@@ -101,6 +101,8 @@ function starGlyph(g,x,y,mag,rgb,alpha,size){
   if(mag===5){g.strokeStyle=`rgba(${rgb},${alpha*.35})`;g.lineWidth=.4;g.beginPath();g.arc(cx,cy,reach*1.35,0,TAU);g.stroke();}
 }
 let grain,backdrop,lensPatch,regionBlend=0,darknessRelief=0;
+// The chart's ink is laid a pixel or two off true, by whichever plate is on the press; see plateRegistration().
+let plateShift={x:0,y:0};
 // ---------- Plates: the night plate (ink and starlight on indigo) and the paper plate (sepia ink on cream) ----------
 // Every render section registers its own colours for both plates with definePlate(); `ink` always points at the
 // active plate so draw code reads ink.section.token. Night values are the original artwork and stay unchanged.
@@ -115,7 +117,7 @@ definePlate('base',{
 });
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
-  figureLayers.clear();ringSprites.clear();
+  figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
   if(world)for(const n of world.nodes){n._glowKey=null;}
   grain=grainTexture();laidTile=null;laidSheet=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
