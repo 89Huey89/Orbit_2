@@ -307,11 +307,14 @@ function celestialPlate(index){
     g.beginPath();g.moveTo(Math.cos(a)*r,Math.sin(a)*r*.79);g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*.79);g.stroke();
   }
   g.restore();
-  g.font="italic 17px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionLatin},${onPaper()?.62:.21})`;g.textAlign='left';
-  g.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],48,1027);
-  g.font="12px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionTab},${onPaper()?.5:.18})`;g.fillText('TAB. '+numerals[index],48,1052);
-  g.font="italic 11px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.figCaption},${onPaper()?.55:.15})`;
-  g.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],48,1072);
+  // A proof before letters is pulled without its captions; the figures and rings stay as they are.
+  if(!plainPlate()){
+    g.font="italic 17px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionLatin},${onPaper()?.62:.21})`;g.textAlign='left';
+    g.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],48,1027);
+    g.font="12px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionTab},${onPaper()?.5:.18})`;g.fillText('TAB. '+numerals[index],48,1052);
+    g.font="italic 11px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.figCaption},${onPaper()?.55:.15})`;
+    g.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],48,1072);
+  }
   if(index===1){
     // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set beside the caption —
     // a small marginal figure, not the plate's big ring system.
@@ -454,7 +457,7 @@ function revealBand(){
   const y=Math.min(H*.3,hudBand()+46);return {top:y-36,bottom:y+36};
 }
 function drawChapterReveal(dt){
-  if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return;
+  if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
   const t=chapterReveal.age,alpha=clamp(Math.min(t/.55,(4.2-t)/1.2),0,1);
   // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
@@ -597,7 +600,7 @@ function drawAtmosphere(dt=0,aim=null){
   }
   drawAmbient(dt,aim);
   // Quiet atlas annotations stay outside the central play path on wide screens.
-  if(W>780){
+  if(W>780&&!plainPlate()){
     ctx.font="10px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.atmosphere.annotation},.23)`;ctx.textAlign='left';
     ctx.fillText('ASCENDENS',W*.115,H*.45);ctx.fillText('Δ  /  '+String(Math.floor(world.progress)).padStart(3,'0'),W*.115,H*.45+17);
     line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);

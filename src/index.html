@@ -12,6 +12,11 @@
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--chapter:#889399;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--chapter:#7a6852;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
+    /* The derived plates keep their base plate's palette and re-ink only the accents. */
+    #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091;--chapter:#8f8873}
+    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--chapter:#7d9a8c;--shield:#8fc0c4}
+    #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a}
+    #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22}
     #game[data-plate="paper"] #chapter{color:#c2b394}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
@@ -153,6 +158,8 @@
       #end .end-stats{margin:15px 0 22px;padding:11px 0}
       #end #end-constellations{margin:-13px 0 15px}
       #end #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
+      #end #end-unlocked{margin:-9px 0 10px;font-size:9px}
+      #end .exlibris{width:84px;height:50px;margin-top:9px}
       #end .end-plate-line{margin-top:9px}
       #end #copy-score{padding:6px 12px}
       #end .action-copy{font-size:17px;margin-bottom:8px}
@@ -170,6 +177,57 @@
       #end #end-observations{margin:2px 0 4px;font-size:8px;line-height:1.4}
       #end .end-plate-line{display:none}
       #end .end-stats{gap:12px}
+    }
+    /* — The catalogue: a ruled library page laid over the plate — */
+    #catalogue{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
+    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:rgba(var(--veil),.975);text-align:left}
+    .catalogue-leaf::before,.catalogue-leaf::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
+    .catalogue-leaf::before{inset:0;border-width:1.5px}
+    .catalogue-leaf::after{inset:5px;opacity:.6}
+    .catalogue-head{flex:0 0 auto;text-align:center}
+    #catalogue h2{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
+    #catalogue .eyebrow{margin:0 0 6px;font-size:9px}
+    #catalogue .title-rule{margin:9px auto 0;width:76px}
+    .catalogue-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;margin-top:11px;padding:0 3px 4px}
+    .ledger-table{width:100%;border-collapse:collapse}
+    .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--line)}
+    .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;border-bottom:1px solid var(--line);color:var(--best)}
+    .cat-group{margin-top:17px}
+    .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1px solid var(--line);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+    .cat-group ul{margin:0;padding:0;list-style:none}
+    .cat-row{border-bottom:1px solid var(--line)}
+    .cat-item,.cat-granted{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;padding:7px 2px;margin:0;background:none;border:0;border-radius:0;text-align:left;font:inherit;color:var(--copy)}
+    .cat-item{pointer-events:auto;cursor:pointer;transition:color .2s}
+    .cat-item:hover,.cat-item:focus-visible{color:var(--ivory)}
+    .cat-item:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
+    .cat-item[aria-pressed="true"]{color:var(--gold)}
+    .cat-item[aria-pressed="true"] .cat-name::before{content:'\25c6\00a0';font-size:7px;vertical-align:middle}
+    .cat-name{font-size:14.5px;letter-spacing:.02em}
+    .cat-latin{flex:0 0 auto;font-style:italic;font-size:11px;color:var(--muted)}
+    .cat-row.locked{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:7px 2px}
+    .cat-blank{flex:0 0 74px;height:1px;background:var(--line)}
+    .cat-cond{font-style:italic;font-size:11px;line-height:1.5;text-align:right;color:var(--muted);opacity:.72}
+    .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
+    .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
+    .cat-initials input:focus-visible{outline:none;border-color:var(--gold)}
+    #catalogue-close{flex:0 0 auto;margin:11px auto 0}
+    #game.playing #catalogue-open{display:none}
+    /* — The catalogue's marks on the colophon: what a run has just granted, and the library stamp — */
+    #end-unlocked{margin:-9px 0 13px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:10px;letter-spacing:.19em;color:var(--gold)}
+    #end-unlocked:empty{display:none}
+    .exlibris{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:98px;height:58px;margin:13px auto 0;border:1px solid var(--line);border-radius:50%;color:var(--gold);opacity:.85}
+    .exlibris::before{content:'';position:absolute;inset:3px;border:1px solid var(--line);border-radius:50%;opacity:.7}
+    .exlibris-line{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.24em}
+    #exlibris-initials{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:16px;letter-spacing:.2em;line-height:1.1}
+    .exlibris.hidden{display:none}
+    @media(max-height:530px) and (orientation:landscape){
+      #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
+      #catalogue h2{font-size:19px}
+      #catalogue .title-rule{margin-top:5px}
+      #game .catalogue-body{margin-top:7px}
+      #game .cat-group{margin-top:11px}
+      #game .exlibris{display:none}
+      #game #end-unlocked{margin:2px 0 3px;font-size:9px}
     }
     /* — The living pen in the DOM: the same hand that draws the chart writes the HUD, the toasts, the
        frontispiece and the colophon. Every base style below is the finished state and every animation
@@ -263,17 +321,33 @@
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>
+      <div id="end-unlocked"></div>
+      <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><span id="end-daily" class="small daily-note"></span><button id="copy-score" class="diff-btn" type="button">COPY SCORE</button></div>
     </div>
   </section>
   <section id="pause" class="screen hidden" aria-label="Paused"><strong>Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
+  <section id="catalogue" class="screen hidden" aria-label="Catalogue" aria-hidden="true">
+    <div class="catalogue-leaf">
+      <div class="catalogue-head">
+        <p class="eyebrow">ORBIS TABULA</p>
+        <h2>CATALOGUS</h2>
+        <div class="title-rule"><span></span></div>
+      </div>
+      <div id="catalogue-body" class="catalogue-body"></div>
+      <button id="catalogue-close" class="diff-btn" type="button">CLOSE</button>
+    </div>
+  </section>
   <div class="footer">
     <button id="sound" class="utility" aria-label="Mute sound" aria-pressed="true" title="Sound">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h4l5-4v12l-5-4H4z"/><path class="sound-wave" d="M16 9c2 2 2 4 0 6m3-9c4 3 4 9 0 12"/><path class="mute-mark" d="m17 10 4 4m0-4-4 4"/></svg>
     </button>
     <span id="chapter" class="small">I &nbsp; / &nbsp; THE QUIET</span>
     <span class="footer-tools">
+    <button id="catalogue-open" class="utility" aria-label="Open the catalogue" aria-expanded="false" title="Catalogue">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z"/><path d="M12 6.4v14.2"/><path d="M7.3 8.3h2.4M7.3 11h2.4M14.3 8.3h2.4M14.3 11h2.4" stroke-width=".8"/></svg>
+    </button>
     <button id="plate" class="utility" aria-label="Switch to paper plate" title="Paper or night plate">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path class="plate-night" d="M9 12h6M9 15.5h6M9 8.5h3"/><path class="plate-paper" d="M10 15.5a3 3 0 1 0 0-6"/></svg>
     </button>
@@ -290,6 +364,7 @@
 <script src="simulation.js"></script>
 <script src="audio.js"></script>
 <script src="plates.js"></script>
+<script src="ledger.js"></script>
 <script src="backdrop.js"></script>
 <script src="planets.js"></script>
 <script src="celestial.js"></script>
