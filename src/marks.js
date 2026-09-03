@@ -45,10 +45,63 @@ definePlate('marks',{
   }
 });
 // ---------- Engraved line quality: a burin line swells and tapers, wobbles slightly, doubles where the
-// hand went round twice, and breaks in tiny gaps. `engravedRing` bakes an orbit ring's main stroke into a
-// small offscreen sprite (cached by quantised radius/rgb/alpha/weight/plate/scale/seed so it is painted
-// once and blitted per frame); `engravedLine` draws a short constellation segment directly since there are
-// only a few of them per frame.
+// hand went round twice, and breaks in tiny gaps. `burinArc` and `burinSegment` are the two primitives —
+// they take any 2D context, so the same hand cuts orbit rings, planet keylines, capture ripples, black-hole
+// edges and the plate frame's double rule. `engravedRing` bakes an orbit ring into a small offscreen sprite
+// (cached by quantised radius/rgb/alpha/weight/plate/scale/seed so it is painted once and blitted per
+// frame); `engravedLine` draws a short constellation segment straight onto ctx.
+function burinArc(g,cx,cy,radius,from,to,rgb,alpha,weight,seed,opts={}){
+  const span=to-from,flatten=opts.flatten??1,rng=seeded(seed>>>0||1);
+  const segCount=opts.segments??clamp(Math.round(Math.abs(span)*Math.max(radius,2)/2.6),6,84);
+  const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
+  const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
+  const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=(opts.wobble??.3)*(1+rng());
+  const skipCount=Math.min(opts.skips??Math.round(segCount*.06),segCount-1),skips=new Set();
+  while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
+  g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
+  for(let i=0;i<segCount;i++){
+    if(skips.has(i))continue;
+    const a0=from+span*i/segCount,a1=from+span*(i+1)/segCount,mid=(a0+a1)/2;
+    const wob=Math.sin(wobFreq*mid+wobPhase)*wobAmp;
+    const s=Math.sin(f1*mid+ph1)*.5+Math.sin(f2*mid+ph2)*.3+Math.sin(f3*mid+ph3)*.2;
+    const r=Math.max(.05,radius+wob);
+    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45));
+    g.beginPath();
+    if(flatten===1)g.arc(cx,cy,r,a0,a1);else g.ellipse(cx,cy,r,Math.max(.05,r*flatten),0,a0,a1);
+    g.stroke();
+  }
+}
+function burinSegment(g,x1,y1,x2,y2,rgb,alpha,weight,seed,opts={}){
+  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,rng=seeded(seed>>>0||1);
+  const ph=rng()*TAU,f=2+Math.floor(rng()*2),ph2=rng()*TAU,f2=5+Math.floor(rng()*3);
+  const wobPhase=rng()*TAU,wobFreq=2+Math.floor(rng()*3),wobAmp=opts.wobble??.35;
+  const segCount=opts.segments??clamp(Math.round(len/16),5,14);
+  const skipCount=Math.min(opts.skips??0,Math.max(0,segCount-2)),skips=new Set();
+  while(skips.size<skipCount)skips.add(1+Math.floor(rng()*(segCount-2)));
+  g.save();g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
+  for(let i=0;i<segCount;i++){
+    if(skips.has(i))continue;
+    const t0=i/segCount,t1=(i+1)/segCount,tm=(t0+t1)/2;
+    const s=Math.sin(f*tm*TAU+ph)*.6+Math.sin(f2*tm*TAU+ph2)*.4;
+    const w0=Math.sin(wobFreq*t0*TAU+wobPhase)*wobAmp,w1=Math.sin(wobFreq*t1*TAU+wobPhase)*wobAmp;
+    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.4));
+    g.beginPath();g.moveTo(x1+dx*t0+nx*w0,y1+dy*t0+ny*w0);g.lineTo(x1+dx*t1+nx*w1,y1+dy*t1+ny*w1);g.stroke();
+  }
+  if(opts.hair!==false){
+    g.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;g.lineWidth=Math.max(.25,weight*.35);
+    const off=(rng()<.5?1:-1)*.8;
+    g.beginPath();g.moveTo(x1+nx*off,y1+ny*off);g.lineTo(x2+nx*off,y2+ny*off);g.stroke();
+  }
+  g.restore();
+}
+// Four burin sides make an engraved rectangle; used for the plate frame's rules.
+function burinRect(g,x,y,w,h,rgb,alpha,weight,seed){
+  const long=Math.max(w,h),segs=clamp(Math.round(long/26),8,48);
+  burinSegment(g,x,y,x+w,y,rgb,alpha,weight,seed,{segments:segs,hair:false,wobble:.25});
+  burinSegment(g,x+w,y,x+w,y+h,rgb,alpha,weight,seed+7,{segments:segs,hair:false,wobble:.25});
+  burinSegment(g,x+w,y+h,x,y+h,rgb,alpha,weight,seed+13,{segments:segs,hair:false,wobble:.25});
+  burinSegment(g,x,y+h,x,y,rgb,alpha,weight,seed+21,{segments:segs,hair:false,wobble:.25});
+}
 const ringSprites=new Map();
 function engravedRing(radius,rgb,alpha,weight,seed){
   const rBucket=Math.round(radius*2)/2,aBucket=Math.round(alpha/.05)*.05;
@@ -56,51 +109,17 @@ function engravedRing(radius,rgb,alpha,weight,seed){
   const cached=ringSprites.get(key);if(cached)return cached;
   const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
-  g.scale(DPR,DPR);g.translate(size/2,size/2);g.lineCap='round';
-  const rng=seeded(seed>>>0||1);
-  const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
-  const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
-  const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=.3+rng()*.3;
-  const segCount=72,skipCount=4+Math.floor(rng()*3),skips=new Set();
-  while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
-  g.strokeStyle=`rgba(${rgb},${aBucket})`;
-  for(let i=0;i<segCount;i++){
-    if(skips.has(i))continue;
-    const a0=i/segCount*TAU,a1=(i+1)/segCount*TAU,mid=(a0+a1)/2;
-    const wob=Math.sin(wobFreq*mid+wobPhase)*wobAmp;
-    const s=Math.sin(f1*mid+ph1)*.5+Math.sin(f2*mid+ph2)*.3+Math.sin(f3*mid+ph3)*.2;
-    g.lineWidth=weight*(1+clamp(s,-1,1)*.45);
-    g.beginPath();g.arc(0,0,rBucket+wob,a0,a1);g.stroke();
-  }
-  const hairGaps=2+Math.floor(rng()*2),hairR=rBucket+(rng()<.5?1:-1)*.9;
-  const slot=TAU/hairGaps,coverFrac=.7,startOffset=rng()*TAU;
-  g.strokeStyle=`rgba(${rgb},${(aBucket*.4).toFixed(3)})`;g.lineWidth=Math.max(.25,weight*.35);
-  for(let k=0;k<hairGaps;k++){
-    const s0=startOffset+k*slot,e0=s0+slot*coverFrac;
-    g.beginPath();g.arc(0,0,hairR,s0,e0);g.stroke();
-  }
+  g.scale(DPR,DPR);g.translate(size/2,size/2);
+  burinArc(g,0,0,rBucket,0,TAU,rgb,aBucket,weight,seed,{segments:72,skips:4+((seed>>>3)%3)});
+  // A fainter second pass a hairline off the true circle, where the hand went round twice.
+  const hairGaps=2+((seed>>>5)&1),hairR=rBucket+((seed&1)?.9:-.9),slot=TAU/hairGaps,startOffset=((seed>>>7)%997)/997*TAU;
+  for(let k=0;k<hairGaps;k++)burinArc(g,0,0,hairR,startOffset+k*slot,startOffset+k*slot+slot*.7,rgb,Number((aBucket*.4).toFixed(3)),Math.max(.25,weight*.35),seed+k*37,{skips:0,wobble:.12});
   const sprite={canvas:c,size};
   ringSprites.set(key,sprite);
   if(ringSprites.size>64)ringSprites.delete(ringSprites.keys().next().value);
   return sprite;
 }
-function engravedLine(x1,y1,x2,y2,rgb,alpha,weight,seed){
-  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
-  const rng=seeded((seed>>>0||1));
-  const ph=rng()*TAU,f=2+Math.floor(rng()*2),ph2=rng()*TAU,f2=5+Math.floor(rng()*3);
-  const segCount=Math.max(5,Math.min(14,Math.round(len/16)));
-  ctx.save();ctx.lineCap='round';ctx.strokeStyle=`rgba(${rgb},${alpha})`;
-  for(let i=0;i<segCount;i++){
-    const t0=i/segCount,t1=(i+1)/segCount,tm=(t0+t1)/2;
-    const s=Math.sin(f*tm*TAU+ph)*.6+Math.sin(f2*tm*TAU+ph2)*.4;
-    ctx.lineWidth=weight*(1+clamp(s,-1,1)*.4);
-    ctx.beginPath();ctx.moveTo(x1+dx*t0,y1+dy*t0);ctx.lineTo(x1+dx*t1,y1+dy*t1);ctx.stroke();
-  }
-  ctx.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;ctx.lineWidth=Math.max(.25,weight*.35);
-  const off=(rng()<.5?1:-1)*.8;
-  ctx.beginPath();ctx.moveTo(x1+nx*off,y1+ny*off);ctx.lineTo(x2+nx*off,y2+ny*off);ctx.stroke();
-  ctx.restore();
-}
+function engravedLine(x1,y1,x2,y2,rgb,alpha,weight,seed){burinSegment(ctx,x1,y1,x2,y2,rgb,alpha,weight,seed);}
 function drawConnections(){
   const main=world.nodes.filter(n=>n.type!=='gold'&&n.y>world.cameraY-160&&n.y<world.cameraY+world.height+160).sort((a,b)=>a.row-b.row);
   ctx.save();ctx.setLineDash([1,9]);ctx.lineWidth=.55;ctx.strokeStyle=`rgba(${ink.marks.connection},.12)`;

@@ -59,7 +59,13 @@
     #hint{position:absolute;bottom:max(100px,calc(env(safe-area-inset-bottom) + 72px));left:25px;right:25px;text-align:center;pointer-events:none;color:var(--copy);font-family:'IM Fell English',Georgia,serif;font-size:14px;letter-spacing:.04em;z-index:2;opacity:0;transition:opacity .5s;text-shadow:0 2px 10px var(--ink)}
     #toast{position:absolute;top:29%;left:15px;right:15px;text-align:center;pointer-events:none;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;letter-spacing:.22em;font-size:13px;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .4s;z-index:2}
     #toast.show{opacity:1;transform:translateY(0)}
-    #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.79),rgba(var(--veil),.3) 65%,transparent);padding:30px 24px 65px}
+    #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
+    /* The colophon is pulled on its own leaf: a near-opaque paper panel inside a double engraved rule, so
+       every line stays legible however far the spilled ink has risen behind it. */
+    .colophon{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;max-width:min(430px,100%);padding:26px 26px 28px;background:rgba(var(--veil),.965)}
+    .colophon::before,.colophon::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
+    .colophon::before{inset:0;border-width:1.5px}
+    .colophon::after{inset:5px;opacity:.6}
     #end .eyebrow{margin:0 0 15px;font-size:10px}
     #end h2{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
     #end-score{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
@@ -104,7 +110,9 @@
       #intro .difficulty{margin-top:8px}
       #intro .start-copy{bottom:78px}
       #intro .instruction{font-size:12px;line-height:1.5}
-      #game #end{padding-bottom:4px}
+      #game #end{padding:4px 10px}
+      #game .colophon{padding:8px 16px 10px;max-width:min(560px,100%)}
+      #game .colophon::after{inset:3px}
       #game #end h2{font-size:19px}
       #game #end-score{font-size:44px}
       .score-frame{margin:0;padding:3px 20px 2px}
@@ -176,14 +184,16 @@
       <p class="printer-line">Impressum &middot; MDCXX</p>
     </div>
   </section>
-  <div id="hint">Tap when the dotted line skims the next orbit’s rim.</div>
+  <div id="hint">Tap when the pricked line skims the next orbit’s rim.</div>
   <div id="toast" aria-live="polite"></div>
   <section id="end" class="screen hidden" aria-label="Run complete">
-    <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2>One more orbit.</h2>
-    <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div></div>
-    <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div></div>
-    <div id="end-constellations" class="instruction">0 / 4 constellations traced</div>
-    <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The dotted line follows your momentum.</p>
+    <div class="colophon">
+      <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2>One more orbit.</h2>
+      <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div></div>
+      <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div></div>
+      <div id="end-constellations" class="instruction">0 / 4 constellations traced</div>
+      <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
+    </div>
   </section>
   <section id="pause" class="screen hidden" aria-label="Paused"><strong>Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
   <div class="footer">
