@@ -200,9 +200,11 @@ function celestialPlate(index){
     // The Eclipse: a dark solar disc inside a corona drawn in hundreds of strokes.
     const x=418,y=470,r=217,eclipsePaper=onPaper();
     g.save();g.translate(x,y);
-    for(let i=0;i<560;i++){
-      const a=i/560*TAU,ray=14+Math.pow(rng(),2)*105+Math.pow(Math.abs(Math.cos(a+.3)),6)*67;
-      g.strokeStyle=`rgba(${i%4===0?ink.plates.coronaA:ink.plates.coronaB},${.035+rng()*.14})`;g.lineWidth=.4+rng()*.6;
+    // The corona is a whisper of radiating strokes, not a sunburst: barely half as many, shorter, and at
+    // two fifths of the weight, so the chapter's dark disc no longer throws light across the whole chart.
+    for(let i=0;i<300;i++){
+      const a=i/300*TAU,ray=12+Math.pow(rng(),2)*78+Math.pow(Math.abs(Math.cos(a+.3)),6)*46;
+      g.strokeStyle=`rgba(${i%4===0?ink.plates.coronaA:ink.plates.coronaB},${.022+rng()*.085})`;g.lineWidth=.35+rng()*.45;
       g.beginPath();g.moveTo(Math.cos(a)*(r+2),Math.sin(a)*(r+2));
       g.quadraticCurveTo(Math.cos(a+.027)*(r+ray*.5),Math.sin(a+.027)*(r+ray*.5),Math.cos(a+.055)*(r+ray),Math.sin(a+.055)*(r+ray));g.stroke();
     }
@@ -368,6 +370,21 @@ function drawCelestialScene(index,weight){
   // at a reduced alpha; night is unaffected.
   ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;ctx.drawImage(plate,place.x,place.y,plate.width*place.fit,plate.height*place.fit);ctx.restore();
 }
+// The illustrated plate is left whole in the margins and washed back down the play channel, where the
+// chart and the traveller have to read first: one pass of the sheet's own ground colour, at full strength
+// across the channel and fading out over a 60-pixel feather either side, so the transition is graded
+// rather than cut and nothing changes but the contrast under the chart.
+const CHANNEL_FEATHER=60;
+function drawChannelVeil(){
+  const half=playChannel(),edge=half+CHANNEL_FEATHER,cx=W*.5,alpha=onPaper()?.3:.34;
+  const veil=ctx.createLinearGradient(cx-edge,0,cx+edge,0),stop=CHANNEL_FEATHER/(edge*2);
+  const ground=ink.base.paperRgb;
+  veil.addColorStop(0,`rgba(${ground},0)`);
+  veil.addColorStop(stop,`rgba(${ground},${alpha})`);
+  veil.addColorStop(1-stop,`rgba(${ground},${alpha})`);
+  veil.addColorStop(1,`rgba(${ground},0)`);
+  ctx.save();ctx.fillStyle=veil;ctx.fillRect(Math.max(0,cx-edge),0,Math.min(W,edge*2),H);ctx.restore();
+}
 function ambientPoint(e,progress){
   if(e.kind==='comet')return {x:lerp(e.x,e.endX,progress)*W,y:lerp(e.y,e.endY,progress)*H};
   const place=celestialPlacement(e.chapter);
@@ -507,7 +524,8 @@ function regionPlate(index,near){
       }
     }
   }
-  const marks=near?[1000,1700,950,440][index]:[3300,5400,3000,1400][index];
+  // The dust is thinned by a third: the plates are the quietest thing on the sheet and were reading loud.
+  const marks=near?[650,1100,620,290][index]:[2150,3500,1950,910][index];
   for(let i=0;i<marks;i++){
     const v=rng(),scatter=(rng()+rng()+rng()-1.5),spread=near?.3:[.44,.5,.27,.26][index];
     const x=center(v)+scatter*w*spread,y=v*h;
@@ -522,7 +540,7 @@ function regionPlate(index,near){
       const y=(i+.5)*h/6;
       for(const wrap of [-h,0,h]){
         g.save();g.translate(center(y/h)-35,y+wrap);g.rotate(.38);g.scale(62,125);
-        const shadow=g.createRadialGradient(0,0,0,0,0,1);shadow.addColorStop(0,`rgba(${ink.atmosphere.eclipseShadow},${paper?.14:.36})`);shadow.addColorStop(1,`rgba(${ink.atmosphere.eclipseShadow},0)`);g.fillStyle=shadow;g.fillRect(-1,-1,2,2);g.restore();
+        const shadow=g.createRadialGradient(0,0,0,0,0,1);shadow.addColorStop(0,`rgba(${ink.atmosphere.eclipseShadow},${paper?.09:.22})`);shadow.addColorStop(1,`rgba(${ink.atmosphere.eclipseShadow},0)`);g.fillStyle=shadow;g.fillRect(-1,-1,2,2);g.restore();
       }
     }
   }
@@ -532,12 +550,12 @@ function drawRegion(index,weight){
   if(weight<.001)return;
   const region=atlasRegions[index],rc=regionInk(region),time=reducedMotion?0:world.time,paper=onPaper();
   ctx.save();ctx.globalAlpha=weight;
-  ctx.fillStyle=`rgba(${rc.wash},${paper?.05:.31})`;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=`rgba(${rc.wash},${paper?.042:.25})`;ctx.fillRect(0,0,W,H);
   for(const near of [false,true]){
     const plate=regionPlate(index,near),height=H*(near?1.7:1.9);
     const travel=reducedMotion?0:world.cameraY*scale*(near?.17:.055)+time*(near?1.1:.35);
     const offset=((travel%height)+height)%height;
-    ctx.globalAlpha=weight*(paper?(near?.22:.34):(near?.54:.84));
+    ctx.globalAlpha=weight*(paper?(near?.17:.27):(near?.4:.62));
     ctx.drawImage(plate,0,-offset,W,height);ctx.drawImage(plate,0,height-offset,W,height);
   }
   ctx.restore();
@@ -579,23 +597,29 @@ function drawAtmosphere(dt=0,aim=null){
     // The new chapter arrives as a fresh sheet drawn up from below the frame, its dust and its own
     // marginalia riding with it; the old plate stays where it lies and fades away underneath.
     const turn=pageTurn(mix),slide=(1-turn)*H;
-    drawCelestialScene(first,1-turn*.9);drawRegion(first,1-turn);
+    drawCelestialScene(first,1-turn*.9);drawChannelVeil();drawRegion(first,1-turn);
     ctx.save();ctx.beginPath();ctx.rect(0,slide,W,Math.max(0,H-slide));ctx.clip();
     ctx.globalAlpha=(1-turn)*.7;ctx.fillStyle=ink.base.paper;ctx.fillRect(0,slide,W,Math.max(0,H-slide));ctx.globalAlpha=1;
-    drawCelestialScene(second,1);drawRegion(second,1);
+    drawCelestialScene(second,1);drawChannelVeil();drawRegion(second,1);
     ctx.restore();
     drawSheetEdge(slide,1-turn);
   }else{
     drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
+    drawChannelVeil();
     drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
   }
   const regionA=regionInk(atlasRegions[first]),regionB=regionInk(atlasRegions[second]),paper=onPaper();
   const starColor=regionA.star.map((v,i)=>Math.round(lerp(v,regionB.star[i],mix))).join(',');
   const density=lerp(atlasRegions[first].density,atlasRegions[second].density,mix),cy=world.cameraY;
+  // Inside the play channel the field is set at half the number of stars and a little over half the
+  // contrast, so a glyph on the chart is never mistaken for one behind it; the margins keep the full field.
+  const channel=playChannel(),middle=W*.5;
   for(let i=0;i<stars.length;i++){
     const s=stars[i],visibility=clamp((density-((i*.61803398875)%1))/.09,0,1);if(visibility===0)continue;
     const y=((s.y*H-cy*s.depth*scale)%(H+12)+(H+12))%(H+12)-6,x=s.x*W;
-    const alpha=visibility*(.2+s.bright*.42)*(reducedMotion?1:.86+.14*Math.sin(world.time*.58+s.phase));
+    const inside=Math.abs(x-middle)<channel;
+    if(inside&&(i&1))continue;
+    const alpha=visibility*(.2+s.bright*.42)*(reducedMotion?1:.86+.14*Math.sin(world.time*.58+s.phase))*(inside?.55:1);
     starGlyph(ctx,x,y,s.mag,s.mag>=4?ink.atmosphere.starGlyph:s.bright>.86?ink.atmosphere.starBright:starColor,alpha,s.size);
   }
   drawAmbient(dt,aim);

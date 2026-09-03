@@ -559,16 +559,25 @@ function drawConstellations(){
     if(!chart.expired){
       const e=chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
       if(ey>-80&&ey<H+80){
+        // The name is set round the top of the rim, and turns to the bottom of it — the same flip the node
+        // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
+        const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
+        const guard=Math.abs(ex-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner,below=ey-ring-size<guard;
         ctx.save();ctx.translate(ex,ey);
         ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${chart.completed?.34:.52})`;
-        textAlongArc(ctx,chart.name,0,0,e.r*scale+11*scale+size,-Math.PI/2,{align:'center',size,spacing:size*.24});
+        textAlongArc(ctx,chart.name,0,0,ring,below?Math.PI/2:-Math.PI/2,{align:'center',size,spacing:size*.24,inward:below});
         ctx.restore();
       }
     }
     const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
     if(label&&!chart.expired&&!plainPlate()&&(!chart.completed||chart.flash>0)){
-      const x=clamp(sx(label.x),20,W-20),y=sy(label.y)-(label.r+46)*scale;
+      // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption
+      // does; and while a toast is on the line it is pushed below the star's ring so the two never meet.
+      const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
+      let y=star+captionOffset(sx(label.x),star,r,46*scale);
+      const band=toastBand();
+      if(band&&y-16<band.bottom&&y+18>band.top)y=star+r+34*scale;
       ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
       ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText(chart.completed?'COMPLETE · +60':count+' / 3 STARS · +60',x,y+16);
     }
@@ -578,11 +587,14 @@ function drawConstellations(){
     ctx.restore();
   }
 }
+// How far either side of the middle the DOM HUD's centre column — the score, the pace and the flow — can
+// reach. A caption printed inside it has to keep below the whole HUD band rather than merely inside the frame.
+const HUD_TEXT_HALF=150;
 // Captions ride above their planet, but flip underneath it when the node sits so high that the text would
 // cross the frame's inner rule or run into the DOM score block in the middle of the HUD band. Returns the
 // y offset in node-local coordinates, where 0 is the planet's centre.
 function captionOffset(x,y,r,gap){
-  const inner=frameBand()*.92+8,guard=Math.abs(x-W*.5)<104?Math.max(inner,hudBand()):inner;
+  const inner=frameBand()*.92+8,guard=Math.abs(x-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner;
   if(y-r-gap>=guard)return -(r+gap);
   let below=Math.max(r+gap+3,guard+12-y);
   const band=revealBand();
@@ -646,13 +658,14 @@ function drawNode(n,aim){
   ctx.stroke();
   if(wedged)penWedgeEnd(pen,n,r);
   if(used)penStrike(n,r,struck,rgb);
-  // A Latin caption engraved round the outer rim of every third main orbit, set in small caps at a
-  // whisper. It is printed only on orbits the player is not holding, so it can never cross the
-  // release marks, the perfect window, or the fading ring, which are drawn on the current orbit alone.
-  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%3===0&&r>15){
+  // A Latin caption engraved round the outer rim of every fourth main orbit, set in small caps at a
+  // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
+  // player is not holding, so it can never cross the release marks, the perfect window, or the fading
+  // ring, which are drawn on the current orbit alone.
+  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%4===0&&r>15){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
     ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
-    ctx.fillStyle=paper?`rgba(${ink.base.ink},.34)`:`rgba(${rgb},.24)`;
+    ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
     textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true});
   }
   if(active){
@@ -787,8 +800,10 @@ function drawFlare(h){
   ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
   ctx.restore();
 }
-// A nebula patch: a stippled cloud, denser at its heart, with a broken contour. It is baked once
-// per patch and blitted, since nothing about it moves — it exists only to hide the chart.
+// A nebula patch: a faint stippled haze, no more. There is no hatch and no fill; a sparse stipple
+// thins to nothing well before the edge, and one broken contour is barely suggested inside it, so the
+// cloud is noticed rather than looked at. It is baked once per patch and blitted, since nothing about
+// it moves — it exists only to hide the chart, which the fogged guide ring says plainly enough.
 const nebulaSprites=new Map();
 function nebulaSprite(seed,radius){
   const rBucket=Math.round(radius/2)*2,key=seed+':'+rBucket+':'+plateName+':'+DPR.toFixed(2);
@@ -797,21 +812,24 @@ function nebulaSprite(seed,radius){
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.translate(size/2,size/2);
   const p=ink.field,rng=seeded((seed>>>0)||1),r=Math.max(2,rBucket),paper=onPaper();
-  const dots=Math.round(1400+r*24);
+  const dots=Math.round(340+r*7);
   for(let i=0;i<dots;i++){
-    const a=rng()*TAU,d=Math.pow(rng(),.62)*r,fade=Math.pow(1-d/r,1.35);
+    // Drawn well inside the patch and faded off with the cube of the distance, so the stipple has no
+    // edge of its own to read as a disc.
+    const a=rng()*TAU,d=Math.pow(rng(),.8)*r*.92,fade=Math.pow(1-d/r,3);
     const wobble=1+Math.sin(a*3+seed)*.12;
-    g.fillStyle=`rgba(${p.fog},${(paper?.05:.07)+rng()*(paper?.16:.24)*fade})`;
-    g.fillRect(Math.cos(a)*d*wobble,Math.sin(a)*d*.82,.6+rng()*(paper?.9:1.2),.6+rng()*.5);
+    g.fillStyle=`rgba(${p.fog},${((paper?.02:.028)+rng()*(paper?.07:.1))*fade})`;
+    g.fillRect(Math.cos(a)*d*wobble,Math.sin(a)*d*.82,.5+rng()*.45,.5+rng()*.4);
   }
-  g.strokeStyle=`rgba(${p.fogEdge},${paper?.2:.16})`;g.lineWidth=.5;
-  for(let i=0;i<3;i++){
-    const rr=r*(.5+i*.19);
+  // One contour, mostly lifted: a suggestion of a boundary rather than a drawn one.
+  g.strokeStyle=`rgba(${p.fogEdge},${paper?.075:.055})`;g.lineWidth=.4;
+  {
+    const rr=r*.72;
     g.beginPath();
     for(let j=0;j<=30;j++){
-      const a=j/30*TAU,jr=rr*(1+Math.sin(a*2.3+i)*.1+(rng()-.5)*.12);
+      const a=j/30*TAU,jr=rr*(1+Math.sin(a*2.3)*.1+(rng()-.5)*.12);
       const px=Math.cos(a)*jr,py=Math.sin(a)*jr*.82;
-      if(j===0)g.moveTo(px,py);else if(j%7===3)g.moveTo(px,py);else g.lineTo(px,py);
+      if(j===0)g.moveTo(px,py);else if(j%3!==0)g.moveTo(px,py);else g.lineTo(px,py);
     }
     g.stroke();
   }
