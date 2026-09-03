@@ -331,7 +331,9 @@ function glyph(seed,type,row,runSeed){
       ink.strokeStyle=paper?'rgba(180,110,58,.7)':'rgba(228,194,135,.72)';ink.lineWidth=.7;ink.stroke();
     }
   }
-  const art={back:back.image,surface:surface.image,front:front.image,weather:planetWeather(family,core,seed),embers,core,tilt,family,spin:palette.spin,phase:seed*.017};
+  const weather=planetWeather(family,core,seed);
+  for(const layer of [back.image,surface.image,front.image,weather,embers])pressPixels(layer);
+  const art={back:back.image,surface:surface.image,front:front.image,weather,embers,core,tilt,family,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
   if(glyphs.size>=24)glyphs.delete(glyphs.keys().next().value);
   glyphs.set(key,art);return art;

@@ -150,6 +150,9 @@ const aged=(r,g,b)=>{
   const L=luminance(r,g,b),t=.2+.28*L,to=[104,68,32];
   return [lerp(r,to[0],t)*.86,lerp(g,to[1],t)*.86,lerp(b,to[2],t)*.86].map(rgbClamp);
 };
+// A ramp read so that its light stop is reached at the sheet's own tone rather than at pure white, so a
+// duotone pulled over the paper plate keeps the paper's ground where it is.
+const topped=(tint,top)=>(r,g,b)=>{const L=luminance(r,g,b),k=L>0?Math.min(1,L/top)/L:1;return tint(r*k,g*k,b*k);};
 const PLATE_STYLES={
   cellarius:{base:'night',wash:.7,tint:duotone([7,16,56],[118,102,72],[252,228,164])},
   verdigris:{base:'night',wash:.52,tint:duotone([5,15,13],[62,124,100],[196,230,204])},
@@ -157,6 +160,9 @@ const PLATE_STYLES={
   // Blue prepared paper, as the Florentine workshops made it: the night plate's pale ink becomes white
   // heightening on a blue-grey ground, so the drawing is carried by the lights rather than the darks.
   azzurra:{base:'night',wash:.55,tint:duotone([100,116,132],[168,180,188],[244,240,230])},
+  // The whole chart in one brown ink, as Galileo washed his moons: no hand-colouring, no rubrication, no
+  // Prussian blue — every body a sepia wash under a sepia line on the cream of the sheet.
+  sepia:{base:'paper',wash:.3,pixels:true,tint:topped(duotone([40,28,18],[138,104,70],[231,218,189]),.86)},
   // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it.
   proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])}
 };
@@ -185,6 +191,20 @@ function tintValue(value,tint){
     return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
   }
   return value;
+}
+// A plate pulled in one ink presses a finished layer through its tint pixel by pixel as well, so the colours
+// the painters use as literals — a shoreline's verdigris, a fissure's glow, a storm's indigo bands — go to
+// the same brown as every registered token. Only a plate that asks for it pays for the pass.
+function pressPixels(canvas){
+  const style=PLATE_STYLES[plateName];if(!style||!style.pixels||!canvas||!canvas.getContext)return canvas;
+  const g=canvas.getContext('2d'),im=g&&g.getImageData?g.getImageData(0,0,canvas.width,canvas.height):null;
+  if(!im||!im.data)return canvas;
+  const d=im.data;
+  for(let i=0;i<d.length;i+=4){
+    if(!d[i+3])continue;
+    const [r,gg,b]=style.tint(d[i],d[i+1],d[i+2]);d[i]=r;d[i+1]=gg;d[i+2]=b;
+  }
+  g.putImageData(im,0,0);return canvas;
 }
 let plateName=storage.get('orbit.plate.v1','night');if(!PLATES[plateName])plateName='night';
 const ink={};

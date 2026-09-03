@@ -99,6 +99,8 @@ const UNLOCKS=[
     describe:()=>'Trace four constellations in one run'},
   {id:'azzurra',kind:'plate',name:'Blue prepared paper',latin:'Carta azzurra',stat:'grazes',threshold:25,
     describe:()=>'Graze 25 black holes'},
+  {id:'sepia',kind:'plate',name:'Sepia plate',latin:'Tabula sepiæ',stat:'constellations',threshold:12,
+    describe:()=>'Trace 12 constellations in all'},
   {id:'comet',kind:'mark',name:'Comet',latin:'Cometa',stat:'runs',threshold:25,
     describe:()=>'Play 25 runs'},
   {id:'telescope',kind:'mark',name:'Galilean telescope',latin:'Perspicillum',stat:'perfects',threshold:100,

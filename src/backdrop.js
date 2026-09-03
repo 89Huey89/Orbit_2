@@ -48,6 +48,18 @@ function dressSheet(sheet){
     const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.3,W*.5,H*.5,Math.max(W,H)*.75);
     edge.addColorStop(0,'rgba(60,76,92,0)');edge.addColorStop(1,'rgba(60,76,92,.3)');
     g.fillStyle=edge;g.fillRect(0,0,W,H);
+  }else if(plateName==='sepia'){
+    // A sheet that has taken wash after wash of the one brown: broad dilute pools with a darker deposited
+    // rim, and the whole toned a little toward the edges.
+    for(let i=0;i<12;i++){
+      const x=rng()*W,y=rng()*H,r=(.08+rng()*.26)*Math.max(W,H);
+      const pool=g.createRadialGradient(x,y,0,x,y,r);
+      pool.addColorStop(0,`rgba(120,84,48,${.03+rng()*.05})`);pool.addColorStop(.86,`rgba(120,84,48,${.02+rng()*.03})`);pool.addColorStop(.96,`rgba(104,70,36,${.06+rng()*.06})`);pool.addColorStop(1,'rgba(104,70,36,0)');
+      g.fillStyle=pool;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+    const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.3,W*.5,H*.5,Math.max(W,H)*.74);
+    edge.addColorStop(0,'rgba(96,64,32,0)');edge.addColorStop(1,'rgba(96,64,32,.22)');
+    g.fillStyle=edge;g.fillRect(0,0,W,H);
   }else if(plateName==='foxed'){
     // Another century in a damp room: heavy foxing, a few deep stains, and a darkened edge.
     for(let i=0;i<240;i++){
