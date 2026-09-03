@@ -539,14 +539,53 @@ function drawRegion(index,weight){
   }
   ctx.restore();
 }
+// ---------- The page turn: one chapter's sheet laid over the last ----------
+// Each plate is pulled with its own slight misregistration, a pixel or two off true. The chart's ink
+// carries the offset of whichever sheet is on the press; the rising darkness does not, since spilled
+// ink is not part of the printed plate.
+const PLATE_REGISTRATION=[0,1,2,3].map(i=>{const rng=seeded(9241+i*3607);return {x:(rng()*2-1)*1.7,y:(rng()*2-1)*1.6};});
+function plateRegistration(){
+  const first=clamp(Math.floor(regionBlend),0,3),second=Math.min(3,first+1),mix=clamp(regionBlend-first,0,1);
+  const a=PLATE_REGISTRATION[first],b=PLATE_REGISTRATION[second];
+  return {x:lerp(a.x,b.x,mix)*scale,y:lerp(a.y,b.y,mix)*scale};
+}
+// How far the fresh sheet has travelled: 0 as it lies below the frame, 1 once it is squarely on the
+// press. It lands a little before the cross-fade finishes, so the old plate fades away underneath it.
+function pageTurn(mix){const u=clamp(mix/.86,0,1);return u*u*(3-2*u);}
+// The leading edge of the arriving sheet: its shadow, its cut edge, and its own plate-mark.
+function drawSheetEdge(y,strength){
+  if(y<=0||y>=H||strength<=.002)return;
+  const colors=ink.frame,band=frameBand(),lift=Math.max(6,14*scale);
+  const shade=ctx.createLinearGradient(0,y-lift,0,y);
+  shade.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);shade.addColorStop(1,`rgba(${onPaper()?'58,42,28':'2,5,10'},${.3*strength})`);
+  ctx.fillStyle=shade;ctx.fillRect(0,y-lift,W,lift);
+  line(0,y,W,y,colors.rule,Math.max(.7,scale*.9));
+  const inset=band*.2;
+  ctx.save();ctx.globalAlpha=strength;ctx.strokeStyle=colors.markEdge;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(inset+.5,H);ctx.lineTo(inset+.5,y+inset+.5);ctx.lineTo(W-inset-.5,y+inset+.5);ctx.lineTo(W-inset-.5,H);ctx.stroke();
+  ctx.restore();
+}
 function drawAtmosphere(dt=0,aim=null){
   ctx.drawImage(backdrop,0,0,W,H);
   const chapter=clamp(Math.floor(world.progress/8),0,3);
   if(world.state!=='paused')regionBlend=lerp(regionBlend,chapter,1-Math.exp(-dt*.8));
   if(Math.abs(chapter-regionBlend)<.001)regionBlend=chapter;
+  plateShift=plateRegistration();
   const first=Math.floor(regionBlend),second=Math.min(3,first+1),mix=regionBlend-first;
-  drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
-  drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
+  if(mix>0&&!reducedMotion){
+    // The new chapter arrives as a fresh sheet drawn up from below the frame, its dust and its own
+    // marginalia riding with it; the old plate stays where it lies and fades away underneath.
+    const turn=pageTurn(mix),slide=(1-turn)*H;
+    drawCelestialScene(first,1-turn*.9);drawRegion(first,1-turn);
+    ctx.save();ctx.beginPath();ctx.rect(0,slide,W,Math.max(0,H-slide));ctx.clip();
+    ctx.globalAlpha=(1-turn)*.7;ctx.fillStyle=ink.base.paper;ctx.fillRect(0,slide,W,Math.max(0,H-slide));ctx.globalAlpha=1;
+    drawCelestialScene(second,1);drawRegion(second,1);
+    ctx.restore();
+    drawSheetEdge(slide,1-turn);
+  }else{
+    drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
+    drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
+  }
   const regionA=regionInk(atlasRegions[first]),regionB=regionInk(atlasRegions[second]),paper=onPaper();
   const starColor=regionA.star.map((v,i)=>Math.round(lerp(v,regionB.star[i],mix))).join(',');
   const density=lerp(atlasRegions[first].density,atlasRegions[second].density,mix),cy=world.cameraY;

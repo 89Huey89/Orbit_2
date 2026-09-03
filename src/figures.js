@@ -2,8 +2,8 @@
 /* Orbit · src/figures.js
    Constellation figures, nodes, gravitational lenses, hazards, and the aim guide. */
 // ---------- Constellation figures: the plate each fork route is engraved for ----------
-// Behind the three stars of a fork (THE NEEDLE / THE SAIL / THE LYRE / THE CROWN), draw the figure the
-// route is named for, as Hevelius or Bayer would engrave it: broken ink contours and stipple that are
+// Behind the three stars of a fork, draw the figure the route is named for — every entry in the
+// twelve-figure catalogue has its own engraving — as Hevelius or Bayer would cut it: broken ink contours and stipple that are
 // always present once the frame is on the page, fine hatching that fills in as each star is captured,
 // and a last dilute wash once the whole chart is complete. An expired chart fades to hairlines. The
 // figure is baked once per (chart, plate, side, scale) into an offscreen layer and blitted per frame.
@@ -15,7 +15,7 @@ const figureLayers=new Map();
 function figFrame(chart){
   const s=chart.stars,side=(s[0].x+s[1].x+s[2].x)>=0?1:-1;
   const minX=Math.min(s[0].x,s[1].x,s[2].x),maxX=Math.max(s[0].x,s[1].x,s[2].x);
-  const minY=Math.min(s[0].y,s[1].y,s[2].y),maxY=Math.max(s[0].y,s[1].y,s[2].y),pad=78;
+  const minY=Math.min(s[0].y,s[1].y,s[2].y),maxY=Math.max(s[0].y,s[1].y,s[2].y),pad=96;
   return {side,originX:minX-pad,originY:minY-pad,w:maxX-minX+pad*2,h:maxY-minY+pad*2};
 }
 // A parametric spine running bottom-to-top through the three stars (their fixed generation order),
@@ -26,7 +26,9 @@ function figSpine(p0,p1,p2,side,ext){
   const chain=[{x:p0.x-Math.cos(dir0)*ext,y:p0.y-Math.sin(dir0)*ext},p0,p1,p2,{x:p2.x+Math.cos(dir2)*ext,y:p2.y+Math.sin(dir2)*ext}];
   const segLen=chain.slice(1).map((b,i)=>Math.hypot(b.x-chain[i].x,b.y-chain[i].y)||.001);
   const total=segLen.reduce((a,b)=>a+b,0);
-  return {total,at(t){
+  // Where each star falls along the spine, so a figure can hang its hinges, waists and joints on them.
+  const stops=[segLen[0]/total,(segLen[0]+segLen[1])/total,(segLen[0]+segLen[1]+segLen[2])/total];
+  return {total,stops,at(t){
     let d=clamp(t,0,1)*total,i=0;
     while(i<segLen.length-1&&d>segLen[i]){d-=segLen[i];i++;}
     const a=chain[i],b=chain[i+1],frac=d/segLen[i],tx=(b.x-a.x)/segLen[i],ty=(b.y-a.y)/segLen[i];
@@ -34,8 +36,12 @@ function figSpine(p0,p1,p2,side,ext){
     return {x:lerp(a.x,b.x,frac),y:lerp(a.y,b.y,frac),tx,ty,px,py};
   }};
 }
-function figRibbon(spine,fn,steps){
-  const pts=[];for(let i=0;i<=steps;i++){const t=i/steps,s=spine.at(t),o=fn(t);pts.push({x:s.x+s.px*o,y:s.y+s.py*o});}
+// One point on the figure: a distance `o` off the spine at parameter `t`, on the outward side.
+function figAt(spine,t,o){const s=spine.at(t);return {x:s.x+s.px*o,y:s.y+s.py*o};}
+function figRibbon(spine,fn,steps){return figRibbonRange(spine,fn,steps,0,1);}
+// The same contour over part of the spine only, for a figure that ends before the extensions do.
+function figRibbonRange(spine,fn,steps,from,to){
+  const pts=[];for(let i=0;i<=steps;i++){const t=lerp(from,to,i/steps),s=spine.at(t),o=fn(t);pts.push({x:s.x+s.px*o,y:s.y+s.py*o});}
   return pts;
 }
 // A hand-inked contour: short broken segments with a little jitter, never a mechanical curve.
@@ -138,6 +144,306 @@ function figCrown(g,p0,p1,p2,side,rng,state){
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-band(t)*.45-2,t=>band(t)+2,24,rng,.9);
 }
+// Points along a circular arc, ready for figInk to cut as a broken hand-drawn curve.
+function figArcPts(cx,cy,r,from,to,steps){
+  const pts=[];for(let i=0;i<=steps;i++){const a=lerp(from,to,i/steps);pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+  return pts;
+}
+// A pair of dividers. The hinge closes on the top star, the pencil socket rings the middle star,
+// and the fixed leg's point descends into the bottom one; the second leg swings out to the side
+// and a graduated sector arc spans the opening.
+function figCompass(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,58),steps=52,[t0,t1,t2]=spine.stops;
+  const hinge=Math.min(1,t2+(1-t2)*.3);
+  const open=t=>clamp((t2-t)/Math.max(.001,t2-t0),0,1.6);
+  const cap=t=>clamp(1-(t-t2)/Math.max(.001,(1-t2)*.3),0,1);
+  const legA=t=>-2.2-open(t)*2.6,legB=t=>2.2+open(t)*40;
+  const wA=t=>(3.1-open(t)*1.9)*cap(t),wB=t=>(3.3-open(t)*2.1)*cap(t);
+  const aIn=figRibbonRange(spine,t=>legA(t)-wA(t),steps,0,hinge),aOut=figRibbonRange(spine,t=>legA(t)+wA(t),steps,0,hinge);
+  const bIn=figRibbonRange(spine,t=>legB(t)-wB(t),steps,0,hinge),bOut=figRibbonRange(spine,t=>legB(t)+wB(t),steps,0,hinge);
+  g.strokeStyle=state.contour;
+  figInk(g,aIn,rng,.7,.07,1.35);figInk(g,aOut,rng,.7,.07,1.35);
+  figInk(g,bIn,rng,.7,.07,1.35);figInk(g,bOut,rng,.7,.07,1.35);
+  // The hinge: a knuckle ring round the top star with two rivet ticks.
+  g.lineWidth=1.3;figInk(g,figArcPts(p2.x,p2.y,p2.r+12,0,TAU,30),rng,.5,.06,1.3);
+  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,-2.5,-.6,10),rng,.5,0,.9);
+  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,.5,2.4,10),rng,.5,0,.9);
+  // The socket that grips the lead, on the middle star.
+  figInk(g,figArcPts(p1.x,p1.y,p1.r+11,0,TAU,26),rng,.6,.1,1.1);
+  for(let i=0;i<6;i++){
+    const a=i/6*TAU,q0={x:p1.x+Math.cos(a)*(p1.r+8),y:p1.y+Math.sin(a)*(p1.r+8)};
+    const q1={x:p1.x+Math.cos(a)*(p1.r+15),y:p1.y+Math.sin(a)*(p1.r+15)};
+    figInk(g,[q0,q1],rng,.4,0,.8);
+  }
+  // The sector arc between the two points, graduated in fifths.
+  const aTip=figAt(spine,0,legA(0)),bTip=figAt(spine,0,legB(0)),foot=spine.at(0);
+  const sector=[];
+  for(let i=0;i<=22;i++){const u=i/22,bow=Math.sin(Math.PI*u)*13;
+    sector.push({x:lerp(aTip.x,bTip.x,u)-foot.tx*bow,y:lerp(aTip.y,bTip.y,u)-foot.ty*bow});}
+  figInk(g,sector,rng,.6,.08,.9);
+  for(let i=1;i<5;i++){
+    const p=sector[Math.round(i/5*22)],q=sector[Math.round(i/5*22)+1]||p;
+    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1;
+    figInk(g,[p,{x:p.x-dy/d*5,y:p.y+dx/d*5}],rng,.3,0,.7);
+  }
+  const inA=t=>legA(clamp(t,0,hinge))-wA(clamp(t,0,hinge)),outA=t=>legA(clamp(t,0,hinge))+wA(clamp(t,0,hinge));
+  const inB=t=>legB(clamp(t,0,hinge))-wB(clamp(t,0,hinge)),outB=t=>legB(clamp(t,0,hinge))+wB(clamp(t,0,hinge));
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inA,outA,Math.round(22*state.hatchFrac),rng);
+    figHatch(g,spine,inB,outB,Math.round(26*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,aIn,aOut);figWash(g,bIn,bOut);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>inA(t)-4,t=>outB(t)+4,26,rng,.85);
+}
+// An hourglass. The waist pinches at the middle star, and the two plates are set on the outer
+// stars, joined by the corner posts, with the sand run out into the lower bulb.
+function figHourglass(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,34),steps=64,[t0,t1,t2]=spine.stops;
+  const reach=Math.max(.001,Math.max(t1-t0,t2-t1));
+  const waist=t=>4+Math.pow(clamp(Math.abs(clamp(t,t0,t2)-t1)/reach,0,1),1.15)*38;
+  const left=figRibbonRange(spine,t=>-waist(t),steps,t0,t2),right=figRibbonRange(spine,waist,steps,t0,t2);
+  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.05,1.4);figInk(g,right,rng,.7,.05,1.4);
+  // A plate on each of the outer stars, with a foot, joined by the two corner posts.
+  const post=52;
+  for(const t of [t0,t2]){
+    const out=t===t0?-.05:.05;
+    figInk(g,[figAt(spine,t,-post),figAt(spine,t,post)],rng,.5,0,1.9);
+    figInk(g,[figAt(spine,t+out*.55,-post+5),figAt(spine,t+out*.55,post-5)],rng,.5,0,.9);
+    figInk(g,[figAt(spine,t+out,-post*.7),figAt(spine,t+out,post*.7)],rng,.5,0,1.4);
+    for(const o of [-1,1])figInk(g,[figAt(spine,t,o*post),figAt(spine,t+out,o*post*.7)],rng,.5,0,1.1);
+  }
+  for(const o of [-1,1])figInk(g,[figAt(spine,t0,o*(post-3)),figAt(spine,t2,o*(post-3))],rng,.9,.12,1.15);
+  // The sand: a thread falling through the waist and a drift heaped in the lower bulb.
+  const thread=[];for(let i=0;i<=14;i++){const t=lerp(t1,t0+.015,i/14);thread.push(figAt(spine,t,Math.sin(i*1.9)*1.3));}
+  figInk(g,thread,rng,.4,.18,.6);
+  g.fillStyle=state.contour;
+  for(let i=0;i<110;i++){
+    const t=lerp(t0+.008,t1-.02,rng()*rng()),s=spine.at(t),o=(rng()*2-1)*waist(t)*.7;
+    g.fillRect(s.x+s.px*o,s.y+s.py*o,.9,.9);
+  }
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-waist(t),waist,Math.round(52*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-waist(t)-3,t=>waist(t)+3,22,rng,.85);
+}
+// A serpent. The body is a wave whose centre line crosses the spine at each of the three stars,
+// tapering to a tail below and rearing into a head above the top one.
+function figSerpent(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,74),steps=88,[t0,t1,t2]=spine.stops;
+  const phase=t=>t<=t0?(t-t0)/Math.max(.001,t0)*2.3:t<=t1?Math.PI*(t-t0)/(t1-t0):
+    t<=t2?Math.PI*(1+(t-t1)/(t2-t1)):Math.PI*2+(t-t2)/Math.max(.001,1-t2)*2.1;
+  const amp=t=>10+30*Math.sin(Math.PI*clamp(t,0,1)),mid=t=>Math.sin(phase(t))*amp(t);
+  const thick=t=>1.4+9.5*Math.pow(Math.sin(Math.PI*clamp(t,0,1)),.65);
+  const left=figRibbon(spine,t=>mid(t)-thick(t),steps),right=figRibbon(spine,t=>mid(t)+thick(t),steps);
+  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.05,1.3);figInk(g,right,rng,.7,.05,1.3);
+  // Belly bands across the body, thickest where it coils past the middle star.
+  for(let i=1;i<26;i++){
+    const t=t0*.4+i/26*(1-t0*.4);
+    figInk(g,[figAt(spine,t,mid(t)-thick(t)),figAt(spine,t,mid(t)+thick(t))],rng,.4,.22,.55);
+  }
+  // The head: a wedge with an eye and a forked tongue, set on the spine's upper extension.
+  const head=spine.at(.985),hx=head.x+head.px*mid(.985),hy=head.y+head.py*mid(.985);
+  const dir=Math.atan2(head.ty,head.tx);
+  g.save();g.translate(hx,hy);g.rotate(dir);g.lineWidth=1.2;
+  g.beginPath();g.moveTo(-9,-6);g.bezierCurveTo(6,-8,14,-4,20,-1.4);g.bezierCurveTo(14,4,6,7,-9,6);g.stroke();
+  g.beginPath();g.arc(4,-1.6,1.9,0,TAU);g.stroke();
+  g.lineWidth=.8;g.beginPath();g.moveTo(20,-1.4);g.lineTo(30,-4.6);g.moveTo(24.6,-2.9);g.lineTo(30,.6);g.stroke();
+  g.restore();
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>mid(t)-thick(t),t=>mid(t)+thick(t),Math.round(60*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>mid(t)-thick(t)-2,t=>mid(t)+thick(t)+2,30,rng,.8);
+}
+// A ship. The hull is bellied out below, its keel deepest at the bottom star, the mast is stepped
+// on the middle star, and the truck with its pennant is set on the top one.
+function figArgo(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,60),steps=52,[t0,t1,t2]=spine.stops;
+  const stern=Math.max(.02,t0-(t1-t0)*.5),bow=t1;
+  const arc=t=>{const u=(t-stern)/(bow-stern);return u<=0||u>=1?0:Math.pow(Math.sin(Math.PI*u),.7);};
+  const hull=t=>arc(t)*56,deck=t=>-arc(t)*9;
+  const keel=figRibbonRange(spine,hull,steps,stern,bow),sheer=figRibbonRange(spine,deck,steps,stern,bow);
+  g.strokeStyle=state.contour;figInk(g,keel,rng,.8,.04,1.6);figInk(g,sheer,rng,.6,.06,1.2);
+  for(const f of [.7,.46,.24])figInk(g,figRibbonRange(spine,t=>lerp(deck(t),hull(t),f),steps,stern,bow),rng,.7,.12,.7);
+  // Oar ports along the upper strake, and the stem and stern posts.
+  for(let i=1;i<10;i++){
+    const t=lerp(stern,bow,i/10),o=lerp(deck(t),hull(t),.82);
+    figInk(g,[figAt(spine,t,o-3),figAt(spine,t,o+3)],rng,.3,0,.75);
+  }
+  figInk(g,[figAt(spine,stern,0),figAt(spine,stern-.045,-16)],rng,.6,0,1.5);
+  figInk(g,[figAt(spine,stern-.045,-16),figAt(spine,stern-.03,-8)],rng,.5,0,1.1);
+  figInk(g,[figAt(spine,bow,0),figAt(spine,bow+.04,-13)],rng,.6,0,1.5);
+  // The mast, stepped on the middle star and carrying its yard and square sail.
+  figInk(g,[figAt(spine,t1,-2),figAt(spine,t2+.02,-2)],rng,.5,0,1.9);
+  figInk(g,[figAt(spine,t1,2),figAt(spine,t2+.02,2)],rng,.5,0,1.5);
+  const yard=lerp(t1,t2,.58);
+  figInk(g,[figAt(spine,yard,-16),figAt(spine,yard,50)],rng,.5,0,1.5);
+  const luff=[],leech=[];
+  for(let i=0;i<=20;i++){
+    const u=i/20,t=lerp(yard,t1+.02,u);
+    luff.push(figAt(spine,t,lerp(-6,0,u)));
+    leech.push(figAt(spine,t,lerp(48,10,u)+Math.sin(Math.PI*u)*14));
+  }
+  figInk(g,leech,rng,.9,.04,1.25);figInk(g,luff,rng,.5,.1,.8);
+  figInk(g,[leech[20],luff[20]],rng,.5,0,.9);
+  for(let i=1;i<5;i++){const u=i/5;figInk(g,[luff[Math.round(u*20)],leech[Math.round(u*20)]],rng,.6,.42,.5);}
+  // Shrouds and a pennant streaming from the truck.
+  for(const o of [-15,32])figInk(g,[figAt(spine,t2-.012,0),figAt(spine,t1+.008,o)],rng,.6,.18,.6);
+  const flag=[];for(let i=0;i<=10;i++){const u=i/10;flag.push(figAt(spine,lerp(t2+.025,t2+.014,u),u*32+Math.sin(u*6)*4));}
+  figInk(g,flag,rng,.5,.04,.85);
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,deck,hull,Math.round(50*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,sheer,keel);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>deck(t)-2,t=>hull(t)+2,26,rng,.85);
+}
+// An astrolabe. The graduated limb rings the middle star, the alidade lies along all three, its
+// sighting vanes on the outer two, and the throne and suspension ring rise above the figure.
+function figAstrolabe(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,58),steps=40,[t0,t1,t2]=spine.stops;
+  const halfRule=t=>3.4-Math.abs(t-t1)*1.4;
+  const left=figRibbon(spine,t=>-halfRule(t),steps),right=figRibbon(spine,halfRule,steps);
+  g.strokeStyle=state.contour;
+  figInk(g,left,rng,.6,.06,1.2);figInk(g,right,rng,.6,.06,1.2);
+  const limbOuter=p1.r+25,limbInner=p1.r+15;
+  figInk(g,figArcPts(p1.x,p1.y,limbOuter,0,TAU,52),rng,.7,.05,1.35);
+  figInk(g,figArcPts(p1.x,p1.y,limbInner,0,TAU,44),rng,.6,.08,.9);
+  for(let i=0;i<48;i++){
+    const a=i/48*TAU,inner=i%4===0?limbInner:limbOuter-3.5;
+    figInk(g,[{x:p1.x+Math.cos(a)*inner,y:p1.y+Math.sin(a)*inner},{x:p1.x+Math.cos(a)*limbOuter,y:p1.y+Math.sin(a)*limbOuter}],rng,.25,0,i%4===0?.75:.45);
+  }
+  // Sighting vanes on the outer stars.
+  for(const q of [p0,p2]){
+    figInk(g,figArcPts(q.x,q.y,q.r+10,0,TAU,22),rng,.5,.12,.9);
+    for(const o of [-1,1])figInk(g,[{x:q.x+o*(q.r+16),y:q.y-5},{x:q.x+o*(q.r+16),y:q.y+5}],rng,.3,0,1.1);
+  }
+  // Throne and suspension ring above the instrument.
+  const crown=spine.at(clamp(t2+(1-t2)*.42,0,1)),ring=spine.at(clamp(t2+(1-t2)*.78,0,1));
+  figInk(g,[figAt(spine,t2+(1-t2)*.1,-11),figAt(spine,t2+(1-t2)*.42,-7),figAt(spine,t2+(1-t2)*.42,7),figAt(spine,t2+(1-t2)*.1,11)],rng,.5,0,1.2);
+  figInk(g,figArcPts(crown.x,crown.y,9,0,TAU,16),rng,.5,.1,.9);
+  figInk(g,figArcPts(ring.x,ring.y,11,0,TAU,20),rng,.6,.06,1.3);
+  figInk(g,figArcPts(ring.x,ring.y,6.5,0,TAU,14),rng,.5,.1,.7);
+  if(state.hatchFrac>0){
+    g.strokeStyle=state.hatch;
+    const n=Math.round(40*state.hatchFrac);
+    for(let i=0;i<n;i++){
+      const a=rng()*TAU,d=lerp(limbInner,limbOuter,rng()),x=p1.x+Math.cos(a)*d,y=p1.y+Math.sin(a)*d,len=1.6+rng()*2.4;
+      g.beginPath();g.moveTo(x-Math.cos(a)*len,y-Math.sin(a)*len);g.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.stroke();
+    }
+    figHatch(g,spine,t=>-halfRule(t),halfRule,Math.round(14*state.hatchFrac),rng);
+  }
+  if(state.wash){
+    g.fillStyle=state.wash;figWash(g,left,right);
+    g.beginPath();g.arc(p1.x,p1.y,limbOuter,0,TAU);g.arc(p1.x,p1.y,limbInner,TAU,0,true);g.fill();
+  }
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-halfRule(t)-3,t=>halfRule(t)+3,18,rng,.8);
+}
+// A quill. The nib is cut at the bottom star, the vane opens at the middle one and the plume
+// curls past the top; the barbs are laid in with short slanted strokes on both sides of the shaft.
+function figQuill(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,66),steps=56,[t0,t1,t2]=spine.stops;
+  const shaft=t=>1+2.9*clamp((t-t0*.5)/Math.max(.001,1-t0*.5),0,1);
+  const vane=t=>{const u=(t-t1)/Math.max(.001,.99-t1);return u<=0||u>=1?0:Math.pow(Math.sin(Math.PI*u),.7)*40;};
+  const inner=t=>-vane(t)*.52;
+  const left=figRibbon(spine,t=>inner(t)-shaft(t),steps),right=figRibbon(spine,t=>vane(t)+shaft(t),steps);
+  const shaftL=figRibbon(spine,t=>-shaft(t),steps),shaftR=figRibbon(spine,shaft,steps);
+  g.strokeStyle=state.contour;
+  figInk(g,shaftL,rng,.6,.05,1.25);figInk(g,shaftR,rng,.6,.05,1.25);
+  figInk(g,left,rng,1,.09,1);figInk(g,right,rng,1.1,.07,1.15);
+  // Barbs, laid from the shaft out to the edge of each vane.
+  for(let i=0;i<74;i++){
+    const t=lerp(t1,.985,i/74),slant=.16;
+    const o1=vane(t),o0=inner(t);
+    if(o1>1)figInk(g,[figAt(spine,t,shaft(t)),figAt(spine,t-slant*.04,o1*(.82+rng()*.18))],rng,.4,0,.5);
+    if(o0<-1)figInk(g,[figAt(spine,t,-shaft(t)),figAt(spine,t-slant*.04,o0*(.82+rng()*.18))],rng,.4,0,.45);
+  }
+  // The nib: two lines closing to a point at the bottom star, with its slit.
+  const nib=t0;
+  figInk(g,[figAt(spine,nib+.06,-3.4),figAt(spine,nib-.012,-.7)],rng,.4,0,1.1);
+  figInk(g,[figAt(spine,nib+.06,3.4),figAt(spine,nib-.012,.7)],rng,.4,0,1.1);
+  figInk(g,[figAt(spine,nib+.055,0),figAt(spine,nib-.01,0)],rng,.3,0,.6);
+  figInk(g,[figAt(spine,nib+.062,-3.6),figAt(spine,nib+.062,3.6)],rng,.3,0,.7);
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,vane,Math.round(54*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>inner(t)-2,t=>vane(t)+2,26,rng,.8);
+}
+// A hanging lantern. The dome springs from the top star, the flame burns at the middle one and
+// throws its light out past the rim, and the foot stands on the bottom star.
+function figLantern(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,62),steps=56,[t0,t1,t2]=spine.stops;
+  const dome=t=>clamp((t-t2)/Math.max(.001,(1-t2)*.62),0,1);
+  const foot=t=>clamp((t0-t)/Math.max(.001,t0*.62),0,1);
+  const body=t=>{
+    if(t>t2)return Math.max(0,42*Math.cos(dome(t)*Math.PI*.5));
+    if(t<t0)return 42+foot(t)*10;
+    return 42;
+  };
+  const left=figRibbon(spine,t=>-body(t),steps),right=figRibbon(spine,body,steps);
+  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.06,1.4);figInk(g,right,rng,.7,.06,1.4);
+  // Corner posts, glazing bars and the sills at each star.
+  for(const o of [-1,1])figInk(g,figRibbon(spine,t=>o*(body(t)-4.5),steps),rng,.6,.16,.8);
+  for(const t of [t0,lerp(t0,t1,.5),t1,lerp(t1,t2,.5),t2]){
+    const w=body(t);figInk(g,[figAt(spine,t,-w),figAt(spine,t,w)],rng,.5,.06,t===t0||t===t2?1.5:.7);
+  }
+  // The foot below and the ring above.
+  figInk(g,[figAt(spine,Math.max(0,t0-t0*.62),-52),figAt(spine,Math.max(0,t0-t0*.62),52)],rng,.5,0,1.6);
+  const hook=spine.at(clamp(t2+(1-t2)*.82,0,1));
+  figInk(g,figArcPts(hook.x,hook.y,11,0,TAU,20),rng,.6,.06,1.3);
+  figInk(g,[figAt(spine,t2+(1-t2)*.62,0),figAt(spine,t2+(1-t2)*.72,0)],rng,.4,0,1.4);
+  // The flame at the middle star, and the light it throws beyond the glass.
+  for(let i=0;i<30;i++){
+    const a=i/30*TAU,long=i%3===0,r0=p1.r+9,r1=r0+(long?26:13)+rng()*6;
+    figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45);
+  }
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-body(t),body,Math.round(56*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-body(t)-3,t=>body(t)+3,26,rng,.85);
+}
+// A moth. The wings open either side of the middle star, the head and its feathered antennae are
+// set on the top star, and the abdomen tapers away below the bottom one.
+function figMoth(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,48),steps=72,[t0,t1,t2]=spine.stops;
+  const lobe=(t,a,b,peak)=>{const u=(t-a)/(b-a);return u<=0||u>=1?0:Math.pow(Math.sin(Math.PI*u),.62)*peak;};
+  const wing=t=>Math.max(lobe(t,t0-(t1-t0)*.34,t1+.015,40),lobe(t,t1-.015,t2+(t2-t1)*.2,58));
+  const body=t=>t>t2?Math.max(1,7-(t-t2)*46):t<t0?Math.max(1,6.5-(t0-t)*30):6.5;
+  const span=t=>wing(t)+body(t);
+  const left=figRibbon(spine,t=>-span(t),steps),right=figRibbon(spine,span,steps);
+  const bodyL=figRibbon(spine,t=>-body(t),steps),bodyR=figRibbon(spine,body,steps);
+  g.strokeStyle=state.contour;
+  figInk(g,left,rng,.9,.05,1.3);figInk(g,right,rng,.9,.05,1.3);
+  figInk(g,bodyL,rng,.5,.08,1);figInk(g,bodyR,rng,.5,.08,1);
+  // The seam between fore and hind wing, and the veins running out from the thorax.
+  for(const o of [-1,1]){
+    figInk(g,[figAt(spine,t1,o*body(t1)),figAt(spine,t1-.012,o*span(t1)*.96)],rng,.5,.06,.8);
+    for(let i=0;i<5;i++){
+      const t=lerp(t1+.02,t2+.02,i/5),reach=span(t)*(.55+i*.08);
+      if(reach>body(t)+3)figInk(g,[figAt(spine,t1+.005,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.2,.5);
+    }
+    for(let i=0;i<4;i++){
+      const t=lerp(t0-.01,t1-.02,i/4),reach=span(t)*(.6+i*.07);
+      if(reach>body(t)+3)figInk(g,[figAt(spine,t1-.01,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.24,.45);
+    }
+  }
+  // An eyespot on each forewing.
+  for(const o of [-1,1]){
+    const t=lerp(t1,t2,.55),c=figAt(spine,t,o*span(t)*.58);
+    figInk(g,figArcPts(c.x,c.y,7.5,0,TAU,16),rng,.5,.08,.9);
+    figInk(g,figArcPts(c.x,c.y,3.4,0,TAU,12),rng,.4,.12,.6);
+  }
+  // Body segments, then the head and its combed antennae on the top star.
+  for(let i=0;i<12;i++){
+    const t=lerp(t0-.05,t2-.01,i/12);
+    figInk(g,[figAt(spine,t,-body(t)),figAt(spine,t,body(t))],rng,.35,.18,.5);
+  }
+  for(const o of [-1,1]){
+    const feel=[];for(let i=0;i<=12;i++){const u=i/12;feel.push(figAt(spine,lerp(t2+.005,1,u),o*(3+u*u*26)));}
+    figInk(g,feel,rng,.5,.04,.85);
+    for(let i=2;i<12;i+=1){
+      const p=feel[i],q=feel[i-1],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy)||1;
+      figInk(g,[p,{x:p.x-dy/d*3.4*o,y:p.y+dx/d*3.4*o}],rng,.25,0,.4);
+    }
+  }
+  if(state.hatchFrac>0){
+    g.strokeStyle=state.hatch;
+    figHatch(g,spine,t=>-span(t),t=>-body(t),Math.round(34*state.hatchFrac),rng);
+    figHatch(g,spine,body,span,Math.round(34*state.hatchFrac),rng);
+  }
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,bodyL);figWash(g,bodyR,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-span(t)-2,t=>span(t)+2,34,rng,.8);
+}
 // A placeholder for catalogue figures that have no engraving of their own yet: a broken
 // contour joining the three stars, doubled as a hairline, with a small ornament at the
 // middle star. It reads as an asterism on the plate without claiming to be a figure.
@@ -157,8 +463,14 @@ function figAsterism(g,p0,p1,p2,side,rng,state){
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-swell(t)-3,t=>swell(t)+3,22,rng,.85);
 }
-const FIGURE_SHAPES=[figNeedle,figSail,figLyre,figCrown];
-const figureFor=chart=>FIGURE_SHAPES[chart.catalogueIndex??chart.id]||figAsterism;
+// Every entry in the catalogue has its own engraving, looked up by name. figAsterism remains only
+// as the last resort for a chart whose name this plate has never been cut for.
+const FIGURE_SHAPES={
+  'THE NEEDLE':figNeedle,'THE SAIL':figSail,'THE LYRE':figLyre,'THE CROWN':figCrown,
+  'THE COMPASS':figCompass,'THE HOURGLASS':figHourglass,'THE SERPENT':figSerpent,'THE ARGO':figArgo,
+  'THE ASTROLABE':figAstrolabe,'THE QUILL':figQuill,'THE LANTERN':figLantern,'THE MOTH':figMoth
+};
+const figureFor=chart=>FIGURE_SHAPES[chart&&chart.name]||FIGURE_SHAPES[CONSTELLATIONS[chart&&chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].name]||figAsterism;
 function buildFigureLayer(chart,frame,count,curScale){
   const w=Math.max(1,Math.ceil(frame.w*curScale)),h=Math.max(1,Math.ceil(frame.h*curScale));
   const c=makeCanvas(w,h),g=c.getContext('2d');
@@ -218,6 +530,17 @@ function drawConstellations(){
       ctx.beginPath();
       for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2,r=(i%2?1.4:4.8)*scale;const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
       ctx.closePath();ctx.fill();ctx.stroke();
+    }
+    // The chart's name is engraved round the rim of its entry star for as long as the route is live.
+    if(!chart.expired){
+      const e=chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
+      if(ey>-80&&ey<H+80){
+        ctx.save();ctx.translate(ex,ey);
+        ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+        ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${chart.completed?.34:.52})`;
+        textAlongArc(ctx,chart.name,0,0,e.r*scale+11*scale+size,-Math.PI/2,{align:'center',size,spacing:size*.24});
+        ctx.restore();
+      }
     }
     const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
     if(label&&!chart.expired&&(!chart.completed||chart.flash>0)){
@@ -299,6 +622,15 @@ function drawNode(n,aim){
   ctx.stroke();
   if(wedged)penWedgeEnd(pen,n,r);
   if(used)penStrike(n,r,struck,rgb);
+  // A Latin caption engraved round the outer rim of every third main orbit, set in small caps at a
+  // whisper. It is printed only on orbits the player is not holding, so it can never cross the
+  // release marks, the perfect window, or the fading ring, which are drawn on the current orbit alone.
+  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%3===0&&r>15){
+    const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
+    ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+    ctx.fillStyle=paper?`rgba(${ink.base.ink},.34)`:`rgba(${rgb},.24)`;
+    textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true});
+  }
   if(active){
     for(const next of releaseTargets(n)){
       const d=Math.hypot(next.x-n.x,next.y-n.y),a=Math.atan2(next.y-n.y,next.x-n.x)-p.dir*Math.acos(clamp(p.rad/d,-1,1)),window=Math.asin(clamp(next.cap/d,0,.8));
@@ -356,44 +688,118 @@ function drawGravitationalLenses(){
 }
 // Palettes for the two later hazard kinds. The black-hole colours above are untouched.
 definePlate('field',{
-  night:{flareCore:'244,222,168',flareRim:'226,178,112',flareRay:'223,166,109',flareEdge:'205,159,122',fog:'168,182,190',fogEdge:'139,156,168'},
-  paper:{flareCore:'176,118,38',flareRim:'150,100,32',flareRay:'160,84,52',flareEdge:'150,100,32',fog:'96,74,52',fogEdge:'58,42,28'}
+  night:{flareCore:'244,222,168',flareRim:'226,178,112',flareRay:'223,166,109',flareEdge:'205,159,122',
+    flareUmbra:'6,9,15',flarePenumbra:'214,163,110',fieldRing:'205,159,122',
+    fog:'202,214,220',fogEdge:'139,156,168'},
+  paper:{flareCore:'176,118,38',flareRim:'150,100,32',flareRay:'160,84,52',flareEdge:'150,100,32',
+    flareUmbra:'26,18,12',flarePenumbra:'140,86,44',fieldRing:'166,58,40',
+    fog:'116,94,66',fogEdge:'58,42,28'}
 });
-// A sunspot flare: a small dark core inside a ring of outward burin rays. The engraving
-// says push, not pull — the rays leave the disc rather than falling into it.
-function drawFlare(h){
-  const x=sx(h.x),y=sy(h.y),r=h.r*scale,core=hazardCore(h)*scale;if(y<-r*4||y>H+r*4)return;
-  const c=ink.field,rng=seeded(h.seed),pulse=reducedMotion?1:.93+.07*Math.sin(world.time*1.6+(h.phase||0));
-  ctx.save();ctx.translate(x,y);
-  for(let i=0;i<34;i++){
-    const a=i/34*TAU+(h.phase||0)*.1,len=r*(.55+rng()*1.15)*pulse;
-    ctx.strokeStyle=`rgba(${c.flareRay},${(.1+rng()*.24)*pulse})`;ctx.lineWidth=(i%3?.45:.8)*scale;
-    ctx.beginPath();ctx.moveTo(Math.cos(a)*(core+2),Math.sin(a)*(core+2));ctx.lineTo(Math.cos(a)*(core+2+len),Math.sin(a)*(core+2+len));ctx.stroke();
+// A sunspot in the Galileo manner: a dark umbra, a penumbra of fine radial strokes, and a broken
+// limb. Everything that does not move is baked into a sprite; only the flare's rays are cut live.
+const flareSprites=new Map();
+function flareSprite(seed,radius,core){
+  const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+Math.round(core)+':'+plateName+':'+DPR.toFixed(2);
+  const cached=flareSprites.get(key);if(cached)return cached;
+  const pad=Math.max(6,rBucket*.45),size=Math.max(4,Math.ceil((rBucket+pad)*2));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);g.lineCap='round';
+  const p=ink.field,rng=seeded((seed>>>0)||1),r=rBucket,u=Math.max(1.5,core);
+  // The penumbra: radial strokes, close-set and long where the spot is deepest.
+  for(let i=0;i<108;i++){
+    const a=i/108*TAU+rng()*.03,from=u*(.98+rng()*.06),to=r*(.82+rng()*.24);
+    const bow=(rng()-.5)*.06;
+    g.strokeStyle=`rgba(${p.flarePenumbra},${.1+rng()*.26})`;g.lineWidth=(i%3?.4:.7);
+    g.beginPath();g.moveTo(Math.cos(a)*from,Math.sin(a)*from);
+    g.quadraticCurveTo(Math.cos(a+bow)*(from+to)/2,Math.sin(a+bow)*(from+to)/2,Math.cos(a+bow*2)*to,Math.sin(a+bow*2)*to);
+    g.stroke();
   }
-  for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(${c.flareEdge},${.26-i*.07})`;ctx.lineWidth=(i?.45:.9)*scale;ctx.beginPath();ctx.arc(0,0,r*(1+i*.16),0,TAU);ctx.stroke();}
-  ctx.fillStyle=`rgba(${c.flareCore},${.5*pulse})`;ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.fill();
-  ctx.strokeStyle=`rgba(${c.flareRim},.85)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.stroke();
-  for(let i=0;i<9;i++){const a=rng()*TAU,d=rng()*core*.8;ctx.fillStyle=`rgba(${c.flareRim},${.18+rng()*.3})`;ctx.fillRect(Math.cos(a)*d,Math.sin(a)*d,.9,.9);}
+  // Two broken contours: the outer limb of the penumbra and the edge of the umbra.
+  burinArc(g,0,0,r,0,TAU,p.flareEdge,.34,.6,seed+7,{segments:34,skips:4});
+  burinArc(g,0,0,r*.82,0,TAU,p.flareEdge,.2,.45,seed+13,{segments:26,skips:5});
+  // The umbra itself: a pool of ink with a ragged edge and a rubricated rim.
+  g.beginPath();
+  for(let i=0;i<=22;i++){const a=i/22*TAU,jr=u*(1+(rng()-.5)*.18);const x=Math.cos(a)*jr,y=Math.sin(a)*jr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}
+  g.closePath();g.fillStyle=`rgba(${p.flareUmbra},${onPaper()?.92:.96})`;g.fill();
+  burinArc(g,0,0,u,0,TAU,p.flareRim,.75,.9,seed+19,{segments:20,skips:2});
+  for(let i=0;i<14;i++){const a=rng()*TAU,d=u*(1.05+rng()*.5);g.fillStyle=`rgba(${p.flarePenumbra},${.14+rng()*.3})`;g.fillRect(Math.cos(a)*d,Math.sin(a)*d,.8,.8);}
+  // Two lesser spots of the same group, as the sunspot plates always show.
+  for(let i=0;i<2;i++){
+    const a=rng()*TAU,d=r*(.62+rng()*.3),sr=u*(.2+rng()*.16);
+    g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d,sr,0,TAU);g.fillStyle=`rgba(${p.flareUmbra},.75)`;g.fill();
+    g.strokeStyle=`rgba(${p.flarePenumbra},.35)`;g.lineWidth=.5;g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d,sr*2.1,0,TAU);g.stroke();
+  }
+  const sprite={canvas:c,size};
+  flareSprites.set(key,sprite);
+  if(flareSprites.size>16)flareSprites.delete(flareSprites.keys().next().value);
+  return sprite;
+}
+function drawFlare(h){
+  const x=sx(h.x),y=sy(h.y),r=h.r*scale,core=hazardCore(h)*scale,reach=gravityRadius(h)*scale;
+  if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
+  const c=ink.field,rng=seeded(h.seed),pulse=reducedMotion?1:.9+.1*Math.sin(world.time*1.6+(h.phase||0));
+  ctx.save();ctx.translate(x,y);
+  // The field is drawn as a dotted ring at its true radius, with small outward barbs: this hazard
+  // pushes, and its ring is pricked, where a black hole's edge is cut solid.
+  ctx.setLineDash([1.7*scale,4.4*scale]);
+  ctx.strokeStyle=`rgba(${c.fieldRing},.3)`;ctx.lineWidth=.8*scale;
+  ctx.beginPath();ctx.arc(0,0,reach,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  for(let i=0;i<8;i++){
+    const a=i/8*TAU+(h.phase||0)*.2;
+    ctx.strokeStyle=`rgba(${c.fieldRing},.32)`;ctx.lineWidth=.65*scale;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a-.035)*(reach-2.6*scale),Math.sin(a-.035)*(reach-2.6*scale));
+    ctx.lineTo(Math.cos(a)*(reach+1.4*scale),Math.sin(a)*(reach+1.4*scale));
+    ctx.lineTo(Math.cos(a+.035)*(reach-2.6*scale),Math.sin(a+.035)*(reach-2.6*scale));
+    ctx.stroke();
+  }
+  // The flare: burin strokes leaving the limb, breathing with the plate's own time.
+  for(let i=0;i<36;i++){
+    const a=i/36*TAU+(h.phase||0)*.1,len=r*(.5+rng()*1.05)*pulse;
+    ctx.strokeStyle=`rgba(${c.flareRay},${(.1+rng()*.26)*pulse})`;ctx.lineWidth=(i%3?.45:.85)*scale;
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r+1),Math.sin(a)*(r+1));ctx.lineTo(Math.cos(a)*(r+1+len),Math.sin(a)*(r+1+len));ctx.stroke();
+  }
+  const sprite=flareSprite(h.seed,r,core);
+  ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
   ctx.restore();
 }
-// A nebula patch: stippled cloud, no rim and no core, drawn only to obscure.
-function drawNebula(h){
-  const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(x+r<0||x-r>W||y+r<0||y-r>H)return;
-  const c=ink.field,rng=seeded(h.seed);
-  ctx.save();ctx.translate(x,y);
-  for(let i=0;i<720;i++){
-    const a=rng()*TAU,d=Math.sqrt(rng())*r,fade=1-d/r;
-    ctx.fillStyle=`rgba(${c.fog},${(.07+rng()*.26)*fade})`;
-    ctx.fillRect(Math.cos(a)*d,Math.sin(a)*d*.82,.7+rng()*1.1,.7);
+// A nebula patch: a stippled cloud, denser at its heart, with a broken contour. It is baked once
+// per patch and blitted, since nothing about it moves — it exists only to hide the chart.
+const nebulaSprites=new Map();
+function nebulaSprite(seed,radius){
+  const rBucket=Math.round(radius/2)*2,key=seed+':'+rBucket+':'+plateName+':'+DPR.toFixed(2);
+  const cached=nebulaSprites.get(key);if(cached)return cached;
+  const size=Math.max(4,Math.ceil(rBucket*2.3));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const p=ink.field,rng=seeded((seed>>>0)||1),r=Math.max(2,rBucket),paper=onPaper();
+  const dots=Math.round(1400+r*24);
+  for(let i=0;i<dots;i++){
+    const a=rng()*TAU,d=Math.pow(rng(),.62)*r,fade=Math.pow(1-d/r,1.35);
+    const wobble=1+Math.sin(a*3+seed)*.12;
+    g.fillStyle=`rgba(${p.fog},${(paper?.05:.07)+rng()*(paper?.16:.24)*fade})`;
+    g.fillRect(Math.cos(a)*d*wobble,Math.sin(a)*d*.82,.6+rng()*(paper?.9:1.2),.6+rng()*.5);
   }
-  ctx.strokeStyle=`rgba(${c.fogEdge},.16)`;ctx.lineWidth=.5;
+  g.strokeStyle=`rgba(${p.fogEdge},${paper?.2:.16})`;g.lineWidth=.5;
   for(let i=0;i<3;i++){
-    ctx.beginPath();
-    const rr=r*(.55+i*.2);
-    for(let j=0;j<=26;j++){const a=j/26*TAU,jr=rr*(1+(rng()-.5)*.3);const px=Math.cos(a)*jr,py=Math.sin(a)*jr*.82;if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
-    ctx.closePath();ctx.stroke();
+    const rr=r*(.5+i*.19);
+    g.beginPath();
+    for(let j=0;j<=30;j++){
+      const a=j/30*TAU,jr=rr*(1+Math.sin(a*2.3+i)*.1+(rng()-.5)*.12);
+      const px=Math.cos(a)*jr,py=Math.sin(a)*jr*.82;
+      if(j===0)g.moveTo(px,py);else if(j%7===3)g.moveTo(px,py);else g.lineTo(px,py);
+    }
+    g.stroke();
   }
-  ctx.restore();
+  const sprite={canvas:c,size};
+  nebulaSprites.set(key,sprite);
+  if(nebulaSprites.size>10)nebulaSprites.delete(nebulaSprites.keys().next().value);
+  return sprite;
+}
+function drawNebula(h){
+  const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(x+r*1.2<0||x-r*1.2>W||y+r<0||y-r>H)return;
+  const sprite=nebulaSprite(h.seed,r);
+  ctx.drawImage(sprite.canvas,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);
 }
 function drawHazard(h){
   if(h.kind==='nebula')return drawNebula(h);

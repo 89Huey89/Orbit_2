@@ -162,6 +162,93 @@ function darknessPlate(relief){
   }
   darknessPlates.set(relief,c);return c;
 }
+// ---------- Marginalia carried on the rising ink ----------
+// A sea-monster and a gloss ride the shoreline, as they do in the empty quarters of an old chart.
+// Both are cut once into sprites: the Leviathan only bobs and fades, it is never re-engraved, and
+// the waterline crops whatever of him is still under the ink.
+const darkMarginalia=new Map();
+function leviathanSprite(relief){
+  const s=Math.max(.55,Math.min(1.6,scale)),key='leviathan:'+plateName+':'+(relief?'r':'n')+':'+s.toFixed(2)+':'+DPR.toFixed(2);
+  const cached=darkMarginalia.get(key);if(cached)return cached;
+  const w=Math.ceil(180*s),h=Math.ceil(80*s);
+  const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
+  g.scale(DPR*s,DPR*s);g.lineCap='round';g.lineJoin='round';
+  const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment,base=80,rng=seeded(880517);
+  // Three coils breaking the surface, each with its own scaled back.
+  const coils=[[34,17],[66,21],[95,15]];
+  for(const [cx,cr] of coils){
+    burinArc(g,cx,base,cr,Math.PI,TAU,rgb,.85,1.15,Math.floor(rng()*1e6)||3,{segments:16,skips:2});
+    burinArc(g,cx,base+2,cr-5,Math.PI*1.08,Math.PI*1.92,rgb,.4,.6,Math.floor(rng()*1e6)||5,{segments:10,skips:2});
+    for(let i=0;i<7;i++){
+      const a=Math.PI*(1.1+i*.12),x=cx+Math.cos(a)*(cr-2),y=base+Math.sin(a)*(cr-2);
+      burinSegment(g,x,y,x+Math.cos(a)*4,y+Math.sin(a)*4,rgb,.4,.5,Math.floor(rng()*1e6)||7,{segments:2,hair:false});
+    }
+  }
+  // The tail thrown up at the far end, with its fluke.
+  burinSegment(g,14,base,7,base-24,rgb,.8,1.3,4113,{segments:5,hair:false,wobble:.7});
+  burinSegment(g,7,base-24,-3,base-33,rgb,.75,1,4127,{segments:3,hair:false,wobble:.4});
+  burinSegment(g,7,base-24,15,base-34,rgb,.75,1,4133,{segments:3,hair:false,wobble:.4});
+  burinSegment(g,-3,base-33,15,base-34,rgb,.35,.6,4137,{segments:4,hair:false,wobble:.8});
+  // The neck, rising from the third coil.
+  burinSegment(g,112,base,127,base-34,rgb,.85,1.5,4139,{segments:6,hair:false,wobble:.8});
+  burinSegment(g,121,base,134,base-30,rgb,.6,1,4157,{segments:6,hair:false,wobble:.8});
+  // The head: a long wedge with open jaws, an eye, teeth, and two swept horns.
+  burinArc(g,130,base-38,8.5,Math.PI*.36,Math.PI*1.42,rgb,.85,1.2,4159,{segments:11,skips:1});
+  burinSegment(g,129,base-45,160,base-50,rgb,.9,1.3,4177,{segments:6,hair:false,wobble:.5});
+  burinSegment(g,131,base-32,153,base-40,rgb,.85,1.1,4201,{segments:6,hair:false,wobble:.5});
+  burinSegment(g,153,base-40,160,base-50,rgb,.8,1,4211,{segments:3,hair:false,wobble:.3});
+  for(let i=0;i<5;i++){
+    const u=i/5,x0=lerp(134,152,u),y0=lerp(base-45.6,base-49,u),y1=lerp(base-41,base-44.5,u);
+    burinSegment(g,x0,y0,x0+1.4,y1,rgb,.5,.5,4217+i,{segments:2,hair:false});
+  }
+  g.fillStyle=`rgba(${rgb},.9)`;g.beginPath();g.arc(136,base-42.5,1.6,0,TAU);g.fill();
+  burinArc(g,136,base-42.5,4,0,TAU,rgb,.45,.5,4229,{segments:8,skips:1});
+  for(const [dx,dy] of [[-9,-9],[-13,-4]])burinSegment(g,128,base-44,128+dx,base-44+dy,rgb,.6,.8,4233+dx,{segments:3,hair:false,wobble:.5});
+  // The spout, blown clear of the head.
+  for(let i=0;i<7;i++){
+    const spread=(i-3)/3*.55,len=16+rng()*14;
+    burinSegment(g,133,base-50,133+Math.sin(spread)*len*.85,base-50-Math.cos(spread)*len,rgb,.34,.6,4241+i*3,{segments:4,skips:1,hair:false,wobble:1.2});
+  }
+  const sprite={canvas:c,w,h};
+  darkMarginalia.set(key,sprite);return sprite;
+}
+function glossSprite(relief){
+  const size=Math.max(9,11*scale),key='gloss:'+plateName+':'+(relief?'r':'n')+':'+size.toFixed(1)+':'+DPR.toFixed(2);
+  const cached=darkMarginalia.get(key);if(cached)return cached;
+  const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment;
+  const text='HIC SUNT DRACONES',font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  const w=Math.ceil(size*text.length*.72)+8,h=Math.ceil(size*1.9);
+  const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.font=font;g.textAlign='left';g.textBaseline='alphabetic';
+  g.fillStyle=`rgba(${rgb},.9)`;
+  g.fillText(text,4,size*1.15);
+  g.fillStyle=`rgba(${rgb},.45)`;
+  g.fillRect(4,size*1.45,Math.max(1,w-14),.6);
+  const sprite={canvas:c,w,h};
+  darkMarginalia.set(key,sprite);return sprite;
+}
+// The Leviathan surfaces slowly and periodically at his own place along the edge, and the gloss
+// drifts with the flood. Both stand still when the run is paused or reduced motion is requested.
+function drawDarkMarginalia(fy,time,alpha){
+  const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
+  const monster=leviathanSprite(false),phase=((time+7)%cycle)/cycle;
+  if(phase<window/cycle){
+    const u=phase*cycle/window,rise=Math.sin(Math.PI*u);
+    const span=W+monster.w*2,x=((.34*span-drift*.62)%span+span)%span-monster.w;
+    const y=fy-monster.h+(1-rise)*monster.h*1.05;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,W,Math.max(0,fy+1));ctx.clip();
+    ctx.globalAlpha=alpha*rise*.9;
+    ctx.drawImage(monster.canvas,x,y,monster.w,monster.h);
+    if(darknessRelief>.001){const r=leviathanSprite(true);ctx.globalAlpha=alpha*rise*.9*darknessRelief;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
+    ctx.restore();
+  }
+  const gloss=glossSprite(false),span=W+gloss.w*2;
+  const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
+  ctx.save();ctx.globalAlpha=alpha*.5;
+  ctx.drawImage(gloss.canvas,gx,fy+9*s,gloss.w,gloss.h);
+  if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief;ctx.drawImage(r.canvas,gx,fy+9*s,r.w,r.h);}
+  ctx.restore();
+}
 function drawDark(dt=0){
   // Match the visible hairline to the simulation's exact loss threshold.
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
@@ -197,6 +284,7 @@ function drawDark(dt=0){
     const x=mote.x*W+Math.sin(time*.3+mote.drift)*2*s,y=fy-(4+phase*25)*s;
     line(x,y,x+.3*s,y+mote.length*s,`rgba(${rgb},${alpha})`,.55*s);
   }
+  drawDarkMarginalia(fy,time,.55+near*.3+darknessRelief*.15);
   if(near>.2&&world.state==='playing'){
     const edge=ctx.createRadialGradient(W*.5,H*.5,H*.3,W*.5,H*.5,Math.max(W,H)*.65);
     edge.addColorStop(0,'rgba(81,48,39,0)');edge.addColorStop(1,`rgba(${rgb},${near*.105*(1-darknessRelief*.75)})`);
