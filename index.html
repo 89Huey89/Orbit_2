@@ -622,11 +622,17 @@ let ambience={random:seeded(7419),wait:7,event:null,sequence:0};
 const darknessPlates=new Map();
 const inkRng=seeded(741593),inkMotes=Array.from({length:40},()=>({x:inkRng(),phase:inkRng(),speed:.045+inkRng()*.045,length:.5+inkRng()*1.6,drift:inkRng()*TAU}));
 const atlasRegions=[
-  {wash:'29,40,40',pigment:'149,157,143',star:[183,190,175],density:1,seed:3197},
-  {wash:'51,39,30',pigment:'175,146,111',star:[202,182,151],density:.82,seed:7321},
-  {wash:'34,27,34',pigment:'143,116,111',star:[179,163,159],density:.62,seed:9481},
-  {wash:'24,34,47',pigment:'126,145,159',star:[172,185,196],density:.46,seed:5107}
+  {wash:'29,40,40',pigment:'149,157,143',star:[183,190,175],density:1,seed:3197,
+    paper:{wash:'80,68,50',pigment:'92,78,58',star:[70,54,38]}},
+  {wash:'51,39,30',pigment:'175,146,111',star:[202,182,151],density:.82,seed:7321,
+    paper:{wash:'100,74,42',pigment:'112,84,48',star:[76,52,28]}},
+  {wash:'34,27,34',pigment:'143,116,111',star:[179,163,159],density:.62,seed:9481,
+    paper:{wash:'96,58,46',pigment:'104,66,50',star:[68,40,32]}},
+  {wash:'24,34,47',pigment:'126,145,159',star:[172,185,196],density:.46,seed:5107,
+    paper:{wash:'64,76,92',pigment:'70,84,98',star:[42,54,70]}}
 ];
+// Reads whichever colour set (night literals or paper.*) is active for a region.
+const regionInk=region=>onPaper()?region.paper:region;
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
 function grainTexture(){
@@ -1245,11 +1251,11 @@ function drawAmbient(dt,aim){
   ctx.save();ctx.lineCap='round';
   if(e.kind==='comet'){
     const stroke=ctx.createLinearGradient(tail.x,tail.y,point.x,point.y);
-    stroke.addColorStop(0,'rgba(187,195,177,0)');stroke.addColorStop(.72,`rgba(187,195,177,${alpha*.55})`);stroke.addColorStop(1,`rgba(222,211,179,${alpha})`);
+    stroke.addColorStop(0,`rgba(${ink.atmosphere.cometTrail},0)`);stroke.addColorStop(.72,`rgba(${ink.atmosphere.cometTrail},${alpha*.55})`);stroke.addColorStop(1,`rgba(${ink.atmosphere.cometHead},${alpha})`);
     ctx.strokeStyle=stroke;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(tail.x,tail.y);ctx.lineTo(point.x,point.y);ctx.stroke();
-    ctx.fillStyle=`rgba(224,216,190,${alpha})`;ctx.beginPath();ctx.arc(point.x,point.y,.75,0,TAU);ctx.fill();
+    ctx.fillStyle=`rgba(${ink.atmosphere.cometDot},${alpha})`;ctx.beginPath();ctx.arc(point.x,point.y,.75,0,TAU);ctx.fill();
   }else{
-    const reach=1.7+envelope*1.5,rgb=e.chapter===3?'187,204,213':'222,204,159';
+    const reach=1.7+envelope*1.5,rgb=e.chapter===3?ink.atmosphere.glintBlue:ink.atmosphere.glintWarm;
     line(point.x-reach,point.y,point.x+reach,point.y,`rgba(${rgb},${alpha*.65})`,.5);
     line(point.x,point.y-reach*1.25,point.x,point.y+reach*1.25,`rgba(${rgb},${alpha*.65})`,.5);
     ctx.fillStyle=`rgba(${rgb},${alpha})`;ctx.fillRect(point.x-.6,point.y-.6,1.2,1.2);
@@ -1268,9 +1274,17 @@ function drawChapterReveal(dt){
   const reach=Math.min(95,W*.21);line(x-reach,y+27+rise,x-9,y+27+rise,'rgba(202,180,137,.42)',.6);line(x+9,y+27+rise,x+reach,y+27+rise,'rgba(202,180,137,.42)',.6);
   ctx.strokeStyle='rgba(216,195,154,.7)';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24+rise);ctx.lineTo(x+3,y+27+rise);ctx.lineTo(x,y+30+rise);ctx.lineTo(x-3,y+27+rise);ctx.closePath();ctx.stroke();ctx.restore();
 }
+// Region-level ambience: drifting dust plates, the region wash, the starfield and its atlas annotations.
+// Night literals below are the original artwork's exact values; only the paper column is new.
+definePlate('atmosphere',{
+  night:{eclipseShadow:'3,6,12',starBright:'218,205,176',starGlyph:'220,204,164',annotation:'155,174,171',
+    cometTrail:'187,195,177',cometHead:'222,211,179',cometDot:'224,216,190',glintBlue:'187,204,213',glintWarm:'222,204,159'},
+  paper:{eclipseShadow:PLATES.paper.base.inkSoft,starBright:PLATES.paper.base.inkStrong,starGlyph:PLATES.paper.base.inkStrong,annotation:PLATES.paper.base.inkSoft,
+    cometTrail:PLATES.paper.base.inkSoft,cometHead:PLATES.paper.base.ink,cometDot:PLATES.paper.base.inkStrong,glintBlue:'52,84,120',glintWarm:'150,100,32'}
+});
 function regionPlate(index,near){
-  const key=index+':'+near;if(regionPlates.has(key))return regionPlates.get(key);
-  const region=atlasRegions[index],c=makeCanvas(384,768),g=c.getContext('2d'),rng=seeded(region.seed+(near?1701:0));
+  const key=index+':'+near+(onPaper()?'p':'');if(regionPlates.has(key))return regionPlates.get(key);
+  const region=atlasRegions[index],rc=regionInk(region),paper=onPaper(),c=makeCanvas(384,768),g=c.getContext('2d'),rng=seeded(region.seed+(near?1701:0));
   const w=c.width,h=c.height,phase=[0,.9,2.4,-.7][index];
   const center=v=>w*([.38,.48,.66,.32][index]+[.14,.25,.21,.1][index]*Math.sin(v*TAU+phase));
   if(!near){
@@ -1281,7 +1295,7 @@ function regionPlate(index,near){
       for(const wrap of [-h,0,h]){
         g.save();g.translate(x,y+wrap);g.rotate(index===1?-.5:index===2?.4:.16);g.scale(rx,ry);
         const haze=g.createRadialGradient(0,0,0,0,0,1);
-        haze.addColorStop(0,`rgba(${region.pigment},${index===3?.065:.12})`);haze.addColorStop(.45,`rgba(${region.pigment},.035)`);haze.addColorStop(1,`rgba(${region.pigment},0)`);
+        haze.addColorStop(0,`rgba(${rc.pigment},${(index===3?.065:.12)*(paper?.55:1)})`);haze.addColorStop(.45,`rgba(${rc.pigment},${paper?.02:.035})`);haze.addColorStop(1,`rgba(${rc.pigment},0)`);
         g.fillStyle=haze;g.fillRect(-1,-1,2,2);g.restore();
       }
     }
@@ -1291,16 +1305,17 @@ function regionPlate(index,near){
     const v=rng(),scatter=(rng()+rng()+rng()-1.5),spread=near?.3:[.44,.5,.27,.26][index];
     const x=center(v)+scatter*w*spread,y=v*h;
     const edge=clamp(1-Math.abs(scatter)/1.4,0,1);
-    const a=(near?.045:.025)+rng()*(near?.19:.1)*edge;
-    g.fillStyle=`rgba(${region.pigment},${a})`;g.fillRect(x,y,near?.6+rng()*.6:.45,.55);
+    const a=((near?.045:.025)+rng()*(near?.19:.1)*edge)*(paper?.6:1);
+    g.fillStyle=`rgba(${rc.pigment},${a})`;g.fillRect(x,y,near?.6+rng()*.6:.45,.55);
   }
   if(index===2&&!near){
-    // A broad dust shadow distinguishes the eclipse region from a colour wash.
+    // A broad dust shadow distinguishes the eclipse region from a colour wash; on paper it is a dilute
+    // sepia pool, never a dark fill.
     for(let i=0;i<6;i++){
       const y=(i+.5)*h/6;
       for(const wrap of [-h,0,h]){
         g.save();g.translate(center(y/h)-35,y+wrap);g.rotate(.38);g.scale(62,125);
-        const shadow=g.createRadialGradient(0,0,0,0,0,1);shadow.addColorStop(0,'rgba(3,6,12,.36)');shadow.addColorStop(1,'rgba(3,6,12,0)');g.fillStyle=shadow;g.fillRect(-1,-1,2,2);g.restore();
+        const shadow=g.createRadialGradient(0,0,0,0,0,1);shadow.addColorStop(0,`rgba(${ink.atmosphere.eclipseShadow},${paper?.14:.36})`);shadow.addColorStop(1,`rgba(${ink.atmosphere.eclipseShadow},0)`);g.fillStyle=shadow;g.fillRect(-1,-1,2,2);g.restore();
       }
     }
   }
@@ -1308,14 +1323,14 @@ function regionPlate(index,near){
 }
 function drawRegion(index,weight){
   if(weight<.001)return;
-  const region=atlasRegions[index],time=reducedMotion?0:world.time;
+  const region=atlasRegions[index],rc=regionInk(region),time=reducedMotion?0:world.time,paper=onPaper();
   ctx.save();ctx.globalAlpha=weight;
-  ctx.fillStyle=`rgba(${region.wash},.31)`;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=`rgba(${rc.wash},${paper?.05:.31})`;ctx.fillRect(0,0,W,H);
   for(const near of [false,true]){
     const plate=regionPlate(index,near),height=H*(near?1.7:1.9);
     const travel=reducedMotion?0:world.cameraY*scale*(near?.17:.055)+time*(near?1.1:.35);
     const offset=((travel%height)+height)%height;
-    ctx.globalAlpha=weight*(near?.54:.84);
+    ctx.globalAlpha=weight*(paper?(near?.22:.34):(near?.54:.84));
     ctx.drawImage(plate,0,-offset,W,height);ctx.drawImage(plate,0,height-offset,W,height);
   }
   ctx.restore();
@@ -1328,17 +1343,17 @@ function drawAtmosphere(dt=0,aim=null){
   const first=Math.floor(regionBlend),second=Math.min(3,first+1),mix=regionBlend-first;
   drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
   drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
-  const regionA=atlasRegions[first],regionB=atlasRegions[second];
+  const regionA=regionInk(atlasRegions[first]),regionB=regionInk(atlasRegions[second]),paper=onPaper();
   const starColor=regionA.star.map((v,i)=>Math.round(lerp(v,regionB.star[i],mix))).join(',');
-  const density=lerp(regionA.density,regionB.density,mix),cy=world.cameraY;
+  const density=lerp(atlasRegions[first].density,atlasRegions[second].density,mix),cy=world.cameraY;
   for(let i=0;i<stars.length;i++){
     const s=stars[i],visibility=clamp((density-((i*.61803398875)%1))/.09,0,1);if(visibility===0)continue;
     const y=((s.y*H-cy*s.depth*scale)%(H+12)+(H+12))%(H+12)-6,x=s.x*W;
     const alpha=visibility*(.2+s.bright*.42)*(reducedMotion?1:.86+.14*Math.sin(world.time*.58+s.phase));
-    ctx.fillStyle=`rgba(${s.bright>.86?'218,205,176':starColor},${alpha})`;ctx.fillRect(x,y,s.size,s.size*.8);
+    ctx.fillStyle=`rgba(${s.bright>.86?ink.atmosphere.starBright:starColor},${alpha})`;ctx.fillRect(x,y,s.size,s.size*.8);
     if(s.bright>.968){
       const reach=s.bright>.987?5.8:3.7;
-      ctx.save();ctx.translate(x+.5,y+.4);ctx.strokeStyle=`rgba(220,204,164,${alpha*.65})`;ctx.lineWidth=.5;
+      ctx.save();ctx.translate(x+.5,y+.4);ctx.strokeStyle=`rgba(${ink.atmosphere.starGlyph},${alpha*(paper?.85:.65)})`;ctx.lineWidth=.5;
       ctx.beginPath();
       for(let j=0;j<16;j++){
         const a=j*TAU/16,radius=j%2?.65:j%4===0?reach:reach*.52;
@@ -1350,10 +1365,10 @@ function drawAtmosphere(dt=0,aim=null){
   drawAmbient(dt,aim);
   // Quiet atlas annotations stay outside the central play path on wide screens.
   if(W>780){
-    ctx.font="10px 'IM Fell English',Georgia,serif";ctx.fillStyle='rgba(155,174,171,.23)';ctx.textAlign='left';
+    ctx.font="10px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.atmosphere.annotation},.23)`;ctx.textAlign='left';
     ctx.fillText('ASCENDENS',W*.115,H*.45);ctx.fillText('Δ  /  '+String(Math.floor(world.progress)).padStart(3,'0'),W*.115,H*.45+17);
-    line(W*.115,H*.45-15,W*.115+45,H*.45-15,'rgba(155,174,171,.2)');
-    ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,'rgba(155,174,171,.16)');
+    line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);
+    ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
   }
   ctx.save();ctx.globalAlpha=.32;ctx.fillStyle=ctx.createPattern(grain,'repeat');ctx.fillRect(0,0,W,H);ctx.restore();
 }
