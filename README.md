@@ -1,6 +1,6 @@
 # Orbit
 
-Open **index.html** in a modern browser. The complete game, artwork, sound, and styles are inside that one file. No installation, server, network access, or build step is needed to play.
+Open **index.html** in a modern browser. The complete game, artwork, sound, and styles are inside that one file, with the seventeenth-century Fell typefaces embedded in `assets/fonts.css` beside it. No installation, server, network access, or build step is needed to play.
 
 Tap or click to begin. While circling a node, tap to release along your current tangent. The next node captures you automatically. Space or Enter performs the same action. Tap after a loss to restart.
 
@@ -44,6 +44,18 @@ Before the first tap, the title screen offers Relaxed, Classic, and Hardcore. Th
 
 A pale blue shield star appears roughly every ten main rows, off the main line like the gold detours. Capturing one arms a single charge, shown at the top of the screen and as a faint ring around the ship. The next contact with a black hole consumes the charge and deflects the flight outward instead of ending the run; only one charge can be carried at a time.
 
+## Plates
+
+The atlas can be printed on either of two plates, chosen with the page icon in the footer and remembered in local storage. The **night plate** is the original artwork: pale ink and starlight on indigo. The **paper plate** is the same chart pulled on aged cream laid paper, with iron-gall sepia and black ink, ochre where the night plate uses gold, rubrication red-brown where it uses copper, and Prussian blue for drifting orbits. The sheet carries laid and chain lines, fibres, foxing, old tide marks, and a dilute ecliptic with hour numerals. On paper the planets are hand-coloured specimens with an off-register keyline and hatched night sides, black holes are pooled ink blots, and the rising darkness is literally spilled ink bleeding up the page along the fibres. Every render section registers its colours for both plates in one place, so the night plate is unchanged by the paper work. Switching plates rebuilds the cached artwork and never touches the simulation.
+
+Both plates sit inside an engraved frame: a plate-mark where the copper pressed the sheet, a heavy double rule, and a graduated scale with right-ascension hours along the top and bottom and declination degrees down the sides that scroll with the ascent. Wide screens add a compass rose, a scale bar, and an engraver's credit in the margins, outside the play channel. The frame is cached and costs one blit per frame.
+
+Lettering uses IM Fell English, IM Fell English SC, and IM Fell DW Pica, digitisations of the Fell types cut in the 1600s and used at Oxford, under the SIL Open Font License. The title screen is an engraved frontispiece with a strapwork cartouche, a Latin subtitle, and a printer's line; the end screen is a colophon with a ruled table of the run.
+
+Each constellation fork carries the figure it is named for, drawn behind its three stars in the manner of Hevelius: a sailmaker's needle threaded through the stars, a lateen sail on its spar, a chelys lyre, and a jewelled diadem. The figures are broken ink contours that hatch in as stars are visited, take a dilute wash on completion, and fade to hairlines when a chart expires. Each is cached per chart and stays clear of the orbit rims.
+
+The chapter plates quote Galileo. The Quiet's moon has a Sidereus Nuncius terminator with crater rims catching light on the dark side; The Drift carries his 1610 sketch of Saturn as a disc with two handles beside the caption; The Eclipse shows sunspot groups with hatched penumbrae across the disc; The Deep notes Jupiter and the Medicean stars as a small circle and four asterisks. Each plate has a second caption line naming the figure.
+
 ## Source
 
 The independent `OrbitWorld` class handles seeded generation, fixed-step movement, swept collisions, scoring, and difficulty. The rest of the inline script handles procedural Canvas artwork, synthesized Web Audio, storage, and input.
@@ -55,4 +67,4 @@ npm test
 npm run build
 ```
 
-The verification script checks the main, constellation, and charged-shortcut paths on 60 generated courses through row 48, including 240 completed constellations and 360 shortcut transfers. It checks exact tangent contacts in both directions at three speeds, moving-target guide agreement, symmetric gravitational flybys, retained speed, curved landing predictions at three speeds, collision warnings, lens sampling at clipped viewport edges, star acceleration and caps, speed-based rewards, long-flight regressions, darkness pressure, rewards and expiry, duplicate capture protection, bounded generation, pause/restart, and complete-script execution at five viewport sizes using native-API stand-ins. Route probes can take an ordinary capture if they miss a perfect timing window for more than 1.5 turns. These are simulation/runtime checks, not browser screenshots. The build validates the script and copies the standalone HTML into `dist` for static hosting.
+The verification script checks the main, constellation, and charged-shortcut paths on 60 generated courses through row 48, including 240 completed constellations and 360 shortcut transfers. It checks exact tangent contacts in both directions at three speeds, moving-target guide agreement, symmetric gravitational flybys, retained speed, curved landing predictions at three speeds, collision warnings, lens sampling at clipped viewport edges, star acceleration and caps, speed-based rewards, long-flight regressions, darkness pressure, rewards and expiry, duplicate capture protection, bounded generation, pause/restart, and complete-script execution at five viewport sizes using native-API stand-ins. Route probes can take an ordinary capture if they miss a perfect timing window for more than 1.5 turns. These are simulation/runtime checks, not browser screenshots. The build validates the script and copies the HTML and the `assets` folder into `dist` for static hosting.
