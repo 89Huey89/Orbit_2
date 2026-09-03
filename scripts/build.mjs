@@ -1,4 +1,4 @@
-import {readFile,mkdir,copyFile} from 'node:fs/promises';
+import {readFile,mkdir,copyFile,cp} from 'node:fs/promises';
 import {Script} from 'node:vm';
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
@@ -8,4 +8,5 @@ if(/<(script|link|img|audio|video)\b[^>]*(src|href)=["']https?:/i.test(html))thr
 if(!html.includes('new OrbitWorld('))throw new Error('Game bootstrap missing.');
 await mkdir(new URL('../dist/',import.meta.url),{recursive:true});
 await copyFile(new URL('../index.html',import.meta.url),new URL('../dist/index.html',import.meta.url));
-console.log(`Orbit built: ${Buffer.byteLength(html).toLocaleString()} bytes, one offline HTML file.`);
+await cp(new URL('../assets/',import.meta.url),new URL('../dist/assets/',import.meta.url),{recursive:true});
+console.log(`Orbit built: ${Buffer.byteLength(html).toLocaleString()} bytes of HTML plus the embedded-font stylesheet in assets/.`);
