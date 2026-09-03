@@ -418,7 +418,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   const events={},items=new Map(),raf=[],saved=new Map();
   let lensCopies=0;
   const gradient={addColorStop(){}};
-  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({})},{
+  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({}),measureText:text=>({width:String(text).length*6})},{
     get(target,key){return key in target?target[key]:(...args)=>{
       for(const a of args)if(typeof a==='number')assert(Number.isFinite(a),'Non-finite canvas argument in '+String(key));
       if(key==='drawImage'&&args[0]?.id==='sky'&&args.length===9){
@@ -433,11 +433,39 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed}};',context);
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed}};',context);
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
+  // The living pen: the first row of a fresh chart is begun the moment the sheet is drawn and every mark
+  // of it is finished within its second; reduced motion prints the whole chart at once instead.
+  {
+    const pen=context.test.reveal,fresh=context.test.world,firstRow=fresh.nodes.filter(n=>n.row<=1);
+    assert(firstRow.length>0,'A fresh chart opens with a first row');
+    if(reduceMotion){
+      for(const n of firstRow)assert.equal(pen.progress(n,1),1,'Reduced motion prints every mark at once');
+      assert.equal(pen.peek('frame'),1);assert.equal(pen.peek(fresh.nodes[0]),1);
+    }else{
+      context.test.render(0);
+      for(const n of firstRow){
+        const started=pen.peek(n);
+        assert(started>=0&&started<1,'The pen starts the first row before the traveller can reach it');
+      }
+      for(let i=0;i<90;i++)fresh.update(1/60);
+      context.test.render(0);
+      for(const n of firstRow)assert.equal(pen.peek(n),1,'Every first-row mark is finished within a second');
+      assert.equal(pen.peek('frame'),1,'The frame finishes drawing itself at the start of a run');
+      const probes=['probe0','probe1','probe2','probe3','probe4'],busy=pen.report().drawing;
+      assert(busy<=3,'The pen never has more than three marks in hand');
+      for(const key of probes)pen.progress(key,1);
+      assert.equal(pen.report().drawing,3,'Five more marks fill the pen\'s hand and no further');
+      assert.equal(probes.filter(key=>pen.peek(key)>=0).length,3-busy,'The marks past the third wait at nothing drawn');
+      assert.equal(context.test.penLettering('THE QUIET',100,100,30,'text',.3,'center'),true,'The chapter name is written letter by letter');
+    }
+    assert(context.test.letteringTime('THE QUIET')>0);
+    assert.equal(context.test.penLettering('THE QUIET',100,100,30,'text',99,'center'),false,'Finished lettering hands back to the printed text');
+  }
   // The daily plate replaces the run seed with the UTC date's, forces Classic pressure,
   // and is not remembered: switching it off restores an ordinary run.
   const beforeDaily=context.test.world;

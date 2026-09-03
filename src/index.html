@@ -171,6 +171,34 @@
       #end .end-plate-line{display:none}
       #end .end-stats{gap:12px}
     }
+    /* — The living pen in the DOM: the same hand that draws the chart writes the HUD, the toasts, the
+       frontispiece and the colophon. Every base style below is the finished state and every animation
+       starts from the unwritten one, so the reduced-motion rule above prints all of it at once. — */
+    @keyframes ink-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+    @keyframes ink-nib{from{left:-2%;opacity:.85}to{left:100%;opacity:0}}
+    @keyframes ink-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    @keyframes letter-settle{from{opacity:0;transform:translateY(8px) rotate(-3deg)}70%{opacity:1}to{opacity:1;transform:none}}
+    #toast.show{animation:ink-wipe .42s ease-out}
+    #toast.show::after,#hint.visible::after{content:'';position:absolute;top:12%;bottom:12%;width:4px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,currentColor);opacity:0;animation:ink-nib .42s ease-out}
+    #hint.visible{animation:ink-wipe .55s ease-out}
+    #hint.visible::after{animation-duration:.55s}
+    .inked{animation:ink-wipe .34s ease-out}
+    #intro h1 span{display:inline-block;animation:letter-settle .85s cubic-bezier(.2,.7,.3,1) backwards;animation-delay:calc(var(--i)*.11s + .2s)}
+    #intro .subtitle-latin{animation:ink-rise .8s ease-out .1s backwards}
+    #intro .cartouche-frame{animation:ink-wipe .9s ease-out .5s backwards}
+    #intro .compass-star{animation:ink-rise .6s ease-out 1s backwards}
+    #intro .title-rule{animation:ink-wipe .6s ease-out .95s backwards}
+    #intro .title-group .eyebrow{animation:ink-rise .8s ease-out 1.05s backwards}
+    #intro .start-copy{animation:ink-rise .9s ease-out 1.15s backwards}
+    /* The colophon is ruled first, then the numbers are written into it. */
+    #game.over .colophon::before{animation:ink-wipe .5s ease-out backwards}
+    #game.over .colophon::after{animation:ink-wipe .5s ease-out .12s backwards}
+    #game.over .score-frame{animation:ink-wipe .5s ease-out .2s backwards}
+    #game.over .end-stats{animation:ink-wipe .55s ease-out .32s backwards}
+    #game.over #end-score,#game.over #record{animation:ink-rise .5s ease-out .5s backwards}
+    #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
+    #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
   </style>
 </head>
 <body>
@@ -198,7 +226,7 @@
             <circle cx="250" cy="118" r="1.1"/><circle cx="242" cy="118" r="1.1"/><circle cx="234" cy="118" r="1.1"/>
           </g>
         </svg>
-        <h1>ORBIT</h1>
+        <h1 aria-label="Orbit"><span style="--i:0" aria-hidden="true">O</span><span style="--i:1" aria-hidden="true">R</span><span style="--i:2" aria-hidden="true">B</span><span style="--i:3" aria-hidden="true">I</span><span style="--i:4" aria-hidden="true">T</span></h1>
         <svg class="compass-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <g stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round">
             <path d="M12 1v6M12 17v6M1 12h6M17 12h6"/>
@@ -266,6 +294,8 @@
 <script src="planets.js"></script>
 <script src="celestial.js"></script>
 <script src="marks.js"></script>
+<script src="glyphs.js"></script>
+<script src="reveal.js"></script>
 <script src="figures.js"></script>
 <script src="effects.js"></script>
 <script src="frame.js"></script>

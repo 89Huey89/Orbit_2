@@ -98,10 +98,11 @@ function drawPlateFrame(){
   if(!W||!H)return;
   const key=W+'x'+H+'x'+DPR+':'+plateName;
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;}
-  ctx.drawImage(frameLayer,0,0,W,H);
+  const framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
   // ascending with the player; everything else in the frame stays perfectly still.
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
+  if(framePen<.8)return;
   const {n,step}=frameEdgeTicks(Math.max(1,H-band*2)),scroll=Math.round(-world.cameraY*.015);
   ctx.font=`${frameWide()?8:6.5}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=colors.text;
   for(let i=0;i<=n;i+=10){
@@ -111,10 +112,11 @@ function drawPlateFrame(){
   }
 }
 function render(dt){
+  reveal.prime();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
-  for(const g of world.nebulas)drawHazard(g);
-  drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)drawHazard(h);
+  for(const g of world.nebulas)revealHazard(g,drawHazard);
+  revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
   drawAim(aim);drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}

@@ -461,10 +461,21 @@ function drawChapterReveal(dt){
   // channel underneath it and above the toast line at 29% of the height, so the two never share a row.
   const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:Math.min(H*.3,hudBand()+46),rise=reducedMotion?0:(1-Math.min(t,1))*5;
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
-  ctx.fillStyle=ink.dark.chapterLabel;ctx.font="12px 'IM Fell English',Georgia,serif";ctx.fillText('P L A T E   '+numerals[chapterReveal.index],x,y-22+rise);
-  ctx.fillStyle=ink.base.text;ctx.font=`${compact?24:Math.min(36,Math.max(24,W*.062))}px 'IM Fell English',Georgia,serif`;ctx.fillText(chapters[chapterReveal.index],x,y+12+rise);
+  // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
+  // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
+  // done — and always under reduced motion — the ordinary lettering below is the finished state.
+  const plate='P L A T E   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
+  const size=compact?24:Math.min(36,Math.max(24,W*.062));
+  ctx.fillStyle=ink.dark.chapterLabel;ctx.font="12px 'IM Fell English SC','IM Fell English',Georgia,serif";
+  if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center'))ctx.fillText(plate,x,y-22+rise);
+  ctx.fillStyle=ink.base.text;ctx.font=`${size}px 'IM Fell English',Georgia,serif`;
+  if(!penLettering(name,x,y+12+rise,size,'text',t,'center'))ctx.fillText(name,x,y+12+rise);
   ctx.shadowBlur=0;
-  const reach=Math.min(95,W*.21);line(x-reach,y+27+rise,x-9,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27+rise,x+reach,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);
+  const reach=Math.min(95,W*.21),ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
+  if(ruled>=1){
+    line(x-reach,y+27+rise,x-9,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27+rise,x+reach,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);
+  }else penRule(x,y+27+rise,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);
+  ctx.globalAlpha=alpha*(ruled>=1?1:ruled);
   ctx.strokeStyle=`rgba(${ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24+rise);ctx.lineTo(x+3,y+27+rise);ctx.lineTo(x,y+30+rise);ctx.lineTo(x-3,y+27+rise);ctx.closePath();ctx.stroke();ctx.restore();
 }
 // Region-level ambience: drifting dust plates, the region wash, the starfield and its atlas annotations.

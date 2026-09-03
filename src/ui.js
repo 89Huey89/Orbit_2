@@ -4,7 +4,10 @@
 // ---------- Presentation, storage, viewport, and the single gameplay input ----------
 // Every ripple, ring and blot carries its own seed so the burin cuts each one differently.
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
-function toast(text,seconds=1.4){$('toast').textContent=text;$('toast').classList.add('show');toastLife=seconds;}
+function toast(text,seconds=1.4){
+  // Removing and re-adding the class starts the ink wipe again for a toast that follows another one.
+  const note=$('toast');note.textContent=text;note.classList.remove('show');void note.offsetWidth;note.classList.add('show');toastLife=seconds;
+}
 function event(type,e){
   if(type==='start'){audio.start();return;}
   if(type==='release'){
@@ -61,7 +64,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  glyphs.clear();trail=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trail=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];
@@ -89,11 +92,16 @@ function showEnd(){
   $('end-tip').textContent=world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='CAUGHT BY A BLACK HOLE'?'Close flybys bend your path. Follow the curved guide and leave room for the dark center.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
   $('announcement').textContent='Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
+// A changed HUD line is written in rather than swapped: the same ink wipe the toasts use.
+function inked(id,text){
+  const el=$(id);if(el.textContent===text)return;
+  el.textContent=text;el.classList.remove('inked');void el.offsetWidth;el.classList.add('inked');
+}
 function updateUI(dt){
-  if(lastScore!==world.score){lastScore=world.score;$('score').textContent=world.score;$('best').textContent=currentBest();}
-  const pace='SPEED ×'+world.speedMultiplier().toFixed(1);if($('pace').textContent!==pace)$('pace').textContent=pace;
-  const flow=world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'';if($('flow').textContent!==flow)$('flow').textContent=flow;
-  const shieldText=world.player.shielded?'SHIELD ARMED':'';if($('shield').textContent!==shieldText)$('shield').textContent=shieldText;
+  if(lastScore!==world.score){lastScore=world.score;inked('score',String(world.score));inked('best',String(currentBest()));}
+  inked('pace','SPEED ×'+world.speedMultiplier().toFixed(1));
+  inked('flow',world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'');
+  inked('shield',world.player.shielded?'SHIELD ARMED':'');
   const chapter=Math.min(3,Math.floor(world.progress/8));
   if(chapter!==lastChapter){lastChapter=chapter;$('chapter').innerHTML=numerals[chapter]+' &nbsp; / &nbsp; '+chapters[chapter];if(chapter>0&&world.state==='playing')chapterReveal={index:chapter,age:0};}
   if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
