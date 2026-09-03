@@ -40,6 +40,10 @@ The player is drawn as a small engraved comet with a pale head, dark keyline, an
 
 The game fills the available viewport and requests the browser's Fullscreen API on the first tap when supported. The corner control toggles fullscreen. On browsers without that API, including some iPhone browsers, the game uses the full available dynamic viewport. Switching away pauses the run; tap to resume.
 
+Before the first tap, the title screen offers Relaxed, Classic, and Hardcore. The choice scales how quickly the rising darkness accelerates (×0.72, ×1, ×1.35) and is remembered in local storage for the next visit; every other rule stays the same.
+
+A pale blue shield star appears roughly every ten main rows, off the main line like the gold detours. Capturing one arms a single charge, shown at the top of the screen and as a faint ring around the ship. The next contact with a black hole consumes the charge and deflects the flight outward instead of ending the run; only one charge can be carried at a time.
+
 ## Source
 
 The independent `OrbitWorld` class handles seeded generation, fixed-step movement, swept collisions, scoring, and difficulty. The rest of the inline script handles procedural Canvas artwork, synthesized Web Audio, storage, and input.
