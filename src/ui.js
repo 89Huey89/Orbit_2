@@ -70,7 +70,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trail=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];

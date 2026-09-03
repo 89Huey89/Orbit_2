@@ -293,7 +293,7 @@ function render(dt){
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
-  drawAim(aim);drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
+  drawAim(aim);drawInkPath();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);

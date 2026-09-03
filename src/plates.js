@@ -5,7 +5,7 @@
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let W=0,H=0,DPR=1,scale=1,world,trail=[],particles=[],rings=[],floaters=[],glyphs=new Map();
+let W=0,H=0,DPR=1,scale=1,world,trail=[],inkPath=[],particles=[],rings=[],floaters=[],glyphs=new Map();
 // Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
 // higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
 function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}

@@ -438,7 +438,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen}};',context);
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen}};',context);
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
@@ -454,10 +454,10 @@ get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFra
       observations:fresh.observations,personalBests:fresh.personalBests,allFourInOneRun:fresh.allFourInOneRun},
       {captures:0,perfects:0,bestFlow:0,constellations:{},grazes:0,shieldsSpent:0,maxSpeedSlings:0,runs:{},observations:{},personalBests:{},allFourInOneRun:false},
       'A fresh or unreadable ledger opens empty');
-    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'comet',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius'},'Cosmetics default to the classic look');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius'},'Cosmetics default to the classic look');
     assert.equal(context.test.isUnlocked('cellarius'),false);
     assert.equal(context.test.setCosmetic('mark','saturn'),false,'A locked cosmetic can never be selected');
-    assert.equal(context.test.cosmetic('mark'),'comet');
+    assert.equal(context.test.cosmetic('mark'),'quill','A refused selection leaves the default in place');
   }
   // Every condition in the catalogue is evaluated against the ledger exactly as written.
   {
@@ -469,10 +469,10 @@ get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFra
       ['verdigris',{deepestHardcoreChapter:3},false],['verdigris',{deepestHardcoreChapter:4},true],
       ['foxed',{runs:{classic:60,hardcore:39}},false],['foxed',{runs:{classic:60,hardcore:40}},true],
       ['proof',{allFourInOneRun:false},false],['proof',{allFourInOneRun:true},true],
+      ['comet',{runs:{classic:24}},false],['comet',{runs:{classic:20,relaxed:5}},true],
       ['telescope',{perfects:99},false],['telescope',{perfects:100},true],
-      ['quill',{perfects:399},false],['quill',{perfects:400},true],
-      ['moth',{perfects:999},false],['moth',{perfects:1000},true],
-      ['saturn',{perfects:2499},false],['saturn',{perfects:2500},true],
+      ['moth',{perfects:499},false],['moth',{perfects:500},true],
+      ['saturn',{perfects:1499},false],['saturn',{perfects:1500},true],
       ['sanguine',{maxSpeedSlings:9},false],['sanguine',{maxSpeedSlings:10},true],
       ['silverpoint',{maxSpeedSlings:49},false],['silverpoint',{maxSpeedSlings:50},true],
       ['goldleaf',{maxSpeedSlings:199},false],['goldleaf',{maxSpeedSlings:200},true],
@@ -598,7 +598,16 @@ get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFra
   context.test.handleInput();assert.equal(context.test.world.player.node,null);
   frames(900);
   assert.equal(context.test.world.state,'dead');context.test.render(.1);
+  // The dried route the run has flown stays on the sheet. It is bounded twice: everything that has
+  // passed below the sheet is dropped as the camera climbs, and a hard cap holds the rest.
+  {
+    const path=context.test.inkPath;
+    assert(path.length>1,'A flight leaves its dried route behind it');
+    assert(path.length<=context.test.INK_PATH_CAP,'The dried route is capped: '+path.length);
+    assert(path.every(point=>context.test.sy(point.y)<=height+240),'The dried route is pruned to the sheet');
+  }
   context.test.handleInput();assert.equal(context.test.world.state,'playing');assert.equal(context.test.world.score,0);assert(context.test.world.player.node);
+  assert(context.test.inkPath.length<=1,'A new run is dealt on a clean sheet');
   events['window:blur']();assert.equal(context.test.world.state,'paused');const pausedTime=context.test.world.time;frames(10);assert.equal(context.test.world.time,pausedTime);context.test.handleInput();assert.equal(context.test.world.state,'playing');
   context.test.render(step);
   // Complete a constellation through the full runtime, including presentation,
@@ -730,12 +739,14 @@ const FULL_LEDGER=JSON.stringify({captures:9000,perfects:4000,bestFlow:9,constel
 const layouts=[
   runtime(390,844),
   runtime(430,932,true,true),
-  runtime(1440,900),
+  // The whole catalogue earned, on a wide plate where the frame prints its credit line and its legend.
+  runtime(1440,900,false,false,{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB',
+    'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}),
   runtime(844,390),
   // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one.
   runtime(320,568,false,false,{'orbit.ledger.v1':'{ this is not a ledger'}),
-  // The whole catalogue earned, with a plate, an ink, a mark, an ornament and a hand already chosen.
-  runtime(412,915,false,false,{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
+  // The same, under reduced motion, with a derived plate, an ink, a mark, an ornament and a hand chosen.
+  runtime(412,915,false,true,{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
     'orbit.cosmetics.v1':JSON.stringify({plate:'cellarius',mark:'saturn',trail:'goldleaf',capture:'seal',frame:'seamonsters',figures:'bode'})})
 ];
 
@@ -782,4 +793,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));

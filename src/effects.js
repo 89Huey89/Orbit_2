@@ -8,6 +8,8 @@ definePlate('dark',{
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
     playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
+    // The route already flown, long dry on the sheet.
+    pathInk:'128,134,116',
     // A fresh stroke is bright ink; as it ages it sinks back to a dimmer, drier tone.
     trailWet:[250,240,208],trailDry:[143,148,128],blotWet:[236,224,186],blotDry:[152,148,122],
     pigment:'166,125,101',pigmentRelief:'211,192,143',shorelineRelief:'221,202,152',
@@ -23,6 +25,7 @@ definePlate('dark',{
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
     playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
+    pathInk:'104,74,42',
     // Wet iron-gall is glossy blue-black; it dries to a matte sepia within a second.
     trailWet:[24,26,46],trailDry:[122,88,52],blotWet:[20,22,42],blotDry:[130,98,58],
     // The calibrated shoreline is rubrication red-brown on paper, turning ochre/gold during a reprieve.
@@ -43,14 +46,14 @@ const mixRgb=(a,b,t)=>Math.round(lerp(a[0],b[0],t))+','+Math.round(lerp(a[1],b[1
 // at a release. The plate's own iron gall is read from the `dark` section above and needs no entry.
 definePlate('inks',{
   night:{
-    sanguine:{wet:[214,116,88],dry:[150,86,68],wash:'196,110,84',edge:'170,96,74',bleed:'206,120,92',blotWet:[214,116,88],blotDry:[152,90,70]},
-    silverpoint:{wet:[226,230,236],dry:[132,138,146],wash:'170,176,184',edge:'150,158,168',bleed:'196,202,210',blotWet:[214,220,228],blotDry:[134,140,148],shimmer:'244,248,255'},
-    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8'}
+    sanguine:{wet:[214,116,88],dry:[150,86,68],wash:'196,110,84',edge:'170,96,74',bleed:'206,120,92',blotWet:[214,116,88],blotDry:[152,90,70],path:'150,86,68'},
+    silverpoint:{wet:[226,230,236],dry:[132,138,146],wash:'170,176,184',edge:'150,158,168',bleed:'196,202,210',blotWet:[214,220,228],blotDry:[134,140,148],shimmer:'244,248,255',path:'126,132,140'},
+    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',path:'164,128,64'}
   },
   paper:{
-    sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88]},
-    silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252'},
-    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10'}
+    sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
+    silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252',path:'118,122,128'},
+    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'}
   }
 });
 // The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen.
@@ -60,11 +63,52 @@ function trailInk(){
   return {wet:ink.dark.trailWet,dry:ink.dark.trailDry,wash:ink.dark.trailWash,edge:ink.dark.trailEdge,
     bleed:ink.dark.trailBleed,blotWet:ink.dark.blotWet,blotDry:ink.dark.blotDry};
 }
+// ---------- The route already flown ----------
+// The wet trail is a hundred-odd samples that fade in a second; the dried path is the whole route the
+// run has taken, kept in world coordinates and printed under the wet ink every frame. It is bounded
+// twice over: everything that has passed below the sheet is dropped as the camera climbs — it only
+// ever climbs — and a hard cap holds the rest whatever happens. Reduced motion keeps it, since a line
+// already on the page is not motion; a paused run adds nothing to it because nothing is sampled.
+const INK_PATH_CAP=3000;
 function recordTrail(){
   if(world.state!=='playing'&&world.state!=='ready')return;
   const p=world.player;
   trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
   const limit=reducedMotion?64:148;if(trail.length>limit)trail.splice(0,trail.length-limit);
+  const last=inkPath[inkPath.length-1];
+  if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
+  pruneInkPath();
+}
+function pruneInkPath(){
+  if(!H||!world)return;
+  const below=H+220;
+  let gone=0;while(gone<inkPath.length&&sy(inkPath[gone].y)>below)gone++;
+  if(gone>0)inkPath.splice(0,gone);
+  if(inkPath.length>INK_PATH_CAP)inkPath.splice(0,inkPath.length-INK_PATH_CAP);
+}
+// The dried route: one wash pass and three weights of burin line, the heavier where the flight was
+// faster, cut in the ink the pen is charged with. The wet trail dries into its head, so the line the
+// player is drawing now and the line drawn a minute ago are the same line.
+function drawInkPath(){
+  if(inkPath.length<2)return;
+  const pen=trailInk(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
+  const band=p=>Math.min(2,Math.floor(clamp((p.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1)*3));
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle=`rgba(${rgb},${paper?.11:.08})`;ctx.lineWidth=1.9*scale;
+  ctx.beginPath();
+  ctx.moveTo(sx(inkPath[0].x),sy(inkPath[0].y));
+  for(let i=1;i<inkPath.length;i++)ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
+  ctx.stroke();
+  for(let weight=0;weight<3;weight++){
+    ctx.strokeStyle=`rgba(${rgb},${(paper?.4:.3)+weight*.05})`;ctx.lineWidth=(.34+weight*.26)*scale;
+    ctx.beginPath();
+    for(let i=1;i<inkPath.length;i++){
+      if(band(inkPath[i])!==weight)continue;
+      ctx.moveTo(sx(inkPath[i-1].x),sy(inkPath[i-1].y));ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawTrail(){
   if(trail.length<2)return;
@@ -114,6 +158,48 @@ function markHead(boost,charge){
 }
 const markStroke=(alpha,width)=>{ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${alpha})`;ctx.lineWidth=width;};
 const OBSERVER_MARKS={
+  // The pen itself: the nib leads, cut to a point at the traveller's exact position and turned along
+  // the flight, with the barrel and the feather trailing behind it. The vane flexes back as the flight
+  // quickens and breathes a little; under reduced motion it is held still.
+  quill(length,boost,breath,charge){
+    const flex=reducedMotion?0:boost*3.6+breath*1.6,back=-length*1.05;
+    // On paper a ring of reserved, unprinted sheet keeps the ink of the vane clear of the nib.
+    if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4,0,7.4,5,0,0,TAU);ctx.fill();}
+    const tipY=-6-flex;
+    // The vane, laid either side of the shaft as a long lens of dilute ink.
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.3)`;
+    ctx.beginPath();ctx.moveTo(-5,-.6);
+    ctx.quadraticCurveTo(back*.4,-4.4-flex*.3,back,tipY);
+    ctx.quadraticCurveTo(back*.5,5.4-flex*.2,-5,1.8);ctx.fill();
+    markStroke(.78,1);
+    ctx.beginPath();ctx.moveTo(-5,0);ctx.quadraticCurveTo(back*.45,-1.6-flex*.35,back,tipY);ctx.stroke();
+    // The barbs of the feather, longer and more swept the further back they are cut.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.72)`;ctx.lineWidth=.55;
+    ctx.beginPath();
+    for(let i=1;i<=12;i++){
+      const u=i/13,x=lerp(-5.5,back,u),y=lerp(-.3,tipY*.94,u);
+      const sweep=Math.sin(Math.PI*Math.min(1,u*1.15));
+      ctx.moveTo(x,y);ctx.lineTo(x-3.4-u*2.6,y+3.4+sweep*4.4);
+      ctx.moveTo(x,y);ctx.lineTo(x-2.6-u*1.8,y-2.2-sweep*3.1);
+    }
+    ctx.stroke();
+    // The nib: a cut point with its slit and shoulder, keylined so the moving point stays legible over
+    // a pale planet, exactly as the comet's head is.
+    ctx.fillStyle=ink.dark.playerKeyline;
+    ctx.beginPath();ctx.moveTo(.6,0);ctx.lineTo(-7.4,-3.1);ctx.lineTo(-9.4,0);ctx.lineTo(-7.4,3.1);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerMid;
+    ctx.beginPath();ctx.moveTo(-.6,0);ctx.lineTo(-7,-2.1);ctx.lineTo(-8.4,0);ctx.lineTo(-7,2.1);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerHighlight;
+    ctx.beginPath();ctx.ellipse(-5.6,-.5,1.9,1.2,0,0,TAU);ctx.fill();
+    ctx.strokeStyle=ink.dark.playerKeyline;ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(-.4,0);ctx.lineTo(-6.4,0);ctx.stroke();
+    // The bead of wet ink held at the point, brightening with the charge in hand.
+    ctx.fillStyle=`rgba(${ink.dark.playerNib},${.4+charge*.45})`;
+    ctx.beginPath();ctx.arc(-1.6,0,1+charge*.5,0,TAU);ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.42+charge*.3})`;ctx.lineWidth=.55;
+    ctx.beginPath();ctx.moveTo(-6.6,-3.4);ctx.lineTo(-6.6,-5.4);ctx.moveTo(-6.6,3.4);ctx.lineTo(-6.6,5.1);ctx.stroke();
+    return true;
+  },
   // A little copperplate comet: a bright head and asymmetric engraved filaments.
   comet(length,boost,breath){
     ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.2)`;ctx.beginPath();ctx.moveTo(4,0);
@@ -126,8 +212,6 @@ const OBSERVER_MARKS={
       ctx.bezierCurveTo(-length*.26,side*spread,-length*.63,side*(spread+.7),-length*(.72+i*.1),side*(.4+i*.22));ctx.stroke();
     }
   },
-  // Galileo's own instrument: a draw-tube of two joints, the objective forward, the eyepiece astern,
-  // bound with its rings and hatched along the underside.
   telescope(length,boost,breath){
     const back=-length*.86,joint=back*.45;
     ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.16)`;
@@ -145,25 +229,6 @@ const OBSERVER_MARKS={
     ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${.26+boost*.16})`;ctx.lineWidth=.4;
     ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(15+boost*5,breath*2);ctx.stroke();
   },
-  // A cut quill: the shaft running back from the nib, its vane fanned in fine barbs.
-  quill(length,boost,breath){
-    const back=-length*.95;
-    markStroke(.75,.95);
-    ctx.beginPath();ctx.moveTo(6,0);ctx.quadraticCurveTo(back*.5,-1.4+breath,back,-5.4+breath*2);ctx.stroke();
-    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.24)`;
-    ctx.beginPath();ctx.moveTo(4,0);ctx.quadraticCurveTo(back*.5,3.4,back,-1.4);
-    ctx.quadraticCurveTo(back*.5,-1.4,4,0);ctx.fill();
-    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.62)`;ctx.lineWidth=.5;
-    ctx.beginPath();
-    for(let i=1;i<=10;i++){
-      const u=i/11,x=lerp(2,back,u),y=lerp(-.4,-4.6+breath*2,u);
-      ctx.moveTo(x,y);ctx.lineTo(x-3.4-u*2.2,y+4.6+u*2.4);
-    }
-    ctx.stroke();
-    // The slit nib at the point.
-    markStroke(.72,.55);ctx.beginPath();ctx.moveTo(6.4,0);ctx.lineTo(2.6,-1.5);ctx.moveTo(6.4,0);ctx.lineTo(2.6,1.5);ctx.stroke();
-  },
-  // A moth: two wings either side of the body, feathered antennae reaching forward.
   moth(length,boost,breath){
     const beat=1+breath*.5,span=Math.max(13,length*.62);
     for(const side of [-1,1]){
@@ -184,7 +249,6 @@ const OBSERVER_MARKS={
     }
     markStroke(.6,.9);ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(-length*.42,0);ctx.stroke();
   },
-  // Galileo's Saturn of 1610: a globe with a handle on either side, cut as he drew it.
   saturn(length,boost,breath){
     const reach=8.4+breath;
     for(const side of [-1,1]){
@@ -202,17 +266,17 @@ const OBSERVER_MARKS={
     ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${.3+boost*.2})`;ctx.lineWidth=.4;
     ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-length*.6,breath*1.5);ctx.stroke();
   }
-};
-function drawPlayer(){
+};function drawPlayer(){
   if(world.state==='dead')return;const p=world.player,flight=!p.node;
   const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge();
   const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
   ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
   ctx.lineCap='round';ctx.lineJoin='round';
-  (OBSERVER_MARKS[cosmetic('mark')]||OBSERVER_MARKS.comet)(length,boost,breath);
-  // The dark keyline keeps the actual moving point legible over pale planets; on paper a thin ring of
-  // exposed, unprinted paper sits between the ink filaments and the head, like a reserved highlight.
-  markHead(boost,charge);
+  // A mark that cuts its own point — the quill's nib is the moving point — says so and keeps it;
+  // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
+  // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
+  const mark=OBSERVER_MARKS[cosmetic('mark')]||OBSERVER_MARKS.quill;
+  if(!mark(length,boost,breath,charge))markHead(boost,charge);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
     ctx.strokeStyle=`rgba(${ink.dark.playerShield},${.55*pulse})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.stroke();
