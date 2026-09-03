@@ -290,14 +290,18 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene};',context);
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName}};',context);
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
   for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+  // Both plates must boot, draw every chapter, and switch mid-run without touching the simulation.
+  context.test.setPlate('paper');assert.equal(context.test.plateName,'paper');
+  for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
   context.test.handleInput();assert.equal(context.test.world.state,'playing');
-  frames(150);
+  frames(75);const midRun=context.test.world.time;context.test.setPlate('night');assert.equal(context.test.world.time,midRun);
+  frames(75);
   context.test.handleInput();assert.equal(context.test.world.player.node,null);
   frames(900);
   assert.equal(context.test.world.state,'dead');context.test.render(.1);
