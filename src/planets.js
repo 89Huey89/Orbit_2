@@ -38,19 +38,24 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
       landContour(g,(rng()-.5)*core*1.5,(rng()-.5)*core*1.5,core*.55,core*.35,rng);
       g.fillStyle=paper?'rgba(58,42,28,.12)':'rgba(56,66,75,.14)';g.fill();
     }
+    // Craters as Galileo drew them in 1610, with the sun on the left: a rim, a crescent of shadow lying on the
+    // floor against the wall nearest the sun, the far wall catching the light, and no rays — nothing an eye at
+    // the telescope ever saw. The larger floors take a few strokes of hatching in their shadow.
+    const shadow=paper?'rgba(58,42,28,.4)':'rgba(34,38,42,.48)',wall=paper?'rgba(48,36,24,.62)':'rgba(48,43,34,.66)',lit='rgba(239,222,184,.72)';
     for(let i=0;i<25;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.94,x=Math.cos(a)*d,y=Math.sin(a)*d;
       const r=core*(i<3?.15+rng()*.055:.035+rng()*.07),flatten=.72+rng()*.24;
-      g.fillStyle='rgba(60,52,39,.17)';g.beginPath();g.ellipse(x,y,r,r*flatten,0,0,TAU);g.fill();
-      g.strokeStyle='rgba(48,43,34,.66)';g.lineWidth=.55;g.stroke();
-      for(let j=0;j<4;j++){
-        g.lineWidth=.3;g.beginPath();g.ellipse(x+.2*j,y+.16*j,r*(1-j*.16),r*flatten*(1-j*.16),0,-.5,Math.PI*.7);g.stroke();
+      g.fillStyle=paper?'rgba(58,42,28,.08)':'rgba(60,52,39,.14)';g.beginPath();g.ellipse(x,y,r,r*flatten,0,0,TAU);g.fill();
+      g.strokeStyle=wall;g.lineWidth=.55;g.stroke();
+      g.fillStyle=shadow;g.beginPath();
+      g.ellipse(x,y,r*.94,r*flatten*.94,0,Math.PI*.5,Math.PI*1.5);
+      g.ellipse(x+r*.5,y,r*.86,r*flatten*.86,0,Math.PI*1.5,Math.PI*.5,true);
+      g.closePath();g.fill();
+      if(i<3){
+        g.strokeStyle=paper?'rgba(26,18,11,.32)':'rgba(30,28,24,.3)';g.lineWidth=.3;
+        for(let j=0;j<4;j++){const yy=y-r*flatten*.6+j*r*flatten*.4;g.beginPath();g.moveTo(x-r*.86,yy);g.lineTo(x-r*.38,yy+r*.3);g.stroke();}
       }
-      g.strokeStyle='rgba(239,222,184,.7)';g.lineWidth=.7;g.beginPath();g.ellipse(x-.35,y-.35,r+.35,r*flatten+.35,0,Math.PI*.8,Math.PI*1.85);g.stroke();
-      if(i===0){
-        g.strokeStyle='rgba(236,226,201,.23)';g.lineWidth=.4;
-        for(let j=0;j<13;j++){const t=j/13*TAU,reach=r*(1.5+rng());g.beginPath();g.moveTo(x+Math.cos(t)*r,y+Math.sin(t)*r);g.lineTo(x+Math.cos(t)*reach,y+Math.sin(t)*reach);g.stroke();}
-      }
+      g.strokeStyle=lit;g.lineWidth=.7;g.beginPath();g.ellipse(x+.15,y,r*.9,r*flatten*.9,0,-Math.PI*.42,Math.PI*.42);g.stroke();
     }
   }else if(family==='ringed'||family==='storm'){
     const phase=rng()*TAU,storm=family==='storm';
@@ -166,15 +171,50 @@ function paintPigment(g,core,rng,rgb=null){
     g.beginPath();g.moveTo(x,y);g.lineTo(x+1+rng()*3,y-.25-rng()*.45);g.stroke();
   }
 }
-function paintEngraving(g,core,palette,rng){
-  const paper=onPaper();
-  // Shading is cut into the plate with curved strokes, not a glossy gradient.
+function paintEngraving(g,core,palette,rng,family='ocean'){
+  const paper=onPaper(),moon=family==='crater';
   g.fillStyle=palette.light+'22';g.fillRect(-core,-core,core*2,core*2);
+  // On paper the dark side is first laid in as a dilute wash, before a single stroke goes on: sepia deepening
+  // from the middle of the body to the limb on the right, with a little more where the limb rolls away, the
+  // way an ink drawing is modelled. The hatch is cut over it, so the strokes read as strokes over tone.
+  if(paper){
+    const wash=g.createLinearGradient(moon?core*.12:-core*.25,0,core,0);
+    wash.addColorStop(0,'rgba(58,42,28,0)');wash.addColorStop(.55,'rgba(58,42,28,.13)');wash.addColorStop(1,'rgba(58,42,28,.27)');
+    g.fillStyle=wash;g.fillRect(-core,-core,core*2,core*2);
+    const limb=g.createRadialGradient(0,0,core*.55,0,0,core);
+    limb.addColorStop(0,'rgba(58,42,28,0)');limb.addColorStop(1,'rgba(58,42,28,.12)');
+    g.fillStyle=limb;g.fillRect(-core,-core,core*2,core*2);
+  }
+  if(moon){
+    // A cratered world carries a Sidereus Nuncius terminator of its own: a ragged day-and-night line a little
+    // right of the middle, the night side laid in behind it, and, in the Codex Leicester's account of the old
+    // moon in the new moon's arms, an earthshine that lifts the dark side faintly toward the limb. Small crater
+    // rims on the dark side catch the light on their far walls, as Galileo drew them.
+    const termX=t=>core*.22+Math.sin(t*11+1.3)*core*.07+Math.sin(t*27-.6)*core*.03;
+    const trace=()=>{for(let i=0;i<=24;i++){const t=i/24,y=-core*1.05+t*core*2.1,x=termX(t);if(i===0)g.moveTo(x,y);else g.lineTo(x,y);}};
+    g.beginPath();trace();g.lineTo(core*1.2,core*1.1);g.lineTo(core*1.2,-core*1.1);g.closePath();
+    g.fillStyle=paper?'rgba(58,42,28,.15)':'rgba(16,18,22,.24)';g.fill();
+    const glow=paper?'239,226,192':'216,210,190',shine=g.createLinearGradient(core*.3,0,core,0);
+    shine.addColorStop(0,`rgba(${glow},0)`);shine.addColorStop(1,`rgba(${glow},${paper?.15:.11})`);
+    g.fillStyle=shine;g.fill();
+    g.strokeStyle=paper?'rgba(26,18,11,.5)':'rgba(38,34,26,.42)';g.lineWidth=paper?.7:.55;
+    g.beginPath();trace();g.stroke();
+    for(let i=0;i<9;i++){
+      const t=rng(),y=-core*.85+t*core*1.7,x=termX(t)+core*.06+rng()*core*.5,r=core*(.035+rng()*.06);
+      if(Math.hypot(x,y)>core*.95)continue;
+      g.strokeStyle=paper?'rgba(239,226,192,.55)':'rgba(230,222,196,.5)';g.lineWidth=.55;
+      g.beginPath();g.arc(x,y,r,-Math.PI*.45,Math.PI*.45);g.stroke();
+      g.strokeStyle=paper?'rgba(26,18,11,.35)':'rgba(30,28,24,.3)';g.lineWidth=.45;
+      g.beginPath();g.arc(x,y,r*.9,Math.PI*.55,Math.PI*1.45);g.stroke();
+    }
+  }
   const hatchInk=paper?'26,18,11':'38,34,26';
   // The hatching is laid as a left hand lays it — each stroke runs down and to the right — and it darkens
-  // toward the limb on the right, where the light falls away.
+  // toward the limb on the right, where the light falls away. On the moon it begins at the terminator, so the
+  // lit hemisphere is left as clean as Galileo left his.
+  const x0=moon?core*.16:-core*.62,step=(core-x0)/34;
   for(let i=0;i<34;i++){
-    const x=-core*.62+i*core*.048;
+    const x=x0+i*step;
     g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/34*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
     g.beginPath();g.moveTo(x,-core*1.14);
     g.bezierCurveTo(x-core*.22,-core*.3,x+core*.36,core*.65,x+core*.48,core*1.1);g.stroke();
@@ -254,7 +294,7 @@ function glyph(seed,type,row,runSeed){
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;g.save();g.beginPath();g.arc(0,0,core,0,TAU);g.clip();
-  paintEngraving(g,core,palette,rng);
+  paintEngraving(g,core,palette,rng,family);
   if(family==='ringed'){
     g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
   }
