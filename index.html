@@ -1054,30 +1054,60 @@ definePlate('plates',{
   },
   paper:{
     globeContour:'58,42,28',globeShadeInk:'34,24,16',globeRim:'58,42,28',
-    wash:['150,140,110','176,140,90','150,90,70','90,110,140'],
+    patchTone:'96,74,52',patchIndigo:'52,84,120',
     limbRing:'58,42,28',moonStipple:'58,42,28',
     ringBack:'150,100,32',ringFront:'176,118,38',ringFleck:'160,84,52',
-    coronaA:'176,118,38',coronaB:'160,84,52',discInk:'34,24,16',coronaRing:'58,42,28',coronaArc:'150,100,32',
+    coronaA:'166,58,40',coronaB:'96,74,52',discInk:'34,24,16',coronaRing:'58,42,28',coronaArc:'96,74,52',
     smokeWash:'96,74,52',smokeStroke:'58,42,28',
-    armWarm:'150,100,32',armCool:'52,84,120',stippleWarm:'150,100,32',stippleCool:'52,84,120',coreRing:'58,42,28',
+    armWarm:'58,42,28',armCool:'96,74,52',stippleWarm:'58,42,28',stippleCool:'96,74,52',coreRing:'58,42,28',
     chartLine:'96,74,52',captionLatin:'58,42,28',captionTab:'58,42,28',figCaption:'96,74,52',
-    speckleLight:'246,238,216',speckleDark:'58,42,28',veil:'246,238,216',vignette:'96,64,28',
+    speckleLight:'246,238,216',speckleDark:'58,42,28',
     terminator:'58,42,28',ringGlyph:'58,42,28',jupiterGlyph:'58,42,28',
     sunspotCore:'34,24,16',sunspotPenumbra:'96,74,52'
   }
 });
 function distantGlobe(g,x,y,r,family,seed){
-  const rng=seeded(seed),palette=planetPalettes[family];
+  const rng=seeded(seed),palette=planetPalettes[family],paper=onPaper();
   g.save();g.translate(x,y);g.beginPath();g.arc(0,0,r,0,TAU);g.clip();
-  g.fillStyle=palette.body;g.fillRect(-r,-r,r*2,r*2);
-  paintPlanetSurface(g,r,family,palette,rng);paintPigment(g,r,rng);
-  // Dense curved engraving holds up at the scale of a whole atlas page.
-  for(let i=0;i<150;i++){
-    const xx=-r+i*r/65;
-    g.strokeStyle=`rgba(${ink.plates.globeContour},${.08+i/150*.24})`;g.lineWidth=.45+rng()*.35;
-    g.beginPath();g.moveTo(xx,-r);g.bezierCurveTo(xx+r*.19,-r*.3,xx-r*.34,r*.5,xx-r*.55,r);g.stroke();
+  if(!paper){
+    g.fillStyle=palette.body;g.fillRect(-r,-r,r*2,r*2);
+    paintPlanetSurface(g,r,family,palette,rng);paintPigment(g,r,rng);
+    // Dense curved engraving holds up at the scale of a whole atlas page.
+    for(let i=0;i<150;i++){
+      const xx=-r+i*r/65;
+      g.strokeStyle=`rgba(${ink.plates.globeContour},${.08+i/150*.24})`;g.lineWidth=.45+rng()*.35;
+      g.beginPath();g.moveTo(xx,-r);g.bezierCurveTo(xx+r*.19,-r*.3,xx-r*.34,r*.5,xx-r*.55,r);g.stroke();
+    }
+  }else if(family==='ringed'){
+    // Paper: Saturn's globe is pure ink line work — no fill, a keyline, hairline latitude bands.
+    const lat=seeded((seed*40503)>>>0);
+    for(let i=-4;i<=4;i++){
+      if(i===0)continue;
+      const yy=i*r/5,half=Math.sqrt(Math.max(0,r*r-yy*yy));
+      g.strokeStyle=`rgba(${ink.plates.globeContour},${.16+lat()*.14})`;g.lineWidth=.45;
+      g.beginPath();g.moveTo(-half,yy);g.lineTo(half,yy);g.stroke();
+    }
+  }else if(family==='crater'){
+    // Paper: craters are line work only — a hairline rim with a short hatched shadow crescent inside
+    // on the far side, no fill, so most of the body stays clean sheet.
+    const cr=seeded((seed*40503)>>>0);
+    for(let i=0;i<20;i++){
+      const a=cr()*TAU,d=Math.sqrt(cr())*r*.9,cx0=Math.cos(a)*d,cy0=Math.sin(a)*d;
+      const cr0=r*(i<3?.12+cr()*.05:.03+cr()*.065);
+      g.strokeStyle=`rgba(${ink.plates.globeContour},${.22+cr()*.2})`;g.lineWidth=.4+cr()*.25;
+      g.beginPath();g.arc(cx0,cy0,cr0,0,TAU);g.stroke();
+      g.save();g.beginPath();g.arc(cx0,cy0,cr0,0,TAU);g.clip();
+      for(let k=-cr0;k<cr0;k+=cr0*.4){
+        if(k<cr0*.05)continue;
+        g.strokeStyle=`rgba(${ink.plates.globeContour},${.1+cr()*.12})`;g.lineWidth=.3;
+        g.beginPath();g.moveTo(cx0+k,cy0-cr0);g.lineTo(cx0+k,cy0+cr0);g.stroke();
+      }
+      g.restore();
+    }
+  }else{
+    paintPlanetSurface(g,r,family,palette,rng);paintPigment(g,r,rng);
   }
-  if(onPaper()){
+  if(paper){
     // Paper: the shaded hemisphere is crosshatched ink, never a flat dark fill — an independent
     // generator keeps this from ever touching the night plate's deterministic sequence above.
     const hatch=seeded((seed*2654435761)>>>0);
@@ -1097,26 +1127,34 @@ function distantGlobe(g,x,y,r,family,seed){
     g.fillStyle=shade;g.fillRect(-r,-r,r*2,r*2);
   }
   g.restore();
-  g.strokeStyle=`rgba(${ink.plates.globeRim},${onPaper()?.4:.27})`;g.lineWidth=1.1;g.beginPath();g.arc(x,y,r,Math.PI*.82,Math.PI*1.72);g.stroke();
+  if(paper){
+    // A keyline closes the disc's edge — an engraving always has one, even where no shading falls.
+    g.strokeStyle=`rgba(${ink.plates.globeRim},.28)`;g.lineWidth=.7;g.beginPath();g.arc(x,y,r,0,TAU);g.stroke();
+  }
+  g.strokeStyle=`rgba(${ink.plates.globeRim},${paper?.4:.27})`;g.lineWidth=1.1;g.beginPath();g.arc(x,y,r,Math.PI*.82,Math.PI*1.72);g.stroke();
 }
 function celestialPlate(index){
   if(celestialPlates.has(index))return celestialPlates.get(index);
   const c=makeCanvas(720,1200),g=c.getContext('2d'),rng=seeded(98153+index*437),w=c.width,h=c.height;
-  if(onPaper()){
-    // A translucent, pooled wash stands in for the night plate's flat dark gradient — the paper itself
-    // still reads through it.
-    const wash=ink.plates.wash[index],base=g.createLinearGradient(0,0,w,h);
-    base.addColorStop(0,`rgba(${wash},.1)`);base.addColorStop(.5,`rgba(${wash},.03)`);base.addColorStop(1,`rgba(${wash},.12)`);
-    g.fillStyle=base;g.fillRect(0,0,w,h);
-  }else{
+  if(!onPaper()){
     const tones=ink.plates.tones[index];
     const base=g.createLinearGradient(0,0,w,h);base.addColorStop(0,tones[0]);base.addColorStop(1,tones[1]);g.fillStyle=base;g.fillRect(0,0,w,h);
   }
-  // Broad, diluted brush marks give each region the texture of a printed plate.
+  // On paper the plate starts fully transparent — no background fill of any kind — so the laid-paper
+  // backdrop shows through everywhere an ink mark doesn't fall, the way an engraving sits on the sheet.
+  // Broad, diluted brush marks give each region the texture of a printed plate. On paper every patch is
+  // one dilute sepia tone (plate IV may fold in a faint indigo for the nebula) rather than the night
+  // plate's per-region colour.
   for(let i=0;i<36;i++){
     const x=rng()*w,y=rng()*h;
     landContour(g,x,y,80+rng()*180,25+rng()*70,rng);
-    g.fillStyle=`rgba(${atlasRegions[index].pigment},${.012+rng()*.025})`;g.fill();
+    if(onPaper()){
+      const indigo=index===3&&i%3===0;
+      g.fillStyle=indigo?`rgba(${ink.plates.patchIndigo},${.01+rng()*.02})`:`rgba(${ink.plates.patchTone},${.015+rng()*.025})`;
+    }else{
+      g.fillStyle=`rgba(${atlasRegions[index].pigment},${.012+rng()*.025})`;
+    }
+    g.fill();
   }
   if(index===0){
     // The Quiet: a monumental lunar limb, with a distant companion above it.
@@ -1175,6 +1213,18 @@ function celestialPlate(index){
       g.fillStyle=`rgba(${ink.plates.ringFleck},${.035+rng()*.17})`;g.fillRect(xx,yy,.5+rng()*1.1,.65);
     }
     g.restore();
+    if(onPaper()){
+      // A hatched shadow band where the globe occults part of the ring, drawn with its own generator.
+      const rh=seeded(61777);
+      g.save();g.translate(x,y);g.rotate(tilt);
+      for(let i=0;i<90;i++){
+        const rr=r*(1.31+rh()*.6),a=Math.PI+rh()*Math.PI*.36-.18,xx=Math.cos(a)*rr,yy=Math.sin(a)*rr*flatten;
+        const len=4+rh()*5,ang=.9+rh()*.4;
+        g.strokeStyle=`rgba(${ink.plates.ringFleck},${.12+rh()*.14})`;g.lineWidth=.4;
+        g.beginPath();g.moveTo(xx,yy);g.lineTo(xx+Math.cos(ang)*len,yy+Math.sin(ang)*len*flatten);g.stroke();
+      }
+      g.restore();
+    }
     g.save();g.globalAlpha=.28;distantGlobe(g,137,844,84,'dune',83591);g.restore();
   }else if(index===2){
     // The Eclipse: a dark solar disc inside a corona drawn in hundreds of strokes.
@@ -1237,9 +1287,21 @@ function celestialPlate(index){
     g.restore();
     // Broken bands of smoke make the page feel heavier towards its lower edge.
     for(let i=0;i<16;i++){
-      landContour(g,rng()*w,780+rng()*260,120+rng()*160,17+rng()*35,rng);
-      g.fillStyle=eclipsePaper?`rgba(${ink.plates.smokeWash},.05)`:'rgba(5,8,18,.19)';g.fill();
-      g.strokeStyle=eclipsePaper?`rgba(${ink.plates.smokeStroke},.1)`:'rgba(137,117,130,.04)';g.lineWidth=.7;g.stroke();
+      const lx=rng()*w,ly=780+rng()*260,lrx=120+rng()*160,lry=17+rng()*35;
+      landContour(g,lx,ly,lrx,lry,rng);
+      if(eclipsePaper){
+        // Sepia contours with a hatched fill, never a flat wash.
+        g.save();g.clip();
+        const hb=seeded(80200+i*97);
+        for(let k=-lrx*1.3;k<lrx*1.3;k+=2.6+hb()*2){
+          g.strokeStyle=`rgba(${ink.plates.smokeWash},${.07+hb()*.08})`;g.lineWidth=.4;
+          g.beginPath();g.moveTo(lx+k,ly-lry*1.6);g.lineTo(lx+k+lry*.8,ly+lry*1.6);g.stroke();
+        }
+        g.restore();
+        g.strokeStyle=`rgba(${ink.plates.smokeStroke},.15)`;g.lineWidth=.6;g.stroke();
+      }else{
+        g.fillStyle='rgba(5,8,18,.19)';g.fill();g.strokeStyle='rgba(137,117,130,.04)';g.lineWidth=.7;g.stroke();
+      }
     }
   }else{
     // The Deep: long spiral arms made of chalk, stipple and fine ink contours.
@@ -1307,20 +1369,16 @@ function celestialPlate(index){
     g.fillStyle=i%2?`rgba(${ink.plates.speckleLight},${onPaper()?.05:.035})`:`rgba(${ink.plates.speckleDark},${onPaper()?.05:.07})`;
     g.fillRect(x,y,.55,.7);
   }
-  if(onPaper()){
-    // A clean paper channel: a light wash keeps the centre legible, instead of darkening it.
-    const veil=g.createLinearGradient(0,0,w,0);
-    veil.addColorStop(0,`rgba(${ink.plates.veil},0)`);veil.addColorStop(.32,`rgba(${ink.plates.veil},.035)`);veil.addColorStop(.5,`rgba(${ink.plates.veil},.1)`);veil.addColorStop(.68,`rgba(${ink.plates.veil},.035)`);veil.addColorStop(1,`rgba(${ink.plates.veil},0)`);
-    g.fillStyle=veil;g.fillRect(0,0,w,h);
-    const vignette=g.createRadialGradient(w*.5,h*.46,240,w*.5,h*.5,690);
-    vignette.addColorStop(0,`rgba(${ink.plates.vignette},0)`);vignette.addColorStop(1,`rgba(${ink.plates.vignette},.14)`);g.fillStyle=vignette;g.fillRect(0,0,w,h);
-  }else{
+  if(!onPaper()){
     // A quiet central channel preserves foreground planets and the trajectory line.
     const veil=g.createLinearGradient(0,0,w,0);
     veil.addColorStop(0,'rgba(5,11,19,.03)');veil.addColorStop(.32,'rgba(5,11,19,.13)');veil.addColorStop(.5,'rgba(5,11,19,.28)');veil.addColorStop(.68,'rgba(5,11,19,.13)');veil.addColorStop(1,'rgba(5,11,19,.03)');
     g.fillStyle=veil;g.fillRect(0,0,w,h);
     const vignette=g.createRadialGradient(w*.5,h*.46,240,w*.5,h*.5,690);
     vignette.addColorStop(0,'rgba(3,8,17,0)');vignette.addColorStop(1,'rgba(3,8,17,.54)');g.fillStyle=vignette;g.fillRect(0,0,w,h);
+    // Paper adds no veil and no vignette here — the channel is already kept clear above by thinning
+    // the background grain, and the plate must stay fully transparent otherwise so the laid-paper
+    // backdrop shows through.
   }
   celestialPlates.set(index,c);return c;
 }
@@ -1333,7 +1391,9 @@ function celestialPlacement(index){
 function drawCelestialScene(index,weight){
   if(weight<.001)return;
   const plate=celestialPlate(index),place=celestialPlacement(index);
-  ctx.save();ctx.globalAlpha=weight;ctx.drawImage(plate,place.x,place.y,plate.width*place.fit,plate.height*place.fit);ctx.restore();
+  // On paper the plate sits back as a distant engraving beneath the gameplay marks, so it is blitted
+  // at a reduced alpha; night is unaffected.
+  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;ctx.drawImage(plate,place.x,place.y,plate.width*place.fit,plate.height*place.fit);ctx.restore();
 }
 function ambientPoint(e,progress){
   if(e.kind==='comet')return {x:lerp(e.x,e.endX,progress)*W,y:lerp(e.y,e.endY,progress)*H};
