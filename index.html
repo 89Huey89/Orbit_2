@@ -601,6 +601,7 @@ definePlate('base',{
 });
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
+  figureLayers.clear();
   if(world)for(const n of world.nodes){n._glowKey=null;}
   grain=grainTexture();if(W&&H)backdrop=paintBackdrop();
 }
@@ -1380,6 +1381,174 @@ function releaseTargets(n){
   }
   return world.nodes.filter(q=>!q.visited&&q.y<n.y-60).sort((a,b)=>Math.hypot(a.x-n.x,a.y-n.y)-Math.hypot(b.x-n.x,b.y-n.y)).slice(0,1);
 }
+// ---------- Constellation figures: the plate each fork route is engraved for ----------
+// Behind the three stars of a fork (THE NEEDLE / THE SAIL / THE LYRE / THE CROWN), draw the figure the
+// route is named for, as Hevelius or Bayer would engrave it: broken ink contours and stipple that are
+// always present once the frame is on the page, fine hatching that fills in as each star is captured,
+// and a last dilute wash once the whole chart is complete. An expired chart fades to hairlines. The
+// figure is baked once per (chart, plate, side, scale) into an offscreen layer and blitted per frame.
+definePlate('figures',{
+  night:{contour:'222,190,127',hatch:'222,190,127',wash:'222,190,127'},
+  paper:{contour:'150,100,32',hatch:'58,42,28',wash:'58,42,28'}
+});
+const figureLayers=new Map();
+function figFrame(chart){
+  const s=chart.stars,side=(s[0].x+s[1].x+s[2].x)>=0?1:-1;
+  const minX=Math.min(s[0].x,s[1].x,s[2].x),maxX=Math.max(s[0].x,s[1].x,s[2].x);
+  const minY=Math.min(s[0].y,s[1].y,s[2].y),maxY=Math.max(s[0].y,s[1].y,s[2].y),pad=78;
+  return {side,originX:minX-pad,originY:minY-pad,w:maxX-minX+pad*2,h:maxY-minY+pad*2};
+}
+// A parametric spine running bottom-to-top through the three stars (their fixed generation order),
+// extended a little past both ends. Its perpendicular always points to the outward side of the fork,
+// away from the main route, so the figure is mirrored by `side` to face the route it branches from.
+function figSpine(p0,p1,p2,side,ext){
+  const dir0=Math.atan2(p1.y-p0.y,p1.x-p0.x),dir2=Math.atan2(p2.y-p1.y,p2.x-p1.x);
+  const chain=[{x:p0.x-Math.cos(dir0)*ext,y:p0.y-Math.sin(dir0)*ext},p0,p1,p2,{x:p2.x+Math.cos(dir2)*ext,y:p2.y+Math.sin(dir2)*ext}];
+  const segLen=chain.slice(1).map((b,i)=>Math.hypot(b.x-chain[i].x,b.y-chain[i].y)||.001);
+  const total=segLen.reduce((a,b)=>a+b,0);
+  return {total,at(t){
+    let d=clamp(t,0,1)*total,i=0;
+    while(i<segLen.length-1&&d>segLen[i]){d-=segLen[i];i++;}
+    const a=chain[i],b=chain[i+1],frac=d/segLen[i],tx=(b.x-a.x)/segLen[i],ty=(b.y-a.y)/segLen[i];
+    let px=-ty,py=tx;if(px*side<0){px=-px;py=-py;}
+    return {x:lerp(a.x,b.x,frac),y:lerp(a.y,b.y,frac),tx,ty,px,py};
+  }};
+}
+function figRibbon(spine,fn,steps){
+  const pts=[];for(let i=0;i<=steps;i++){const t=i/steps,s=spine.at(t),o=fn(t);pts.push({x:s.x+s.px*o,y:s.y+s.py*o});}
+  return pts;
+}
+// A hand-inked contour: short broken segments with a little jitter, never a mechanical curve.
+function figInk(g,pts,rng,jag,gap,width){
+  g.lineWidth=width;g.beginPath();
+  for(let i=0;i<pts.length-1;i++){
+    if(rng()<gap)continue;
+    const a=pts[i],b=pts[i+1];
+    g.moveTo(a.x+(rng()-.5)*jag,a.y+(rng()-.5)*jag);g.lineTo(b.x+(rng()-.5)*jag,b.y+(rng()-.5)*jag);
+  }
+  g.stroke();
+}
+function figStipple(g,spine,leftFn,rightFn,n,rng,size){
+  for(let i=0;i<n;i++){
+    const t=rng(),s=spine.at(t),o=lerp(leftFn(t),rightFn(t),rng());
+    g.fillRect(s.x+s.px*o,s.y+s.py*o,size,size);
+  }
+}
+function figHatch(g,spine,leftFn,rightFn,n,rng){
+  for(let i=0;i<n;i++){
+    const t=rng(),s=spine.at(t),o=lerp(leftFn(t),rightFn(t),rng()),len=2+rng()*3;
+    const x=s.x+s.px*o,y=s.y+s.py*o,a=Math.atan2(s.ty,s.tx)+Math.PI/2+(rng()-.5)*.6;
+    g.beginPath();g.moveTo(x-Math.cos(a)*len,y-Math.sin(a)*len);g.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.stroke();
+  }
+}
+function figWash(g,left,right){
+  g.beginPath();g.moveTo(left[0].x,left[0].y);
+  for(const p of left)g.lineTo(p.x,p.y);
+  for(let i=right.length-1;i>=0;i--)g.lineTo(right[i].x,right[i].y);
+  g.closePath();g.fill();
+}
+// A long sailmaker's needle: a thin tapering shaft with a pierced eye near the blunt end, and a
+// curling thread that doubles back through all three stars.
+function figNeedle(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,54),steps=48;
+  const halfW=t=>t<.05?4.2:t>.9?Math.max(.4,5.6*(1-(t-.9)/.1)):5.6;
+  const left=figRibbon(spine,t=>-halfW(t),steps),right=figRibbon(spine,t=>halfW(t),steps);
+  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.08,1.3);figInk(g,right,rng,.7,.08,1.3);
+  const eye=spine.at(.04);g.save();g.translate(eye.x+eye.px*8,eye.y+eye.py*8);g.rotate(Math.atan2(eye.ty,eye.tx));
+  g.lineWidth=1.3;g.beginPath();g.ellipse(0,0,7,3.6,0,0,TAU);g.stroke();
+  g.beginPath();g.ellipse(0,0,3.2,1.4,0,0,TAU);g.stroke();g.restore();
+  const thread=[];for(let i=0;i<=60;i++){const t=.08+i/60*.86,s=spine.at(t),amp=20*Math.sin(t*Math.PI),o=Math.sin(t*11+side)*amp;thread.push({x:s.x+s.px*o,y:s.y+s.py*o});}
+  g.lineWidth=1;figInk(g,thread,rng,.7,.1,1);
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-halfW(t)-2,t=>halfW(t)+2,26,rng,.9);
+}
+// A billowing lateen sail on a spar: a near-straight luff close to the spine and a bulging leech that
+// bellies out through the middle star.
+function figSail(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,46),steps=52;
+  const inner=()=>-2.6,outer=t=>6+Math.pow(Math.sin(Math.PI*clamp(t,.04,.96)),1.3)*44;
+  const left=figRibbon(spine,inner,steps),right=figRibbon(spine,outer,steps);
+  g.strokeStyle=state.contour;
+  figInk(g,left,rng,.6,.06,1.5);figInk(g,right,rng,1,.05,1.2);
+  figInk(g,[left[2],right[2]],rng,.5,0,1);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1);
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,inner,outer,30,rng,.9);
+}
+// A classical chelys lyre: two curved arms rising from a soundbox to a crossbar, with strings strung
+// between, the soundbox low on the frame and the yoke high.
+function figLyre(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,40),steps=48;
+  const armOut=t=>9+Math.sin(Math.PI*clamp(t,0,1))*34,armIn=t=>5+Math.sin(Math.PI*clamp(t,0,1))*17;
+  const leftOut=figRibbon(spine,t=>-armOut(t),steps),leftIn=figRibbon(spine,t=>-armIn(t),steps);
+  const rightIn=figRibbon(spine,t=>armIn(t),steps),rightOut=figRibbon(spine,t=>armOut(t),steps);
+  g.strokeStyle=state.contour;
+  figInk(g,leftOut,rng,.7,.07,1.3);figInk(g,leftIn,rng,.7,.09,1);
+  figInk(g,rightIn,rng,.7,.09,1);figInk(g,rightOut,rng,.7,.07,1.3);
+  const box=spine.at(.06);g.save();g.translate(box.x,box.y);g.rotate(Math.atan2(box.ty,box.tx));
+  g.lineWidth=1.4;g.beginPath();g.ellipse(0,0,19,10,0,0,TAU);g.stroke();g.restore();
+  const i92=Math.round(steps*.92),yl=leftIn[i92],yr=rightIn[i92];
+  g.lineWidth=1.5;g.beginPath();g.moveTo(yl.x,yl.y);g.lineTo(yr.x,yr.y);g.stroke();
+  for(let i=0;i<7;i++){
+    const u=-1+i/3,t0=.14,t1=.9,a=spine.at(t0),b=spine.at(t1);
+    const x0=a.x+a.px*u*armIn(t0)*.8,y0=a.y+a.py*u*armIn(t0)*.8,x1=b.x+b.px*u*armIn(t1)*.8,y1=b.y+b.py*u*armIn(t1)*.8;
+    g.lineWidth=.7;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+  }
+  if(state.hatchFrac>0){
+    g.strokeStyle=state.hatch;
+    figHatch(g,spine,t=>-armOut(t),t=>-armIn(t),Math.round(20*state.hatchFrac),rng);
+    figHatch(g,spine,armIn,armOut,Math.round(20*state.hatchFrac),rng);
+  }
+  if(state.wash){g.fillStyle=state.wash;figWash(g,leftOut,leftIn);figWash(g,rightIn,rightOut);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-armOut(t),armOut,22,rng,.7);
+}
+// A pointed diadem: a thin band that arcs past the stars with occasional spikes, and a jewel collar
+// set clear of each star's rim.
+function figCrown(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,34),steps=48;
+  const band=t=>5+(Math.abs(Math.sin(t*Math.PI*2.4))>.8?17:0);
+  const left=figRibbon(spine,t=>-band(t)*.45,steps),right=figRibbon(spine,band,steps);
+  g.strokeStyle=state.contour;g.lineWidth=1.2;figInk(g,left,rng,.6,.06,1.2);figInk(g,right,rng,.6,.06,1.2);
+  for(const p of [p0,p1,p2]){
+    g.lineWidth=1.2;g.beginPath();g.arc(p.x,p.y,p.r+14,0,TAU);g.stroke();
+    g.beginPath();g.arc(p.x,p.y,p.r+21,-.65,.65);g.stroke();
+  }
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-band(t)*.45,band,Math.round(40*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-band(t)*.45-2,t=>band(t)+2,24,rng,.9);
+}
+const FIGURE_SHAPES=[figNeedle,figSail,figLyre,figCrown];
+function buildFigureLayer(chart,frame,count,curScale){
+  const w=Math.max(1,Math.ceil(frame.w*curScale)),h=Math.max(1,Math.ceil(frame.h*curScale));
+  const c=makeCanvas(w,h),g=c.getContext('2d');
+  g.scale(curScale,curScale);g.translate(-frame.originX,-frame.originY);g.lineJoin='round';g.lineCap='round';
+  const rng=seeded(48200+chart.id*104729),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
+  const contourA=(onPaper()?.4:.3)*fade,hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07;
+  const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,
+    hatchFrac:expired?0:count/3,wash:(!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
+  const [p0,p1,p2]=chart.stars;
+  FIGURE_SHAPES[chart.id](g,p0,p1,p2,frame.side,rng,state);
+  // Never let the ink cross the orbit rings, release marks, or the dotted guide around a star.
+  g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#000';
+  for(const s of chart.stars){g.beginPath();g.arc(s.x,s.y,s.r+8,0,TAU);g.fill();}
+  g.restore();
+  return {canvas:c,count,completed:chart.completed,expired:chart.expired};
+}
+function drawConstellationFigure(chart){
+  if(chart.stars.length<3)return;
+  if(sy(chart.entry.y)<-190||sy(chart.stars[2].y)>H+210)return;
+  const frame=figFrame(chart),count=chart.stars.filter(n=>n.visited).length;
+  const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+frame.side+':'+bucket;
+  let layer=figureLayers.get(key);
+  if(!layer||layer.count!==count||layer.completed!==chart.completed||layer.expired!==chart.expired){
+    layer=buildFigureLayer(chart,frame,count,scale);figureLayers.set(key,layer);
+  }
+  const x=sx(frame.originX),y=sy(frame.originY);
+  if(x>W||y>H||x+layer.canvas.width<0||y+layer.canvas.height<0)return;
+  ctx.drawImage(layer.canvas,x,y);
+}
+
 function drawConstellations(){
   for(const chart of world.constellations){
     if(!chart.stars.length||sy(chart.entry.y)<-150||sy(chart.stars[chart.stars.length-1].y)>H+170)continue;
