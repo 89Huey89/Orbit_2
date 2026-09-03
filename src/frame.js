@@ -100,6 +100,7 @@ function drawPlateFrame(){
 function render(dt){
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
+  for(const g of world.nebulas)drawHazard(g);
   drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)drawHazard(h);
   drawAim(aim);drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();

@@ -138,17 +138,37 @@ function figCrown(g,p0,p1,p2,side,rng,state){
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-band(t)*.45-2,t=>band(t)+2,24,rng,.9);
 }
+// A placeholder for catalogue figures that have no engraving of their own yet: a broken
+// contour joining the three stars, doubled as a hairline, with a small ornament at the
+// middle star. It reads as an asterism on the plate without claiming to be a figure.
+function figAsterism(g,p0,p1,p2,side,rng,state){
+  const spine=figSpine(p0,p1,p2,side,30),steps=44;
+  const swell=t=>3+Math.sin(Math.PI*clamp(t,0,1))*9;
+  const left=figRibbon(spine,t=>-swell(t),steps),right=figRibbon(spine,swell,steps);
+  g.strokeStyle=state.contour;
+  figInk(g,left,rng,.8,.14,1.25);figInk(g,right,rng,.8,.14,1.25);
+  figInk(g,figRibbon(spine,()=>0,steps),rng,.6,.22,.7);
+  const mid=spine.at(.5);
+  g.save();g.translate(mid.x+mid.px*(swell(.5)+11),mid.y+mid.py*(swell(.5)+11));g.rotate(Math.atan2(mid.ty,mid.tx));
+  g.lineWidth=1.1;g.beginPath();g.arc(0,0,6.5,0,TAU);g.stroke();
+  g.beginPath();g.moveTo(-10,0);g.lineTo(10,0);g.moveTo(0,-10);g.lineTo(0,10);g.stroke();g.restore();
+  for(const q of [p0,p1,p2]){g.lineWidth=.9;g.beginPath();g.arc(q.x,q.y,q.r+13,-.5,.5);g.stroke();g.beginPath();g.arc(q.x,q.y,q.r+13,Math.PI-.5,Math.PI+.5);g.stroke();}
+  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-swell(t),swell,Math.round(34*state.hatchFrac),rng);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  g.fillStyle=state.contour;figStipple(g,spine,t=>-swell(t)-3,t=>swell(t)+3,22,rng,.85);
+}
 const FIGURE_SHAPES=[figNeedle,figSail,figLyre,figCrown];
+const figureFor=chart=>FIGURE_SHAPES[chart.catalogueIndex??chart.id]||figAsterism;
 function buildFigureLayer(chart,frame,count,curScale){
   const w=Math.max(1,Math.ceil(frame.w*curScale)),h=Math.max(1,Math.ceil(frame.h*curScale));
   const c=makeCanvas(w,h),g=c.getContext('2d');
   g.scale(curScale,curScale);g.translate(-frame.originX,-frame.originY);g.lineJoin='round';g.lineCap='round';
-  const rng=seeded(48200+chart.id*104729),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
+  const rng=seeded(48200+((chart.catalogueIndex??chart.id)+chart.id*13)*104729),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
   const contourA=(onPaper()?.4:.3)*fade,hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07;
   const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,
     hatchFrac:expired?0:count/3,wash:(!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
   const [p0,p1,p2]=chart.stars;
-  FIGURE_SHAPES[chart.id](g,p0,p1,p2,frame.side,rng,state);
+  figureFor(chart)(g,p0,p1,p2,frame.side,rng,state);
   // Never let the ink cross the orbit rings, release marks, or the dotted guide around a star.
   g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#000';
   for(const s of chart.stars){g.beginPath();g.arc(s.x,s.y,s.r+8,0,TAU);g.fill();}
@@ -162,6 +182,7 @@ function drawConstellationFigure(chart){
   const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+frame.side+':'+bucket;
   let layer=figureLayers.get(key);
   if(!layer||layer.count!==count||layer.completed!==chart.completed||layer.expired!==chart.expired){
+    if(figureLayers.size>10)figureLayers.clear();
     layer=buildFigureLayer(chart,frame,count,scale);figureLayers.set(key,layer);
   }
   const x=sx(frame.originX),y=sy(frame.originY);
@@ -290,6 +311,7 @@ function drawNode(n,aim){
 }
 function drawGravitationalLenses(){
   for(const h of world.hazards){
+    if(h.kind&&h.kind!=='hole')continue;
     const x=sx(h.x),y=sy(h.y),outer=gravityRadius(h)*scale,inner=(h.r+1)*scale,diameter=outer*2;
     if(x+outer<0||x-outer>W||y+outer<0||y-outer>H)continue;
     if(!lensPatch)lensPatch=makeCanvas(640,640);
@@ -312,7 +334,50 @@ function drawGravitationalLenses(){
     ctx.restore();
   }
 }
+// Palettes for the two later hazard kinds. The black-hole colours above are untouched.
+definePlate('field',{
+  night:{flareCore:'244,222,168',flareRim:'226,178,112',flareRay:'223,166,109',flareEdge:'205,159,122',fog:'168,182,190',fogEdge:'139,156,168'},
+  paper:{flareCore:'176,118,38',flareRim:'150,100,32',flareRay:'160,84,52',flareEdge:'150,100,32',fog:'96,74,52',fogEdge:'58,42,28'}
+});
+// A sunspot flare: a small dark core inside a ring of outward burin rays. The engraving
+// says push, not pull — the rays leave the disc rather than falling into it.
+function drawFlare(h){
+  const x=sx(h.x),y=sy(h.y),r=h.r*scale,core=hazardCore(h)*scale;if(y<-r*4||y>H+r*4)return;
+  const c=ink.field,rng=seeded(h.seed),pulse=reducedMotion?1:.93+.07*Math.sin(world.time*1.6+(h.phase||0));
+  ctx.save();ctx.translate(x,y);
+  for(let i=0;i<34;i++){
+    const a=i/34*TAU+(h.phase||0)*.1,len=r*(.55+rng()*1.15)*pulse;
+    ctx.strokeStyle=`rgba(${c.flareRay},${(.1+rng()*.24)*pulse})`;ctx.lineWidth=(i%3?.45:.8)*scale;
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*(core+2),Math.sin(a)*(core+2));ctx.lineTo(Math.cos(a)*(core+2+len),Math.sin(a)*(core+2+len));ctx.stroke();
+  }
+  for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(${c.flareEdge},${.26-i*.07})`;ctx.lineWidth=(i?.45:.9)*scale;ctx.beginPath();ctx.arc(0,0,r*(1+i*.16),0,TAU);ctx.stroke();}
+  ctx.fillStyle=`rgba(${c.flareCore},${.5*pulse})`;ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.fill();
+  ctx.strokeStyle=`rgba(${c.flareRim},.85)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.stroke();
+  for(let i=0;i<9;i++){const a=rng()*TAU,d=rng()*core*.8;ctx.fillStyle=`rgba(${c.flareRim},${.18+rng()*.3})`;ctx.fillRect(Math.cos(a)*d,Math.sin(a)*d,.9,.9);}
+  ctx.restore();
+}
+// A nebula patch: stippled cloud, no rim and no core, drawn only to obscure.
+function drawNebula(h){
+  const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(x+r<0||x-r>W||y+r<0||y-r>H)return;
+  const c=ink.field,rng=seeded(h.seed);
+  ctx.save();ctx.translate(x,y);
+  for(let i=0;i<720;i++){
+    const a=rng()*TAU,d=Math.sqrt(rng())*r,fade=1-d/r;
+    ctx.fillStyle=`rgba(${c.fog},${(.07+rng()*.26)*fade})`;
+    ctx.fillRect(Math.cos(a)*d,Math.sin(a)*d*.82,.7+rng()*1.1,.7);
+  }
+  ctx.strokeStyle=`rgba(${c.fogEdge},.16)`;ctx.lineWidth=.5;
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    const rr=r*(.55+i*.2);
+    for(let j=0;j<=26;j++){const a=j/26*TAU,jr=rr*(1+(rng()-.5)*.3);const px=Math.cos(a)*jr,py=Math.sin(a)*jr*.82;if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+    ctx.closePath();ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawHazard(h){
+  if(h.kind==='nebula')return drawNebula(h);
+  if(h.kind==='flare')return drawFlare(h);
   const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(y<-r*3||y>H+r*3)return;
   ctx.save();ctx.translate(x,y);const rng=seeded(h.seed),pulse=reducedMotion?1:.95+.05*Math.sin(world.time*1.2+(h.phase||0)),paper=onPaper();
   const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
@@ -371,10 +436,11 @@ function drawAim(aim){
       line(x+nx*2.5*scale,y+ny*2.5*scale,x-nx*2.5*scale,y-ny*2.5*scale,`rgba(${ink.marks.slingAimTick},.45)`,.7);
     }
   }
-  if(aim?.perfect){
+  if(aim?.perfect&&!preview.fogged){
     ctx.strokeStyle=`rgba(${ink.marks.aimPerfectArc},.65)`;ctx.lineWidth=1.2*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();
   }
-  if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=.8;ctx.strokeRect(-2.5,-2.5,5,5);}
+  if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
+  else if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=.8;ctx.strokeRect(-2.5,-2.5,5,5);}
   else if(blocked){line(bx-3,by-3,bx+3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);line(bx+3,by-3,bx-3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);}
   ctx.restore();
 }

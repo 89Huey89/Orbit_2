@@ -10,14 +10,57 @@ let frameTime=0,accumulator=0,toastLife=0,deathShown=false,screenFlash=0,lastSco
 let lastChapter=-1,recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
+let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
 const DARKNESS_MULT={relaxed:.72,classic:1,hardcore:1.35};
 let difficulty=storage.get('orbit.difficulty.v1','classic');
 if(!(difficulty in DARKNESS_MULT))difficulty='classic';
-function setDifficulty(value){difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
+// The daily plate: one shared course a day, drawn from the UTC date, always at Classic
+// pressure, with its own record. The choice itself is never remembered between visits.
+function utcDay(){try{return new Date().toISOString().slice(0,10);}catch(_){return '1970-01-01';}}
+function dayStamp(date){let h=0x811c9dc5;for(let i=0;i<date.length;i++){h=Math.imul(h^date.charCodeAt(i),0x01000193);}return h>>>0;}
+let dailyOn=false,dailyDay=utcDay(),dailySeed=dayStamp(dailyDay),dailyBest=0;
+function readDailyBest(){
+  try{const raw=JSON.parse(storage.get('orbit.daily.v1','null'));if(raw&&raw.date===dailyDay)return Math.max(0,Number(raw.best)||0);}catch(_){}
+  return 0;
+}
+const activeDifficulty=()=>dailyOn?'classic':difficulty;
+const currentBest=()=>dailyOn?dailyBest:best;
+function recordBest(score){
+  if(dailyOn){if(score>dailyBest){dailyBest=score;storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));}}
+  else if(score>best){best=score;storage.set('orbit.best.v1',best);}
+}
+function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
 function syncDifficulty(){
-  for(const key in DARKNESS_MULT)$('diff-'+key).setAttribute('aria-pressed',String(key===difficulty));
-  if(world)world.darknessMult=DARKNESS_MULT[difficulty];
+  for(const key in DARKNESS_MULT)$('diff-'+key).setAttribute('aria-pressed',String(key===activeDifficulty()));
+  if(world)world.darknessMult=DARKNESS_MULT[activeDifficulty()];
+}
+function syncDaily(){
+  game.classList.toggle('daily',dailyOn);
+  $('daily').setAttribute('aria-pressed',String(dailyOn));
+  $('daily-date').textContent=dailyOn?'Tabula diei \u00b7 '+dailyDay:'';
+  $('best').textContent=currentBest();
+  syncDifficulty();
+}
+function setDaily(on){
+  dailyOn=on;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  syncDaily();
+  if(world&&world.state==='ready'){newWorld();recordAtStart=currentBest();if(W&&H)render(0);}
+}
+function scoreLine(){
+  const charts=world.constellationsCompleted;
+  return 'Orbit \u00b7 '+(dailyOn?'Tabula diei '+dailyDay:'Ascent')+' \u00b7 '+world.score+' points \u00b7 row '+Math.floor(world.progress)+
+    ' \u00b7 '+charts+' constellation'+(charts===1?'':'s');
+}
+function copyScore(){
+  const line=scoreLine();
+  $('copy-score').textContent='COPIED';
+  try{
+    if(typeof navigator!=='undefined'&&navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
+      const p=navigator.clipboard.writeText(line);if(p&&typeof p.catch==='function')p.catch(()=>{$('copy-score').textContent='COPY SCORE';});
+    }else $('copy-score').textContent='COPY SCORE';
+  }catch(_){$('copy-score').textContent='COPY SCORE';}
+  return line;
 }
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
 const numerals=['I','II','III','IV'];

@@ -25,7 +25,7 @@ function event(type,e){
     else if(e.n.type==='gold')toast('GOLDEN DETOUR');
     else if(e.perfect)toast(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT');
     else if(e.n.type==='drift'&&e.n.row<10)toast('A WANDERING ORBIT');
-    if(world.score>best){best=world.score;storage.set('orbit.best.v1',best);}
+    recordBest(world.score);
   }else if(type==='chartProgress'){
     toast(e.chart.name+' · '+e.count+' / 3',1.8);
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
@@ -36,7 +36,7 @@ function event(type,e){
       audio.tone([261.63,329.63,392][i],1.1,i*.14,.24);
     }
     $('announcement').textContent=e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
-    if(world.score>best){best=world.score;storage.set('orbit.best.v1',best);}
+    recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45});
@@ -45,9 +45,12 @@ function event(type,e){
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
     burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6});
     toast('SHIELD ABSORBED THE IMPACT',1.8);
+  }else if(type==='observation'){
+    toast('OBSERVATION \u00b7 '+e.latin,2.6);
+    audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     audio.tone(698.46,.28,0,.16);floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
-    if(world.score>best){best=world.score;storage.set('orbit.best.v1',best);}
+    recordBest(world.score);
   }else if(type==='death'){
     audio.death();burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
     rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6});screenFlash=1;
@@ -57,8 +60,9 @@ function event(type,e){
 function newWorld(){
   glyphs.clear();trail=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
-  recordAtStart=best;world=new OrbitWorld(++runSeed,W/scale,H/scale,event);
-  world.darknessMult=DARKNESS_MULT[difficulty];
+  recordAtStart=currentBest();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event);
+  world.darknessMult=DARKNESS_MULT[activeDifficulty()];
+  $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
 function setPlaying(){
@@ -70,14 +74,20 @@ function setPlaying(){
 function showEnd(){
   deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
   $('end-score').textContent=world.score;$('end-reason').textContent=world.reason;
-  $('record').textContent=world.score>recordAtStart?'A NEW PERSONAL BEST':'BEST '+best;
+  $('record').textContent=world.score>recordAtStart?'A NEW PERSONAL BEST':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
-  $('end-constellations').textContent=world.constellationsCompleted+' / 4 constellations traced';
+  const row=Math.floor(world.progress),newRow=row>bestRow;
+  if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
+  $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
+  const charts=world.constellationsCompleted;
+  $('end-constellations').textContent=charts+' constellation'+(charts===1?'':'s')+' traced';
+  $('end-observations').textContent=world.observations.map(o=>o.latin).join(', ');
+  $('end-daily').textContent=dailyOn?'Tabula diei · '+dailyDay:'';
   $('end-tip').textContent=world.captures===0?'Release when the dotted line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='CAUGHT BY A BLACK HOLE'?'Close flybys bend your path. Follow the curved guide and leave room for the dark center.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
   $('announcement').textContent='Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
 function updateUI(dt){
-  if(lastScore!==world.score){lastScore=world.score;$('score').textContent=world.score;$('best').textContent=best;}
+  if(lastScore!==world.score){lastScore=world.score;$('score').textContent=world.score;$('best').textContent=currentBest();}
   const pace='SPEED ×'+world.speedMultiplier().toFixed(1);if($('pace').textContent!==pace)$('pace').textContent=pace;
   const flow=world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'';if($('flow').textContent!==flow)$('flow').textContent=flow;
   const shieldText=world.player.shielded?'SHIELD ARMED':'';if($('shield').textContent!==shieldText)$('shield').textContent=shieldText;
@@ -105,7 +115,7 @@ function enterFullscreen(){
 }
 function handleInput(){
   audio.unlock();
-  if(world.state==='ready'){recordAtStart=best;world.start();setPlaying();enterFullscreen();}
+  if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing')world.release();
   else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
   else if(world.state==='paused'){world.state='playing';accumulator=0;frameTime=performance.now();$('pause').classList.add('hidden');}
@@ -124,6 +134,8 @@ window.addEventListener('blur',pause);
 $('sound').addEventListener('click',()=>{audio.toggle();storage.set('orbit.sound.v1',audio.enabled?'on':'off');syncSound();if(audio.enabled)audio.tone(440,.25,0,.2);});
 $('plate').addEventListener('click',()=>{setPlate(onPaper()?'night':'paper');if(audio.enabled)audio.brush(1500,.12);});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidateArt();if(world)render(0);}).catch(()=>{});
+$('daily').addEventListener('click',()=>{setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);});
+$('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 $('diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
 $('diff-classic').addEventListener('click',()=>setDifficulty('classic'));
 $('diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
@@ -147,4 +159,4 @@ function tick(now){
   }
   requestAnimationFrame(tick);
 }
-syncPlate();resize();newWorld();syncSound();syncDifficulty();$('best').textContent=best;render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);

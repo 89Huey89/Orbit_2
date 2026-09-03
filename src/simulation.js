@@ -86,14 +86,46 @@ function transferContact(p,v,n,time,limit) {
   if(arrival>limit+1e-8)return null;
   return {...sample(arrival),time:arrival,perfect};
 }
+// Twelve engraved asterisms. Each entry carries the three lateral star offsets of its
+// fork, in the fixed bottom-to-top generation order. Catalogue entries 0-3 belong to
+// regions 0-3 and are unchanged; later regions draw from the whole catalogue in a
+// seeded order that does not repeat until every figure has been used.
+const CONSTELLATIONS = [
+  {name:'THE NEEDLE',shape:[112,151,105]},
+  {name:'THE SAIL',shape:[143,91,144]},
+  {name:'THE LYRE',shape:[100,152,117]},
+  {name:'THE CROWN',shape:[139,92,143]},
+  {name:'THE COMPASS',shape:[106,148,128]},
+  {name:'THE HOURGLASS',shape:[146,97,140]},
+  {name:'THE SERPENT',shape:[99,147,119]},
+  {name:'THE ARGO',shape:[134,102,146]},
+  {name:'THE ASTROLABE',shape:[121,149,101]},
+  {name:'THE QUILL',shape:[148,105,135]},
+  {name:'THE LANTERN',shape:[103,141,124]},
+  {name:'THE MOTH',shape:[140,100,150]}
+];
+// Named feats. Each is recorded at most once per run and reported as it happens.
+const OBSERVATIONS = {
+  perfectThree:{name:'THREE PERFECT TRANSFERS',latin:'TRES PERFECTI'},
+  skipFive:{name:'FIVE ORBITS SKIPPED',latin:'SALTUS QUINQUE'},
+  maxSpeed:{name:'THE FULL PACE OF THE CHART',latin:'VELOCITAS SUMMA'},
+  graze:{name:'A BLACK HOLE GRAZED AT FULL SPEED',latin:'PERICULUM'},
+  pureChart:{name:'A CONSTELLATION IN PERFECT TRANSFERS',latin:'LINEA PURA'},
+  fortyRows:{name:'THE FORTIETH ROW',latin:'ALTITUDO'},
+  threeMinutes:{name:'THREE MINUTES ALOFT',latin:'VIGILIA'}
+};
+// Black holes pull inward and are lethal to their drawn edge; sunspot flares push
+// outward over the same field and only their smaller core kills. An absent kind is a
+// black hole, so older hazards and fixtures keep their behaviour.
+function hazardCore(h) { return h.kind==='flare'?h.r*.6:h.r; }
 function gravityRadius(h) { return h.r+100; }
 function bendVelocity(p,hazards,dt) {
   let ax=0,ay=0;
   for(const h of hazards){
     const dx=h.x-p.x,dy=h.y-p.y,d2=dx*dx+dy*dy,reach=gravityRadius(h);
     if(d2>=reach*reach||d2<1e-10)continue;
-    const d=Math.sqrt(d2),edge=1-d/reach;
-    const pull=1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
+    const d=Math.sqrt(d2),edge=1-d/reach,sign=h.kind==='flare'?-1:1;
+    const pull=sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
     ax+=dx/d*pull;ay+=dy/d*pull;
   }
   // This local arcade field turns momentum while preserving earned speed.
@@ -113,7 +145,7 @@ function flightStep(p,nodes,hazards,time,dt,launchY,width) {
     if(contact&&contact.time<first){first=contact.time;hit={kind:'node',n,contact};}
   }
   for(const h of hazards){
-    const t=segmentCircle(x,y,bx,by,h.x,h.y,h.r+3);
+    const t=segmentCircle(x,y,bx,by,h.x,h.y,hazardCore(h)+3);
     if(t!==null&&t*dt<=first){first=t*dt;hit={kind:'hole',h};}
   }
   const boundary=width/2+16;
@@ -143,8 +175,17 @@ class OrbitWorld {
     this.random = seeded(seed); this.seed = seed; this.emit = emit;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
-    this.nodes = []; this.hazards = []; this.row = 0; this.serial = 0;
+    this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
     this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;
+    // Figure order and nebula placement use their own streams so the main course
+    // generation for a seed is unaffected by them.
+    const shuffle=seeded((seed*2654435761>>>0)^0x9e3779b9);
+    const deal=list=>{for(let i=list.length-1;i>0;i--){const j=Math.floor(shuffle()*(i+1));const t=list[i];list[i]=list[j];list[j]=t;}return list;};
+    // The eight later figures come first, then the four opening ones, so a region past
+    // the fourth never repeats a figure until the whole catalogue has been used.
+    this.catalogueOrder=[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
+    this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
+    this.perfectStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
@@ -158,14 +199,14 @@ class OrbitWorld {
   }
   generateRow() {
     const k = ++this.row, prev = this.lastMain, rng = this.random;
-    const region=Math.floor(k/8),local=k%8,fork=region<4&&local>=3&&local<=7;
+    const region=Math.floor(k/8),local=k%8,fork=local>=3&&local<=7;
     const side=((this.seed>>region)&1)?1:-1;
     const spread = Math.min(149, this.width * .29);
     let x = k === 1 ? 77 : k === 2 ? -75 : (rng()-.5)*spread*2;
     if (k > 2 && Math.abs(x - prev.baseX) < 58) x = clamp(x + (x < 0 ? 72 : -72), -spread, spread);
     let y = prev.baseY - (k <= 2 ? 207 : 193 + Math.min(48, k * 1.5) + rng()*28);
     let radius = k < 3 ? 54 : 54 - Math.min(13,k*.39) + rng()*7;
-    if(fork){x=local===3||local===7?0:-side*[0,0,0,0,100,82,106][local];radius=local===3||local===7?55:55-region*2;}
+    if(fork){x=local===3||local===7?0:-side*[0,0,0,0,100,82,106][local];radius=local===3||local===7?55:55-Math.min(region,4)*2;}
     const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : 'still';
     if(type==='sling'){if(k>=7)x=0;radius=57;}
     const slingOrigin=this.nodes.find(q=>q.shortcut&&k>q.row&&k<=q.row+2);
@@ -178,14 +219,15 @@ class OrbitWorld {
     if(fork){
       n.routeId=region;n.routeRole=local===3?'entry':local===7?'exit':'main';
       if(local===3){
-        this.constellations.push({id:region,name:['THE NEEDLE','THE SAIL','THE LYRE','THE CROWN'][region],entry:n,main:[],stars:[],exit:null,mask:0,completed:false,expired:false,flash:0,bonus:60});
+        const catalogueIndex=this.catalogueFor(region);
+        this.constellations.push({id:region,catalogueIndex,name:CONSTELLATIONS[catalogueIndex].name,entry:n,main:[],stars:[],exit:null,mask:0,completed:false,expired:false,pure:true,flash:0,bonus:60});
       }else{
         const chart=this.constellations.find(c=>c.id===region);
         if(local===7)chart.exit=n;
         else{
           chart.main.push(n);
-          const i=local-4,shapes=[[112,151,105],[143,91,144],[100,152,117],[139,92,143]];
-          const star=this.makeNode(side*shapes[region][i],y+[24,42,18][i],35-region,k,'gold');
+          const i=local-4,shape=CONSTELLATIONS[chart.catalogueIndex].shape;
+          const star=this.makeNode(side*shape[i],y+[24,42,18][i],35-Math.min(region,4),k,'gold');
           star.cap=star.r+9;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
         }
       }
@@ -214,9 +256,37 @@ class OrbitWorld {
         if(smooth.some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+prev.amp+n.amp+25))continue;
         if(slingOrigin&&tangentPaths(slingOrigin,slingOrigin.shortcut).some(p=>pointSegment(hx,hy,p.x,p.y,slingOrigin.shortcut.x,slingOrigin.shortcut.y)<r+25))continue;
         if(slingOrigin&&[...orbitTangents(slingOrigin,slingOrigin.shortcut,1),...orbitTangents(slingOrigin,slingOrigin.shortcut,-1)].some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+25))continue;
-        this.hazards.push({x:hx,y:hy,r,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false}); break;
+        // From the third region, sunspot flares alternate with black holes under the
+        // same clearance rules: they repel instead of pulling and only their core kills.
+        const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'hole';
+        this.hazards.push({x:hx,y:hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false}); break;
       }
     }
+    // A nebula patch lies across one of the tangent routes between the last two main
+    // nodes. It is inert: it neither kills nor pulls, it only hides the far part of the
+    // aiming guide. It never covers a capture band, a drift envelope, or a hazard.
+    if (k >= 12 && k%4 === 0) {
+      const fog=this.nebulaRandom,routes=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
+      for (let tries=0;tries<14&&routes.length;tries++) {
+        const path=routes[Math.floor(fog()*routes.length)],t=.34+fog()*.32;
+        const gx=lerp(path.x,path.bx,t),gy=lerp(path.y,path.by,t);
+        // The cloud is grown to the largest size that still clears every capture band,
+        // drift envelope and hazard field around it, and dropped if that is under 60.
+        let room=90;
+        for(const q of this.nodes)room=Math.min(room,Math.hypot(gx-q.baseX,gy-q.baseY)-q.cap-q.amp-8);
+        for(const h of this.hazards)room=Math.min(room,Math.hypot(gx-h.x,gy-h.y)-gravityRadius(h)+30);
+        for(const g of this.nebulas)room=Math.min(room,Math.hypot(gx-g.x,gy-g.y)-g.r);
+        if(room<60)continue;
+        this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(90,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
+      }
+    }
+  }
+  catalogueFor(region) { return region<4?region:this.catalogueOrder[(region-4)%CONSTELLATIONS.length]; }
+  // A named feat, reported and recorded once per run.
+  observe(key) {
+    if(this.observed.has(key)||!OBSERVATIONS[key])return false;
+    this.observed.add(key);const record={key,...OBSERVATIONS[key]};
+    this.observations.push(record);this.emit('observation',record);return true;
   }
   ensureAhead() { while (this.lastMain.y > this.cameraY-350) this.generateRow(); }
   positionPlayer() {
@@ -227,7 +297,9 @@ class OrbitWorld {
   start() { if(this.state!=='ready')return; this.state='playing'; this.emit('start',{}); }
   charge() { const p=this.player;return p.node&&p.node.type==='sling'?clamp(p.orbitSweep/TAU,0,1):0; }
   speedMultiplier(speed=this.player.node?this.player.speed:Math.hypot(this.player.vx,this.player.vy)) { return clamp(speed/BASE_SPEED,1,MAX_SPEED/BASE_SPEED); }
-  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*this.darknessMult; }
+  // Consecutive perfect transfers past the second ease the pursuit by 3% each, to 15%.
+  darknessRelief() { return 1-Math.min(.15,Math.max(0,this.perfectStreak-2)*.03); }
+  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*this.darknessMult*this.darknessRelief(); }
   launchVelocity() {
     const p=this.player,rawSpeed=Math.hypot(p.vx,p.vy),speed=Math.min(MAX_SPEED,rawSpeed),ratio=speed/Math.max(1e-8,rawSpeed);
     // Bound repeated assists from moving planets without changing the heading.
@@ -258,10 +330,17 @@ class OrbitWorld {
     this.combo=quick?Math.min(5,this.combo+1):1; this.maxCombo=Math.max(this.maxCombo,this.combo);
     const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=Math.round(baseGain*scoreMultiplier)+skipBonus;
     this.score+=gain; this.captures++; this.perfects+=perfect?1:0;
+    this.perfectStreak=perfect?this.perfectStreak+1:0;
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
     this.shake=perfect?1.8:1.0;
     this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo});
+    if(this.perfectStreak>=3)this.observe('perfectThree');
+    if(skipped>=5)this.observe('skipFive');
+    if(this.progress>=40)this.observe('fortyRows');
     if(n.type==='shield'&&!p.shielded){p.shielded=true;this.emit('shield',{x:n.x,y:n.y});}
+    if(n.routeId!==undefined&&!perfect){
+      const route=this.constellations.find(c=>c.id===n.routeId);if(route)route.pure=false;
+    }
     if(n.routeRole==='star'){
       const chart=this.constellations.find(c=>c.id===n.routeId);
       if(chart&&!chart.completed&&!chart.expired){
@@ -270,6 +349,7 @@ class OrbitWorld {
           chart.completed=true;chart.flash=2.4;this.constellationsCompleted++;
           this.score+=chart.bonus;this.darknessGrace=4;
           this.emit('constellation',{chart,x:n.x,y:n.y,gain:chart.bonus});
+          if(chart.pure)this.observe('pureChart');
         }else this.emit('chartProgress',{chart,x:n.x,y:n.y,count:chart.stars.filter(s=>s.visited).length});
       }
     }
@@ -286,11 +366,11 @@ class OrbitWorld {
   hazardHit(h) {
     if(this.state!=='playing')return;
     const p=this.player;
-    if(!p.shielded){this.die('CAUGHT BY A BLACK HOLE');return;}
+    if(!p.shielded){this.die(h.kind==='flare'?'SEARED BY A SUNSPOT FLARE':'CAUGHT BY A BLACK HOLE');return;}
     p.shielded=false;
     const dx=p.x-h.x,dy=p.y-h.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
-    const clear=h.r+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
+    const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
   }
   resize(width,height) {
@@ -319,6 +399,7 @@ class OrbitWorld {
       p.orbitSweep+=turn;
       if(p.node.type==='sling'){
         if(p.speed<MAX_SPEED)p.speed=Math.min(MAX_SPEED,p.speed+STAR_GAIN*chargeStep/TAU);
+        if(p.speed>=MAX_SPEED)this.observe('maxSpeed');
         if((p.orbitSweep>=TAU||p.speed>=MAX_SPEED)&&!p.chargeAnnounced){p.chargeAnnounced=true;this.emit('charged',{x:p.node.x,y:p.node.y,max:p.speed>=MAX_SPEED});}
       }
       this.positionPlayer();
@@ -333,14 +414,18 @@ class OrbitWorld {
         else if(result.hit?.kind==='edge')this.die('LEFT THE STAR CHART');
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
-          if(!h.near&&pointSegment(h.x,h.y,ax,ay,p.x,p.y)<h.r+17){h.near=true;this.score+=5;this.emit('near',{x:p.x,y:p.y});}
+          if(!h.near&&pointSegment(h.x,h.y,ax,ay,p.x,p.y)<h.r+17){
+            h.near=true;this.score+=5;this.emit('near',{x:p.x,y:p.y});
+            if(h.kind!=='flare'&&Math.hypot(p.vx,p.vy)>=MAX_SPEED-.5)this.observe('graze');
+          }
         }
       }
     }
     if(wasOrbiting)for(const h of this.hazards){
       const d=pointSegment(h.x,h.y,oldX,oldY,p.x,p.y);
-      if(d<h.r+3)this.hazardHit(h);
+      if(d<hazardCore(h)+3)this.hazardHit(h);
     }
+    if(this.elapsed>=180)this.observe('threeMinutes');
     this.topY=Math.min(this.topY,p.y);
     const target=this.topY-this.height*.57;
     if(target<this.cameraY)this.cameraY=lerp(this.cameraY,target,1-Math.exp(-dt*4));
@@ -352,6 +437,8 @@ class OrbitWorld {
     this.ensureAhead();
     this.nodes=this.nodes.filter(n=>n===p.node||n.y<this.floorY+170);
     this.hazards=this.hazards.filter(h=>h.y<this.floorY+170);
+    this.nebulas=this.nebulas.filter(g=>g.y-g.r<this.floorY+170);
+    if(this.constellations.length>14)this.constellations=this.constellations.slice(-14);
     for(const chart of this.constellations){
       chart.flash=Math.max(0,chart.flash-dt);
       if(!chart.completed&&chart.stars.some(s=>!s.visited&&s.y-s.cap>this.floorY-4))chart.expired=true;
@@ -376,7 +463,27 @@ class OrbitWorld {
     if(best&&this.hazards.some(h=>{const t=segmentCircle(p.x,p.y,bx,by,h.x,h.y,h.r+3);return t!==null&&t<=hitAt;}))return null;
     const length=best?best.distance:p.node.type==='sling'?speed*1.9:83;
     this.flightPreview={points:[{x:p.x,y:p.y,time:0,distance:0},{x:p.x+dx*length,y:p.y+dy*length,time:length/speed,distance:length}],aim:best,curved:false,blocked:false,steps:0};
+    this.fogPreview();
     return best;
+  }
+  // A nebula hides everything beyond its near edge: the drawn preview stops there and
+  // is marked fogged. The aim itself, and the release marks on the current orbit, stand.
+  fogPreview() {
+    const preview=this.flightPreview;if(!preview)return preview;
+    preview.fogged=false;
+    if(!this.nebulas.length||preview.points.length<2)return preview;
+    const pts=preview.points;
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];let first=null;
+      for(const g of this.nebulas){
+        const t=segmentCircle(a.x,a.y,b.x,b.y,g.x,g.y,g.r);
+        if(t!==null&&(first===null||t<first))first=t;
+      }
+      if(first===null)continue;
+      const entry={x:lerp(a.x,b.x,first),y:lerp(a.y,b.y,first),time:lerp(a.time,b.time,first),distance:lerp(a.distance,b.distance,first)};
+      preview.points=pts.slice(0,i+1).concat([entry]);preview.fogged=true;break;
+    }
+    return preview;
   }
   curvedAim(launch,duration) {
     const source=this.player,p={x:source.x,y:source.y,vx:launch.vx,vy:launch.vy};
@@ -394,7 +501,7 @@ class OrbitWorld {
         break;
       }
     }
-    preview.curved=bend>.001;this.flightPreview=preview;return preview.aim;
+    preview.curved=bend>.001;this.flightPreview=preview;this.fogPreview();return preview.aim;
   }
 }
 // END SIMULATION
