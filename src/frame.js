@@ -21,7 +21,7 @@ function frameCorner(g,x,y,dirX,dirY,color){
   g.beginPath();g.arc(x+4*dirX,y+4*dirY,1.3,0,TAU);g.strokeStyle=color;g.lineWidth=.7;g.stroke();
 }
 function frameCompassRose(g,cx,cy,r,colors){
-  // The whole ornament, fleur tip included, stays within r+3px of cx,cy so callers can budget its footprint.
+  // The ornament and its four cardinal names stay within 3r of cx,cy, so callers can budget the footprint.
   g.save();g.translate(cx,cy);g.strokeStyle=colors.orn;g.lineWidth=.8;
   g.beginPath();g.arc(0,0,r,0,TAU);g.stroke();g.beginPath();g.arc(0,0,r*.5,0,TAU);g.stroke();
   for(let i=0;i<8;i++){
@@ -29,6 +29,45 @@ function frameCompassRose(g,cx,cy,r,colors){
     g.lineWidth=long?.9:.6;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);g.stroke();
   }
   g.fillStyle=colors.orn;g.beginPath();g.moveTo(0,-r-3);g.lineTo(-2,-r+1.2);g.lineTo(0,-r-.5);g.lineTo(2,-r+1.2);g.closePath();g.fill();
+  g.restore();
+  // The four winds named round the rose, each set on its own quarter of the ring.
+  const size=Math.max(4.6,r*.42),ring=r*1.9;
+  g.strokeStyle=colors.tickMinor;g.lineWidth=.5;g.beginPath();g.arc(cx,cy,ring-1.5,0,TAU);g.stroke();
+  g.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  g.fillStyle=colors.text;
+  const opts={align:'center',size,spacing:size*.14};
+  textAlongArc(g,'SEPTENTRIO',cx,cy,ring+size,-Math.PI/2,opts);
+  textAlongArc(g,'ORIENS',cx,cy,ring+size,0,opts);
+  textAlongArc(g,'OCCIDENS',cx,cy,ring+size,Math.PI,opts);
+  textAlongArc(g,'MERIDIES',cx,cy,ring,Math.PI/2,{...opts,inward:true});
+}
+// A cherubic wind-head, cut for the corner of the plate: a puffing face turned into the chart with its
+// breath streaming away from the mouth. Seeded so no two corners are the same head.
+function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed){
+  const rng=seeded(seed>>>0||1),R=radius;
+  g.save();g.translate(cx,cy);g.rotate(angle);
+  // The face, cut with few and heavy strokes so it still reads at the size of a margin ornament.
+  burinArc(g,0,0,R,0,TAU,rgb,alpha,1.1,seed+3,{segments:24,skips:2});
+  // Hair, a wreath of curls round the back of the head only.
+  for(let i=0;i<6;i++){
+    const a=Math.PI*.62+i/5*Math.PI*.76+(rng()-.5)*.1,cxx=Math.cos(a)*R*1.02,cyy=Math.sin(a)*R*1.02;
+    burinArc(g,cxx,cyy,R*(.3+rng()*.12),a-2.4,a+.9,rgb,alpha*(.7+rng()*.4),.75,seed+11+i*5,{segments:6,skips:0});
+  }
+  // Closed eyes under heavy brows, and the swell of two cheeks blown full of wind.
+  for(const s of [-1,1]){
+    burinArc(g,R*.06,s*R*.3,R*.24,-1,.7,rgb,alpha,.8,seed+31+(s>0?1:0),{segments:5,skips:0});
+    burinArc(g,R*.02,s*R*.32,R*.34,-.8,.35,rgb,alpha*.65,.6,seed+41+(s>0?1:0),{segments:4,skips:0});
+    burinArc(g,R*.34,s*R*.46,R*.42,-2.5,-.15,rgb,alpha*.8,.7,seed+51+(s>0?1:0),{segments:6,skips:0});
+  }
+  // The pursed mouth, blowing along the local x axis.
+  burinArc(g,R*.74,0,R*.2,0,TAU,rgb,alpha,.9,seed+61,{segments:10,skips:0});
+  g.fillStyle=`rgba(${rgb},${alpha*.7})`;g.beginPath();g.arc(R*.74,0,R*.09,0,TAU);g.fill();
+  // The breath: long tapering strokes leaving the mouth and spreading over the margin.
+  for(let i=0;i<5;i++){
+    const spread=(i-2)/2*.4,len=R*(2.1+rng()*2.2);
+    const x0=R*.98,y0=Math.sin(spread)*R*.28;
+    burinSegment(g,x0,y0,x0+Math.cos(spread)*len,y0+Math.sin(spread)*len,rgb,alpha*(.6-Math.abs(spread)*.5),.7,seed+71+i*7,{segments:6,skips:1,hair:false,wobble:1.1});
+  }
   g.restore();
 }
 function frameScaleBar(g,x,y,colors){
@@ -71,12 +110,19 @@ function buildFrameLayer(){
   // Restrained corner brackets at the inner rule.
   frameCorner(g,innerR,innerR,1,1,colors.orn);frameCorner(g,W-innerR,innerR,-1,1,colors.orn);
   frameCorner(g,innerR,H-innerR,1,-1,colors.orn);frameCorner(g,W-innerR,H-innerR,-1,-1,colors.orn);
+  // A wind-head in each corner, blowing along the diagonal into the chart, kept in the margin's tone.
+  {
+    const head=wide?14:9,inset=innerR+head*.9+(wide?3:2),windRgb=ink.base.inkSoft,windAlpha=onPaper()?.34:.24;
+    const corners=[[inset,inset,1,1],[W-inset,inset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
+    for(const [x,y,dx,dy] of corners)frameWindHead(g,x,y,Math.atan2(dy,dx),windRgb,windAlpha,head,51001+Math.round(x*7+y*13));
+  }
   // Marginalia in the flanks either side of the play channel — desktop only, and clear of the centre 55%.
   // Anchored a fixed distance off the bottom edge so the whole cluster (rose, bar, its label, the credit
   // line below) always lands inside the band regardless of how band scales.
   if(wide){
-    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,oy=H-15,roseR=7;
-    frameCompassRose(g,leftCx,oy,roseR,colors);
+    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,oy=H-15,roseR=13;
+    // The rose is set in the left flank, clear of the play channel, where its cardinal names have room.
+    frameCompassRose(g,leftCx,Math.min(H-roseR*3-band,H*.63),roseR,colors);
     frameScaleBar(g,rightX,oy-2,colors);
     g.font=`italic 6.5px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('Delineavit et sculpsit · Orbis Tabula',rightX,oy+10);

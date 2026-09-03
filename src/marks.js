@@ -102,6 +102,46 @@ function burinRect(g,x,y,w,h,rgb,alpha,weight,seed){
   burinSegment(g,x+w,y+h,x,y+h,rgb,alpha,weight,seed+13,{segments:segs,hair:false,wobble:.25});
   burinSegment(g,x,y+h,x,y,rgb,alpha,weight,seed+21,{segments:segs,hair:false,wobble:.25});
 }
+// Lettering set on a curve, the way an engraver letters a caption round a rim: every glyph is
+// placed at its own angle and turned tangent to the arc. Advances come from `measureText` where
+// the context provides one and from an average advance where it does not, so the routine works
+// on a bare stand-in as well as a browser canvas. The caller owns the font, fill and alpha.
+// options: {size, spacing, align:'start'|'center'|'end', inward, direction}
+// Returns {start,end,span} in radians so a caller can keep two captions from meeting.
+function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
+  const chars=Array.from(String(text??''));
+  if(!chars.length||!(r>.001))return {start:startAngle,end:startAngle,span:0};
+  const size=options.size??12,spacing=options.spacing??0,inward=!!options.inward;
+  const dir=options.direction??(inward?-1:1);
+  const measured=ch=>{
+    if(typeof g.measureText==='function'){
+      const m=g.measureText(ch);
+      if(m&&Number.isFinite(m.width)&&m.width>0)return m.width;
+    }
+    return size*(ch===' '?.34:.56);
+  };
+  const widths=chars.map(measured);
+  const length=widths.reduce((a,b)=>a+b,0)+spacing*(chars.length-1);
+  const span=length/r;
+  const align=options.align||'start';
+  const start=startAngle-dir*(align==='center'?span/2:align==='end'?span:0);
+  let walked=0;
+  for(let i=0;i<chars.length;i++){
+    walked+=(i?spacing:0)+widths[i]/2;
+    const a=start+dir*walked/r;
+    walked+=widths[i]/2;
+    if(chars[i]===' ')continue;
+    g.save();
+    g.textAlign='center';g.textBaseline='alphabetic';
+    g.translate(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    g.rotate(a+(inward?-Math.PI/2:Math.PI/2));
+    g.fillText(chars[i],0,0);
+    g.restore();
+  }
+  return {start,end:start+dir*span,span};
+}
+// The small seeded vocabulary the plate letters round its orbits.
+const RIM_CAPTIONS=['ORBITA','TABULA','MOTUS','SILENTIUM','ASCENSUS','VIGILIA'];
 const ringSprites=new Map();
 function engravedRing(radius,rgb,alpha,weight,seed){
   const rBucket=Math.round(radius*2)/2,aBucket=Math.round(alpha/.05)*.05;
