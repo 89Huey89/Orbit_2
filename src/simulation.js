@@ -112,8 +112,11 @@ const OBSERVATIONS = {
   graze:{name:'A BLACK HOLE GRAZED AT FULL SPEED',latin:'PERICULUM'},
   pureChart:{name:'A CONSTELLATION IN PERFECT TRANSFERS',latin:'LINEA PURA'},
   fortyRows:{name:'THE FORTIETH ROW',latin:'ALTITUDO'},
-  threeMinutes:{name:'THREE MINUTES ALOFT',latin:'VIGILIA'}
+  threeMinutes:{name:'THREE MINUTES ALOFT',latin:'VIGILIA'},
+  rightAngle:{name:'A RIGHT ANGLE OF ARRIVAL',latin:'ANGULUS RECTUS'}
 };
+// An arrival whose incoming line meets the orbit's radius this close to a right angle is a square.
+const SQUARE_TOLERANCE = 1.5;
 // Black holes pull inward and are lethal to their drawn edge; sunspot flares push
 // outward over the same field and only their smaller core kills. An absent kind is a
 // black hole, so older hazards and fixtures keep their behaviour.
@@ -186,7 +189,7 @@ class OrbitWorld {
     this.catalogueOrder=[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
     this.perfectStreak=0;this.observations=[];this.observed=new Set();
-    this.score = 0; this.captures = 0; this.perfects = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
+    this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
@@ -320,6 +323,10 @@ class OrbitWorld {
     const rvx=p.vx-(contact?contact.vx:n.vx),rvy=p.vy-(contact?contact.vy:n.vy),arrivalSpeed=Math.hypot(rvx,rvy),radius=Math.hypot(rx,ry);
     const cross=rx*rvy-ry*rvx,alignment=clamp(Math.abs(cross)/Math.max(1e-8,radius*arrivalSpeed),0,1);
     const perfect=!!contact?.perfect,scoreMultiplier=this.speedMultiplier(Math.hypot(p.vx,p.vy));
+    // The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry joined inside or
+    // outside the ring reads a little under or over; a hard turn toward the centre reads well under.
+    const angle=perfect?90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI:Math.atan2(Math.abs(cross),-(rx*rvx+ry*rvy))*180/Math.PI;
+    const square=!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
     p.dir=cross>=0?1:-1; p.angle=Math.atan2(ry,rx); p.rad=radius||n.r;p.tangentCapture=perfect;
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
@@ -329,11 +336,12 @@ class OrbitWorld {
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     this.combo=quick?Math.min(5,this.combo+1):1; this.maxCombo=Math.max(this.maxCombo,this.combo);
     const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=Math.round(baseGain*scoreMultiplier)+skipBonus;
-    this.score+=gain; this.captures++; this.perfects+=perfect?1:0;
+    this.score+=gain+squareBonus; this.captures++; this.perfects+=perfect?1:0; this.squares+=square?1:0;
     this.perfectStreak=perfect?this.perfectStreak+1:0;
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
     this.shake=perfect?1.8:1.0;
-    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo});
+    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
+    if(square)this.observe('rightAngle');
     if(this.perfectStreak>=3)this.observe('perfectThree');
     if(skipped>=5)this.observe('skipFive');
     if(this.progress>=40)this.observe('fortyRows');

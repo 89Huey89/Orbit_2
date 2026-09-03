@@ -63,6 +63,29 @@ assert.equal(holeHead.hit?.kind,'hole');assert(Math.abs(holeHead.y-27)<3,'A blac
 assert.equal(flareHead.hit?.kind,'hole');assert(Math.abs(flareHead.y-(24*.6+3))<3,'A flare only kills inside its smaller core');
 assert.equal(hazardCore({r:24}),24);assert.equal(hazardCore({r:24,kind:'hole'}),24);assert.equal(hazardCore({r:24,kind:'flare'}),24*.6);
 
+// The arrival angle reads 90 for a line exactly tangent to the drawn ring, a little off for a smooth
+// entry joined inside or outside it, and far below for a hard turn toward the centre. Only the exact
+// tangent is a square and earns its own bonus, once per landing, on top of the perfect transfer.
+function tangentArrival(offset){
+  const events=[],w=new OrbitWorld(31,440,860,(type,e)=>{if(type==='capture')events.push(e);}),origin=w.player.node;
+  const destination=w.makeNode(120,-400,54,1,'still');w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];
+  const path=orbitTangents(origin,destination,-1)[0];assert(path,'A tangent route must exist for the fixture');
+  w.player.angle=path.angle+offset;w.player.dir=-1;w.player.speed=150;w.positionPlayer();w.start();w.release();
+  for(let i=0;i<120*8&&w.state==='playing'&&!w.player.node;i++)w.update(step);
+  assert.equal(w.player.node,destination);assert.equal(events.length,1);return {event:events[0],world:w};
+}
+const exact=tangentArrival(0),shy=tangentArrival(.02);
+assert(exact.event.perfect&&Math.abs(exact.event.angle-90)<1e-6,'An exact tangent reads ninety degrees');
+assert(exact.event.square&&exact.event.squareBonus===10&&exact.world.squares===1,'An exact tangent is a square worth ten at the opening pace');
+assert(exact.world.observations.some(o=>o.key==='rightAngle'),'The first square is observed');
+assert(exact.world.score===exact.event.gain+10,'The square bonus is added beside the landing reward');
+assert(!shy.event.square&&Math.abs(shy.event.angle-90)>1.5&&Math.abs(shy.event.angle-90)<15,'A tangent released late joins off the ring and is not a square');
+{
+  const events=[],w=new OrbitWorld(32,440,860,(type,e)=>{if(type==='capture')events.push(e);}),destination=w.makeNode(0,-400,54,1,'still');
+  w.player.node=null;w.player.x=0;w.player.y=-400+54;w.player.vx=0;w.player.vy=-150;w.player.launch={row:0,sweep:1};w.state='playing';
+  assert.equal(w.capture(destination),true);assert.equal(events.length,1);
+  assert(!events[0].perfect&&!events[0].square&&events[0].angle<10,'A flight straight at the centre reads near zero');
+}
 function curvedFixture(speed=240,drift=false,angle=-.002){
   const captures=[],w=new OrbitWorld(712,440,860,(type,e)=>{if(type==='capture')captures.push(e);}),origin=w.player.node;
   origin.x=origin.baseX=-57;const destination=w.makeNode(70,-420,50,2,drift?'drift':'still');
@@ -412,10 +435,11 @@ const hit=new OrbitWorld(9);hit.start();hit.release();hit.hazards.push({x:hit.pl
 for(let i=0;i<15;i++)hit.update(step);assert.equal(hit.state,'dead');assert.equal(hit.reason,'CAUGHT BY A BLACK HOLE');
 const fade=new OrbitWorld(8);fade.start();fade.player.node.type='fading';fade.player.orbitTime=4.49;fade.update(.02);assert.equal(fade.reason,'THE ORBIT FADED');
 
+const LEDGER_KEY='orbit.ledger.v1';
 // Execute the complete script against native-API stand-ins. This catches boot,
 // input, storage, drawing-argument, and restart errors without a browser session.
-function runtime(width,height,storageBlocked=false,reduceMotion=false){
-  const events={},items=new Map(),raf=[],saved=new Map();
+function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
+  const events={},items=new Map(),raf=[],saved=new Map(Object.entries(seed));
   let lensCopies=0;
   const gradient={addColorStop(){}};
   // measureText is the one text metric the lettering routines ask for; the stand-in answers with a
@@ -435,11 +459,67 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES};',context);
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying};',context);
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
+  // ---------- The ledger and the catalogue ----------
+  // A browser with no ledger — or with a ledger that is not JSON at all — opens on an empty one, with
+  // every cosmetic at its classic default and nothing unlocked.
+  const seededLedger=seed[LEDGER_KEY]&&seed[LEDGER_KEY].startsWith('{"captures');
+  if(!seededLedger){
+    const fresh=JSON.parse(JSON.stringify(context.test.ledger));
+    assert.deepEqual({captures:fresh.captures,perfects:fresh.perfects,bestFlow:fresh.bestFlow,constellations:fresh.constellations,
+      grazes:fresh.grazes,shieldsSpent:fresh.shieldsSpent,maxSpeedSlings:fresh.maxSpeedSlings,runs:fresh.runs,
+      observations:fresh.observations,personalBests:fresh.personalBests,allFourInOneRun:fresh.allFourInOneRun},
+      {captures:0,perfects:0,bestFlow:0,constellations:{},grazes:0,shieldsSpent:0,maxSpeedSlings:0,runs:{},observations:{},personalBests:{},allFourInOneRun:false},
+      'A fresh or unreadable ledger opens empty');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius'},'Cosmetics default to the classic look');
+    assert.equal(context.test.isUnlocked('cellarius'),false);
+    assert.equal(context.test.setCosmetic('mark','saturn'),false,'A locked cosmetic can never be selected');
+    assert.equal(context.test.cosmetic('mark'),'quill','A refused selection leaves the default in place');
+  }
+  // Every condition in the catalogue is evaluated against the ledger exactly as written.
+  {
+    const empty=context.test.ledger&&JSON.parse(JSON.stringify(context.test.ledger));
+    const at=fields=>Object.assign(JSON.parse(JSON.stringify(empty)),{captures:0,perfects:0,bestRow:0,maxSpeedSlings:0,runs:{},
+      constellations:{},personalBests:{},deepestHardcoreChapter:0,allFourInOneRun:false},fields);
+    const cases=[
+      ['cellarius',{captures:999},false],['cellarius',{captures:1000},true],
+      ['verdigris',{deepestHardcoreChapter:3},false],['verdigris',{deepestHardcoreChapter:4},true],
+      ['foxed',{runs:{classic:60,hardcore:39}},false],['foxed',{runs:{classic:60,hardcore:40}},true],
+      ['proof',{allFourInOneRun:false},false],['proof',{allFourInOneRun:true},true],
+      ['comet',{runs:{classic:24}},false],['comet',{runs:{classic:20,relaxed:5}},true],
+      ['telescope',{perfects:99},false],['telescope',{perfects:100},true],
+      ['moth',{perfects:499},false],['moth',{perfects:500},true],
+      ['saturn',{perfects:1499},false],['saturn',{perfects:1500},true],
+      ['sanguine',{maxSpeedSlings:9},false],['sanguine',{maxSpeedSlings:10},true],
+      ['silverpoint',{maxSpeedSlings:49},false],['silverpoint',{maxSpeedSlings:50},true],
+      ['goldleaf',{maxSpeedSlings:199},false],['goldleaf',{maxSpeedSlings:200},true],
+      ['rose',{captures:249},false],['rose',{captures:250},true],
+      ['seal',{captures:999},false],['seal',{captures:1000},true],
+      ['manicule',{captures:4999},false],['manicule',{captures:5000},true],
+      ['strapwork',{bestRow:19},false],['strapwork',{bestRow:20},true],
+      ['acanthus',{bestRow:39},false],['acanthus',{bestRow:40},true],
+      ['seamonsters',{bestRow:59},false],['seamonsters',{bestRow:60},true],
+      ['bayer',{constellations:{'THE LYRE':9,'THE SAIL':9}},false],['bayer',{constellations:{'THE LYRE':10}},true],
+      ['bode',{constellations:{'THE LYRE':24}},false],['bode',{constellations:{'THE LYRE':25}},true],
+      ['delineavit',{runs:{classic:49}},false],['delineavit',{runs:{classic:30,relaxed:20}},true],
+      ['exlibris',{personalBests:{relaxed:10,classic:10}},false],['exlibris',{personalBests:{relaxed:10,classic:10,hardcore:10}},true]
+    ];
+    for(const [id,fields,expected] of cases){
+      assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
+    }
+    assert.equal(context.test.UNLOCKS.length,21,'The catalogue holds every unlockable');
+    // Nothing is ever taken away: a ledger that meets everything unlocks everything.
+    const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},
+      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true});
+    assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
+  }
   // The living pen: the first row of a fresh chart is begun the moment the sheet is drawn and every mark
   // of it is finished within its second; reduced motion prints the whole chart at once instead.
   {
@@ -507,12 +587,51 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   assert.equal(context.test.textAlongArc(context.test.ctx,'',10,10,40,0,{}).span,0,'Empty lettering occupies no arc');
   assert.equal(context.test.textAlongArc(context.test.ctx,'ORBITA',10,10,0,0,{}).span,0,'A degenerate rim is skipped, not drawn');
   context.test.handleInput();assert.equal(context.test.world.state,'playing');
+  // Every plate in the press — the two base plates and the four derived ones — boots, prints all four
+  // chapter plates and builds a frame, and the proof plate is the only one that omits its lettering.
+  for(const id of context.test.plateIds){
+    context.test.setPlate(id);
+    assert.equal(context.test.plateName,id);
+    assert.equal(context.test.plainPlate(),id==='proof','Only the proof plate is pulled before letters');
+    for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+    assert(context.test.buildFrameLayer(),'Every plate must build a frame: '+id);
+    context.test.render(1/60);
+  }
+  context.test.setPlate('night');
+  // Every cosmetic selection draws: the frame ornaments and figure styles into the cached layers, the
+  // observer marks, inks and capture marks through a live frame with a capture ripple in hand.
+  {
+    const chosen={};for(const group of context.test.COSMETIC_KINDS)chosen[group.kind]=context.test.cosmetic(group.kind);
+    for(const group of context.test.COSMETIC_KINDS){
+      if(group.kind==='plate')continue;
+      for(const item of context.test.cosmeticItems(group.kind)){
+        const open=context.test.isUnlocked(item.id);
+        assert.equal(context.test.setCosmetic(group.kind,item.id),open,'Only an earned cosmetic can be chosen: '+item.id);
+        if(!open)continue;
+        assert.equal(context.test.cosmetic(group.kind),item.id);
+        const target=context.test.world.nodes[0];
+        context.test.rings.push({kind:'capture',node:target,x:target.x,y:target.y,start:target.r+2,distance:18,angle:.4,perfect:true,age:0,life:.85,alpha:.86,seed:9181});
+        context.test.render(1/60);
+        assert(context.test.buildFrameLayer(),'Every cosmetic must render a frame: '+item.id);
+      }
+      context.test.setCosmetic(group.kind,chosen[group.kind]);
+    }
+  }
   frames(75);const midRun=context.test.world.time;context.test.setPlate('night');assert.equal(context.test.world.time,midRun);
   frames(75);
   context.test.handleInput();assert.equal(context.test.world.player.node,null);
   frames(900);
   assert.equal(context.test.world.state,'dead');context.test.render(.1);
+  // The dried route the run has flown stays on the sheet. It is bounded twice: everything that has
+  // passed below the sheet is dropped as the camera climbs, and a hard cap holds the rest.
+  {
+    const path=context.test.inkPath;
+    assert(path.length>1,'A flight leaves its dried route behind it');
+    assert(path.length<=context.test.INK_PATH_CAP,'The dried route is capped: '+path.length);
+    assert(path.every(point=>context.test.sy(point.y)<=height+240),'The dried route is pruned to the sheet');
+  }
   context.test.handleInput();assert.equal(context.test.world.state,'playing');assert.equal(context.test.world.score,0);assert(context.test.world.player.node);
+  assert(context.test.inkPath.length<=1,'A new run is dealt on a clean sheet');
   events['window:blur']();assert.equal(context.test.world.state,'paused');const pausedTime=context.test.world.time;frames(10);assert.equal(context.test.world.time,pausedTime);context.test.handleInput();assert.equal(context.test.world.state,'playing');
   context.test.render(step);
   // Complete a constellation through the full runtime, including presentation,
@@ -550,7 +669,51 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   assert.equal(run.observe('threeMinutes'),true);assert.equal(run.observe('threeMinutes'),false,'An observation is awarded once per run');
   context.test.render(step);
   assert(element('toast').textContent.includes('OBSERVATION \u00b7 VIGILIA'));
+  const beforeRun={captures:context.test.ledger.captures,perfects:context.test.ledger.perfects,
+    charts:context.test.ledgerStat('constellations'),runs:context.test.ledgerStat('runs'),seconds:context.test.ledger.playSeconds};
   run.die('RUN COMPLETE');run.player.deadTime=.8;context.test.render(.1);
+  // The colophon writes the ledger: the lifetime figures rise by exactly what this run did, the run is
+  // counted under the pressure it was played at, and the document itself is written unless storage is blocked.
+  {
+    const led=context.test.ledger;
+    assert.equal(led.captures,beforeRun.captures+run.captures,'The ledger counts the run\'s captures');
+    assert.equal(led.perfects,beforeRun.perfects+run.perfects,'The ledger counts the run\'s perfect transfers');
+    assert.equal(context.test.ledgerStat('constellations'),beforeRun.charts+run.constellationsCompleted,'The ledger counts the constellations traced');
+    assert.equal(context.test.ledgerStat('runs'),beforeRun.runs+1,'A finished run is counted once');
+    assert(led.bestFlow>=run.maxCombo&&led.bestRow>=Math.floor(run.progress),'The ledger keeps the best flow and the highest row');
+    assert(led.playSeconds>beforeRun.seconds,'The ledger keeps the time spent in the chart');
+    assert(led.personalBests.classic>=run.score,'The ledger keeps a personal best for the pressure played');
+    assert(led.observations.threeMinutes>=1,'The ledger counts the observations made');
+    assert(led.deepestChapter>=Math.min(4,Math.floor(run.progress/8)+1),'The ledger keeps the deepest chapter reached');
+    if(!storageBlocked){
+      const document=JSON.parse(saved.get(LEDGER_KEY));
+      assert.equal(document.captures,led.captures,'The ledger is written to storage at the end of a run');
+      assert.equal(document.bestRow,led.bestRow);
+    }
+  }
+  // The catalogue: a ruled leaf over the plate that lists the ledger and every cosmetic, opens and
+  // closes on its own, holds the gameplay input while it is open, and takes three letters of initials.
+  {
+    context.test.openCatalogue();
+    assert.equal(context.test.catalogueOpen,true);
+    const page=element('catalogue-body').innerHTML;
+    assert(page.includes('Orbits captured')&&page.includes('Time in the chart'),'The catalogue prints the ledger\'s figures');
+    for(const group of context.test.COSMETIC_KINDS)assert(page.includes(group.title),'The catalogue lists '+group.title);
+    assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
+    if(!seededLedger){
+      assert(page.includes('cat-row locked')&&page.includes('Capture 1,000 orbits in all'),'A locked entry is a blank rule with its condition');
+      assert(!page.includes('id="initials"'),'The initials field waits for the engraver\'s credit');
+    }else{
+      assert(page.includes('id="initials"'),'The engraver\'s credit brings out the initials field');
+      assert.equal(context.test.setInitials('j.h.f.g'),'JHF','Initials are three letters at most');
+      assert(context.test.engraverCredit().startsWith('J.H.F. delineavit'),context.test.engraverCredit());
+    }
+    const heldState=context.test.world.state;
+    context.test.handleInput();
+    assert.equal(context.test.world.state,heldState,'The catalogue holds the gameplay input while it is open');
+    events['window:keydown']({code:'Escape',preventDefault(){},repeat:false,target:{closest:()=>null}});
+    assert.equal(context.test.catalogueOpen,false,'Escape closes the catalogue');
+  }
   assert.equal(element('end-constellations').textContent,'1 constellation traced');
   assert.equal(element('end-row').textContent,Math.floor(run.progress),'The colophon reports the row reached');
   assert(element('end-observations').textContent.includes('VIGILIA'),'The colophon lists the run observations');
@@ -590,9 +753,80 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   assert(midTurn>0,'The sheet must be drawn part way across the frame');
   assert.equal(context.test.regionBlend,1,'The page turn settles exactly on the new chapter: '+context.test.regionBlend);
   assert(turnFrames<900,'The page turn must complete in a few seconds');
+  // ---------- The survey at both ends of a flight ----------
+  // An exact tangent from a two-planet fixture, flown through the whole runtime: the release lays a
+  // departure construction on the orbit it left, the landing lays an arrival construction with the
+  // geometer's right angle on the one it reached, and both dry on the sheet with the route.
+  {
+    context.test.newWorld();context.test.setPlaying();
+    const w=context.test.world,origin=w.player.node,destination=w.makeNode(120,-400,54,1,'still');
+    w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];w.nebulas=[];
+    const path=context.test.orbitTangents(origin,destination,-1)[0];
+    assert(path,'A tangent route must exist for the survey fixture');
+    // The run's first square is also its ANGULUS RECTUS observation, whose announcement follows the
+    // capture and takes the line; noting the observation first leaves the square's own toast standing.
+    w.observed.add('rightAngle');
+    w.player.angle=path.angle;w.player.dir=-1;w.player.speed=150;w.positionPlayer();w.start();
+    assert.equal(context.test.surveys.length,0,'A new run is dealt with nothing surveyed');
+    assert.equal(w.release(),true);
+    const departure=context.test.surveys.at(-1);
+    assert.equal(context.test.surveys.length,1,'A release is surveyed once');
+    assert.equal(departure.kind,'departure','The release lays a departure construction');
+    assert(departure.r>1&&Number.isFinite(departure.cx)&&Number.isFinite(departure.cy));
+    assert(Number.isInteger(departure.bearing)&&departure.bearing>=0&&departure.bearing<360,'The release bearing reads 0 to 359 clockwise from north: '+departure.bearing);
+    context.test.render(step);
+    for(let i=0;i<120*8&&w.state==='playing'&&!w.player.node;i++)w.update(step);
+    assert.equal(w.player.node,destination,'The survey fixture must land');
+    const landing=context.test.surveys.at(-1);
+    assert.equal(context.test.surveys.length,2,'A landing is surveyed once');
+    assert.equal(landing.kind,'landing','The landing lays an arrival construction');
+    assert.equal(landing.square,true,'An exact tangent lands square');
+    assert(landing.squareBonus>0&&Math.abs(landing.angle-90)<1e-6,'The right-angle mark carries the square bonus');
+    assert(element('toast').textContent.includes('RIGHT ANGLE · +'+landing.squareBonus),element('toast').textContent);
+    context.test.render(step);context.test.render(step);
+    // Bounded like the route: the constructions can never outgrow their cap or outlive the run.
+    for(let i=0;i<context.test.SURVEY_CAP*3;i++)context.test.surveys.push({...landing,birth:w.time});
+    frames(3);
+    assert(context.test.surveys.length<=context.test.SURVEY_CAP,'The constructions are capped: '+context.test.surveys.length);
+    context.test.newWorld();
+    assert.equal(context.test.surveys.length,0,'A new run is dealt on a sheet with no constructions');
+  }
+  // A nebula patch is baked into a sprite of its own, whatever the plate.
+  {
+    const patch=context.test.nebulaSprite(4711,26);
+    assert(patch&&patch.canvas&&patch.size>0,'A nebula patch is baked into a sprite');
+    assert.strictEqual(context.test.nebulaSprite(4711,26),patch,'A nebula sprite is cut once and reused');
+  }
+  // The gloss on the flood keeps out of the footer band, where the chapter name and the buttons are set,
+  // however high the ink has risen — at every layout this runtime is booted at.
+  {
+    const gloss=context.test.glossSprite(false),floor=context.test.marginaliaFloor();
+    assert(floor>0&&floor<=height-context.test.footerBand(),'The marginalia floor sits above the footer band at '+width+'x'+height);
+    for(const fy of [-40,0,height*.35,height*.75,height-10,height+120]){
+      const place=context.test.marginaliaGloss(fy,gloss);
+      assert(place.y+place.h<=floor+1e-6,'The gloss stays out of the footer band at '+width+'x'+height+', waterline '+fy);
+    }
+  }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }
-const layouts=[runtime(390,844),runtime(430,932,true,true),runtime(1440,900),runtime(844,390),runtime(320,568)];
+// A ledger that has earned the whole catalogue, seeded into storage before the page boots, so the
+// unlocked half of every screen is exercised as well as the empty one.
+const FULL_LEDGER=JSON.stringify({captures:9000,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
+  deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:8,maxSpeedSlings:400,runs:{classic:140,relaxed:6,hardcore:20},
+  playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},observations:{threeMinutes:4},allFourInOneRun:true});
+const layouts=[
+  runtime(390,844),
+  runtime(430,932,true,true),
+  // The whole catalogue earned, on a wide plate where the frame prints its credit line and its legend.
+  runtime(1440,900,false,false,{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB',
+    'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}),
+  runtime(844,390),
+  // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one.
+  runtime(320,568,false,false,{'orbit.ledger.v1':'{ this is not a ledger'}),
+  // The same, under reduced motion, with a derived plate, an ink, a mark, an ornament and a hand chosen.
+  runtime(412,915,false,true,{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
+    'orbit.cosmetics.v1':JSON.stringify({plate:'cellarius',mark:'saturn',trail:'goldleaf',capture:'seal',frame:'seamonsters',figures:'bode'})})
+];
 
 // Two pilots traverse the same course. Slow, sharp captures retain little of
 // the stars' acceleration; deliberate charging and tangent entries outrun the
@@ -637,4 +871,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));

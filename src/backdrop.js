@@ -1,7 +1,54 @@
 'use strict';
 /* Orbit · src/backdrop.js
    The two sheets: aged laid paper, and indigo night with starlight. */
-function paintBackdrop(){return onPaper()?paintPaperBackdrop():paintNightBackdrop();}
+function paintBackdrop(){return dressSheet(onPaper()?paintPaperBackdrop():paintNightBackdrop());}
+// A derived plate is pulled on its base plate's sheet and then dressed: the whole sheet is washed
+// toward the new ground colour, keeping every fibre, laid line and tide mark of the original beneath
+// it, and each plate adds whatever else belongs to it — gold leaf, oxidation, or another century of
+// foxing. The two base plates pass straight through untouched.
+function dressSheet(sheet){
+  const style=PLATE_STYLES[plateName];
+  if(!style||!W||!H)return sheet;
+  const g=sheet.getContext('2d');
+  g.save();g.setTransform(DPR,0,0,DPR,0,0);
+  g.globalAlpha=style.wash??.5;g.fillStyle=ink.base.paper;g.fillRect(0,0,W,H);g.globalAlpha=1;
+  const rng=seeded(6120133);
+  if(plateName==='cellarius'){
+    // Gold leaf laid over a deep blue ground: a warm bloom through the middle of the sheet and a
+    // scatter of leaf where the burnisher caught it.
+    const bloom=g.createRadialGradient(W*.5,H*.42,0,W*.5,H*.5,Math.max(W,H)*.7);
+    bloom.addColorStop(0,'rgba(214,176,96,.1)');bloom.addColorStop(1,'rgba(214,176,96,0)');
+    g.fillStyle=bloom;g.fillRect(0,0,W,H);
+    for(let i=0;i<190;i++){
+      const x=rng()*W,y=rng()*H,r=.4+rng()*rng()*2.1;
+      g.fillStyle=`rgba(244,216,148,${.05+rng()*.16})`;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+    }
+  }else if(plateName==='verdigris'){
+    // Copper gone green: soft oxidation patches creeping across the plate.
+    for(let i=0;i<22;i++){
+      const x=rng()*W,y=rng()*H,r=(.08+rng()*.3)*Math.max(W,H);
+      const patch=g.createRadialGradient(x,y,0,x,y,r);
+      patch.addColorStop(0,`rgba(96,168,132,${.03+rng()*.055})`);patch.addColorStop(1,'rgba(96,168,132,0)');
+      g.fillStyle=patch;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+  }else if(plateName==='foxed'){
+    // Another century in a damp room: heavy foxing, a few deep stains, and a darkened edge.
+    for(let i=0;i<240;i++){
+      const corner=rng()<.6,x=corner?(rng()<.5?rng()*W*.34:W-rng()*W*.34):rng()*W;
+      const y=corner?H*.55+rng()*H*.45:rng()*H,r=1.1+rng()*rng()*9;
+      const spot=g.createRadialGradient(x,y,0,x,y,r);
+      spot.addColorStop(0,`rgba(116,64,24,${.2+rng()*.28})`);spot.addColorStop(.55,`rgba(132,80,36,${.1+rng()*.14})`);spot.addColorStop(1,'rgba(132,80,36,0)');
+      g.fillStyle=spot;g.fillRect(x-r,y-r,r*2,r*2);
+      // The rusted rim a damp spot dries into.
+      if(rng()<.35){g.strokeStyle=`rgba(112,62,24,${.08+rng()*.12})`;g.lineWidth=.5;g.beginPath();g.arc(x,y,r*.78,0,TAU);g.stroke();}
+    }
+    const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.22,W*.5,H*.5,Math.max(W,H)*.72);
+    edge.addColorStop(0,'rgba(74,46,18,0)');edge.addColorStop(1,'rgba(74,46,18,.42)');
+    g.fillStyle=edge;g.fillRect(0,0,W,H);
+  }
+  g.restore();
+  return sheet;
+}
 function paintPaperBackdrop(){
   // Aged laid paper: warm cream, mottled sizing, laid and chain lines, fibres, foxing, a tide mark, and the
   // same calibrated ecliptic as the night plate pressed into the sheet in dilute sepia.
@@ -55,7 +102,7 @@ function paintPaperBackdrop(){
     const a=i/120*TAU,major=i%10===0,r=chartRadius,l=major?9:i%5===0?5:2.5;
     g.strokeStyle=`rgba(84,60,32,${major?.2:.12})`;g.lineWidth=major?.8:.5;
     g.beginPath();g.moveTo(Math.cos(a)*r,Math.sin(a)*r*chartFlatten);g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
-    if(major){g.font="10px 'IM Fell English',Georgia,serif";g.fillStyle='rgba(84,60,32,.22)';g.textAlign='center';g.fillText(['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'][i/10],Math.cos(a)*(r+18),Math.sin(a)*(r+18)*chartFlatten+3);}
+    if(major&&!plainPlate()){g.font="10px 'IM Fell English',Georgia,serif";g.fillStyle='rgba(84,60,32,.22)';g.textAlign='center';g.fillText(['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'][i/10],Math.cos(a)*(r+18),Math.sin(a)*(r+18)*chartFlatten+3);}
   }
   g.restore();
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.3,W/2,H*.5,Math.max(W,H)*.74);
@@ -98,7 +145,7 @@ function paintNightBackdrop(){
     g.strokeStyle=`rgba(207,189,146,${major?.18:.10})`;g.lineWidth=.55;
     g.beginPath();g.moveTo(Math.cos(a)*(r-3),Math.sin(a)*(r-3)*chartFlatten);
     g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
-    if(major){
+    if(major&&!plainPlate()){
       g.save();g.translate(Math.cos(a)*(r+20),Math.sin(a)*(r+20)*chartFlatten);g.rotate(.48);
       g.font="italic 12px 'IM Fell English',Georgia,serif";g.textAlign='center';g.fillStyle='rgba(207,189,146,.2)';
       g.fillText(['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][i/10],0,4);g.restore();

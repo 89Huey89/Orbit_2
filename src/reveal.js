@@ -14,8 +14,8 @@ definePlate('reveal',{
     strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'}
 });
 // How long each kind of mark takes, and how far above the top of the view the cartographer works ahead.
-const REVEAL_MARGIN=140,REVEAL_CAP=3;
-const NODE_REVEAL=1,HAZARD_REVEAL=.9,CHART_REVEAL=1.2;
+const REVEAL_MARGIN=-24,REVEAL_CAP=3;
+const NODE_REVEAL=1.25,HAZARD_REVEAL=1.1,CHART_REVEAL=1.4;
 const reveal=(function(){
   const born=new Map(),drawing=new Set();
   let runs=-1,lastScratch=-9;
@@ -62,11 +62,12 @@ const reveal=(function(){
       return clamp((clock()-mark.birth)/mark.span,0,1);
     },
     report(){return {marks:born.size,drawing:drawing.size};},
-    // The cartographer draws ahead of the traveller: everything within a margin above the top of the view
-    // is started here, nearest first, before any of it is drawn.
+    // The cartographer works in view: a mark starts once it has entered the top of the sheet by a small
+    // margin, nearest first, so the drawing is seen. The view keeps the traveller far enough below its top
+    // that the next ring closes before a full-speed flight can reach it.
     prime(){
       if(reducedMotion||!world)return;
-      const top=world.cameraY-REVEAL_MARGIN,bottom=world.cameraY+world.height+80,inView=world.cameraY+20;
+      const top=world.cameraY-REVEAL_MARGIN,bottom=world.cameraY+world.height+80,inView=world.cameraY+world.height*.45;
       primeList.length=0;
       for(const n of world.nodes)if(n.y>top&&n.y<bottom)primeList.push(n.y,n,NODE_REVEAL);
       for(const h of world.hazards)if(h.y>top&&h.y<bottom)primeList.push(h.y,h,HAZARD_REVEAL);
@@ -342,6 +343,8 @@ function revealFrame(layer){
 // One clip rectangle uncovers the caption glyph by glyph with a nib mark at its edge; a finished caption is
 // printed with a single fillText, exactly as before.
 function writeText(context,text,x,y,progress,options){
+  // A proof before letters carries no captions at all: the pen simply never writes them.
+  if(plainPlate())return;
   if(progress>=1||reducedMotion){context.fillText(text,x,y);return;}
   if(progress<=0||!text)return;
   const shownGlyphs=Math.max(1,Math.ceil(progress*text.length));
