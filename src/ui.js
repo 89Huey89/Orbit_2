@@ -12,6 +12,8 @@ function event(type,e){
   if(type==='start'){audio.start();return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
+    // The departure is surveyed on the orbit just left, and stays on the sheet as dried ink.
+    recordDeparture(e);
     rings.push({kind:'blot',x:e.x,y:e.y,size:1.5+e.charge*1.5,age:0,life:1.5,alpha:.6,seed:ringSeed()});
     if(e.sling&&e.charge>.15){
       audio.tone(155,.45,0,.25,'sine',230+e.charge*200);
@@ -24,6 +26,9 @@ function event(type,e){
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');
     audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
+    // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
+    recordLanding(e);
+    if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     if(e.skip)toast(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,2);
@@ -31,6 +36,7 @@ function event(type,e){
     else if(e.n.type==='sling')toast('ORBIT TO GAIN SPEED · TAP TO LEAVE',2.5);
     else if(e.n.type==='fading')toast('FADING ORBIT · KEEP MOVING');
     else if(e.n.type==='gold')toast('GOLDEN DETOUR');
+    else if(e.square)toast('RIGHT ANGLE · +'+e.squareBonus,1.8);
     else if(e.perfect)toast(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT');
     else if(e.n.type==='drift'&&e.n.row<10)toast('A WANDERING ORBIT');
     recordBest(world.score);
@@ -70,7 +76,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];surveys=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];

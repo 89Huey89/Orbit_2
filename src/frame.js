@@ -44,7 +44,7 @@ function frameCompassRose(g,cx,cy,r,colors){
 }
 // A cherubic wind-head, cut for the corner of the plate: a puffing face turned into the chart with its
 // breath streaming away from the mouth. Seeded so no two corners are the same head.
-function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed){
+function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed,breath=1){
   const rng=seeded(seed>>>0||1),R=radius;
   g.save();g.translate(cx,cy);g.rotate(angle);
   // The face, cut with few and heavy strokes so it still reads at the size of a margin ornament.
@@ -65,7 +65,7 @@ function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed){
   g.fillStyle=`rgba(${rgb},${alpha*.7})`;g.beginPath();g.arc(R*.74,0,R*.09,0,TAU);g.fill();
   // The breath: long tapering strokes leaving the mouth and spreading over the margin.
   for(let i=0;i<5;i++){
-    const spread=(i-2)/2*.4,len=R*(2.1+rng()*2.2);
+    const spread=(i-2)/2*.4,len=R*(2.1+rng()*2.2)*breath;
     const x0=R*.98,y0=Math.sin(spread)*R*.28;
     burinSegment(g,x0,y0,x0+Math.cos(spread)*len,y0+Math.sin(spread)*len,rgb,alpha*(.6-Math.abs(spread)*.5),.7,seed+71+i*7,{segments:6,skips:1,hair:false,wobble:1.1});
   }
@@ -182,22 +182,28 @@ function frameRosette(g,cx,cy,rgb,alpha,size,seed){
   }
   g.closePath();g.stroke();
 }
+// The DOM HUD prints ORBIT, the score and BEST across the top of the plate, and the two upper corners of
+// the margin have to keep out of its way. They are cut at 45% of the head and half the breath there, and
+// tucked further into the corner, so the whole ornament finishes above and outside the HUD's text boxes;
+// the two lower corners are unchanged, since nothing is set over them.
+const TOP_HEAD=.45,TOP_BREATH=.5;
 function frameOrnaments(g,wide,innerR){
-  const style=cosmetic('frame'),head=wide?14:9,inset=innerR+head*.9+(wide?3:2);
+  const style=cosmetic('frame'),head=wide?14:9;
   const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
-  const corners=[[inset,inset,1,1],[W-inset,inset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
+  const inset=innerR+head*.9+(wide?3:2),topHead=head*TOP_HEAD,topInset=innerR+topHead*.9+(wide?3:2);
+  const corners=[[topInset,topInset,1,1],[W-topInset,topInset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
   for(const [x,y,dx,dy] of corners){
-    const seed=51001+Math.round(x*7+y*13);
-    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,head,seed);
-    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,head*.9,seed);
+    const seed=51001+Math.round(x*7+y*13),top=dy>0,size=top?topHead:head;
+    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,size,seed);
+    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,size*.9,seed);
     else if(style==='seamonsters'){
       // The monsters swim in the two lower corners, where the rising ink reaches: they are cut in the
       // flood's own pigment, at the weight the shoreline marginalia is printed at, so they still read
       // once the page is half drowned. The upper corners take a small star instead.
       if(dy<0)frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
-      else frameRosette(g,x,y,rgb,alpha*.85,head*.5,seed);
+      else frameRosette(g,x,y,rgb,alpha*.85,size*.5,seed);
     }
-    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed);
+    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,size,seed,top?TOP_BREATH:1);
   }
 }
 function frameScaleBar(g,x,y,colors){
@@ -293,7 +299,7 @@ function render(dt){
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
-  drawAim(aim);drawInkPath();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
+  drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);

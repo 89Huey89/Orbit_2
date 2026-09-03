@@ -85,6 +85,10 @@ function pruneInkPath(){
   let gone=0;while(gone<inkPath.length&&sy(inkPath[gone].y)>below)gone++;
   if(gone>0)inkPath.splice(0,gone);
   if(inkPath.length>INK_PATH_CAP)inkPath.splice(0,inkPath.length-INK_PATH_CAP);
+  // The surveyed departures and landings are dried ink beside the route, and are pruned with it.
+  let dropped=0;while(dropped<surveys.length&&sy(surveys[dropped].cy)>below)dropped++;
+  if(dropped>0)surveys.splice(0,dropped);
+  if(surveys.length>SURVEY_CAP)surveys.splice(0,surveys.length-SURVEY_CAP);
 }
 // The dried route: one wash pass and three weights of burin line, the heavier where the flight was
 // faster, cut in the ink the pen is charged with. The wet trail dries into its head, so the line the
@@ -107,6 +111,167 @@ function drawInkPath(){
       ctx.moveTo(sx(inkPath[i-1].x),sy(inkPath[i-1].y));ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
     }
     ctx.stroke();
+  }
+  ctx.restore();
+}
+// ---------- The survey: every flight measured at both ends ----------
+// A flight is surveyed where it leaves and where it lands, and the geometer's construction stays on the
+// sheet as dried ink. At the release: the radius out to the release point, the departure line along the
+// tangent with an arrowhead at its end, and the release bearing — an arc swept clockwise from the sheet's
+// north to the release radius, its numeral set outside it, over a dotted north reference. At the landing:
+// the radius to the contact, the incoming line carried a little past it, the arrival angle between them
+// with its numeral — or, for a square, the geometer's right angle in gold — and a short note of the
+// arrival speed, the reward, and the orbits skipped.
+// Both are kept in world coordinates, pruned with the permanent ink path, cleared when a new run is dealt,
+// and drawn in one style and the pen's own dried ink. The pen reads `world.time`, so a paused run freezes
+// a construction mid-stroke and reduced motion prints it whole.
+const SURVEY_CAP=48,SURVEY_LANDING=.6,SURVEY_DEPARTURE=.4;
+function surveyProgress(s){
+  if(reducedMotion)return 1;
+  return clamp((world.time-s.birth)/Math.max(.001,s.span),0,1);
+}
+// The moment of release: the orbit just left is the node the flight is ignoring, and the release velocity
+// is the tangent it left along. The bearing is read clockwise from the sheet's north, 0 to 359.
+function recordDeparture(e){
+  if(!world)return null;
+  const n=world.nodes.find(q=>q.id===world.player.ignore);if(!n)return null;
+  const rx=e.x-n.x,ry=e.y-n.y,r=Math.hypot(rx,ry);if(!(r>1))return null;
+  const speed=Math.hypot(e.vx,e.vy)||1;
+  const record={kind:'departure',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
+    bearing:Math.round(((Math.atan2(rx,-ry)*180/Math.PI)%360+360)%360)%360,birth:world.time,span:SURVEY_DEPARTURE};
+  surveys.push(record);pruneInkPath();return record;
+}
+// The landing: only a flight that was launched is surveyed, so the orbit the run opens on is not.
+function recordLanding(e){
+  if(!world||!e.launch)return null;
+  const n=e.n,rx=e.x-n.x,ry=e.y-n.y,r=Math.hypot(rx,ry)||n.r||1;
+  const speed=Math.hypot(e.vx,e.vy)||1;
+  const record={kind:'landing',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
+    angle:e.angle,square:!!e.square,squareBonus:e.squareBonus||0,gain:e.gain,
+    mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING};
+  surveys.push(record);pruneInkPath();return record;
+}
+// A hairline drawn on from one end to the other, with the wet bead and the nib riding the moving end.
+function surveyLine(x0,y0,x1,y1,t,rgb,alpha,weight,head){
+  if(t<=0)return;
+  const x=lerp(x0,x1,t),y=lerp(y0,y1,t);
+  ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineWidth=Math.max(.35,weight);
+  ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
+  if(t<1&&head!==false){const a=Math.atan2(y1-y0,x1-x0);penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8);}
+}
+// The same stroke swept round an arc, from one angle to another.
+function surveyArc(cx,cy,r,from,to,t,rgb,alpha,weight){
+  if(t<=0||!(r>.2))return;
+  const end=from+(to-from)*t;
+  ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineWidth=Math.max(.35,weight);
+  ctx.beginPath();ctx.arc(cx,cy,r,Math.min(from,end),Math.max(from,end));ctx.stroke();
+  if(t<1){
+    const x=cx+Math.cos(end)*r,y=cy+Math.sin(end)*r,a=end+(to>=from?Math.PI/2:-Math.PI/2);
+    penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8);
+  }
+}
+// A short tick across the arc at one of its ends, the way a geometer closes an angle.
+function surveyTick(cx,cy,r,angle,rgb,alpha,weight){
+  const c=Math.cos(angle),s=Math.sin(angle),reach=Math.max(2,2.6*scale);
+  line(cx+c*(r-reach),cy+s*(r-reach),cx+c*(r+reach),cy+s*(r+reach),`rgba(${rgb},${alpha})`,Math.max(.35,weight));
+}
+// The engraved figures a construction is numbered with, and the italic note beside it.
+function surveyNumeral(text,x,y,size,rgb,alpha,t){
+  if(t<=0)return;
+  ctx.save();ctx.textAlign='center';ctx.fillStyle=`rgba(${rgb},${alpha})`;
+  ctx.font=`${size}px 'IM Fell English',Georgia,serif`;
+  writeText(ctx,text,x,y+size*.35,t,{size});
+  ctx.restore();
+}
+function drawSurveys(){
+  if(!surveys.length||!world)return;
+  const rgb=(trailInk().path||ink.dark.pathInk),gold=ink.base.gold,base=onPaper()?.6:.46;
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.textBaseline='alphabetic';
+  for(const s of surveys){
+    const y=sy(s.cy);if(y<-320||y>H+320)continue;
+    const t=surveyProgress(s);if(t<=0)continue;
+    if(s.kind==='departure')drawDepartureSurvey(s,t,rgb,base);
+    else drawLandingSurvey(s,t,rgb,gold,base);
+  }
+  ctx.restore();
+}
+function drawDepartureSurvey(s,t,rgb,base){
+  const cx=sx(s.cx),cy=sy(s.cy),px=sx(s.x),py=sy(s.y),r=s.r*scale;
+  // (a) The radius, from the planet's centre out to the point the pen left the ring.
+  surveyLine(cx,cy,px,py,revealSpan(t,0,.3),rgb,base*.7,.45*scale);
+  // (b) The departure line along the tangent, closed with a small arrowhead.
+  const reach=30*scale,ex=px+s.dx*reach,ey=py+s.dy*reach,run=revealSpan(t,.25,.6);
+  surveyLine(px,py,ex,ey,run,rgb,base,.55*scale);
+  if(run>=1){
+    const a=Math.atan2(s.dy,s.dx),wing=Math.max(3,4.2*scale);
+    ctx.strokeStyle=`rgba(${rgb},${base})`;ctx.lineWidth=Math.max(.35,.55*scale);
+    ctx.beginPath();
+    ctx.moveTo(ex-Math.cos(a-.42)*wing,ey-Math.sin(a-.42)*wing);ctx.lineTo(ex,ey);
+    ctx.lineTo(ex-Math.cos(a+.42)*wing,ey-Math.sin(a+.42)*wing);ctx.stroke();
+  }
+  // (c) The bearing: the dotted north reference from the centre up to the ring, the arc swept clockwise
+  // from it to the release radius with a tick at each end, and the reading set outside the arc. The whole
+  // figure is kept well inside the ring, so it can never cross the release marks printed on the rim.
+  const bear=revealSpan(t,.55,1);if(bear<=0)return;
+  ctx.save();ctx.setLineDash([Math.max(1,1.6*scale),Math.max(2,3*scale)]);
+  surveyLine(cx,cy,cx,cy-r,Math.min(1,bear*2.6),rgb,base*.45,.4*scale,false);
+  ctx.restore();
+  const arcR=Math.max(5,r*.52),from=-Math.PI/2,to=from+s.bearing*Math.PI/180;
+  surveyArc(cx,cy,arcR,from,to,bear,rgb,base*.8,.45*scale);
+  if(bear>=1){
+    surveyTick(cx,cy,arcR,from,rgb,base*.75,.4*scale);
+    surveyTick(cx,cy,arcR,to,rgb,base*.75,.4*scale);
+  }
+  const mid=(from+to)/2,size=Math.max(8,9*scale),labelR=arcR+Math.max(8,9*scale);
+  surveyNumeral(s.bearing+'°',cx+Math.cos(mid)*labelR,cy+Math.sin(mid)*labelR,size,rgb,base*.95,revealSpan(t,.72,1));
+}
+function drawLandingSurvey(s,t,rgb,gold,base){
+  const cx=sx(s.cx),cy=sy(s.cy),px=sx(s.x),py=sy(s.y);
+  // (a) The radius from the planet's centre out to the contact.
+  surveyLine(cx,cy,px,py,revealSpan(t,0,.28),rgb,base*.7,.45*scale);
+  // (b) The incoming line, carried a little past the contact so the angle has two full arms.
+  const back=34*scale,past=11*scale;
+  surveyLine(px-s.dx*back,py-s.dy*back,px+s.dx*past,py+s.dy*past,revealSpan(t,.22,.55),rgb,base,.55*scale);
+  // (c) Between them the arrival angle: an arc with two tick ends and its numeral outside, or — where the
+  // line met the ring square — the geometer's right angle, a small square with a dot inside it, in gold.
+  const mark=revealSpan(t,.5,.82),reach=Math.max(9,11*scale);
+  const inward=Math.atan2(-s.uy,-s.ux),along=Math.atan2(s.dy,s.dx);
+  let delta=along-inward;while(delta>Math.PI)delta-=TAU;while(delta<-Math.PI)delta+=TAU;
+  const bis=inward+delta/2;
+  if(s.square){
+    const ex=Math.cos(inward),ey=Math.sin(inward),fx=Math.cos(along),fy=Math.sin(along),q=reach*.72;
+    surveyLine(px+ex*q,py+ey*q,px+ex*q+fx*q,py+ey*q+fy*q,revealSpan(mark,0,.52),gold,base+.14,.7*scale);
+    surveyLine(px+fx*q,py+fy*q,px+fx*q+ex*q,py+fy*q+ey*q,revealSpan(mark,.44,.94),gold,base+.14,.7*scale);
+    if(mark>.9){
+      ctx.fillStyle=`rgba(${gold},${base+.2})`;
+      ctx.beginPath();ctx.arc(px+(ex+fx)*q*.44,py+(ey+fy)*q*.44,Math.max(.9,1.15*scale),0,TAU);ctx.fill();
+    }
+  }else{
+    surveyArc(px,py,reach,inward,inward+delta,mark,rgb,base*.9,.45*scale);
+    if(mark>=1){
+      surveyTick(px,py,reach,inward,rgb,base*.8,.4*scale);
+      surveyTick(px,py,reach,inward+delta,rgb,base*.8,.4*scale);
+    }
+    const size=Math.max(8,9.5*scale),labelR=reach+Math.max(9,10*scale);
+    surveyNumeral(Math.round(s.angle)+'°',px+Math.cos(bis)*labelR,py+Math.sin(bis)*labelR,size,rgb,base*.95,revealSpan(t,.62,.88));
+  }
+  // (d) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
+  const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
+  const lines=[];
+  if(s.square)lines.push(['ANGULUS RECTUS · +'+s.squareBonus,gold]);
+  lines.push(['×'+s.mult.toFixed(1)+'  ·  +'+s.gain,rgb]);
+  if(s.skipped>0)lines.push(['SKIP '+s.skipped,rgb]);
+  // The node prints its own row numeral a little east of the ring, so a contact that landed due east
+  // pushes the note further out rather than setting it on top of the number.
+  const size=Math.max(9,10*scale),step=size*1.28,right=s.ux>=0;
+  const out=(s.ux>.9&&Math.abs(s.uy)<.36?38:22)*scale;
+  const nx=px+s.ux*out+(right?4:-4),ny=py+s.uy*out;
+  ctx.save();ctx.textAlign=right?'left':'right';
+  ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  for(let i=0;i<lines.length;i++){
+    const from=i/lines.length,step2=1/lines.length;
+    ctx.fillStyle=`rgba(${lines[i][1]},${base*.95})`;
+    writeText(ctx,lines[i][0],nx,ny+i*step,revealSpan(note,from,from+step2),{size,nib:false});
   }
   ctx.restore();
 }
@@ -413,16 +578,28 @@ function glossSprite(relief){
   const sprite={canvas:c,w,h};
   darkMarginalia.set(key,sprite);return sprite;
 }
+// The lowest line the shoreline's marginalia may reach: the footer band across the bottom of the plate,
+// where the chapter name and the utility buttons are set, plus the frame's own inner rule. The waterline
+// itself goes on rising past it — only the monster and the gloss are held above.
+function marginaliaFloor(){return H-footerBand()-frameBand()*.92;}
+// Where the gloss is printed for a given waterline: it rides just under the ink until the flood would
+// carry it into the footer band, and from there it stays where it is while the ink goes on past it.
+function marginaliaGloss(fy,gloss){
+  const floor=marginaliaFloor();
+  return {y:Math.min(fy+9*scale,floor-gloss.h),h:gloss.h};
+}
 // The Leviathan surfaces slowly and periodically at his own place along the edge, and the gloss
-// drifts with the flood. Both stand still when the run is paused or reduced motion is requested.
+// drifts with the flood. Both stand still when the run is paused or reduced motion is requested, and
+// both stay above the footer band however high the ink has risen.
 function drawDarkMarginalia(fy,time,alpha){
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
+  const floor=marginaliaFloor(),line=Math.min(fy,floor);
   const monster=leviathanSprite(false),phase=((time+7)%cycle)/cycle;
-  if(phase<window/cycle){
+  if(phase<window/cycle&&line>monster.h*.25){
     const u=phase*cycle/window,rise=Math.sin(Math.PI*u);
     const span=W+monster.w*2,x=((.34*span-drift*.62)%span+span)%span-monster.w;
-    const y=fy-monster.h+(1-rise)*monster.h*1.05;
-    ctx.save();ctx.beginPath();ctx.rect(0,0,W,Math.max(0,fy+1));ctx.clip();
+    const y=line-monster.h+(1-rise)*monster.h*1.05;
+    ctx.save();ctx.beginPath();ctx.rect(0,0,W,Math.max(0,line+1));ctx.clip();
     ctx.globalAlpha=alpha*rise*.9;
     ctx.drawImage(monster.canvas,x,y,monster.w,monster.h);
     if(darknessRelief>.001){const r=leviathanSprite(true);ctx.globalAlpha=alpha*rise*.9*darknessRelief;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
@@ -431,9 +608,11 @@ function drawDarkMarginalia(fy,time,alpha){
   if(plainPlate())return;
   const gloss=glossSprite(false),span=W+gloss.w*2;
   const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
+  const gy=marginaliaGloss(fy,gloss).y;
+  if(gy+gloss.h<=0)return;
   ctx.save();ctx.globalAlpha=alpha*.5;
-  ctx.drawImage(gloss.canvas,gx,fy+9*s,gloss.w,gloss.h);
-  if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief;ctx.drawImage(r.canvas,gx,fy+9*s,r.w,r.h);}
+  ctx.drawImage(gloss.canvas,gx,gy,gloss.w,gloss.h);
+  if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
   ctx.restore();
 }
 function drawDark(dt=0){
