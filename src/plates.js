@@ -5,7 +5,7 @@
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let W=0,H=0,DPR=1,scale=1,world,trail=[],particles=[],rings=[],floaters=[],glyphs=new Map();
+let W=0,H=0,DPR=1,scale=1,world,trail=[],inkPath=[],particles=[],rings=[],floaters=[],glyphs=new Map();
 // Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
 // higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
 function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}
@@ -106,11 +106,70 @@ let plateShift={x:0,y:0};
 // ---------- Plates: the night plate (ink and starlight on indigo) and the paper plate (sepia ink on cream) ----------
 // Every render section registers its own colours for both plates with definePlate(); `ink` always points at the
 // active plate so draw code reads ink.section.token. Night values are the original artwork and stay unchanged.
+//
+// A plate may also be *derived*: it names one of the two base plates and passes every token that plate
+// registers through one colour transform, so a new plate costs a transform rather than a second atlas.
+// The derived plates are the catalogue's unlockable ones; PLATE_STYLES below is their whole definition.
+const rgbClamp=v=>Math.max(0,Math.min(255,Math.round(v)));
+const luminance=(r,g,b)=>(r*.299+g*.587+b*.114)/255;
+const mix3=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+// A duotone press: every tone is re-inked along a three-stop ramp from the ground through a middle
+// tone to the highlight, so the plate keeps its whole tonal range in one new pair of colours.
+const duotone=(dark,mid,light)=>(r,g,b)=>{
+  const L=luminance(r,g,b),ramp=L<.5?mix3(dark,mid,L*2):mix3(mid,light,(L-.5)*2);
+  return ramp.map(rgbClamp);
+};
+// A sheet left too long in a damp room: everything blends toward foxing brown and loses a little light,
+// the pale sizing most of all. Unlike a duotone this keeps every hue the paper plate already prints.
+const aged=(r,g,b)=>{
+  const L=luminance(r,g,b),t=.2+.28*L,to=[104,68,32];
+  return [lerp(r,to[0],t)*.86,lerp(g,to[1],t)*.86,lerp(b,to[2],t)*.86].map(rgbClamp);
+};
+const PLATE_STYLES={
+  cellarius:{base:'night',wash:.7,tint:duotone([7,16,56],[118,102,72],[252,228,164])},
+  verdigris:{base:'night',wash:.52,tint:duotone([5,15,13],[62,124,100],[196,230,204])},
+  foxed:{base:'paper',wash:.5,tint:aged},
+  // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it.
+  proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])}
+};
 const PLATES={night:{},paper:{}};
+for(const id in PLATE_STYLES)PLATES[id]={};
+// Colour transforms reach every registered token, whatever shape it is stored in: `r,g,b` triplets,
+// rgb()/rgba() strings, hex, [r,g,b] arrays, and any array or object of those.
+const RGB_TRIPLE=/^\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*$/;
+const RGB_FUNC=/^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*(?:,\s*([\d.]+)\s*)?\)$/i;
+const RGB_HEX=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+function tintValue(value,tint){
+  if(Array.isArray(value)){
+    if(value.length===3&&value.every(v=>typeof v==='number'))return tint(value[0],value[1],value[2]);
+    return value.map(v=>tintValue(v,tint));
+  }
+  if(value&&typeof value==='object'){const out={};for(const key in value)out[key]=tintValue(value[key],tint);return out;}
+  if(typeof value!=='string')return value;
+  let m=value.match(RGB_TRIPLE);
+  if(m){const [r,g,b]=tint(+m[1],+m[2],+m[3]);return r+','+g+','+b;}
+  m=value.match(RGB_FUNC);
+  if(m){const [r,g,b]=tint(+m[1],+m[2],+m[3]);return m[4]===undefined?`rgb(${r},${g},${b})`:`rgba(${r},${g},${b},${m[4]})`;}
+  m=value.match(RGB_HEX);
+  if(m){
+    const hex=m[1].length===3?m[1].split('').map(c=>c+c).join(''):m[1];
+    const [r,g,b]=tint(parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16));
+    return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  return value;
+}
 let plateName=storage.get('orbit.plate.v1','night');if(!PLATES[plateName])plateName='night';
 const ink={};
-function definePlate(section,variants){PLATES.night[section]=variants.night;PLATES.paper[section]=variants.paper;ink[section]=variants[plateName];}
-const onPaper=()=>plateName==='paper';
+function definePlate(section,variants){
+  PLATES.night[section]=variants.night;PLATES.paper[section]=variants.paper;
+  for(const id in PLATE_STYLES){const style=PLATE_STYLES[id];PLATES[id][section]=tintValue(variants[style.base],style.tint);}
+  ink[section]=PLATES[plateName][section];
+}
+// Which of the two base plates a plate is pulled from, and what that means for the artwork.
+const plateBase=name=>PLATE_STYLES[name]?PLATE_STYLES[name].base:name;
+const onPaper=()=>plateBase(plateName)==='paper';
+// A proof before letters carries no captions, labels, numerals or legend: figures and rings only.
+const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'}
@@ -123,14 +182,25 @@ function invalidateArt(){
   frameLayer=null;
 }
 function syncPlate(){
-  game.setAttribute('data-plate',plateName);
+  // The stylesheet switches its variables on the base plate; the exact plate is named beside it so a
+  // derived plate can adjust a line or two of chrome without repeating the whole palette.
+  game.setAttribute('data-plate',plateBase(plateName));
+  game.setAttribute('data-plate-id',plateName);
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);
   const button=$('plate');if(button){button.setAttribute('aria-label',onPaper()?'Switch to night plate':'Switch to paper plate');button.setAttribute('aria-pressed',String(onPaper()));}
 }
+// Point `ink` at a plate without touching storage or the cached artwork: used while the modules are
+// still registering their sections, before there is anything cached to rebuild.
+function applyPlate(name){
+  if(!PLATES[name])return false;
+  plateName=name;
+  for(const key of Object.keys(PLATES[name]))ink[key]=PLATES[name][key];
+  return true;
+}
 function setPlate(name){
   if(!PLATES[name]||name===plateName)return;
-  plateName=name;storage.set('orbit.plate.v1',name);
-  for(const key of Object.keys(PLATES[name]))ink[key]=PLATES[name][key];
+  applyPlate(name);storage.set('orbit.plate.v1',name);
+  if(typeof recordCosmetic==='function')recordCosmetic('plate',name);
   invalidateArt();syncPlate();if(world)render(0);
 }
 const regionPlates=new Map();
@@ -149,8 +219,17 @@ const atlasRegions=[
   {wash:'24,34,47',pigment:'126,145,159',star:[172,185,196],density:.46,seed:5107,
     paper:{wash:'64,76,92',pigment:'70,84,98',star:[42,54,70]}}
 ];
-// Reads whichever colour set (night literals or paper.*) is active for a region.
-const regionInk=region=>onPaper()?region.paper:region;
+// Reads whichever colour set (night literals or paper.*) is active for a region, passed through the
+// derived plate's transform like every registered token, and cached because it is read per frame.
+const regionInkCache=new Map();
+function regionInk(region){
+  const base=onPaper()?region.paper:region;
+  const style=PLATE_STYLES[plateName];if(!style)return base;
+  const key=plateName+':'+region.seed;
+  let tinted=regionInkCache.get(key);
+  if(!tinted){tinted=tintValue({wash:base.wash,pigment:base.pigment,star:base.star},style.tint);regionInkCache.set(key,tinted);}
+  return tinted;
+}
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
 // The sheet itself, as a seamless tile: laid wires every 1.5 px, heavier chain lines every 27 px, and

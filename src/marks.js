@@ -130,7 +130,7 @@ function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
     walked+=(i?spacing:0)+widths[i]/2;
     const a=start+dir*walked/r;
     walked+=widths[i]/2;
-    if(chars[i]===' ')continue;
+    if(chars[i]===' '||plainPlate())continue;
     g.save();
     g.textAlign='center';g.textBaseline='alphabetic';
     g.translate(cx+Math.cos(a)*r,cy+Math.sin(a)*r);

@@ -44,23 +44,46 @@ function figRibbonRange(spine,fn,steps,from,to){
   const pts=[];for(let i=0;i<=steps;i++){const t=lerp(from,to,i/steps),s=spine.at(t),o=fn(t);pts.push({x:s.x+s.px*o,y:s.y+s.py*o});}
   return pts;
 }
+// ---------- The hand the figures are cut in ----------
+// One style object is consulted by the four primitives every figure is built from — the contour, the
+// hatching, the stipple and the wash — and by the pen the layer is drawn with, whose line weight is
+// scaled as it is set. So all twelve engravings answer to the chosen hand without being rewritten:
+// Bayer's is finer, more geometric and less broken, Bode's heavier and far more shaded.
+const FIGURE_STYLES={
+  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1},
+  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65},
+  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7}
+};
+const figureStyle=()=>FIGURE_STYLES[cosmetic('figures')]||FIGURE_STYLES.hevelius;
+let figStyle=FIGURE_STYLES.hevelius;
+// The pen the figure is cut with: every line weight set on it, by the primitives below or by a figure
+// reaching for the context directly, is scaled by the style's weight.
+function figPen(g,style){
+  return new Proxy(g,{
+    get(target,key){const value=target[key];return typeof value==='function'?value.bind(target):value;},
+    set(target,key,value){target[key]=key==='lineWidth'?value*style.weight:value;return true;}
+  });
+}
 // A hand-inked contour: short broken segments with a little jitter, never a mechanical curve.
 function figInk(g,pts,rng,jag,gap,width){
   g.lineWidth=width;g.beginPath();
   for(let i=0;i<pts.length-1;i++){
-    if(rng()<gap)continue;
+    if(rng()<gap*figStyle.breaks)continue;
     const a=pts[i],b=pts[i+1];
-    g.moveTo(a.x+(rng()-.5)*jag,a.y+(rng()-.5)*jag);g.lineTo(b.x+(rng()-.5)*jag,b.y+(rng()-.5)*jag);
+    const j=jag*figStyle.jag;
+    g.moveTo(a.x+(rng()-.5)*j,a.y+(rng()-.5)*j);g.lineTo(b.x+(rng()-.5)*j,b.y+(rng()-.5)*j);
   }
   g.stroke();
 }
-function figStipple(g,spine,leftFn,rightFn,n,rng,size){
+function figStipple(g,spine,leftFn,rightFn,count,rng,size){
+  const n=Math.round(count*figStyle.stipple);
   for(let i=0;i<n;i++){
     const t=rng(),s=spine.at(t),o=lerp(leftFn(t),rightFn(t),rng());
     g.fillRect(s.x+s.px*o,s.y+s.py*o,size,size);
   }
 }
-function figHatch(g,spine,leftFn,rightFn,n,rng){
+function figHatch(g,spine,leftFn,rightFn,count,rng){
+  const n=Math.round(count*figStyle.hatch);
   for(let i=0;i<n;i++){
     const t=rng(),s=spine.at(t),o=lerp(leftFn(t),rightFn(t),rng()),len=2+rng()*3;
     const x=s.x+s.px*o,y=s.y+s.py*o,a=Math.atan2(s.ty,s.tx)+Math.PI/2+(rng()-.5)*.6;
@@ -476,11 +499,12 @@ function buildFigureLayer(chart,frame,count,curScale){
   const c=makeCanvas(w,h),g=c.getContext('2d');
   g.scale(curScale,curScale);g.translate(-frame.originX,-frame.originY);g.lineJoin='round';g.lineCap='round';
   const rng=seeded(48200+((chart.catalogueIndex??chart.id)+chart.id*13)*104729),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
-  const contourA=(onPaper()?.4:.3)*fade,hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07;
-  const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,
+  figStyle=figureStyle();
+  const contourA=(onPaper()?.4:.3)*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07;
+  const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,style:figStyle,
     hatchFrac:expired?0:count/3,wash:(!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
   const [p0,p1,p2]=chart.stars;
-  figureFor(chart)(g,p0,p1,p2,frame.side,rng,state);
+  figureFor(chart)(figPen(g,figStyle),p0,p1,p2,frame.side,rng,state);
   // Never let the ink cross the orbit rings, release marks, or the pricked guide around a star.
   g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#000';
   for(const s of chart.stars){g.beginPath();g.arc(s.x,s.y,s.r+8,0,TAU);g.fill();}
@@ -491,7 +515,7 @@ function drawConstellationFigure(chart){
   if(chart.stars.length<3)return;
   if(sy(chart.entry.y)<-190||sy(chart.stars[2].y)>H+210)return;
   const frame=figFrame(chart),count=chart.stars.filter(n=>n.visited).length;
-  const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+frame.side+':'+bucket;
+  const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+cosmetic('figures')+':'+frame.side+':'+bucket;
   let layer=figureLayers.get(key);
   if(!layer||layer.count!==count||layer.completed!==chart.completed||layer.expired!==chart.expired){
     if(figureLayers.size>10)figureLayers.clear();
@@ -543,12 +567,12 @@ function drawConstellations(){
       }
     }
     const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
-    if(label&&!chart.expired&&(!chart.completed||chart.flash>0)){
+    if(label&&!chart.expired&&!plainPlate()&&(!chart.completed||chart.flash>0)){
       const x=clamp(sx(label.x),20,W-20),y=sy(label.y)-(label.r+46)*scale;
       ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
       ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText(chart.completed?'COMPLETE · +60':count+' / 3 STARS · +60',x,y+16);
     }
-    if(world.player.node===chart.entry&&chart.main[0]){
+    if(world.player.node===chart.entry&&chart.main[0]&&!plainPlate()){
       const n=chart.main[0];ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
     }
     ctx.restore();

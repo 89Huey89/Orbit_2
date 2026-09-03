@@ -8,6 +8,8 @@ definePlate('dark',{
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
     playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
+    // The route already flown, long dry on the sheet.
+    pathInk:'128,134,116',
     // A fresh stroke is bright ink; as it ages it sinks back to a dimmer, drier tone.
     trailWet:[250,240,208],trailDry:[143,148,128],blotWet:[236,224,186],blotDry:[152,148,122],
     pigment:'166,125,101',pigmentRelief:'211,192,143',shorelineRelief:'221,202,152',
@@ -23,6 +25,7 @@ definePlate('dark',{
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
     playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
+    pathInk:'104,74,42',
     // Wet iron-gall is glossy blue-black; it dries to a matte sepia within a second.
     trailWet:[24,26,46],trailDry:[122,88,52],blotWet:[20,22,42],blotDry:[130,98,58],
     // The calibrated shoreline is rubrication red-brown on paper, turning ochre/gold during a reprieve.
@@ -38,14 +41,78 @@ definePlate('dark',{
 });
 // Blends two registered [r,g,b] plate colours into an `r,g,b` string for a template literal.
 const mixRgb=(a,b,t)=>Math.round(lerp(a[0],b[0],t))+','+Math.round(lerp(a[1],b[1],t))+','+Math.round(lerp(a[2],b[2],t));
+// The catalogue's trail inks, registered per plate like every other colour: a wet and a dry tone for
+// the stroke, the wash beneath it, the dry-brush edge, the bleed of a fast segment, and the bead of ink
+// at a release. The plate's own iron gall is read from the `dark` section above and needs no entry.
+definePlate('inks',{
+  night:{
+    sanguine:{wet:[214,116,88],dry:[150,86,68],wash:'196,110,84',edge:'170,96,74',bleed:'206,120,92',blotWet:[214,116,88],blotDry:[152,90,70],path:'150,86,68'},
+    silverpoint:{wet:[226,230,236],dry:[132,138,146],wash:'170,176,184',edge:'150,158,168',bleed:'196,202,210',blotWet:[214,220,228],blotDry:[134,140,148],shimmer:'244,248,255',path:'126,132,140'},
+    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',path:'164,128,64'}
+  },
+  paper:{
+    sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
+    silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252',path:'118,122,128'},
+    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'}
+  }
+});
+// The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen.
+function trailInk(){
+  const chosen=ink.inks[cosmetic('trail')];
+  if(chosen)return chosen;
+  return {wet:ink.dark.trailWet,dry:ink.dark.trailDry,wash:ink.dark.trailWash,edge:ink.dark.trailEdge,
+    bleed:ink.dark.trailBleed,blotWet:ink.dark.blotWet,blotDry:ink.dark.blotDry};
+}
+// ---------- The route already flown ----------
+// The wet trail is a hundred-odd samples that fade in a second; the dried path is the whole route the
+// run has taken, kept in world coordinates and printed under the wet ink every frame. It is bounded
+// twice over: everything that has passed below the sheet is dropped as the camera climbs — it only
+// ever climbs — and a hard cap holds the rest whatever happens. Reduced motion keeps it, since a line
+// already on the page is not motion; a paused run adds nothing to it because nothing is sampled.
+const INK_PATH_CAP=3000;
 function recordTrail(){
   if(world.state!=='playing'&&world.state!=='ready')return;
   const p=world.player;
   trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
   const limit=reducedMotion?64:148;if(trail.length>limit)trail.splice(0,trail.length-limit);
+  const last=inkPath[inkPath.length-1];
+  if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
+  pruneInkPath();
+}
+function pruneInkPath(){
+  if(!H||!world)return;
+  const below=H+220;
+  let gone=0;while(gone<inkPath.length&&sy(inkPath[gone].y)>below)gone++;
+  if(gone>0)inkPath.splice(0,gone);
+  if(inkPath.length>INK_PATH_CAP)inkPath.splice(0,inkPath.length-INK_PATH_CAP);
+}
+// The dried route: one wash pass and three weights of burin line, the heavier where the flight was
+// faster, cut in the ink the pen is charged with. The wet trail dries into its head, so the line the
+// player is drawing now and the line drawn a minute ago are the same line.
+function drawInkPath(){
+  if(inkPath.length<2)return;
+  const pen=trailInk(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
+  const band=p=>Math.min(2,Math.floor(clamp((p.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1)*3));
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle=`rgba(${rgb},${paper?.11:.08})`;ctx.lineWidth=1.9*scale;
+  ctx.beginPath();
+  ctx.moveTo(sx(inkPath[0].x),sy(inkPath[0].y));
+  for(let i=1;i<inkPath.length;i++)ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
+  ctx.stroke();
+  for(let weight=0;weight<3;weight++){
+    ctx.strokeStyle=`rgba(${rgb},${(paper?.4:.3)+weight*.05})`;ctx.lineWidth=(.34+weight*.26)*scale;
+    ctx.beginPath();
+    for(let i=1;i<inkPath.length;i++){
+      if(band(inkPath[i])!==weight)continue;
+      ctx.moveTo(sx(inkPath[i-1].x),sy(inkPath[i-1].y));ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawTrail(){
   if(trail.length<2)return;
+  const pen=trailInk();
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   for(let i=1;i<trail.length;i++){
     const a=trail[i-1],b=trail[i],age=world.time-b.time;
@@ -54,43 +121,162 @@ function drawTrail(){
     const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),weight=t*(1+boost*.7);
     // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. The stroke is laid wet and
     // dries as the segment ages, from glossy blue-black to matte sepia on paper, bright to dim ink at night.
-    const dried=mixRgb(ink.dark.trailWet,ink.dark.trailDry,1-t*t);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${ink.dark.trailWash},${t*t*.16})`,(1+3.5*weight)*scale);
+    const dried=mixRgb(pen.wet,pen.dry,1-t*t);
+    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.wash},${t*t*.16})`,(1+3.5*weight)*scale);
+    // Gold leaf is laid over a dark keyline, the way a gilder cuts the line first and lays the leaf into it.
+    if(pen.keyline)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*scale);
     line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${dried},${t*t*.77})`,(.18+1.2*weight)*scale);
     if(!reducedMotion){
       const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
-      line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${ink.dark.trailEdge},${t*.36})`,.4*scale);
+      line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36})`,.4*scale);
+      // Silverpoint catches the light along the stroke: a faint shimmer that travels segment by segment.
+      if(pen.shimmer){
+        const glint=Math.max(0,Math.sin(world.time*3.1-i*.35));
+        if(glint>.55)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.shimmer},${t*t*(glint-.55)*.9})`,(.15+.5*weight)*scale);
+      }
       if(b.air&&i%6===0&&t<.88){
         const reach=(1-t)*(1.5+boost*2.5),sign=i%12===0?1:-1;
-        line(sx(b.x+nx*sign),sy(b.y+ny*sign),sx(b.x-dx/d*reach+nx*reach*sign),sy(b.y-dy/d*reach+ny*reach*sign),`rgba(${ink.dark.trailBleed},${t*.24})`,.4*scale);
+        line(sx(b.x+nx*sign),sy(b.y+ny*sign),sx(b.x-dx/d*reach+nx*reach*sign),sy(b.y-dy/d*reach+ny*reach*sign),`rgba(${pen.bleed},${t*.24})`,.4*scale);
       }
     }
   }
   ctx.restore();
 }
-function drawPlayer(){
-  if(world.state==='dead')return;const p=world.player,flight=!p.node;
-  const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge();
-  const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
-  ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
-  // A little copperplate comet: a bright head and asymmetric engraved filaments.
-  ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.2)`;ctx.beginPath();ctx.moveTo(4,0);
-  ctx.bezierCurveTo(-3,-4.4,-length*.7,-2.8,-length,0);
-  ctx.bezierCurveTo(-length*.58,2.3,-4,4.1,4,0);ctx.fill();
-  for(let i=0;i<5;i++){
-    const side=i%2?1:-1,spread=(1+i*.48)*(1+boost*.28)+breath;
-    ctx.strokeStyle=`rgba(${i%2?ink.dark.playerFilamentA:ink.dark.playerFilamentB},${.56-i*.065})`;ctx.lineWidth=i===0?.7:.45;
-    ctx.beginPath();ctx.moveTo(1,side*.8);
-    ctx.bezierCurveTo(-length*.26,side*spread,-length*.63,side*(spread+.7),-length*(.72+i*.1),side*(.4+i*.22));ctx.stroke();
-  }
-  // The dark keyline keeps the actual moving point legible over pale planets; on paper a thin ring of
-  // exposed, unprinted paper sits between the ink filaments and the head, like a reserved highlight.
+// ---------- Observer marks: the glyph the traveller is engraved as ----------
+// Every mark is cut in the same local space — the heading along +x, the moving point at the origin —
+// and every one ends with the same head, so the actual position stays legible over a pale planet
+// whatever is chosen. The comet is the plate's own mark and the default.
+// The head all marks share: a reserved highlight on paper, a dark keyline, and the nib ticks that
+// brighten with the charge held.
+function markHead(boost,charge){
   if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(0,0,6,5,0,0,TAU);ctx.fill();}
   ctx.fillStyle=ink.dark.playerKeyline;ctx.beginPath();ctx.ellipse(0,0,5.3,4.4,0,0,TAU);ctx.fill();
   ctx.fillStyle=ink.dark.playerMid;ctx.beginPath();ctx.ellipse(-.25,.2,4.1,3.3,0,0,TAU);ctx.fill();
   ctx.fillStyle=ink.dark.playerHighlight;ctx.beginPath();ctx.ellipse(.7,-.45,2.7,2.3,0,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.48+charge*.25})`;ctx.lineWidth=.55;
   ctx.beginPath();ctx.moveTo(5.1,0);ctx.lineTo(7.8+boost*1.5,0);ctx.moveTo(0,-4.7);ctx.lineTo(0,-6.4);ctx.moveTo(0,4.7);ctx.lineTo(0,6.1);ctx.stroke();
+}
+const markStroke=(alpha,width)=>{ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${alpha})`;ctx.lineWidth=width;};
+const OBSERVER_MARKS={
+  // The pen itself: the nib leads, cut to a point at the traveller's exact position and turned along
+  // the flight, with the barrel and the feather trailing behind it. The vane flexes back as the flight
+  // quickens and breathes a little; under reduced motion it is held still.
+  quill(length,boost,breath,charge){
+    const flex=reducedMotion?0:boost*3.6+breath*1.6,back=-length*1.05;
+    // On paper a ring of reserved, unprinted sheet keeps the ink of the vane clear of the nib.
+    if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4,0,7.4,5,0,0,TAU);ctx.fill();}
+    const tipY=-6-flex;
+    // The vane, laid either side of the shaft as a long lens of dilute ink.
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.3)`;
+    ctx.beginPath();ctx.moveTo(-5,-.6);
+    ctx.quadraticCurveTo(back*.4,-4.4-flex*.3,back,tipY);
+    ctx.quadraticCurveTo(back*.5,5.4-flex*.2,-5,1.8);ctx.fill();
+    markStroke(.78,1);
+    ctx.beginPath();ctx.moveTo(-5,0);ctx.quadraticCurveTo(back*.45,-1.6-flex*.35,back,tipY);ctx.stroke();
+    // The barbs of the feather, longer and more swept the further back they are cut.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.72)`;ctx.lineWidth=.55;
+    ctx.beginPath();
+    for(let i=1;i<=12;i++){
+      const u=i/13,x=lerp(-5.5,back,u),y=lerp(-.3,tipY*.94,u);
+      const sweep=Math.sin(Math.PI*Math.min(1,u*1.15));
+      ctx.moveTo(x,y);ctx.lineTo(x-3.4-u*2.6,y+3.4+sweep*4.4);
+      ctx.moveTo(x,y);ctx.lineTo(x-2.6-u*1.8,y-2.2-sweep*3.1);
+    }
+    ctx.stroke();
+    // The nib: a cut point with its slit and shoulder, keylined so the moving point stays legible over
+    // a pale planet, exactly as the comet's head is.
+    ctx.fillStyle=ink.dark.playerKeyline;
+    ctx.beginPath();ctx.moveTo(.6,0);ctx.lineTo(-7.4,-3.1);ctx.lineTo(-9.4,0);ctx.lineTo(-7.4,3.1);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerMid;
+    ctx.beginPath();ctx.moveTo(-.6,0);ctx.lineTo(-7,-2.1);ctx.lineTo(-8.4,0);ctx.lineTo(-7,2.1);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerHighlight;
+    ctx.beginPath();ctx.ellipse(-5.6,-.5,1.9,1.2,0,0,TAU);ctx.fill();
+    ctx.strokeStyle=ink.dark.playerKeyline;ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(-.4,0);ctx.lineTo(-6.4,0);ctx.stroke();
+    // The bead of wet ink held at the point, brightening with the charge in hand.
+    ctx.fillStyle=`rgba(${ink.dark.playerNib},${.4+charge*.45})`;
+    ctx.beginPath();ctx.arc(-1.6,0,1+charge*.5,0,TAU);ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.42+charge*.3})`;ctx.lineWidth=.55;
+    ctx.beginPath();ctx.moveTo(-6.6,-3.4);ctx.lineTo(-6.6,-5.4);ctx.moveTo(-6.6,3.4);ctx.lineTo(-6.6,5.1);ctx.stroke();
+    return true;
+  },
+  // A little copperplate comet: a bright head and asymmetric engraved filaments.
+  comet(length,boost,breath){
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.2)`;ctx.beginPath();ctx.moveTo(4,0);
+    ctx.bezierCurveTo(-3,-4.4,-length*.7,-2.8,-length,0);
+    ctx.bezierCurveTo(-length*.58,2.3,-4,4.1,4,0);ctx.fill();
+    for(let i=0;i<5;i++){
+      const side=i%2?1:-1,spread=(1+i*.48)*(1+boost*.28)+breath;
+      ctx.strokeStyle=`rgba(${i%2?ink.dark.playerFilamentA:ink.dark.playerFilamentB},${.56-i*.065})`;ctx.lineWidth=i===0?.7:.45;
+      ctx.beginPath();ctx.moveTo(1,side*.8);
+      ctx.bezierCurveTo(-length*.26,side*spread,-length*.63,side*(spread+.7),-length*(.72+i*.1),side*(.4+i*.22));ctx.stroke();
+    }
+  },
+  telescope(length,boost,breath){
+    const back=-length*.86,joint=back*.45;
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.16)`;
+    ctx.beginPath();ctx.moveTo(8,-3.1);ctx.lineTo(joint,-2.5);ctx.lineTo(back,-1.7);ctx.lineTo(back,1.7);ctx.lineTo(joint,2.5);ctx.lineTo(8,3.1);ctx.closePath();ctx.fill();
+    markStroke(.62,.7);
+    ctx.beginPath();ctx.moveTo(8,-3.1);ctx.lineTo(joint,-2.5);ctx.lineTo(back,-1.7);ctx.moveTo(8,3.1);ctx.lineTo(joint,2.5);ctx.lineTo(back,1.7);ctx.stroke();
+    for(const [x,r] of [[8,3.4],[joint,2.7],[back,1.9]]){
+      markStroke(.6,.6);ctx.beginPath();ctx.ellipse(x,0,.9,r,0,0,TAU);ctx.stroke();
+    }
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.4)`;ctx.lineWidth=.4;
+    ctx.beginPath();
+    for(let i=0;i<7;i++){const x=lerp(joint,8,i/6);ctx.moveTo(x,1.1);ctx.lineTo(x-1.3,2.9);}
+    ctx.stroke();
+    // The line of sight, breathing a little as the observer holds the tube steady.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${.26+boost*.16})`;ctx.lineWidth=.4;
+    ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(15+boost*5,breath*2);ctx.stroke();
+  },
+  moth(length,boost,breath){
+    const beat=1+breath*.5,span=Math.max(13,length*.62);
+    for(const side of [-1,1]){
+      ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.22)`;
+      ctx.beginPath();ctx.moveTo(1,side*1.2);
+      ctx.bezierCurveTo(-2,side*(9*beat),-span*.9,side*(10.5*beat),-span,side*(2.2*beat));
+      ctx.bezierCurveTo(-span*.6,side*.8,-3,side*.9,1,side*1.2);ctx.fill();
+      markStroke(.72,.7);
+      ctx.beginPath();ctx.moveTo(1,side*1.2);
+      ctx.bezierCurveTo(-2,side*(9*beat),-span*.9,side*(10.5*beat),-span,side*(2.2*beat));ctx.stroke();
+      ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.4;
+      ctx.beginPath();
+      for(let i=1;i<4;i++){const u=i/4;ctx.moveTo(-1,side*1.4);ctx.lineTo(lerp(-2,-span*.95,u),side*(2.6+6.4*beat*(1-u*.4)));}
+      ctx.stroke();
+      // The feathered antennae.
+      markStroke(.5,.4);
+      ctx.beginPath();ctx.moveTo(3.4,side*1.2);ctx.quadraticCurveTo(8,side*2.4,10.5,side*(5+breath));ctx.stroke();
+    }
+    markStroke(.6,.9);ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(-length*.42,0);ctx.stroke();
+  },
+  saturn(length,boost,breath){
+    const reach=8.4+breath;
+    for(const side of [-1,1]){
+      ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.24)`;
+      ctx.beginPath();ctx.ellipse(side*reach,0,3.3,4.1,0,0,TAU);ctx.fill();
+      markStroke(.8,.85);ctx.beginPath();ctx.ellipse(side*reach,0,3.3,4.1,0,0,TAU);ctx.stroke();
+      ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.4;
+      ctx.beginPath();
+      for(let i=0;i<4;i++){const y=-2.4+i*1.6;ctx.moveTo(side*(reach-2.4),y);ctx.lineTo(side*(reach+2.4),y);}
+      ctx.stroke();
+    }
+    markStroke(.6,.6);
+    ctx.beginPath();ctx.moveTo(-reach+3,0);ctx.lineTo(reach-3,0);ctx.stroke();
+    // The wake of the observation, faint behind the figure.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${.3+boost*.2})`;ctx.lineWidth=.4;
+    ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-length*.6,breath*1.5);ctx.stroke();
+  }
+};function drawPlayer(){
+  if(world.state==='dead')return;const p=world.player,flight=!p.node;
+  const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge();
+  const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
+  ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  // A mark that cuts its own point — the quill's nib is the moving point — says so and keeps it;
+  // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
+  // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
+  const mark=OBSERVER_MARKS[cosmetic('mark')]||OBSERVER_MARKS.quill;
+  if(!mark(length,boost,breath,charge))markHead(boost,charge);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
     ctx.strokeStyle=`rgba(${ink.dark.playerShield},${.55*pulse})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.stroke();
@@ -242,6 +428,7 @@ function drawDarkMarginalia(fy,time,alpha){
     if(darknessRelief>.001){const r=leviathanSprite(true);ctx.globalAlpha=alpha*rise*.9*darknessRelief;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
     ctx.restore();
   }
+  if(plainPlate())return;
   const gloss=glossSprite(false),span=W+gloss.w*2;
   const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
   ctx.save();ctx.globalAlpha=alpha*.5;
@@ -300,12 +487,62 @@ function burst(x,y,count,color='gold',force=1){
   }
   if(particles.length>230)particles.splice(0,particles.length-230);
 }
+// ---------- Capture marks: what the burin leaves at a planet as the traveller is taken ----------
+// Each mark is drawn in the planet's own space, rotated so +x is the point of contact, with `radius`
+// the ripple's reach and `alpha` its remaining life. Reduced motion holds every one of them still.
+const CAPTURE_MARKS={
+  // A compass rose thrown out from the contact: eight rays, the cardinals long, on two faint rings.
+  rose(r,t,radius,alpha,burin){
+    const rgb=ink.dark.transferArc;
+    burinArc(ctx,0,0,radius,0,TAU,rgb,alpha*.5,r.perfect?.7:.5,burin,{segments:22,skips:2});
+    if(r.perfect)burinArc(ctx,0,0,radius*.62,0,TAU,ink.dark.transferArcSoft,alpha*.4,.45,burin+5,{segments:16,skips:2});
+    for(let i=0;i<8;i++){
+      const a=i/8*TAU,long=i%2===0,reach=radius*(long?1.22:.86);
+      const c=Math.cos(a),s=Math.sin(a);
+      ctx.fillStyle=`rgba(${rgb},${alpha*(long?.85:.5)})`;
+      ctx.beginPath();ctx.moveTo(c*reach,s*reach);
+      ctx.lineTo(Math.cos(a+.13)*radius*.28,Math.sin(a+.13)*radius*.28);
+      ctx.lineTo(Math.cos(a-.13)*radius*.28,Math.sin(a-.13)*radius*.28);
+      ctx.closePath();ctx.fill();
+    }
+    line(0,0,radius*1.34,0,`rgba(${ink.dark.transferTick},${alpha*.8})`,.6);
+  },
+  // A wax seal pressed at the contact: a pooled blot of wax under a stamped star.
+  seal(r,t,radius,alpha,burin){
+    const size=Math.max(2,radius*(r.perfect?.5:.4));
+    ctx.save();ctx.translate(radius*.72,0);
+    landContour(ctx,0,0,size,size*.88,seeded(burin));
+    ctx.fillStyle=`rgba(${ink.dark.transferArcSoft},${alpha*.5})`;ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.dark.transferArc},${alpha*.8})`;ctx.lineWidth=.5;ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.transferTick},${alpha*.9})`;ctx.lineWidth=.5;
+    ctx.beginPath();
+    for(let i=0;i<12;i++){
+      const a=i/12*TAU,rr=i%2?size*.24:size*.55;
+      const px=Math.cos(a)*rr,py=Math.sin(a)*rr;
+      if(i)ctx.lineTo(px,py);else ctx.moveTo(px,py);
+    }
+    ctx.closePath();ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,size*.72,0,TAU);ctx.stroke();
+    ctx.restore();
+    burinArc(ctx,0,0,radius,-2.4,2.4,ink.dark.transferArc,alpha*.45,.5,burin+11,{segments:14,skips:2});
+  },
+  // A printer's manicule swung round to point at the planet that took you.
+  manicule(r,t,radius,alpha,burin){
+    burinArc(ctx,0,0,radius,-1.9,1.9,ink.dark.transferArc,alpha*.42,.5,burin,{segments:14,skips:2});
+    ctx.save();ctx.rotate(Math.PI);
+    manicule(-radius*1.5,0,1,Math.max(3.4,radius*.42),ink.dark.transferTick,alpha*.95);
+    ctx.restore();
+    if(r.perfect)line(radius*.4,0,radius*1.1,0,`rgba(${ink.dark.transferTick},${alpha*.7})`,.5);
+  }
+};
 function drawTransferMark(r,t){
   const grow=reducedMotion?0:1-Math.pow(1-t,3),radius=r.start+grow*r.distance;
   const x=r.node?r.node.x:r.x,y=r.node?r.node.y:r.y,alpha=Math.pow(1-t,1.5)*r.alpha;
   const sectors=r.perfect?8:5;
   ctx.save();ctx.translate(sx(x),sy(y));ctx.scale(scale,scale);ctx.rotate(r.angle);
   const burin=r.seed||1;
+  const chosen=CAPTURE_MARKS[cosmetic('capture')];
+  if(chosen){chosen(r,t,radius,alpha,burin);ctx.restore();return;}
   for(let j=0;j<sectors;j++){
     const a=j*TAU/sectors,gap=r.perfect?.055:.11;
     burinArc(ctx,0,0,radius,a+gap,a+TAU/sectors-gap,ink.dark.transferArc,alpha,r.perfect?.9:.6,burin+j*13,{segments:7,skips:0});
@@ -354,7 +591,7 @@ function drawEffects(dt){
       // A bead of ink pools at the release point, then dries lighter as it soaks in.
       const grow=reducedMotion?1:clamp(t*6,.25,1),dry=clamp((t-.15)/.85,0,1),alpha=r.alpha*clamp(1-t*t,0,1);
       ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
-      const rgb=mixRgb(ink.dark.blotWet,ink.dark.blotDry,dry),size=r.size*grow;
+      const pen=trailInk(),rgb=mixRgb(pen.blotWet,pen.blotDry,dry),size=r.size*grow;
       landContour(ctx,0,0,size,size*.84,seeded(r.seed));
       ctx.fillStyle=`rgba(${rgb},${alpha*.8})`;ctx.fill();
       ctx.strokeStyle=`rgba(${rgb},${alpha*.55})`;ctx.lineWidth=.45;ctx.stroke();

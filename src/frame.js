@@ -31,6 +31,7 @@ function frameCompassRose(g,cx,cy,r,colors){
   g.fillStyle=colors.orn;g.beginPath();g.moveTo(0,-r-3);g.lineTo(-2,-r+1.2);g.lineTo(0,-r-.5);g.lineTo(2,-r+1.2);g.closePath();g.fill();
   g.restore();
   // The four winds named round the rose, each set on its own quarter of the ring.
+  if(plainPlate())return;
   const size=Math.max(4.6,r*.42),ring=r*1.9;
   g.strokeStyle=colors.tickMinor;g.lineWidth=.5;g.beginPath();g.arc(cx,cy,ring-1.5,0,TAU);g.stroke();
   g.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
@@ -70,10 +71,140 @@ function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed){
   }
   g.restore();
 }
+// ---------- The catalogue's marginal ornaments ----------
+// Alternatives to the wind-heads, cut into the same four corners with the same burin at the margin's
+// own tone, and baked into the same cached frame layer. Each takes the corner point, the diagonal
+// pointing into the chart, a size and its own seed.
+// Interlaced strapwork: two pierced straps crossing at the corner and running along both margins,
+// the upright one passing over the one that follows the edge.
+function frameStrapwork(g,cx,cy,dirX,dirY,rgb,alpha,size,seed){
+  const w=size*.4,reach=size*3.4;
+  g.save();g.translate(cx,cy);g.scale(dirX,dirY);
+  const strap=(along,s)=>{
+    const gap=w+size*.34;
+    for(const side of [-1,1]){
+      const edge=side*w;
+      if(along){
+        // Broken where the upright strap passes over it, so the two read as interlaced.
+        burinSegment(g,gap,edge,reach,edge,rgb,alpha,.75,s+side*3,{segments:8,skips:1,hair:false,wobble:.5});
+        burinSegment(g,-size*.5,edge,-gap,edge,rgb,alpha*.7,.6,s+side*7,{segments:2,hair:false,wobble:.4});
+      }else burinSegment(g,edge,-size*.5,edge,reach,rgb,alpha,.75,s+side*11,{segments:9,skips:1,hair:false,wobble:.5});
+    }
+    // A pierced lozenge two thirds along the band, and a curled terminal at its end.
+    const t=reach*.66,lx=along?t:0,ly=along?0:t;
+    g.strokeStyle=`rgba(${rgb},${alpha*.9})`;g.lineWidth=.7;
+    g.beginPath();
+    g.moveTo(lx+(along?size*.62:0),ly+(along?0:size*.62));
+    g.lineTo(lx+(along?0:w),ly+(along?w:0));
+    g.lineTo(lx-(along?size*.62:0),ly-(along?0:size*.62));
+    g.lineTo(lx-(along?0:w),ly-(along?w:0));
+    g.closePath();g.stroke();
+    g.beginPath();g.arc(lx,ly,size*.13,0,TAU);g.stroke();
+    burinArc(g,along?reach:0,along?0:reach,w,along?-Math.PI/2:Math.PI,along?Math.PI/2:TAU,rgb,alpha*.85,.7,s+29,{segments:8,skips:0});
+  };
+  strap(true,seed);strap(false,seed+137);
+  g.restore();
+}
+// An acanthus scroll: a stem sweeping out of the corner into the margin, ending in a tight volute,
+// with lobed leaves turning over along its back.
+function frameAcanthus(g,cx,cy,dirX,dirY,rgb,alpha,size,seed){
+  const rng=seeded(seed>>>0||1);
+  g.save();g.translate(cx,cy);g.rotate(Math.atan2(dirY,dirX));
+  const stem=[];
+  for(let i=0;i<=24;i++){
+    const u=i/24;
+    stem.push({x:lerp(-size*.5,size*4.2,u),y:Math.sin(u*Math.PI*.92)*size*1.8-size*.25});
+  }
+  for(let i=0;i<stem.length-1;i++){
+    const a=stem[i],b=stem[i+1];
+    burinSegment(g,a.x,a.y,b.x,b.y,rgb,alpha,1.15-i*.025,seed+i*7,{segments:2,hair:false,wobble:.5});
+  }
+  // The volute the stem curls into, a turn and a half of tightening spiral.
+  const tip=stem[stem.length-1];
+  let prev=tip;
+  for(let i=1;i<=22;i++){
+    const u=i/22,a=-Math.PI*.45+u*Math.PI*2.6,r=size*(.95-u*.72);
+    const point={x:tip.x+size*.85+Math.cos(a)*r,y:tip.y+size*.5+Math.sin(a)*r};
+    burinSegment(g,prev.x,prev.y,point.x,point.y,rgb,alpha*(.95-u*.35),.8,seed+91+i*3,{segments:2,hair:false,wobble:.4});
+    prev=point;
+  }
+  g.fillStyle=`rgba(${rgb},${alpha*.7})`;
+  g.beginPath();g.arc(tip.x+size*.85,tip.y+size*.5,size*.13,0,TAU);g.fill();
+  // Four leaves off the back of the stem, each a lobe turning over at its tip.
+  for(let i=0;i<4;i++){
+    const at=stem[3+i*5],next=stem[4+i*5]||at;
+    const tx=next.x-at.x,ty=next.y-at.y,d=Math.hypot(tx,ty)||1;
+    const nx=ty/d,ny=-tx/d,leaf=size*(1.5-i*.22)*(.85+rng()*.3);
+    const tipX=at.x+nx*leaf+tx/d*leaf*.5,tipY=at.y+ny*leaf+ty/d*leaf*.5;
+    burinSegment(g,at.x,at.y,tipX,tipY,rgb,alpha*(.85-i*.08),.85,seed+41+i*5,{segments:3,hair:false,wobble:.7});
+    burinArc(g,at.x+nx*leaf*.45,at.y+ny*leaf*.45,leaf*.6,Math.atan2(ny,nx)-1.9,Math.atan2(ny,nx)+.9,rgb,alpha*(.8-i*.08),.75,seed+61+i*5,{segments:8,skips:1});
+    // The rib of the leaf, and the curl where it turns over.
+    burinArc(g,tipX,tipY,leaf*.24,0,Math.PI*1.6,rgb,alpha*(.65-i*.07),.6,seed+81+i*5,{segments:6,skips:0});
+  }
+  g.restore();
+}
+// A sea monster out of the empty quarters: coils breaking the margin, a reared head and a blown spout.
+function frameSeaMonster(g,cx,cy,dirX,rgb,alpha,size,seed){
+  const rng=seeded(seed>>>0||1);
+  g.save();g.translate(cx,cy);g.scale(dirX,1);
+  for(const [x,r] of [[-size*.2,size*.5],[size*.9,size*.62],[size*1.95,size*.44]]){
+    burinArc(g,x,0,r,Math.PI,TAU,rgb,alpha,.85,Math.floor(rng()*1e6)||3,{segments:12,skips:2});
+    for(let i=0;i<5;i++){
+      const a=Math.PI*(1.12+i*.16),px=x+Math.cos(a)*(r-size*.1),py=Math.sin(a)*(r-size*.1);
+      burinSegment(g,px,py,px+Math.cos(a)*size*.16,py+Math.sin(a)*size*.16,rgb,alpha*.5,.4,Math.floor(rng()*1e6)||7,{segments:2,hair:false});
+    }
+  }
+  burinSegment(g,size*2.3,0,size*2.9,-size*1.5,rgb,alpha,.9,seed+11,{segments:5,hair:false,wobble:.6});
+  burinArc(g,size*3,-size*1.7,size*.42,Math.PI*.4,Math.PI*1.5,rgb,alpha,.8,seed+17,{segments:8,skips:1});
+  burinSegment(g,size*2.95,-size*2.05,size*4.1,-size*2.25,rgb,alpha,.8,seed+23,{segments:4,hair:false,wobble:.4});
+  burinSegment(g,size*3.05,-size*1.5,size*3.9,-size*1.85,rgb,alpha*.9,.7,seed+29,{segments:4,hair:false,wobble:.4});
+  burinSegment(g,size*3.9,-size*1.85,size*4.1,-size*2.25,rgb,alpha*.85,.6,seed+31,{segments:2,hair:false});
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(size*3.15,-size*1.9,size*.08,0,TAU);g.fill();
+  for(let i=0;i<5;i++){
+    const spread=(i-2)/2*.5,len=size*(1+rng());
+    burinSegment(g,size*3,-size*2.3,size*3+Math.sin(spread)*len,-size*2.3-Math.cos(spread)*len,rgb,alpha*.4,.5,seed+41+i*3,{segments:3,skips:1,hair:false,wobble:1.1});
+  }
+  for(let i=0;i<3;i++){
+    const y=size*(.18+i*.16);
+    burinSegment(g,-size*1.1,y,size*4.4,y,rgb,alpha*(.28-i*.06),.45,seed+61+i*9,{segments:9,skips:2,hair:false,wobble:1.4});
+  }
+  g.restore();
+}
+// A small engraved star, set in the two corners a sea-monster plate leaves empty.
+function frameRosette(g,cx,cy,rgb,alpha,size,seed){
+  burinArc(g,cx,cy,size*.34,0,TAU,rgb,alpha*.7,.6,seed,{segments:10,skips:1});
+  g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineWidth=.7;
+  g.beginPath();
+  for(let i=0;i<16;i++){
+    const a=i/16*TAU,r=i%2?size*.3:size;
+    const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+    if(i)g.lineTo(px,py);else g.moveTo(px,py);
+  }
+  g.closePath();g.stroke();
+}
+function frameOrnaments(g,wide,innerR){
+  const style=cosmetic('frame'),head=wide?14:9,inset=innerR+head*.9+(wide?3:2);
+  const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
+  const corners=[[inset,inset,1,1],[W-inset,inset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
+  for(const [x,y,dx,dy] of corners){
+    const seed=51001+Math.round(x*7+y*13);
+    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,head,seed);
+    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,head*.9,seed);
+    else if(style==='seamonsters'){
+      // The monsters swim in the two lower corners, where the rising ink reaches: they are cut in the
+      // flood's own pigment, at the weight the shoreline marginalia is printed at, so they still read
+      // once the page is half drowned. The upper corners take a small star instead.
+      if(dy<0)frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
+      else frameRosette(g,x,y,rgb,alpha*.85,head*.5,seed);
+    }
+    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed);
+  }
+}
 function frameScaleBar(g,x,y,colors){
   const w=30,h=3;
   g.lineWidth=1;g.strokeStyle=colors.rule;g.strokeRect(x+.5,y+.5,w,h);
   g.fillStyle=colors.orn;for(let i=0;i<4;i+=2)g.fillRect(x+i*w/4,y,w/4,h);
+  if(plainPlate())return;
   g.font=`italic 7px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
 }
 function buildFrameLayer(){
@@ -95,7 +226,7 @@ function buildFrameLayer(){
     g.lineWidth=major?.9:.5;g.strokeStyle=major?colors.tick:colors.tickMinor;
     g.beginPath();g.moveTo(x,outerR);g.lineTo(x,outerR+len);g.stroke();
     g.beginPath();g.moveTo(x,H-outerR);g.lineTo(x,H-outerR-len);g.stroke();
-    if(numbered){
+    if(numbered&&!plainPlate()){
       g.font=`${wide?8:6.5}px 'IM Fell English',Georgia,serif`;g.textAlign='center';g.fillStyle=colors.text;
       g.fillText(String(i),x,outerR+tickLen*.72+2);g.fillText(String(i),x,H-outerR-tickLen*.72+5);
     }
@@ -110,12 +241,9 @@ function buildFrameLayer(){
   // Restrained corner brackets at the inner rule.
   frameCorner(g,innerR,innerR,1,1,colors.orn);frameCorner(g,W-innerR,innerR,-1,1,colors.orn);
   frameCorner(g,innerR,H-innerR,1,-1,colors.orn);frameCorner(g,W-innerR,H-innerR,-1,-1,colors.orn);
-  // A wind-head in each corner, blowing along the diagonal into the chart, kept in the margin's tone.
-  {
-    const head=wide?14:9,inset=innerR+head*.9+(wide?3:2),windRgb=ink.base.inkSoft,windAlpha=onPaper()?.34:.24;
-    const corners=[[inset,inset,1,1],[W-inset,inset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
-    for(const [x,y,dx,dy] of corners)frameWindHead(g,x,y,Math.atan2(dy,dx),windRgb,windAlpha,head,51001+Math.round(x*7+y*13));
-  }
+  // The marginal ornament in each corner — the wind-heads blowing along the diagonal into the chart by
+  // default, or whichever of the catalogue's ornaments is chosen — kept in the margin's own tone.
+  frameOrnaments(g,wide,innerR);
   // Marginalia in the flanks either side of the play channel — desktop only, and clear of the centre 55%.
   // Anchored a fixed distance off the bottom edge so the whole cluster (rose, bar, its label, the credit
   // line below) always lands inside the band regardless of how band scales.
@@ -124,8 +252,10 @@ function buildFrameLayer(){
     // The rose is set in the left flank, clear of the play channel, where its cardinal names have room.
     frameCompassRose(g,leftCx,Math.min(H-roseR*3-band,H*.63),roseR,colors);
     frameScaleBar(g,rightX,oy-2,colors);
+    if(plainPlate())return c;
+    // The engraver's line, which carries the player's initials once the catalogue has granted them.
     g.font=`italic 6.5px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';
-    g.fillText('Delineavit et sculpsit · Orbis Tabula',rightX,oy+10);
+    g.fillText(engraverCredit(),rightX,oy+10);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     const keyX=rightX,keyTop=Math.max(H*.28,band+70);
     g.font="8px 'IM Fell English SC','IM Fell English',Georgia,serif";g.fillStyle=colors.text;g.textAlign='left';
@@ -148,7 +278,7 @@ function drawPlateFrame(){
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
   // ascending with the player; everything else in the frame stays perfectly still.
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
-  if(framePen<.8)return;
+  if(framePen<.8||plainPlate())return;
   const {n,step}=frameEdgeTicks(Math.max(1,H-band*2)),scroll=Math.round(-world.cameraY*.015);
   ctx.font=`${frameWide()?8:6.5}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=colors.text;
   for(let i=0;i<=n;i+=10){
@@ -163,7 +293,7 @@ function render(dt){
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
-  drawAim(aim);drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
+  drawAim(aim);drawInkPath();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
