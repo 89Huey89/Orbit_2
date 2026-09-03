@@ -1,0 +1,11 @@
+import {readFile,mkdir,copyFile} from 'node:fs/promises';
+import {Script} from 'node:vm';
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+if(scripts.length!==1)throw new Error('Expected one self-contained script.');
+for(const [,source]of scripts)new Script(source,{filename:'index.html'});
+if(/<(script|link|img|audio|video)\b[^>]*(src|href)=["']https?:/i.test(html))throw new Error('External dependency found.');
+if(!html.includes('new OrbitWorld('))throw new Error('Game bootstrap missing.');
+await mkdir(new URL('../dist/',import.meta.url),{recursive:true});
+await copyFile(new URL('../index.html',import.meta.url),new URL('../dist/index.html',import.meta.url));
+console.log(`Orbit built: ${Buffer.byteLength(html).toLocaleString()} bytes, one offline HTML file.`);
