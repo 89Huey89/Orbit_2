@@ -675,7 +675,7 @@ definePlate('base',{
 });
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
-  figureLayers.clear();
+  figureLayers.clear();ringSprites.clear();
   if(world)for(const n of world.nodes){n._glowKey=null;}
   grain=grainTexture();if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
@@ -1769,6 +1769,63 @@ definePlate('marks',{
     hazardRim:'34,24,16',hazardArcFaint:'58,42,28',hazardOuter:'58,42,28'
   }
 });
+// ---------- Engraved line quality: a burin line swells and tapers, wobbles slightly, doubles where the
+// hand went round twice, and breaks in tiny gaps. `engravedRing` bakes an orbit ring's main stroke into a
+// small offscreen sprite (cached by quantised radius/rgb/alpha/weight/plate/scale/seed so it is painted
+// once and blitted per frame); `engravedLine` draws a short constellation segment directly since there are
+// only a few of them per frame.
+const ringSprites=new Map();
+function engravedRing(radius,rgb,alpha,weight,seed){
+  const rBucket=Math.round(radius*2)/2,aBucket=Math.round(alpha/.05)*.05;
+  const key=rBucket+'|'+rgb+'|'+aBucket.toFixed(2)+'|'+weight+'|'+plateName+'|'+scale.toFixed(3)+'|'+seed;
+  const cached=ringSprites.get(key);if(cached)return cached;
+  const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);g.lineCap='round';
+  const rng=seeded(seed>>>0||1);
+  const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
+  const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
+  const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=.3+rng()*.3;
+  const segCount=72,skipCount=4+Math.floor(rng()*3),skips=new Set();
+  while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
+  g.strokeStyle=`rgba(${rgb},${aBucket})`;
+  for(let i=0;i<segCount;i++){
+    if(skips.has(i))continue;
+    const a0=i/segCount*TAU,a1=(i+1)/segCount*TAU,mid=(a0+a1)/2;
+    const wob=Math.sin(wobFreq*mid+wobPhase)*wobAmp;
+    const s=Math.sin(f1*mid+ph1)*.5+Math.sin(f2*mid+ph2)*.3+Math.sin(f3*mid+ph3)*.2;
+    g.lineWidth=weight*(1+clamp(s,-1,1)*.45);
+    g.beginPath();g.arc(0,0,rBucket+wob,a0,a1);g.stroke();
+  }
+  const hairGaps=2+Math.floor(rng()*2),hairR=rBucket+(rng()<.5?1:-1)*.9;
+  const slot=TAU/hairGaps,coverFrac=.7,startOffset=rng()*TAU;
+  g.strokeStyle=`rgba(${rgb},${(aBucket*.4).toFixed(3)})`;g.lineWidth=Math.max(.25,weight*.35);
+  for(let k=0;k<hairGaps;k++){
+    const s0=startOffset+k*slot,e0=s0+slot*coverFrac;
+    g.beginPath();g.arc(0,0,hairR,s0,e0);g.stroke();
+  }
+  const sprite={canvas:c,size};
+  ringSprites.set(key,sprite);
+  if(ringSprites.size>64)ringSprites.delete(ringSprites.keys().next().value);
+  return sprite;
+}
+function engravedLine(x1,y1,x2,y2,rgb,alpha,weight,seed){
+  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+  const rng=seeded((seed>>>0||1));
+  const ph=rng()*TAU,f=2+Math.floor(rng()*2),ph2=rng()*TAU,f2=5+Math.floor(rng()*3);
+  const segCount=Math.max(5,Math.min(14,Math.round(len/16)));
+  ctx.save();ctx.lineCap='round';ctx.strokeStyle=`rgba(${rgb},${alpha})`;
+  for(let i=0;i<segCount;i++){
+    const t0=i/segCount,t1=(i+1)/segCount,tm=(t0+t1)/2;
+    const s=Math.sin(f*tm*TAU+ph)*.6+Math.sin(f2*tm*TAU+ph2)*.4;
+    ctx.lineWidth=weight*(1+clamp(s,-1,1)*.4);
+    ctx.beginPath();ctx.moveTo(x1+dx*t0,y1+dy*t0);ctx.lineTo(x1+dx*t1,y1+dy*t1);ctx.stroke();
+  }
+  ctx.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;ctx.lineWidth=Math.max(.25,weight*.35);
+  const off=(rng()<.5?1:-1)*.8;
+  ctx.beginPath();ctx.moveTo(x1+nx*off,y1+ny*off);ctx.lineTo(x2+nx*off,y2+ny*off);ctx.stroke();
+  ctx.restore();
+}
 function drawConnections(){
   const main=world.nodes.filter(n=>n.type!=='gold'&&n.y>world.cameraY-160&&n.y<world.cameraY+world.height+160).sort((a,b)=>a.row-b.row);
   ctx.save();ctx.setLineDash([1,9]);ctx.lineWidth=.55;ctx.strokeStyle=`rgba(${ink.marks.connection},.12)`;
@@ -1968,9 +2025,14 @@ function drawConstellations(){
     ctx.save();ctx.lineWidth=.8*scale;
     for(let i=1;i<points.length;i++){
       const a=points[i-1],b=points[i],lit=chart.completed||(a.visited&&b.visited),dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
-      const start=a.cap+10,end=b.cap+10;
-      ctx.strokeStyle=`rgba(${ink.marks.constellationLine},${chart.expired?.065:lit?.55:.25})`;ctx.setLineDash(lit?[]:[3*scale,7*scale]);
-      ctx.beginPath();ctx.moveTo(sx(a.x+dx/d*start),sy(a.y+dy/d*start));ctx.lineTo(sx(b.x-dx/d*end),sy(b.y-dy/d*end));ctx.stroke();
+      const start=a.cap+10,end=b.cap+10,alpha=chart.expired?.065:lit?.55:.25;
+      const ax=sx(a.x+dx/d*start),ay=sy(a.y+dy/d*start),bx=sx(b.x-dx/d*end),by=sy(b.y-dy/d*end);
+      if(lit&&!chart.expired){
+        ctx.setLineDash([]);engravedLine(ax,ay,bx,by,ink.marks.constellationLine,alpha,.8*scale,a.id*131+b.id);
+      }else{
+        ctx.strokeStyle=`rgba(${ink.marks.constellationLine},${alpha})`;ctx.setLineDash(lit?[]:[3*scale,7*scale]);
+        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      }
     }
     ctx.setLineDash([]);
     if(chart.completed){
@@ -2032,8 +2094,7 @@ function drawNode(n,aim){
       ctx.fillText(active?(p.speed>=MAX_SPEED?'MAX SPEED  ·  ×'+pace:charge>=1?'SPEED HELD  ·  ×'+pace:'BUILDING SPEED  ·  ×'+pace):'SLINGSHOT STAR',0,active?r+28*scale:-r-25*scale);
     }
   }
-  ctx.lineWidth=.7;ctx.strokeStyle=`rgba(${rgb},${active?.59:target?.57:.25})`;
-  ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
+  {const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed);ctx.drawImage(ring.canvas,-ring.size/2,-ring.size/2,ring.size,ring.size);}
   ctx.lineWidth=.45;ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
   ctx.strokeStyle=`rgba(${rgb},${target?.36:.11})`;ctx.setLineDash([1*scale,5*scale]);ctx.beginPath();ctx.arc(0,0,n.cap*scale,0,TAU);ctx.stroke();ctx.setLineDash([]);
   ctx.lineWidth=.5;ctx.strokeStyle=paper?`rgba(${ink.base.ink},.4)`:`rgba(${rgb},.16)`;ctx.beginPath();
