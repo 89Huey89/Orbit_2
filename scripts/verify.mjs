@@ -352,7 +352,7 @@ const layouts=[runtime(390,844),runtime(430,932,true,true),runtime(1440,900),run
 // the stars' acceleration; deliberate charging and tangent entries outrun the
 // fully developed pursuit. No artificial flight timer or automatic speed gain.
 function pressureRun(useStars){
-  const w=new OrbitWorld(8);w.start();
+  const w=new OrbitWorld(1);w.start();
   for(let i=0;i<120*400&&w.state==='playing'&&w.progress<220;i++){
     const n=w.player.node;
     if(n){

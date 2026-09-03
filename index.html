@@ -60,6 +60,11 @@
     .stat .small{font-size:9px}
     #end-constellations{margin:-18px 0 23px;font-size:13px;color:var(--gold)}
     #end .action-copy{font-size:19px;margin-bottom:12px}
+    .difficulty{pointer-events:auto;display:flex;gap:9px;justify-content:center;margin-top:19px}
+    .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:'Trebuchet MS',Verdana,sans-serif;font-size:10px;letter-spacing:.14em;padding:8px 13px;border-radius:2px;cursor:pointer;transition:color .2s,border-color .2s}
+    .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
+    .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+    #shield{color:#9fc9d8}
     #pause{background:rgba(8,15,24,.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
     #pause strong{font-size:40px;font-weight:400;letter-spacing:.04em}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
@@ -77,12 +82,18 @@
   <canvas id="sky" tabindex="0" role="application" aria-label="Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node. Captures are automatic. Nearby black holes bend your flight; follow the curved guide."></canvas>
   <header class="hud" aria-label="Score">
     <div class="brand">ORBIT</div>
-    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div></div>
+    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="shield" class="small"></div></div>
     <div class="best-block"><span class="small">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen" aria-label="Start game">
     <div class="title-group"><p class="eyebrow">FOLLOW THE PULL</p><h1>ORBIT</h1><div class="title-rule"><span></span></div></div>
-    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.</p></div>
+    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.</p>
+      <div class="difficulty" role="group" aria-label="Difficulty">
+        <button id="diff-relaxed" class="diff-btn" type="button" aria-pressed="false">RELAXED</button>
+        <button id="diff-classic" class="diff-btn" type="button" aria-pressed="true">CLASSIC</button>
+        <button id="diff-hardcore" class="diff-btn" type="button" aria-pressed="false">HARDCORE</button>
+      </div>
+    </div>
   </section>
   <div id="hint">Tap when the dotted line skims the next orbit’s rim.</div>
   <div id="toast" aria-live="polite"></div>
@@ -254,10 +265,10 @@ class OrbitWorld {
     this.nodes = []; this.hazards = []; this.row = 0; this.serial = 0;
     this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;
     this.score = 0; this.captures = 0; this.perfects = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
-    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0;
+    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
-    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0};
+    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false};
     this.positionPlayer(); this.ensureAhead();
   }
   makeNode(x, y, r, row, type) {
@@ -304,6 +315,12 @@ class OrbitWorld {
       const ex = side * Math.min(174,this.width*.39), ey = (prev.y+n.y)/2;
       if ([prev,n].every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+82)) this.makeNode(ex,ey,32,k-.5,'gold');
     }
+    // A rare shield star: one carried charge absorbs the next black-hole contact.
+    if (!fork && k >= 10 && k%10 === 0) {
+      const side = (prev.x+n.x)>0 ? -1 : 1;
+      const ex = side * Math.min(150,this.width*.34), ey = (prev.y+n.y)/2-40;
+      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28,k-.5,'shield');
+    }
     // Keep both possible tangent routes to each main node clear, including drift envelopes.
     if (!fork && k >= 6 && k%3 !== 1) {
       const r = 18+rng()*11+Math.min(8,k*.14);
@@ -329,7 +346,7 @@ class OrbitWorld {
   start() { if(this.state!=='ready')return; this.state='playing'; this.emit('start',{}); }
   charge() { const p=this.player;return p.node&&p.node.type==='sling'?clamp(p.orbitSweep/TAU,0,1):0; }
   speedMultiplier(speed=this.player.node?this.player.speed:Math.hypot(this.player.vx,this.player.vy)) { return clamp(speed/BASE_SPEED,1,MAX_SPEED/BASE_SPEED); }
-  darknessSpeed() { return 22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55); }
+  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*this.darknessMult; }
   launchVelocity() {
     const p=this.player,rawSpeed=Math.hypot(p.vx,p.vy),speed=Math.min(MAX_SPEED,rawSpeed),ratio=speed/Math.max(1e-8,rawSpeed);
     // Bound repeated assists from moving planets without changing the heading.
@@ -363,6 +380,7 @@ class OrbitWorld {
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
     this.shake=perfect?1.8:1.0;
     this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo});
+    if(n.type==='shield'&&!p.shielded){p.shielded=true;this.emit('shield',{x:n.x,y:n.y});}
     if(n.routeRole==='star'){
       const chart=this.constellations.find(c=>c.id===n.routeId);
       if(chart&&!chart.completed&&!chart.expired){
@@ -381,6 +399,18 @@ class OrbitWorld {
     if(this.state!=='playing')return;
     this.state='dead';this.reason=reason;this.player.deadTime=0;this.shake=5;
     this.emit('death',{x:this.player.x,y:this.player.y,reason,score:this.score});
+  }
+  // A carried shield absorbs one black-hole contact: it consumes itself and
+  // reflects the flight outward instead of ending the run.
+  hazardHit(h) {
+    if(this.state!=='playing')return;
+    const p=this.player;
+    if(!p.shielded){this.die('CAUGHT BY A BLACK HOLE');return;}
+    p.shielded=false;
+    const dx=p.x-h.x,dy=p.y-h.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
+    p.vx-=2*dot*nx;p.vy-=2*dot*ny;
+    const clear=h.r+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
+    this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
   }
   resize(width,height) {
     const oldHeight=this.height;this.width=width;this.height=height;
@@ -418,7 +448,7 @@ class OrbitWorld {
         const step=this.hazards.length?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
         const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width);
         p.flightTime+=result.dt;remaining-=step;time+=step;
-        if(result.hit?.kind==='hole')this.die('CAUGHT BY A BLACK HOLE');
+        if(result.hit?.kind==='hole')this.hazardHit(result.hit.h);
         else if(result.hit?.kind==='edge')this.die('LEFT THE STAR CHART');
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
@@ -428,7 +458,7 @@ class OrbitWorld {
     }
     if(wasOrbiting)for(const h of this.hazards){
       const d=pointSegment(h.x,h.y,oldX,oldY,p.x,p.y);
-      if(d<h.r+3)this.die('CAUGHT BY A BLACK HOLE');
+      if(d<h.r+3)this.hazardHit(h);
     }
     this.topY=Math.min(this.topY,p.y);
     const target=this.topY-this.height*.57;
@@ -532,6 +562,14 @@ let lastChapter=-1,recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
+const DARKNESS_MULT={relaxed:.72,classic:1,hardcore:1.35};
+let difficulty=storage.get('orbit.difficulty.v1','classic');
+if(!(difficulty in DARKNESS_MULT))difficulty='classic';
+function setDifficulty(value){difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
+function syncDifficulty(){
+  for(const key in DARKNESS_MULT)$('diff-'+key).setAttribute('aria-pressed',String(key===difficulty));
+  if(world)world.darknessMult=DARKNESS_MULT[difficulty];
+}
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
 const numerals=['I','II','III','IV'];
 const starRng=seeded(763428);
@@ -612,7 +650,8 @@ const planetPalettes={
   dune:    {light:'#d8bf93',body:'#b49b72',dark:'#493b2d',rgb:'202,178,137',size:24,spin:.01},
   volcanic:{light:'#b5a184',body:'#82735f',dark:'#302d29',rgb:'184,159,122',size:25,spin:.011},
   storm:   {light:'#c9c3b4',body:'#9c9b91',dark:'#3e3d3c',rgb:'191,188,173',size:29,spin:.013},
-  gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006}
+  gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006},
+  shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006}
 };
 
 // Every seven main worlds have different geology. The run seed changes their
@@ -815,12 +854,12 @@ function planetWeather(family,core,seed){
   return layer.image;
 }
 function glyph(seed,type,row,runSeed){
-  const family=type==='gold'?'gold':planetFamily(row,runSeed),key=seed+':'+type+':'+family;
+  const family=type==='gold'?'gold':type==='shield'?'shield':planetFamily(row,runSeed),key=seed+':'+type+':'+family;
   if(glyphs.has(key))return glyphs.get(key);
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
-  if(family!=='gold')paintSurvey(g,core,family,tilt);
+  if(family!=='gold'&&family!=='shield')paintSurvey(g,core,family,tilt);
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
   g=surface.ink;
   g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();
@@ -1276,8 +1315,8 @@ function drawNode(n,aim){
   const p=world.player,active=p.node===n,used=n.visited&&!active,target=aim&&aim.n.id===n.id;
   const x=sx(n.x),y=sy(n.y),r=(active?p.rad:n.r)*scale;
   if(y<-r*2||y>H+r*2)return;
-  const gold=n.type==='gold',drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling';
-  const rgb=drift?'148,180,177':fading?'205,159,122':gold?'226,195,133':'209,190,146';
+  const gold=n.type==='gold',drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
+  const rgb=drift?'148,180,177':fading?'205,159,122':gold?'226,195,133':shield?'150,196,214':'209,190,146';
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=.2;
@@ -1342,7 +1381,7 @@ function drawNode(n,aim){
     }
   }
   if(!used){
-    ctx.font=`${Math.max(9,10*scale)}px Georgia`;ctx.textAlign='left';ctx.fillStyle=`rgba(${rgb},.48)`;ctx.fillText(gold?'+15':String(Math.floor(n.row)+1).padStart(2,'0'),r+12*scale,4*scale);
+    ctx.font=`${Math.max(9,10*scale)}px Georgia`;ctx.textAlign='left';ctx.fillStyle=`rgba(${rgb},.48)`;ctx.fillText(gold?'+15':shield?'SHIELD':String(Math.floor(n.row)+1).padStart(2,'0'),r+12*scale,4*scale);
     if(drift){ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,-r-15);ctx.bezierCurveTo(-3,-r-23,3,-r-7,9,-r-15);ctx.stroke();}
     if(world.captures<2&&!active&&n.row===Math.floor(world.progress)+1){ctx.textAlign='center';ctx.font=`${Math.max(9,9*scale)}px 'Trebuchet MS',sans-serif`;ctx.fillStyle='rgba(200,204,186,.6)';ctx.fillText('NEXT',0,-r-24*scale);}
   }
@@ -1475,6 +1514,11 @@ function drawPlayer(){
   ctx.fillStyle='#fff3ce';ctx.beginPath();ctx.ellipse(.7,-.45,2.7,2.3,0,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(246,227,181,${.48+charge*.25})`;ctx.lineWidth=.55;
   ctx.beginPath();ctx.moveTo(5.1,0);ctx.lineTo(7.8+boost*1.5,0);ctx.moveTo(0,-4.7);ctx.lineTo(0,-6.4);ctx.moveTo(0,4.7);ctx.lineTo(0,6.1);ctx.stroke();
+  if(p.shielded){
+    const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
+    ctx.strokeStyle=`rgba(150,205,224,${.55*pulse})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(150,205,224,${.22*pulse})`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,11.5,0,TAU);ctx.stroke();
+  }
   ctx.restore();
 }
 function darknessPlate(relief){
@@ -1663,6 +1707,14 @@ function event(type,e){
     }
     $('announcement').textContent=e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
     if(world.score>best){best=world.score;storage.set('orbit.best.v1',best);}
+  }else if(type==='shield'){
+    audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
+    rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45});
+    toast('SHIELD ARMED · SURVIVES ONE BLACK HOLE',2.4);
+  }else if(type==='shieldBreak'){
+    audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
+    burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6});
+    toast('SHIELD ABSORBED THE IMPACT',1.8);
   }else if(type==='near'){
     audio.tone(698.46,.28,0,.16);floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
     if(world.score>best){best=world.score;storage.set('orbit.best.v1',best);}
@@ -1676,6 +1728,7 @@ function newWorld(){
   glyphs.clear();trail=[];particles=[];rings=[];floaters=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=best;world=new OrbitWorld(++runSeed,W/scale,H/scale,event);
+  world.darknessMult=DARKNESS_MULT[difficulty];
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
 function setPlaying(){
@@ -1697,6 +1750,7 @@ function updateUI(dt){
   if(lastScore!==world.score){lastScore=world.score;$('score').textContent=world.score;$('best').textContent=best;}
   const pace='SPEED ×'+world.speedMultiplier().toFixed(1);if($('pace').textContent!==pace)$('pace').textContent=pace;
   const flow=world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'';if($('flow').textContent!==flow)$('flow').textContent=flow;
+  const shieldText=world.player.shielded?'SHIELD ARMED':'';if($('shield').textContent!==shieldText)$('shield').textContent=shieldText;
   const chapter=Math.min(3,Math.floor(world.progress/8));
   if(chapter!==lastChapter){lastChapter=chapter;$('chapter').innerHTML=numerals[chapter]+' &nbsp; / &nbsp; '+chapters[chapter];if(chapter>0&&world.state==='playing')chapterReveal={index:chapter,age:0};}
   if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
@@ -1738,6 +1792,9 @@ function pause(){if(world&&world.state==='playing'){world.state='paused';$('paus
 document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();if(audio.ctx)audio.ctx.suspend().catch(()=>{});}else frameTime=performance.now();});
 window.addEventListener('blur',pause);
 $('sound').addEventListener('click',()=>{audio.toggle();storage.set('orbit.sound.v1',audio.enabled?'on':'off');syncSound();if(audio.enabled)audio.tone(440,.25,0,.2);});
+$('diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
+$('diff-classic').addEventListener('click',()=>setDifficulty('classic'));
+$('diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 $('fullscreen').addEventListener('click',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){try{const exit=document.exitFullscreen||document.webkitExitFullscreen;const p=exit.call(document);if(p&&p.catch)p.catch(()=>{});}catch(_){}}
@@ -1758,7 +1815,7 @@ function tick(now){
   }
   requestAnimationFrame(tick);
 }
-resize();newWorld();syncSound();$('best').textContent=best;render(0);requestAnimationFrame(tick);
+resize();newWorld();syncSound();syncDifficulty();$('best').textContent=best;render(0);requestAnimationFrame(tick);
 </script>
 </body>
 </html>
