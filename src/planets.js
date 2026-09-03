@@ -315,7 +315,9 @@ function drawPlanet(art,r,time){
   }
   ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
 }
-function sx(x){return W*.5+x*scale;}
-function sy(y){return (y-world.cameraY)*scale;}
+// World to plate. The chart carries the active sheet's registration offset; the frame and the
+// scenery behind it do not, so a page turn shifts the printed chart very slightly against them.
+function sx(x){return W*.5+x*scale+plateShift.x;}
+function sy(y){return (y-world.cameraY)*scale+plateShift.y;}
 function line(x1,y1,x2,y2,color,width=.6){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
 
