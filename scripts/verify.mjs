@@ -418,7 +418,9 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   const events={},items=new Map(),raf=[],saved=new Map();
   let lensCopies=0;
   const gradient={addColorStop(){}};
-  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({})},{
+  // measureText is the one text metric the lettering routines ask for; the stand-in answers with a
+  // plausible advance so textAlongArc exercises its measured path rather than its fallback.
+  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({}),measureText:t=>({width:Math.max(1,String(t).length*5.5)})},{
     get(target,key){return key in target?target[key]:(...args)=>{
       for(const a of args)if(typeof a==='number')assert(Number.isFinite(a),'Non-finite canvas argument in '+String(key));
       if(key==='drawImage'&&args[0]?.id==='sky'&&args.length===9){
@@ -433,7 +435,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed}};',context);
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES};',context);
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
@@ -455,6 +457,27 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   // Both plates must boot, draw every chapter, and switch mid-run without touching the simulation.
   context.test.setPlate('paper');assert.equal(context.test.plateName,'paper');
   for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+  // Every entry in the catalogue is engraved: none of them falls through to the generic asterism,
+  // and each figure bakes a layer with finite arguments part-traced, completed and expired.
+  for(const entry of CONSTELLATIONS){
+    const index=CONSTELLATIONS.indexOf(entry),figure=context.test.figureFor({name:entry.name,catalogueIndex:index});
+    assert.equal(typeof figure,'function','Every catalogue figure needs an engraving: '+entry.name);
+    assert.notEqual(figure,context.test.figAsterism,'No catalogue entry may fall back to the asterism: '+entry.name);
+    for(const [count,completed,expired] of [[0,false,false],[2,false,false],[3,true,false],[1,false,true]]){
+      const stars=entry.shape.map((offset,j)=>({x:offset-120,y:-j*200+[24,42,18][j],r:33,visited:j<count}));
+      const chart={id:5,catalogueIndex:index,name:entry.name,stars,completed,expired};
+      const layer=context.test.buildFigureLayer(chart,context.test.figFrame(chart),count,1);
+      assert(layer&&layer.canvas,'A catalogue figure must bake into a layer: '+entry.name);
+    }
+  }
+  assert.equal(context.test.figureFor({name:'THE UNCUT PLATE'}),context.test.figAsterism,'An unknown name still falls back');
+  // Lettering on a curve places every glyph at a finite point, and reports the arc it used.
+  for(const options of [{size:9,spacing:1.2,align:'center'},{size:7,spacing:0,inward:true},{size:11,align:'end',direction:-1}]){
+    const arc=context.test.textAlongArc(context.test.ctx,'ORBITA \u00b7 TABULA',60,80,54,-Math.PI/2,options);
+    assert(Number.isFinite(arc.start)&&Number.isFinite(arc.end)&&arc.span>0,'textAlongArc must report a finite arc');
+  }
+  assert.equal(context.test.textAlongArc(context.test.ctx,'',10,10,40,0,{}).span,0,'Empty lettering occupies no arc');
+  assert.equal(context.test.textAlongArc(context.test.ctx,'ORBITA',10,10,0,0,{}).span,0,'A degenerate rim is skipped, not drawn');
   context.test.handleInput();assert.equal(context.test.world.state,'playing');
   frames(75);const midRun=context.test.world.time;context.test.setPlate('night');assert.equal(context.test.world.time,midRun);
   frames(75);
@@ -525,7 +548,21 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false){
   fresh.hazards=[{x:-fresh.width/2+4,y:fresh.cameraY+4,r:28,seed:23,phase:.3,near:false},{x:fresh.width/2-4,y:fresh.cameraY+fresh.height-4,r:30,seed:24,phase:.6,near:false}];
   const beforeCopies=lensCopies;context.test.render(step);assert.equal(lensCopies-beforeCopies,2,'Partly clipped black holes must still lens the background');
   events['window:blur']();const frozenTime=fresh.time;fresh.update(2);context.test.render(step);assert.equal(fresh.time,frozenTime);
-  return {width,height,storageBlocked,reduceMotion,lensCopies};
+  // The page turn: a sheet leaves the frame entirely, freezes with the run, and lands exactly on the
+  // new chapter rather than crawling toward it.
+  assert.equal(context.test.pageTurn(0),0);assert.equal(context.test.pageTurn(1),1);
+  assert(context.test.pageTurn(.5)>0&&context.test.pageTurn(.5)<1);
+  fresh.state='playing';fresh.progress=8;
+  let midTurn=0,turnFrames=0;
+  for(let i=0;i<900&&context.test.regionBlend<1;i++){
+    context.test.render(1/60);turnFrames++;
+    if(context.test.regionBlend>.25&&context.test.regionBlend<.75)midTurn=context.test.regionBlend;
+    if(i===120){const held=context.test.regionBlend;fresh.state='paused';context.test.render(1/60);assert.equal(context.test.regionBlend,held,'A paused run freezes the page turn');fresh.state='playing';}
+  }
+  assert(midTurn>0,'The sheet must be drawn part way across the frame');
+  assert.equal(context.test.regionBlend,1,'The page turn settles exactly on the new chapter: '+context.test.regionBlend);
+  assert(turnFrames<900,'The page turn must complete in a few seconds');
+  return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }
 const layouts=[runtime(390,844),runtime(430,932,true,true),runtime(1440,900),runtime(844,390),runtime(320,568)];
 
@@ -572,4 +609,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
