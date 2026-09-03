@@ -746,17 +746,36 @@ function paintNightBackdrop(){
   return c;
 }
 const planetFamilies=['ocean','crater','ringed','ice','dune','volcanic','storm'];
-const planetPalettes={
-  ocean:   {light:'#cdc7ac',body:'#929c87',dark:'#343a32',rgb:'184,190,164',size:26,spin:.012},
-  crater:  {light:'#ded1b4',body:'#b1a58a',dark:'#3c3931',rgb:'207,194,164',size:21,spin:.007},
-  ringed:  {light:'#d8c7a1',body:'#b2a07d',dark:'#443b2d',rgb:'202,185,147',size:27,spin:.009},
-  ice:     {light:'#d6d5bd',body:'#a4b0a6',dark:'#39413d',rgb:'196,205,187',size:24,spin:.008},
-  dune:    {light:'#d8bf93',body:'#b49b72',dark:'#493b2d',rgb:'202,178,137',size:24,spin:.01},
-  volcanic:{light:'#b5a184',body:'#82735f',dark:'#302d29',rgb:'184,159,122',size:25,spin:.011},
-  storm:   {light:'#c9c3b4',body:'#9c9b91',dark:'#3e3d3c',rgb:'191,188,173',size:29,spin:.013},
-  gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006},
-  shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006}
-};
+// Each world's local colour is registered per plate; on paper it is a restrained period pigment
+// (verdigris, ochre, burnt sienna, indigo, chalk) instead of the night plate's muted alien tone.
+// planetPalettes forwards to the live plate so both `distantGlobe` (outside this region) and the
+// code below keep reading `planetPalettes[family].rgb` etc. without knowing which plate is active.
+definePlate('planets',{
+  night:{
+    ocean:   {light:'#cdc7ac',body:'#929c87',dark:'#343a32',rgb:'184,190,164',size:26,spin:.012},
+    crater:  {light:'#ded1b4',body:'#b1a58a',dark:'#3c3931',rgb:'207,194,164',size:21,spin:.007},
+    ringed:  {light:'#d8c7a1',body:'#b2a07d',dark:'#443b2d',rgb:'202,185,147',size:27,spin:.009},
+    ice:     {light:'#d6d5bd',body:'#a4b0a6',dark:'#39413d',rgb:'196,205,187',size:24,spin:.008},
+    dune:    {light:'#d8bf93',body:'#b49b72',dark:'#493b2d',rgb:'202,178,137',size:24,spin:.01},
+    volcanic:{light:'#b5a184',body:'#82735f',dark:'#302d29',rgb:'184,159,122',size:25,spin:.011},
+    storm:   {light:'#c9c3b4',body:'#9c9b91',dark:'#3e3d3c',rgb:'191,188,173',size:29,spin:.013},
+    gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006},
+    shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006}
+  },
+  paper:{
+    ocean:   {light:'#e2dcc4',body:'#aebd9f',dark:'#465648',rgb:'62,104,84',   size:26,spin:.012}, // verdigris
+    crater:  {light:'#e8dcbe',body:'#c3b48e',dark:'#524832',rgb:'122,100,70', size:21,spin:.007}, // weathered chalk/ochre
+    ringed:  {light:'#ead5a0',body:'#c9a76a',dark:'#5a4221',rgb:'176,118,38', size:27,spin:.009}, // ochre
+    ice:     {light:'#ece4cb',body:'#c4cbb2',dark:'#465148',rgb:'100,118,128',size:24,spin:.008}, // chalk + slate
+    dune:    {light:'#ecd09b',body:'#c99b60',dark:'#5a3a1e',rgb:'166,90,46',  size:24,spin:.01},  // burnt sienna
+    volcanic:{light:'#d8ab7c',body:'#ab7346',dark:'#4a2818',rgb:'166,58,40',  size:25,spin:.011}, // rubrication
+    storm:   {light:'#dad4bc',body:'#a3a894',dark:'#3f454a',rgb:'52,84,120',  size:29,spin:.013}, // indigo
+    gold:    {light:'#ead495',body:'#c39e55',dark:'#4a3a1c',rgb:'190,132,46', size:14,spin:.006}, // bright ochre
+    shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}  // dull Prussian
+  }
+});
+const planetPalettes={};
+for(const family in PLATES.night.planets)Object.defineProperty(planetPalettes,family,{enumerable:true,get:()=>ink.planets[family]});
 
 // Every seven main worlds have different geology. The run seed changes their
 // order; decoration has its own RNG and never changes the course or physics.
@@ -775,24 +794,27 @@ function landContour(g,x,y,rx,ry,rng){
   g.closePath();
 }
 function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
-  const rgb=palette.rgb;
+  const rgb=palette.rgb,paper=onPaper();
   if(family==='ocean'){
     // Broad, irregular shorelines and islands beneath wisps of cloud.
     for(let i=0;i<4;i++){
       const x=(rng()-.5)*core*1.5,y=(rng()-.5)*core*1.6;
       landContour(g,x,y,core*(i===0?.52:.22+rng()*.2),core*(.3+rng()*.32),rng);
-      g.fillStyle=i%2?'#b8b292':'#cbc4a4';g.fill();g.strokeStyle='rgba(51,60,45,.7)';g.lineWidth=.65;g.stroke();
+      if(paper){g.fillStyle=i%2?'rgba(62,104,84,.3)':'rgba(98,140,116,.24)';g.strokeStyle='rgba(58,42,28,.55)';}
+      else{g.fillStyle=i%2?'#b8b292':'#cbc4a4';g.strokeStyle='rgba(51,60,45,.7)';}
+      g.fill();g.lineWidth=.65;g.stroke();
     }
     for(let i=0;i<9;i++){
       const x=(rng()-.5)*core*1.8,y=(rng()-.5)*core*1.9;
-      g.strokeStyle=`rgba(218,218,196,${.1+rng()*.15})`;g.lineWidth=.6+rng()*1.25;g.lineCap='round';
+      g.strokeStyle=paper?`rgba(96,74,52,${.14+rng()*.18})`:`rgba(218,218,196,${.1+rng()*.15})`;g.lineWidth=.6+rng()*1.25;g.lineCap='round';
       g.beginPath();g.moveTo(x-core*.28,y);g.bezierCurveTo(x-core*.12,y-3,x+core*.18,y+3,x+core*.4,y-1);g.stroke();
     }
-    g.fillStyle='rgba(207,213,193,.42)';g.beginPath();g.ellipse(-core*.16,-core*.97,core*.42,core*.16,0,0,TAU);g.fill();
+    if(paper){g.fillStyle='rgba(231,218,189,.6)';g.strokeStyle='rgba(58,42,28,.28)';g.lineWidth=.4;g.beginPath();g.ellipse(-core*.16,-core*.97,core*.42,core*.16,0,0,TAU);g.fill();g.stroke();}
+    else{g.fillStyle='rgba(207,213,193,.42)';g.beginPath();g.ellipse(-core*.16,-core*.97,core*.42,core*.16,0,0,TAU);g.fill();}
   }else if(family==='crater'){
     for(let i=0;i<5;i++){
       landContour(g,(rng()-.5)*core*1.5,(rng()-.5)*core*1.5,core*.55,core*.35,rng);
-      g.fillStyle='rgba(56,66,75,.14)';g.fill();
+      g.fillStyle=paper?'rgba(58,42,28,.12)':'rgba(56,66,75,.14)';g.fill();
     }
     for(let i=0;i<25;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.94,x=Math.cos(a)*d,y=Math.sin(a)*d;
@@ -810,20 +832,24 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
     }
   }else if(family==='ringed'||family==='storm'){
     const phase=rng()*TAU,storm=family==='storm';
+    const stormMajor=paper?'rgba(224,220,206,.42)':'rgba(200,194,202,.38)',stormMinor=paper?'rgba(52,84,120,.5)':'rgba(75,71,87,.45)';
+    const ringMajor=paper?'rgba(234,222,190,.42)':'rgba(215,197,161,.42)',ringMinor=paper?'rgba(120,90,58,.42)':'rgba(111,86,66,.4)';
     for(let i=-22;i<23;i++){
       const y=i*core/21,bend=Math.sin(i*.65+phase)*(storm?3.7:1.5);
-      g.strokeStyle=i%4===0?(storm?'rgba(200,194,202,.38)':'rgba(215,197,161,.42)'):i%3===0?(storm?'rgba(75,71,87,.45)':'rgba(111,86,66,.4)'):`rgba(${rgb},.22)`;
+      g.strokeStyle=i%4===0?(storm?stormMajor:ringMajor):i%3===0?(storm?stormMinor:ringMinor):`rgba(${rgb},.22)`;
       g.lineWidth=.65+rng()*1.45;g.beginPath();g.moveTo(-core-3,y);g.bezierCurveTo(-core*.35,y-3+bend,core*.32,y+4-bend,core+3,y-1);g.stroke();
     }
     const x=-core*.24,y=core*.12,w=core*(storm?.43:.25),h=w*.53;
+    const spotA=storm?(paper?'rgba(220,214,198,.4)':'rgba(207,201,208,.4)'):(paper?'rgba(224,206,166,.44)':'rgba(212,190,150,.44)');
+    const spotB=storm?(paper?'rgba(52,84,120,.55)':'rgba(76,71,89,.52)'):(paper?'rgba(120,90,58,.48)':'rgba(115,85,64,.45)');
     for(let i=9;i>0;i--){
-      g.strokeStyle=i%2===0?(storm?'rgba(207,201,208,.4)':'rgba(212,190,150,.44)'):(storm?'rgba(76,71,89,.52)':'rgba(115,85,64,.45)');g.lineWidth=.8;
+      g.strokeStyle=i%2===0?spotA:spotB;g.lineWidth=.8;
       g.beginPath();g.ellipse(x+Math.sin(i*.5)*.55,y,w*i/9,h*i/9,-.12,0,TAU);g.stroke();
     }
   }else if(family==='ice'){
     for(let i=0;i<8;i++){
       landContour(g,(rng()-.5)*core*1.7,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.25+rng()*.3),rng);
-      g.fillStyle=i%2?'rgba(210,216,206,.3)':'rgba(95,119,128,.22)';g.fill();
+      g.fillStyle=paper?(i%2?'rgba(236,228,204,.42)':'rgba(100,118,128,.2)'):(i%2?'rgba(210,216,206,.3)':'rgba(95,119,128,.22)');g.fill();
     }
     // Long fractured plates, each with smaller branches and a pale raised rim.
     for(let i=0;i<7;i++){
@@ -833,8 +859,8 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
         x+=(rng()-.5)*core*.5;y+=core*.29;g.lineTo(x,y);
         if(j===3||j===5){g.lineTo(x+core*(rng()-.5)*.7,y-core*.22);g.moveTo(x,y);}
       }
-      g.strokeStyle='rgba(61,89,104,.43)';g.lineWidth=1.1;g.stroke();
-      g.save();g.translate(-.5,-.45);g.strokeStyle='rgba(220,226,214,.5)';g.lineWidth=.4;g.stroke();g.restore();
+      g.strokeStyle=paper?'rgba(58,42,28,.5)':'rgba(61,89,104,.43)';g.lineWidth=1.1;g.stroke();
+      g.save();g.translate(-.5,-.45);g.strokeStyle=paper?'rgba(238,228,200,.55)':'rgba(220,226,214,.5)';g.lineWidth=.4;g.stroke();g.restore();
     }
   }else if(family==='dune'){
     const phase=rng()*TAU;
@@ -852,7 +878,7 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
   }else if(family==='volcanic'){
     for(let i=0;i<10;i++){
       landContour(g,(rng()-.5)*core*1.8,(rng()-.5)*core*1.8,core*.38,core*.3,rng);
-      g.fillStyle=i%2?'rgba(141,101,86,.2)':'rgba(13,20,33,.45)';g.fill();
+      g.fillStyle=i%2?'rgba(141,101,86,.2)':(paper?'rgba(60,32,20,.4)':'rgba(13,20,33,.45)');g.fill();
     }
     for(let i=0;i<7;i++){
       let x=(rng()-.5)*core*1.8,y=(rng()-.75)*core*1.7;
@@ -873,6 +899,7 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
   }
 }
 function paintPlanetRings(g,core,tilt,flatten,front,rgb){
+  const paper=onPaper();
   g.save();g.rotate(tilt);
   // The far half disappears behind the globe; the near half crosses its face.
   for(let i=0;i<68;i++){
@@ -880,22 +907,34 @@ function paintPlanetRings(g,core,tilt,flatten,front,rgb){
     const r=core*(1.28+i*.0107),a=(i<13?.25:i<44?.55:.36)+(i%5)*.025;
     g.strokeStyle=`rgba(${rgb},${a})`;g.lineWidth=i%8===0?.75:.4;
     g.beginPath();g.ellipse(0,0,r,r*flatten,0,front?0:Math.PI,front?Math.PI:TAU);g.stroke();
+    // Paper plate: the shadowed sweep of ring is cross-hatched ink, not just a darker wash.
+    if(paper&&i>=13&&i<44&&i%2===0){
+      g.strokeStyle=`rgba(58,42,28,${.12+(i%5)*.02})`;g.lineWidth=.32;
+      for(let s=0;s<7;s++){
+        const t=(front?0:Math.PI)+Math.PI*(s+.5)/7,x=Math.cos(t)*r,y=Math.sin(t)*r*flatten;
+        const nx=Math.cos(t)*.95,ny=Math.sin(t)*flatten*.95;
+        g.beginPath();g.moveTo(x-nx,y-ny);g.lineTo(x+nx,y+ny);g.stroke();
+      }
+    }
   }
   g.restore();
 }
 function planetLayer(size=288){
   const image=makeCanvas(size,size),ink=image.getContext('2d');ink.translate(size/2,size/2);ink.scale(2,2);return {image,ink};
 }
-function paintPigment(g,core,rng){
+function paintPigment(g,core,rng,rgb=null){
+  const paper=onPaper();
   // Uneven transparent washes, pooled edges and exposed paper, cached once.
   for(let i=0;i<16;i++){
     landContour(g,(rng()-.5)*core*2,(rng()-.5)*core*2,core*(.2+rng()*.6),core*(.16+rng()*.4),rng);
-    g.fillStyle=i%3===0?'rgba(52,43,30,.065)':'rgba(229,213,172,.075)';g.fill();
+    if(paper&&rgb)g.fillStyle=i%3===0?'rgba(58,42,28,.05)':`rgba(${rgb},${.06+rng()*.05})`;
+    else g.fillStyle=i%3===0?'rgba(52,43,30,.065)':'rgba(229,213,172,.075)';
+    g.fill();
     g.strokeStyle='rgba(63,52,34,.07)';g.lineWidth=.45;g.stroke();
   }
   for(let i=0;i<950;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2,light=i%3!==0;
-    g.fillStyle=light?'rgba(239,226,192,.24)':'rgba(45,39,27,.22)';
+    g.fillStyle=light?'rgba(239,226,192,.24)':(paper?'rgba(45,39,27,.16)':'rgba(45,39,27,.22)');
     g.fillRect(x,y,.18+rng()*.55,.2+rng()*.42);
   }
   // Short broken strokes suggest dry brush catching the paper grain.
@@ -906,26 +945,36 @@ function paintPigment(g,core,rng){
   }
 }
 function paintEngraving(g,core,palette,rng){
+  const paper=onPaper();
   // Shading is cut into the plate with curved strokes, not a glossy gradient.
   g.fillStyle=palette.light+'22';g.fillRect(-core,-core,core*2,core*2);
+  const hatchInk=paper?'34,24,16':'38,34,26';
   for(let i=0;i<34;i++){
     const x=-core*.28+i*core*.048;
-    g.strokeStyle=`rgba(38,34,26,${.21+i/34*.37})`;g.lineWidth=.35+rng()*.28;
+    g.strokeStyle=`rgba(${hatchInk},${(paper?.15:.21)+i/34*(paper?.45:.37)})`;g.lineWidth=.35+rng()*.28;
     g.beginPath();g.moveTo(x,-core*1.14);
     g.bezierCurveTo(x+core*.22,-core*.3,x-core*.36,core*.65,x-core*.48,core*1.1);g.stroke();
   }
-  g.strokeStyle='rgba(37,33,25,.32)';g.lineWidth=.38;
+  g.strokeStyle=paper?'rgba(34,24,16,.28)':'rgba(37,33,25,.32)';g.lineWidth=.38;
   for(let i=0;i<19;i++){
     const y=-core+i*core*.12;
     g.beginPath();g.moveTo(core*.4,y);g.bezierCurveTo(core*.66,y+.08*core,core*.86,y+.35*core,core*1.1,y+.45*core);g.stroke();
   }
+  if(paper){
+    // A second, counter-slanted pass crosses the first over the dark limb: true cross-hatch.
+    for(let i=0;i<22;i++){
+      const y=-core*1.05+i*core*.1;
+      g.strokeStyle=`rgba(34,24,16,${.05+i/22*.17})`;g.lineWidth=.28+rng()*.2;
+      g.beginPath();g.moveTo(core*.05,y);g.bezierCurveTo(core*.4,y+core*.05,core*.55,y+core*.05,core*.95,y+core*.02);g.stroke();
+    }
+  }
   for(let i=0;i<440;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2;
     if(rng()>(x+y+core)/(core*3))continue;
-    g.fillStyle='rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.35,.35);
+    g.fillStyle=paper?'rgba(34,24,16,.3)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.35,.35);
   }
   // Fine meridians make each globe read as a hand-coloured atlas specimen.
-  g.save();g.rotate(-.28);g.strokeStyle='rgba(47,44,33,.19)';g.lineWidth=.38;g.setLineDash([1.4,1.6]);
+  g.save();g.rotate(-.28);g.strokeStyle=paper?'rgba(96,74,52,.24)':'rgba(47,44,33,.19)';g.lineWidth=.38;g.setLineDash([1.4,1.6]);
   for(const width of [.35,.72]){g.beginPath();g.ellipse(0,0,core*width,core,0,0,TAU);g.stroke();}
   for(const y of [-.48,0,.48]){g.beginPath();g.ellipse(0,core*y,core*Math.sqrt(1-y*y),core*.17,0,0,TAU);g.stroke();}
   g.restore();
@@ -933,7 +982,7 @@ function paintEngraving(g,core,palette,rng){
 function paintSurvey(g,core,family,tilt){
   // Broken survey arcs sit inside the functional orbit, with a distinct style.
   const radius=family==='ringed'?core*1.98:core+6;
-  g.save();g.rotate(tilt);g.strokeStyle='rgba(196,182,145,.26)';g.lineWidth=.45;
+  g.save();g.rotate(tilt);g.strokeStyle=onPaper()?'rgba(96,74,52,.32)':'rgba(196,182,145,.26)';g.lineWidth=.45;
   for(let quadrant=0;quadrant<4;quadrant++){
     const a=quadrant*Math.PI/2;
     g.beginPath();g.arc(0,0,radius,a+.18,a+.68);g.stroke();
@@ -949,10 +998,13 @@ function paintSurvey(g,core,family,tilt){
 }
 function planetWeather(family,core,seed){
   if(!['ocean','ringed','storm'].includes(family))return null;
+  const paper=onPaper();
   const layer=planetLayer(160),g=layer.ink,rng=seeded(seed^0x41c38),ocean=family==='ocean';
   for(let i=0;i<(ocean?11:17);i++){
     const x=(rng()-.5)*64,y=(rng()-.5)*core*1.65,length=ocean?5+rng()*12:11+rng()*18;
-    g.strokeStyle=`rgba(220,215,196,${.12+rng()*.25})`;g.lineWidth=.45+rng()*(ocean?1.1:.7);g.lineCap='round';
+    // Fine ink strokes on paper, in place of pale drifting cloud on the night plate.
+    g.strokeStyle=paper?`rgba(58,42,28,${.14+rng()*.22})`:`rgba(220,215,196,${.12+rng()*.25})`;
+    g.lineWidth=(paper?.32:.45)+rng()*(ocean?(paper?.6:1.1):(paper?.42:.7));g.lineCap='round';
     g.beginPath();g.moveTo(x-length/2,y);g.bezierCurveTo(x-length*.2,y-2.5,x+length*.15,y+2.7,x+length/2,y-.6);g.stroke();
   }
   return layer.image;
@@ -960,6 +1012,7 @@ function planetWeather(family,core,seed){
 function glyph(seed,type,row,runSeed){
   const family=type==='gold'?'gold':type==='shield'?'shield':planetFamily(row,runSeed),key=seed+':'+type+':'+family;
   if(glyphs.has(key))return glyphs.get(key);
+  const paper=onPaper();
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
@@ -969,25 +1022,26 @@ function glyph(seed,type,row,runSeed){
   g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();
   g.save();g.beginPath();g.arc(0,0,core-.2,0,TAU);g.clip();
   const fissures=[];paintPlanetSurface(g,core,family,palette,rng,fissures);
-  paintPigment(g,core,rng);
+  paintPigment(g,core,rng,rgb);
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;g.save();g.beginPath();g.arc(0,0,core,0,TAU);g.clip();
   paintEngraving(g,core,palette,rng);
   if(family==='ringed'){
-    g.save();g.rotate(tilt);g.strokeStyle='rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
+    g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
   }
   g.restore();
-  // Slightly misregistered outlines retain the character of a printed plate.
-  g.strokeStyle='rgba(31,29,23,.85)';g.lineWidth=.8;g.beginPath();g.arc(0,0,core-.25,0,TAU);g.stroke();
-  g.strokeStyle=`rgba(${rgb},.65)`;g.lineWidth=.4;g.beginPath();g.arc(-.28,-.2,core+.5,0,TAU);g.stroke();
+  // Slightly misregistered outlines retain the character of a printed plate; on paper the
+  // dark keyline and the coloured wash sit a touch further apart, like off-register hand colouring.
+  g.strokeStyle=paper?'rgba(34,24,16,.88)':'rgba(31,29,23,.85)';g.lineWidth=paper?.85:.8;g.beginPath();g.arc(0,0,core-.25,0,TAU);g.stroke();
+  g.strokeStyle=`rgba(${rgb},${paper?.7:.65})`;g.lineWidth=paper?.5:.4;g.beginPath();g.arc(paper?-.55:-.28,paper?-.4:-.2,core+(paper?.75:.5),0,TAU);g.stroke();
   for(let i=0;i<11;i++){
-    const a=i/11*TAU;g.strokeStyle='rgba(226,211,174,.38)';g.lineWidth=.35;
+    const a=i/11*TAU;g.strokeStyle=paper?'rgba(58,42,28,.3)':'rgba(226,211,174,.38)';g.lineWidth=.35;
     g.beginPath();g.arc(.15,-.1,core+.85,a+.06,a+.16+rng()*.25);g.stroke();
   }
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,true,rgb);
   if(family==='gold'){
-    g.strokeStyle='rgba(218,192,139,.65)';g.lineWidth=.7;
+    g.strokeStyle=`rgba(${rgb},.65)`;g.lineWidth=.7;
     for(let i=0;i<6;i++){g.save();g.rotate(i*TAU/6);g.beginPath();g.moveTo(12,0);g.bezierCurveTo(24,-9,35,-7,44,0);g.bezierCurveTo(32,7,22,10,12,0);g.stroke();g.restore();}
   }
   let embers=null;
@@ -995,7 +1049,8 @@ function glyph(seed,type,row,runSeed){
     const layer=planetLayer(160),ink=layer.ink;embers=layer.image;
     for(const path of fissures){
       ink.beginPath();for(const p of path){if(p.move)ink.moveTo(p.x,p.y);else ink.lineTo(p.x,p.y);}
-      ink.strokeStyle='rgba(190,143,93,.24)';ink.lineWidth=2.5;ink.stroke();ink.strokeStyle='rgba(228,194,135,.72)';ink.lineWidth=.7;ink.stroke();
+      ink.strokeStyle=paper?'rgba(120,60,32,.28)':'rgba(190,143,93,.24)';ink.lineWidth=2.5;ink.stroke();
+      ink.strokeStyle=paper?'rgba(180,110,58,.7)':'rgba(228,194,135,.72)';ink.lineWidth=.7;ink.stroke();
     }
   }
   const art={back:back.image,surface:surface.image,front:front.image,weather:planetWeather(family,core,seed),embers,core,tilt,family,spin:palette.spin,phase:seed*.017};
@@ -1017,10 +1072,12 @@ function drawPlanet(art,r,time){
   }
   ctx.restore();
   if(art.family==='ice'){
+    const paper=onPaper();
     ctx.save();ctx.rotate(art.tilt);
     for(let i=0;i<4;i++){
       const height=2.2+i*.75+Math.sin(t*.32+art.phase+i*.8)*.8;
-      ctx.strokeStyle=`rgba(184,198,179,${.055+.025*Math.sin(t*.38+art.phase+i*.6)})`;ctx.lineWidth=.65;
+      ctx.strokeStyle=paper?`rgba(58,42,28,${.045+.02*Math.sin(t*.38+art.phase+i*.6)})`:`rgba(184,198,179,${.055+.025*Math.sin(t*.38+art.phase+i*.6)})`;
+      ctx.lineWidth=.65;
       ctx.beginPath();ctx.ellipse(-2,-art.core*.66,art.core*.59,art.core*.3+height,-.1,Math.PI*1.05,Math.PI*1.86);ctx.stroke();
     }
     ctx.restore();
