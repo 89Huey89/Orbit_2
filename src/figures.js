@@ -638,7 +638,12 @@ function drawNode(n,aim){
       ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
       const pace=world.speedMultiplier().toFixed(1);
       const caption=active?(p.speed>=MAX_SPEED?'MAX SPEED  ·  ×'+pace:charge>=1?'SPEED HELD  ·  ×'+pace:'BUILDING SPEED  ·  ×'+pace):'SLINGSHOT STAR';
-      writeText(ctx,caption,0,active?r+28*scale:captionOffset(x,y,r,25*scale),revealLabel(pen,caption),{size:13});
+      // The caption for the orbit being held is always set below the planet, where it cannot cover the
+      // release marks; when the star is high enough that below is still inside the HUD band, it is pushed
+      // clear of the band instead.
+      let dy=active?r+28*scale:captionOffset(x,y,r,25*scale);
+      if(active&&Math.abs(x-W*.5)<HUD_TEXT_HALF&&y+dy<hudBand()+12)dy=hudBand()+12-y;
+      writeText(ctx,caption,0,dy,revealLabel(pen,caption),{size:13});
     }
   }
   const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
