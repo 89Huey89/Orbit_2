@@ -266,12 +266,16 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   const size=Math.max(9,10*scale),step=size*1.28,right=s.ux>=0;
   const out=(s.ux>.9&&Math.abs(s.uy)<.36?38:22)*scale;
   const nx=px+s.ux*out+(right?4:-4),ny=py+s.uy*out;
-  ctx.save();ctx.textAlign=right?'left':'right';
-  ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  ctx.save();ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  // The note is kept inside the frame's inner rule: its left edge is clamped to the sheet, whichever
+  // side of the ring it was set on, so a landing near the margin never prints into the border.
+  let widest=0;for(const l of lines)widest=Math.max(widest,ctx.measureText(l[0]).width||l[0].length*size*.5);
+  const inset=frameBand()+5*scale,left=clamp(right?nx:nx-widest,inset,Math.max(inset,W-inset-widest));
+  ctx.textAlign='left';
   for(let i=0;i<lines.length;i++){
     const from=i/lines.length,step2=1/lines.length;
     ctx.fillStyle=`rgba(${lines[i][1]},${base*.95})`;
-    writeText(ctx,lines[i][0],nx,ny+i*step,revealSpan(note,from,from+step2),{size,nib:false});
+    writeText(ctx,lines[i][0],left,ny+i*step,revealSpan(note,from,from+step2),{size,nib:false});
   }
   ctx.restore();
 }
