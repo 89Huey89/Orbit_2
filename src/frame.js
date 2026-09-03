@@ -43,9 +43,11 @@ function buildFrameLayer(){
   const pm1=band*.2,pm2=band*.42;
   g.lineWidth=1;g.strokeStyle=colors.markEdge;g.strokeRect(pm1+.5,pm1+.5,Math.max(1,W-pm1*2-1),Math.max(1,H-pm1*2-1));
   if(onPaper()){g.lineWidth=.6;g.strokeStyle=colors.mark;g.strokeRect(pm2+.5,pm2+.5,Math.max(1,W-pm2*2-1),Math.max(1,H-pm2*2-1));}
+  // The double rule is cut with the same burin as the orbit rings: it swells, wobbles and lifts a little.
   const outerR=band*.56,innerR=band*.92;
-  g.lineWidth=wide?1.4:1;g.strokeStyle=colors.rule;g.strokeRect(outerR+.5,outerR+.5,Math.max(1,W-outerR*2-1),Math.max(1,H-outerR*2-1));
-  g.lineWidth=wide?1:.7;g.strokeStyle=colors.ruleFaint;g.strokeRect(innerR+.5,innerR+.5,Math.max(1,W-innerR*2-1),Math.max(1,H-innerR*2-1));
+  const ruleRgb=ink.base.inkStrong,faintRgb=ink.base.inkSoft;
+  burinRect(g,outerR+.5,outerR+.5,Math.max(1,W-outerR*2-1),Math.max(1,H-outerR*2-1),ruleRgb,onPaper()?.62:.46,wide?1.4:1,90211);
+  burinRect(g,innerR+.5,innerR+.5,Math.max(1,W-innerR*2-1),Math.max(1,H-innerR*2-1),faintRgb,onPaper()?.34:.26,wide?1:.7,44127);
   // Graduated scale between the two rules: fine ticks every unit, heavier every 5th, numbered every 10th.
   const tickLen=Math.max(1,innerR-outerR);
   const hLen=Math.max(1,W-band*2),{n:hn,step:hStep}=frameEdgeTicks(hLen);
@@ -78,6 +80,17 @@ function buildFrameLayer(){
     frameScaleBar(g,rightX,oy-2,colors);
     g.font=`italic 6.5px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('Delineavit et sculpsit · Orbis Tabula',rightX,oy+10);
+    // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
+    const keyX=rightX,keyTop=Math.max(H*.28,band+70);
+    g.font="8px 'IM Fell English SC','IM Fell English',Georgia,serif";g.fillStyle=colors.text;g.textAlign='left';
+    g.fillText('MAGNITUDINES',keyX,keyTop);
+    g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+66,keyTop+3.5);g.stroke();
+    g.font="italic 7.5px 'IM Fell English',Georgia,serif";
+    for(let m=5;m>=0;m--){
+      const row=keyTop+17+(5-m)*12;
+      starGlyph(g,keyX+7,row-4.5,m,ink.atmosphere.starGlyph,.62,1.3);
+      g.fillStyle=colors.text;g.fillText(MAGNITUDES[5-m],keyX+24,row);
+    }
   }
   return c;
 }
@@ -106,6 +119,7 @@ function render(dt){
   drawPlateFrame();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
+  drawLaidPaper();
   updateUI(dt);
 }
 

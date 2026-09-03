@@ -126,12 +126,12 @@ function paintPlanetRings(g,core,tilt,flatten,front,rgb){
   // The far half disappears behind the globe; the near half crosses its face.
   for(let i=0;i<68;i++){
     if(i>44&&i<50)continue;
-    const r=core*(1.28+i*.0107),a=(i<13?.25:i<44?.55:.36)+(i%5)*.025;
+    const r=core*(1.28+i*.0107),a=((i<13?.25:i<44?.55:.36)+(i%5)*.025)*(paper?.7:1);
     g.strokeStyle=`rgba(${rgb},${a})`;g.lineWidth=i%8===0?.75:.4;
     g.beginPath();g.ellipse(0,0,r,r*flatten,0,front?0:Math.PI,front?Math.PI:TAU);g.stroke();
     // Paper plate: the shadowed sweep of ring is cross-hatched ink, not just a darker wash.
     if(paper&&i>=13&&i<44&&i%2===0){
-      g.strokeStyle=`rgba(58,42,28,${.12+(i%5)*.02})`;g.lineWidth=.32;
+      g.strokeStyle=`rgba(26,18,11,${.2+(i%5)*.03})`;g.lineWidth=.4;
       for(let s=0;s<7;s++){
         const t=(front?0:Math.PI)+Math.PI*(s+.5)/7,x=Math.cos(t)*r,y=Math.sin(t)*r*flatten;
         const nx=Math.cos(t)*.95,ny=Math.sin(t)*flatten*.95;
@@ -145,18 +145,18 @@ function planetLayer(size=288){
   const image=makeCanvas(size,size),ink=image.getContext('2d');ink.translate(size/2,size/2);ink.scale(2,2);return {image,ink};
 }
 function paintPigment(g,core,rng,rgb=null){
-  const paper=onPaper();
+  const paper=onPaper(),wash=paper?.7:1;
   // Uneven transparent washes, pooled edges and exposed paper, cached once.
   for(let i=0;i<16;i++){
     landContour(g,(rng()-.5)*core*2,(rng()-.5)*core*2,core*(.2+rng()*.6),core*(.16+rng()*.4),rng);
-    if(paper&&rgb)g.fillStyle=i%3===0?'rgba(58,42,28,.05)':`rgba(${rgb},${.06+rng()*.05})`;
+    if(paper&&rgb)g.fillStyle=i%3===0?'rgba(58,42,28,.05)':`rgba(${rgb},${(.06+rng()*.05)*wash})`;
     else g.fillStyle=i%3===0?'rgba(52,43,30,.065)':'rgba(229,213,172,.075)';
     g.fill();
     g.strokeStyle='rgba(63,52,34,.07)';g.lineWidth=.45;g.stroke();
   }
   for(let i=0;i<950;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2,light=i%3!==0;
-    g.fillStyle=light?'rgba(239,226,192,.24)':(paper?'rgba(45,39,27,.16)':'rgba(45,39,27,.22)');
+    g.fillStyle=light?`rgba(239,226,192,${.24*wash})`:(paper?'rgba(45,39,27,.19)':'rgba(45,39,27,.22)');
     g.fillRect(x,y,.18+rng()*.55,.2+rng()*.42);
   }
   // Short broken strokes suggest dry brush catching the paper grain.
@@ -170,14 +170,14 @@ function paintEngraving(g,core,palette,rng){
   const paper=onPaper();
   // Shading is cut into the plate with curved strokes, not a glossy gradient.
   g.fillStyle=palette.light+'22';g.fillRect(-core,-core,core*2,core*2);
-  const hatchInk=paper?'34,24,16':'38,34,26';
+  const hatchInk=paper?'26,18,11':'38,34,26';
   for(let i=0;i<34;i++){
     const x=-core*.28+i*core*.048;
-    g.strokeStyle=`rgba(${hatchInk},${(paper?.15:.21)+i/34*(paper?.45:.37)})`;g.lineWidth=.35+rng()*.28;
+    g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/34*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
     g.beginPath();g.moveTo(x,-core*1.14);
     g.bezierCurveTo(x+core*.22,-core*.3,x-core*.36,core*.65,x-core*.48,core*1.1);g.stroke();
   }
-  g.strokeStyle=paper?'rgba(34,24,16,.28)':'rgba(37,33,25,.32)';g.lineWidth=.38;
+  g.strokeStyle=paper?'rgba(26,18,11,.42)':'rgba(37,33,25,.32)';g.lineWidth=paper?.5:.38;
   for(let i=0;i<19;i++){
     const y=-core+i*core*.12;
     g.beginPath();g.moveTo(core*.4,y);g.bezierCurveTo(core*.66,y+.08*core,core*.86,y+.35*core,core*1.1,y+.45*core);g.stroke();
@@ -186,17 +186,17 @@ function paintEngraving(g,core,palette,rng){
     // A second, counter-slanted pass crosses the first over the dark limb: true cross-hatch.
     for(let i=0;i<22;i++){
       const y=-core*1.05+i*core*.1;
-      g.strokeStyle=`rgba(34,24,16,${.05+i/22*.17})`;g.lineWidth=.28+rng()*.2;
+      g.strokeStyle=`rgba(26,18,11,${.09+i/22*.28})`;g.lineWidth=.38+rng()*.24;
       g.beginPath();g.moveTo(core*.05,y);g.bezierCurveTo(core*.4,y+core*.05,core*.55,y+core*.05,core*.95,y+core*.02);g.stroke();
     }
   }
   for(let i=0;i<440;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2;
     if(rng()>(x+y+core)/(core*3))continue;
-    g.fillStyle=paper?'rgba(34,24,16,.3)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.35,.35);
+    g.fillStyle=paper?'rgba(26,18,11,.44)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.4,.38);
   }
   // Fine meridians make each globe read as a hand-coloured atlas specimen.
-  g.save();g.rotate(-.28);g.strokeStyle=paper?'rgba(96,74,52,.24)':'rgba(47,44,33,.19)';g.lineWidth=.38;g.setLineDash([1.4,1.6]);
+  g.save();g.rotate(-.28);g.strokeStyle=paper?'rgba(58,42,28,.36)':'rgba(47,44,33,.19)';g.lineWidth=paper?.44:.38;g.setLineDash([1.4,1.6]);
   for(const width of [.35,.72]){g.beginPath();g.ellipse(0,0,core*width,core,0,0,TAU);g.stroke();}
   for(const y of [-.48,0,.48]){g.beginPath();g.ellipse(0,core*y,core*Math.sqrt(1-y*y),core*.17,0,0,TAU);g.stroke();}
   g.restore();
@@ -241,7 +241,10 @@ function glyph(seed,type,row,runSeed){
   if(family!=='gold'&&family!=='shield')paintSurvey(g,core,family,tilt);
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
   g=surface.ink;
-  g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();
+  // Paper: the body colour is a dilute wash on the sheet, not a printed flat, so the engraving above it
+  // carries the form. Night keeps the original solid body tone.
+  if(paper){g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=ink.base.paper;g.fill();g.globalAlpha=.62;g.fillStyle=palette.body;g.fill();g.globalAlpha=1;}
+  else{g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
   g.save();g.beginPath();g.arc(0,0,core-.2,0,TAU);g.clip();
   const fissures=[];paintPlanetSurface(g,core,family,palette,rng,fissures);
   paintPigment(g,core,rng,rgb);
@@ -253,10 +256,16 @@ function glyph(seed,type,row,runSeed){
     g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
   }
   g.restore();
-  // Slightly misregistered outlines retain the character of a printed plate; on paper the
-  // dark keyline and the coloured wash sit a touch further apart, like off-register hand colouring.
-  g.strokeStyle=paper?'rgba(34,24,16,.88)':'rgba(31,29,23,.85)';g.lineWidth=paper?.85:.8;g.beginPath();g.arc(0,0,core-.25,0,TAU);g.stroke();
-  g.strokeStyle=`rgba(${rgb},${paper?.7:.65})`;g.lineWidth=paper?.5:.4;g.beginPath();g.arc(paper?-.55:-.28,paper?-.4:-.2,core+(paper?.75:.5),0,TAU);g.stroke();
+  // Slightly misregistered outlines retain the character of a printed plate. On paper the hand colouring is
+  // laid first and overruns the plate by a pixel or two in the off-register direction, then the burin keyline
+  // is printed over it, so the black line always reads on top of the wash.
+  if(paper){
+    g.strokeStyle=`rgba(${rgb},.3)`;g.lineWidth=1.9;g.beginPath();g.arc(-1.05,-.75,core+.2,0,TAU);g.stroke();
+    burinArc(g,0,0,core-.25,0,TAU,'26,18,11',.96,1.15,seed^0x51f3,{segments:76,skips:3});
+  }else{
+    burinArc(g,0,0,core-.25,0,TAU,'31,29,23',.85,.85,seed^0x51f3,{segments:76,skips:4});
+    g.strokeStyle=`rgba(${rgb},.65)`;g.lineWidth=.4;g.beginPath();g.arc(-.28,-.2,core+.5,0,TAU);g.stroke();
+  }
   for(let i=0;i<11;i++){
     const a=i/11*TAU;g.strokeStyle=paper?'rgba(58,42,28,.3)':'rgba(226,211,174,.38)';g.lineWidth=.35;
     g.beginPath();g.arc(.15,-.1,core+.85,a+.06,a+.16+rng()*.25);g.stroke();

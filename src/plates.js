@@ -6,6 +6,9 @@ const game=document.getElementById('game'),canvas=document.getElementById('sky')
 const $=id=>document.getElementById(id);
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let W=0,H=0,DPR=1,scale=1,world,trail=[],particles=[],rings=[],floaters=[],glyphs=new Map();
+// Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
+// higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
+function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}
 let frameTime=0,accumulator=0,toastLife=0,deathShown=false,screenFlash=0,lastScore=-1;
 let lastChapter=-1,recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
@@ -65,7 +68,38 @@ function copyScore(){
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
 const numerals=['I','II','III','IV'];
 const starRng=seeded(763428);
-const stars=Array.from({length:210},()=>({x:starRng(),y:starRng(),size:.3+starRng()*1.15,phase:starRng()*TAU,depth:.06+starRng()*.19,bright:starRng()}));
+const stars=Array.from({length:210},()=>{
+  const s={x:starRng(),y:starRng(),size:.3+starRng()*1.15,phase:starRng()*TAU,depth:.06+starRng()*.19,bright:starRng()};
+  // Six magnitude classes drawn from the star's own brightness and size; the first magnitude is rarest.
+  const v=s.bright*.68+(s.size-.3)/1.15*.32;
+  s.mag=v<.52?0:v<.76?1:v<.88?2:v<.945?3:v<.982?4:5;
+  return s;
+});
+const MAGNITUDES=['I','II','III','IV','V','VI'];
+// Magnitude glyphs, as engraved in a printed star atlas: a plain dot for the sixth, a ringed dot for the
+// fifth, then four-, six- and eight-pointed forms, and a haloed eight-point for the first. x,y is the
+// glyph's top-left, so a plain dot lands exactly where the old fillRect did.
+function starGlyph(g,x,y,mag,rgb,alpha,size){
+  g.fillStyle=`rgba(${rgb},${alpha})`;
+  if(mag===0){g.fillRect(x,y,size,size*.8);return;}
+  const cx=x+size*.5,cy=y+size*.4;
+  if(mag===1){
+    g.fillRect(x,y,size,size*.8);
+    g.strokeStyle=`rgba(${rgb},${alpha*.45})`;g.lineWidth=.4;
+    g.beginPath();g.arc(cx,cy,size*.5+1.2,0,TAU);g.stroke();return;
+  }
+  const points=mag===2?4:mag===3?6:8,reach=size*.5+.75+mag*.62;
+  g.strokeStyle=`rgba(${rgb},${alpha*.72})`;g.lineWidth=mag>=4?.5:.4;
+  g.beginPath();
+  for(let j=0;j<points*2;j++){
+    const a=j*Math.PI/points-Math.PI/2,long=points===8&&j%4?.62:1;
+    const r=j%2?reach*.3:reach*long,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+    if(j)g.lineTo(px,py);else g.moveTo(px,py);
+  }
+  g.closePath();g.stroke();
+  g.beginPath();g.arc(cx,cy,Math.max(.35,size*.36),0,TAU);g.fill();
+  if(mag===5){g.strokeStyle=`rgba(${rgb},${alpha*.35})`;g.lineWidth=.4;g.beginPath();g.arc(cx,cy,reach*1.35,0,TAU);g.stroke();}
+}
 let grain,backdrop,lensPatch,regionBlend=0,darknessRelief=0;
 // ---------- Plates: the night plate (ink and starlight on indigo) and the paper plate (sepia ink on cream) ----------
 // Every render section registers its own colours for both plates with definePlate(); `ink` always points at the
@@ -83,7 +117,7 @@ function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();
   if(world)for(const n of world.nodes){n._glowKey=null;}
-  grain=grainTexture();if(W&&H)backdrop=paintBackdrop();
+  grain=grainTexture();laidTile=null;laidSheet=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
 }
 function syncPlate(){
@@ -117,6 +151,51 @@ const atlasRegions=[
 const regionInk=region=>onPaper()?region.paper:region;
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
+// The sheet itself, as a seamless tile: laid wires every 1.5 px, heavier chain lines every 27 px, and
+// short fibres. It is multiplied over the finished frame on paper so every stroke breaks across the laid
+// lines instead of lying on top of them; at night the same tile is screened back at a whisper.
+let laidTile=null,laidKey='',laidSheet=null,laidSheetKey='';
+function laidPaper(){
+  const key=plateName+':'+DPR;
+  if(laidTile&&laidKey===key)return laidTile;
+  const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=108,th=96;
+  const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
+  g.scale(unit,unit);
+  g.fillStyle=paper?'#ffffff':'#000000';g.fillRect(0,0,tw,th);
+  const dark=a=>paper?`rgba(70,50,26,${a})`:`rgba(206,222,226,${a})`;
+  const light=a=>paper?`rgba(255,252,242,${a})`:`rgba(0,0,0,${a})`;
+  g.lineWidth=.55;
+  for(let y=0;y<th;y+=1.5){
+    g.strokeStyle=dark(paper?.2:.14);g.beginPath();g.moveTo(0,y+.3);g.lineTo(tw,y+.3);g.stroke();
+    if(paper){g.strokeStyle=light(.5);g.beginPath();g.moveTo(0,y+1.05);g.lineTo(tw,y+1.05);g.stroke();}
+  }
+  for(let x=0;x<tw;x+=27){
+    if(paper){g.strokeStyle=light(.4);g.lineWidth=2.4;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();}
+    g.strokeStyle=dark(paper?.11:.07);g.lineWidth=.9;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();
+  }
+  for(let i=0;i<90;i++){
+    const x=rng()*tw,y=rng()*th,a=rng()*TAU,l=1.5+rng()*5;
+    g.strokeStyle=rng()>.45?dark(.05+rng()*.1):light(.25+rng()*.35);g.lineWidth=.3+rng()*.5;
+    for(const [ox,oy] of [[0,0],[-tw,0],[0,-th],[-tw,-th]]){
+      g.beginPath();g.moveTo(x+ox,y+oy);g.lineTo(x+ox+Math.cos(a)*l,y+oy+Math.sin(a)*l);g.stroke();
+    }
+  }
+  laidTile=c;laidKey=key;return c;
+}
+function laidSheetFor(){
+  const key=plateName+':'+W+'x'+H+':'+DPR;
+  if(laidSheet&&laidSheetKey===key)return laidSheet;
+  const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');
+  const pattern=g.createPattern(laidPaper(),'repeat');if(!pattern)return null;
+  // One tile pixel to one device pixel, so the wires stay crisp whatever the pixel ratio.
+  g.fillStyle=pattern;g.fillRect(0,0,c.width,c.height);
+  laidSheet=c;laidSheetKey=key;return c;
+}
+function drawLaidPaper(){
+  const sheet=laidSheetFor();if(!sheet||!W||!H)return;
+  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=onPaper()?.44:.07;
+  ctx.drawImage(sheet,0,0,W,H);ctx.restore();
+}
 function grainTexture(){
   const c=makeCanvas(256,256),g=c.getContext('2d'),rng=seeded(4404),im=g.createImageData(256,256),paper=onPaper();
   for(let i=0;i<im.data.length;i+=4){

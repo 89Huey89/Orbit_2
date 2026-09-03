@@ -8,6 +8,8 @@ definePlate('dark',{
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
     playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
+    // A fresh stroke is bright ink; as it ages it sinks back to a dimmer, drier tone.
+    trailWet:[250,240,208],trailDry:[143,148,128],blotWet:[236,224,186],blotDry:[152,148,122],
     pigment:'166,125,101',pigmentRelief:'211,192,143',shorelineRelief:'221,202,152',
     washTop:'4,10,17',washMid:'6,13,22',washSolid:'#040910',bodyTop:'5,11,19',bodyMid:'4,10,18',
     voidLayers:['rgba(22,30,36,.23)','rgba(13,22,31,.44)','rgba(7,16,25,.57)','rgba(4,11,20,.63)','rgba(3,8,15,.72)'],
@@ -21,6 +23,8 @@ definePlate('dark',{
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
     playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
+    // Wet iron-gall is glossy blue-black; it dries to a matte sepia within a second.
+    trailWet:[24,26,46],trailDry:[122,88,52],blotWet:[20,22,42],blotDry:[130,98,58],
     // The calibrated shoreline is rubrication red-brown on paper, turning ochre/gold during a reprieve.
     pigment:'166,58,40',pigmentRelief:'176,118,38',shorelineRelief:'176,118,38',
     // Spilled indigo-black ink, #14121f family, pooling and feathering into the paper fibres.
@@ -32,6 +36,8 @@ definePlate('dark',{
     floaterText:'34,24,16',screenFlash:'255,248,222'
   }
 });
+// Blends two registered [r,g,b] plate colours into an `r,g,b` string for a template literal.
+const mixRgb=(a,b,t)=>Math.round(lerp(a[0],b[0],t))+','+Math.round(lerp(a[1],b[1],t))+','+Math.round(lerp(a[2],b[2],t));
 function recordTrail(){
   if(world.state!=='playing'&&world.state!=='ready')return;
   const p=world.player;
@@ -46,9 +52,11 @@ function drawTrail(){
     const life=reducedMotion?.48:b.air?1.18:.78,t=clamp(1-age/life,0,1);if(t===0)continue;
     const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<.01)continue;
     const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),weight=t*(1+boost*.7);
-    // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion.
+    // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. The stroke is laid wet and
+    // dries as the segment ages, from glossy blue-black to matte sepia on paper, bright to dim ink at night.
+    const dried=mixRgb(ink.dark.trailWet,ink.dark.trailDry,1-t*t);
     line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${ink.dark.trailWash},${t*t*.16})`,(1+3.5*weight)*scale);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${ink.dark.trailStroke},${t*t*.77})`,(.18+1.2*weight)*scale);
+    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${dried},${t*t*.77})`,(.18+1.2*weight)*scale);
     if(!reducedMotion){
       const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
       line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${ink.dark.trailEdge},${t*.36})`,.4*scale);
@@ -209,13 +217,12 @@ function drawTransferMark(r,t){
   const x=r.node?r.node.x:r.x,y=r.node?r.node.y:r.y,alpha=Math.pow(1-t,1.5)*r.alpha;
   const sectors=r.perfect?8:5;
   ctx.save();ctx.translate(sx(x),sy(y));ctx.scale(scale,scale);ctx.rotate(r.angle);
+  const burin=r.seed||1;
   for(let j=0;j<sectors;j++){
     const a=j*TAU/sectors,gap=r.perfect?.055:.11;
-    ctx.strokeStyle=`rgba(${ink.dark.transferArc},${alpha})`;ctx.lineWidth=r.perfect?.9:.6;
-    ctx.beginPath();ctx.arc(0,0,radius,a+gap,a+TAU/sectors-gap);ctx.stroke();
+    burinArc(ctx,0,0,radius,a+gap,a+TAU/sectors-gap,ink.dark.transferArc,alpha,r.perfect?.9:.6,burin+j*13,{segments:7,skips:0});
     if(r.perfect){
-      ctx.strokeStyle=`rgba(${ink.dark.transferArcSoft},${alpha*.68})`;ctx.lineWidth=.4;
-      ctx.beginPath();ctx.arc(0,0,radius+3,a+.1,a+TAU/sectors-.17);ctx.stroke();
+      burinArc(ctx,0,0,radius+3,a+.1,a+TAU/sectors-.17,ink.dark.transferArcSoft,alpha*.68,.4,burin+j*13+5,{segments:5,skips:1});
       const c=Math.cos(a),s=Math.sin(a),reach=j%2===0?6:3;
       line(c*(radius+1),s*(radius+1),c*(radius+reach),s*(radius+reach),`rgba(${ink.dark.transferTick},${alpha})`,.6);
     }
@@ -229,6 +236,21 @@ function drawTransferMark(r,t){
   }
   ctx.restore();
 }
+// A pointing hand cut with a few strokes, as printed in the margin of a seventeenth-century book.
+// `dir` is +1 for a hand pointing right, -1 for one pointing left.
+function manicule(x,y,dir,size,rgb,alpha){
+  ctx.save();ctx.translate(x,y);ctx.scale(dir*size,size);
+  ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineJoin='round';ctx.lineCap='round';ctx.lineWidth=.85/size;
+  ctx.beginPath();ctx.moveTo(-1,-.5);ctx.lineTo(-.66,-.6);ctx.lineTo(-.66,.6);ctx.lineTo(-1,.5);ctx.closePath();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-.62,-.52);
+  ctx.bezierCurveTo(-.2,-.6,-.02,-.42,.18,-.34);
+  ctx.lineTo(.92,-.26);ctx.bezierCurveTo(1.16,-.2,1.16,-.02,.9,.02);
+  ctx.lineTo(.2,.06);ctx.bezierCurveTo(.42,.3,.24,.62,-.16,.6);
+  ctx.lineTo(-.62,.56);ctx.closePath();ctx.stroke();
+  ctx.lineWidth=.5/size;
+  ctx.beginPath();ctx.moveTo(-.1,.1);ctx.lineTo(.16,.13);ctx.moveTo(-.14,.3);ctx.lineTo(.1,.32);ctx.stroke();
+  ctx.restore();
+}
 function drawEffects(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];if(world.state!=='paused'){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.5);p.vy*=Math.exp(-dt*1.5);}
@@ -240,10 +262,30 @@ function drawEffects(dt){
     const r=rings[i];if(world.state!=='paused')r.age+=dt;if(r.age>r.life){rings.splice(i,1);continue;}
     const t=r.age/r.life;
     if(r.kind==='capture'){drawTransferMark(r,t);continue;}
-    ctx.strokeStyle=`rgba(${ink.dark.ringSimple},${(1-t)*r.alpha})`;ctx.lineWidth=.8;ctx.beginPath();ctx.arc(sx(r.x),sy(r.y),(r.start+(reducedMotion?0:t*r.distance))*scale,0,TAU);ctx.stroke();
+    if(r.kind==='blot'){
+      // A bead of ink pools at the release point, then dries lighter as it soaks in.
+      const grow=reducedMotion?1:clamp(t*6,.25,1),dry=clamp((t-.15)/.85,0,1),alpha=r.alpha*clamp(1-t*t,0,1);
+      ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
+      const rgb=mixRgb(ink.dark.blotWet,ink.dark.blotDry,dry),size=r.size*grow;
+      landContour(ctx,0,0,size,size*.84,seeded(r.seed));
+      ctx.fillStyle=`rgba(${rgb},${alpha*.8})`;ctx.fill();
+      ctx.strokeStyle=`rgba(${rgb},${alpha*.55})`;ctx.lineWidth=.45;ctx.stroke();
+      ctx.restore();continue;
+    }
+    burinArc(ctx,sx(r.x),sy(r.y),(r.start+(reducedMotion?0:t*r.distance))*scale,0,TAU,ink.dark.ringSimple,(1-t)*r.alpha,.8,r.seed||7,{segments:20,skips:2});
   }
+  // Scores are written up as marginal notes in Fell italic beside the play field, each with a small
+  // engraved manicule pointing back in at the event. They drift up gently and fade, as before.
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}
-    ctx.fillStyle=`rgba(${ink.dark.floaterText},${Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1)})`;ctx.font=`${18*scale}px 'IM Fell English',Georgia,serif`;ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-(reducedMotion?0:f.age*24*scale));
+    const alpha=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
+    const inner=frameBand()*.92+7,left=sx(f.x)<W*.5,hand=Math.max(4.5,6*scale);
+    const y=clamp(sy(f.y)-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
+    const x=left?inner+hand*2.4:W-inner-hand*2.4;
+    ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
+    ctx.font=`italic ${Math.max(11,13*scale)}px 'IM Fell English',Georgia,serif`;ctx.textAlign=left?'left':'right';
+    ctx.fillText(f.text,x,y);
+    manicule(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left?1:-1,hand,ink.dark.floaterText,alpha*.85);
+    ctx.restore();
   }
 }

@@ -447,11 +447,19 @@ function drawAmbient(dt,aim){
   }
   ctx.restore();
 }
+// The band the chapter lettering occupies while it is on the page, or null when nothing is printed there.
+function revealBand(){
+  if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return null;
+  if(H<540&&W>H)return null;
+  const y=Math.min(H*.3,hudBand()+46);return {top:y-36,bottom:y+36};
+}
 function drawChapterReveal(dt){
   if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return;
   if(world.state!=='paused')chapterReveal.age+=dt;
   const t=chapterReveal.age,alpha=clamp(Math.min(t/.55,(4.2-t)/1.2),0,1);
-  const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:Math.min(190,H*.21),rise=reducedMotion?0:(1-Math.min(t,1))*5;
+  // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
+  // channel underneath it and above the toast line at 29% of the height, so the two never share a row.
+  const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:Math.min(H*.3,hudBand()+46),rise=reducedMotion?0:(1-Math.min(t,1))*5;
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
   ctx.fillStyle=ink.dark.chapterLabel;ctx.font="12px 'IM Fell English',Georgia,serif";ctx.fillText('P L A T E   '+numerals[chapterReveal.index],x,y-22+rise);
   ctx.fillStyle=ink.base.text;ctx.font=`${compact?24:Math.min(36,Math.max(24,W*.062))}px 'IM Fell English',Georgia,serif`;ctx.fillText(chapters[chapterReveal.index],x,y+12+rise);
@@ -535,17 +543,7 @@ function drawAtmosphere(dt=0,aim=null){
     const s=stars[i],visibility=clamp((density-((i*.61803398875)%1))/.09,0,1);if(visibility===0)continue;
     const y=((s.y*H-cy*s.depth*scale)%(H+12)+(H+12))%(H+12)-6,x=s.x*W;
     const alpha=visibility*(.2+s.bright*.42)*(reducedMotion?1:.86+.14*Math.sin(world.time*.58+s.phase));
-    ctx.fillStyle=`rgba(${s.bright>.86?ink.atmosphere.starBright:starColor},${alpha})`;ctx.fillRect(x,y,s.size,s.size*.8);
-    if(s.bright>.968){
-      const reach=s.bright>.987?5.8:3.7;
-      ctx.save();ctx.translate(x+.5,y+.4);ctx.strokeStyle=`rgba(${ink.atmosphere.starGlyph},${alpha*(paper?.85:.65)})`;ctx.lineWidth=.5;
-      ctx.beginPath();
-      for(let j=0;j<16;j++){
-        const a=j*TAU/16,radius=j%2?.65:j%4===0?reach:reach*.52;
-        const px=Math.cos(a)*radius,py=Math.sin(a)*radius;if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-      }
-      ctx.closePath();ctx.stroke();ctx.restore();
-    }
+    starGlyph(ctx,x,y,s.mag,s.mag>=4?ink.atmosphere.starGlyph:s.bright>.86?ink.atmosphere.starBright:starColor,alpha,s.size);
   }
   drawAmbient(dt,aim);
   // Quiet atlas annotations stay outside the central play path on wide screens.

@@ -2,21 +2,24 @@
 /* Orbit · src/ui.js
    Presentation, storage, viewport, screens, the single gameplay input, and bootstrap. */
 // ---------- Presentation, storage, viewport, and the single gameplay input ----------
+// Every ripple, ring and blot carries its own seed so the burin cuts each one differently.
+let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
 function toast(text,seconds=1.4){$('toast').textContent=text;$('toast').classList.add('show');toastLife=seconds;}
 function event(type,e){
   if(type==='start'){audio.start();return;}
   if(type==='release'){
-    audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45});
+    audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
+    rings.push({kind:'blot',x:e.x,y:e.y,size:1.5+e.charge*1.5,age:0,life:1.5,alpha:.6,seed:ringSeed()});
     if(e.sling&&e.charge>.15){
       audio.tone(155,.45,0,.25,'sine',230+e.charge*200);
-      if(!reducedMotion){burst(e.x,e.y,Math.round(8+e.charge*12),'gold',.9);rings.push({x:e.x,y:e.y,start:5,distance:55,age:0,life:.5,alpha:.42});}
+      if(!reducedMotion){burst(e.x,e.y,Math.round(8+e.charge*12),'gold',.9);rings.push({x:e.x,y:e.y,start:5,distance:55,age:0,life:.5,alpha:.42,seed:ringSeed()});}
       toast('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),1.2);
     }
   }else if(type==='charged'){
     audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);toast(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',1.8);
   }else if(type==='capture'){
     audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
-    rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56});
+    rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     if(e.skip)toast(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,2);
     else if(e.n.routeRole==='entry')toast('TRACE 3 STARS · +60 & A REPRIEVE',2.6);
@@ -32,18 +35,18 @@ function event(type,e){
   }else if(type==='constellation'){
     toast(e.chart.name+' · COMPLETE +60',2.8);
     for(const [i,n] of e.chart.stars.entries()){
-      if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5});}
+      if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
       audio.tone([261.63,329.63,392][i],1.1,i*.14,.24);
     }
     $('announcement').textContent=e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
     recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
-    rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45});
+    rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
     toast('SHIELD ARMED · SURVIVES ONE BLACK HOLE',2.4);
   }else if(type==='shieldBreak'){
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
-    burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6});
+    burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
     toast('SHIELD ABSORBED THE IMPACT',1.8);
   }else if(type==='observation'){
     toast('OBSERVATION \u00b7 '+e.latin,2.6);
@@ -53,7 +56,7 @@ function event(type,e){
     recordBest(world.score);
   }else if(type==='death'){
     audio.death();burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
-    rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6});screenFlash=1;
+    rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});screenFlash=1;
     $('hint').classList.remove('visible');$('toast').classList.remove('show');toastLife=0;
   }
 }
@@ -67,7 +70,7 @@ function newWorld(){
 }
 function setPlaying(){
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
-  $('hint').textContent='Tap when the dotted line skims the next orbit’s rim.';$('hint').classList.add('visible');$('toast').classList.remove('show');toastLife=0;
+  $('hint').textContent='Tap when the pricked line skims the next orbit’s rim.';$('hint').classList.add('visible');$('toast').classList.remove('show');toastLife=0;
   $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and earn more points.';
   chapterReveal={index:0,age:0};
 }
@@ -83,7 +86,7 @@ function showEnd(){
   $('end-constellations').textContent=charts+' constellation'+(charts===1?'':'s')+' traced';
   $('end-observations').textContent=world.observations.map(o=>o.latin).join(', ');
   $('end-daily').textContent=dailyOn?'Tabula diei · '+dailyDay:'';
-  $('end-tip').textContent=world.captures===0?'Release when the dotted line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='CAUGHT BY A BLACK HOLE'?'Close flybys bend your path. Follow the curved guide and leave room for the dark center.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
+  $('end-tip').textContent=world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='CAUGHT BY A BLACK HOLE'?'Close flybys bend your path. Follow the curved guide and leave room for the dark center.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
   $('announcement').textContent='Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
 function updateUI(dt){
@@ -96,7 +99,7 @@ function updateUI(dt){
   if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
     $('hint').textContent='One lap builds speed. Tap sooner for less. Perfect landings keep it.';$('hint').classList.add('visible');
   }else if(world.state==='playing'&&world.captures<2){
-    $('hint').textContent='Tap when the dotted line skims the next orbit’s rim.';$('hint').classList.add('visible');
+    $('hint').textContent='Tap when the pricked line skims the next orbit’s rim.';$('hint').classList.add('visible');
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
     $('hint').textContent='Black holes bend your flight. Follow the curve; give the dark center room.';$('hint').classList.add('visible');
   }else $('hint').classList.remove('visible');
