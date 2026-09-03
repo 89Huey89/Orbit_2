@@ -11,6 +11,8 @@
   <style>
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--chapter:#889399;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--chapter:#7a6852;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    #game[data-plate="paper"] .footer{color:#d9ccb0}
+    #game[data-plate="paper"] #chapter{color:#c2b394}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
@@ -24,11 +26,11 @@
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
     .small{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    #score{display:block;font-family:'IM Fell DW Pica','IM Fell English',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
+    #score{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
     #flow{height:23px;margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.18em;transition:opacity .3s}
     #pace{margin-top:6px;font-size:12px;letter-spacing:.09em;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
     .best-block{text-align:right;padding-top:7px}
-    #best{display:block;font-family:'IM Fell DW Pica','IM Fell English',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
+    #best{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
     .screen{position:absolute;inset:0;z-index:3;pointer-events:none;text-align:center;transition:opacity .45s,transform .6s}
     .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
     .title-group{position:absolute;top:19%;left:20px;right:20px}
@@ -60,7 +62,7 @@
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.79),rgba(var(--veil),.3) 65%,transparent);padding:30px 24px 65px}
     #end .eyebrow{margin:0 0 15px;font-size:10px}
     #end h2{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
-    #end-score{font-family:'IM Fell DW Pica','IM Fell English',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+    #end-score{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
     #record{color:var(--gold);height:23px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
     .end-stats{display:flex;gap:28px;justify-content:center;margin:25px 0 37px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-width:220px}
     .stat{position:relative;display:flex;flex-direction:column;gap:7px;padding:0 22px;font-size:19px;font-variant-numeric:tabular-nums}
@@ -1788,7 +1790,7 @@ definePlate('dark',{
     pigment:'166,58,40',pigmentRelief:'176,118,38',shorelineRelief:'176,118,38',
     // Spilled indigo-black ink, #14121f family, pooling and feathering into the paper fibres.
     washTop:'20,18,31',washMid:'24,20,34',washSolid:'#14121f',bodyTop:'20,18,31',bodyMid:'20,18,31',
-    voidLayers:['rgba(28,24,38,.2)','rgba(24,20,34,.36)','rgba(20,18,31,.5)','rgba(16,14,26,.62)','rgba(14,12,22,.74)'],
+    voidLayers:['rgba(28,24,38,.34)','rgba(24,20,34,.58)','rgba(20,18,31,.78)','rgba(16,14,26,.9)','rgba(14,12,22,.97)'],
     landFillWash:'rgba(20,18,31,.09)',landFillPool:'rgba(14,12,22,.34)',fleckDark:'14,12,22',
     burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
@@ -1859,8 +1861,24 @@ function darknessPlate(relief){
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
   // Seamless pools of dilute ink, growing opaque below the leading edge.
   const wash=g.createLinearGradient(0,24,0,140);
-  wash.addColorStop(0,`rgba(${ink.dark.washTop},0)`);wash.addColorStop(.22,`rgba(${ink.dark.washMid},.78)`);wash.addColorStop(1,ink.dark.washSolid);
+  wash.addColorStop(0,`rgba(${ink.dark.washTop},0)`);wash.addColorStop(.22,`rgba(${ink.dark.washMid},${onPaper()?.94:.78})`);wash.addColorStop(1,ink.dark.washSolid);
   g.fillStyle=wash;g.fillRect(0,24,w,h-24);
+  if(onPaper()){
+    // Spilled ink on paper: the flood bleeds upward along the fibres in dark feathered threads, with a few
+    // near-opaque pools where the pigment settled, so the edge reads as a stain rather than a horizon.
+    const bleed=seeded(311977);
+    for(let i=0;i<260;i++){
+      const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5,reach=2+bleed()*bleed()*16,bend=(bleed()-.5)*6;
+      for(const wrap of [-w,0,w]){
+        g.strokeStyle=`rgba(${ink.dark.fleckDark},${.08+bleed()*.22})`;g.lineWidth=.35+bleed()*.7;
+        g.beginPath();g.moveTo(x+wrap,edge+6);g.bezierCurveTo(x+wrap+bend,edge+2,x+wrap-bend,edge-reach*.5,x+wrap+bend*.4,edge-reach);g.stroke();
+      }
+    }
+    for(let i=0;i<14;i++){
+      const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);
+      for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.55)`;g.fill();}
+    }
+  }
   for(let layer=0;layer<5;layer++){
     g.beginPath();g.moveTo(0,h);
     for(let x=0;x<=w;x+=4){
