@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080f18">
+  <meta name="description" content="Orbit — a one-tap arcade ascent. Release into the dark. Find your next orbit.">
+  <meta name="color-scheme" content="dark light">
+  <title>Orbit</title>
+  <link rel="stylesheet" href="../assets/fonts.css">
+  <style>
+    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--chapter:#889399;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
+    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--chapter:#7a6852;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    #game[data-plate="paper"] .footer{color:#d9ccb0}
+    #game[data-plate="paper"] #chapter{color:#c2b394}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
+    #game{background:var(--ink);color:var(--ivory)}
+    body{font-family:'IM Fell English',Georgia,'Times New Roman',serif;user-select:none;-webkit-user-select:none;touch-action:none}
+    button{font:inherit;color:inherit}
+    #game{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden;isolation:isolate}
+    #sky{display:block;width:100%;height:100%;outline:none;touch-action:none}
+    #sky:focus-visible{outline:1px solid var(--gold);outline-offset:-5px}
+    .hud{position:absolute;z-index:2;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:max(24px,calc(env(safe-area-inset-top) + 12px));display:grid;grid-template-columns:1fr auto 1fr;align-items:start;pointer-events:none;transition:opacity .5s}
+    .brand{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:17px;letter-spacing:.24em;line-height:1.2;padding-top:7px}
+    .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
+    .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
+    .small{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
+    #score{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
+    #flow{height:23px;margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.18em;transition:opacity .3s}
+    #pace{margin-top:6px;font-size:12px;letter-spacing:.09em;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
+    .best-block{text-align:right;padding-top:7px}
+    #best{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
+    .screen{position:absolute;inset:0;z-index:3;pointer-events:none;text-align:center;transition:opacity .45s,transform .6s}
+    .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
+    .title-group{position:absolute;top:19%;left:20px;right:20px}
+    .eyebrow{margin:0 0 13px;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.37em}
+    h1{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1;text-shadow:0 4px 30px var(--ink)}
+    .title-rule{width:100px;margin:24px auto 0;display:flex;align-items:center;gap:11px;color:var(--gold)}
+    .title-rule::before,.title-rule::after{content:'';height:1px;background:linear-gradient(90deg,transparent,var(--gold));flex:1;opacity:.5}
+    .title-rule::after{transform:rotate(180deg)}
+    .title-rule span{width:4px;height:4px;border:1px solid var(--gold);transform:rotate(45deg)}
+    .start-copy{position:absolute;bottom:max(15%,95px);left:24px;right:24px}
+    .action-copy{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
+    .instruction{font-family:'IM Fell English',Georgia,serif;color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
+    .footer{position:absolute;bottom:max(17px,calc(env(safe-area-inset-bottom) + 7px));left:max(15px,env(safe-area-inset-left));right:max(15px,env(safe-area-inset-right));z-index:6;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+    .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;cursor:pointer;opacity:.6;transition:opacity .2s;display:grid;place-items:center}
+    .utility:hover,.utility:focus-visible{opacity:1}
+    .utility:focus-visible{outline:1px solid var(--gold);outline-offset:-4px;border-radius:50%}
+    .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+    .utility .mute-mark{display:none}
+    .utility.muted .mute-mark{display:block}
+    .utility.muted .sound-wave{display:none}
+    .footer-tools{display:flex;align-items:center}
+    #plate .plate-paper{display:none}
+    #game[data-plate="paper"] #plate .plate-paper{display:block}
+    #game[data-plate="paper"] #plate .plate-night{display:none}
+    #chapter{font-size:11px;letter-spacing:.22em;color:var(--chapter);text-align:center}
+    #hint{position:absolute;bottom:max(100px,calc(env(safe-area-inset-bottom) + 72px));left:25px;right:25px;text-align:center;pointer-events:none;color:var(--copy);font-family:'IM Fell English',Georgia,serif;font-size:14px;letter-spacing:.04em;z-index:2;opacity:0;transition:opacity .5s;text-shadow:0 2px 10px var(--ink)}
+    #toast{position:absolute;top:29%;left:15px;right:15px;text-align:center;pointer-events:none;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;letter-spacing:.22em;font-size:13px;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .4s;z-index:2}
+    #toast.show{opacity:1;transform:translateY(0)}
+    #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.79),rgba(var(--veil),.3) 65%,transparent);padding:30px 24px 65px}
+    #end .eyebrow{margin:0 0 15px;font-size:10px}
+    #end h2{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
+    #end-score{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+    #record{color:var(--gold);height:23px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+    .end-stats{display:flex;gap:28px;justify-content:center;margin:25px 0 37px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-width:220px}
+    .stat{position:relative;display:flex;flex-direction:column;gap:7px;padding:0 22px;font-size:19px;font-variant-numeric:tabular-nums}
+    .stat .small{font-size:9px}
+    #end-constellations{margin:-18px 0 23px;font-size:13px;color:var(--gold)}
+    #end .action-copy{font-size:19px;margin-bottom:12px}
+    .difficulty{pointer-events:auto;display:flex;gap:9px;justify-content:center;margin-top:19px}
+    .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
+    .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
+    .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+    #shield{color:var(--shield)}
+    #pause{background:rgba(var(--veil),.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+    #pause strong{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
+    .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    #game.playing .score-block{opacity:1}
+    #game.playing #hint.visible{opacity:1}
+    #game.over .score-block{opacity:0}
+    @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
+    /* — Frontispiece / colophon: engraved atlas title page for #intro, #end, #pause — */
+    .subtitle-latin{margin:0 0 13px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.26em;color:var(--muted);opacity:.9}
+    .cartouche{position:relative;display:inline-block}
+    .cartouche-frame{position:absolute;top:-.22em;left:-.55em;right:-.55em;bottom:-.3em;width:calc(100% + 1.1em);height:calc(100% + .52em);z-index:-1;color:var(--gold);opacity:.55;pointer-events:none}
+    .compass-star{position:absolute;left:50%;bottom:0;width:16px;height:16px;transform:translate(-50%,55%);color:var(--gold);opacity:.85;pointer-events:none}
+    .title-group .eyebrow{margin:18px 0 0}
+    .difficulty{align-items:center}
+    .diff-sep{color:var(--gold);font-size:8px;line-height:1;opacity:.6;pointer-events:none}
+    .printer-line{margin:20px 0 0;font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
+    .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
+    .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
+    #pause .title-rule{margin:10px auto 0}
+    @media(max-height:530px) and (orientation:landscape){
+      .subtitle-latin,.printer-line{display:none}
+      #intro h1{font-size:46px}
+      .cartouche-frame{top:-.15em;left:-.4em;right:-.4em;bottom:-.2em}
+      .compass-star{width:11px;height:11px}
+      .title-group .title-rule{margin-top:6px}
+      .title-group .eyebrow{margin-top:6px}
+      #intro .difficulty{margin-top:8px}
+      #intro .start-copy{bottom:78px}
+      #intro .instruction{font-size:12px;line-height:1.5}
+      #game #end{padding-bottom:4px}
+      #game #end h2{font-size:19px}
+      #game #end-score{font-size:44px}
+      .score-frame{margin:0;padding:3px 20px 2px}
+      #end .end-stats{margin:4px 0 8px;padding:6px 0}
+      .stat{padding:0 14px}
+      #end .action-copy{margin-bottom:2px}
+      #end #end-constellations{margin:2px 0 4px;font-size:11px}
+      #end #end-tip{font-size:10px}
+      #pause strong{font-size:28px}
+      #pause .title-rule{margin-top:6px}
+    }
+    @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
+    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}.end-stats{margin:9px 0 15px;padding-top:10px}#hint{bottom:64px}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    /* Plate frame clearance: nudge the HUD chrome a few px inside the engraved margin drawn on #sky. */
+    .hud{left:max(26px,calc(env(safe-area-inset-left) + 4px));right:max(26px,calc(env(safe-area-inset-right) + 4px));top:max(26px,calc(env(safe-area-inset-top) + 14px))}
+    .footer{bottom:max(20px,calc(env(safe-area-inset-bottom) + 10px));left:max(17px,calc(env(safe-area-inset-left) + 3px));right:max(17px,calc(env(safe-area-inset-right) + 3px))}
+    #hint{bottom:max(104px,calc(env(safe-area-inset-bottom) + 76px));left:27px;right:27px}
+    #toast{left:17px;right:17px}
+    @media(min-width:800px){.hud{left:46px;right:46px;top:40px}.footer{left:35px;right:35px;bottom:27px}}
+  </style>
+</head>
+<body>
+<main id="game" aria-label="Orbit arcade game">
+  <canvas id="sky" tabindex="0" role="application" aria-label="Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node. Captures are automatic. Nearby black holes bend your flight; follow the curved guide."></canvas>
+  <header class="hud" aria-label="Score">
+    <div class="brand">ORBIT</div>
+    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="shield" class="small"></div></div>
+    <div class="best-block"><span class="small">Best</span><span id="best">0</span></div>
+  </header>
+  <section id="intro" class="screen frontispiece" aria-label="Start game">
+    <div class="title-group">
+      <p class="subtitle-latin">Sive de Motu Corporum C&aelig;lestium Tabul&aelig;</p>
+      <div class="cartouche">
+        <svg class="cartouche-frame" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs><path id="oc" d="M2,36 L2,11 Q2,2 11,2 L36,2 M11,2 Q20,2 20,10 Q20,17 13,17" fill="none"/></defs>
+          <rect x="1" y="1" width="298" height="118" fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <g stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke">
+            <use href="#oc"/><use href="#oc" transform="translate(300,0) scale(-1,1)"/><use href="#oc" transform="translate(0,120) scale(1,-1)"/><use href="#oc" transform="translate(300,120) scale(-1,-1)"/>
+          </g>
+          <g fill="currentColor" opacity=".65">
+            <circle cx="50" cy="2" r="1.1"/><circle cx="58" cy="2" r="1.1"/><circle cx="66" cy="2" r="1.1"/>
+            <circle cx="250" cy="2" r="1.1"/><circle cx="242" cy="2" r="1.1"/><circle cx="234" cy="2" r="1.1"/>
+            <circle cx="50" cy="118" r="1.1"/><circle cx="58" cy="118" r="1.1"/><circle cx="66" cy="118" r="1.1"/>
+            <circle cx="250" cy="118" r="1.1"/><circle cx="242" cy="118" r="1.1"/><circle cx="234" cy="118" r="1.1"/>
+          </g>
+        </svg>
+        <h1>ORBIT</h1>
+        <svg class="compass-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <g stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round">
+            <path d="M12 1v6M12 17v6M1 12h6M17 12h6"/>
+            <path d="M4.6 4.6l3.6 3.6M15.8 15.8l3.6 3.6M19.4 4.6l-3.6 3.6M8.2 15.8l-3.6 3.6" stroke-width=".6" opacity=".65"/>
+          </g>
+          <circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width=".8"/>
+          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="title-rule"><span></span></div>
+      <p class="eyebrow">FOLLOW THE PULL</p>
+    </div>
+    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.</p>
+      <div class="difficulty" role="group" aria-label="Difficulty">
+        <button id="diff-relaxed" class="diff-btn" type="button" aria-pressed="false">RELAXED</button>
+        <span class="diff-sep" aria-hidden="true">&#9670;</span>
+        <button id="diff-classic" class="diff-btn" type="button" aria-pressed="true">CLASSIC</button>
+        <span class="diff-sep" aria-hidden="true">&#9670;</span>
+        <button id="diff-hardcore" class="diff-btn" type="button" aria-pressed="false">HARDCORE</button>
+      </div>
+      <p class="printer-line">Impressum &middot; MDCXX</p>
+    </div>
+  </section>
+  <div id="hint">Tap when the dotted line skims the next orbit’s rim.</div>
+  <div id="toast" aria-live="polite"></div>
+  <section id="end" class="screen hidden" aria-label="Run complete">
+    <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2>One more orbit.</h2>
+    <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div></div>
+    <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div></div>
+    <div id="end-constellations" class="instruction">0 / 4 constellations traced</div>
+    <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The dotted line follows your momentum.</p>
+  </section>
+  <section id="pause" class="screen hidden" aria-label="Paused"><strong>Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
+  <div class="footer">
+    <button id="sound" class="utility" aria-label="Mute sound" aria-pressed="true" title="Sound">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h4l5-4v12l-5-4H4z"/><path class="sound-wave" d="M16 9c2 2 2 4 0 6m3-9c4 3 4 9 0 12"/><path class="mute-mark" d="m17 10 4 4m0-4-4 4"/></svg>
+    </button>
+    <span id="chapter" class="small">I &nbsp; / &nbsp; THE QUIET</span>
+    <span class="footer-tools">
+    <button id="plate" class="utility" aria-label="Switch to paper plate" title="Paper or night plate">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path class="plate-night" d="M9 12h6M9 15.5h6M9 8.5h3"/><path class="plate-paper" d="M10 15.5a3 3 0 1 0 0-6"/></svg>
+    </button>
+    <button id="fullscreen" class="utility" aria-label="Enter fullscreen" title="Fullscreen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg>
+    </button>
+    </span>
+  </div>
+  <span id="announcement" class="sr-only" aria-live="polite"></span>
+</main>
+<!-- Orbit is entirely procedural. No assets, libraries, or network requests.
+     Simulation uses world coordinates and a fixed step; rendering uses CSS pixels.
+     These classic scripts share one global scope; scripts/build.mjs inlines them into a single dist/index.html. -->
+<script src="simulation.js"></script>
+<script src="audio.js"></script>
+<script src="plates.js"></script>
+<script src="backdrop.js"></script>
+<script src="planets.js"></script>
+<script src="celestial.js"></script>
+<script src="marks.js"></script>
+<script src="figures.js"></script>
+<script src="effects.js"></script>
+<script src="frame.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

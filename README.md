@@ -1,6 +1,6 @@
 # Orbit
 
-Open **index.html** in a modern browser. The complete game, artwork, sound, and styles are inside that one file, with the seventeenth-century Fell typefaces embedded in `assets/fonts.css` beside it. No installation, server, network access, or build step is needed to play.
+The playable game is a single file. Run `npm run build` to produce **dist/index.html**, which contains the complete game, artwork, sound, and styles, with the seventeenth-century Fell typefaces embedded in `dist/assets/fonts.css` beside it. That built page needs no installation, server, or network access to play, and it is what GitHub Pages serves. During development, open `src/index.html` directly or run `npm start` and visit the printed address: the template loads the same code as separate module scripts, so no build is needed between edits.
 
 Tap or click to begin. While circling a node, tap to release along your current tangent. The next node captures you automatically. Space or Enter performs the same action. Tap after a loss to restart.
 
@@ -58,13 +58,14 @@ The chapter plates quote Galileo. The Quiet's moon has a Sidereus Nuncius termin
 
 ## Source
 
-The independent `OrbitWorld` class handles seeded generation, fixed-step movement, swept collisions, scoring, and difficulty. The rest of the inline script handles procedural Canvas artwork, synthesized Web Audio, storage, and input.
+The source lives in `src/` as classic scripts that share one global scope, listed in load order in `src/index.html`. `simulation.js` holds the independent `OrbitWorld` class: seeded generation, fixed-step movement, swept collisions, scoring, and difficulty. `audio.js` synthesizes the Web Audio sounds. `plates.js` owns the render globals, storage, and the night and paper colour tokens; `backdrop.js` paints the two sheets; `planets.js` builds the procedural specimens; `celestial.js` draws the chapter plates and ambient events; `marks.js` bakes the burin rings and route lines; `figures.js` draws constellation figures, nodes, lenses, hazards, and the aim guide; `effects.js` paints the rising darkness, the comet, and its trail; `frame.js` builds the plate frame and composes each frame; `ui.js` handles the screens, viewport, and the single input. `scripts/bundle.mjs` inlines the modules into one script for both the build and the tests.
 
 Optional development commands use only Node.js built-ins:
 
 ```
+npm start
 npm test
 npm run build
 ```
 
-The verification script checks the main, constellation, and charged-shortcut paths on 60 generated courses through row 48, including 240 completed constellations and 360 shortcut transfers. It checks exact tangent contacts in both directions at three speeds, moving-target guide agreement, symmetric gravitational flybys, retained speed, curved landing predictions at three speeds, collision warnings, lens sampling at clipped viewport edges, star acceleration and caps, speed-based rewards, long-flight regressions, darkness pressure, rewards and expiry, duplicate capture protection, bounded generation, pause/restart, and complete-script execution at five viewport sizes using native-API stand-ins. Route probes can take an ordinary capture if they miss a perfect timing window for more than 1.5 turns. These are simulation/runtime checks, not browser screenshots. The build validates the script and copies the HTML and the `assets` folder into `dist` for static hosting.
+The verification script checks the main, constellation, and charged-shortcut paths on 60 generated courses through row 48, including 240 completed constellations and 360 shortcut transfers. It checks exact tangent contacts in both directions at three speeds, moving-target guide agreement, symmetric gravitational flybys, retained speed, curved landing predictions at three speeds, collision warnings, lens sampling at clipped viewport edges, star acceleration and caps, speed-based rewards, long-flight regressions, darkness pressure, rewards and expiry, duplicate capture protection, bounded generation, pause/restart, and complete-script execution at five viewport sizes using native-API stand-ins. Route probes can take an ordinary capture if they miss a perfect timing window for more than 1.5 turns. These are simulation/runtime checks, not browser screenshots. `npm start` serves the repository for development. The build inlines the modules, validates the resulting script, and writes the single-file page and the `assets` folder into `dist` for static hosting.

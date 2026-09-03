@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
-const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
-const simulation=script.split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
+import {bundle} from './bundle.mjs';
+const {html,script}=await bundle();
+const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
 const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,bendVelocity,flightStep,BASE_SPEED,MAX_SPEED,STAR_GAIN};',sandbox);
 const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,bendVelocity,flightStep,BASE_SPEED,MAX_SPEED,STAR_GAIN}=sandbox.api;
 const step=1/120;
