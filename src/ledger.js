@@ -97,6 +97,8 @@ const UNLOCKS=[
     describe:()=>'Play 100 runs'},
   {id:'proof',kind:'plate',name:'Proof before letters',latin:'Ante litteras',test:l=>l.allFourInOneRun,
     describe:()=>'Trace four constellations in one run'},
+  {id:'azzurra',kind:'plate',name:'Blue prepared paper',latin:'Carta azzurra',stat:'grazes',threshold:25,
+    describe:()=>'Graze 25 black holes'},
   {id:'comet',kind:'mark',name:'Comet',latin:'Cometa',stat:'runs',threshold:25,
     describe:()=>'Play 25 runs'},
   {id:'telescope',kind:'mark',name:'Galilean telescope',latin:'Perspicillum',stat:'perfects',threshold:100,

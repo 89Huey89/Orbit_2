@@ -154,6 +154,9 @@ const PLATE_STYLES={
   cellarius:{base:'night',wash:.7,tint:duotone([7,16,56],[118,102,72],[252,228,164])},
   verdigris:{base:'night',wash:.52,tint:duotone([5,15,13],[62,124,100],[196,230,204])},
   foxed:{base:'paper',wash:.5,tint:aged},
+  // Blue prepared paper, as the Florentine workshops made it: the night plate's pale ink becomes white
+  // heightening on a blue-grey ground, so the drawing is carried by the lights rather than the darks.
+  azzurra:{base:'night',wash:.55,tint:duotone([100,116,132],[168,180,188],[244,240,230])},
   // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it.
   proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])}
 };

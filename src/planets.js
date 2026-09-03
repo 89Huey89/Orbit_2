@@ -171,11 +171,13 @@ function paintEngraving(g,core,palette,rng){
   // Shading is cut into the plate with curved strokes, not a glossy gradient.
   g.fillStyle=palette.light+'22';g.fillRect(-core,-core,core*2,core*2);
   const hatchInk=paper?'26,18,11':'38,34,26';
+  // The hatching is laid as a left hand lays it — each stroke runs down and to the right — and it darkens
+  // toward the limb on the right, where the light falls away.
   for(let i=0;i<34;i++){
-    const x=-core*.28+i*core*.048;
+    const x=-core*.62+i*core*.048;
     g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/34*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
     g.beginPath();g.moveTo(x,-core*1.14);
-    g.bezierCurveTo(x+core*.22,-core*.3,x-core*.36,core*.65,x-core*.48,core*1.1);g.stroke();
+    g.bezierCurveTo(x-core*.22,-core*.3,x+core*.36,core*.65,x+core*.48,core*1.1);g.stroke();
   }
   g.strokeStyle=paper?'rgba(26,18,11,.42)':'rgba(37,33,25,.32)';g.lineWidth=paper?.5:.38;
   for(let i=0;i<19;i++){
@@ -183,11 +185,12 @@ function paintEngraving(g,core,palette,rng){
     g.beginPath();g.moveTo(core*.4,y);g.bezierCurveTo(core*.66,y+.08*core,core*.86,y+.35*core,core*1.1,y+.45*core);g.stroke();
   }
   if(paper){
-    // A second, counter-slanted pass crosses the first over the dark limb: true cross-hatch.
-    for(let i=0;i<22;i++){
-      const y=-core*1.05+i*core*.1;
-      g.strokeStyle=`rgba(26,18,11,${.09+i/22*.28})`;g.lineWidth=.38+rng()*.24;
-      g.beginPath();g.moveTo(core*.05,y);g.bezierCurveTo(core*.4,y+core*.05,core*.55,y+core*.05,core*.95,y+core*.02);g.stroke();
+    // No cross-hatch: the dark limb is deepened with a second set of parallel strokes that curve with the
+    // form, concentric with the limb itself, the way a pen follows a rounded body rather than crossing it.
+    for(let i=0;i<14;i++){
+      const rr=core*(.5+i*.036),reach=.55+i*.03;
+      g.strokeStyle=`rgba(26,18,11,${.08+i/14*.26})`;g.lineWidth=.38+rng()*.24;
+      g.beginPath();g.arc(0,0,rr,-reach+rng()*.08,reach-rng()*.08);g.stroke();
     }
   }
   for(let i=0;i<440;i++){
@@ -261,6 +264,10 @@ function glyph(seed,type,row,runSeed){
   // is printed over it, so the black line always reads on top of the wash.
   if(paper){
     g.strokeStyle=`rgba(${rgb},.3)`;g.lineWidth=1.9;g.beginPath();g.arc(-1.05,-.75,core+.2,0,TAU);g.stroke();
+    // The circle was first tried in red chalk, a little off and broken where the chalk skipped, and the pen
+    // then followed it: the sanguine underdrawing shows beside the ink wherever the two do not agree.
+    burinArc(g,.9,-.6,core+1.1,0,TAU,ink.underdrawing.chalk,.34,1,seed^0x2c71,{segments:60,skips:9,wobble:.9});
+    burinArc(g,-.4,.8,core+.4,1.1,2.6,ink.underdrawing.chalk,.22,.8,seed^0x1a5b,{segments:14,skips:2,wobble:.6});
     burinArc(g,0,0,core-.25,0,TAU,'26,18,11',.96,1.15,seed^0x51f3,{segments:76,skips:3});
   }else{
     burinArc(g,0,0,core-.25,0,TAU,'31,29,23',.85,.85,seed^0x51f3,{segments:76,skips:4});

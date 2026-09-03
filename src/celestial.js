@@ -154,11 +154,12 @@ function celestialPlate(index){
       g.stroke();
       if(paper){
         // Dark hatching stands in for the night side, rather than a flat shadow fill.
+        // The strokes run down and to the right, as a left hand lays them.
         for(let i=0;i<70;i++){
           const t=tr(),yy=cy-rr+t*rr*2,xx=termX(t)+8+tr()*(rr*.6);
           if(xx>cx+rr)continue;
           g.strokeStyle=`rgba(${ink.plates.terminator},${.05+tr()*.1})`;g.lineWidth=.4;
-          g.beginPath();g.moveTo(xx,yy);g.lineTo(xx+9+tr()*10,yy+3);g.stroke();
+          const len=9+tr()*9;g.beginPath();g.moveTo(xx,yy);g.lineTo(xx+len*.72,yy+len*.7);g.stroke();
         }
       }
       for(let i=0;i<20;i++){
@@ -209,13 +210,16 @@ function celestialPlate(index){
       g.quadraticCurveTo(Math.cos(a+.027)*(r+ray*.5),Math.sin(a+.027)*(r+ray*.5),Math.cos(a+.055)*(r+ray),Math.sin(a+.055)*(r+ray));g.stroke();
     }
     if(eclipsePaper){
-      // The eclipsed disc is built from dense engraved cross-hatching, never a flat dark fill.
+      // The eclipsed disc is built from dense hatching, never a flat dark fill. The strokes are parallel and
+      // slant down to the right, the left hand's way; a second pass at a near angle darkens the lower limb
+      // instead of crossing the first, so the disc reads as drawn rather than engraved.
       const dh=seeded(60413);
       g.save();g.beginPath();g.arc(0,0,r,0,TAU);g.clip();
       for(let pass=0;pass<2;pass++){
-        g.save();g.rotate(pass===0?.4:-.55);
-        for(let i=-r*1.2;i<r*1.2;i+=2+dh()*1.1){
-          g.strokeStyle=`rgba(${ink.plates.discInk},${.16+dh()*.2})`;g.lineWidth=.55+dh()*.4;
+        g.save();g.rotate(pass===0?-.55:-.82);
+        for(let i=-r*1.2;i<r*1.2;i+=(pass===0?1.8:2.6)+dh()*1.1){
+          if(pass===1&&i<r*.05)continue;
+          g.strokeStyle=`rgba(${ink.plates.discInk},${(pass===0?.16:.1)+dh()*.2})`;g.lineWidth=.55+dh()*.4;
           g.beginPath();g.moveTo(i,-r*1.2);g.lineTo(i,r*1.2);g.stroke();
         }
         g.restore();
@@ -309,35 +313,8 @@ function celestialPlate(index){
     g.beginPath();g.moveTo(Math.cos(a)*r,Math.sin(a)*r*.79);g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*.79);g.stroke();
   }
   g.restore();
-  // A proof before letters is pulled without its captions; the figures and rings stay as they are.
-  if(!plainPlate()){
-    g.font="italic 17px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionLatin},${onPaper()?.62:.21})`;g.textAlign='left';
-    g.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],48,1027);
-    g.font="12px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.captionTab},${onPaper()?.5:.18})`;g.fillText('TAB. '+numerals[index],48,1052);
-    g.font="italic 11px 'IM Fell English',Georgia,serif";g.fillStyle=`rgba(${ink.plates.figCaption},${onPaper()?.55:.15})`;
-    g.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],48,1072);
-  }
-  if(index===1){
-    // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set beside the caption —
-    // a small marginal figure, not the plate's big ring system.
-    const mx=150,my=996,ms=9,col=`rgba(${ink.plates.ringGlyph},${onPaper()?.55:.4})`;
-    g.save();g.translate(mx,my);g.strokeStyle=col;g.lineWidth=.9;
-    g.beginPath();g.arc(0,0,ms,0,TAU);g.stroke();
-    for(const side of [-1,1]){g.beginPath();g.ellipse(side*ms*1.55,0,ms*.62,ms*.42,0,0,TAU);g.stroke();}
-    g.restore();
-  }else if(index===3){
-    // Galileo's Medicean-stars notation for Jupiter: "O * * *" beside the caption.
-    const mx=150,my=996,col=`rgba(${ink.plates.jupiterGlyph},${onPaper()?.55:.4})`;
-    g.save();g.translate(mx,my);g.strokeStyle=col;g.lineWidth=.9;g.beginPath();g.arc(0,0,4.4,0,TAU);g.stroke();
-    g.lineWidth=1;
-    for(let k=0;k<4;k++){
-      const sxk=14+k*12;
-      for(const rot of [0,Math.PI/2,Math.PI/4,-Math.PI/4]){
-        g.beginPath();g.moveTo(sxk-3.2*Math.cos(rot),0-3.2*Math.sin(rot));g.lineTo(sxk+3.2*Math.cos(rot),0+3.2*Math.sin(rot));g.stroke();
-      }
-    }
-    g.restore();
-  }
+  // The plate's caption block and Galileo's marginal figures are set live at the foot of the sheet — see
+  // drawPlateCaptions() — so they keep inside the frame whatever crop the print takes on a narrow sheet.
   for(let i=0;i<4200;i++){
     const x=rng()*w,y=rng()*h;
     if(onPaper()&&x>w*.32&&x<w*.68&&i%3)continue; // a cleaner paper channel: thin the grain toward the centre
@@ -369,6 +346,45 @@ function drawCelestialScene(index,weight){
   // On paper the plate sits back as a distant engraving beneath the gameplay marks, so it is blitted
   // at a reduced alpha; night is unaffected.
   ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;ctx.drawImage(plate,place.x,place.y,plate.width*place.fit,plate.height*place.fit);ctx.restore();
+  drawPlateCaptions(index,weight,place);
+}
+// The plate's caption block — its Latin title, the table numeral, the figure line and, on two of the plates,
+// Galileo's own marginal figure above them — used to be baked into the print at its lower-left corner, where a
+// narrow sheet cropped it against the frame. It is set live instead, at the print's own place on a wide sheet
+// and drawn in to the foot of the margin on a narrow one, in the same whisper the print carries it at.
+function drawPlateCaptions(index,weight,place){
+  if(plainPlate()||weight<.001)return;
+  const paper=onPaper(),fit=clamp(place.fit,.7,1.15),inner=frameBand()+9;
+  const x=Math.max(inner,place.x+48*place.fit);
+  const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit);
+  ctx.save();ctx.globalAlpha=paper?weight*.72:weight;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  ctx.font=`italic ${17*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
+  ctx.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],x,y);
+  ctx.font=`${12*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
+  ctx.font=`italic ${11*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
+  ctx.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],x,y+45*fit);
+  if(index===1){
+    // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set above the caption —
+    // a small marginal figure, not the plate's big ring system.
+    const ms=9,col=`rgba(${ink.plates.ringGlyph},${paper?.55:.4})`;
+    ctx.save();ctx.translate(x+102*fit,y-31*fit);ctx.scale(fit,fit);ctx.strokeStyle=col;ctx.lineWidth=.9;
+    ctx.beginPath();ctx.arc(0,0,ms,0,TAU);ctx.stroke();
+    for(const side of [-1,1]){ctx.beginPath();ctx.ellipse(side*ms*1.55,0,ms*.62,ms*.42,0,0,TAU);ctx.stroke();}
+    ctx.restore();
+  }else if(index===3){
+    // Galileo's Medicean-stars notation for Jupiter: "O * * *" above the caption.
+    const col=`rgba(${ink.plates.jupiterGlyph},${paper?.55:.4})`;
+    ctx.save();ctx.translate(x+102*fit,y-31*fit);ctx.scale(fit,fit);ctx.strokeStyle=col;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(0,0,4.4,0,TAU);ctx.stroke();
+    ctx.lineWidth=1;
+    for(let k=0;k<4;k++){
+      const sxk=14+k*12;
+      for(const rot of [0,Math.PI/2,Math.PI/4,-Math.PI/4]){
+        ctx.beginPath();ctx.moveTo(sxk-3.2*Math.cos(rot),0-3.2*Math.sin(rot));ctx.lineTo(sxk+3.2*Math.cos(rot),0+3.2*Math.sin(rot));ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  ctx.restore();
 }
 // The illustrated plate is left whole in the margins and washed back down the play channel, where the
 // chart and the traveller have to read first: one pass of the sheet's own ground colour, at full strength
@@ -471,7 +487,25 @@ function drawAmbient(dt,aim){
 function revealBand(){
   if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return null;
   if(H<540&&W>H)return null;
-  const y=Math.min(H*.3,hudBand()+46);return {top:y-36,bottom:y+36};
+  const y=revealAnchor();return {top:y-36,bottom:y+36};
+}
+// Where the chapter lettering is set: the line under the HUD band, or one of two lower lines when a planet
+// or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins,
+// so the lettering never jumps while the pen is still writing it.
+function revealAnchor(){
+  if(chapterReveal.y!==undefined)return chapterReveal.y;
+  const base=Math.min(H*.3,hudBand()+46),reach=Math.min(95,W*.21)+30,limit=H*.62;
+  let bestY=base,bestCost=Infinity;
+  for(const y of [base,base+70,base+140]){
+    if(y!==base&&y+40>limit)break;
+    let cost=0;
+    const cover=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-W*.5)-reach),dy=Math.max(0,Math.abs(py-y)-38);return Math.max(0,r-Math.hypot(dx,dy));};
+    for(const n of world.nodes)cost+=cover(sx(n.x),sy(n.y),(n.cap||n.r)*scale+6);
+    for(const h of world.hazards)cost+=cover(sx(h.x),sy(h.y),h.r*scale+10);
+    if(cost<bestCost-.5){bestCost=cost;bestY=y;}
+    if(cost===0)break;
+  }
+  chapterReveal.y=bestY;return bestY;
 }
 function drawChapterReveal(dt){
   if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead'||plainPlate())return;
@@ -479,8 +513,19 @@ function drawChapterReveal(dt){
   const t=chapterReveal.age,alpha=clamp(Math.min(t/.55,(4.2-t)/1.2),0,1);
   // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
   // channel underneath it and above the toast line at 29% of the height, so the two never share a row.
-  const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:Math.min(H*.3,hudBand()+46),rise=reducedMotion?0:(1-Math.min(t,1))*5;
-  ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
+  const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor(),rise=reducedMotion?0:(1-Math.min(t,1))*5;
+  ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
+  {
+    // The lettering is pulled on a small leaf of its own: one soft pass of the sheet's ground, feathered to
+    // nothing, so the chapter name reads over whatever the chart has scrolled beneath it — the Eclipse's dark
+    // disc included — without a hard edge anywhere on the page.
+    const spread=Math.min(95,W*.21)+72;
+    ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
+    const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
+    leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.66:.56})`);leaf.addColorStop(.5,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+  }
+  ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
   // done — and always under reduced motion — the ordinary lettering below is the finished state.

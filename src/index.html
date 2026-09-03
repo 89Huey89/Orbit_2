@@ -17,6 +17,7 @@
     #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--chapter:#7d9a8c;--shield:#8fc0c4}
     #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a}
     #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22}
+    #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--chapter:#cfd6da;--shield:#e2ecf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate="paper"] #chapter{color:#c2b394}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
@@ -64,6 +65,9 @@
     #hint{position:absolute;bottom:max(100px,calc(env(safe-area-inset-bottom) + 72px));left:25px;right:25px;text-align:center;pointer-events:none;color:var(--copy);font-family:'IM Fell English',Georgia,serif;font-size:14px;letter-spacing:.04em;z-index:2;opacity:0;transition:opacity .5s;text-shadow:0 2px 10px var(--ink)}
     #toast{position:absolute;top:29%;left:15px;right:15px;text-align:center;pointer-events:none;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;letter-spacing:.22em;font-size:13px;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .4s;z-index:2}
     #toast.show{opacity:1;transform:translateY(0)}
+    /* The frontispiece and the colophon are leaves of their own: the toast line is not printed through them. */
+    #game.over #toast{opacity:0}
+    #intro{background:radial-gradient(ellipse at center,rgba(var(--veil),.4),rgba(var(--veil),.12) 70%,transparent)}
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
     /* The colophon is pulled on its own leaf: a near-opaque paper panel inside a double engraved rule, so
        every line stays legible however far the spilled ink has risen behind it. */
