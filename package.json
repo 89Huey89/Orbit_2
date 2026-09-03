@@ -1,1 +1,1 @@
-{"name":"orbit","private":true,"version":"1.0.0","description":"Self-contained procedural arcade game","scripts":{"build":"node scripts/build.mjs","test":"node scripts/verify.mjs"}}
+{"name":"orbit","private":true,"version":"1.0.0","description":"Self-contained procedural arcade game","scripts":{"start":"node scripts/serve.mjs","build":"node scripts/build.mjs","test":"node scripts/verify.mjs","glyphs":"node scripts/glyphs.mjs"},"devDependencies":{"fontkit":"^2.0.4"}}
