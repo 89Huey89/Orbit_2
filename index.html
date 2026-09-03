@@ -1281,7 +1281,12 @@ function drawNode(n,aim){
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=.2;
-  const glow=ctx.createRadialGradient(0,0,r*.2,0,0,r*2.1);glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
+  const glowKey=r.toFixed(2)+':'+active;
+  if(n._glowKey!==glowKey){
+    const glow=ctx.createRadialGradient(0,0,r*.2,0,0,r*2.1);glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);
+    n._glow=glow;n._glowKey=glowKey;
+  }
+  ctx.fillStyle=n._glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   drawPlanet(glyph(n.seed,n.type,n.row,world.seed),n.r*scale,world.time);
   if(sling){
     const charge=active?world.charge():0,band=r*.73;
@@ -1304,10 +1309,17 @@ function drawNode(n,aim){
   ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
   ctx.lineWidth=.45;ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
   ctx.strokeStyle=`rgba(${rgb},${target?.36:.11})`;ctx.setLineDash([1*scale,5*scale]);ctx.beginPath();ctx.arc(0,0,n.cap*scale,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  ctx.lineWidth=.5;ctx.strokeStyle=`rgba(${rgb},.16)`;ctx.beginPath();
   for(let i=0;i<48;i++){
-    const a=i/48*TAU,l=i%4===0?3.2:1.2;ctx.lineWidth=.5;ctx.strokeStyle=`rgba(${rgb},${i%4===0?.37:.16})`;
-    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r+3*scale),Math.sin(a)*(r+3*scale));ctx.lineTo(Math.cos(a)*(r+(3+l)*scale),Math.sin(a)*(r+(3+l)*scale));ctx.stroke();
+    if(i%4===0)continue;
+    const a=i/48*TAU;ctx.moveTo(Math.cos(a)*(r+3*scale),Math.sin(a)*(r+3*scale));ctx.lineTo(Math.cos(a)*(r+4.2*scale),Math.sin(a)*(r+4.2*scale));
   }
+  ctx.stroke();
+  ctx.strokeStyle=`rgba(${rgb},.37)`;ctx.beginPath();
+  for(let i=0;i<48;i+=4){
+    const a=i/48*TAU;ctx.moveTo(Math.cos(a)*(r+3*scale),Math.sin(a)*(r+3*scale));ctx.lineTo(Math.cos(a)*(r+6.2*scale),Math.sin(a)*(r+6.2*scale));
+  }
+  ctx.stroke();
   if(active){
     for(const next of releaseTargets(n)){
       const d=Math.hypot(next.x-n.x,next.y-n.y),a=Math.atan2(next.y-n.y,next.x-n.x)-p.dir*Math.acos(clamp(p.rad/d,-1,1)),window=Math.asin(clamp(next.cap/d,0,.8));
@@ -1371,9 +1383,20 @@ function drawHazard(h){
     ctx.beginPath();ctx.ellipse(0,0,r*(1.64+i*.09),r*(.47+i*.028),0,0,TAU);ctx.stroke();
   }
   ctx.restore();
-  for(let i=0;i<54;i++){
-    const a=i/54*TAU,l=2+rng()*r*.42;ctx.strokeStyle=`rgba(200,121,93,${(.08+rng()*.27)*pulse})`;ctx.lineWidth=.5;
-    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r+3),Math.sin(a)*(r+3));ctx.lineTo(Math.cos(a+.035)*(r+l+3),Math.sin(a+.035)*(r+l+3));ctx.stroke();
+  {
+    const buckets=new Map();
+    for(let i=0;i<54;i++){
+      const a=i/54*TAU,l=2+rng()*r*.42,base=.08+rng()*.27,bucket=Math.min(11,Math.floor((base-.08)/.27*12));
+      let seg=buckets.get(bucket);if(!seg){seg=[];buckets.set(bucket,seg);}
+      seg.push(Math.cos(a)*(r+3),Math.sin(a)*(r+3),Math.cos(a+.035)*(r+l+3),Math.sin(a+.035)*(r+l+3));
+    }
+    ctx.lineWidth=.5;
+    for(const [bucket,seg] of buckets){
+      ctx.strokeStyle=`rgba(200,121,93,${(.08+(bucket+.5)/12*.27)*pulse})`;
+      ctx.beginPath();
+      for(let j=0;j<seg.length;j+=4){ctx.moveTo(seg[j],seg[j+1]);ctx.lineTo(seg[j+2],seg[j+3]);}
+      ctx.stroke();
+    }
   }
   ctx.fillStyle='#060a11';ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();ctx.strokeStyle='rgba(197,109,83,.62)';ctx.lineWidth=.85;ctx.stroke();
   ctx.strokeStyle='rgba(232,164,119,.8)';ctx.lineWidth=1.35;ctx.beginPath();ctx.arc(-.7,-.3,r,Math.PI*1.04,Math.PI*1.82);ctx.stroke();
@@ -1729,8 +1752,8 @@ function tick(now){
     accumulator+=dt;
     while(accumulator>=FLIGHT_STEP){
       world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
-      recordTrail();
     }
+    recordTrail();
     render(dt);
   }
   requestAnimationFrame(tick);
