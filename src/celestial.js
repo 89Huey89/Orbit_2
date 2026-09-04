@@ -503,6 +503,9 @@ function revealAnchor(){
     const cover=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-W*.5)-reach),dy=Math.max(0,Math.abs(py-y)-38);return Math.max(0,r-Math.hypot(dx,dy));};
     for(const n of world.nodes)cost+=cover(sx(n.x),sy(n.y),(n.cap||n.r)*scale+6);
     for(const h of world.hazards)cost+=cover(sx(h.x),sy(h.y),h.r*scale+10);
+    // A live constellation's name is lettered round its entry star's rim, well past the star's own
+    // radius: keep the chapter lettering off that ring too, not just off the planet itself.
+    for(const c of world.constellations)if(!c.expired&&c.entry)cost+=cover(sx(c.entry.x),sy(c.entry.y),c.entry.r*scale+40*scale);
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }

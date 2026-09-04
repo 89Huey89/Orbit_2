@@ -292,7 +292,11 @@ $('catalogue-body').addEventListener('click',e=>{
   }
 });
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidateArt();if(world)render(0);}).catch(()=>{});
-$('daily').addEventListener('click',()=>{setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);});
+// The switch lives on both the title screen and the run-complete colophon, so a daily run is never a
+// dead end: tapping either one toggles the same setting and the next "tap to try again" honours it.
+function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
+$('daily').addEventListener('click',toggleDaily);
+$('daily-end').addEventListener('click',toggleDaily);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 $('fullscreen').addEventListener('click',()=>{
