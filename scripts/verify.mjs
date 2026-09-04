@@ -282,6 +282,35 @@ for(const [from,to,expected]of [[0,1,0],[0,2,1],[0,4,3],[3,4.5,1],[3.5,5,1]]){
   assert.equal(w.player.node,destination);assert.equal(captures[0].skipped,expected);assert.equal(captures[0].skipBonus,expected*16,'Count each intervening full orbit, including gold detour endpoints, with the speed reward');
 }
 
+// A real new run opens on three parallel targets, one per pressure, in place of the ordinary
+// single first node. Course generation waits until one is captured; that capture sets the run's
+// difficulty, clears the two unchosen targets, and becomes the new main node exactly as an
+// ordinary capture would.
+for(const choice of ['relaxed','classic','hardcore']){
+  const emitted=[],w=new OrbitWorld(55,440,860,(type,e)=>{if(type==='difficulty')emitted.push(e.value);},true);
+  const paths=w.nodes.filter(n=>n.difficultyChoice);
+  assert.equal(paths.length,3,'A real new run opens on three difficulty targets');
+  assert.equal(paths.map(n=>n.difficultyChoice).sort().join(','),'classic,hardcore,relaxed');
+  assert.equal(w.difficultyPending,true,'The choice is pending until one target is captured');
+  const rowBefore=w.row;w.start();w.ensureAhead();
+  assert.equal(w.row,rowBefore,'Course generation must wait for the difficulty choice');
+  const target=paths.find(n=>n.difficultyChoice===choice);
+  w.player.x=target.x;w.player.y=target.y;w.player.vx=0;w.player.vy=-1;
+  assert.equal(w.capture(target),true,'Capturing a difficulty target is an ordinary capture');
+  assert.equal(w.difficultyPending,false,'Capturing a target resolves the pending choice');
+  assert.deepEqual(emitted,[choice],'The chosen pressure is announced exactly once, and only the chosen one');
+  assert.equal(w.nodes.filter(n=>n.difficultyChoice).length,1,'The two unchosen targets are removed');
+  assert.equal(w.nodes.some(n=>n.difficultyChoice&&n!==target),false,'Only the captured target remains');
+  assert.equal(w.lastMain,target,'The captured target becomes the new main node');
+  const rowAfter=w.row;w.ensureAhead();assert(w.row>rowAfter,'Course generation resumes once the choice is made');
+}
+{
+  // Daily runs and every fixed layout keep the ordinary single-node opening.
+  const daily=new OrbitWorld(56,440,860,()=>{},false);
+  assert.equal(daily.nodes.some(n=>n.difficultyChoice),false,'A run started with offerDifficulty off skips the choice');
+  assert.equal(daily.difficultyPending,undefined);
+}
+
 // A tangent-seeking pilot uses the stars and follows the generated main route.
 let totalCaptures=0,perfects=0,maxNodes=0,maxHazards=0;const failures=[];
 for(let seed=1;seed<=60;seed++){
