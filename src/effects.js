@@ -307,22 +307,29 @@ function drawLandingSurvey(s,t,rgb,gold,base){
 function drawTrail(){
   if(trail.length<2)return;
   const pen=trailInk();
+  // Past the gauge's own copper mark (see updateUI) the nib is starved: the stroke skips beats and
+  // loses its weight the nearer the reservoir runs to dry, as a real pen scratches out its last ink.
+  const starved=clamp(1-world.inkLevel()/.34,0,1),thin=1-starved*.55;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   for(let i=1;i<trail.length;i++){
     const a=trail[i-1],b=trail[i],age=world.time-b.time;
     const life=reducedMotion?.48:b.air?1.18:.78,t=clamp(1-age/life,0,1);if(t===0)continue;
+    if(starved>0){
+      const skip=(Math.sin(b.time*5.3)+Math.sin(b.time*11.7+2.1)*.6+1.6)/3.2;
+      if(skip<starved*.6)continue;
+    }
     const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<.01)continue;
     const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),weight=t*(1+boost*.7);
     // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. The stroke is laid wet and
     // dries as the segment ages, from glossy blue-black to matte sepia on paper, bright to dim ink at night.
     const dried=mixRgb(pen.wet,pen.dry,1-t*t);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.wash},${t*t*.16})`,(1+3.5*weight)*scale);
+    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.wash},${t*t*.16})`,(1+3.5*weight)*scale*thin);
     // Gold leaf is laid over a dark keyline, the way a gilder cuts the line first and lays the leaf into it.
-    if(pen.keyline)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*scale);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${dried},${t*t*.77})`,(.18+1.2*weight)*scale);
+    if(pen.keyline)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*scale*thin);
+    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${dried},${t*t*.77})`,(.18+1.2*weight)*scale*thin);
     if(!reducedMotion){
       const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
-      line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36})`,.4*scale);
+      line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36})`,.4*scale*thin);
       // Silverpoint catches the light along the stroke: a faint shimmer that travels segment by segment.
       if(pen.shimmer){
         const glint=Math.max(0,Math.sin(world.time*3.1-i*.35));
