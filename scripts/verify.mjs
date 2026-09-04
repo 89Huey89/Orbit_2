@@ -472,6 +472,27 @@ for(const choice of ['relaxed','classic','hardcore']){
   assert.equal(daily.difficultyPending,undefined);
 }
 
+// Missing a capture outright is harsher than only missing the perfect band inside it, so Tiro's
+// capMult widens the whole forgiving window generateRow and makeNode grant a node, on top of the
+// narrower perfect band widened by perfectMult. Two worlds built from the same seed generate
+// identical geometry, so the only thing capMult may change is the capture radius, never the
+// drawn radius or position a node is placed at.
+{
+  const seed=777;
+  const plain=new OrbitWorld(seed,440,860,()=>{},false);
+  const widened=new OrbitWorld(seed,440,860,()=>{},false);
+  widened.capMult=1.3;
+  const pBefore=plain.nodes.length,wBefore=widened.nodes.length;
+  plain.generateRow();widened.generateRow();
+  const pNew=plain.nodes.slice(pBefore),wNew=widened.nodes.slice(wBefore);
+  assert(pNew.length>0,'generateRow must add at least one node');
+  assert.equal(wNew.length,pNew.length,'The same seed generates the same nodes regardless of capMult');
+  for(let i=0;i<pNew.length;i++){
+    assert.equal(wNew[i].x,pNew[i].x);assert.equal(wNew[i].r,pNew[i].r,'capMult must never change a node\'s drawn radius');
+    assert(Math.abs(wNew[i].cap-pNew[i].cap*1.3)<1e-9,'capMult scales the forgiving capture window by exactly the difficulty multiplier');
+  }
+}
+
 // A tangent-seeking pilot uses the stars and follows the generated main route.
 let totalCaptures=0,perfects=0,maxNodes=0,maxHazards=0;const failures=[];
 for(let seed=1;seed<=60;seed++){

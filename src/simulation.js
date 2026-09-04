@@ -251,7 +251,7 @@ class OrbitWorld {
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
     this.perfectStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
-    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1;
+    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1; this.capMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
     this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,ink:1,dryAnnounced:false};
@@ -270,7 +270,7 @@ class OrbitWorld {
     this.row = 1;
   }
   makeNode(x, y, r, row, type) {
-    const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:r+11,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:0};
+    const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:(r+11)*this.capMult,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:0};
     this.nodes.push(n); return n;
   }
   // The furthest from the middle a node of this radius may be cut and still keep its whole orbit —
@@ -315,7 +315,7 @@ class OrbitWorld {
     // The capture band opens with the chart. A long crossing is aimed from further off, so the
     // angle that finds the rim is finer; the band grows with the gulf to keep the release window
     // about as wide in the hand as it was when the orbits were close together.
-    n.cap = n.r + Math.max(6, 12-k*.13)*grow;
+    n.cap = (n.r + Math.max(6, 12-k*.13)*grow)*this.capMult;
     this.lastMain = n;
     if(fork){
       n.routeId=region;n.routeRole=local===3?'entry':local===7?'exit':'main';
@@ -330,7 +330,7 @@ class OrbitWorld {
           const i=local-4,shape=CONSTELLATIONS[chart.catalogueIndex].shape;
           const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size,this.inboard(starR));
           const star=this.makeNode(side*reach,y+[24,42,18][i]*grow,starR,k,'gold');
-          star.cap=star.r+9*grow;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
+          star.cap=(star.r+9*grow)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
         }
       }
     }

@@ -45,6 +45,10 @@ const INK_MULT={relaxed:.82,classic:1,hardcore:1.22};
 // Tiro also asks less precise timing to land a smooth tangent transfer, since a tight orbit sweeps
 // through its release window quickly whatever the pressure; Adeptus and Magister keep the drawn window.
 const PERFECT_MULT={relaxed:1.35,classic:1,hardcore:1};
+// Missing a capture outright is a harsher failure than missing only the perfect band inside it, so
+// Tiro widens the whole forgiving capture window a body carries beyond its drawn rim, not just the
+// narrower perfect band within it. Adeptus and Magister keep the drawn window.
+const CAP_MULT={relaxed:1.3,classic:1,hardcore:1};
 let difficulty=storage.get('orbit.difficulty.v1','classic');
 if(!(difficulty in DARKNESS_MULT))difficulty='classic';
 // The daily plate: one shared course a day, drawn from the UTC date, always at Classic
@@ -65,7 +69,7 @@ function recordBest(score){
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
 function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
-function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];}
+function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));

@@ -94,7 +94,7 @@ function newWorld(){
   reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];surveys=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
-  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];
+  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
