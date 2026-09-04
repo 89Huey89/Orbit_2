@@ -217,15 +217,17 @@ function arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect) {
   if(perfect)return 90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI;
   return Math.atan2(Math.abs(rx*rvy-ry*rvx),-(rx*rvx+ry*rvy))*180/Math.PI;
 }
-// An arrival steeper than this does not join the orbit at all: see OrbitWorld.bounce. It is set to
-// turn away a flight that is falling onto a planet rather than crossing its rim — about a quarter of
-// the arrivals the chart offers — while leaving anything with real angle on it the forgiving ordinary
-// capture it has always been. A tangent-seeking pilot never meets it at all.
+// An arrival steeper than this still joins — there is no way to steer a flight once it is released,
+// so refusing it outright left a mistimed release with nothing to recover onto — but earns nothing:
+// see the steep case in OrbitWorld.capture. It is set to catch a flight that is falling onto a planet
+// rather than crossing its rim — about a quarter of the arrivals the chart offers — while leaving
+// anything with real angle on it the forgiving ordinary capture it has always been. A tangent-seeking
+// pilot never meets it at all.
 const GRAZE_MINIMUM = 16;
 function arrivalAim(n,contact,distance,vx,vy) {
   const speed=Math.hypot(vx,vy);
   const angle=arrivalAngle(n,contact.rx,contact.ry,contact.rvx,contact.rvy,contact.distance,contact.perfect);
-  return {n,distance,perfect:contact.perfect,angle,bounce:angle<GRAZE_MINIMUM,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
+  return {n,distance,perfect:contact.perfect,angle,steep:angle<GRAZE_MINIMUM,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
 }
 
 class OrbitWorld {
@@ -457,18 +459,21 @@ class OrbitWorld {
     const cross=rx*rvy-ry*rvx,alignment=clamp(Math.abs(cross)/Math.max(1e-8,radius*arrivalSpeed),0,1);
     const perfect=!!contact?.perfect,scoreMultiplier=this.speedMultiplier(Math.hypot(p.vx,p.vy));
     const angle=arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect);
-    // A flight that comes down at the centre rather than across the rim does not join the orbit: it
-    // skips off and flies on. The opening targets never refuse a landing, so the choice of pressure
-    // cannot be lost to it, and a run is only ever turned away by an approach the guide had marked.
-    if(angle<GRAZE_MINIMUM&&!this.difficultyPending&&contact){this.bounce(n,contact);return false;}
-    const square=!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
+    // A flight that comes down at the centre rather than across the rim still joins: there is no way
+    // to steer a flight once it is released, so turning one away outright only ever stranded a
+    // mistimed release with nothing left to recover onto. It lands as the same forgiving hard turn
+    // any angled arrival gets, but a steep one earns nothing at all — no score, no skip bonus, no ink
+    // dividend — so a careless release is still worse than a patient one, and the choice of pressure
+    // is never lost to it.
+    const steep=angle<GRAZE_MINIMUM&&!this.difficultyPending;
+    const square=!steep&&!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
     p.dir=cross>=0?1:-1; p.angle=Math.atan2(ry,rx); p.rad=radius||n.r;p.tangentCapture=perfect;
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
-    // A landing pays the nib back. A clean tangent arrival pays better than a hard turn, so the
-    // transfer that scores best also funds the next one.
-    p.ink=Math.min(1,p.ink+(perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN));p.dryAnnounced=false;
+    // A landing pays the nib back. A clean tangent arrival pays better than a hard turn; a steep one
+    // pays nothing, exactly what it cost to get there.
+    p.ink=Math.min(1,p.ink+(steep?0:perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN));p.dryAnnounced=false;
     if(n.difficultyChoice){
       this.nodes=this.nodes.filter(q=>q===n||!q.difficultyChoice);
       this.difficultyPending=false;this.lastMain=n;
@@ -478,15 +483,15 @@ class OrbitWorld {
       this.emit('difficulty',{value:n.difficultyChoice});
     }
     this.positionPlayer();
-    const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0,skipBonus=Math.round(skipped*10*scoreMultiplier);
+    const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0,skipBonus=steep?0:Math.round(skipped*10*scoreMultiplier);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     this.combo=quick?Math.min(5,this.combo+1):1; this.maxCombo=Math.max(this.maxCombo,this.combo);
-    const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=Math.round(baseGain*scoreMultiplier)+skipBonus;
+    const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=steep?0:Math.round(baseGain*scoreMultiplier)+skipBonus;
     this.score+=gain+squareBonus; this.captures++; this.perfects+=perfect?1:0; this.squares+=square?1:0;
     this.perfectStreak=perfect?this.perfectStreak+1:0;
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
-    this.shake=perfect?1.8:1.0;
-    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
+    this.shake=perfect?1.8:steep?1.3:1.0;
+    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,steep,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
     if(square)this.observe('rightAngle');
     if(this.perfectStreak>=3)this.observe('perfectThree');
     if(skipped>=5)this.observe('skipFive');
@@ -526,16 +531,6 @@ class OrbitWorld {
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
-  }
-  // Too steep to join: the flight skips off the rim and carries on, keeping its speed and losing the
-  // orbit. It is put just outside the capture band along the outward normal so it leaves cleanly
-  // rather than grazing the same rim again on the next step.
-  bounce(n,contact) {
-    const p=this.player,cx=contact?contact.cx:n.x,cy=contact?contact.cy:n.y;
-    const dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
-    p.vx-=2*dot*nx;p.vy-=2*dot*ny;
-    const clear=n.cap+2;p.x=cx+nx*clear;p.y=cy+ny*clear;
-    this.shake=1.4;this.emit('bounce',{x:p.x,y:p.y,n});
   }
   resize(width,height) {
     const oldHeight=this.height;this.width=width;this.height=height;
@@ -643,8 +638,8 @@ class OrbitWorld {
       const t=hit.time*speed/reach;if(t>=hitAt)continue;
       hitAt=t;best=arrivalAim(n,hit,hit.time*speed,launch.vx,launch.vy);
     }
-    // The opening targets never turn a landing away, so the guide must not warn that they will.
-    if(best&&this.difficultyPending)best.bounce=false;
+    // The opening targets never cost a landing its credit, so the guide must not warn that this one will.
+    if(best&&this.difficultyPending)best.steep=false;
     const until=best?best.distance:reach;
     const gravity=this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
@@ -716,7 +711,7 @@ class OrbitWorld {
         break;
       }
     }
-    if(preview.aim&&this.difficultyPending)preview.aim.bounce=false;
+    if(preview.aim&&this.difficultyPending)preview.aim.steep=false;
     preview.curved=bend>.001;this.flightPreview=preview;this.fogPreview();this.markInk(preview,preview.aim);return preview.aim;
   }
 }

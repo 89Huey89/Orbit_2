@@ -27,15 +27,22 @@ function event(type,e){
     audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');
-    audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
-    if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
+    if(e.steep){
+      // Too steep to earn anything: a duller thud in place of the ordinary capture chime, and no
+      // floater, since there is no score to announce.
+      audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);burst(e.x,e.y,6,'red',.4);
+    }else{
+      audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
+      if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
+      floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
+    }
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
-    floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
     const at={node:e.n};
-    if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
+    if(e.steep)say('TOO STEEP · NO ORBIT EARNED',at);
+    else if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
     else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',at);
     else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
     else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
@@ -60,10 +67,6 @@ function event(type,e){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
     say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
-  }else if(type==='bounce'){
-    audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);
-    burst(e.x,e.y,10,'red',.5);rings.push({x:e.x,y:e.y,start:4,distance:26,age:0,life:.45,alpha:.4,seed:ringSeed()});
-    say('TOO STEEP · THE RIM TURNED YOU AWAY',{node:e.n});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
