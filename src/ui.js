@@ -332,6 +332,7 @@ function tick(now){
       world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
     }
     recordTrail();
+    audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
     render(dt);
   }
   requestAnimationFrame(tick);
