@@ -3,7 +3,7 @@
    Procedural sound: soft glass, brushed noise, and low strings. */
 // ---------- Procedural sound: soft glass, brushed noise, and low strings ----------
 class OrbitAudio {
-  constructor(enabled){this.enabled=enabled;this.ctx=null;}
+  constructor(enabled){this.enabled=enabled;this.ctx=null;this.scratchNext=0;}
   unlock(){
     try{
       if(!this.ctx){
@@ -28,6 +28,22 @@ class OrbitAudio {
     const t=this.ctx.currentTime,s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();
     s.buffer=this.noise;f.type='bandpass';f.frequency.value=freq;f.Q.value=.65;g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);
     s.connect(f);f.connect(g);g.connect(this.master);s.start();s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+  }
+  // A quill dragging on paper: tiny random grains of filtered noise, not a looped sample, so there is
+  // no seam to hear. Called every frame while a line is being drawn; it self-schedules the next grain
+  // and simply does nothing on the frames between, faster and a touch louder the harder the line bites.
+  scratch(active,speed=0){
+    if(!active||!this.ctx||!this.enabled||this.ctx.state!=='running'){this.scratchNext=0;return;}
+    const t=this.ctx.currentTime;if(t<this.scratchNext)return;
+    const level=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
+    const s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();
+    s.buffer=this.noise;f.type='bandpass';f.frequency.value=2800+Math.random()*2800;f.Q.value=1+Math.random()*2;
+    const peak=.07+level*.05+Math.random()*.03,dur=.018+Math.random()*.024;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+.003);g.gain.exponentialRampToValueAtTime(.0008,t+dur);
+    s.connect(f);f.connect(g);g.connect(this.master);
+    s.start(t,Math.random()*(this.noise.duration-dur-.01),dur);
+    s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+    this.scratchNext=t+.024+Math.random()*.045-level*.012;
   }
   start(){this.tone(196,.8,0,.3);this.tone(293.66,.7,.11,.22);this.tone(440,.9,.22,.16);}
   release(){this.tone(330,.11,0,.25,'sine',190);this.brush(2100,.17);}

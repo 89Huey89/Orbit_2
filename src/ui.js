@@ -280,6 +280,9 @@ game.addEventListener('pointerdown',e=>{
   if(e.target.closest('button')||!e.isPrimary||e.button!==0)return;
   e.preventDefault();handleInput();
 },{passive:false});
+// iOS/WebKit doesn't reliably treat pointerdown as a user gesture for unlocking Web
+// Audio, so also unlock on the touch events it does recognize.
+for(const type of ['touchstart','touchend'])game.addEventListener(type,()=>audio.unlock(),{passive:true});
 window.addEventListener('keydown',e=>{
   if(e.code==='Escape'&&catalogueOpen){e.preventDefault();closeCatalogue();return;}
   if(catalogueOpen)return;
@@ -332,6 +335,7 @@ function tick(now){
       world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
     }
     recordTrail();
+    audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
     render(dt);
   }
   requestAnimationFrame(tick);
