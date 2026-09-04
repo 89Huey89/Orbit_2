@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import {bundle} from './bundle.mjs';
 const {html,script}=await bundle();
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
-const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN};',sandbox);
-const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN}=sandbox.api;
+const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM};',sandbox);
+const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM}=sandbox.api;
 const step=1/120;
 
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
@@ -98,13 +98,14 @@ for(const [speed,drift,angle] of [[150,false,-.032],[150,true,-.026],[240,false,
   const {w,destination,captures}=curvedFixture(speed,drift,angle),before={score:w.score,near:w.hazards[0].near,node:w.player.node};
   const aim=w.aim(),preview=w.flightPreview;assert.equal(aim?.n,destination);assert(preview.curved&&preview.points.length>4);maxPreviewSteps=Math.max(maxPreviewSteps,preview.steps);
   assert.deepEqual({score:w.score,near:w.hazards[0].near,node:w.player.node},before,'Prediction cannot mutate the live run');
-  const expected=preview.points.at(-1);w.release();for(let i=0;i<120*8&&!w.player.node&&w.state==='playing';i++)w.update(step);
+  // The drawn course may be cut short by the pace's own horizon; what is compared is the prediction.
+  const expected=preview.landing;w.release();for(let i=0;i<120*8&&!w.player.node&&w.state==='playing';i++)w.update(step);
   assert.equal(w.player.node,destination);assert.equal(captures[0].perfect,aim.perfect);
   assert(Math.hypot(w.player.x-expected.x,w.player.y-expected.y)<.2,'The curved guide must land where real flight lands');curvedCaptures++;
 }
 assert(maxPreviewSteps<300,'Curved prediction must remain bounded');
 const blockedCurve=curvedFixture(240,false,.32);assert.equal(blockedCurve.w.aim(),null);assert.equal(blockedCurve.w.flightPreview.blocked,'hole');
-const blockedPoint=blockedCurve.w.flightPreview.points.at(-1);assert(Math.abs(Math.hypot(blockedPoint.x-70,blockedPoint.y+170)-27)<.02);
+const blockedPoint=blockedCurve.w.flightPreview.landing;assert(Math.abs(Math.hypot(blockedPoint.x-70,blockedPoint.y+170)-27)<.02);
 blockedCurve.w.release();for(let i=0;i<120*4&&blockedCurve.w.state==='playing';i++)blockedCurve.w.update(step);
 assert.equal(blockedCurve.w.reason,'CAUGHT BY A BLACK HOLE','A warning guide must agree with the real collision');
 
@@ -120,7 +121,7 @@ let flareCaptures=0,flareGrazes=0;
 for(let angle=-.02;angle<=.24;angle+=.004){
   const {w,destination}=flareFixture(angle),aim=w.aim(),preview=w.flightPreview,before=w.score;
   if(!aim||aim.n!==destination||!preview.curved)continue;
-  const expected=preview.points.at(-1);w.release();
+  const expected=preview.landing;w.release();
   for(let i=0;i<120*8&&!w.player.node&&w.state==='playing';i++)w.update(step);
   assert.equal(w.player.node,destination,'A flare-bent guide must reach the planet it advertises');
   assert(Math.hypot(w.player.x-expected.x,w.player.y-expected.y)<.2,'The flare guide must land where real flight lands');
@@ -175,11 +176,50 @@ for(const offset of [-50,50])for(const speed of [150,240,360]){
   for(let i=0;i<120;i++)w.update(step);
   assert(Math.abs(w.player.speed-speed)<1e-7,'Ordinary orbits must not erase earned momentum or auto-accelerate');
 }
-const roughSlow=transferFixture(0,150),roughFast=transferFixture(0,300);
+// An angled arrival that is not a tangent is still the forgiving ordinary capture it has always been.
+const roughSlow=transferFixture(25,150),roughFast=transferFixture(25,300);
 for(const test of [roughSlow,roughFast]){
-  assert.equal(test.w.aim().perfect,false,'Center-directed flights are ordinary captures');test.w.release();
+  const aim=test.w.aim();
+  assert.equal(aim.perfect,false,'An angled, non-tangent flight is an ordinary capture');
+  assert.equal(aim.bounce,false,'and still joins the orbit');
+  assert(aim.angle>GRAZE_MINIMUM&&aim.angle<45,'well inside the forgiving band: '+aim.angle.toFixed(1));
+  test.w.release();
   for(let i=0;i<120*3&&!test.w.player.node;i++)test.w.update(step);
   assert.equal(test.w.player.node,test.destination);assert.equal(test.captures[0].perfect,false);
+}
+// A flight falling straight down at the centre does not join at all: it skips off the rim and flies
+// on, keeping its speed and losing the orbit. The guide says so before the release is made.
+for(const offset of [0,10]){
+  const skid=transferFixture(offset,240),aim=skid.w.aim();
+  assert.equal(aim.n,skid.destination,'The guide still aims the course');
+  assert(aim.angle<GRAZE_MINIMUM);
+  assert.equal(aim.bounce,true,'and marks that it will skip off rather than land');
+  const bounced=[];skid.w.emit=(t,e)=>{if(t==='bounce')bounced.push(e);};
+  const speed=Math.hypot(skid.w.player.vx,skid.w.player.vy);
+  skid.w.release();
+  for(let i=0;i<120*3&&skid.w.state==='playing'&&!skid.w.player.node;i++)skid.w.update(step);
+  assert.equal(bounced.length,1,'The rim turns the flight away exactly once');
+  assert.equal(skid.w.player.node,null,'No orbit is joined');
+  assert.equal(skid.captures.length,0,'and nothing is scored');
+  assert.equal(skid.destination.visited,false,'The planet is still there to be landed on properly');
+  assert(Math.abs(Math.hypot(skid.w.player.vx,skid.w.player.vy)-speed)<1e-7,'A skip keeps the speed it arrived with');
+}
+// The three opening targets never turn a landing away, so the choice of pressure cannot be lost to it.
+{
+  const open=new OrbitWorld(12,440,860,()=>{},true);open.start();
+  const target=open.nodes.find(q=>q.difficultyChoice==='classic');
+  open.player.x=target.x;open.player.y=target.y+target.r;open.player.vx=0;open.player.vy=-240;
+  assert.equal(open.capture(target,{cx:target.x,cy:target.y,vx:0,vy:0,perfect:false,rx:0,ry:target.r,rvx:0,rvy:-240,distance:target.r}),true,
+    'A dead-centre arrival on an opening target still sets the pressure');
+  // And the guide never warns of a refusal that cannot happen while the choice is pending.
+  const offer=new OrbitWorld(12,440,860,()=>{},true);offer.start();
+  let warned=0,aimed=0;
+  for(let i=0;i<360;i++){
+    offer.player.angle=i/360*Math.PI*2;offer.positionPlayer();
+    const a=offer.aim();if(!a)continue;aimed++;if(a.bounce)warned++;
+  }
+  assert(aimed>0,'The opening targets must be aimable');
+  assert.equal(warned,0,'No opening course is marked as one that will skip off');
 }
 assert.equal(roughFast.captures[0].gain,roughSlow.captures[0].gain*2,'The same landing at twice the speed earns twice the points');
 assert(roughFast.w.player.speed<300&&roughFast.w.player.speed>BASE_SPEED,'A sharp capture sheds only some excess momentum');
@@ -214,6 +254,33 @@ const idle=new OrbitWorld(2);idle.start();for(let i=0;i<120*40&&idle.state==='pl
 assert.equal(idle.state,'dead','Waiting forever must lose');assert.equal(idle.reason,'THE DARK CAUGHT UP');
 assert(idle.elapsed>6&&idle.elapsed<13,'Opening darkness must give a few learning seconds, then threaten idle play');
 const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=paused.player.x;paused.update(10);assert.equal(paused.player.x,old);assert.equal(paused.elapsed,0);
+
+// ---------- The pace hides the far end of a fast crossing ----------
+// At the opening pace the whole course is drawn. As the chart's speed is earned the pen stops setting
+// down the far part of it, so a run at full pace commits to the last of a long transfer unseen. What
+// is hidden is only what is drawn: the aim and the prediction behind it are untouched, which is what
+// lets the guide still be checked against real flight.
+{
+  const sight=speed=>{const w=new OrbitWorld(13,440,860);w.start();
+    const origin=w.player.node,far=w.makeNode(origin.x+origin.r+25,origin.y-700,54,2,'still');
+    w.nodes=[origin,far];w.lastMain=far;w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();
+    const aim=w.aim(),p=w.flightPreview;
+    return {aim,fogged:p.fogged,drawn:p.points.at(-1).distance,landing:p.landing,range:w.sightRange()};
+  };
+  const slow=sight(BASE_SPEED),fast=sight(MAX_SPEED);
+  assert.equal(slow.aim?.n.row,2);assert.equal(fast.aim?.n.row,2,'The same planet is aimed at either pace');
+  assert.equal(slow.fogged,false,'At the opening pace the whole course is drawn');
+  assert(Math.abs(slow.drawn-slow.aim.distance)<1e-6);
+  assert.equal(fast.fogged,true,'At the chart top speed the far part of a long crossing is not');
+  assert(fast.drawn<slow.drawn*.6,'and a good deal of it is left unset: '+fast.drawn.toFixed(0)+' of '+slow.drawn.toFixed(0));
+  assert(Math.abs(fast.drawn-fast.range)<1e-6,'The course is cut exactly at the pace horizon');
+  assert(fast.range<slow.range,'The horizon closes in as the pace rises');
+  // The fog is what is drawn, never what will happen.
+  assert(Math.abs(slow.landing.x-fast.landing.x)<1e-6&&Math.abs(slow.landing.y-fast.landing.y)<1e-6,
+    'The predicted landing is the same whether or not the course to it is drawn');
+  assert.equal(slow.aim.perfect,fast.aim.perfect);
+  assert(Math.abs(slow.aim.angle-fast.aim.angle)<1e-6,'and so is the arrival it predicts');
+}
 
 // ---------- The nib and its ink ----------
 // A full nib carries 2000 world units, spent by the distance flown rather than the time taken, so
@@ -253,7 +320,7 @@ const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=pa
   for(let i=0;i<120*4&&dry.state==='playing';i++)dry.update(step);
   assert.equal(dry.reason,'THE NIB RAN DRY','An empty nib ends the run in flight');
   const last=new OrbitWorld(8,440,860);last.start();
-  const origin=last.player.node,target=last.makeNode(origin.x+origin.r,origin.y-600,54,2,'still');
+  const origin=last.player.node,target=last.makeNode(origin.x+origin.r+25,origin.y-600,54,2,'still');
   last.nodes=[origin,target];last.lastMain=target;last.player.angle=0;last.player.dir=-1;last.positionPlayer();
   const aim=last.aim();assert.equal(aim?.n,target);
   last.player.ink=last.inkCost(aim.distance)+1e-4;
@@ -326,7 +393,9 @@ function distantTransfer(boosted=true){
   w.player.angle=0;w.player.dir=-1;w.player.orbitSweep=Math.PI*2;
   w.player.speed=boosted?240:150;
   w.positionPlayer();
-  const destination=w.makeNode(origin.x+origin.r,-1800,54,8,'still');
+  // Offset enough to cross the rim at about 27 degrees: an ordinary capture, as this fixture wants,
+  // but not the near-radial drop the rim now turns away.
+  const destination=w.makeNode(origin.x+origin.r+25,-1800,54,8,'still');
   w.nodes=[origin,destination];w.lastMain=destination;w.row=8;w.start();
   return {w,destination,captures};
 }
@@ -346,7 +415,9 @@ for(const boosted of [true,false]){
   const score=w.score;assert.equal(w.capture(destination),false);assert.equal(w.score,score,'Long bonuses cannot be farmed');
   assert(Math.abs((w.player.x-destination.x)*w.player.vx+(w.player.y-destination.y)*w.player.vy)<1e-7,'Captured velocity must immediately match the new orbit');
 }
-const longHazard=distantTransfer();longHazard.w.hazards.push({x:longHazard.destination.x,y:-1620,r:14,near:false});
+// The hazard sits on the flight's own line, which is the launch tangent rather than the destination's
+// centre now that the fixture crosses the rim at an angle.
+const longHazard=distantTransfer();longHazard.w.hazards.push({x:longHazard.w.player.x,y:-1620,r:14,near:false});
 assert.equal(longHazard.w.aim(),null,'A distant hazard must block the guide');longHazard.w.release();
 for(let i=0;i<120*12&&longHazard.w.state==='playing';i++)longHazard.w.update(step);
 assert(longHazard.w.player.flightTime>3.6);assert.equal(longHazard.w.reason,'CAUGHT BY A BLACK HOLE');assert.equal(longHazard.captures.length,0);
@@ -395,7 +466,7 @@ for(let seed=1;seed<=60;seed++){
   for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
     if(w.player.node){
       const aim=w.aim();
-      if(aim&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.bounce&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     if(i===120*12&&seed%4===0)w.resize(1280,780);
@@ -419,7 +490,7 @@ for(let seed=1;seed<=60;seed++){
       const row=Math.floor(w.progress)+1;
       const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
       const aim=w.aim();
-      if(aim&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     if(i===120*12&&seed%4===0)w.resize(1280,780);
@@ -451,7 +522,7 @@ for(let seed=1;seed<=60;seed++){
       const row=Math.floor(w.progress)+1;
       const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
       const aim=w.aim();
-      if(aim&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     assert(w.nodes.length<20&&w.hazards.length<12&&w.nebulas.length<8,'Later generation must stay bounded');
@@ -594,7 +665,7 @@ for(let seed=1;seed<=60;seed++){
       const n=w.player.node,row=Math.floor(w.progress)+1;
       const target=n.shortcut?w.nodes.find(q=>q.id===n.shortcutId):w.nodes.find(q=>q.row===row&&q.routeRole==='star')||w.nodes.find(q=>q.row===row&&q.type!=='gold');
       const aim=w.aim();
-      if(aim&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(n.type!=='sling'||w.charge()===1)){
+      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(n.type!=='sling'||w.charge()===1)){
         if(n.shortcut)expected=target.id;
         w.release();
       }
@@ -1126,9 +1197,10 @@ const layouts=[
     'orbit.cosmetics.v1':JSON.stringify({plate:'cellarius',mark:'saturn',trail:'goldleaf',capture:'seal',frame:'seamonsters',figures:'bode'})})
 ];
 
-// Two pilots traverse the same course. Slow, sharp captures retain little of
-// the stars' acceleration; deliberate charging and tangent entries outrun the
-// fully developed pursuit. No artificial flight timer or automatic speed gain.
+// Two pilots traverse the same course. A dawdler that lingers two laps on every ring and leaves its
+// stars uncharged keeps little of the chart's pace and is eventually overhauled by the flood;
+// deliberate charging and tangent entries outrun the fully developed pursuit. No artificial flight
+// timer and no automatic speed gain: the difference is entirely in how the two of them fly.
 function pressureRun(useStars,observations,inkMult=0){
   const w=new OrbitWorld(1,440,860,observations?(type,e)=>{if(type==='observation')observations.push(e);}:undefined);w.start();
   // The pursuit is what these two runs are about, so ink is free here and measured on its own below.
@@ -1139,9 +1211,10 @@ function pressureRun(useStars,observations,inkMult=0){
     const n=w.player.node;
     if(n){
       const target=w.nodes.find(q=>q.row===Math.floor(w.progress)+1&&q.type!=='gold'),aim=w.aim();
-      const end=w.flightPreview?.points.at(-1);
-      const centered=aim&&end&&!aim.perfect&&Math.abs((aim.cx-end.x)*aim.dy-(aim.cy-end.y)*aim.dx)<aim.n.r*.15;
-      if(aim&&aim.n===target&&(useStars?aim.perfect||w.player.orbitSweep>Math.PI*3:centered)&&w.player.orbitTime>.12&&(!useStars||n.type!=='sling'||w.charge()===1))w.release();
+      // The dawdler takes whatever landing the rim will accept, but only after two idle laps, and
+      // never charges a star. The other flies tangents and takes every star to a full lap.
+      const ready=useStars?aim&&(aim.perfect||w.player.orbitSweep>Math.PI*3):aim&&w.player.orbitSweep>Math.PI*4;
+      if(ready&&!aim.bounce&&aim.n===target&&w.player.orbitTime>.12&&(!useStars||n.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     w.bestRelief=Math.min(w.bestRelief,w.darknessRelief());
@@ -1151,12 +1224,23 @@ function pressureRun(useStars,observations,inkMult=0){
 }
 const observed=[];
 const slowRun=pressureRun(false),fastRun=pressureRun(true,observed);
-assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT UP');// Consistently slow play now meets the flood sooner than it did: the chart is cut for a faster pace
-// and the tide takes a quarter of that growth, and from row 12 a hazard may close one side of a
-// crossing, so a pilot that will not fly around one loses ground while it waits.
-assert(slowRun.elapsed>90&&slowRun.elapsed<300,'The pursuit must eventually catch consistently slow progress');
-assert.equal(slowRun.perfectStreak,0,'An ordinary capture resets the perfect streak');
-assert.equal(slowRun.darknessRelief(),1,'Slow, centred play earns no relief from the pursuit');
+assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT UP');// Consistently slow play meets the flood far sooner than it once did, and deliberately so: the chart
+// is cut for a faster pace with the tide taking a quarter of that growth, from row 12 a hazard may
+// close one side of a crossing, and a rim will not accept a flight that falls at it. The band is what
+// this assertion is really for — the pursuit must neither become unable to catch a dawdler nor take
+// one the instant the run begins.
+assert(slowRun.elapsed>60&&slowRun.elapsed<300,'The pursuit must eventually catch consistently slow progress: '+slowRun.elapsed.toFixed(0)+'s');
+// The streak rule, tested where it lives rather than read off whichever landing a pilot happened to
+// stop on: an ordinary capture resets it, and with no streak there is no relief from the pursuit.
+{
+  const streak=transferFixture(25,240);streak.w.perfectStreak=6;
+  assert(streak.w.darknessRelief()<1,'A standing streak is worth relief');
+  streak.w.release();
+  for(let i=0;i<120*3&&!streak.w.player.node;i++)streak.w.update(step);
+  assert.equal(streak.captures[0].perfect,false,'An angled arrival is an ordinary capture');
+  assert.equal(streak.w.perfectStreak,0,'An ordinary capture resets the perfect streak');
+  assert.equal(streak.w.darknessRelief(),1,'and with it the relief from the pursuit');
+}
 assert.equal(fastRun.state,'playing');assert(fastRun.progress>=220&&fastRun.elapsed>slowRun.elapsed);
 // The two pressures answer two different mistakes, and a run can only dodge both by flying well.
 // Dwelling on a ring buys ink but spends the time the flood is counting, so the slow, centred pilot
@@ -1170,7 +1254,7 @@ assert(pressureRun(false,undefined,1).inkLevel()>0,'A run that dwells is never s
 function rusher(seed){
   const w=new OrbitWorld(seed,440,860);w.start();
   for(let i=0;i<120*400&&w.state==='playing'&&w.progress<120;i++){
-    if(w.player.node){const aim=w.aim();if(aim&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
+    if(w.player.node){const aim=w.aim();if(aim&&!aim.bounce&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
     w.update(step);
   }
   return w;
@@ -1195,7 +1279,16 @@ assert.equal(observed.length,fastRun.observations.length);
 assert(observed.every((o,i)=>o===fastRun.observations[i]),'Emitted observations are the ones recorded on the world');
 assert(observed.every(o=>OBSERVATIONS[o.key]&&o.name===OBSERVATIONS[o.key].name&&o.latin===OBSERVATIONS[o.key].latin));
 for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(observed.some(o=>o.key===key),'Expected the '+key+' observation: '+JSON.stringify(observed.map(o=>o.key)));
-assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
+// The dawdler takes whatever landing the rim accepts, so it does sometimes fly a tangent by luck; the
+// claim worth holding is that the feat is never awarded without the transfers it names.
+assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=3,
+  'TRES PERFECTI is never earned without three perfect transfers');
+{
+  const plain=transferFixture(25,240);plain.w.release();
+  for(let i=0;i<120*3&&!plain.w.player.node;i++)plain.w.update(step);
+  assert.equal(plain.w.perfects,0,'An angled arrival is not a perfect transfer');
+  assert.equal(plain.w.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
+}
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rim that turns away a flight falling at it, marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));

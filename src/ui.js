@@ -60,6 +60,10 @@ function event(type,e){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
     say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
+  }else if(type==='bounce'){
+    audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);
+    burst(e.x,e.y,10,'red',.5);rings.push({x:e.x,y:e.y,start:4,distance:26,age:0,life:.45,alpha:.4,seed:ringSeed()});
+    say('TOO STEEP · THE RIM TURNED YOU AWAY',{node:e.n});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);

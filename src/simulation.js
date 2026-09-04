@@ -38,6 +38,12 @@ const TRANSFER_SECONDS = 1.28;
 // then only on every third row, so a closed route stays an event rather than the standing state of
 // the chart. Before it, every route is left clear and a hazard is only something to give room to.
 const HAZARD_CLOSES_ROUTE = 12;
+// How far along a course the pen will still set it down. At the opening pace the whole transfer is
+// drawn and nothing is hidden; as the chart's speed is earned the far part of a fast crossing is
+// left unset, so a run flown at full pace commits to the last of it unseen. The release marks and
+// the perfect window on the orbit being left are untouched, exactly as they are under a nebula, so
+// what is lost is where the flight ends rather than whether it leaves on a tangent.
+const SIGHT_NEAR = 260, SIGHT_FAR = 900;
 function chartPace(row) { return BASE_SPEED+(MAX_SPEED-BASE_SPEED)*clamp((row-3)/25,0,1)*.78; }
 // How much wider the chart is cut at this row than at the opening: 1 at the start, about 2.1 once
 // the chart is drawn for its full pace.
@@ -204,9 +210,22 @@ function freeFlightStep(p,hazards,remaining) {
   // Skip force-free sections on the same 120 Hz grid as real flight.
   return Math.min(remaining,Math.max(FLIGHT_STEP,Math.floor(entry/FLIGHT_STEP)*FLIGHT_STEP));
 }
+// The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry that joined a
+// little inside or outside reads a few degrees under or over; a flight coming straight down at the
+// centre reads near nothing. One definition, shared by the landing and by the guide that predicts it.
+function arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect) {
+  if(perfect)return 90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI;
+  return Math.atan2(Math.abs(rx*rvy-ry*rvx),-(rx*rvx+ry*rvy))*180/Math.PI;
+}
+// An arrival steeper than this does not join the orbit at all: see OrbitWorld.bounce. It is set to
+// turn away a flight that is falling onto a planet rather than crossing its rim — about a quarter of
+// the arrivals the chart offers — while leaving anything with real angle on it the forgiving ordinary
+// capture it has always been. A tangent-seeking pilot never meets it at all.
+const GRAZE_MINIMUM = 16;
 function arrivalAim(n,contact,distance,vx,vy) {
   const speed=Math.hypot(vx,vy);
-  return {n,distance,perfect:contact.perfect,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
+  const angle=arrivalAngle(n,contact.rx,contact.ry,contact.rvx,contact.rvy,contact.distance,contact.perfect);
+  return {n,distance,perfect:contact.perfect,angle,bounce:angle<GRAZE_MINIMUM,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
 }
 
 class OrbitWorld {
@@ -437,9 +456,11 @@ class OrbitWorld {
     const rvx=p.vx-(contact?contact.vx:n.vx),rvy=p.vy-(contact?contact.vy:n.vy),arrivalSpeed=Math.hypot(rvx,rvy),radius=Math.hypot(rx,ry);
     const cross=rx*rvy-ry*rvx,alignment=clamp(Math.abs(cross)/Math.max(1e-8,radius*arrivalSpeed),0,1);
     const perfect=!!contact?.perfect,scoreMultiplier=this.speedMultiplier(Math.hypot(p.vx,p.vy));
-    // The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry joined inside or
-    // outside the ring reads a little under or over; a hard turn toward the centre reads well under.
-    const angle=perfect?90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI:Math.atan2(Math.abs(cross),-(rx*rvx+ry*rvy))*180/Math.PI;
+    const angle=arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect);
+    // A flight that comes down at the centre rather than across the rim does not join the orbit: it
+    // skips off and flies on. The opening targets never refuse a landing, so the choice of pressure
+    // cannot be lost to it, and a run is only ever turned away by an approach the guide had marked.
+    if(angle<GRAZE_MINIMUM&&!this.difficultyPending&&contact){this.bounce(n,contact);return false;}
     const square=!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
     p.dir=cross>=0?1:-1; p.angle=Math.atan2(ry,rx); p.rad=radius||n.r;p.tangentCapture=perfect;
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
@@ -505,6 +526,16 @@ class OrbitWorld {
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
+  }
+  // Too steep to join: the flight skips off the rim and carries on, keeping its speed and losing the
+  // orbit. It is put just outside the capture band along the outward normal so it leaves cleanly
+  // rather than grazing the same rim again on the next step.
+  bounce(n,contact) {
+    const p=this.player,cx=contact?contact.cx:n.x,cy=contact?contact.cy:n.y;
+    const dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
+    p.vx-=2*dot*nx;p.vy-=2*dot*ny;
+    const clear=n.cap+2;p.x=cx+nx*clear;p.y=cy+ny*clear;
+    this.shake=1.4;this.emit('bounce',{x:p.x,y:p.y,n});
   }
   resize(width,height) {
     const oldHeight=this.height;this.width=width;this.height=height;
@@ -612,6 +643,8 @@ class OrbitWorld {
       const t=hit.time*speed/reach;if(t>=hitAt)continue;
       hitAt=t;best=arrivalAim(n,hit,hit.time*speed,launch.vx,launch.vy);
     }
+    // The opening targets never turn a landing away, so the guide must not warn that they will.
+    if(best&&this.difficultyPending)best.bounce=false;
     const until=best?best.distance:reach;
     const gravity=this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
@@ -633,18 +666,33 @@ class OrbitWorld {
     if(aim)aim.dry=preview.dry;
     return preview;
   }
-  // A nebula hides everything beyond its near edge: the drawn preview stops there and
-  // is marked fogged. The aim itself, and the release marks on the current orbit, stand.
+  // How far the chart is still drawn ahead of the traveller at the pace in hand.
+  sightRange() {
+    const p=this.player,speed=p.node?p.speed:Math.hypot(p.vx,p.vy);
+    return lerp(SIGHT_FAR,SIGHT_NEAR,clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1));
+  }
+  // Two things hide the chart, and both cut the drawn course at the nearer of them: a nebula, which
+  // hides everything past its near edge, and the pace itself, which leaves the far part of a fast
+  // crossing unset. Either way the preview stops and is marked fogged. The aim itself, and the
+  // release marks on the current orbit, stand.
   fogPreview() {
     const preview=this.flightPreview;if(!preview)return preview;
     preview.fogged=false;
-    if(!this.nebulas.length||preview.points.length<2)return preview;
-    const pts=preview.points;
+    const pts=preview.points;if(pts.length<2)return preview;
+    // What the course actually comes to, kept whole. Fog decides how much of it is drawn, never what
+    // the flight will do, so prediction can still be checked against the real thing.
+    preview.landing={x:pts[pts.length-1].x,y:pts[pts.length-1].y,distance:pts[pts.length-1].distance};
+    const sight=this.sightRange();
     for(let i=0;i<pts.length-1;i++){
       const a=pts[i],b=pts[i+1];let first=null;
       for(const g of this.nebulas){
         const t=segmentCircle(a.x,a.y,b.x,b.y,g.x,g.y,g.r);
         if(t!==null&&(first===null||t<first))first=t;
+      }
+      // The pace's own horizon, wherever it falls inside this leg.
+      if(b.distance>sight&&b.distance>a.distance){
+        const t=clamp((sight-a.distance)/(b.distance-a.distance),0,1);
+        if(first===null||t<first)first=t;
       }
       if(first===null)continue;
       const entry={x:lerp(a.x,b.x,first),y:lerp(a.y,b.y,first),time:lerp(a.time,b.time,first),distance:lerp(a.distance,b.distance,first)};
@@ -668,6 +716,7 @@ class OrbitWorld {
         break;
       }
     }
+    if(preview.aim&&this.difficultyPending)preview.aim.bounce=false;
     preview.curved=bend>.001;this.flightPreview=preview;this.fogPreview();this.markInk(preview,preview.aim);return preview.aim;
   }
 }
