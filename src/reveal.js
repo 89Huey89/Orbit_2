@@ -84,7 +84,9 @@ const reveal=(function(){
           }
         }
       }
-      for(let i=0;i<primeList.length;i+=3)this.progress(primeList[i+1],primeList[i+2],primeList[i]>inView);
+      // The three opening paths are drawn at once, never waiting on the cap: the player must see every
+      // difficulty on offer immediately, not have one appear only once a slot frees up.
+      for(let i=0;i<primeList.length;i+=3)this.progress(primeList[i+1],primeList[i+2],primeList[i]>inView||!!primeList[i+1].difficultyChoice);
     }
   };
 })();

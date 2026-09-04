@@ -58,16 +58,10 @@ function recordBest(score){
   if(dailyOn){if(score>dailyBest){dailyBest=score;storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));}}
   else if(score>best){best=score;storage.set('orbit.best.v1',best);}
 }
+// The difficulty is set in-run, by which of the three opening targets the player captures
+// (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
 function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
-function syncDifficulty(){
-  const active=activeDifficulty();
-  for(const key in DARKNESS_MULT){
-    const pressed=String(key===active);
-    $('diff-'+key).setAttribute('aria-pressed',pressed);
-    $('end-diff-'+key).setAttribute('aria-pressed',pressed);
-  }
-  if(world)world.darknessMult=DARKNESS_MULT[active];
-}
+function syncDifficulty(){if(world)world.darknessMult=DARKNESS_MULT[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));

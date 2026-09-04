@@ -459,7 +459,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying};',context);
@@ -621,6 +621,10 @@ drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,
   }
   frames(75);const midRun=context.test.world.time;context.test.setPlate('night');assert.equal(context.test.world.time,midRun);
   frames(75);
+  // The opening now offers three reachable targets (the difficulty choice), so a release at
+  // whatever angle the orbit has drifted to can no longer be trusted to miss all of them; aim
+  // it dead sideways instead, straight out of the chart's width, to force the intended miss.
+  context.test.world.player.angle=-Math.PI/2;context.test.world.player.dir=1;
   context.test.handleInput();assert.equal(context.test.world.player.node,null);
   frames(900);
   assert.equal(context.test.world.state,'dead');context.test.render(.1);
@@ -684,7 +688,7 @@ drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,
     assert.equal(context.test.ledgerStat('runs'),beforeRun.runs+1,'A finished run is counted once');
     assert(led.bestFlow>=run.maxCombo&&led.bestRow>=Math.floor(run.progress),'The ledger keeps the best flow and the highest row');
     assert(led.playSeconds>beforeRun.seconds,'The ledger keeps the time spent in the chart');
-    assert(led.personalBests.classic>=run.score,'The ledger keeps a personal best for the pressure played');
+    assert(led.personalBests[context.test.difficulty]>=run.score,'The ledger keeps a personal best for the pressure played');
     assert(led.observations.threeMinutes>=1,'The ledger counts the observations made');
     assert(led.deepestChapter>=Math.min(4,Math.floor(run.progress/8)+1),'The ledger keeps the deepest chapter reached');
     if(!storageBlocked){

@@ -85,7 +85,6 @@
     .stat .small{font-size:9px}
     #end-constellations{margin:-18px 0 23px;font-size:13px;color:var(--gold)}
     #end .action-copy{font-size:19px;margin-bottom:12px}
-    .difficulty{pointer-events:auto;display:flex;gap:9px;justify-content:center;margin-top:19px}
     .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
     .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
     .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
@@ -103,8 +102,6 @@
     .cartouche-frame{position:absolute;top:-.22em;left:-.55em;right:-.55em;bottom:-.3em;width:calc(100% + 1.1em);height:calc(100% + .52em);z-index:-1;color:var(--gold);opacity:.55;pointer-events:none}
     .compass-star{position:absolute;left:50%;bottom:0;width:16px;height:16px;transform:translate(-50%,55%);color:var(--gold);opacity:.85;pointer-events:none}
     .title-group .eyebrow{margin:18px 0 0}
-    .difficulty{align-items:center}
-    .diff-sep{color:var(--gold);font-size:8px;line-height:1;opacity:.6;pointer-events:none}
     .printer-line{margin:20px 0 0;font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
@@ -117,7 +114,6 @@
       .compass-star{width:11px;height:11px}
       .title-group .title-rule{margin-top:6px}
       .title-group .eyebrow{margin-top:6px}
-      #intro .difficulty{margin-top:8px}
       #intro .start-copy{bottom:78px}
       #intro .instruction{font-size:12px;line-height:1.5}
       #game #end{padding:4px 10px}
@@ -146,7 +142,6 @@
     /* — Daily plate, the ascent record, and the run's observations — */
     .daily-group{pointer-events:auto;display:flex;gap:11px;align-items:center;justify-content:center;margin-top:11px}
     .daily-note{color:var(--muted);letter-spacing:.2em;font-size:10px;min-height:12px}
-    #game.daily .difficulty{opacity:.42;pointer-events:none}
     #game.daily #daily{color:var(--gold);border-color:var(--gold)}
     #end .end-stats{flex-wrap:nowrap;gap:0;min-width:0}
     #end .stat{padding:0 clamp(5px,3vw,22px)}
@@ -165,7 +160,6 @@
       #end #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
       #end #end-unlocked{margin:-9px 0 10px;font-size:9px}
       #end .exlibris{width:84px;height:50px;margin-top:9px}
-      #end .difficulty{margin-top:9px}
       #end .end-plate-line{margin-top:9px}
       #end #copy-score{padding:6px 12px}
       #end .action-copy{font-size:17px;margin-bottom:8px}
@@ -181,7 +175,6 @@
     @media(max-height:530px) and (orientation:landscape){
       #intro .daily-group{margin-top:5px}
       #end #end-observations{margin:2px 0 4px;font-size:8px;line-height:1.4}
-      #end .difficulty{display:none}
       #end .end-plate-line{display:none}
       #end .end-stats{gap:12px}
     }
@@ -263,7 +256,7 @@
     #game.over .end-stats{animation:ink-wipe .55s ease-out .32s backwards}
     #game.over #end-score,#game.over #record{animation:ink-rise .5s ease-out .5s backwards}
     #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
-    #game.over #end-constellations,#game.over #end-observations,#game.over #end .difficulty,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
+    #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
   </style>
 </head>
 <body>
@@ -304,14 +297,7 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">FOLLOW THE PULL</p>
     </div>
-    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.</p>
-      <div class="difficulty" role="group" aria-label="Difficulty">
-        <button id="diff-relaxed" class="diff-btn" type="button" aria-pressed="false">RELAXED</button>
-        <span class="diff-sep" aria-hidden="true">&#9670;</span>
-        <button id="diff-classic" class="diff-btn" type="button" aria-pressed="true">CLASSIC</button>
-        <span class="diff-sep" aria-hidden="true">&#9670;</span>
-        <button id="diff-hardcore" class="diff-btn" type="button" aria-pressed="false">HARDCORE</button>
-      </div>
+    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Relaxed, Classic, or Hardcore.</p>
       <div class="daily-group">
         <button id="daily" class="diff-btn" type="button" aria-pressed="false">DAILY PLATE</button>
         <span id="daily-date" class="small daily-note"></span>
@@ -331,13 +317,6 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="difficulty" role="group" aria-label="Difficulty">
-        <button id="end-diff-relaxed" class="diff-btn" type="button" aria-pressed="false">RELAXED</button>
-        <span class="diff-sep" aria-hidden="true">&#9670;</span>
-        <button id="end-diff-classic" class="diff-btn" type="button" aria-pressed="true">CLASSIC</button>
-        <span class="diff-sep" aria-hidden="true">&#9670;</span>
-        <button id="end-diff-hardcore" class="diff-btn" type="button" aria-pressed="false">HARDCORE</button>
-      </div>
       <div class="end-plate-line"><span id="end-daily" class="small daily-note"></span><button id="copy-score" class="diff-btn" type="button">COPY SCORE</button></div>
     </div>
   </section>

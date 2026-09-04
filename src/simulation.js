@@ -174,7 +174,10 @@ function arrivalAim(n,contact,distance,vx,vy) {
 }
 
 class OrbitWorld {
-  constructor(seed, width = 440, height = 860, emit = () => {}) {
+  // offerDifficulty spawns three parallel opening targets — RELAXED, CLASSIC, HARDCORE — in place
+  // of the single first node; whichever one the player captures sets the run's difficulty. Off by
+  // default so every existing fixture and fixed layout keeps its ordinary single-node opening.
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false) {
     this.random = seeded(seed); this.seed = seed; this.emit = emit;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
@@ -194,7 +197,19 @@ class OrbitWorld {
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
     this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false};
-    this.positionPlayer(); this.ensureAhead();
+    this.positionPlayer();
+    if (offerDifficulty) this.spawnDifficultyPaths(); else this.ensureAhead();
+  }
+  // Three targets, side by side at the first row, each carrying a difficulty. Row generation
+  // stays paused (see ensureAhead) until the player captures one of them.
+  spawnDifficultyPaths() {
+    const y = this.lastMain.baseY - 207, gap = Math.min(140, this.width * .32);
+    this.difficultyPending = true;
+    for (const [choice, x] of [['relaxed', -gap], ['classic', 0], ['hardcore', gap]]) {
+      const n = this.makeNode(x, y, 54, 1, 'still');
+      n.difficultyChoice = choice;
+    }
+    this.row = 1;
   }
   makeNode(x, y, r, row, type) {
     const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:r+11,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:0};
@@ -291,7 +306,7 @@ class OrbitWorld {
     this.observed.add(key);const record={key,...OBSERVATIONS[key]};
     this.observations.push(record);this.emit('observation',record);return true;
   }
-  ensureAhead() { while (this.lastMain.y > this.cameraY-350) this.generateRow(); }
+  ensureAhead() { if (this.difficultyPending) return; while (this.lastMain.y > this.cameraY-350) this.generateRow(); }
   positionPlayer() {
     const p=this.player,n=p.node; if (!n) return;
     p.x=n.x+Math.cos(p.angle)*p.rad; p.y=n.y+Math.sin(p.angle)*p.rad;
@@ -331,6 +346,11 @@ class OrbitWorld {
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
+    if(n.difficultyChoice){
+      this.nodes=this.nodes.filter(q=>q===n||!q.difficultyChoice);
+      this.difficultyPending=false;this.lastMain=n;
+      this.emit('difficulty',{value:n.difficultyChoice});
+    }
     this.positionPlayer();
     const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0,skipBonus=Math.round(skipped*10*scoreMultiplier);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
