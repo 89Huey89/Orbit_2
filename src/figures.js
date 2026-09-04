@@ -702,7 +702,12 @@ function drawNode(n,aim){
     const mark=gold?'+15':shield?'SHIELD':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
-    if(world.captures<2&&!active&&n.row===Math.floor(world.progress)+1){ctx.textAlign='center';ctx.font=`${Math.max(9,9*scale)}px 'IM Fell English SC','IM Fell English',Georgia,serif`;ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,'NEXT',0,captionOffset(x,y,r,24*scale),revealLabel(pen,'NEXT'),{size:Math.max(9,9*scale)});}
+    // A difficulty node takes the "next" caption's spot, centred so it never runs off either
+    // edge, and names the pressure it sets instead of just marking the node as reachable.
+    if(world.captures<2&&!active&&n.row===Math.floor(world.progress)+1){
+      const label=n.difficultyChoice?n.difficultyChoice.toUpperCase():'NEXT';
+      ctx.textAlign='center';ctx.font=`${Math.max(9,9*scale)}px 'IM Fell English SC','IM Fell English',Georgia,serif`;ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
+    }
   }
   ctx.restore();
 }

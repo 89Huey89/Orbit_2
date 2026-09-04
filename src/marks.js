@@ -175,6 +175,10 @@ function drawConnections(){
   ctx.restore();
 }
 function releaseTargets(n){
+  if(n.row===0){
+    const paths=world.nodes.filter(q=>q.difficultyChoice&&!q.visited);
+    if(paths.length)return paths;
+  }
   if(n.shortcut){
     return [world.nodes.find(q=>q.row===n.row+1&&q.type!=='gold'),world.nodes.find(q=>q.id===n.shortcutId)].filter(q=>q&&!q.visited);
   }

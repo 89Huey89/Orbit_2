@@ -73,12 +73,15 @@ function event(type,e){
     audio.death();burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
     rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});screenFlash=1;
     $('hint').classList.remove('visible');$('toast').classList.remove('show');toastLife=0;
+  }else if(type==='difficulty'){
+    setDifficulty(e.value);
+    audio.tone(440,.3,0,.15);toast('PRESSURE SET · '+e.value.toUpperCase(),1.8);
   }
 }
 function newWorld(){
   reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];surveys=[];lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event);
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -203,7 +206,9 @@ function updateUI(dt){
   inked('shield',world.player.shielded?'SHIELD ARMED':'');
   const chapter=Math.min(3,Math.floor(world.progress/8));
   if(chapter!==lastChapter){lastChapter=chapter;$('chapter').innerHTML=numerals[chapter]+' &nbsp; / &nbsp; '+chapters[chapter];if(chapter>0&&world.state==='playing')chapterReveal={index:chapter,age:0};}
-  if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
+  if(world.state==='playing'&&world.difficultyPending){
+    $('hint').textContent='Aim for RELAXED, CLASSIC, or HARDCORE — your first orbit sets the pressure.';$('hint').classList.add('visible');
+  }else if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
     $('hint').textContent='One lap builds speed. Tap sooner for less. Perfect landings keep it.';$('hint').classList.add('visible');
   }else if(world.state==='playing'&&world.captures<2){
     $('hint').textContent='Tap when the pricked line skims the next orbit’s rim.';$('hint').classList.add('visible');
@@ -267,12 +272,6 @@ $('catalogue-body').addEventListener('click',e=>{
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidateArt();if(world)render(0);}).catch(()=>{});
 $('daily').addEventListener('click',()=>{setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);});
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
-$('diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
-$('diff-classic').addEventListener('click',()=>setDifficulty('classic'));
-$('diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
-$('end-diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
-$('end-diff-classic').addEventListener('click',()=>setDifficulty('classic'));
-$('end-diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 $('fullscreen').addEventListener('click',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){try{const exit=document.exitFullscreen||document.webkitExitFullscreen;const p=exit.call(document);if(p&&p.catch)p.catch(()=>{});}catch(_){}}
