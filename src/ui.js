@@ -60,6 +60,10 @@ function event(type,e){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
     say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
+  }else if(type==='bounce'){
+    audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);
+    burst(e.x,e.y,10,'red',.5);rings.push({x:e.x,y:e.y,start:4,distance:26,age:0,life:.45,alpha:.4,seed:ringSeed()});
+    say('TOO STEEP · THE RIM TURNED YOU AWAY',{node:e.n});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
@@ -87,14 +91,14 @@ function newWorld(){
   reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];surveys=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
-  world.darknessMult=DARKNESS_MULT[activeDifficulty()];
+  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
 function setPlaying(){
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   clearInscriptions();
-  $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and earn more points.';
+  $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
   chapterReveal={index:0,age:0};
 }
 function showEnd(){
@@ -219,6 +223,12 @@ function updateUI(dt){
   inked('pace','SPEED ×'+world.speedMultiplier().toFixed(1));
   inked('flow',world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'');
   inked('shield',world.player.shielded?'SHIELD ARMED':'');
+  // The nib's reservoir. The rule drains with the ink in hand and takes the copper of a warning
+  // once what is left will not carry an ordinary transfer.
+  const level=world.inkLevel(),gauge=$('ink'),held=(level*100).toFixed(1);
+  const wet=level<=.34?'var(--copper)':'var(--gold)';
+  gauge.style.background='linear-gradient(to right,'+wet+' 0 '+held+'%,var(--line) '+held+'% 100%)';
+  gauge.classList.toggle('dry',level<=.12);
   const chapter=Math.min(3,Math.floor(world.progress/8));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
@@ -231,6 +241,8 @@ function updateUI(dt){
   // its condition holds, and left as ink for the chart to carry away as soon as it stops.
   if(world.state==='playing'&&world.difficultyPending){
     inscribeHeld('instruction','Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
+  }else if(world.state==='playing'&&world.player.node&&world.inkLevel()<=.28){
+    inscribeHeld('instruction','The nib is running dry. Hold this orbit to re-charge it, or find a star.',{node:world.player.node});
   }else if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
     inscribeHeld('instruction','One lap builds speed. Tap sooner for less. Perfect landings keep it.',{node:world.player.node});
   }else if(world.state==='playing'&&world.captures<2){

@@ -910,8 +910,9 @@ function drawAim(aim){
   // The course is pricked, not ruled: small burin wedges are set along the predicted path, spaced and sized
   // by the plate scale, opening slightly toward the destination. They creep forward with the flight unless
   // reduced motion is requested, in which case the pricking stands still.
-  const guideRgb=blocked?ink.marks.aimBlockedStart:aim?ink.marks.aimLocked:ink.marks.aimDefault;
-  const nearAlpha=blocked?.72:aim?.78:.5,farAlpha=blocked?.5:aim?.34:.12,weight=aim?1.15:.92;
+  const warn=blocked||aim?.bounce;
+  const guideRgb=warn?ink.marks.aimBlockedStart:aim?ink.marks.aimLocked:ink.marks.aimDefault;
+  const nearAlpha=warn?.72:aim?.78:.5,farAlpha=warn?.5:aim?.34:.12,weight=aim?1.15:.92;
   const legs=[];let total=0,px=ax,py=ay;
   for(let i=1;i<points.length;i++){
     if(points[i].distance<12)continue;
@@ -919,6 +920,9 @@ function drawAim(aim){
     if(len>.001){legs.push({x:px,y:py,ux:(qx-px)/len,uy:(qy-py)/len,len});total+=len;}
     px=qx;py=qy;
   }
+  // Where the nib would run out along this course, as a fraction of the drawn line. Past it the
+  // pricking is starved to almost nothing: the pen has no ink left to set it down.
+  const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   if(total>1){
     const gap=Math.max(4,8.5*scale),crawl=reducedMotion?0:(world.time*26*scale)%gap;
     let leg=0,walked=0,d=crawl;
@@ -926,7 +930,8 @@ function drawAim(aim){
       while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
       const l=legs[leg],along=clamp(d-walked,0,l.len),f=d/total;
       const x=l.x+l.ux*along,y=l.y+l.uy*along,size=(1.8+f*2.2)*scale*weight;
-      ctx.fillStyle=`rgba(${guideRgb},${lerp(nearAlpha,farAlpha,f)})`;
+      const starved=f>dryFrom?.16:1;
+      ctx.fillStyle=`rgba(${guideRgb},${lerp(nearAlpha,farAlpha,f)*starved})`;
       ctx.beginPath();
       ctx.moveTo(x-l.ux*size,y-l.uy*size);
       ctx.lineTo(x+l.ux*size*.6-l.uy*size*.5,y+l.uy*size*.6+l.ux*size*.5);
@@ -946,7 +951,26 @@ function drawAim(aim){
   if(aim?.perfect&&!preview.fogged){
     ctx.strokeStyle=`rgba(${ink.marks.aimPerfectArc},.65)`;ctx.lineWidth=1.2*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();
   }
+  // A transfer the nib cannot pay for is still aimed and still drawn: the course is barred with a
+  // copper stroke where the ink gives out, so the decision to fly it is made in full knowledge.
+  if(dryFrom<1&&total>1){
+    let leg=0,walked=0,d=dryFrom*total;
+    while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
+    const l=legs[leg],along=clamp(d-walked,0,l.len);
+    const x=l.x+l.ux*along,y=l.y+l.uy*along,bar=4.6*scale;
+    line(x-l.uy*bar,y+l.ux*bar,x+l.uy*bar,y-l.ux*bar,`rgba(${ink.marks.aimMarkBlocked},.8)`,1.1);
+    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.55)`;ctx.lineWidth=.75;
+    ctx.beginPath();ctx.arc(x,y,2.4*scale,0,TAU);ctx.stroke();
+  }
   if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
+  // A course the rim will turn away is marked with an open chevron across the line rather than the
+  // landing square: the flight reaches the planet and glances off it.
+  else if(aim?.bounce){
+    const l=legs[legs.length-1]||{ux:1,uy:0},w2=4.2*scale;
+    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.8)`;ctx.lineWidth=1;ctx.beginPath();
+    ctx.moveTo(bx-l.uy*w2-l.ux*w2,by+l.ux*w2-l.uy*w2);ctx.lineTo(bx,by);
+    ctx.lineTo(bx+l.uy*w2-l.ux*w2,by-l.ux*w2-l.uy*w2);ctx.stroke();
+  }
   else if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=.8;ctx.strokeRect(-2.5,-2.5,5,5);}
   else if(blocked){line(bx-3,by-3,bx+3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);line(bx+3,by-3,bx-3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);}
   ctx.restore();

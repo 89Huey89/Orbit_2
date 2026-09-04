@@ -15,6 +15,39 @@ const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
 // keep working; only the printed word changes.
 const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER'};
 const FLIGHT_STEP = 1/120;
+// The nib carries a charge of ink, held as 0..1. Flight spends it by the distance flown, so a
+// transfer costs what it is long rather than what it takes; going faster crosses the same gulf for
+// the same ink. Holding an orbit re-charges the nib slowly, a landing pays a dividend — a clean
+// tangent arrival pays better than a hard turn — and one lap of a slingshot star fills it. Run the
+// nib dry in flight and the line stops: the run ends. INK_REACH is the whole budget in world units,
+// so a full nib carries the traveller that far before anything is earned back.
+// The budget is set so the ordinary main line pays for itself — a short hop costs less than the
+// landing and the dwell give back — while a long skip has to be funded deliberately. One lap of a
+// slingshot star fills the nib outright, so a star buys reach as well as speed, and the deep skip
+// the chart offers after it is affordable exactly once per star.
+const INK_REACH = 2000;
+const INK_ORBIT_GAIN = 0.13, INK_SLING_GAIN = 0.85;
+const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
+// The chart is drawn for a pace rather than for a row count, and every transfer on it is cut to
+// take about the same time to fly. As the early slingshots put a faster pace within reach the
+// gulfs open to match, so speed earned on a star buys distance instead of merely arriving sooner.
+// The pace is a property of the chart and not of the traveller: it depends only on the row, so a
+// seed still draws one plate for everyone, which is what the daily plate rests on.
+const TRANSFER_SECONDS = 1.28;
+// The row from which a hazard may sit on one of the two ways between main nodes and close it, and
+// then only on every third row, so a closed route stays an event rather than the standing state of
+// the chart. Before it, every route is left clear and a hazard is only something to give room to.
+const HAZARD_CLOSES_ROUTE = 12;
+// How far along a course the pen will still set it down. At the opening pace the whole transfer is
+// drawn and nothing is hidden; as the chart's speed is earned the far part of a fast crossing is
+// left unset, so a run flown at full pace commits to the last of it unseen. The release marks and
+// the perfect window on the orbit being left are untouched, exactly as they are under a nebula, so
+// what is lost is where the flight ends rather than whether it leaves on a tangent.
+const SIGHT_NEAR = 260, SIGHT_FAR = 900;
+function chartPace(row) { return BASE_SPEED+(MAX_SPEED-BASE_SPEED)*clamp((row-3)/25,0,1)*.78; }
+// How much wider the chart is cut at this row than at the opening: 1 at the start, about 2.1 once
+// the chart is drawn for its full pace.
+function chartGrowth(row) { return chartPace(row)/BASE_SPEED; }
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 function seeded(seed) {
@@ -177,9 +210,22 @@ function freeFlightStep(p,hazards,remaining) {
   // Skip force-free sections on the same 120 Hz grid as real flight.
   return Math.min(remaining,Math.max(FLIGHT_STEP,Math.floor(entry/FLIGHT_STEP)*FLIGHT_STEP));
 }
+// The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry that joined a
+// little inside or outside reads a few degrees under or over; a flight coming straight down at the
+// centre reads near nothing. One definition, shared by the landing and by the guide that predicts it.
+function arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect) {
+  if(perfect)return 90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI;
+  return Math.atan2(Math.abs(rx*rvy-ry*rvx),-(rx*rvx+ry*rvy))*180/Math.PI;
+}
+// An arrival steeper than this does not join the orbit at all: see OrbitWorld.bounce. It is set to
+// turn away a flight that is falling onto a planet rather than crossing its rim — about a quarter of
+// the arrivals the chart offers — while leaving anything with real angle on it the forgiving ordinary
+// capture it has always been. A tangent-seeking pilot never meets it at all.
+const GRAZE_MINIMUM = 16;
 function arrivalAim(n,contact,distance,vx,vy) {
   const speed=Math.hypot(vx,vy);
-  return {n,distance,perfect:contact.perfect,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
+  const angle=arrivalAngle(n,contact.rx,contact.ry,contact.rvx,contact.rvy,contact.distance,contact.perfect);
+  return {n,distance,perfect:contact.perfect,angle,bounce:angle<GRAZE_MINIMUM,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
 }
 
 class OrbitWorld {
@@ -203,10 +249,10 @@ class OrbitWorld {
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
     this.perfectStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
-    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1;
+    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
-    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false};
+    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,ink:1,dryAnnounced:false};
     this.positionPlayer();
     if (offerDifficulty) this.spawnDifficultyPaths(); else this.ensureAhead();
   }
@@ -225,24 +271,49 @@ class OrbitWorld {
     const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:r+11,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:0};
     this.nodes.push(n); return n;
   }
+  // The furthest from the middle a node of this radius may be cut and still keep its whole orbit —
+  // and the traveller riding it — inside the chart's edge, which is where a run is lost.
+  inboard(r) { return Math.max(40, this.width/2 - r - 22); }
   generateRow() {
     const k = ++this.row, prev = this.lastMain, rng = this.random;
     const region=Math.floor(k/8),local=k%8,fork=local>=3&&local<=7;
     const side=((this.seed>>region)&1)?1:-1;
-    const spread = Math.min(149, this.width * .29);
+    const grow = chartGrowth(k);
+    // The orbits open with the chart, up to half as wide again. A wider ring is swept more slowly at
+    // the same pace and presents a larger rim from further off, which is what keeps the release
+    // window about as wide in the hand as it was when the orbits sat close together.
+    const size = Math.min(grow,1.5);
+    // The chart opens sideways as well as upward, but never past what the sheet can hold: a captured
+    // orbit has to stay clear of the chart's edge, which is where the traveller is lost.
+    const spread = Math.min(this.width*.29*Math.min(grow,1.45), this.inboard(57*size), 232);
+    const apart = 58*grow;
     let x = k === 1 ? 77 : k === 2 ? -75 : (rng()-.5)*spread*2;
-    if (k > 2 && Math.abs(x - prev.baseX) < 58) x = clamp(x + (x < 0 ? 72 : -72), -spread, spread);
-    let y = prev.baseY - (k <= 2 ? 207 : 193 + Math.min(48, k * 1.5) + rng()*28);
-    let radius = k < 3 ? 54 : 54 - Math.min(13,k*.39) + rng()*7;
-    if(fork){x=local===3||local===7?0:-side*[0,0,0,0,100,82,106][local];radius=local===3||local===7?55:55-Math.min(region,4)*2;}
+    if (k > 2 && Math.abs(x - prev.baseX) < apart) x = clamp(x + (x < 0 ? apart*1.24 : -apart*1.24), -spread, spread);
+    // Every transfer is cut to about TRANSFER_SECONDS at the pace the chart is drawn for, so the
+    // gulf between two orbits grows with that pace rather than with the row number.
+    let y = prev.baseY - (k <= 2 ? 207 : chartPace(k)*TRANSFER_SECONDS + rng()*30);
+    let radius = k < 3 ? 54 : (54 - Math.min(13,k*.39) + rng()*7)*size;
+    if(fork){x=local===3||local===7?0:-side*Math.min([0,0,0,0,100,82,106][local]*grow,spread);radius=(local===3||local===7?55:55-Math.min(region,4)*2)*size;}
     const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : 'still';
+    // A slingshot star keeps its original ring whatever the chart does around it: the charge is
+    // earned per lap, so a wider ring would only make the same 90 units of speed cost more time
+    // against the rising dark.
     if(type==='sling'){if(k>=7)x=0;radius=57;}
     const slingOrigin=this.nodes.find(q=>q.shortcut&&k>q.row&&k<=q.row+2);
-    if(slingOrigin){const first=k===slingOrigin.row+1;x=first?-slingOrigin.shortcut.x*1.2:slingOrigin.shortcut.x;y=first?slingOrigin.y-224:slingOrigin.shortcut.y;}
+    if(slingOrigin){
+      const first=k===slingOrigin.row+1,edge=this.inboard(radius);
+      x=first?clamp(-slingOrigin.shortcut.x*1.2,-edge,edge):slingOrigin.shortcut.x;
+      y=first?slingOrigin.y-224*grow:slingOrigin.shortcut.y;
+    }
     const n = this.makeNode(x,y,radius,k,type);
-    if(type==='sling'&&k>=7)n.shortcut={x:-side*98,y:y-500,r:54};
+    // The star's own shortcut stays about two and a half rows deep, so it opens up with the chart:
+    // the reach a full nib and a full lap buy together is always the same number of orbits skipped.
+    if(type==='sling'&&k>=7)n.shortcut={x:-side*Math.min(98*grow,this.inboard(54*size)),y:y-chartPace(k)*TRANSFER_SECONDS*2.55,r:54*size};
     if(slingOrigin&&k===slingOrigin.row+2)slingOrigin.shortcutId=n.id;
-    n.cap = n.r + Math.max(6, 12-k*.13);
+    // The capture band opens with the chart. A long crossing is aimed from further off, so the
+    // angle that finds the rim is finer; the band grows with the gulf to keep the release window
+    // about as wide in the hand as it was when the orbits were close together.
+    n.cap = n.r + Math.max(6, 12-k*.13)*grow;
     this.lastMain = n;
     if(fork){
       n.routeId=region;n.routeRole=local===3?'entry':local===7?'exit':'main';
@@ -255,39 +326,66 @@ class OrbitWorld {
         else{
           chart.main.push(n);
           const i=local-4,shape=CONSTELLATIONS[chart.catalogueIndex].shape;
-          const star=this.makeNode(side*shape[i],y+[24,42,18][i],35-Math.min(region,4),k,'gold');
-          star.cap=star.r+9;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
+          const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size,this.inboard(starR));
+          const star=this.makeNode(side*reach,y+[24,42,18][i]*grow,starR,k,'gold');
+          star.cap=star.r+9*grow;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
         }
       }
     }
     // Small gold satellites offer a harder detour. The main path remains available.
     if (!fork && k >= 4 && k%4 === 0) {
       const side = (prev.x+n.x)>0 ? -1 : 1;
-      const ex = side * Math.min(174,this.width*.39), ey = (prev.y+n.y)/2;
-      if ([prev,n].every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+82)) this.makeNode(ex,ey,32,k-.5,'gold');
+      const ex = side * Math.min(174*grow,this.width*.39,this.inboard(32*size)), ey = (prev.y+n.y)/2;
+      if ([prev,n].every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+82)) this.makeNode(ex,ey,32*size,k-.5,'gold');
     }
     // A rare shield star: one carried charge absorbs the next black-hole contact.
     if (!fork && k >= 10 && k%10 === 0) {
       const side = (prev.x+n.x)>0 ? -1 : 1;
-      const ex = side * Math.min(150,this.width*.34), ey = (prev.y+n.y)/2-40;
-      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28,k-.5,'shield');
+      const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2-40;
+      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'shield');
     }
-    // Keep both possible tangent routes to each main node clear, including drift envelopes.
+    // Hazards and the ways across. Through the opening regions a hole or a flare is placed clear of
+    // every route between the last two main nodes, so it is scenery to be given room rather than an
+    // obstacle. From HAZARD_CLOSES_ROUTE onward it is allowed to sit on one of them and shut it: the
+    // side you cross on becomes a decision instead of a formality. What is never allowed is closing
+    // the last way through — at least one smooth tangent, the route a perfect transfer is flown on,
+    // is always left open, and the slingshot's own shortcut is never touched.
     if (!fork && k >= 6 && k%3 !== 1) {
       const r = 18+rng()*11+Math.min(8,k*.14);
-      for (let tries=0;tries<12;tries++) {
+      const direct=tangentPaths(prev,n),smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
+      // Two margins, because a hazard reaches further than it kills. A route closer than `kill` is
+      // shut; the route left open has to be clear of the whole gravity field, or it would be bent
+      // into the hazard it was supposed to avoid.
+      const kill=r+prev.amp+n.amp+25,free=gravityRadius({r})+prev.amp+n.amp+10;
+      const mayClose=k>=HAZARD_CLOSES_ROUTE&&k%3===2;
+      let chosen=null,clearOf=null;
+      for (let tries=0;tries<12&&!chosen;tries++) {
         const hx=(rng()-.5)*Math.min(this.width-72,380), hy=(prev.y+n.y)/2+(rng()-.5)*55;
         if (this.nodes.some(q=>Math.hypot(hx-q.baseX,hy-q.baseY)<q.r+q.amp+r+30)) continue;
-        const paths=tangentPaths(prev,n);
-        if (paths.some(p=>pointSegment(hx,hy,p.x,p.y,n.x,n.y)<r+prev.amp+n.amp+25)) continue;
-        const smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
-        if(smooth.some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+prev.amp+n.amp+25))continue;
         if(slingOrigin&&tangentPaths(slingOrigin,slingOrigin.shortcut).some(p=>pointSegment(hx,hy,p.x,p.y,slingOrigin.shortcut.x,slingOrigin.shortcut.y)<r+25))continue;
         if(slingOrigin&&[...orbitTangents(slingOrigin,slingOrigin.shortcut,1),...orbitTangents(slingOrigin,slingOrigin.shortcut,-1)].some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+25))continue;
+        const toSmooth=smooth.map(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by));
+        const toDirect=direct.map(p=>pointSegment(hx,hy,p.x,p.y,n.x,n.y));
+        const openSmooth=toSmooth.filter(d=>d>=kill).length,openDirect=toDirect.filter(d=>d>=kill).length;
+        // The way left open has to be flyable both ways it can be flown: a smooth tangent for a
+        // perfect transfer, and a centre-directed line for a player not yet flying them. A hazard
+        // closes one side of the crossing, never one style of play.
+        const flyable=toSmooth.filter(d=>d>=free).length&&toDirect.filter(d=>d>=free).length;
+        if(openSmooth===smooth.length&&openDirect===direct.length){
+          // Clear of everything: the old placement, kept as the fallback and used outright until
+          // the chart is deep enough for a hazard to be allowed to close a route.
+          if(!clearOf)clearOf={hx,hy};
+          if(!mayClose)break;
+          continue;
+        }
+        if(mayClose&&flyable>0)chosen={hx,hy};
+      }
+      const place=chosen||clearOf;
+      if(place){
         // From the third region, sunspot flares alternate with black holes under the
-        // same clearance rules: they repel instead of pulling and only their core kills.
+        // same placement rules: they repel instead of pulling and only their core kills.
         const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'hole';
-        this.hazards.push({x:hx,y:hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false}); break;
+        this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
       }
     }
     // A nebula patch lies across one of the tangent routes between the last two main
@@ -324,10 +422,20 @@ class OrbitWorld {
   }
   start() { if(this.state!=='ready')return; this.state='playing'; this.emit('start',{}); }
   charge() { const p=this.player;return p.node&&p.node.type==='sling'?clamp(p.orbitSweep/TAU,0,1):0; }
+  // What the nib holds, and what a flight of a given length would take out of it. The pressure
+  // scales the drain rather than the capacity, so every plate reads the same gauge.
+  inkLevel() { return clamp(this.player.ink,0,1); }
+  inkCost(distance) { return distance/INK_REACH*this.inkMult; }
+  // How far the nib could still carry the traveller, in world units.
+  inkRange() { return this.inkLevel()*INK_REACH/Math.max(1e-8,this.inkMult); }
   speedMultiplier(speed=this.player.node?this.player.speed:Math.hypot(this.player.vx,this.player.vy)) { return clamp(speed/BASE_SPEED,1,MAX_SPEED/BASE_SPEED); }
   // Consecutive perfect transfers past the second ease the pursuit by 3% each, to 15%.
   darknessRelief() { return 1-Math.min(.15,Math.max(0,this.perfectStreak-2)*.03); }
-  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*this.darknessMult*this.darknessRelief(); }
+  // The flood rises in proportion to the chart it is covering. The plate is cut for a faster pace
+  // as the run climbs, so a tide fixed in world units would slacken exactly where the chart opens
+  // up; a quarter of that growth keeps the squeeze roughly even without letting the tide outrun what
+  // even a skilled run can climb, so the fully developed pursuit reaches about 191 rather than 150.
+  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*(1+(chartGrowth(this.progress)-1)*.25)*this.darknessMult*this.darknessRelief(); }
   launchVelocity() {
     const p=this.player,rawSpeed=Math.hypot(p.vx,p.vy),speed=Math.min(MAX_SPEED,rawSpeed),ratio=speed/Math.max(1e-8,rawSpeed);
     // Bound repeated assists from moving planets without changing the heading.
@@ -348,14 +456,19 @@ class OrbitWorld {
     const rvx=p.vx-(contact?contact.vx:n.vx),rvy=p.vy-(contact?contact.vy:n.vy),arrivalSpeed=Math.hypot(rvx,rvy),radius=Math.hypot(rx,ry);
     const cross=rx*rvy-ry*rvx,alignment=clamp(Math.abs(cross)/Math.max(1e-8,radius*arrivalSpeed),0,1);
     const perfect=!!contact?.perfect,scoreMultiplier=this.speedMultiplier(Math.hypot(p.vx,p.vy));
-    // The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry joined inside or
-    // outside the ring reads a little under or over; a hard turn toward the centre reads well under.
-    const angle=perfect?90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI:Math.atan2(Math.abs(cross),-(rx*rvx+ry*rvy))*180/Math.PI;
+    const angle=arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect);
+    // A flight that comes down at the centre rather than across the rim does not join the orbit: it
+    // skips off and flies on. The opening targets never refuse a landing, so the choice of pressure
+    // cannot be lost to it, and a run is only ever turned away by an approach the guide had marked.
+    if(angle<GRAZE_MINIMUM&&!this.difficultyPending&&contact){this.bounce(n,contact);return false;}
     const square=!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
     p.dir=cross>=0?1:-1; p.angle=Math.atan2(ry,rx); p.rad=radius||n.r;p.tangentCapture=perfect;
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
+    // A landing pays the nib back. A clean tangent arrival pays better than a hard turn, so the
+    // transfer that scores best also funds the next one.
+    p.ink=Math.min(1,p.ink+(perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN));p.dryAnnounced=false;
     if(n.difficultyChoice){
       this.nodes=this.nodes.filter(q=>q===n||!q.difficultyChoice);
       this.difficultyPending=false;this.lastMain=n;
@@ -414,10 +527,31 @@ class OrbitWorld {
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
   }
+  // Too steep to join: the flight skips off the rim and carries on, keeping its speed and losing the
+  // orbit. It is put just outside the capture band along the outward normal so it leaves cleanly
+  // rather than grazing the same rim again on the next step.
+  bounce(n,contact) {
+    const p=this.player,cx=contact?contact.cx:n.x,cy=contact?contact.cy:n.y;
+    const dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
+    p.vx-=2*dot*nx;p.vy-=2*dot*ny;
+    const clear=n.cap+2;p.x=cx+nx*clear;p.y=cy+ny*clear;
+    this.shake=1.4;this.emit('bounce',{x:p.x,y:p.y,n});
+  }
   resize(width,height) {
     const oldHeight=this.height;this.width=width;this.height=height;
     this.cameraY-=(height-oldHeight)*.62;
     if(this.state==='ready')this.floorY=height*.30-16;
+    // A narrower sheet must not strand what was already drawn outside its edge: everything the chart
+    // carries is pulled back inboard, and the traveller rides its own orbit in.
+    for(const n of this.nodes){
+      const edge=this.inboard(n.r+n.amp);
+      n.baseX=clamp(n.baseX,-edge,edge);
+      n.x=n.amp?n.baseX+Math.sin(this.time*.72+n.phase)*n.amp:n.baseX;
+      if(n.shortcut){const far=this.inboard(n.shortcut.r);n.shortcut.x=clamp(n.shortcut.x,-far,far);}
+    }
+    for(const h of this.hazards){const edge=this.inboard(h.r);h.x=clamp(h.x,-edge,edge);}
+    for(const g of this.nebulas){const edge=this.inboard(g.r);g.x=clamp(g.x,-edge,edge);}
+    if(this.player.node)this.positionPlayer();
     this.ensureAhead();
   }
   update(dt) {
@@ -440,6 +574,11 @@ class OrbitWorld {
       if(!p.tangentCapture)p.rad=lerp(p.rad,p.node.r,1-Math.exp(-dt*10));
       const turn=p.speed/p.rad*dt,chargeStep=Math.min(turn,Math.max(0,TAU-p.orbitSweep));p.angle+=p.dir*turn;
       p.orbitSweep+=turn;
+      // The nib re-charges on the ring it is holding, and a slingshot star fills it over its lap:
+      // dwelling buys ink, which is what makes the rising dark the price of a long transfer.
+      const wasDry=p.ink<=0;
+      p.ink=Math.min(1,p.ink+(p.node.type==='sling'?INK_SLING_GAIN:INK_ORBIT_GAIN)*dt);
+      if(wasDry&&p.ink>0)p.dryAnnounced=false;
       if(p.node.type==='sling'){
         if(p.speed<MAX_SPEED)p.speed=Math.min(MAX_SPEED,p.speed+STAR_GAIN*chargeStep/TAU);
         if(p.speed>=MAX_SPEED)this.observe('maxSpeed');
@@ -453,9 +592,13 @@ class OrbitWorld {
         const step=this.hazards.length?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
         const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width);
         p.flightTime+=result.dt;remaining-=step;time+=step;
+        // The line costs ink by its length. What the step drew is spent before anything else is
+        // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
+        p.ink=Math.max(0,p.ink-this.inkCost(Math.hypot(p.x-ax,p.y-ay)));
         if(result.hit?.kind==='hole')this.hazardHit(result.hit.h);
         else if(result.hit?.kind==='edge')this.die('LEFT THE STAR CHART');
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
+        if(this.state==='playing'&&!p.node&&p.ink<=0)this.die('THE NIB RAN DRY');
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
           if(!h.near&&pointSegment(h.x,h.y,ax,ay,p.x,p.y)<h.r+17){
             h.near=true;this.score+=5;this.emit('near',{x:p.x,y:p.y});
@@ -500,6 +643,8 @@ class OrbitWorld {
       const t=hit.time*speed/reach;if(t>=hitAt)continue;
       hitAt=t;best=arrivalAim(n,hit,hit.time*speed,launch.vx,launch.vy);
     }
+    // The opening targets never turn a landing away, so the guide must not warn that they will.
+    if(best&&this.difficultyPending)best.bounce=false;
     const until=best?best.distance:reach;
     const gravity=this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
@@ -507,20 +652,47 @@ class OrbitWorld {
     const length=best?best.distance:p.node.type==='sling'?speed*1.9:83;
     this.flightPreview={points:[{x:p.x,y:p.y,time:0,distance:0},{x:p.x+dx*length,y:p.y+dy*length,time:length/speed,distance:length}],aim:best,curved:false,blocked:false,steps:0};
     this.fogPreview();
+    this.markInk(this.flightPreview,best);
     return best;
   }
-  // A nebula hides everything beyond its near edge: the drawn preview stops there and
-  // is marked fogged. The aim itself, and the release marks on the current orbit, stand.
+  // What the drawn transfer would take out of the nib, and whether the nib can pay for it. A
+  // transfer the ink cannot reach is still aimed and still drawn — it is marked dry, so the choice
+  // to fly it stays the player's, made knowing the line stops short.
+  markInk(preview,aim) {
+    if(!preview)return preview;
+    preview.inkRange=this.inkRange();
+    preview.inkCost=this.inkCost(aim?aim.distance:preview.points[preview.points.length-1].distance);
+    preview.dry=!!aim&&preview.inkCost>this.inkLevel();
+    if(aim)aim.dry=preview.dry;
+    return preview;
+  }
+  // How far the chart is still drawn ahead of the traveller at the pace in hand.
+  sightRange() {
+    const p=this.player,speed=p.node?p.speed:Math.hypot(p.vx,p.vy);
+    return lerp(SIGHT_FAR,SIGHT_NEAR,clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1));
+  }
+  // Two things hide the chart, and both cut the drawn course at the nearer of them: a nebula, which
+  // hides everything past its near edge, and the pace itself, which leaves the far part of a fast
+  // crossing unset. Either way the preview stops and is marked fogged. The aim itself, and the
+  // release marks on the current orbit, stand.
   fogPreview() {
     const preview=this.flightPreview;if(!preview)return preview;
     preview.fogged=false;
-    if(!this.nebulas.length||preview.points.length<2)return preview;
-    const pts=preview.points;
+    const pts=preview.points;if(pts.length<2)return preview;
+    // What the course actually comes to, kept whole. Fog decides how much of it is drawn, never what
+    // the flight will do, so prediction can still be checked against the real thing.
+    preview.landing={x:pts[pts.length-1].x,y:pts[pts.length-1].y,distance:pts[pts.length-1].distance};
+    const sight=this.sightRange();
     for(let i=0;i<pts.length-1;i++){
       const a=pts[i],b=pts[i+1];let first=null;
       for(const g of this.nebulas){
         const t=segmentCircle(a.x,a.y,b.x,b.y,g.x,g.y,g.r);
         if(t!==null&&(first===null||t<first))first=t;
+      }
+      // The pace's own horizon, wherever it falls inside this leg.
+      if(b.distance>sight&&b.distance>a.distance){
+        const t=clamp((sight-a.distance)/(b.distance-a.distance),0,1);
+        if(first===null||t<first)first=t;
       }
       if(first===null)continue;
       const entry={x:lerp(a.x,b.x,first),y:lerp(a.y,b.y,first),time:lerp(a.time,b.time,first),distance:lerp(a.distance,b.distance,first)};
@@ -544,7 +716,8 @@ class OrbitWorld {
         break;
       }
     }
-    preview.curved=bend>.001;this.flightPreview=preview;this.fogPreview();return preview.aim;
+    if(preview.aim&&this.difficultyPending)preview.aim.bounce=false;
+    preview.curved=bend>.001;this.flightPreview=preview;this.fogPreview();this.markInk(preview,preview.aim);return preview.aim;
   }
 }
 // END SIMULATION
