@@ -80,7 +80,7 @@ function event(type,e){
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
-    audio.tone(440,.3,0,.15);say('PRESSURE SET · '+e.value.toUpperCase(),1.8);
+    audio.tone(440,.3,0,.15);say('PRESSURE SET · '+DIFFICULTY_LABELS[e.value],1.8);
   }
 }
 function newWorld(){
@@ -230,7 +230,7 @@ function updateUI(dt){
   // the orbit being held, or the black hole that is bending the flight. Each stays while its condition
   // holds and fades as soon as it stops.
   if(world.state==='playing'&&world.difficultyPending){
-    inscribeHeld('instruction','Aim for RELAXED, CLASSIC, or HARDCORE — your first orbit sets the pressure.',{node:world.player.node});
+    inscribeHeld('instruction','Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
   }else if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
     inscribeHeld('instruction','One lap builds speed. Tap sooner for less. Perfect landings keep it.',{node:world.player.node});
   }else if(world.state==='playing'&&world.captures<2){
