@@ -181,28 +181,31 @@ const roughSlow=transferFixture(25,150),roughFast=transferFixture(25,300);
 for(const test of [roughSlow,roughFast]){
   const aim=test.w.aim();
   assert.equal(aim.perfect,false,'An angled, non-tangent flight is an ordinary capture');
-  assert.equal(aim.bounce,false,'and still joins the orbit');
+  assert.equal(aim.steep,false,'and still joins the orbit');
   assert(aim.angle>GRAZE_MINIMUM&&aim.angle<45,'well inside the forgiving band: '+aim.angle.toFixed(1));
   test.w.release();
   for(let i=0;i<120*3&&!test.w.player.node;i++)test.w.update(step);
   assert.equal(test.w.player.node,test.destination);assert.equal(test.captures[0].perfect,false);
 }
-// A flight falling straight down at the centre does not join at all: it skips off the rim and flies
-// on, keeping its speed and losing the orbit. The guide says so before the release is made.
+// A flight falling straight down at the centre still joins the orbit — there is no way to steer a
+// flight once it is released, so turning it away outright only ever stranded a mistimed release with
+// nothing left to recover onto — but the landing earns nothing at all. The guide says so before the
+// release is made.
 for(const offset of [0,10]){
   const skid=transferFixture(offset,240),aim=skid.w.aim();
   assert.equal(aim.n,skid.destination,'The guide still aims the course');
   assert(aim.angle<GRAZE_MINIMUM);
-  assert.equal(aim.bounce,true,'and marks that it will skip off rather than land');
-  const bounced=[];skid.w.emit=(t,e)=>{if(t==='bounce')bounced.push(e);};
-  const speed=Math.hypot(skid.w.player.vx,skid.w.player.vy);
+  assert.equal(aim.steep,true,'and marks that the landing will earn nothing');
+  const inkBefore=skid.w.player.ink,cost=skid.w.inkCost(aim.distance);
   skid.w.release();
   for(let i=0;i<120*3&&skid.w.state==='playing'&&!skid.w.player.node;i++)skid.w.update(step);
-  assert.equal(bounced.length,1,'The rim turns the flight away exactly once');
-  assert.equal(skid.w.player.node,null,'No orbit is joined');
-  assert.equal(skid.captures.length,0,'and nothing is scored');
-  assert.equal(skid.destination.visited,false,'The planet is still there to be landed on properly');
-  assert(Math.abs(Math.hypot(skid.w.player.vx,skid.w.player.vy)-speed)<1e-7,'A skip keeps the speed it arrived with');
+  assert.equal(skid.w.player.node,skid.destination,'The orbit is still joined');
+  assert.equal(skid.destination.visited,true,'and the planet is spent, exactly as any other capture spends it');
+  assert.equal(skid.captures.length,1,'the capture happens');
+  assert.equal(skid.captures[0].steep,true,'marked as a steep, uncredited one');
+  assert.equal(skid.captures[0].gain,0,'and nothing is scored');
+  assert(skid.w.player.speed<240&&skid.w.player.speed>=BASE_SPEED,'a steep landing sheds speed like any other hard turn');
+  assert(Math.abs(skid.w.player.ink-(inkBefore-cost))<1e-6,'no ink dividend is paid for a steep landing');
 }
 // The three opening targets never turn a landing away, so the choice of pressure cannot be lost to it.
 {
@@ -216,10 +219,10 @@ for(const offset of [0,10]){
   let warned=0,aimed=0;
   for(let i=0;i<360;i++){
     offer.player.angle=i/360*Math.PI*2;offer.positionPlayer();
-    const a=offer.aim();if(!a)continue;aimed++;if(a.bounce)warned++;
+    const a=offer.aim();if(!a)continue;aimed++;if(a.steep)warned++;
   }
   assert(aimed>0,'The opening targets must be aimable');
-  assert.equal(warned,0,'No opening course is marked as one that will skip off');
+  assert.equal(warned,0,'No opening course is marked as one that will earn nothing');
 }
 assert.equal(roughFast.captures[0].gain,roughSlow.captures[0].gain*2,'The same landing at twice the speed earns twice the points');
 assert(roughFast.w.player.speed<300&&roughFast.w.player.speed>BASE_SPEED,'A sharp capture sheds only some excess momentum');
@@ -466,7 +469,7 @@ for(let seed=1;seed<=60;seed++){
   for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
     if(w.player.node){
       const aim=w.aim();
-      if(aim&&!aim.bounce&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     if(i===120*12&&seed%4===0)w.resize(1280,780);
@@ -490,7 +493,7 @@ for(let seed=1;seed<=60;seed++){
       const row=Math.floor(w.progress)+1;
       const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
       const aim=w.aim();
-      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.steep&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     if(i===120*12&&seed%4===0)w.resize(1280,780);
@@ -522,7 +525,7 @@ for(let seed=1;seed<=60;seed++){
       const row=Math.floor(w.progress)+1;
       const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
       const aim=w.aim();
-      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      if(aim&&!aim.steep&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     assert(w.nodes.length<20&&w.hazards.length<12&&w.nebulas.length<8,'Later generation must stay bounded');
@@ -665,7 +668,7 @@ for(let seed=1;seed<=60;seed++){
       const n=w.player.node,row=Math.floor(w.progress)+1;
       const target=n.shortcut?w.nodes.find(q=>q.id===n.shortcutId):w.nodes.find(q=>q.row===row&&q.routeRole==='star')||w.nodes.find(q=>q.row===row&&q.type!=='gold');
       const aim=w.aim();
-      if(aim&&!aim.bounce&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(n.type!=='sling'||w.charge()===1)){
+      if(aim&&!aim.steep&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(n.type!=='sling'||w.charge()===1)){
         if(n.shortcut)expected=target.id;
         w.release();
       }
@@ -1214,7 +1217,7 @@ function pressureRun(useStars,observations,inkMult=0){
       // The dawdler takes whatever landing the rim will accept, but only after two idle laps, and
       // never charges a star. The other flies tangents and takes every star to a full lap.
       const ready=useStars?aim&&(aim.perfect||w.player.orbitSweep>Math.PI*3):aim&&w.player.orbitSweep>Math.PI*4;
-      if(ready&&!aim.bounce&&aim.n===target&&w.player.orbitTime>.12&&(!useStars||n.type!=='sling'||w.charge()===1))w.release();
+      if(ready&&!aim.steep&&aim.n===target&&w.player.orbitTime>.12&&(!useStars||n.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
     w.bestRelief=Math.min(w.bestRelief,w.darknessRelief());
@@ -1254,7 +1257,7 @@ assert(pressureRun(false,undefined,1).inkLevel()>0,'A run that dwells is never s
 function rusher(seed){
   const w=new OrbitWorld(seed,440,860);w.start();
   for(let i=0;i<120*400&&w.state==='playing'&&w.progress<120;i++){
-    if(w.player.node){const aim=w.aim();if(aim&&!aim.bounce&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
+    if(w.player.node){const aim=w.aim();if(aim&&!aim.steep&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
     w.update(step);
   }
   return w;

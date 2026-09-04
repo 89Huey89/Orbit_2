@@ -910,7 +910,7 @@ function drawAim(aim){
   // The course is pricked, not ruled: small burin wedges are set along the predicted path, spaced and sized
   // by the plate scale, opening slightly toward the destination. They creep forward with the flight unless
   // reduced motion is requested, in which case the pricking stands still.
-  const warn=blocked||aim?.bounce;
+  const warn=blocked||aim?.steep;
   const guideRgb=warn?ink.marks.aimBlockedStart:aim?ink.marks.aimLocked:ink.marks.aimDefault;
   const nearAlpha=warn?.72:aim?.78:.5,farAlpha=warn?.5:aim?.34:.12,weight=aim?1.15:.92;
   const legs=[];let total=0,px=ax,py=ay;
@@ -963,9 +963,9 @@ function drawAim(aim){
     ctx.beginPath();ctx.arc(x,y,2.4*scale,0,TAU);ctx.stroke();
   }
   if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
-  // A course the rim will turn away is marked with an open chevron across the line rather than the
-  // landing square: the flight reaches the planet and glances off it.
-  else if(aim?.bounce){
+  // A course too steep to earn anything is marked with an open chevron across the line rather than
+  // the landing square: the flight still reaches the planet, but the landing pays nothing.
+  else if(aim?.steep){
     const l=legs[legs.length-1]||{ux:1,uy:0},w2=4.2*scale;
     ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.8)`;ctx.lineWidth=1;ctx.beginPath();
     ctx.moveTo(bx-l.uy*w2-l.ux*w2,by+l.ux*w2-l.uy*w2);ctx.lineTo(bx,by);
