@@ -492,7 +492,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
-get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,drawRunningHead};',context);
+get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead};',context);
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
   const inscribed=()=>written().map(g=>g.text).join(' | ');
@@ -696,7 +696,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   // The standing instruction is written on the chart, beside the very orbit it is about, and it is held
   // there rather than counted down while the condition lasts.
   {
-    const held=written().find(g=>g.key==='instruction');
+    const held=written().find(g=>g.key==='instruction'&&g.held);
     assert(held&&held.text.includes('One lap'),'The slingshot instruction is written onto the chart: '+JSON.stringify(written().map(g=>g.text)));
     assert.equal(held.node,run.player.node,'It is set beside the orbit being held');
     assert.equal(held.held,true);
@@ -863,9 +863,66 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       w.cameraY+=w.height;
     }
     // The sheet holds a bounded number of them, and a run is dealt on a clean one.
-    for(let i=0;i<context.test.INSCRIPTION_CAP*3;i++)context.test.inscribe('NOTA '+i,{life:4});
+    for(let i=0;i<context.test.INSCRIPTION_CAP*3;i++)context.test.inscribe('NOTA '+i);
     assert(context.test.inscriptions.length<=context.test.INSCRIPTION_CAP,'The inscriptions are capped: '+context.test.inscriptions.length);
     context.test.render(step);context.test.render(step);
+    // Lettering is never set over lettering: however many notes crowd one subject, no two of them overlap.
+    const sway=g=>g.node&&g.node.amp?g.node.amp*context.test.scale:0;
+    const overlapping=()=>{
+      const boxes=written().map(g=>({g,b:context.test.inscriptionBox(g),s:sway(g),r:g.node&&g.node.amp?(g.node.baseX-g.node.x)*context.test.scale:0})),pairs=[];
+      for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+        const a=boxes[i],b=boxes[j];
+        if(a.b.left+a.r-a.s<b.b.right+b.r+b.s&&a.b.right+a.r+a.s>b.b.left+b.r-b.s&&a.b.top<b.b.bottom&&a.b.bottom>b.b.top)pairs.push(a.g.text+' / '+b.g.text);
+      }
+      return pairs;
+    };
+    assert.equal(overlapping().length,0,'Inscriptions overlap: '+overlapping().join(', '));
+    // The same holds across a wandering orbit's whole drift: a note beside it is set clear of the others
+    // wherever the planet is carried, so the drift can never bring two notes together.
+    {
+      context.test.clearInscriptions();
+      const wanderer=w.nodes.find(n=>n!==w.player.node&&Math.abs(n.y-w.player.y)<w.height*.3)||w.nodes[0];
+      const savedAmp=wanderer.amp,savedX=wanderer.x;wanderer.amp=22;
+      for(let i=0;i<6;i++)context.test.inscribe('WANDERING NOTE '+i,{node:wanderer});
+      for(let i=0;i<6;i++)context.test.inscribe('FIXED NOTE '+i,{x:wanderer.baseX+40,y:wanderer.y});
+      for(const t of [-1,-.5,0,.5,1]){
+        wanderer.x=wanderer.baseX+t*wanderer.amp;
+        assert.equal(overlapping().length,0,'Drift brings inscriptions together at '+t+': '+overlapping().join(', '));
+      }
+      wanderer.amp=savedAmp;wanderer.x=savedX;
+    }
+    // Nothing written fades or expires: a note stays on the sheet, at full strength, for as long as the
+    // sheet holds still under it, and leaves only when the chart has carried it under the plate's rule.
+    {
+      context.test.clearInscriptions();
+      const kept=context.test.inscribe('KEPT AS INK',{node:w.player.node});
+      const before=context.test.inscriptionBox(kept);
+      for(let i=0;i<120*30;i++)context.test.render(step);
+      assert(written().includes(kept),'An inscription is not struck out with age');
+      const after=context.test.inscriptionBox(kept);
+      assert(Math.abs(after.cx-before.cx)<1e-6&&Math.abs(after.cy-before.cy)<1e-6,'An inscription keeps its place while the sheet holds still');
+      const stood=context.test.inscribeHeld('probe','One lap builds speed.',{node:w.player.node});
+      w.cameraY-=w.height*2;
+      context.test.render(step);
+      assert(!written().includes(kept),'A note the sheet has carried off the plate is struck from the list');
+      assert(written().includes(stood)&&context.test.inscriptionRoom(context.test.inscriptionBox(stood))<0,'A standing instruction is held until it is asked for again');
+      context.test.inscribeHeld('probe','One lap builds speed.',{node:w.player.node});
+      assert(context.test.inscriptionRoom(context.test.inscriptionBox(stood))>-1e-6,'A standing instruction the sheet carried off is set again');
+      w.cameraY+=w.height*2;
+    }
+    // A standing instruction that stops being asked for is not struck out: it is ink like any other note,
+    // and the same instruction asked for again while it is still on the plate is taken up, not written twice.
+    {
+      context.test.clearInscriptions();
+      const first=context.test.inscribeHeld('probe','Tap when the pricked line skims the rim.',{node:w.player.node});
+      const second=context.test.inscribeHeld('probe','One lap builds speed.',{node:w.player.node});
+      assert(written().includes(first)&&written().includes(second),'A replaced instruction stays on the sheet as ink');
+      assert(!first.held&&second.held,'Only the instruction still being asked for is held');
+      assert.equal(context.test.inscribeHeld('probe','Tap when the pricked line skims the rim.',{node:w.player.node}),first,'An instruction still on the plate is taken up again');
+      assert(first.held&&!second.held&&written().length===2,'No instruction is written twice over');
+      assert.equal(overlapping().length,0,'Instructions overlap: '+overlapping().join(', '));
+      context.test.clearInscriptions();
+    }
     // Bounded like the route: the constructions can never outgrow their cap or outlive the run.
     for(let i=0;i<context.test.SURVEY_CAP*3;i++)context.test.surveys.push({...landing,birth:w.time});
     frames(3);
@@ -953,4 +1010,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet and kept off the margins','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));

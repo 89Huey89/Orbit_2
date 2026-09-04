@@ -6,9 +6,9 @@
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see
 // src/inscriptions.js. `where` names the subject — a planet or star to follow, or the point on the sheet
-// the thing happened at — and the note is set clear of it and left to fade as the chart carries it away.
-function say(text,seconds=1.4,where){
-  return inscribe(text,Object.assign({life:seconds},where));
+// the thing happened at — and the note is set clear of it and left as ink for the chart to carry away.
+function say(text,where){
+  return inscribe(text,where);
 }
 function event(type,e){
   if(type==='start'){audio.start();return;}
@@ -20,11 +20,11 @@ function event(type,e){
     if(e.sling&&e.charge>.15){
       audio.tone(155,.45,0,.25,'sine',230+e.charge*200);
       if(!reducedMotion){burst(e.x,e.y,Math.round(8+e.charge*12),'gold',.9);rings.push({x:e.x,y:e.y,start:5,distance:55,age:0,life:.5,alpha:.42,seed:ringSeed()});}
-      say('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),1.2,{x:e.x,y:e.y});
+      say('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),{x:e.x,y:e.y});
     }
   }else if(type==='charged'){
     if(e.max)tally('maxSpeedSlings');
-    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',1.8,{node:world.player.node});
+    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');
     audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
@@ -35,21 +35,21 @@ function event(type,e){
     floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
     const at={node:e.n};
-    if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,2,at);
-    else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',2.6,at);
-    else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',2.5,at);
-    else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',1.4,at);
-    else if(e.n.type==='gold')say('GOLDEN DETOUR',1.4,at);
-    else if(e.square)say('RIGHT ANGLE · +'+e.squareBonus,1.8,at);
-    else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',1.4,at);
-    else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',1.4,at);
+    if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
+    else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',at);
+    else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
+    else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
+    else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
+    else if(e.square)say('RIGHT ANGLE · +'+e.squareBonus,at);
+    else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
+    else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
-    say(e.chart.name+' · '+e.count+' / 3',1.8,{node:e.chart.stars[e.count-1]||world.player.node});
+    say(e.chart.name+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
-    say(e.chart.name+' · COMPLETE +60',2.8,{node:e.chart.stars[1]||e.chart.entry});
+    say(e.chart.name+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
     for(const [i,n] of e.chart.stars.entries()){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
       audio.tone([261.63,329.63,392][i],1.1,i*.14,.24);
@@ -59,15 +59,15 @@ function event(type,e){
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',2.4,{x:e.x,y:e.y});
+    say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
     burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say('SHIELD ABSORBED THE IMPACT',1.8,{x:e.x,y:e.y});
+    say('SHIELD ABSORBED THE IMPACT',{x:e.x,y:e.y});
   }else if(type==='observation'){
     tallyMap('observations',e.key);
-    say('OBSERVATION \u00b7 '+e.latin,2.6);
+    say('OBSERVATION \u00b7 '+e.latin);
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
@@ -80,7 +80,7 @@ function event(type,e){
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
-    audio.tone(440,.3,0,.15);say('PRESSURE SET · '+DIFFICULTY_LABELS[e.value],1.8);
+    audio.tone(440,.3,0,.15);say('PRESSURE SET · '+DIFFICULTY_LABELS[e.value]);
   }
 }
 function newWorld(){
@@ -227,8 +227,8 @@ function updateUI(dt){
     if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent='Plate '+numerals[chapter]+'. '+chapters[chapter]+'.';}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
-  // the orbit being held, or the black hole that is bending the flight. Each stays while its condition
-  // holds and fades as soon as it stops.
+  // the orbit being held, or the black hole that is bending the flight. Each is kept on the sheet while
+  // its condition holds, and left as ink for the chart to carry away as soon as it stops.
   if(world.state==='playing'&&world.difficultyPending){
     inscribeHeld('instruction','Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
   }else if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
