@@ -66,12 +66,29 @@ function event(type,e){
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say('SHIELD ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
+    say(POWERUP_LABELS.shield+' ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
     burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say('SHIELD ABSORBED THE IMPACT',{x:e.x,y:e.y});
+    say(POWERUP_LABELS.shield+' ABSORBED THE IMPACT',{x:e.x,y:e.y});
+  }else if(type==='reflector'){
+    audio.tone(740,.4,0,.22,'sine',920);burst(e.x,e.y,10,'violet',.5);
+    rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
+    say(POWERUP_LABELS.reflector+' ARMED · TURNS BACK THE EDGE',{x:e.x,y:e.y});
+  }else if(type==='reflectorBreak'){
+    tally('reflectorsSpent');
+    audio.tone(210,.5,0,.3,'triangle',105);audio.brush(900,.3);
+    burst(e.x,e.y,20,'violet',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
+    say(POWERUP_LABELS.reflector+' THREW YOU BACK',{x:e.x,y:e.y});
+  }else if(type==='inkwell'){
+    tally('inkwellsFound');
+    audio.tone(523.25,.5,0,.16);audio.tone(659.25,.5,.12,.14);
+    burst(e.x,e.y,14,'gold',.7);rings.push({x:e.x,y:e.y,start:4,distance:40,age:0,life:.6,alpha:.5,seed:ringSeed()});
+    say('A RECKLESS LINE · A NEW COLOUR TAKES',{x:e.x,y:e.y});
+  }else if(type==='inkwellDry'){
+    audio.tone(220,.3,0,.18,'triangle',160);burst(e.x,e.y,5,'red',.3);
+    say('THE WELL RUNS DRY · FLY RECKLESS FIRST',{x:e.x,y:e.y});
   }else if(type==='observation'){
     tallyMap('observations',e.key);
     say('OBSERVATION \u00b7 '+e.latin);
@@ -228,7 +245,8 @@ function updateUI(dt){
   if(lastScore!==world.score){lastScore=world.score;inked('score',String(world.score));inked('best',String(currentBest()));}
   inked('pace','SPEED ×'+world.speedMultiplier().toFixed(1));
   inked('flow',world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'');
-  inked('shield',world.player.shielded?'SHIELD ARMED':'');
+  inked('shield',world.player.shielded?POWERUP_LABELS.shield+' ARMED':'');
+  inked('reflector',world.player.reflectorArmed?POWERUP_LABELS.reflector+' ARMED':'');
   // The nib's reservoir. The rule drains with the ink in hand and takes the copper of a warning
   // once what is left will not carry an ordinary transfer.
   const level=world.inkLevel(),gauge=$('ink'),held=(level*100).toFixed(1);

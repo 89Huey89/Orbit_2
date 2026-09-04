@@ -14,6 +14,11 @@ const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
 // hardcore) are unchanged so existing saves, personal bests and the pressure multiplier lookup all
 // keep working; only the printed word changes.
 const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER'};
+// Display names for the two carried charges, in the same Latin voice: SCUTUM the shield, that turns
+// aside a black hole; REPULSA the repulse, that turns the traveller back from the chart's edge. As with
+// DIFFICULTY_LABELS, the internal type strings ('shield', 'reflector') are unchanged so nothing that
+// reads them has to know the printed word.
+const POWERUP_LABELS = {shield:'SCUTUM', reflector:'REPULSA'};
 const FLIGHT_STEP = 1/120;
 // The nib carries a charge of ink, held as 0..1. Flight spends it by the distance flown, so a
 // transfer costs what it is long rather than what it takes; going faster crosses the same gulf for
@@ -224,6 +229,9 @@ function arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect) {
 // anything with real angle on it the forgiving ordinary capture it has always been. A tangent-seeking
 // pilot never meets it at all.
 const GRAZE_MINIMUM = 16;
+// How many consecutive bad-angle or orbit-skipping captures in a row still have to be standing when
+// an inkwell is reached for it to yield a colour rather than run dry. See OrbitWorld.capture.
+const INK_STREAK_REQUIRED = 3;
 function arrivalAim(n,contact,distance,vx,vy) {
   const speed=Math.hypot(vx,vy);
   const angle=arrivalAngle(n,contact.rx,contact.ry,contact.rvx,contact.rvy,contact.distance,contact.perfect);
@@ -249,12 +257,12 @@ class OrbitWorld {
     // the fourth never repeats a figure until the whole catalogue has been used.
     this.catalogueOrder=[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
-    this.perfectStreak=0;this.observations=[];this.observed=new Set();
+    this.perfectStreak=0;this.recklessStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1; this.capMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
-    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,ink:1,dryAnnounced:false};
+    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,reflectorArmed:false,ink:1,dryAnnounced:false};
     this.positionPlayer();
     if (offerDifficulty) this.spawnDifficultyPaths(); else this.ensureAhead();
   }
@@ -345,6 +353,20 @@ class OrbitWorld {
       const side = (prev.x+n.x)>0 ? -1 : 1;
       const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2-40;
       if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'shield');
+    }
+    // A rarer reflector star: one carried charge turns the traveller back from the chart's edge
+    // instead of losing the run to it.
+    if (!fork && k >= 13 && k%13 === 0) {
+      const side = (prev.x+n.x)>0 ? -1 : 1;
+      const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2+40;
+      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'reflector');
+    }
+    // A rarer inkwell still: a streak of bad-angle or orbit-skipping captures still standing when it is
+    // reached earns a fresh colour for the trail; reached with a clean run in hand, it gives up nothing.
+    if (!fork && k >= 17 && k%17 === 0) {
+      const side = (prev.x+n.x)>0 ? -1 : 1;
+      const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2-90;
+      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'inkwell');
     }
     // Hazards and the ways across. Through the opening regions a hole or a flare is placed clear of
     // every route between the last two main nodes, so it is scenery to be given room rather than an
@@ -485,10 +507,14 @@ class OrbitWorld {
     this.positionPlayer();
     const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0,skipBonus=steep?0:Math.round(skipped*10*scoreMultiplier);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
+    // An inkwell only pays out on a streak already standing when the traveller reaches it — the streak
+    // this landing itself extends or breaks is read below, after it is folded in.
+    const reckless=this.recklessStreak>=INK_STREAK_REQUIRED;
     this.combo=quick?Math.min(5,this.combo+1):1; this.maxCombo=Math.max(this.maxCombo,this.combo);
     const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=steep?0:Math.round(baseGain*scoreMultiplier)+skipBonus;
     this.score+=gain+squareBonus; this.captures++; this.perfects+=perfect?1:0; this.squares+=square?1:0;
     this.perfectStreak=perfect?this.perfectStreak+1:0;
+    this.recklessStreak=(steep||skip)?this.recklessStreak+1:0;
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
     this.shake=perfect?1.8:steep?1.3:1.0;
     this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,steep,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
@@ -497,6 +523,8 @@ class OrbitWorld {
     if(skipped>=5)this.observe('skipFive');
     if(this.progress>=40)this.observe('fortyRows');
     if(n.type==='shield'&&!p.shielded){p.shielded=true;this.emit('shield',{x:n.x,y:n.y});}
+    if(n.type==='reflector'&&!p.reflectorArmed){p.reflectorArmed=true;this.emit('reflector',{x:n.x,y:n.y});}
+    if(n.type==='inkwell')this.emit(reckless?'inkwell':'inkwellDry',{x:n.x,y:n.y});
     if(n.routeId!==undefined&&!perfect){
       const route=this.constellations.find(c=>c.id===n.routeId);if(route)route.pure=false;
     }
@@ -531,6 +559,17 @@ class OrbitWorld {
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
+  }
+  // A carried reflector charge turns back a flight past the chart's edge: it consumes itself and
+  // sends the traveller back into the chart instead of losing the run to it.
+  edgeHit() {
+    if(this.state!=='playing')return;
+    const p=this.player;
+    if(!p.reflectorArmed){this.die('LEFT THE STAR CHART');return;}
+    p.reflectorArmed=false;
+    const boundary=this.width/2+16;
+    p.vx=-p.vx;p.x=clamp(p.x,-boundary+8,boundary-8);
+    this.shake=3;this.emit('reflectorBreak',{x:p.x,y:p.y});
   }
   resize(width,height) {
     const oldHeight=this.height;this.width=width;this.height=height;
@@ -591,7 +630,7 @@ class OrbitWorld {
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
         p.ink=Math.max(0,p.ink-this.inkCost(Math.hypot(p.x-ax,p.y-ay)));
         if(result.hit?.kind==='hole')this.hazardHit(result.hit.h);
-        else if(result.hit?.kind==='edge')this.die('LEFT THE STAR CHART');
+        else if(result.hit?.kind==='edge')this.edgeHit();
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node&&p.ink<=0)this.die('THE NIB RAN DRY');
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
@@ -614,7 +653,7 @@ class OrbitWorld {
     if(this.elapsed>1.5)this.floorY+=48*respite-this.darknessSpeed()*(dt-respite);
     this.floorY=Math.min(this.floorY,this.cameraY+this.height-25);
     if(p.y>this.floorY-4)this.die('THE DARK CAUGHT UP');
-    if(Math.abs(p.x)>this.width/2+16)this.die('LEFT THE STAR CHART');
+    if(Math.abs(p.x)>this.width/2+16)this.edgeHit();
     this.ensureAhead();
     this.nodes=this.nodes.filter(n=>n===p.node||n.y<this.floorY+170);
     this.hazards=this.hazards.filter(h=>h.y<this.floorY+170);

@@ -6,7 +6,7 @@ definePlate('dark',{
   night:{
     chapterShadow:'#080f18',chapterLabel:'#baa57b',chapterRule:'202,180,137',chapterDiamond:'216,195,154',
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
-    playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',
+    playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',playerReflector:'196,172,224',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
     // The route already flown, long dry on the sheet.
     pathInk:'128,134,116',
@@ -16,14 +16,14 @@ definePlate('dark',{
     washTop:'4,10,17',washMid:'6,13,22',washSolid:'#040910',bodyTop:'5,11,19',bodyMid:'4,10,18',
     voidLayers:['rgba(22,30,36,.23)','rgba(13,22,31,.44)','rgba(7,16,25,.57)','rgba(4,11,20,.63)','rgba(3,8,15,.72)'],
     landFillWash:'rgba(36,45,50,.075)',landFillPool:'rgba(1,5,12,.3)',fleckDark:'0,3,9',
-    burstGold:'230,209,159',burstRed:'222,145,106',burstBlue:'165,215,210',ringSimple:'231,216,171',
+    burstGold:'230,209,159',burstRed:'222,145,106',burstBlue:'165,215,210',burstViolet:'210,190,224',ringSimple:'231,216,171',
     transferArc:'226,207,165',transferArcSoft:'186,169,131',transferTick:'239,219,173',transferNib:'232,212,171',
     floaterText:'238,224,185',screenFlash:'238,212,157'
   },
   paper:{
     chapterShadow:'transparent',chapterLabel:'#5c4630',chapterRule:'58,42,28',chapterDiamond:'34,24,16',
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
-    playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',
+    playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',playerReflector:'92,58,120',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
     pathInk:'104,74,42',
     // Wet iron-gall is glossy blue-black; it dries to a matte sepia within a second.
@@ -34,7 +34,7 @@ definePlate('dark',{
     washTop:'20,18,31',washMid:'24,20,34',washSolid:'#14121f',bodyTop:'20,18,31',bodyMid:'20,18,31',
     voidLayers:['rgba(28,24,38,.34)','rgba(24,20,34,.58)','rgba(20,18,31,.78)','rgba(16,14,26,.9)','rgba(14,12,22,.97)'],
     landFillWash:'rgba(20,18,31,.09)',landFillPool:'rgba(14,12,22,.34)',fleckDark:'14,12,22',
-    burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',ringSimple:'58,42,28',
+    burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',burstViolet:'92,58,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
     floaterText:'34,24,16',screenFlash:'255,248,222'
   }
@@ -48,12 +48,18 @@ definePlate('inks',{
   night:{
     sanguine:{wet:[214,116,88],dry:[150,86,68],wash:'196,110,84',edge:'170,96,74',bleed:'206,120,92',blotWet:[214,116,88],blotDry:[152,90,70],path:'150,86,68'},
     silverpoint:{wet:[226,230,236],dry:[132,138,146],wash:'170,176,184',edge:'150,158,168',bleed:'196,202,210',blotWet:[214,220,228],blotDry:[134,140,148],shimmer:'244,248,255',path:'126,132,140'},
-    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',path:'164,128,64'}
+    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',path:'164,128,64'},
+    // A reckless line's ink: soot-black bistre, warm rather than the iron gall's cool near-black.
+    bistre:{wet:[232,208,168],dry:[138,112,82],wash:'210,182,140',edge:'176,148,108',bleed:'218,192,150',blotWet:[230,206,166],blotDry:[140,114,84],path:'150,122,88'},
+    // Orpiment: the old illuminators' bright, faintly dangerous yellow-orange mineral.
+    orpiment:{wet:[255,196,96],dry:[190,124,54],wash:'224,158,72',edge:'196,128,58',bleed:'236,172,84',blotWet:[252,194,94],blotDry:[188,122,52],path:'176,116,50'}
   },
   paper:{
     sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
     silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252',path:'118,122,128'},
-    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'}
+    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'},
+    bistre:{wet:[58,44,30],dry:[146,112,72],wash:'96,74,50',edge:'80,60,40',bleed:'104,80,54',blotWet:[56,42,28],blotDry:[148,114,74],path:'112,86,58'},
+    orpiment:{wet:[150,88,20],dry:[196,140,58],wash:'176,112,36',edge:'140,88,30',bleed:'198,142,60',blotWet:[148,86,18],blotDry:[198,142,60],path:'168,106,40'}
   }
 });
 // The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen.
@@ -484,6 +490,13 @@ const OBSERVER_MARKS={
     ctx.strokeStyle=`rgba(${ink.dark.playerShield},${.55*pulse})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.stroke();
     ctx.strokeStyle=`rgba(${ink.dark.playerShield},${.22*pulse})`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,11.5,0,TAU);ctx.stroke();
   }
+  // The reflector's charge rides a wider, broken ring, so the two carried charges read apart at a
+  // glance and neither is lost when both are held at once.
+  if(p.reflectorArmed){
+    const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4+1.7);
+    ctx.strokeStyle=`rgba(${ink.dark.playerReflector},${.55*pulse})`;ctx.lineWidth=1;ctx.setLineDash([2.4,2.4]);
+    ctx.beginPath();ctx.arc(0,0,14,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  }
   ctx.restore();
 }
 function darknessPlate(relief){
@@ -806,7 +819,7 @@ function drawEffects(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];if(world.state!=='paused'){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.5);p.vy*=Math.exp(-dt*1.5);}
     if(p.life<=0){particles.splice(i,1);continue;}
-    const alpha=clamp(p.life/p.max,0,1),rgb=p.color==='red'?ink.dark.burstRed:p.color==='blue'?ink.dark.burstBlue:ink.dark.burstGold;
+    const alpha=clamp(p.life/p.max,0,1),rgb=p.color==='red'?ink.dark.burstRed:p.color==='blue'?ink.dark.burstBlue:p.color==='violet'?ink.dark.burstViolet:ink.dark.burstGold;
     line(sx(p.x),sy(p.y),sx(p.x-p.vx*.025),sy(p.y-p.vy*.025),`rgba(${rgb},${alpha})`,p.size*scale);
   }
   for(let i=rings.length-1;i>=0;i--){
