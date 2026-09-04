@@ -81,8 +81,15 @@ function event(type,e){
     audio.tone(698.46,.28,0,.16);floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
     recordBest(world.score);
   }else if(type==='death'){
-    audio.death();burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
-    rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});screenFlash=1;
+    audio.death();
+    if(e.reason==='LEFT THE STAR CHART'){
+      // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than bursting.
+      rings.push({kind:'splat',x:e.x,y:e.y,dir:e.x>=0?1:-1,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
+    }else{
+      burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
+      rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});
+    }
+    screenFlash=1;
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
   }else if(type==='difficulty'){
