@@ -484,8 +484,10 @@ function drawAmbient(dt,aim){
   ctx.restore();
 }
 // The band the chapter lettering occupies while it is on the page, or null when nothing is printed there.
+// The plate title is ink, not a toast — it stays on the sheet once written, so the band stays
+// reserved for as long as it does, and other captions keep clear of it indefinitely.
 function revealBand(){
-  if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return null;
+  if(world.state==='ready'||world.state==='dead'||plainPlate())return null;
   if(H<540&&W>H)return null;
   const y=revealPoint().y;return {top:y-36,bottom:y+36};
 }
@@ -514,7 +516,7 @@ function revealAnchor(){
 // The name is written onto the sheet, not over it: the line chosen above is taken into world coordinates
 // the first time it is asked for, and the chart carries the lettering from there, exactly as it carries an
 // orbit. It is held back at the edge of the play channel rather than allowed to print into the margin, so
-// a fast ascent slides it to the foot of the sheet and it fades there.
+// a fast ascent slides it to the foot of the sheet and it settles there.
 function revealPoint(){
   const compact=H<540&&W>H;
   if(chapterReveal.wx===undefined){
@@ -530,9 +532,11 @@ function revealPoint(){
   };
 }
 function drawChapterReveal(dt){
-  if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead'||plainPlate())return;
+  if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
-  const t=chapterReveal.age,alpha=clamp(Math.min(t/.55,(4.2-t)/1.2),0,1);
+  // The plate title is written once and left as ink: it fades in under the pen, then stands at
+  // full strength for as long as the plate is open, rather than fading back out like a toast.
+  const t=chapterReveal.age,alpha=clamp(t/.55,0,1);
   // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
   // channel underneath it, and rides the sheet from there.
   const place=revealPoint(),compact=place.compact,x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
