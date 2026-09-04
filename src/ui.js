@@ -270,6 +270,9 @@ $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio
 $('diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
 $('diff-classic').addEventListener('click',()=>setDifficulty('classic'));
 $('diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
+$('end-diff-relaxed').addEventListener('click',()=>setDifficulty('relaxed'));
+$('end-diff-classic').addEventListener('click',()=>setDifficulty('classic'));
+$('end-diff-hardcore').addEventListener('click',()=>setDifficulty('hardcore'));
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 $('fullscreen').addEventListener('click',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){try{const exit=document.exitFullscreen||document.webkitExitFullscreen;const p=exit.call(document);if(p&&p.catch)p.catch(()=>{});}catch(_){}}

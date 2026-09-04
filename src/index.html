@@ -165,6 +165,7 @@
       #end #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
       #end #end-unlocked{margin:-9px 0 10px;font-size:9px}
       #end .exlibris{width:84px;height:50px;margin-top:9px}
+      #end .difficulty{margin-top:9px}
       #end .end-plate-line{margin-top:9px}
       #end #copy-score{padding:6px 12px}
       #end .action-copy{font-size:17px;margin-bottom:8px}
@@ -180,6 +181,7 @@
     @media(max-height:530px) and (orientation:landscape){
       #intro .daily-group{margin-top:5px}
       #end #end-observations{margin:2px 0 4px;font-size:8px;line-height:1.4}
+      #end .difficulty{display:none}
       #end .end-plate-line{display:none}
       #end .end-stats{gap:12px}
     }
@@ -261,7 +263,7 @@
     #game.over .end-stats{animation:ink-wipe .55s ease-out .32s backwards}
     #game.over #end-score,#game.over #record{animation:ink-rise .5s ease-out .5s backwards}
     #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
-    #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
+    #game.over #end-constellations,#game.over #end-observations,#game.over #end .difficulty,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
   </style>
 </head>
 <body>
@@ -329,6 +331,13 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
+      <div class="difficulty" role="group" aria-label="Difficulty">
+        <button id="end-diff-relaxed" class="diff-btn" type="button" aria-pressed="false">RELAXED</button>
+        <span class="diff-sep" aria-hidden="true">&#9670;</span>
+        <button id="end-diff-classic" class="diff-btn" type="button" aria-pressed="true">CLASSIC</button>
+        <span class="diff-sep" aria-hidden="true">&#9670;</span>
+        <button id="end-diff-hardcore" class="diff-btn" type="button" aria-pressed="false">HARDCORE</button>
+      </div>
       <div class="end-plate-line"><span id="end-daily" class="small daily-note"></span><button id="copy-score" class="diff-btn" type="button">COPY SCORE</button></div>
     </div>
   </section>

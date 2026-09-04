@@ -60,8 +60,13 @@ function recordBest(score){
 }
 function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
 function syncDifficulty(){
-  for(const key in DARKNESS_MULT)$('diff-'+key).setAttribute('aria-pressed',String(key===activeDifficulty()));
-  if(world)world.darknessMult=DARKNESS_MULT[activeDifficulty()];
+  const active=activeDifficulty();
+  for(const key in DARKNESS_MULT){
+    const pressed=String(key===active);
+    $('diff-'+key).setAttribute('aria-pressed',pressed);
+    $('end-diff-'+key).setAttribute('aria-pressed',pressed);
+  }
+  if(world)world.darknessMult=DARKNESS_MULT[active];
 }
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
