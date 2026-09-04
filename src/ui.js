@@ -94,7 +94,7 @@ function newWorld(){
 function setPlaying(){
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   clearInscriptions();
-  $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and earn more points.';
+  $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
   chapterReveal={index:0,age:0};
 }
 function showEnd(){

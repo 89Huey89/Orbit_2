@@ -34,6 +34,10 @@ const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
 // The pace is a property of the chart and not of the traveller: it depends only on the row, so a
 // seed still draws one plate for everyone, which is what the daily plate rests on.
 const TRANSFER_SECONDS = 1.28;
+// The row from which a hazard may sit on one of the two ways between main nodes and close it, and
+// then only on every third row, so a closed route stays an event rather than the standing state of
+// the chart. Before it, every route is left clear and a hazard is only something to give room to.
+const HAZARD_CLOSES_ROUTE = 12;
 function chartPace(row) { return BASE_SPEED+(MAX_SPEED-BASE_SPEED)*clamp((row-3)/25,0,1)*.78; }
 // How much wider the chart is cut at this row than at the opening: 1 at the start, about 2.1 once
 // the chart is drawn for its full pace.
@@ -321,22 +325,48 @@ class OrbitWorld {
       const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2-40;
       if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'shield');
     }
-    // Keep both possible tangent routes to each main node clear, including drift envelopes.
+    // Hazards and the ways across. Through the opening regions a hole or a flare is placed clear of
+    // every route between the last two main nodes, so it is scenery to be given room rather than an
+    // obstacle. From HAZARD_CLOSES_ROUTE onward it is allowed to sit on one of them and shut it: the
+    // side you cross on becomes a decision instead of a formality. What is never allowed is closing
+    // the last way through — at least one smooth tangent, the route a perfect transfer is flown on,
+    // is always left open, and the slingshot's own shortcut is never touched.
     if (!fork && k >= 6 && k%3 !== 1) {
       const r = 18+rng()*11+Math.min(8,k*.14);
-      for (let tries=0;tries<12;tries++) {
+      const direct=tangentPaths(prev,n),smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
+      // Two margins, because a hazard reaches further than it kills. A route closer than `kill` is
+      // shut; the route left open has to be clear of the whole gravity field, or it would be bent
+      // into the hazard it was supposed to avoid.
+      const kill=r+prev.amp+n.amp+25,free=gravityRadius({r})+prev.amp+n.amp+10;
+      const mayClose=k>=HAZARD_CLOSES_ROUTE&&k%3===2;
+      let chosen=null,clearOf=null;
+      for (let tries=0;tries<12&&!chosen;tries++) {
         const hx=(rng()-.5)*Math.min(this.width-72,380), hy=(prev.y+n.y)/2+(rng()-.5)*55;
         if (this.nodes.some(q=>Math.hypot(hx-q.baseX,hy-q.baseY)<q.r+q.amp+r+30)) continue;
-        const paths=tangentPaths(prev,n);
-        if (paths.some(p=>pointSegment(hx,hy,p.x,p.y,n.x,n.y)<r+prev.amp+n.amp+25)) continue;
-        const smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
-        if(smooth.some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+prev.amp+n.amp+25))continue;
         if(slingOrigin&&tangentPaths(slingOrigin,slingOrigin.shortcut).some(p=>pointSegment(hx,hy,p.x,p.y,slingOrigin.shortcut.x,slingOrigin.shortcut.y)<r+25))continue;
         if(slingOrigin&&[...orbitTangents(slingOrigin,slingOrigin.shortcut,1),...orbitTangents(slingOrigin,slingOrigin.shortcut,-1)].some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+25))continue;
+        const toSmooth=smooth.map(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by));
+        const toDirect=direct.map(p=>pointSegment(hx,hy,p.x,p.y,n.x,n.y));
+        const openSmooth=toSmooth.filter(d=>d>=kill).length,openDirect=toDirect.filter(d=>d>=kill).length;
+        // The way left open has to be flyable both ways it can be flown: a smooth tangent for a
+        // perfect transfer, and a centre-directed line for a player not yet flying them. A hazard
+        // closes one side of the crossing, never one style of play.
+        const flyable=toSmooth.filter(d=>d>=free).length&&toDirect.filter(d=>d>=free).length;
+        if(openSmooth===smooth.length&&openDirect===direct.length){
+          // Clear of everything: the old placement, kept as the fallback and used outright until
+          // the chart is deep enough for a hazard to be allowed to close a route.
+          if(!clearOf)clearOf={hx,hy};
+          if(!mayClose)break;
+          continue;
+        }
+        if(mayClose&&flyable>0)chosen={hx,hy};
+      }
+      const place=chosen||clearOf;
+      if(place){
         // From the third region, sunspot flares alternate with black holes under the
-        // same clearance rules: they repel instead of pulling and only their core kills.
+        // same placement rules: they repel instead of pulling and only their core kills.
         const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'hole';
-        this.hazards.push({x:hx,y:hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false}); break;
+        this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
       }
     }
     // A nebula patch lies across one of the tangent routes between the last two main

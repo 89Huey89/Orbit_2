@@ -215,6 +215,83 @@ assert.equal(idle.state,'dead','Waiting forever must lose');assert.equal(idle.re
 assert(idle.elapsed>6&&idle.elapsed<13,'Opening darkness must give a few learning seconds, then threaten idle play');
 const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=paused.player.x;paused.update(10);assert.equal(paused.player.x,old);assert.equal(paused.elapsed,0);
 
+// ---------- The nib and its ink ----------
+// A full nib carries 2000 world units, spent by the distance flown rather than the time taken, so
+// the same crossing costs the same whether it is flown slowly or at the chart's top speed.
+{
+  const w=new OrbitWorld(5,440,860);w.start();
+  assert.equal(w.inkLevel(),1,'A run is dealt with a full nib');
+  assert.equal(w.inkCost(2000),1,'A full nib carries two thousand world units');
+  assert.equal(w.inkRange(),2000);
+  w.inkMult=1.25;assert.equal(w.inkCost(2000),1.25,'The pressure scales the drain, not the gauge');
+  assert.equal(w.inkRange(),1600,'A harder plate reaches less far on the same charge');
+  assert.equal(w.inkLevel(),1,'and reads the same full gauge');
+}
+// Flight spends it; a landing pays a dividend, and a clean tangent arrival pays more than a hard turn.
+{
+  const spend=(speed)=>{
+    const w=new OrbitWorld(6,440,860);w.start();
+    w.nodes=[w.player.node];w.player.speed=speed;w.positionPlayer();w.release();
+    let flown=0;
+    for(let i=0;i<120*4&&w.state==='playing';i++){
+      const x=w.player.x,y=w.player.y;w.update(step);flown+=Math.hypot(w.player.x-x,w.player.y-y);
+    }
+    return {spent:1-w.player.ink,flown};
+  };
+  const slow=spend(150),fast=spend(300);
+  assert(slow.flown>0&&fast.flown>0);
+  assert(Math.abs(slow.spent-slow.flown/2000)<1e-9,'Ink is spent by the distance drawn');
+  assert(Math.abs(fast.spent-fast.flown/2000)<1e-9);
+  assert(Math.abs(slow.spent/slow.flown-fast.spent/fast.flown)<1e-12,
+    'The same crossing costs the same ink however fast it is flown');
+}
+// Running the nib dry in flight ends the run, and the landing is settled first, so a transfer that
+// arrives on the last drop stands.
+{
+  const dry=new OrbitWorld(7,440,860);dry.start();
+  dry.nodes=[dry.player.node];dry.player.ink=.02;dry.release();
+  for(let i=0;i<120*4&&dry.state==='playing';i++)dry.update(step);
+  assert.equal(dry.reason,'THE NIB RAN DRY','An empty nib ends the run in flight');
+  const last=new OrbitWorld(8,440,860);last.start();
+  const origin=last.player.node,target=last.makeNode(origin.x+origin.r,origin.y-600,54,2,'still');
+  last.nodes=[origin,target];last.lastMain=target;last.player.angle=0;last.player.dir=-1;last.positionPlayer();
+  const aim=last.aim();assert.equal(aim?.n,target);
+  last.player.ink=last.inkCost(aim.distance)+1e-4;
+  last.release();
+  for(let i=0;i<120*10&&last.state==='playing'&&!last.player.node;i++)last.update(step);
+  assert.equal(last.player.node,target,'A transfer that arrives on the last drop stands');
+  assert.equal(last.state,'playing');
+}
+// Holding a ring re-charges the nib; a slingshot star fills it over its lap; a landing pays back more
+// for a tangent arrival than for a hard turn. Dwelling is how ink is bought, and time is what it costs.
+{
+  const w=new OrbitWorld(9,440,860);w.start();w.player.ink=.2;
+  w.update(1);assert(Math.abs(w.player.ink-.33)<1e-9,'A held orbit re-charges the nib slowly');
+  const star=new OrbitWorld(10,440,860);star.start();
+  star.player.node.type='sling';star.player.ink=.2;star.update(1);
+  assert(Math.abs(star.player.ink-1.05+.05)<1e-9||star.player.ink===1,'A slingshot star fills the nib far faster');
+  assert(star.player.ink>w.player.ink,'and faster than an ordinary ring');
+  assert(star.player.ink<=1,'The nib never holds more than a full charge');
+}
+// The guide prices the transfer it is drawing and marks the one the nib cannot pay for. It still aims
+// it and still draws it: the choice to fly a course that stops short stays the player's to make.
+{
+  const w=new OrbitWorld(11,440,860);w.start();
+  const origin=w.player.node,far=w.makeNode(origin.x+origin.r,origin.y-1500,54,2,'still');
+  w.nodes=[origin,far];w.lastMain=far;w.player.angle=0;w.player.dir=-1;w.positionPlayer();
+  const rich=w.aim();
+  assert.equal(rich?.n,far,'The guide reaches the distant planet');
+  assert.equal(rich.dry,false,'A full nib pays for it');
+  assert(Math.abs(w.flightPreview.inkCost-w.inkCost(rich.distance))<1e-9);
+  w.player.ink=.2;
+  const poor=w.aim();
+  assert.equal(poor?.n,far,'The same course is still aimed when the nib cannot pay for it');
+  assert.equal(poor.dry,true,'and is marked dry');
+  assert.equal(w.flightPreview.dry,true);
+  assert(Math.abs(w.flightPreview.inkRange-400)<1e-9,'The preview says how far the ink still reaches');
+  assert.equal(w.release(),true,'A dry course may still be flown');
+}
+
 // Charge follows angular travel, caps at one lap, and changes actual momentum.
 const chargeEvents=[],charged=new OrbitWorld(4,440,860,(type,e)=>chargeEvents.push({type,...e}));
 charged.player.node.type='sling';charged.update(1);assert.equal(charged.charge(),0,'Ready mode cannot pre-charge');charged.start();
@@ -405,6 +482,60 @@ const drawn=[];for(let region=4;region<4+CONSTELLATIONS.length;region++)drawn.pu
 assert.equal(new Set(drawn).size,CONSTELLATIONS.length,'No figure repeats until the catalogue is exhausted');
 assert.equal(orderA.catalogueFor(4+CONSTELLATIONS.length),orderA.catalogueFor(4),'The catalogue then starts again');
 
+// ---------- The chart is cut for the pace it expects ----------
+// Every transfer is drawn to take about the same time to fly at the pace the chart is cut for, so the
+// gulfs open as the run climbs instead of staying the length they were at the opening.
+{
+  const w=new OrbitWorld(4242,440,860);while(w.row<60)w.generateRow();
+  const main=new Map();
+  for(const n of w.nodes)if(Number.isInteger(n.row)&&n.type!=='gold'&&n.type!=='shield'&&n.routeRole!=='star')main.set(n.row,n);
+  const gap=row=>{const a=main.get(row-1),b=main.get(row);return a&&b?Math.hypot(b.baseX-a.baseX,b.baseY-a.baseY)-a.r-b.r:null;};
+  const early=[4,5,6].map(gap),late=[40,41,42].map(gap);
+  assert(early.every(v=>v!==null)&&late.every(v=>v!==null));
+  const mean=v=>v.reduce((s,x)=>s+x,0)/v.length;
+  assert(mean(late)>mean(early)*1.8,'A deep crossing must be far longer than an opening one: '+mean(early).toFixed(0)+' then '+mean(late).toFixed(0));
+  // The orbits open with the chart, so a wider ring is swept more slowly and presents a larger rim
+  // from further off. Without this the release window would halve as the gulfs doubled.
+  assert(main.get(40).r>main.get(5).r,'Orbits open with the chart rather than shrinking');
+  assert(main.get(40).cap-main.get(40).r>main.get(5).cap-main.get(5).r,'and their capture bands open too');
+  // A slingshot ring is the exception: its charge is earned per lap, so a wider one would only cost
+  // more time against the flood for the same 90 units of speed.
+  const stars=[...main.values()].filter(n=>n.type==='sling');
+  assert(stars.length>=4&&stars.every(n=>n.r===57),'Slingshot rings keep their size whatever the chart does');
+}
+// The pace is a property of the row and not of the traveller, which is what the daily plate rests on:
+// two players opening the same seed are dealt the same plate, and how one of them flies cannot change
+// the chart the other is given.
+{
+  const plate=()=>{const w=new OrbitWorld(20260904,440,860);while(w.row<40)w.generateRow();
+    return JSON.stringify(w.nodes.map(n=>[n.row,n.baseX,n.baseY,n.r,n.type]));};
+  assert.equal(plate(),plate(),'One seed deals one chart');
+  const flown=new OrbitWorld(20260904,440,860);flown.start();
+  for(let i=0;i<120*30&&flown.state==='playing';i++){
+    if(flown.player.node&&flown.aim()?.perfect)flown.release();
+    flown.update(step);
+  }
+  while(flown.row<40)flown.generateRow();
+  const untouched=new OrbitWorld(20260904,440,860);while(untouched.row<40)untouched.generateRow();
+  const deep=w=>JSON.stringify([...w.nodes].filter(n=>n.row>=30).map(n=>[n.row,n.baseY]).sort());
+  assert.equal(deep(flown),deep(untouched),'How a run is flown cannot change the chart it is dealt');
+}
+// A sheet made narrower must not leave orbits standing outside its own edge, where a run is lost.
+{
+  const w=new OrbitWorld(31,1280,860);w.start();
+  for(let i=0;i<120*30&&w.state==='playing';i++){
+    if(w.player.node&&w.aim()?.perfect)w.release();
+    w.update(step);
+  }
+  const before=w.nodes.map(n=>n.baseX);
+  assert(w.nodes.some(n=>Math.abs(n.baseX)+n.r>440/2+16),'The wide sheet must lay orbits beyond a narrow one');
+  w.resize(440,860);
+  assert(w.nodes.some((n,i)=>n.baseX!==before[i]),'Narrowing the sheet must actually move what stood outside it');
+  for(const n of w.nodes)assert(Math.abs(n.baseX)+n.r+n.amp<=440/2+16,'Every orbit is pulled inside the narrower chart');
+  for(const h of w.hazards)assert(Math.abs(h.x)+h.r<=440/2+16);
+  if(w.player.node)assert(Math.abs(w.player.x)<=440/2+16,'and the traveller rides its own orbit in');
+}
+
 // Generation of the two later hazard kinds.
 let flareRows=0,holeRows=0,nebulaCount=0;
 for(let seed=1;seed<=60;seed++){
@@ -424,6 +555,34 @@ for(let seed=1;seed<=60;seed++){
 }
 assert(flareRows>60&&holeRows>60,'Both hazard kinds must be common past the third region');
 assert(nebulaCount>=120,'Nebula patches must actually appear: '+nebulaCount);
+
+// A hazard may sit on one of the ways between two main nodes and shut it, from row 12 and only on
+// every third row. What it may never do is close the last way through: whichever side it leaves open
+// has to be flyable both ways it can be flown — a smooth tangent for a perfect transfer and a
+// centre-directed line for a player not yet flying them — and clear of the whole gravity field, not
+// merely of the lethal core, or the flight would be bent into the hazard it was drawn around.
+let hazardsPlaced=0,routesClosed=0;
+for(let seed=1;seed<=120;seed++){
+  const w=new OrbitWorld(seed,440,860);
+  const rowOf=new Map(),placed=[];
+  while(w.row<70){const before=w.hazards.length;w.generateRow();if(w.hazards.length>before)placed.push(w.hazards.at(-1));}
+  for(const n of w.nodes)if(Number.isInteger(n.row)&&n.type!=='gold'&&n.type!=='shield'&&n.routeRole!=='star')rowOf.set(n.row,n);
+  for(const h of placed){
+    const n=rowOf.get(h.row),prev=rowOf.get(h.row-1);if(!n||!prev)continue;
+    hazardsPlaced++;
+    const smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)].map(p=>pointSegment(h.x,h.y,p.x,p.y,p.bx,p.by));
+    const direct=tangentPaths(prev,n).map(p=>pointSegment(h.x,h.y,p.x,p.y,n.x,n.y));
+    const kill=h.r+prev.amp+n.amp+25,free=gravityRadius(h)+prev.amp+n.amp+10;
+    if(!smooth.concat(direct).some(d=>d<kill))continue;
+    routesClosed++;
+    assert(h.row>=12,'No route is closed before row 12: row '+h.row+' seed '+seed);
+    assert.equal(h.row%3,2,'A route is only closed on every third row: row '+h.row+' seed '+seed);
+    assert(smooth.some(d=>d>=free),'A closed crossing must leave a smooth tangent clear of the field: seed '+seed+' row '+h.row);
+    assert(direct.some(d=>d>=free),'A closed crossing must leave a centred line clear of the field: seed '+seed+' row '+h.row);
+  }
+}
+assert(routesClosed>200,'Hazards must actually close routes, not merely be allowed to: '+routesClosed);
+assert(routesClosed<hazardsPlaced*.6,'A closed route stays an event, not the standing state of the chart: '+routesClosed+'/'+hazardsPlaced);
 
 // Charge fully at every slingshot and take its direct two-row transfer.
 let boostedTransfers=0;const slingFailures=[];
@@ -992,7 +1151,10 @@ function pressureRun(useStars,observations,inkMult=0){
 }
 const observed=[];
 const slowRun=pressureRun(false),fastRun=pressureRun(true,observed);
-assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT UP');assert(slowRun.elapsed>120&&slowRun.elapsed<300,'The pursuit must eventually catch consistently slow progress');
+assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT UP');// Consistently slow play now meets the flood sooner than it did: the chart is cut for a faster pace
+// and the tide takes a quarter of that growth, and from row 12 a hazard may close one side of a
+// crossing, so a pilot that will not fly around one loses ground while it waits.
+assert(slowRun.elapsed>90&&slowRun.elapsed<300,'The pursuit must eventually catch consistently slow progress');
 assert.equal(slowRun.perfectStreak,0,'An ordinary capture resets the perfect streak');
 assert.equal(slowRun.darknessRelief(),1,'Slow, centred play earns no relief from the pursuit');
 assert.equal(fastRun.state,'playing');assert(fastRun.progress>=220&&fastRun.elapsed>slowRun.elapsed);
@@ -1036,4 +1198,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
