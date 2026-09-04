@@ -9,17 +9,16 @@
   <title>Orbit</title>
   <link rel="stylesheet" href="../assets/fonts.css">
   <style>
-    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--chapter:#889399;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
-    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--chapter:#7a6852;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
+    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
     /* The derived plates keep their base plate's palette and re-ink only the accents. */
-    #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091;--chapter:#8f8873}
-    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--chapter:#7d9a8c;--shield:#8fc0c4}
+    #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091}
+    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--shield:#8fc0c4}
     #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a}
     #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22}
-    #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--chapter:#7d6850;--shield:#5c4832;--line:rgba(74,52,30,.34);--veil:226,213,184}
-    #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--chapter:#cfd6da;--shield:#e2ecf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
-    #game[data-plate="paper"] #chapter{color:#c2b394}
+    #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--shield:#5c4832;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
@@ -62,12 +61,6 @@
     #plate .plate-paper{display:none}
     #game[data-plate="paper"] #plate .plate-paper{display:block}
     #game[data-plate="paper"] #plate .plate-night{display:none}
-    #chapter{font-size:11px;letter-spacing:.22em;color:var(--chapter);text-align:center}
-    #hint{position:absolute;bottom:max(100px,calc(env(safe-area-inset-bottom) + 72px));left:25px;right:25px;text-align:center;pointer-events:none;color:var(--copy);font-family:'IM Fell English',Georgia,serif;font-size:14px;letter-spacing:.04em;z-index:2;opacity:0;transition:opacity .5s;text-shadow:0 2px 10px var(--ink)}
-    #toast{position:absolute;top:29%;left:15px;right:15px;text-align:center;pointer-events:none;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;letter-spacing:.22em;font-size:13px;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .4s;z-index:2}
-    #toast.show{opacity:1;transform:translateY(0)}
-    /* The frontispiece and the colophon are leaves of their own: the toast line is not printed through them. */
-    #game.over #toast{opacity:0}
     #intro{background:radial-gradient(ellipse at center,rgba(var(--veil),.4),rgba(var(--veil),.12) 70%,transparent)}
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
     /* The colophon is pulled on its own leaf: a near-opaque paper panel inside a double engraved rule, so
@@ -93,7 +86,6 @@
     #pause strong{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
-    #game.playing #hint.visible{opacity:1}
     #game.over .score-block{opacity:0}
     @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
     /* — Frontispiece / colophon: engraved atlas title page for #intro, #end, #pause — */
@@ -131,13 +123,11 @@
       #pause .title-rule{margin-top:6px}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
-    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}.end-stats{margin:9px 0 15px;padding-top:10px}#hint{bottom:64px}}
+    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}.end-stats{margin:9px 0 15px;padding-top:10px}}
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
     /* Plate frame clearance: nudge the HUD chrome a few px inside the engraved margin drawn on #sky. */
     .hud{left:max(26px,calc(env(safe-area-inset-left) + 4px));right:max(26px,calc(env(safe-area-inset-right) + 4px));top:max(26px,calc(env(safe-area-inset-top) + 14px))}
     .footer{bottom:max(20px,calc(env(safe-area-inset-bottom) + 10px));left:max(17px,calc(env(safe-area-inset-left) + 3px));right:max(17px,calc(env(safe-area-inset-right) + 3px))}
-    #hint{bottom:max(104px,calc(env(safe-area-inset-bottom) + 76px));left:27px;right:27px}
-    #toast{left:17px;right:17px}
     @media(min-width:800px){.hud{left:46px;right:46px;top:40px}.footer{left:35px;right:35px;bottom:27px}}
     /* — Daily plate, the ascent record, and the run's observations — */
     .daily-group{pointer-events:auto;display:flex;gap:11px;align-items:center;justify-content:center;margin-top:11px}
@@ -229,18 +219,13 @@
       #game .exlibris{display:none}
       #game #end-unlocked{margin:2px 0 3px;font-size:9px}
     }
-    /* — The living pen in the DOM: the same hand that draws the chart writes the HUD, the toasts, the
+    /* — The living pen in the DOM: the same hand that draws the chart writes the HUD, the
        frontispiece and the colophon. Every base style below is the finished state and every animation
        starts from the unwritten one, so the reduced-motion rule above prints all of it at once. — */
     @keyframes ink-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
     @keyframes ink-nib{from{left:-2%;opacity:.85}to{left:100%;opacity:0}}
     @keyframes ink-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
     @keyframes letter-settle{from{opacity:0;transform:translateY(8px) rotate(-3deg)}70%{opacity:1}to{opacity:1;transform:none}}
-    #toast.show{animation:ink-wipe .42s ease-out}
-    #toast.show::after,#hint.visible::after{content:'';position:absolute;top:12%;bottom:12%;width:4px;pointer-events:none;
-      background:linear-gradient(90deg,transparent,currentColor);opacity:0;animation:ink-nib .42s ease-out}
-    #hint.visible{animation:ink-wipe .55s ease-out}
-    #hint.visible::after{animation-duration:.55s}
     .inked{animation:ink-wipe .34s ease-out}
     #intro h1 span{display:inline-block;animation:letter-settle .85s cubic-bezier(.2,.7,.3,1) backwards;animation-delay:calc(var(--i)*.11s + .2s)}
     #intro .subtitle-latin{animation:ink-rise .8s ease-out .1s backwards}
@@ -305,8 +290,6 @@
       <p class="printer-line">Impressum &middot; MDCXX</p>
     </div>
   </section>
-  <div id="hint">Tap when the pricked line skims the next orbit’s rim.</div>
-  <div id="toast" aria-live="polite"></div>
   <section id="end" class="screen hidden" aria-label="Run complete">
     <div class="colophon">
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2>One more orbit.</h2>
@@ -336,7 +319,6 @@
     <button id="sound" class="utility" aria-label="Mute sound" aria-pressed="true" title="Sound">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h4l5-4v12l-5-4H4z"/><path class="sound-wave" d="M16 9c2 2 2 4 0 6m3-9c4 3 4 9 0 12"/><path class="mute-mark" d="m17 10 4 4m0-4-4 4"/></svg>
     </button>
-    <span id="chapter" class="small">I &nbsp; / &nbsp; THE QUIET</span>
     <span class="footer-tools">
     <button id="catalogue-open" class="utility" aria-label="Open the catalogue" aria-expanded="false" title="Catalogue">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z"/><path d="M12 6.4v14.2"/><path d="M7.3 8.3h2.4M7.3 11h2.4M14.3 8.3h2.4M14.3 11h2.4" stroke-width=".8"/></svg>
@@ -350,6 +332,8 @@
     </span>
   </div>
   <span id="announcement" class="sr-only" aria-live="polite"></span>
+  <!-- What the pen writes onto the chart is written here too, so a reader hears every inscription. -->
+  <span id="inscribed" class="sr-only" aria-live="polite"></span>
 </main>
 <!-- Orbit is entirely procedural. No assets, libraries, or network requests.
      Simulation uses world coordinates and a fixed step; rendering uses CSS pixels.
@@ -365,6 +349,7 @@
 <script src="glyphs.js"></script>
 <script src="reveal.js"></script>
 <script src="figures.js"></script>
+<script src="inscriptions.js"></script>
 <script src="effects.js"></script>
 <script src="frame.js"></script>
 <script src="ui.js"></script>

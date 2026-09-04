@@ -345,8 +345,10 @@ function revealFrame(layer){
 // One clip rectangle uncovers the caption glyph by glyph with a nib mark at its edge; a finished caption is
 // printed with a single fillText, exactly as before.
 function writeText(context,text,x,y,progress,options){
-  // A proof before letters carries no captions at all: the pen simply never writes them.
-  if(plainPlate())return;
+  // A proof before letters carries no captions at all: the pen simply never writes them. What the run
+  // itself has to say is not part of the engraving, so an inscription asks for `plain` and is written
+  // on every plate in the press.
+  if(plainPlate()&&!(options&&options.plain))return;
   if(progress>=1||reducedMotion){context.fillText(text,x,y);return;}
   if(progress<=0||!text)return;
   const shownGlyphs=Math.max(1,Math.ceil(progress*text.length));

@@ -487,13 +487,14 @@ function drawAmbient(dt,aim){
 function revealBand(){
   if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead')return null;
   if(H<540&&W>H)return null;
-  const y=revealAnchor();return {top:y-36,bottom:y+36};
+  const y=revealPoint().y;return {top:y-36,bottom:y+36};
 }
 // Where the chapter lettering is set: the line under the HUD band, or one of two lower lines when a planet
 // or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins,
 // so the lettering never jumps while the pen is still writing it.
 function revealAnchor(){
   if(chapterReveal.y!==undefined)return chapterReveal.y;
+  if(!world.nodes)return Math.min(H*.3,hudBand()+46);
   const base=Math.min(H*.3,hudBand()+46),reach=Math.min(95,W*.21)+30,limit=H*.62;
   let bestY=base,bestCost=Infinity;
   for(const y of [base,base+70,base+140]){
@@ -507,13 +508,31 @@ function revealAnchor(){
   }
   chapterReveal.y=bestY;return bestY;
 }
+// The name is written onto the sheet, not over it: the line chosen above is taken into world coordinates
+// the first time it is asked for, and the chart carries the lettering from there, exactly as it carries an
+// orbit. It is held back at the edge of the play channel rather than allowed to print into the margin, so
+// a fast ascent slides it to the foot of the sheet and it fades there.
+function revealPoint(){
+  const compact=H<540&&W>H;
+  if(chapterReveal.wx===undefined){
+    const x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor();
+    chapterReveal.wx=(x-W*.5-plateShift.x)/scale;
+    chapterReveal.wy=(y-plateShift.y)/scale+world.cameraY;
+  }
+  const reach=Math.min(95,W*.21)+16,inner=frameBand()*.92+8;
+  return {
+    x:clamp(sx(chapterReveal.wx),Math.min(W*.5,inner+reach),Math.max(W*.5,W-inner-reach)),
+    y:clamp(sy(chapterReveal.wy),hudBand()+40,H-footerBand()-34),
+    compact
+  };
+}
 function drawChapterReveal(dt){
   if(chapterReveal.age>=4.2||world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
   const t=chapterReveal.age,alpha=clamp(Math.min(t/.55,(4.2-t)/1.2),0,1);
   // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
-  // channel underneath it and above the toast line at 29% of the height, so the two never share a row.
-  const compact=H<540&&W>H,x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor(),rise=reducedMotion?0:(1-Math.min(t,1))*5;
+  // channel underneath it, and rides the sheet from there.
+  const place=revealPoint(),compact=place.compact,x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
   {
     // The lettering is pulled on a small leaf of its own: one soft pass of the sheet's ground, feathered to
