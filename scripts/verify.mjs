@@ -13,6 +13,16 @@ assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect
 assert.equal(segmentCircle(-100,20,100,20,0,0,10),null);
 assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
 
+// Tiro's wider pressure asks less precise timing to land a smooth tangent transfer: the windowMult
+// argument widens the band around the target's rim that counts as perfect, and the guide and real
+// flight both read it from the world's own perfectMult, so a flight passing just outside the drawn
+// window at Classic's ×1 reads perfect once Tiro's ×1.35 is in effect.
+{
+  const n={x:0,y:0,vx:0,vy:0,amp:0,r:100,cap:130},p={x:125,y:-500},v={vx:0,vy:200};
+  assert.equal(transferContact(p,v,n,0,10).perfect,false,'125 falls outside the drawn ±20 rim window');
+  assert.equal(transferContact(p,v,n,0,10,1.35).perfect,true,'The same flight is perfect inside the widened window');
+}
+
 // Black-hole flybys bend close, slow flights most strongly while preserving
 // the player's selected speed. The field ends cleanly outside its drawn range.
 function flyby(offset,speed){
