@@ -171,6 +171,9 @@ function renderCatalogue(){
     for(const item of cosmeticItems(group.kind))html+=catalogueRow(item,group.kind);
     html+='</ul></section>';
   }
+  html+='<section class="cat-group"><h3>Named feats<span class="cat-latin">Insignia</span></h3><ul>';
+  for(const entry of UNLOCKS)if(entry.kind==='medal')html+=catalogueRow(entry,null);
+  html+='</ul></section>';
   html+='<section class="cat-group"><h3>The engraver<span class="cat-latin">Sculptor</span></h3><ul>';
   for(const id of ['delineavit','exlibris'])html+=catalogueRow(UNLOCK_BY_ID[id],null);
   html+='</ul>';

@@ -134,7 +134,25 @@ const UNLOCKS=[
   {id:'delineavit',kind:'credit',name:'Engraver’s credit',latin:'Delineavit',stat:'runs',threshold:50,
     describe:()=>'Play 50 runs'},
   {id:'exlibris',kind:'stamp',name:'Ex libris stamp',latin:'Ex libris',test:l=>Object.keys(DARKNESS_MULT).every(key=>(l.personalBests[key]||0)>0),
-    describe:()=>`Score on ${DIFFICULTY_LABELS.relaxed}, ${DIFFICULTY_LABELS.classic} and ${DIFFICULTY_LABELS.hardcore}`}
+    describe:()=>`Score on ${DIFFICULTY_LABELS.relaxed}, ${DIFFICULTY_LABELS.classic} and ${DIFFICULTY_LABELS.hardcore}`},
+  // The atlas's eight named feats, struck as medals: each is earned the first time the ledger has ever
+  // recorded that observation, lifetime, keyed to the same OBSERVATIONS entry the sheet inscribes.
+  {id:'perfecti',kind:'medal',name:'Three perfect transfers',latin:'Tres Perfecti',test:l=>(l.observations.perfectThree||0)>0,
+    describe:()=>'Make three perfect transfers in a row'},
+  {id:'quinque',kind:'medal',name:'Five orbits skipped',latin:'Saltus Quinque',test:l=>(l.observations.skipFive||0)>0,
+    describe:()=>'Skip five orbits in one flight'},
+  {id:'summa',kind:'medal',name:'The chart’s top speed',latin:'Velocitas Summa',test:l=>(l.observations.maxSpeed||0)>0,
+    describe:()=>'Reach the chart’s top speed'},
+  {id:'periculum',kind:'medal',name:'A graze at full speed',latin:'Periculum',test:l=>(l.observations.graze||0)>0,
+    describe:()=>'Graze a black hole at full speed'},
+  {id:'pura',kind:'medal',name:'A perfect constellation',latin:'Linea Pura',test:l=>(l.observations.pureChart||0)>0,
+    describe:()=>'Trace a constellation in perfect transfers alone'},
+  {id:'altitudo',kind:'medal',name:'The fortieth row',latin:'Altitudo',test:l=>(l.observations.fortyRows||0)>0,
+    describe:()=>'Reach row 40'},
+  {id:'vigilia',kind:'medal',name:'Three minutes aloft',latin:'Vigilia',test:l=>(l.observations.threeMinutes||0)>0,
+    describe:()=>'Survive three minutes in one run'},
+  {id:'rectus',kind:'medal',name:'A right angle of arrival',latin:'Angulus Rectus',test:l=>(l.observations.rightAngle||0)>0,
+    describe:()=>'Land a transfer within a degree and a half of square'}
 ];
 const UNLOCK_BY_ID={};for(const entry of UNLOCKS)UNLOCK_BY_ID[entry.id]=entry;
 function unlockMet(entry,l=ledger){

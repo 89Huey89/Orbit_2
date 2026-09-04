@@ -777,15 +777,24 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       ['bayer',{constellations:{'THE LYRE':9,'THE SAIL':9}},false],['bayer',{constellations:{'THE LYRE':10}},true],
       ['bode',{constellations:{'THE LYRE':24}},false],['bode',{constellations:{'THE LYRE':25}},true],
       ['delineavit',{runs:{classic:49}},false],['delineavit',{runs:{classic:30,relaxed:20}},true],
-      ['exlibris',{personalBests:{relaxed:10,classic:10}},false],['exlibris',{personalBests:{relaxed:10,classic:10,hardcore:10}},true]
+      ['exlibris',{personalBests:{relaxed:10,classic:10}},false],['exlibris',{personalBests:{relaxed:10,classic:10,hardcore:10}},true],
+      ['perfecti',{observations:{}},false],['perfecti',{observations:{perfectThree:1}},true],
+      ['quinque',{observations:{}},false],['quinque',{observations:{skipFive:1}},true],
+      ['summa',{observations:{}},false],['summa',{observations:{maxSpeed:1}},true],
+      ['periculum',{observations:{}},false],['periculum',{observations:{graze:1}},true],
+      ['pura',{observations:{}},false],['pura',{observations:{pureChart:1}},true],
+      ['altitudo',{observations:{}},false],['altitudo',{observations:{fortyRows:1}},true],
+      ['vigilia',{observations:{}},false],['vigilia',{observations:{threeMinutes:1}},true],
+      ['rectus',{observations:{}},false],['rectus',{observations:{rightAngle:1}},true]
     ];
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,23,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,31,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
     const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
-      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true});
+      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true,
+      observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});
     assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
   }
   // The living pen: the first row of a fresh chart is begun the moment the sheet is drawn and every mark
@@ -981,6 +990,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     const page=element('catalogue-body').innerHTML;
     assert(page.includes('Orbits captured')&&page.includes('Time in the chart'),'The catalogue prints the ledger\'s figures');
     for(const group of context.test.COSMETIC_KINDS)assert(page.includes(group.title),'The catalogue lists '+group.title);
+    assert(page.includes('Named feats')&&page.includes('Insignia'),'The catalogue lists the named feats as medals');
     assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
     if(!seededLedger){
       assert(page.includes('cat-row locked')&&page.includes('Capture 1,000 orbits in all'),'A locked entry is a blank rule with its condition');
@@ -1185,7 +1195,8 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
 // unlocked half of every screen is exercised as well as the empty one.
 const FULL_LEDGER=JSON.stringify({captures:9000,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
   deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:8,maxSpeedSlings:400,runs:{classic:140,relaxed:6,hardcore:20},
-  playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},observations:{threeMinutes:4},allFourInOneRun:true});
+  playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},
+  observations:{perfectThree:6,skipFive:5,maxSpeed:3,graze:2,pureChart:2,fortyRows:9,threeMinutes:4,rightAngle:12},allFourInOneRun:true});
 const layouts=[
   runtime(390,844),
   runtime(430,932,true,true),
