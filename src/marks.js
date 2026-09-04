@@ -9,6 +9,7 @@
 definePlate('marks',{
   night:{
     node:'209,190,146',nodeDrift:'148,180,177',nodeFading:'205,159,122',nodeGold:'226,195,133',nodeShield:'150,196,214',
+    nodeRelaxed:'158,206,148',nodeHardcore:'224,98,74',
     connection:'177,192,183',
     constellationLine:'209,189,145',constellationComplete:'218,199,156',constellationStar:'218,196,147',
     constellationFillLit:'rgba(231,212,169,.9)',constellationFillDark:'#111b22',
@@ -27,6 +28,7 @@ definePlate('marks',{
   },
   paper:{
     node:'58,42,28',nodeDrift:'52,84,120',nodeFading:'166,58,40',nodeGold:'150,100,32',nodeShield:'56,104,134',
+    nodeRelaxed:'62,104,84',nodeHardcore:'140,30,20',
     connection:'96,74,52',
     constellationLine:'150,100,32',constellationComplete:'176,118,38',constellationStar:'150,100,32',
     constellationFillLit:'rgba(176,118,38,.88)',constellationFillDark:'#e7dabd',

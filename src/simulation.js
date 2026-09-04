@@ -5,6 +5,15 @@
 // BEGIN SIMULATION
 const TAU = Math.PI * 2;
 const BASE_SPEED = 150, MAX_SPEED = 360, STAR_GAIN = 90;
+// The opening orbit, held only while the difficulty choice is pending, is flown at a gentler pace
+// than ordinary play so a new player has time to read all three targets before committing to one.
+const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
+// Display names for the three pressures, in the atlas's own Latin voice — TIRO the raw recruit,
+// ADEPTUS the one who has attained (the alchemist's own rank for a practitioner), MAGISTER the
+// master — rather than a modern difficulty label. The stored/internal values (relaxed/classic/
+// hardcore) are unchanged so existing saves, personal bests and the pressure multiplier lookup all
+// keep working; only the printed word changes.
+const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER'};
 const FLIGHT_STEP = 1/120;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -174,9 +183,10 @@ function arrivalAim(n,contact,distance,vx,vy) {
 }
 
 class OrbitWorld {
-  // offerDifficulty spawns three parallel opening targets — RELAXED, CLASSIC, HARDCORE — in place
-  // of the single first node; whichever one the player captures sets the run's difficulty. Off by
-  // default so every existing fixture and fixed layout keeps its ordinary single-node opening.
+  // offerDifficulty spawns three parallel opening targets — relaxed, classic, hardcore internally,
+  // printed as TIRO, ADEPTUS, MAGISTER (see DIFFICULTY_LABELS) — in place of the single first node;
+  // whichever one the player captures sets the run's difficulty. Off by default so every existing
+  // fixture and fixed layout keeps its ordinary single-node opening.
   constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false) {
     this.random = seeded(seed); this.seed = seed; this.emit = emit;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
@@ -196,7 +206,7 @@ class OrbitWorld {
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
-    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false};
+    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false};
     this.positionPlayer();
     if (offerDifficulty) this.spawnDifficultyPaths(); else this.ensureAhead();
   }
@@ -349,6 +359,9 @@ class OrbitWorld {
     if(n.difficultyChoice){
       this.nodes=this.nodes.filter(q=>q===n||!q.difficultyChoice);
       this.difficultyPending=false;this.lastMain=n;
+      // The gentler opening pace was only ever meant to ease aiming among the three targets;
+      // ordinary pacing begins the moment the choice is made, whatever speed the capture landed at.
+      p.speed=BASE_SPEED;
       this.emit('difficulty',{value:n.difficultyChoice});
     }
     this.positionPlayer();
@@ -418,7 +431,9 @@ class OrbitWorld {
     }
     const p=this.player;
     if(this.state==='ready'){p.angle+=p.dir*dt*.78;this.positionPlayer();return;}
-    this.elapsed+=dt;
+    // The rising dark must not creep up while the difficulty choice is still pending: the player is
+    // meant to read all three targets and aim at leisure, not race a pursuit that already started.
+    if(!this.difficultyPending)this.elapsed+=dt;
     const oldX=p.x,oldY=p.y,wasOrbiting=!!p.node;
     if(p.node){
       p.orbitTime+=dt;

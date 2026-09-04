@@ -609,7 +609,10 @@ function drawNode(n,aim){
   const pen=revealNode(n),struck=used?revealRetire(n):0;
   if(pen.t<=0)return;
   const gold=n.type==='gold',drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
-  const rgb=drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:ink.marks.node;
+  // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
+  // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
+  // plate's ordinary ink, reading as the plain, unmarked choice between the two.
+  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
@@ -622,7 +625,7 @@ function drawNode(n,aim){
     n._glow=glow;n._glowKey=glowKey;
   }
   ctx.fillStyle=n._glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
-  revealPlanet(glyph(n.seed,n.type,n.row,world.seed),n.r*scale,world.time,pen,n.seed);
+  revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed);
   if(sling&&pen.survey>0){
     const charge=active?world.charge():0,band=r*.73;
     for(let i=0;i<18;i++){
@@ -702,7 +705,7 @@ function drawNode(n,aim){
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either
     // edge, and names the pressure it sets instead of just marking the node as reachable.
     if(world.captures<2&&!active&&n.row===Math.floor(world.progress)+1){
-      const label=n.difficultyChoice?n.difficultyChoice.toUpperCase():'NEXT';
+      const label=n.difficultyChoice?DIFFICULTY_LABELS[n.difficultyChoice]:'NEXT';
       ctx.textAlign='center';ctx.font=`${Math.max(9,9*scale)}px 'IM Fell English SC','IM Fell English',Georgia,serif`;ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
     }
   }

@@ -274,8 +274,13 @@ function planetWeather(family,core,seed){
   }
   return layer.image;
 }
-function glyph(seed,type,row,runSeed){
-  const family=type==='gold'?'gold':type==='shield'?'shield':planetFamily(row,runSeed),key=seed+':'+type+':'+family;
+// The three opening difficulty targets are pinned to their own worlds instead of the row's usual
+// seeded family: a calm ocean world for Tiro, a ringed world (the plainest, most emblematic body in
+// the atlas) for Adeptus, and a volcanic world for Magister, so the choice reads at a glance before
+// its caption is even legible.
+const DIFFICULTY_FAMILY = {relaxed:'ocean', classic:'ringed', hardcore:'volcanic'};
+function glyph(seed,type,row,runSeed,difficultyChoice){
+  const family=type==='gold'?'gold':type==='shield'?'shield':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed),key=seed+':'+type+':'+family;
   if(glyphs.has(key))return glyphs.get(key);
   const paper=onPaper();
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];

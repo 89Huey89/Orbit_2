@@ -92,7 +92,7 @@ const UNLOCKS=[
   {id:'cellarius',kind:'plate',name:'Cellarius plate',latin:'Tabula Cellarii',stat:'captures',threshold:1000,
     describe:()=>'Capture 1,000 orbits in all'},
   {id:'verdigris',kind:'plate',name:'Verdigris plate',latin:'Tabula ærugine',test:l=>l.deepestHardcoreChapter>=4,
-    describe:()=>'Reach chapter IV, The Deep, at Hardcore pressure'},
+    describe:()=>`Reach chapter IV, The Deep, at ${DIFFICULTY_LABELS.hardcore} pressure`},
   {id:'foxed',kind:'plate',name:'Foxed plate',latin:'Tabula maculosa',stat:'runs',threshold:100,
     describe:()=>'Play 100 runs'},
   {id:'proof',kind:'plate',name:'Proof before letters',latin:'Ante litteras',test:l=>l.allFourInOneRun,
@@ -134,7 +134,7 @@ const UNLOCKS=[
   {id:'delineavit',kind:'credit',name:'Engraver’s credit',latin:'Delineavit',stat:'runs',threshold:50,
     describe:()=>'Play 50 runs'},
   {id:'exlibris',kind:'stamp',name:'Ex libris stamp',latin:'Ex libris',test:l=>Object.keys(DARKNESS_MULT).every(key=>(l.personalBests[key]||0)>0),
-    describe:()=>'Score on Relaxed, Classic and Hardcore'}
+    describe:()=>`Score on ${DIFFICULTY_LABELS.relaxed}, ${DIFFICULTY_LABELS.classic} and ${DIFFICULTY_LABELS.hardcore}`}
 ];
 const UNLOCK_BY_ID={};for(const entry of UNLOCKS)UNLOCK_BY_ID[entry.id]=entry;
 function unlockMet(entry,l=ledger){
