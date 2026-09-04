@@ -63,10 +63,14 @@ function syncDifficulty(){if(world)world.darknessMult=DARKNESS_MULT[activeDiffic
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));
+  $('daily-end').setAttribute('aria-pressed',String(dailyOn));
   $('daily-date').textContent=dailyOn?'Tabula diei \u00b7 '+dailyDay:'';
   $('best').textContent=currentBest();
   syncDifficulty();
 }
+// Toggled from the title screen before a run, or from the colophon after one: the run-complete screen
+// carries its own DAILY PLATE switch (see #daily-end in ui.js) precisely so the daily plate is never a
+// one-way door \u2014 tapping to try again always honours whichever plate was chosen last, standard included.
 function setDaily(on){
   dailyOn=on;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   syncDaily();

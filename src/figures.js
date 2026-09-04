@@ -570,15 +570,23 @@ function drawConstellations(){
         ctx.restore();
       }
     }
-    const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
-    if(label&&!chart.expired&&!plainPlate()&&!captionsHeld()&&(!chart.completed||chart.flash>0)){
+    // Progress toward the constellation is announced once, as permanent ink, by the "chartProgress" and
+    // "constellation" inscriptions (see event() in ui.js) pinned to the star each capture happens at.
+    // A second, live caption chasing whichever star is next would just repeat the same name in a
+    // different place every frame — the name would seem to drift as the target moved from star to star.
+    if(chart.completed&&chart.flash>0&&!chart.expired&&!plainPlate()&&!captionsHeld()){
+      const label=chart.stars[2];
       // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption does.
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
       const y=star+captionOffset(sx(label.x),star,r,46*scale);
       ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
-      ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText(chart.completed?'COMPLETE · +60':count+' / 3 STARS · +60',x,y+16);
+      ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText('COMPLETE · +60',x,y+16);
     }
-    if(world.player.node===chart.entry&&chart.main[0]&&!plainPlate()&&!captionsHeld()){
+    // Skipped where the node already carries the early-run "NEXT" caption (see drawNode in figures.js):
+    // the wide-orbit hint sits on the same main-line node right after a constellation's entry, and the
+    // two captions would otherwise print on top of each other.
+    const nextCaptioned=world.captures<2&&chart.main[0]&&chart.main[0].row===Math.floor(world.progress)+1;
+    if(world.player.node===chart.entry&&chart.main[0]&&!nextCaptioned&&!plainPlate()&&!captionsHeld()){
       const n=chart.main[0];ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
     }
     ctx.restore();
@@ -834,18 +842,9 @@ function nebulaSprite(seed,radius){
     g.fillStyle=`rgba(${p.fog},${((paper?.02:.028)+rng()*(paper?.07:.1))*fade})`;
     g.fillRect(Math.cos(a)*d*wobble,Math.sin(a)*d*.82,.5+rng()*.45,.5+rng()*.4);
   }
-  // One contour, mostly lifted: a suggestion of a boundary rather than a drawn one.
-  g.strokeStyle=`rgba(${p.fogEdge},${paper?.075:.055})`;g.lineWidth=.4;
-  {
-    const rr=r*.72;
-    g.beginPath();
-    for(let j=0;j<=30;j++){
-      const a=j/30*TAU,jr=rr*(1+Math.sin(a*2.3)*.1+(rng()-.5)*.12);
-      const px=Math.cos(a)*jr,py=Math.sin(a)*jr*.82;
-      if(j===0)g.moveTo(px,py);else if(j%3!==0)g.moveTo(px,py);else g.lineTo(px,py);
-    }
-    g.stroke();
-  }
+  // One contour, mostly lifted: a suggestion of a boundary rather than a drawn one. Cut with the same
+  // burin that engraves every other stroke on the plate, so the mist reads as ink and not a plotted curve.
+  burinArc(g,0,0,r*.72,0,TAU,p.fogEdge,paper?.075:.055,.4,seed+31,{flatten:.82,segments:20,skips:9,wobble:.5});
   const sprite={canvas:c,size};
   nebulaSprites.set(key,sprite);
   if(nebulaSprites.size>10)nebulaSprites.delete(nebulaSprites.keys().next().value);
