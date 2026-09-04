@@ -99,6 +99,9 @@ function newWorld(){
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
 function setPlaying(){
+  // A daily plate is entered in the log the moment its run begins, and only while it is the current
+  // day's: that entry is the whole of what opens a past plate to be drawn again.
+  noteDailyPlay();
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   clearInscriptions();
   $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
@@ -115,7 +118,7 @@ function showEnd(){
   const charts=world.constellationsCompleted;
   $('end-constellations').textContent=charts+' constellation'+(charts===1?'':'s')+' traced';
   $('end-observations').textContent=world.observations.map(o=>o.latin).join(', ');
-  $('end-daily').textContent=dailyOn?'Tabula diei · '+dailyDay:'';
+  $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
   const fresh=[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
@@ -197,6 +200,7 @@ function syncCatalogueMarks(){
   if(mark)mark.textContent=initials||'ORBIS';
 }
 function openCatalogue(){
+  if(ephemerisOpen)closeEphemeris();
   catalogueOpen=true;renderCatalogue();
   $('catalogue').classList.remove('hidden');$('catalogue').setAttribute('aria-hidden','false');
   $('catalogue-open').setAttribute('aria-expanded','true');
@@ -269,7 +273,7 @@ function enterFullscreen(){
   try{const request=game.requestFullscreen||game.webkitRequestFullscreen;if(request){const p=request.call(game,{navigationUI:'hide'});if(p&&p.catch)p.catch(()=>{});}}catch(_){}
 }
 function handleInput(){
-  if(catalogueOpen)return;
+  if(catalogueOpen||ephemerisOpen)return;
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing')world.release();
@@ -284,8 +288,8 @@ game.addEventListener('pointerdown',e=>{
 // Audio, so also unlock on the touch events it does recognize.
 for(const type of ['touchstart','touchend'])game.addEventListener(type,()=>audio.unlock(),{passive:true});
 window.addEventListener('keydown',e=>{
-  if(e.code==='Escape'&&catalogueOpen){e.preventDefault();closeCatalogue();return;}
-  if(catalogueOpen)return;
+  if(e.code==='Escape'&&(catalogueOpen||ephemerisOpen)){e.preventDefault();if(catalogueOpen)closeCatalogue();else closeEphemeris();return;}
+  if(catalogueOpen||ephemerisOpen)return;
   if((e.code==='Space'||e.code==='Enter')&&!e.repeat&&!e.target.closest('button')){e.preventDefault();handleInput();}
 });
 game.addEventListener('contextmenu',e=>e.preventDefault());
