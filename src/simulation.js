@@ -93,7 +93,7 @@ function nodeMotion(n,time) {
 // A grazing flight joins at closest approach, where relative velocity is
 // tangent to the orbit. Other flights retain the forgiving outer capture rim.
 // The guide and actual flight share this solver, including moving planets.
-function transferContact(p,v,n,time,limit) {
+function transferContact(p,v,n,time,limit,windowMult=1) {
   const speed=Math.hypot(v.vx,v.vy);if(speed<1e-8)return null;
   const sample=t=>{
     const m=nodeMotion(n,time+t),x=p.x+v.vx*t,y=p.y+v.vy*t,rx=x-m.x,ry=y-m.y;
@@ -110,7 +110,7 @@ function transferContact(p,v,n,time,limit) {
       if(Math.abs(next-closest)<1e-8){closest=next;break;}closest=next;
     }
   }
-  const near=sample(closest),rimWindow=Math.max(8,n.r*.20);
+  const near=sample(closest),rimWindow=Math.max(8,n.r*.20)*windowMult;
   const perfect=closest>0&&near.distance>=n.r-rimWindow&&near.distance<=Math.min(n.cap,n.r+rimWindow);
   let arrival=closest;
   if(!perfect){
@@ -181,12 +181,12 @@ function bendVelocity(p,hazards,dt) {
   return turn;
 }
 // Real flight and prediction share the same steering and swept contacts.
-function flightStep(p,nodes,hazards,time,dt,launchY,width) {
+function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1) {
   const turn=bendVelocity(p,hazards,dt),x=p.x,y=p.y,bx=x+p.vx*dt,by=y+p.vy*dt;
   const reach=Math.hypot(p.vx,p.vy)*dt;let hit=null,first=dt+1;
   for(const n of nodes){
     if(n.visited||n.y>launchY+90||Math.abs(n.y-y)>reach+n.cap)continue;
-    const contact=transferContact({x,y},p,n,time,dt);
+    const contact=transferContact({x,y},p,n,time,dt,windowMult);
     if(contact&&contact.time<first){first=contact.time;hit={kind:'node',n,contact};}
   }
   for(const h of hazards){
@@ -251,7 +251,7 @@ class OrbitWorld {
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
     this.perfectStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
-    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1;
+    this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
     this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,ink:1,dryAnnounced:false};
@@ -585,7 +585,7 @@ class OrbitWorld {
       let remaining=dt,time=this.time-dt;
       while(remaining>1e-9&&this.state==='playing'&&!p.node){
         const step=this.hazards.length?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
-        const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width);
+        const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width,this.perfectMult);
         p.flightTime+=result.dt;remaining-=step;time+=step;
         // The line costs ink by its length. What the step drew is spent before anything else is
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
@@ -634,7 +634,7 @@ class OrbitWorld {
     let best=null,hitAt=2;
     for(const n of this.nodes){
       if(n.visited||n.y>p.y+90)continue;
-      const hit=transferContact(p,launch,n,this.time,reach/speed);if(!hit)continue;
+      const hit=transferContact(p,launch,n,this.time,reach/speed,this.perfectMult);if(!hit)continue;
       const t=hit.time*speed/reach;if(t>=hitAt)continue;
       hitAt=t;best=arrivalAim(n,hit,hit.time*speed,launch.vx,launch.vy);
     }
@@ -701,7 +701,7 @@ class OrbitWorld {
     let time=0,distance=0,bend=0;
     while(time<duration-1e-9&&preview.steps<4096){
       const dt=freeFlightStep(p,this.hazards,duration-time),x=p.x,y=p.y;
-      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width);
+      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width,this.perfectMult);
       time+=result.dt;distance+=Math.hypot(p.x-x,p.y-y);bend+=Math.abs(result.turn);preview.steps++;
       const last=preview.points[preview.points.length-1];
       if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push({x:p.x,y:p.y,time,distance});
