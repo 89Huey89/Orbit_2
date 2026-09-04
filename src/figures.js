@@ -919,6 +919,9 @@ function drawAim(aim){
     if(len>.001){legs.push({x:px,y:py,ux:(qx-px)/len,uy:(qy-py)/len,len});total+=len;}
     px=qx;py=qy;
   }
+  // Where the nib would run out along this course, as a fraction of the drawn line. Past it the
+  // pricking is starved to almost nothing: the pen has no ink left to set it down.
+  const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   if(total>1){
     const gap=Math.max(4,8.5*scale),crawl=reducedMotion?0:(world.time*26*scale)%gap;
     let leg=0,walked=0,d=crawl;
@@ -926,7 +929,8 @@ function drawAim(aim){
       while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
       const l=legs[leg],along=clamp(d-walked,0,l.len),f=d/total;
       const x=l.x+l.ux*along,y=l.y+l.uy*along,size=(1.8+f*2.2)*scale*weight;
-      ctx.fillStyle=`rgba(${guideRgb},${lerp(nearAlpha,farAlpha,f)})`;
+      const starved=f>dryFrom?.16:1;
+      ctx.fillStyle=`rgba(${guideRgb},${lerp(nearAlpha,farAlpha,f)*starved})`;
       ctx.beginPath();
       ctx.moveTo(x-l.ux*size,y-l.uy*size);
       ctx.lineTo(x+l.ux*size*.6-l.uy*size*.5,y+l.uy*size*.6+l.ux*size*.5);
@@ -945,6 +949,17 @@ function drawAim(aim){
   }
   if(aim?.perfect&&!preview.fogged){
     ctx.strokeStyle=`rgba(${ink.marks.aimPerfectArc},.65)`;ctx.lineWidth=1.2*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();
+  }
+  // A transfer the nib cannot pay for is still aimed and still drawn: the course is barred with a
+  // copper stroke where the ink gives out, so the decision to fly it is made in full knowledge.
+  if(dryFrom<1&&total>1){
+    let leg=0,walked=0,d=dryFrom*total;
+    while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
+    const l=legs[leg],along=clamp(d-walked,0,l.len);
+    const x=l.x+l.ux*along,y=l.y+l.uy*along,bar=4.6*scale;
+    line(x-l.uy*bar,y+l.ux*bar,x+l.uy*bar,y-l.ux*bar,`rgba(${ink.marks.aimMarkBlocked},.8)`,1.1);
+    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.55)`;ctx.lineWidth=.75;
+    ctx.beginPath();ctx.arc(x,y,2.4*scale,0,TAU);ctx.stroke();
   }
   if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
   else if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=.8;ctx.strokeRect(-2.5,-2.5,5,5);}

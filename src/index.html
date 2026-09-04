@@ -9,8 +9,8 @@
   <title>Orbit</title>
   <link rel="stylesheet" href="../assets/fonts.css">
   <style>
-    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--line:rgba(207,188,141,.24);--veil:8,15,24}
-    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
+    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
     /* The derived plates keep their base plate's palette and re-ink only the accents. */
     #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091}
@@ -81,6 +81,11 @@
     .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
     .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
     .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+    /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and
+       turns copper when what is left will not carry a long transfer. */
+    #ink{height:3px;margin:7px auto 0;width:54px;padding:0;background:var(--line);opacity:0;transition:opacity .4s}
+    #game.playing #ink{opacity:.85}
+    #ink.dry{animation:breathe 1s ease-in-out infinite}
     #shield{color:var(--shield)}
     #pause{background:rgba(var(--veil),.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
     #pause strong{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
@@ -249,7 +254,7 @@
   <canvas id="sky" tabindex="0" role="application" aria-label="Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node. Captures are automatic. Nearby black holes bend your flight; follow the curved guide."></canvas>
   <header class="hud" aria-label="Score">
     <div class="brand">ORBIT</div>
-    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="shield" class="small"></div></div>
+    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="ink" class="small" aria-hidden="true"></div><div id="shield" class="small"></div></div>
     <div class="best-block"><span class="small">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">

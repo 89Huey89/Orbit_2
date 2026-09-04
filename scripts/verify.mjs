@@ -970,9 +970,13 @@ const layouts=[
 // Two pilots traverse the same course. Slow, sharp captures retain little of
 // the stars' acceleration; deliberate charging and tangent entries outrun the
 // fully developed pursuit. No artificial flight timer or automatic speed gain.
-function pressureRun(useStars,observations){
+function pressureRun(useStars,observations,inkMult=0){
   const w=new OrbitWorld(1,440,860,observations?(type,e)=>{if(type==='observation')observations.push(e);}:undefined);w.start();
-  for(let i=0;i<120*400&&w.state==='playing'&&w.progress<220;i++){
+  // The pursuit is what these two runs are about, so ink is free here and measured on its own below.
+  w.inkMult=inkMult;w.bestRelief=1;
+  // 220 rows is a longer journey than it was: the chart is now cut for the pace it expects, so the
+  // same row count covers close to twice the distance and needs the wall-clock to match.
+  for(let i=0;i<120*700&&w.state==='playing'&&w.progress<220;i++){
     const n=w.player.node;
     if(n){
       const target=w.nodes.find(q=>q.row===Math.floor(w.progress)+1&&q.type!=='gold'),aim=w.aim();
@@ -981,6 +985,7 @@ function pressureRun(useStars,observations){
       if(aim&&aim.n===target&&(useStars?aim.perfect||w.player.orbitSweep>Math.PI*3:centered)&&w.player.orbitTime>.12&&(!useStars||n.type!=='sling'||w.charge()===1))w.release();
     }
     w.update(step);
+    w.bestRelief=Math.min(w.bestRelief,w.darknessRelief());
     if(!w.player.node)assert(Math.hypot(w.player.vx,w.player.vy)<=MAX_SPEED+1e-7);
   }
   return w;
@@ -991,10 +996,31 @@ assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT 
 assert.equal(slowRun.perfectStreak,0,'An ordinary capture resets the perfect streak');
 assert.equal(slowRun.darknessRelief(),1,'Slow, centred play earns no relief from the pursuit');
 assert.equal(fastRun.state,'playing');assert(fastRun.progress>=220&&fastRun.elapsed>slowRun.elapsed);
+// The two pressures answer two different mistakes, and a run can only dodge both by flying well.
+// Dwelling on a ring buys ink but spends the time the flood is counting, so the slow, centred pilot
+// above is caught by the dark with ink still in hand. Leaving at the first opening spends distance
+// faster than any landing pays it back, so a pilot that never waits runs the nib dry instead. Flying
+// tangent entries and charging the stars pays for both and outlasts the pursuit.
+const wetRun=pressureRun(true,undefined,1);
+assert.equal(wetRun.state,'playing','Tangent entries and charged stars keep the nib paid for');
+assert(wetRun.progress>=220&&wetRun.inkLevel()>0,'A well-flown run reaches row 220 with ink to spare');
+assert(pressureRun(false,undefined,1).inkLevel()>0,'A run that dwells is never short of ink, only of time');
+function rusher(seed){
+  const w=new OrbitWorld(seed,440,860);w.start();
+  for(let i=0;i<120*400&&w.state==='playing'&&w.progress<120;i++){
+    if(w.player.node){const aim=w.aim();if(aim&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
+    w.update(step);
+  }
+  return w;
+}
+const rushed=[1,2,3,4,5,6,7,8].map(rusher);
+assert(rushed.every(w=>w.reason==='THE NIB RAN DRY'),
+  'Leaving at the first opening every time must run the nib dry: '+JSON.stringify(rushed.map(w=>w.reason)));
+assert(rushed.every(w=>w.progress<60),'The nib gives out well before a rushed run gets deep');
 // The pursuit is fully developed at 150; a long chain of perfect transfers holds it
 // 15% back, which is the whole of the relief a run can earn.
-assert.equal(fastRun.darknessRelief(),.85);
-assert.equal(fastRun.darknessSpeed(),150*.85,'A player using speed and smooth transfers can outlast the full pursuit');
+assert.equal(fastRun.bestRelief,.85,'A long chain of perfect transfers earns the whole of the relief');
+assert.equal(150*fastRun.bestRelief,127.5,'A player using speed and smooth transfers faces 127.5 where sloppy play faces the full 150');
 const reliefWorld=new OrbitWorld(21);reliefWorld.start();reliefWorld.elapsed=400;
 for(const [streak,factor] of [[0,1],[1,1],[2,1],[3,.97],[4,.94],[7,.85],[40,.85]]){
   reliefWorld.perfectStreak=streak;
@@ -1010,4 +1036,4 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 assert.equal(slowRun.observations.some(o=>o.key==='perfectThree'),false,'A run without perfect transfers cannot earn TRES PERFECTI');
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.darknessRelief()},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));

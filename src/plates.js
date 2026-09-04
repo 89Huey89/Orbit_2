@@ -39,6 +39,9 @@ let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
 const DARKNESS_MULT={relaxed:.72,classic:1,hardcore:1.35};
+// The pressure also sets how fast the nib spends its ink, so a gentler plate grants a longer
+// reach on the same charge rather than a different gauge.
+const INK_MULT={relaxed:.82,classic:1,hardcore:1.22};
 let difficulty=storage.get('orbit.difficulty.v1','classic');
 if(!(difficulty in DARKNESS_MULT))difficulty='classic';
 // The daily plate: one shared course a day, drawn from the UTC date, always at Classic
@@ -59,7 +62,7 @@ function recordBest(score){
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
 function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
-function syncDifficulty(){if(world)world.darknessMult=DARKNESS_MULT[activeDifficulty()];}
+function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));

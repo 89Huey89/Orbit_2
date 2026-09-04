@@ -342,12 +342,12 @@ function drawTrail(){
 // whatever is chosen. The comet is the plate's own mark and the default.
 // The head all marks share: a reserved highlight on paper, a dark keyline, and the nib ticks that
 // brighten with the charge held.
-function markHead(boost,charge){
+function markHead(boost,charge,inkHeld=1){
   if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(0,0,6,5,0,0,TAU);ctx.fill();}
   ctx.fillStyle=ink.dark.playerKeyline;ctx.beginPath();ctx.ellipse(0,0,5.3,4.4,0,0,TAU);ctx.fill();
   ctx.fillStyle=ink.dark.playerMid;ctx.beginPath();ctx.ellipse(-.25,.2,4.1,3.3,0,0,TAU);ctx.fill();
   ctx.fillStyle=ink.dark.playerHighlight;ctx.beginPath();ctx.ellipse(.7,-.45,2.7,2.3,0,0,TAU);ctx.fill();
-  ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.48+charge*.25})`;ctx.lineWidth=.55;
+  ctx.strokeStyle=`rgba(${ink.dark.playerNib},${(.48+charge*.25)*(.35+inkHeld*.65)})`;ctx.lineWidth=.55;
   ctx.beginPath();ctx.moveTo(5.1,0);ctx.lineTo(7.8+boost*1.5,0);ctx.moveTo(0,-4.7);ctx.lineTo(0,-6.4);ctx.moveTo(0,4.7);ctx.lineTo(0,6.1);ctx.stroke();
 }
 const markStroke=(alpha,width)=>{ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${alpha})`;ctx.lineWidth=width;};
@@ -355,7 +355,7 @@ const OBSERVER_MARKS={
   // The pen itself: the nib leads, cut to a point at the traveller's exact position and turned along
   // the flight, with the barrel and the feather trailing behind it. The vane flexes back as the flight
   // quickens and breathes a little; under reduced motion it is held still.
-  quill(length,boost,breath,charge){
+  quill(length,boost,breath,charge,inkHeld=1){
     const flex=reducedMotion?0:boost*3.6+breath*1.6,back=-length*1.05;
     // On paper a ring of reserved, unprinted sheet keeps the ink of the vane clear of the nib.
     if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4,0,7.4,5,0,0,TAU);ctx.fill();}
@@ -387,9 +387,10 @@ const OBSERVER_MARKS={
     ctx.beginPath();ctx.ellipse(-5.6,-.5,1.9,1.2,0,0,TAU);ctx.fill();
     ctx.strokeStyle=ink.dark.playerKeyline;ctx.lineWidth=.5;
     ctx.beginPath();ctx.moveTo(-.4,0);ctx.lineTo(-6.4,0);ctx.stroke();
-    // The bead of wet ink held at the point, brightening with the charge in hand.
-    ctx.fillStyle=`rgba(${ink.dark.playerNib},${.4+charge*.45})`;
-    ctx.beginPath();ctx.arc(-1.6,0,1+charge*.5,0,TAU);ctx.fill();
+    // The bead of wet ink held at the point. It brightens with the slingshot charge in hand and
+    // dries away as the nib empties, so a starved point is visible before the line ever stops.
+    ctx.fillStyle=`rgba(${ink.dark.playerNib},${(.4+charge*.45)*(.24+inkHeld*.76)})`;
+    ctx.beginPath();ctx.arc(-1.6,0,(1+charge*.5)*(.4+inkHeld*.6),0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.42+charge*.3})`;ctx.lineWidth=.55;
     ctx.beginPath();ctx.moveTo(-6.6,-3.4);ctx.lineTo(-6.6,-5.4);ctx.moveTo(-6.6,3.4);ctx.lineTo(-6.6,5.1);ctx.stroke();
     return true;
@@ -462,7 +463,7 @@ const OBSERVER_MARKS={
   }
 };function drawPlayer(){
   if(world.state==='dead')return;const p=world.player,flight=!p.node;
-  const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge();
+  const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge(),inkHeld=world.inkLevel();
   const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
   ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
   ctx.lineCap='round';ctx.lineJoin='round';
@@ -470,7 +471,7 @@ const OBSERVER_MARKS={
   // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
   // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
   const mark=OBSERVER_MARKS[cosmetic('mark')]||OBSERVER_MARKS.quill;
-  if(!mark(length,boost,breath,charge))markHead(boost,charge);
+  if(!mark(length,boost,breath,charge,inkHeld))markHead(boost,charge,inkHeld);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
     ctx.strokeStyle=`rgba(${ink.dark.playerShield},${.55*pulse})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,9,0,TAU);ctx.stroke();
