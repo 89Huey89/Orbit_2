@@ -572,12 +572,9 @@ function drawConstellations(){
     }
     const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
     if(label&&!chart.expired&&!plainPlate()&&!captionsHeld()&&(!chart.completed||chart.flash>0)){
-      // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption
-      // does; and while a toast is on the line it is pushed below the star's ring so the two never meet.
+      // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption does.
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
-      let y=star+captionOffset(sx(label.x),star,r,46*scale);
-      const band=toastBand();
-      if(band&&y-16<band.bottom&&y+18>band.top)y=star+r+34*scale;
+      const y=star+captionOffset(sx(label.x),star,r,46*scale);
       ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
       ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText(chart.completed?'COMPLETE · +60':count+' / 3 STARS · +60',x,y+16);
     }

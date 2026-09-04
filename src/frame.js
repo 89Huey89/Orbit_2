@@ -304,14 +304,34 @@ function drawHudLeaf(){
   leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.8:.62})`);leaf.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.6:.46})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
   ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
+// The running head: the plate's own number and name, engraved at the foot of the sheet where a printer
+// sets one, in the frame's ink rather than in the DOM. It names the chapter the ascent has reached, and
+// the page turn writes the same name large across the chart as the sheet changes.
+function drawRunningHead(){
+  if(!world||plainPlate())return;
+  const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
+  const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
+  const size=frameWide()?9.5:8.5,head='TAB. '+numerals[index]+'  \u00b7  '+chapters[index];
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  // The running head keeps a soft leaf of the sheet's own ground under it, feathered to nothing, so it is
+  // still read once the spilled ink has risen past the foot of the plate.
+  ctx.save();ctx.translate(W*.5,y-size*.35);ctx.scale(Math.min(W*.34,116),size*1.9);
+  const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
+  leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.72:.6})`);leaf.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+  ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+  ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  ctx.fillStyle=colors.text;
+  ctx.fillText(head,W*.5,y);
+  ctx.restore();
+}
 function render(dt){
   reveal.prime();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
-  drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
-  drawPlateFrame();drawHudLeaf();
+  drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawPlayer();drawDark(dt);ctx.restore();
+  drawPlateFrame();drawRunningHead();drawHudLeaf();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
   drawLaidPaper();

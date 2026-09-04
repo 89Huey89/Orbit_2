@@ -9,7 +9,7 @@ let W=0,H=0,DPR=1,scale=1,world,trail=[],inkPath=[],particles=[],rings=[],floate
 // Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
 // higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
 function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}
-// Height in CSS pixels of the DOM footer band across the bottom of the plate — the chapter name and the
+// Height in CSS pixels of the footer band across the bottom of the plate — the running head and the
 // utility buttons — again mirroring the CSS, with whatever safe-area inset the browser reports added to
 // it. Canvas marginalia keep above it.
 let safeBottom=-1;
@@ -32,9 +32,7 @@ function footerBand(){return Math.min(H*.42,(H<=530&&W>H?58:70)+safeAreaBottom()
 // The play channel: the width down the middle of the sheet the chart itself is drawn in. The scenery is
 // held back inside it and left fuller in the margins either side, so the moving parts read first.
 function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
-// The band the DOM toast occupies while one is showing, or null when the line is clear.
-function toastBand(){return toastLife>0?{top:H*.29-20,bottom:H*.29+15}:null;}
-let frameTime=0,accumulator=0,toastLife=0,deathShown=false,screenFlash=0,lastScore=-1;
+let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,lastScore=-1;
 let lastChapter=-1,recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
