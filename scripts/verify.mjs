@@ -493,6 +493,8 @@ drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,
       ['verdigris',{deepestHardcoreChapter:3},false],['verdigris',{deepestHardcoreChapter:4},true],
       ['foxed',{runs:{classic:60,hardcore:39}},false],['foxed',{runs:{classic:60,hardcore:40}},true],
       ['proof',{allFourInOneRun:false},false],['proof',{allFourInOneRun:true},true],
+      ['azzurra',{grazes:24},false],['azzurra',{grazes:25},true],
+      ['sepia',{constellations:{'THE LYRE':6,'THE SAIL':5}},false],['sepia',{constellations:{'THE LYRE':6,'THE SAIL':6}},true],
       ['comet',{runs:{classic:24}},false],['comet',{runs:{classic:20,relaxed:5}},true],
       ['telescope',{perfects:99},false],['telescope',{perfects:100},true],
       ['moth',{perfects:499},false],['moth',{perfects:500},true],
@@ -514,9 +516,9 @@ drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,21,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,23,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
-    const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},
+    const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true});
     assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
   }

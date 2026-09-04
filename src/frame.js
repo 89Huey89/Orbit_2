@@ -293,6 +293,17 @@ function drawPlateFrame(){
     ctx.textAlign='right';ctx.fillText(String(value),W-outerR-tickLen*.72+2,y+2.5);
   }
 }
+// The score, the pace and the flow are DOM, printed in the middle of the HUD band, and the chart scrolls up
+// beneath them. While a run is on, a soft leaf of the sheet's own ground is laid under that column,
+// feathered to nothing all round, so the figures never print straight across a planet.
+function drawHudLeaf(){
+  if(!world||world.state==='ready'||world.state==='dead')return;
+  const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=band*.64;
+  ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
+  const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
+  leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.8:.62})`);leaf.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.6:.46})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+  ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+}
 function render(dt){
   reveal.prime();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
@@ -300,7 +311,7 @@ function render(dt){
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawPlayer();drawDark(dt);ctx.restore();
-  drawPlateFrame();
+  drawPlateFrame();drawHudLeaf();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
   drawLaidPaper();

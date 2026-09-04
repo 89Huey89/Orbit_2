@@ -150,6 +150,11 @@ function engravedRing(radius,rgb,alpha,weight,seed){
   const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.translate(size/2,size/2);
+  // On paper the ring was first tried in red chalk: a broken sanguine arc a little off true, under the ink.
+  if(onPaper()){
+    const chalkR=rBucket+((seed>>>2)&1?1:-1)*.8,from=((seed>>>9)%997)/997*TAU;
+    burinArc(g,.5,-.4,chalkR,from,from+TAU*.62,ink.underdrawing.chalk,Number((aBucket*.55).toFixed(3)),Math.max(.5,weight*.9),seed^0x3d9,{segments:40,skips:6,wobble:.8});
+  }
   burinArc(g,0,0,rBucket,0,TAU,rgb,aBucket,weight,seed,{segments:72,skips:4+((seed>>>3)%3)});
   // A fainter second pass a hairline off the true circle, where the hand went round twice.
   const hairGaps=2+((seed>>>5)&1),hairR=rBucket+((seed&1)?.9:-.9),slot=TAU/hairGaps,startOffset=((seed>>>7)%997)/997*TAU;

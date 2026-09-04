@@ -183,6 +183,17 @@ function surveyNumeral(text,x,y,size,rgb,alpha,t){
   writeText(ctx,text,x,y+size*.35,t,{size});
   ctx.restore();
 }
+// The points of a construction are lettered as a geometer letters a figure — a at the centre, b at the point
+// on the ring, c at the far end of the line — in the same italic hand the note beside it is written in.
+function surveyLetter(text,x,y,size,rgb,alpha,t){
+  if(t<=0)return;
+  ctx.save();ctx.textAlign='center';ctx.fillStyle=`rgba(${rgb},${alpha})`;
+  ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  writeText(ctx,text,x,y+size*.35,t,{size,nib:false});
+  ctx.restore();
+}
+// A unit vector across a construction's line, turned to the side away from a given direction.
+function surveyAside(ux,uy,dx,dy){let px=-uy,py=ux;if(px*dx+py*dy>0){px=-px;py=-py;}return [px,py];}
 function drawSurveys(){
   if(!surveys.length||!world)return;
   const rgb=(trailInk().path||ink.dark.pathInk),gold=ink.base.gold,base=onPaper()?.6:.46;
@@ -224,6 +235,12 @@ function drawDepartureSurvey(s,t,rgb,base){
   }
   const mid=(from+to)/2,size=Math.max(8,9*scale),labelR=arcR+Math.max(8,9*scale);
   surveyNumeral(s.bearing+'°',cx+Math.cos(mid)*labelR,cy+Math.sin(mid)*labelR,size,rgb,base*.95,revealSpan(t,.72,1));
+  // (d) The letters: a at the centre and b at the release point, set across the radius on the side away
+  // from the departure line, and c beyond the arrowhead — each written as the pen reaches its point.
+  const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),off=8*scale,ls=Math.max(7.5,8.5*scale);
+  surveyLetter('a',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.25,.38));
+  surveyLetter('b',px+ax*off-s.ux*2*scale,py+ay*off-s.uy*2*scale,ls,rgb,base*.9,revealSpan(t,.3,.43));
+  surveyLetter('c',ex+s.dx*9*scale,ey+s.dy*9*scale,ls,rgb,base*.9,revealSpan(t,.6,.74));
 }
 function drawLandingSurvey(s,t,rgb,gold,base){
   const cx=sx(s.cx),cy=sy(s.cy),px=sx(s.x),py=sy(s.y);
@@ -255,7 +272,15 @@ function drawLandingSurvey(s,t,rgb,gold,base){
     const size=Math.max(8,9.5*scale),labelR=reach+Math.max(9,10*scale);
     surveyNumeral(Math.round(s.angle)+'°',px+Math.cos(bis)*labelR,py+Math.sin(bis)*labelR,size,rgb,base*.95,revealSpan(t,.62,.88));
   }
-  // (d) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
+  // (d) The letters: a at the centre, across the radius on the side away from the incoming line; b at the
+  // contact, across the incoming line on the outward side; c at the far end of the incoming line.
+  {
+    const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),[bx,by]=surveyAside(s.dx,s.dy,-s.ux,-s.uy),off=8*scale,ls=Math.max(7.5,8.5*scale);
+    surveyLetter('a',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
+    surveyLetter('b',px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
+    surveyLetter('c',px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
+  }
+  // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
   const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
   const lines=[];
   if(s.square)lines.push(['ANGULUS RECTUS · +'+s.squareBonus,gold]);
@@ -595,6 +620,15 @@ function marginaliaGloss(fy,gloss){
 // The Leviathan surfaces slowly and periodically at his own place along the edge, and the gloss
 // drifts with the flood. Both stand still when the run is paused or reduced motion is requested, and
 // both stay above the footer band however high the ink has risen.
+// The gloss keeps off the chart: where it would drift across an orbit ring or a hazard it fades to nothing
+// over a short reach and comes back once it is clear, so it never prints through a ring in the play channel.
+function glossClearance(x,y,w,h){
+  let clear=1;
+  const near=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-(x+w*.5))-w*.5),dy=Math.max(0,Math.abs(py-(y+h*.5))-h*.5);return Math.hypot(dx,dy)-r;};
+  for(const n of world.nodes){const ny=sy(n.y);if(ny<y-220||ny>y+h+220)continue;clear=Math.min(clear,near(sx(n.x),ny,(n.cap||n.r)*scale+6*scale)/(16*scale));}
+  for(const hz of world.hazards){const hy=sy(hz.y);if(hy<y-320||hy>y+h+320)continue;clear=Math.min(clear,near(sx(hz.x),hy,hz.r*scale+14*scale)/(16*scale));}
+  return clamp(clear,0,1);
+}
 function drawDarkMarginalia(fy,time,alpha){
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
   const floor=marginaliaFloor(),line=Math.min(fy,floor);
@@ -614,9 +648,10 @@ function drawDarkMarginalia(fy,time,alpha){
   const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
   const gy=marginaliaGloss(fy,gloss).y;
   if(gy+gloss.h<=0)return;
-  ctx.save();ctx.globalAlpha=alpha*.5;
+  const clear=glossClearance(gx,gy,gloss.w,gloss.h);if(clear<=0)return;
+  ctx.save();ctx.globalAlpha=alpha*.5*clear;
   ctx.drawImage(gloss.canvas,gx,gy,gloss.w,gloss.h);
-  if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
+  if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief*clear;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
   ctx.restore();
 }
 function drawDark(dt=0){

@@ -31,6 +31,35 @@ function dressSheet(sheet){
       patch.addColorStop(0,`rgba(96,168,132,${.03+rng()*.055})`);patch.addColorStop(1,'rgba(96,168,132,0)');
       g.fillStyle=patch;g.fillRect(x-r,y-r,r*2,r*2);
     }
+  }else if(plateName==='azzurra'){
+    // A blue-grey ground prepared over the sheet: an uneven wash, pale fibres lying every way, and a
+    // soft darkening toward the edges where the preparation pooled.
+    for(let i=0;i<18;i++){
+      const x=rng()*W,y=rng()*H,r=(.1+rng()*.3)*Math.max(W,H);
+      const patch=g.createRadialGradient(x,y,0,x,y,r);
+      patch.addColorStop(0,`rgba(${rng()<.5?'70,88,106':'150,164,174'},${.03+rng()*.06})`);patch.addColorStop(1,'rgba(90,108,124,0)');
+      g.fillStyle=patch;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+    for(let i=0;i<380;i++){
+      const x=rng()*W,y=rng()*H,a=rng()*TAU,l=2+rng()*9;
+      g.strokeStyle=`rgba(${rng()<.55?'236,232,220':'62,78,94'},${.04+rng()*.1})`;g.lineWidth=.3+rng()*.5;
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();
+    }
+    const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.3,W*.5,H*.5,Math.max(W,H)*.75);
+    edge.addColorStop(0,'rgba(60,76,92,0)');edge.addColorStop(1,'rgba(60,76,92,.3)');
+    g.fillStyle=edge;g.fillRect(0,0,W,H);
+  }else if(plateName==='sepia'){
+    // A sheet that has taken wash after wash of the one brown: broad dilute pools with a darker deposited
+    // rim, and the whole toned a little toward the edges.
+    for(let i=0;i<12;i++){
+      const x=rng()*W,y=rng()*H,r=(.08+rng()*.26)*Math.max(W,H);
+      const pool=g.createRadialGradient(x,y,0,x,y,r);
+      pool.addColorStop(0,`rgba(120,84,48,${.03+rng()*.05})`);pool.addColorStop(.86,`rgba(120,84,48,${.02+rng()*.03})`);pool.addColorStop(.96,`rgba(104,70,36,${.06+rng()*.06})`);pool.addColorStop(1,'rgba(104,70,36,0)');
+      g.fillStyle=pool;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+    const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.3,W*.5,H*.5,Math.max(W,H)*.74);
+    edge.addColorStop(0,'rgba(96,64,32,0)');edge.addColorStop(1,'rgba(96,64,32,.22)');
+    g.fillStyle=edge;g.fillRect(0,0,W,H);
   }else if(plateName==='foxed'){
     // Another century in a damp room: heavy foxing, a few deep stains, and a darkened edge.
     for(let i=0;i<240;i++){
@@ -185,6 +214,9 @@ definePlate('planets',{
     shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}  // dull Prussian
   }
 });
+// The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived
+// plates, whatever the press makes of it.
+definePlate('underdrawing',{night:{chalk:'214,116,88'},paper:{chalk:'168,74,56'}});
 const planetPalettes={};
 for(const family in PLATES.night.planets)Object.defineProperty(planetPalettes,family,{enumerable:true,get:()=>ink.planets[family]});
 

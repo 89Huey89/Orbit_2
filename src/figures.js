@@ -558,7 +558,7 @@ function drawConstellations(){
     // The chart's name is engraved round the rim of its entry star for as long as the route is live.
     if(!chart.expired){
       const e=chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
-      if(ey>-80&&ey<H+80){
+      if(ey>-80&&ey<H+80&&!captionsHeld()){
         // The name is set round the top of the rim, and turns to the bottom of it — the same flip the node
         // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
         const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
@@ -571,7 +571,7 @@ function drawConstellations(){
       }
     }
     const label=chart.completed?chart.stars[2]:chart.stars.find(n=>!n.visited);
-    if(label&&!chart.expired&&!plainPlate()&&(!chart.completed||chart.flash>0)){
+    if(label&&!chart.expired&&!plainPlate()&&!captionsHeld()&&(!chart.completed||chart.flash>0)){
       // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption
       // does; and while a toast is on the line it is pushed below the star's ring so the two never meet.
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
@@ -581,7 +581,7 @@ function drawConstellations(){
       ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
       ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText(chart.completed?'COMPLETE · +60':count+' / 3 STARS · +60',x,y+16);
     }
-    if(world.player.node===chart.entry&&chart.main[0]&&!plainPlate()){
+    if(world.player.node===chart.entry&&chart.main[0]&&!plainPlate()&&!captionsHeld()){
       const n=chart.main[0];ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
     }
     ctx.restore();
@@ -590,6 +590,9 @@ function drawConstellations(){
 // How far either side of the middle the DOM HUD's centre column — the score, the pace and the flow — can
 // reach. A caption printed inside it has to keep below the whole HUD band rather than merely inside the frame.
 const HUD_TEXT_HALF=150;
+// The frontispiece is its own leaf: while the run is still to be dealt, the chart beneath it is printed
+// without a caption on it, so nothing the pen would letter can show through the title cartouche.
+const captionsHeld=()=>world.state==='ready';
 // Captions ride above their planet, but flip underneath it when the node sits so high that the text would
 // cross the frame's inner rule or run into the DOM score block in the middle of the HUD band. Returns the
 // y offset in node-local coordinates, where 0 is the planet's centre.
@@ -634,7 +637,7 @@ function drawNode(n,aim){
     for(const a of [0,Math.PI]){
       ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
     }
-    if(!used){
+    if(!used&&!captionsHeld()){
       ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
       const pace=world.speedMultiplier().toFixed(1);
       const caption=active?(p.speed>=MAX_SPEED?'MAX SPEED  ·  ×'+pace:charge>=1?'SPEED HELD  ·  ×'+pace:'BUILDING SPEED  ·  ×'+pace):'SLINGSHOT STAR';
@@ -667,7 +670,7 @@ function drawNode(n,aim){
   // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
   // player is not holding, so it can never cross the release marks, the perfect window, or the fading
   // ring, which are drawn on the current orbit alone.
-  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%4===0&&r>15){
+  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
     ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
@@ -694,7 +697,7 @@ function drawNode(n,aim){
       ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
     }
   }
-  if(!used){
+  if(!used&&!captionsHeld()){
     ctx.font=`${Math.max(9,10*scale)}px 'IM Fell English',Georgia,serif`;ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
     const mark=gold?'+15':shield?'SHIELD':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
