@@ -287,9 +287,236 @@ const glyphKey=(seed,type,row,runSeed,difficultyChoice)=>seed+':'+type+':'+plane
 // one. Two things keep that off the frame: a planet still on the sheet is never the one evicted (the
 // cache is kept in the order it was last read, not the order it was cut), and one planet still to come
 // is cut per frame, well before the pen reaches it — see prewarmGlyph().
+// ---------- The observatory plate: rendered specimens ----------
+// The engraved plates above describe a body with marks — a keyline, hatching toward the limb, a wash. A
+// rendered one describes it with light instead, and the split between the cached layers is what makes that
+// affordable: `surface` carries the albedo alone and turns, `front` carries the lighting and does not, so
+// the terminator stays where the sun is while the world rotates under it. Nothing is computed per frame
+// and drawPlanet is never told which kind of specimen it was handed.
+const MODERN_LIGHT={x:-.42,y:-.46};
+// Worlds that hold an atmosphere scatter light around their own limb; a bare rock does not.
+const MODERN_AIR={ocean:1,ice:.72,ringed:.88,storm:1,dune:.4,volcanic:.22,crater:0,gold:.6,shield:.9,reflector:.9,inkwell:.6};
+function modernNoise(g,core,rng,count,tone,alpha){
+  for(let i=0;i<count;i++){
+    const a=rng()*TAU,d=Math.sqrt(rng())*core,r=.3+rng()*1.5;
+    g.fillStyle=`rgba(${tone},${alpha*rng()})`;g.beginPath();g.ellipse(Math.cos(a)*d,Math.sin(a)*d,r,r*(.5+rng()*.7),rng()*TAU,0,TAU);g.fill();
+  }
+}
+// A band of latitude on a gas giant: the disc is filled in horizontal strips whose edges are pushed about
+// by a couple of sine terms, so the belts wander the way real ones do instead of ruling straight across.
+function modernBands(g,core,rng,palette,turbulent){
+  const count=13+Math.floor(rng()*7),phase=rng()*TAU;
+  for(let i=0;i<count;i++){
+    const t0=-1+2*i/count,t1=-1+2*(i+1)/count,tone=i%2?palette.light:palette.body;
+    g.fillStyle=tone;g.globalAlpha=.3+rng()*.4;
+    g.beginPath();g.moveTo(-core,core*t0);
+    for(let k=0;k<=10;k++){
+      const u=k/10,y=core*(t0+(t1-t0)*0)+Math.sin(u*6+phase+i)*core*(turbulent?.05:.022);
+      g.lineTo(-core+u*core*2,core*t0+y-core*t0);
+    }
+    g.lineTo(core,core*t1);
+    for(let k=10;k>=0;k--){
+      const u=k/10,y=Math.sin(u*5-phase+i*1.3)*core*(turbulent?.05:.022);
+      g.lineTo(-core+u*core*2,core*t1+y);
+    }
+    g.closePath();g.fill();
+  }
+  g.globalAlpha=1;
+  // The one storm every such world is known by, drawn as a set of nested ovals that shear as they go in.
+  const sx=-core*.2+rng()*core*.3,sy=core*(.1+rng()*.3),sw=core*(turbulent?.36:.22),sh=sw*.52;
+  for(let i=10;i>0;i--){
+    const k=i/10;
+    g.fillStyle=i>7?palette.dark:i>3?palette.body:palette.light;g.globalAlpha=.1+(1-k)*.24;
+    g.beginPath();g.ellipse(sx+Math.sin(i*.7)*sw*.06,sy,sw*k,sh*k,-.14,0,TAU);g.fill();
+  }
+  g.globalAlpha=1;
+}
+// The albedo of one world: what it would look like flat-lit, with no sun anywhere. This is the only layer
+// that turns, so nothing here may imply a light direction.
+function modernAlbedo(g,core,family,palette,rng){
+  g.save();g.beginPath();g.arc(0,0,core,0,TAU);g.clip();
+  g.fillStyle=palette.body;g.beginPath();g.arc(0,0,core,0,TAU);g.fill();
+  if(family==='ocean'){
+    for(let i=0;i<7;i++){
+      landContour(g,(rng()-.5)*core*1.7,(rng()-.5)*core*1.8,core*(.18+rng()*.42),core*(.16+rng()*.36),rng);
+      g.fillStyle=i%3===0?'rgba(96,116,72,.82)':i%3===1?'rgba(122,128,86,.7)':'rgba(140,124,88,.6)';g.fill();
+    }
+    for(const y of [-1,1]){
+      g.fillStyle='rgba(238,246,250,.72)';g.beginPath();g.ellipse(0,core*y,core*.62,core*.2,0,0,TAU);g.fill();
+    }
+    modernNoise(g,core,rng,120,'196,220,236',.16);
+  }else if(family==='crater'){
+    for(let i=0;i<6;i++){
+      landContour(g,(rng()-.5)*core*1.4,(rng()-.5)*core*1.4,core*(.3+rng()*.4),core*(.24+rng()*.34),rng);
+      g.fillStyle=`rgba(58,56,52,${.16+rng()*.16})`;g.fill();
+    }
+    for(let i=0;i<46;i++){
+      const a=rng()*TAU,d=Math.sqrt(rng())*core*.97,x=Math.cos(a)*d,y=Math.sin(a)*d;
+      const r=core*(i<4?.11+rng()*.08:.02+rng()*.06);
+      g.fillStyle=`rgba(48,46,42,${.1+rng()*.16})`;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+      g.strokeStyle=`rgba(224,220,208,${.14+rng()*.2})`;g.lineWidth=.5;g.beginPath();g.arc(x,y,r*.94,0,TAU);g.stroke();
+      if(i<4){g.fillStyle='rgba(230,226,214,.1)';g.beginPath();g.arc(x,y,r*2.4,0,TAU);g.fill();}
+    }
+    modernNoise(g,core,rng,220,'40,38,34',.14);
+  }else if(family==='ringed'||family==='storm'){
+    modernBands(g,core,rng,palette,family==='storm');
+    modernNoise(g,core,rng,140,'255,248,232',.1);
+  }else if(family==='ice'){
+    for(let i=0;i<9;i++){
+      landContour(g,(rng()-.5)*core*1.6,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.18+rng()*.3),rng);
+      g.fillStyle=i%2?'rgba(240,250,255,.5)':'rgba(96,140,166,.3)';g.fill();
+    }
+    // Fracture lines, as they run across an ice shell: long, slightly curved, and crossing one another.
+    for(let i=0;i<22;i++){
+      const a=rng()*TAU,d=(rng()-.5)*core*1.2,cs=Math.cos(a),sn=Math.sin(a);
+      g.strokeStyle=`rgba(70,110,140,${.2+rng()*.35})`;g.lineWidth=.35+rng()*.8;
+      g.beginPath();
+      for(let k=0;k<=8;k++){
+        const t=-1+2*k/8,off=Math.sin(t*3+i)*core*.08;
+        const x=cs*t*core-sn*(d+off),y=sn*t*core+cs*(d+off);
+        if(k)g.lineTo(x,y);else g.moveTo(x,y);
+      }
+      g.stroke();
+    }
+    modernNoise(g,core,rng,150,'255,255,255',.2);
+  }else if(family==='dune'){
+    for(let i=0;i<15;i++){
+      const y=-core+i*core*2/15;
+      g.fillStyle=`rgba(${i%2?'196,124,72':'132,72,38'},${.14+rng()*.2})`;
+      g.beginPath();g.moveTo(-core,y);
+      for(let k=0;k<=8;k++)g.lineTo(-core+k*core/4,y+Math.sin(k*.9+i)*core*.05);
+      g.lineTo(core,y+core*.14);g.lineTo(-core,y+core*.14);g.closePath();g.fill();
+    }
+    // One long rift, and the dark basalt plains either side of it.
+    g.strokeStyle='rgba(58,28,14,.5)';g.lineWidth=core*.06;g.lineCap='round';
+    g.beginPath();g.moveTo(-core*.8,core*.1);g.bezierCurveTo(-core*.2,-core*.1,core*.2,core*.16,core*.82,-core*.04);g.stroke();
+    for(let i=0;i<4;i++){
+      landContour(g,(rng()-.5)*core*1.5,(rng()-.5)*core*1.5,core*(.16+rng()*.24),core*(.12+rng()*.2),rng);
+      g.fillStyle=`rgba(64,40,26,${.16+rng()*.14})`;g.fill();
+    }
+    for(const y of [-1,1]){g.fillStyle='rgba(244,240,236,.4)';g.beginPath();g.ellipse(0,core*y,core*.34,core*.13,0,0,TAU);g.fill();}
+    modernNoise(g,core,rng,180,'86,48,26',.16);
+  }else if(family==='volcanic'){
+    for(let i=0;i<8;i++){
+      landContour(g,(rng()-.5)*core*1.6,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.16+rng()*.3),rng);
+      g.fillStyle=`rgba(${i%2?'26,20,18':'62,50,44'},${.3+rng()*.3})`;g.fill();
+    }
+    modernNoise(g,core,rng,240,'18,12,10',.3);
+  }else{
+    // The pickups are not worlds and are not pretending to be: a clean body with a soft sheen across it.
+    const sheen=g.createLinearGradient(-core,-core,core,core);
+    sheen.addColorStop(0,palette.light);sheen.addColorStop(.5,palette.body);sheen.addColorStop(1,palette.dark);
+    g.fillStyle=sheen;g.globalAlpha=.7;g.beginPath();g.arc(0,0,core,0,TAU);g.fill();g.globalAlpha=1;
+    modernNoise(g,core,rng,60,'255,255,255',.12);
+  }
+  g.restore();
+}
+// A ring system as a photograph resolves it: a run of concentric annuli of differing opacity with the
+// divisions left empty between them, the far half passing behind the planet and dimmed as it goes.
+function modernRings(g,core,tilt,flatten,front,palette,rng){
+  const inner=core*1.22,outer=core*2.02;
+  g.save();g.rotate(tilt);
+  const bands=[[0,.14,.5],[.16,.34,.78],[.36,.4,.16],[.42,.7,.92],[.72,.78,.3],[.8,1,.55]];
+  for(const [a,b,strength] of bands){
+    const r0=inner+(outer-inner)*a,r1=inner+(outer-inner)*b,steps=Math.max(2,Math.round((r1-r0)/.55));
+    for(let i=0;i<steps;i++){
+      const r=r0+(r1-r0)*i/steps,fade=.5+.5*Math.sin(i*1.7+a*9);
+      g.strokeStyle=`rgba(${palette.rgb},${strength*(front?.5:.22)*(.4+fade*.6)*.5})`;
+      g.lineWidth=.7;
+      g.beginPath();g.ellipse(0,0,r,r*flatten,0,front?0:Math.PI,front?Math.PI:TAU);g.stroke();
+    }
+  }
+  g.restore();
+}
+// The lighting pass. It sits on the still layer above the turning albedo, so a single set of gradients
+// carries the whole form: the falloff away from the sun, the darkening at the limb, the crescent of light
+// on the lit edge, and — for anything holding air — the scatter that runs a little way past the limb.
+function modernLighting(g,core,family,palette,rng,tilt,flatten){
+  const lx=core*MODERN_LIGHT.x,ly=core*MODERN_LIGHT.y,air=MODERN_AIR[family]??.5;
+  g.save();g.beginPath();g.arc(0,0,core,0,TAU);g.clip();
+  // One gradient does most of the work: white where the sun stands, nothing through the middle of the
+  // sphere, and deepening to the night side as it runs off the far limb.
+  const day=g.createRadialGradient(lx,ly,core*.06,lx,ly,core*2.05);
+  day.addColorStop(0,'rgba(255,252,244,.34)');day.addColorStop(.2,'rgba(255,250,238,.1)');
+  day.addColorStop(.36,'rgba(0,0,0,0)');day.addColorStop(.6,'rgba(2,4,10,.34)');
+  day.addColorStop(.82,'rgba(1,3,8,.74)');day.addColorStop(1,'rgba(0,1,5,.93)');
+  g.fillStyle=day;g.fillRect(-core,-core,core*2,core*2);
+  // Limb darkening: even the lit half loses light where the surface turns away from the eye.
+  const limb=g.createRadialGradient(0,0,core*.6,0,0,core);
+  limb.addColorStop(0,'rgba(0,0,0,0)');limb.addColorStop(1,`rgba(2,4,9,${.3+air*.16})`);
+  g.fillStyle=limb;g.fillRect(-core,-core,core*2,core*2);
+  // The crescent of light caught on the lit edge, fading as the limb turns into the terminator.
+  const rim=g.createLinearGradient(lx*2.2,ly*2.2,-lx*2.2,-ly*2.2);
+  rim.addColorStop(0,`rgba(${palette.rgb},${.5+air*.4})`);rim.addColorStop(.42,`rgba(${palette.rgb},.08)`);rim.addColorStop(.75,`rgba(${palette.rgb},0)`);
+  g.strokeStyle=rim;g.lineWidth=1.5;g.beginPath();g.arc(0,0,core-.7,0,TAU);g.stroke();
+  // A specular return, on the bodies that have something to return it with.
+  if(family==='ocean'||family==='ice'){
+    const spec=g.createRadialGradient(lx*1.06,ly*1.06,0,lx*1.06,ly*1.06,core*.42);
+    spec.addColorStop(0,'rgba(255,255,255,.4)');spec.addColorStop(.5,'rgba(255,255,255,.09)');spec.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=spec;g.fillRect(-core,-core,core*2,core*2);
+  }
+  // Magma read through the crust, and brightest on the night side where nothing else is lit.
+  if(family==='volcanic'){
+    for(let i=0;i<7;i++){
+      const a=rng()*TAU,d=Math.sqrt(rng())*core*.8,x=Math.cos(a)*d,y=Math.sin(a)*d,r=core*(.1+rng()*.22);
+      const vent=g.createRadialGradient(x,y,0,x,y,r);
+      vent.addColorStop(0,`rgba(255,196,120,${.3+rng()*.3})`);vent.addColorStop(.4,`rgba(226,96,36,${.18+rng()*.2})`);vent.addColorStop(1,'rgba(180,40,12,0)');
+      g.fillStyle=vent;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+  }
+  // A ringed world throws its own rings across itself.
+  if(family==='ringed'){
+    g.save();g.rotate(tilt);
+    const shadow=g.createLinearGradient(0,-core*flatten*1.1,0,core*flatten*1.1);
+    shadow.addColorStop(0,'rgba(0,0,0,0)');shadow.addColorStop(.4,'rgba(0,0,0,.42)');
+    shadow.addColorStop(.6,'rgba(0,0,0,.42)');shadow.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=shadow;g.fillRect(-core,-core*flatten*1.1,core*2,core*flatten*2.2);
+    g.restore();
+  }
+  g.restore();
+  // Outside the disc: the thin shell of air the limb is seen through, brightest on the lit side.
+  if(air>.05){
+    const halo=g.createRadialGradient(0,0,core*.94,0,0,core*(1.1+air*.22));
+    halo.addColorStop(0,`rgba(${palette.rgb},${.3*air})`);halo.addColorStop(.35,`rgba(${palette.rgb},${.13*air})`);halo.addColorStop(1,`rgba(${palette.rgb},0)`);
+    g.fillStyle=halo;g.beginPath();g.arc(0,0,core*(1.1+air*.22),0,TAU);g.fill();
+  }
+}
+// Cloud decks and belt turbulence, scrolled across the body by drawPlanet exactly as the engraved
+// plates' weather is. The tile is 80 units wide and wraps, so it is drawn twice a frame and never seams.
+function modernWeather(family,core,seed,palette){
+  if(!['ocean','ringed','storm','ice'].includes(family))return null;
+  const layer=planetLayer(160),g=layer.ink,rng=seeded(seed^0x41c38),ocean=family==='ocean';
+  for(let i=0;i<(ocean?16:22);i++){
+    const x=(rng()-.5)*72,y=(rng()-.5)*core*1.8,w=ocean?7+rng()*15:14+rng()*24,h=ocean?2+rng()*4:1.4+rng()*2.6;
+    const cloud=g.createRadialGradient(x,y,0,x,y,w*.5);
+    cloud.addColorStop(0,`rgba(255,255,255,${(ocean?.34:.2)+rng()*.2})`);cloud.addColorStop(.55,`rgba(248,252,255,${.06+rng()*.1})`);cloud.addColorStop(1,'rgba(248,252,255,0)');
+    g.save();g.translate(x,y);g.scale(1,h/(w*.5));g.fillStyle=cloud;g.translate(-x,-y);
+    g.fillRect(x-w,y-w,w*2,w*2);g.restore();
+  }
+  return layer.image;
+}
+// One rendered specimen, in the layers drawPlanet already knows how to blit.
+function renderedSpecimen(family,seed){
+  const rng=seeded(seed),palette=planetPalettes[family];
+  const back=planetLayer(),surface=planetLayer(160),front=planetLayer();
+  const core=palette.size+rng()*3,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
+  if(family==='ringed')modernRings(back.ink,core,tilt,flatten,false,palette,seeded(seed^0x5b1));
+  modernAlbedo(surface.ink,core,family,palette,rng);
+  modernLighting(front.ink,core,family,palette,seeded(seed^0x9c4),tilt,flatten);
+  if(family==='ringed')modernRings(front.ink,core,tilt,flatten,true,palette,seeded(seed^0x5b1));
+  const weather=modernWeather(family,core,seed,palette);
+  for(const layer of [back.image,surface.image,front.image,weather])pressPixels(layer);
+  return {back:back.image,surface:surface.image,front:front.image,weather,embers:null,core,tilt,family,spin:palette.spin,phase:seed*.017};
+}
+// The cache is kept in the order it was last read, so the planet still on the sheet is never the one evicted.
+function cacheGlyph(key,art){
+  if(glyphs.size>=24)glyphs.delete(glyphs.keys().next().value);
+  glyphs.set(key,art);return art;
+}
 function glyph(seed,type,row,runSeed,difficultyChoice){
   const family=planetFamilyFor(type,row,runSeed,difficultyChoice),key=glyphKey(seed,type,row,runSeed,difficultyChoice);
   if(glyphs.has(key)){const held=glyphs.get(key);glyphs.delete(key);glyphs.set(key,held);return held;}
+  if(modernPlate())return cacheGlyph(key,renderedSpecimen(family,seed));
   const paper=onPaper();
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
@@ -348,8 +575,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   for(const layer of [back.image,surface.image,front.image,weather,embers])pressPixels(layer);
   const art={back:back.image,surface:surface.image,front:front.image,weather,embers,core,tilt,family,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
-  if(glyphs.size>=24)glyphs.delete(glyphs.keys().next().value);
-  glyphs.set(key,art);return art;
+  return cacheGlyph(key,art);
 }
 // One planet that has not been cut yet, taken a frame at a time from those the chart is about to
 // carry, so the work lands on a frame that has room for it rather than on the frame that needs it.

@@ -1,14 +1,14 @@
 'use strict';
 /* Orbit · src/backdrop.js
    The two sheets: aged laid paper, and indigo night with starlight. */
-function paintBackdrop(){return dressSheet(onPaper()?paintPaperBackdrop():paintNightBackdrop());}
+function paintBackdrop(){return modernPlate()?paintModernBackdrop():dressSheet(onPaper()?paintPaperBackdrop():paintNightBackdrop());}
 // A derived plate is pulled on its base plate's sheet and then dressed: the whole sheet is washed
 // toward the new ground colour, keeping every fibre, laid line and tide mark of the original beneath
 // it, and each plate adds whatever else belongs to it — gold leaf, oxidation, or another century of
 // foxing. The two base plates pass straight through untouched.
 function dressSheet(sheet){
   const style=PLATE_STYLES[plateName];
-  if(!style||!W||!H)return sheet;
+  if(!style||!W||!H||!style.wash)return sheet;
   const g=sheet.getContext('2d');
   g.save();g.setTransform(DPR,0,0,DPR,0,0);
   g.globalAlpha=style.wash??.5;g.fillStyle=ink.base.paper;g.fillRect(0,0,W,H);g.globalAlpha=1;
@@ -131,7 +131,7 @@ function paintPaperBackdrop(){
     const a=i/120*TAU,major=i%10===0,r=chartRadius,l=major?9:i%5===0?5:2.5;
     g.strokeStyle=`rgba(84,60,32,${major?.2:.12})`;g.lineWidth=major?.8:.5;
     g.beginPath();g.moveTo(Math.cos(a)*r,Math.sin(a)*r*chartFlatten);g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
-    if(major&&!plainPlate()){g.font="10px 'IM Fell English',Georgia,serif";g.fillStyle='rgba(84,60,32,.22)';g.textAlign='center';g.fillText(['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'][i/10],Math.cos(a)*(r+18),Math.sin(a)*(r+18)*chartFlatten+3);}
+    if(major&&!plainPlate()){g.font=plateFace(10);g.fillStyle='rgba(84,60,32,.22)';g.textAlign='center';g.fillText(['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'][i/10],Math.cos(a)*(r+18),Math.sin(a)*(r+18)*chartFlatten+3);}
   }
   g.restore();
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.3,W/2,H*.5,Math.max(W,H)*.74);
@@ -176,13 +176,84 @@ function paintNightBackdrop(){
     g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
     if(major&&!plainPlate()){
       g.save();g.translate(Math.cos(a)*(r+20),Math.sin(a)*(r+20)*chartFlatten);g.rotate(.48);
-      g.font="italic 12px 'IM Fell English',Georgia,serif";g.textAlign='center';g.fillStyle='rgba(207,189,146,.2)';
+      g.font=plateFace(12,'text','italic');g.textAlign='center';g.fillStyle='rgba(207,189,146,.2)';
       g.fillText(['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][i/10],0,4);g.restore();
     }
   }
   g.restore();
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.22,W/2,H*.5,Math.max(W,H)*.7);
   vignette.addColorStop(0,'rgba(3,8,15,0)');vignette.addColorStop(1,'rgba(2,6,13,.66)');g.fillStyle=vignette;g.fillRect(0,0,W,H);
+  return c;
+}
+// The observatory plate's sheet: no paper at all, but the black a long exposure actually returns, with the
+// faint band of the galaxy lying across it, two or three nebulae resolved out of it in false colour, and a
+// field of stars carrying the small bloom an optic puts around anything bright. Everything here is a
+// gradient or a dot — the sheet is painted once and cached exactly as the other two are.
+function paintModernBackdrop(){
+  const c=makeCanvas(Math.ceil(W*DPR),Math.ceil(H*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);
+  const rng=seeded(521907),far=Math.max(W,H);
+  g.fillStyle='#04060b';g.fillRect(0,0,W,H);
+  // The sky is never quite black: a cold airglow gathers toward the middle of the field.
+  const ground=g.createRadialGradient(W*.5,H*.46,0,W*.5,H*.5,far*.78);
+  ground.addColorStop(0,'rgba(24,38,60,.55)');ground.addColorStop(.55,'rgba(12,20,34,.34)');ground.addColorStop(1,'rgba(3,5,10,0)');
+  g.fillStyle=ground;g.fillRect(0,0,W,H);
+  // The galactic band, laid diagonally as a long soft wedge with dust lanes cut back out of it.
+  g.save();g.translate(W*.52,H*.5);g.rotate(-.62);
+  const band=g.createLinearGradient(0,-H*.5,0,H*.5);
+  band.addColorStop(0,'rgba(58,72,104,0)');band.addColorStop(.42,'rgba(96,112,150,.2)');
+  band.addColorStop(.5,'rgba(126,140,178,.26)');band.addColorStop(.58,'rgba(96,112,150,.2)');band.addColorStop(1,'rgba(58,72,104,0)');
+  g.fillStyle=band;g.fillRect(-far,-H*.5,far*2,H);
+  // Dust lanes: each is one radial fade stretched flat along the band, so it dies away at both ends and
+  // both edges. A rectangle of gradient would leave the two cut ends showing as straight lines.
+  for(let i=0;i<26;i++){
+    const y=(rng()-.5)*H*.62,h=8+rng()*34,x=(rng()-.5)*far*1.3,w=far*(.14+rng()*.42);
+    const lane=g.createRadialGradient(0,0,0,0,0,1);
+    lane.addColorStop(0,`rgba(4,6,12,${.24+rng()*.3})`);lane.addColorStop(.55,`rgba(4,6,12,${.1+rng()*.14})`);lane.addColorStop(1,'rgba(4,6,12,0)');
+    g.save();g.translate(x,y);g.rotate((rng()-.5)*.16);g.scale(w*.5,h);
+    g.fillStyle=lane;g.fillRect(-1,-1,2,2);g.restore();
+  }
+  g.restore();
+  // Emission nebulae, in the false colour a narrowband composite assigns them.
+  for(const cloud of [[.24,.26,'168,70,96'],[.78,.7,'56,120,168'],[.64,.2,'128,86,164'],[.16,.78,'46,132,134']]){
+    const x=W*cloud[0],y=H*cloud[1],r=far*(.16+rng()*.14);
+    for(let i=0;i<9;i++){
+      const ox=x+(rng()-.5)*r*.9,oy=y+(rng()-.5)*r*.7,rr=r*(.32+rng()*.5);
+      const glow=g.createRadialGradient(ox,oy,0,ox,oy,rr);
+      glow.addColorStop(0,`rgba(${cloud[2]},${.035+rng()*.05})`);glow.addColorStop(.6,`rgba(${cloud[2]},${.012+rng()*.02})`);glow.addColorStop(1,`rgba(${cloud[2]},0)`);
+      g.fillStyle=glow;g.fillRect(ox-rr,oy-rr,rr*2,rr*2);
+    }
+  }
+  // The field itself. Most of it is unresolved: single faint pixels drawn thickest through the band.
+  g.save();g.translate(W*.52,H*.5);g.rotate(-.62);
+  for(let i=0;i<4200;i++){
+    const x=(rng()-.5)*far*2.2,y=(rng()+rng()+rng()-1.5)*H*.5;
+    g.fillStyle=`rgba(${rng()<.3?'196,214,244':'232,238,246'},${.06+rng()*.34})`;
+    g.fillRect(x,y,.6+rng()*.5,.6+rng()*.5);
+  }
+  g.restore();
+  for(let i=0;i<620;i++){
+    const x=rng()*W,y=rng()*H;
+    g.fillStyle=`rgba(226,236,248,${.05+rng()*.3})`;g.fillRect(x,y,.7,.7);
+  }
+  // The brighter stars carry a small halo and, past a certain magnitude, the four-armed spike a spider
+  // in front of the mirror puts on them. Colour runs from cool to warm with an even hand.
+  for(let i=0;i<86;i++){
+    const x=rng()*W,y=rng()*H,mag=rng(),r=.7+mag*mag*2.6;
+    const tone=mag>.86?'255,224,190':mag>.6?'246,246,242':'202,222,255';
+    const halo=g.createRadialGradient(x,y,0,x,y,r*7);
+    halo.addColorStop(0,`rgba(${tone},${.2+mag*.34})`);halo.addColorStop(.32,`rgba(${tone},${.05+mag*.1})`);halo.addColorStop(1,`rgba(${tone},0)`);
+    g.fillStyle=halo;g.fillRect(x-r*7,y-r*7,r*14,r*14);
+    g.fillStyle=`rgba(255,255,255,${.55+mag*.45})`;g.beginPath();g.arc(x,y,r*.62,0,TAU);g.fill();
+    if(mag>.72){
+      const reach=r*(5+mag*7);
+      g.strokeStyle=`rgba(${tone},${.1+mag*.16})`;g.lineWidth=.55;
+      g.beginPath();g.moveTo(x-reach,y);g.lineTo(x+reach,y);g.moveTo(x,y-reach);g.lineTo(x,y+reach);g.stroke();
+    }
+  }
+  // The corners fall away, as they do on any real field flattened at the centre.
+  const vignette=g.createRadialGradient(W*.5,H*.46,Math.min(W,H)*.24,W*.5,H*.5,far*.72);
+  vignette.addColorStop(0,'rgba(2,4,9,0)');vignette.addColorStop(1,'rgba(1,2,6,.72)');
+  g.fillStyle=vignette;g.fillRect(0,0,W,H);
   return c;
 }
 const planetFamilies=['ocean','crater','ringed','ice','dune','volcanic','storm'];
@@ -216,6 +287,23 @@ definePlate('planets',{
     shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}, // dull Prussian
     reflector:{light:'#d9cfe0',body:'#a390ac',dark:'#3c2c40',rgb:'92,58,120', size:15,spin:.006}, // deep plum
     inkwell: {light:'#d8c4a0',body:'#8a6440',dark:'#301f10',rgb:'107,74,44', size:15,spin:.006}  // dark umber
+  },
+  // The observatory plate keeps the sizes and spins of the bodies it inherits and nothing else: a rendered
+  // world is lit rather than hatched, so it needs the colour it actually is, not the pigment a colourist
+  // reached for. `body` is the albedo the sphere is filled with, `light` the tone the lit limb is carried
+  // to, `dark` the night side, and `rgb` the light the atmosphere scatters around the rim.
+  modern:{
+    ocean:   {light:'#a8d4ee',body:'#2f6494',dark:'#08182c',rgb:'116,178,226'}, // water and cloud
+    crater:  {light:'#e0dacb',body:'#8c8779',dark:'#211f1b',rgb:'196,190,178'}, // bare regolith
+    ringed:  {light:'#f2debb',body:'#c6a670',dark:'#3a2c17',rgb:'230,204,158'}, // pale ammonia bands
+    ice:     {light:'#eef7fc',body:'#9dc3d6',dark:'#1e3644',rgb:'196,226,242'}, // rime and old ice
+    dune:    {light:'#eeb488',body:'#ac6539',dark:'#341a0d',rgb:'218,142,94'},  // iron oxide sand
+    volcanic:{light:'#d0774a',body:'#4c3b33',dark:'#140c09',rgb:'214,100,52'},  // basalt over magma
+    storm:   {light:'#f0dfc8',body:'#bf9e80',dark:'#3c2c20',rgb:'226,198,168'}, // a banded giant
+    gold:    {light:'#ffe9a8',body:'#d8ab48',dark:'#3e2f0e',rgb:'246,206,116'},
+    shield:  {light:'#cdeeff',body:'#4e9dc4',dark:'#12303f',rgb:'128,208,242'},
+    reflector:{light:'#e6d2ff',body:'#8f6bc0',dark:'#2a1c40',rgb:'196,164,246'},
+    inkwell: {light:'#f2cf9a',body:'#c07f3c',dark:'#3a2410',rgb:'232,174,104'}
   }
 });
 // The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived

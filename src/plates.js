@@ -241,7 +241,14 @@ const PLATE_STYLES={
   // Prussian blue — every body a sepia wash under a sepia line on the cream of the sheet.
   sepia:{base:'paper',wash:.3,pixels:true,tint:topped(duotone([40,28,18],[138,104,70],[231,218,189]),.86)},
   // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it.
-  proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])}
+  proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])},
+  // The observatory plate: the same chart as a modern survey would publish it. The sheet goes to the
+  // black of a sensor rather than the blue of a night sky and every engraved line is re-inked as a cool
+  // instrument hairline, but the bodies themselves are no longer printed — they are rendered, lit from
+  // one quarter and left in their own colour, which is what `render:'modern'` asks the painters for and
+  // what the per-plate overrides beside the night and paper palettes supply. It is pulled on its own
+  // sheet rather than dressed over the night one, so its wash is nothing.
+  modern:{base:'night',wash:0,render:'modern',tint:duotone([4,7,13],[104,124,146],[233,242,250])}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -285,9 +292,23 @@ function pressPixels(canvas){
 }
 let plateName=storage.get('orbit.plate.v1','night');if(!PLATES[plateName])plateName='night';
 const ink={};
+// A derived plate normally takes its base plate's values through its transform and nothing else. A plate
+// that departs from its base in kind rather than only in colour may also name itself in the same call and
+// give the tokens it keeps for itself; those are folded over the transformed ones, so it states only what
+// it changes and inherits the rest. Only whole leaf values are replaced — a nested group is merged.
+function mergeTokens(base,over){
+  if(!over||typeof over!=='object'||Array.isArray(over))return over===undefined?base:over;
+  if(!base||typeof base!=='object'||Array.isArray(base))return over;
+  const out={};for(const key in base)out[key]=base[key];
+  for(const key in over)out[key]=mergeTokens(base[key],over[key]);
+  return out;
+}
 function definePlate(section,variants){
   PLATES.night[section]=variants.night;PLATES.paper[section]=variants.paper;
-  for(const id in PLATE_STYLES){const style=PLATE_STYLES[id];PLATES[id][section]=tintValue(variants[style.base],style.tint);}
+  for(const id in PLATE_STYLES){
+    const style=PLATE_STYLES[id],derived=tintValue(variants[style.base],style.tint);
+    PLATES[id][section]=variants[id]===undefined?derived:mergeTokens(derived,variants[id]);
+  }
   ink[section]=PLATES[plateName][section];
 }
 // Which of the two base plates a plate is pulled from, and what that means for the artwork.
@@ -295,10 +316,29 @@ const plateBase=name=>PLATE_STYLES[name]?PLATE_STYLES[name].base:name;
 const onPaper=()=>plateBase(plateName)==='paper';
 // A proof before letters carries no captions, labels, numerals or legend: figures and rings only.
 const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);
+// Whether the bodies on this plate are rendered rather than engraved. A plate that answers yes is still
+// pulled from the night plate's tokens and still answers no to onPaper(), so every existing fork stands.
+const modernPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='modern');
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'}
 });
+// ---------- The hand the plate letters in ----------
+// Every `ctx.font` in the game is built here. The Fell faces are era III's — the engraved atlas the
+// game is set in — and are registered as a plate token like any colour, so a plate cut for another
+// century sets its captions in its own type by naming one value rather than by rewriting the font
+// string at every place text is drawn. `text` is the roman, `sc` the small caps, `body` the stack the
+// stylesheet's running copy uses; each keeps its own fallbacks so a face that fails to load still
+// lands on something with the right proportions.
+const FELL_FACES={
+  text:"'IM Fell English',Georgia,serif",
+  sc:"'IM Fell English SC','IM Fell English',Georgia,serif",
+  body:"'IM Fell English',Georgia,'Times New Roman',serif"
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES});
+// A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
+// the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
+const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
@@ -398,6 +438,9 @@ function laidSheetFor(){
   laidSheet=c;laidSheetKey=key;return c;
 }
 function drawLaidPaper(){
+  // The observatory plate is not printed on a sheet, so it carries neither laid wires nor chain lines;
+  // the grain over it stands alone and reads as the sensor's own noise.
+  if(modernPlate())return;
   const sheet=laidSheetFor();if(!sheet||!W||!H)return;
   ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=onPaper()?.35:.055;
   ctx.drawImage(sheet,0,0,W,H);ctx.restore();

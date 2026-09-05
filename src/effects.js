@@ -208,7 +208,7 @@ function surveyTick(cx,cy,r,angle,rgb,alpha,weight){
 function surveyNumeral(text,x,y,size,rgb,alpha,t){
   if(t<=0)return;
   ctx.save();ctx.textAlign='center';ctx.fillStyle=`rgba(${rgb},${alpha})`;
-  ctx.font=`${size}px 'IM Fell English',Georgia,serif`;
+  ctx.font=plateFace(size);
   writeText(ctx,text,x,y+size*.35,t,{size});
   ctx.restore();
 }
@@ -217,7 +217,7 @@ function surveyNumeral(text,x,y,size,rgb,alpha,t){
 function surveyLetter(text,x,y,size,rgb,alpha,t){
   if(t<=0)return;
   ctx.save();ctx.textAlign='center';ctx.fillStyle=`rgba(${rgb},${alpha})`;
-  ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  ctx.font=plateFace(size,'text','italic');
   writeText(ctx,text,x,y+size*.35,t,{size,nib:false});
   ctx.restore();
 }
@@ -320,7 +320,7 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   const size=Math.max(9,10*scale),step=size*1.28,right=s.ux>=0;
   const out=(s.ux>.9&&Math.abs(s.uy)<.36?38:22)*scale;
   const nx=px+s.ux*out+(right?4:-4),ny=py+s.uy*out;
-  ctx.save();ctx.font=`italic ${size}px 'IM Fell English',Georgia,serif`;
+  ctx.save();ctx.font=plateFace(size,'text','italic');
   // The note is kept inside the frame's inner rule: its left edge is clamped to the sheet, whichever
   // side of the ring it was set on, so a landing near the margin never prints into the border.
   let widest=0;for(const l of lines)widest=Math.max(widest,ctx.measureText(l[0]).width||l[0].length*size*.5);
@@ -640,7 +640,7 @@ function glossSprite(relief){
   const size=Math.max(9,11*scale),key='gloss:'+plateName+':'+(relief?'r':'n')+':'+size.toFixed(1)+':'+DPR.toFixed(2);
   const cached=darkMarginalia.get(key);if(cached)return cached;
   const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment;
-  const text='HIC SUNT DRACONES',font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  const text='HIC SUNT DRACONES',font=plateFace(size,'sc');
   const w=Math.ceil(size*text.length*.72)+8,h=Math.ceil(size*1.9);
   const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.font=font;g.textAlign='left';g.textBaseline='alphabetic';
@@ -899,7 +899,7 @@ function drawEffects(dt){
     const y=clamp(sy(f.y)-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
     const x=left?inner+hand*2.4:W-inner-hand*2.4;
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
-    ctx.font=`italic ${Math.max(11,13*scale)}px 'IM Fell English',Georgia,serif`;ctx.textAlign=left?'left':'right';
+    ctx.font=plateFace(Math.max(11,13*scale),'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);
     manicule(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left?1:-1,hand,ink.dark.floaterText,alpha*.85);
     ctx.restore();

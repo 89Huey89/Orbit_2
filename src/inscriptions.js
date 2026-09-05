@@ -23,8 +23,8 @@ function clearInscriptions(){inscriptions=[];}
 // Two hands: announcements in the small caps the plate names things in, instructions in the same italic
 // the marginal notes are written in.
 const inscriptionFont=(tone,size)=>tone==='note'
-  ?`italic ${size}px 'IM Fell English',Georgia,serif`
-  :`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  ?plateFace(size,'text','italic')
+  :plateFace(size,'sc');
 const inscriptionSize=tone=>tone==='note'?Math.max(10.5,12*scale):Math.max(10,11.5*scale);
 const inscriptionInner=()=>frameBand()*.92+8;
 const inscriptionWidth=()=>Math.max(96,Math.min(W-inscriptionInner()*2-16,244));

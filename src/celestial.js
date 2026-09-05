@@ -356,7 +356,9 @@ function drawCelestialScene(index,weight){
   // screen of engraving blended in beyond both margins every frame. Only the part on the sheet is
   // blitted, with a little overhang so the resampler still has neighbours to read at the edges.
   const dw=plate.width*place.fit,dh=plate.height*place.fit;
-  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;
+  // The chapter plates are engraved illustrations; on the observatory plate they are held far back, so
+  // they read as the faint deep-sky field a long exposure returns rather than as a printed globe.
+  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:modernPlate()?weight*.22:weight;
   blitVisible(plate,place.x,place.y,dw,dh,Math.max(2,Math.ceil(place.fit*2)));
   ctx.restore();
   drawPlateCaptions(index,weight,place);
@@ -371,10 +373,10 @@ function drawPlateCaptions(index,weight,place){
   const x=Math.max(inner,place.x+48*place.fit);
   const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit);
   ctx.save();ctx.globalAlpha=paper?weight*.72:weight;ctx.textAlign='left';ctx.textBaseline='alphabetic';
-  ctx.font=`italic ${17*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
+  ctx.font=plateFace(17*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
   ctx.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],x,y);
-  ctx.font=`${12*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
-  ctx.font=`italic ${11*fit}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
+  ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
+  ctx.font=plateFace(11*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
   ctx.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],x,y+45*fit);
   if(index===1){
     // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set above the caption —
@@ -595,9 +597,9 @@ function drawChapterReveal(dt){
   // done — and always under reduced motion — the ordinary lettering below is the finished state.
   const plate='P L A T E   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
   const size=compact?24:Math.min(36,Math.max(24,W*.062));
-  ctx.fillStyle=ink.dark.chapterLabel;ctx.font="12px 'IM Fell English SC','IM Fell English',Georgia,serif";
+  ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');
   if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center'))ctx.fillText(plate,x,y-22+rise);
-  ctx.fillStyle=ink.base.text;ctx.font=`${size}px 'IM Fell English',Georgia,serif`;
+  ctx.fillStyle=ink.base.text;ctx.font=plateFace(size);
   if(!penLettering(name,x,y+12+rise,size,'text',t,'center'))ctx.fillText(name,x,y+12+rise);
   ctx.shadowBlur=0;
   const reach=Math.min(95,W*.21),ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
@@ -764,7 +766,7 @@ function drawAtmosphere(dt=0,aim=null){
   drawAmbient(dt,aim);
   // Quiet atlas annotations stay outside the central play path on wide screens.
   if(W>780&&!plainPlate()){
-    ctx.font="10px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.atmosphere.annotation},.23)`;ctx.textAlign='left';
+    ctx.font=plateFace(10);ctx.fillStyle=`rgba(${ink.atmosphere.annotation},.23)`;ctx.textAlign='left';
     ctx.fillText('ASCENDENS',W*.115,H*.45);ctx.fillText('Δ  /  '+String(Math.floor(world.progress)).padStart(3,'0'),W*.115,H*.45+17);
     line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);
     ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
