@@ -341,55 +341,47 @@ gesture the real record's most individually identifiable marks were made with.
 ## 12. Risks and open questions
 
 - **The star-map claims are minority readings, not findings, and the game should not assert them
-  as fact.** Lascaux-as-Pleiades, Lascaux-as-Summer-Triangle, the Adorant-as-Orion (Geißenklösterle,
-  an Aurignacian mammoth-ivory figure, c. 35,000–32,000 BCE — scholars including those noting the
-  figure's "belt" and "sword" derive from the ivory's own grain structure, not intentional carving,
-  dismiss the Orion reading), Knowth-as-lunar-map, and Göbekli Tepe's Pillar 43 as a zodiac
-  recording a comet impact (Sweatman & Tsikritsis 2017; rebutted at length by the site's own
-  excavation team, Notroff, Dietrich, Clare et al., "More than a vulture," *Mediterranean
-  Archaeology and Archaeometry* 17(2), 2017, on chronological and methodological grounds) are all
-  genuinely contested, several by the archaeologists who actually excavate the sites in question.
-  Depict the marks — the dots, the spiral, the pillar reliefs — honestly and let a chapter's own
-  flavour text carry the claim as a claim ("some read this as...") rather than as the game's
-  authorial voice. This matters more here than on any other plate, because unlike a Ptolemaic
-  constellation or an al-Ṣūfī figure, these readings are live academic disputes, not settled
+  as fact.** Lascaux-as-Pleiades, Lascaux-as-Summer-Triangle, the Adorant-as-Orion
+  (Geißenklösterle, an Aurignacian mammoth-ivory figure, c. 35,000–32,000 BCE — scholars note its
+  apparent "belt" and "sword" derive from the ivory's own grain structure, not intentional
+  carving), Knowth-as-lunar-map, and Göbekli Tepe's Pillar 43 as a comet-impact zodiac (Sweatman &
+  Tsikritsis 2017, rebutted at length by the site's own excavators — Notroff, Dietrich, Clare et
+  al., "More than a vulture," *Mediterranean Archaeology and Archaeometry* 17(2), 2017) are all
+  genuinely contested, several by the archaeologists who excavate the sites in question. Depict
+  the marks honestly and let a chapter's own flavour text carry the claim as a claim ("some read
+  this as...") rather than as the game's authorial voice — these are live disputes, not settled
   history the game is merely stylising.
-- **Two attested grammars exist for this era and they should not be blended.** The Franco-Cantabrian
-  painted cave (Lascaux, Chauvet, El Castillo) is this document's primary grammar, and it is the
-  one recommended for the shipped era, matching how era I leans on one Egyptian ceiling rather
-  than every Egyptian source at once. Australian Aboriginal dark-constellation astronomy — the
-  Emu in the Sky, formed from the Coalsack and other dark nebulae along the Milky Way, correlated
-  with a real pecked emu engraving at Elvina Track, Ku-ring-gai Chase National Park, New South
-  Wales — is an extraordinary, genuinely attested, and *still living* tradition, and it answers
-  the brief's "dark constellation" and "Barnard-style" leads better than anything European does.
-  It is deliberately **not** folded into the grammar above, for two reasons: it belongs to a
-  different continent and culture than the cave-painting material this document leans on, and,
-  more importantly, it is living Indigenous cultural and astronomical knowledge, not an extinct
-  practice recovered only through excavation — a distinction this document thinks a commercial
-  game should treat with real caution before drawing on it as a hazard skin. If a future pass
-  wants Aboriginal sky-tradition specifically, it should be its own decision, made deliberately
-  and probably with appropriate consultation, not inherited by default from this write-up.
-- **Rule 1 gets tested hardest by the "torch breathes" twist** in §6. It is designed to stay
-  render-side, but confirm during a spike that it truly never needs to read simulation state
-  beyond what the guide already reads today, or it becomes a B/C-shaped change per DANGERS.md.
-- **The tally/dot-field HUD is a genuine legibility risk**, flagged in §9. Spike one screen of it
-  — score, flow, and a skip bonus all firing in the same few seconds a real run produces — before
-  committing the era to it. A hybrid fallback (tallies for lore captions, a plain numeral face
-  kept for the safety-critical HUD numbers) is the honest retreat if the spike fails.
-- **No frame at all (§9) is the era's strongest and riskiest idea simultaneously.** Every other
-  plate keeps some border the player's eye can use to judge the chart's edge; removing it
-  entirely is the most authentic possible choice and also removes a piece of chrome every other
-  era relies on for readability. Build one chapter plate as a spike before committing, exactly as
-  `01-ceiling.md` already recommends for its own, smaller version of the same problem.
-- **Dates given throughout are approximate and, in several cases, actively debated within the
-  literature** (Lascaux's precise dating in particular has shifted across publications). Nothing
-  above should be read as a settled year; where a range is given, treat the range as the claim.
-- **Bush Barrow's gold lozenge, named as a lead to verify, does not belong to this era.** It is an
-  Early Bronze Age grave good, c. 1950 BCE, from a burial near Stonehenge — outside this era's own
-  c. 3,000 BCE close and squarely inside the territory era 1 (The Disc, Nebra, c. 1600 BCE) is
-  built for. Cup-and-ring marks have the same problem in miniature: the motif class spans roughly
-  3800–1500 BCE, so only its earliest phase sits inside this era's window at all. Recommend moving
-  Bush Barrow off this era's reference list entirely.
+- **Two attested grammars exist for this era and should not be blended.** The Franco-Cantabrian
+  painted cave (Lascaux, Chauvet, El Castillo) is this document's primary grammar, matching how
+  era I leans on one Egyptian ceiling rather than every Egyptian source at once. Australian
+  Aboriginal dark-constellation astronomy — the Emu in the Sky, formed from the Coalsack and
+  other dark nebulae, correlated with a real pecked emu engraving at Elvina Track, Ku-ring-gai
+  Chase National Park, NSW — is an extraordinary, genuinely attested, and *still living*
+  tradition, and answers the brief's "dark constellation" lead better than anything European
+  does. It is deliberately **not** folded into the grammar above: it belongs to a different
+  continent and culture than the cave-painting material here, and, more importantly, it is living
+  Indigenous cultural knowledge, not an extinct practice recovered only through excavation — a
+  distinction a commercial game should treat with real caution before using as a hazard skin. If
+  a future pass wants Aboriginal sky-tradition specifically, that should be its own deliberate
+  decision, probably with consultation, not inherited by default from this write-up.
+- **Rule 1 is tested hardest by the "torch breathes" twist** in §6: confirm in a spike that it
+  never needs to read simulation state beyond what the guide already reads today, or it becomes a
+  B/C-shaped change per DANGERS.md.
+- **The tally/dot-field HUD (§9) is a genuine legibility risk.** Spike one screen of it — score,
+  flow and a skip bonus all firing within a few seconds, as a real run produces — before
+  committing. A hybrid fallback (tallies for lore captions, a plain numeral face kept for
+  safety-critical HUD numbers) is the honest retreat if the spike fails.
+- **No frame at all (§9) is the era's strongest and riskiest idea at once.** Every other plate
+  keeps some border the eye can use to judge the chart's edge; removing it is the most authentic
+  choice and also removes chrome every other era relies on. Build one chapter plate as a spike
+  first, exactly as `01-ceiling.md` recommends for its own smaller version of this problem.
+- **Dates throughout are approximate and, in several cases, actively debated** (Lascaux's own
+  dating has shifted across publications); treat any range given as the claim, not a settled year.
+- **Bush Barrow's gold lozenge, named as a lead, does not belong to this era.** It is an Early
+  Bronze Age grave good, c. 1950 BCE, near Stonehenge — past this era's c. 3,000 BCE close and
+  inside era 1's (The Disc, Nebra, c. 1600 BCE) territory instead. Cup-and-ring marks have the
+  same problem in miniature (the motif class runs c. 3800–1500 BCE); only its earliest phase sits
+  inside this era's window. Recommend dropping Bush Barrow from this era's reference list.
 
 ## 13. Sources
 

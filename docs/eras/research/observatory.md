@@ -135,10 +135,9 @@ faces already are):
   v1.1, confirmed, also on Google Fonts as B612 and B612 Mono). The one face on this list actually
   drawn for a glanced-at-speed instrument panel rather than adapted to one.
 
-No shaping is needed: FITS cards, catalogue designations and Latin-script instrument labels are all
-one-glyph-per-character, same as the shipped Fell faces. Numerals should be lining, tabular figures
-set in the monospace face — not a separate "HUD numeral" face — because a FITS card's `EXPTIME` and
-the game's score are typographically the same kind of object: a value in a labelled field.
+No shaping needed: FITS cards and catalogue designations are one-glyph-per-character, same as the
+Fell faces. Numerals should be lining, tabular figures in the monospace face — a FITS card's
+`EXPTIME` and the game's score are typographically the same object: a value in a labelled field.
 
 ## 5. Names for the game's things
 

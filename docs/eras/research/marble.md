@@ -91,15 +91,15 @@ built from **material colour**, not paint, plus the one genuinely painted docume
 
 | Swatch | Source | Hex (approx.) | Role |
 |---|---|---|---|
-| Pentelic/Carrara white | the marble ground, sun-bleached and slightly warm, not printer's white | `#EDE6D6` | ground |
-| Deep relief shadow | the shadow pooling in a deep drill-cut, not black — stone-grey | `#4A463E` | "ink" — the only dark this era has |
+| Pentelic/Carrara white | sun-bleached marble, slightly warm, not printer's white | `#EDE6D6` | ground |
+| Deep relief shadow | shadow pooling in a deep drill-cut, stone-grey not black | `#4A463E` | "ink" — the only dark this era has |
 | Weathered ochre patina | the honey-brown skin old excavated marble takes on | `#C9A66B` | age/wear accent |
-| Bronze, unpolished | the Mainz/Kugel/Antikythera ground metal, oxidised | `#6B5A3E` | metal ground |
-| Verdigris | bronze's corrosion colour, the same word the shipped game already uses for a plate | `#5B8A72` | metal accent/age |
-| Struck silver | the Mainz globe's silver inlay, bright against the bronze | `#C7C4B8` | the "gold" of this era's metal objects |
-| Tyrian purple | murex-dye parchment ground, vanishingly expensive, used for the grandest Carolingian pages (the Aratea's близ relatives use purple leaves; the Aratea itself is closer to blue-toned grounds on some folios — treat exact folio colours as needing a plate-by-plate check) | `#4B2E52` | Aratea ground, luxury accent |
-| Gold leaf | the Aratea's star-points and highlights, laid over the painted figures | `#D4AF37` | the true "gold" of this era |
-| Lamp-black / iron-gall | the Aratea's figure outlines and the Antikythera/monumental-inscription ink-fill (paint used to make shallow-cut lettering legible) | `#2A2620` | the era's true written ink, reserved for the manuscript half |
+| Bronze, unpolished | Mainz/Kugel/Antikythera ground metal, oxidised | `#6B5A3E` | metal ground |
+| Verdigris | bronze's corrosion colour, a word the shipped game already uses for a plate | `#5B8A72` | metal accent/age |
+| Struck silver | the Mainz globe's silver inlay, bright against bronze | `#C7C4B8` | this era's metal "gold" |
+| Tyrian purple | murex-dye parchment ground, the grandest Carolingian pages (exact Aratea folio colours need a plate-by-plate check — some run closer to blue) | `#4B2E52` | Aratea ground, luxury |
+| Gold leaf | the Aratea's star-points and highlights | `#D4AF37` | this era's true gold |
+| Lamp-black / iron-gall | Aratea outlines; paint filling shallow-cut lettering elsewhere | `#2A2620` | written ink, manuscript half only |
 
 Two grounds, deliberately not blended: **stone** (white-to-ochre, unpainted, for the sculptural
 half) and **purple-to-blue parchment with gold** (for the Aratea half). A plate built for this era
@@ -171,31 +171,31 @@ inherited unbroken. That continuity is worth keeping visible rather than paperin
 | Game term | Word | Translit. | Gloss | Status |
 |---|---|---|---|---|
 | ocean (family) | Ὠκεανός | *Okeanos* | the Titan/river encircling the world | attested |
-| crater (family) | κρατήρ | *kratēr* | mixing-bowl; **the direct root of the English word "crater"** | attested |
-| ringed (family) | στεφάνη | *stephanē* | circlet, rim, wreath-band | constructed (attested word, unattested application — Saturn's rings are unknown to antiquity) |
-| ice (family) | κρύσταλλος | *krystallos* | ice; also rock-crystal, believed by ancient authors to be ice frozen permanently hard | attested |
-| dune (family) | θίς / θῖνες | *this / thines* | sand-ridge, dune (Homeric, of a shoreline) | attested |
-| volcanic (family) | Ἡφαίστου | *Hēphaistou* | "of Hephaestus," the smith-god whose forge antiquity located under Etna/Vulcano | constructed epithet, attested god |
-| storm (family) | θύελλα | *thuella* | whirlwind, storm (Homeric) | attested |
-| slingshot pickup | σφενδόνη | *sphendonē* | a sling (the weapon) | attested, constructed application |
-| Scutum | Scutum | — | shield | **already the era's own Latin word — unchanged** |
-| Repulsa | Repulsa | — | a repulse, a thrusting-back | **already the era's own Latin word — unchanged** |
-| inkwell pickup | atramentarium | — | ink-pot | attested Latin |
-| attractor (VORAGO) | Χάρυβδις | *Charybdis* | the whirlpool of the Odyssey, thrice-daily swallowing the sea | attested |
-| repulsor (MACULA) | Φαέθων / Ἡλίου ἅρμα | *Phaethōn / Hēliou harma* | Phaethon, who lost control of "the chariot of the Sun" and was struck down | attested (note: this is a *different* Phaethon from the planet-name in §5's companion table below — flag the collision, see §12) |
-| crosswind (VENTUS) | Βορέας, Ζέφυρος | *Boreas, Zephyros* | the north and west winds, named individually on the Tower of the Winds | attested |
-| obscurer (nebula) | γαλαξίας | *galaxias* | "milky" — literally the root of the word "galaxy" | attested |
+| crater (family) | κρατήρ | *kratēr* | mixing-bowl — root of "crater" | attested |
+| ringed (family) | στεφάνη | *stephanē* | circlet, wreath-band | constructed (Saturn's rings unknown to antiquity) |
+| ice (family) | κρύσταλλος | *krystallos* | ice; also rock-crystal, thought permanently frozen | attested |
+| dune (family) | θίς / θῖνες | *this / thines* | sand-ridge, dune (Homeric) | attested |
+| volcanic (family) | Ἡφαίστου | *Hēphaistou* | "of Hephaestus," forge under Etna/Vulcano | constructed epithet |
+| storm (family) | θύελλα | *thuella* | whirlwind (Homeric) | attested |
+| slingshot pickup | σφενδόνη | *sphendonē* | a sling | attested, constructed use |
+| Scutum | Scutum | — | shield | **shipped already — unchanged** |
+| Repulsa | Repulsa | — | a repulse | **shipped already — unchanged** |
+| inkwell pickup | atramentarium | — | ink-pot | attested |
+| attractor (VORAGO) | Χάρυβδις | *Charybdis* | the whirlpool, thrice-daily swallowing the sea | attested |
+| repulsor (MACULA) | Φαέθων / Ἡλίου ἅρμα | *Phaethōn / Hēliou harma* | who lost the Sun's chariot | attested (name collision, see §7/§12) |
+| crosswind (VENTUS) | Βορέας, Ζέφυρος | *Boreas, Zephyros* | north/west winds, named on the Tower of the Winds | attested |
+| obscurer (nebula) | γαλαξίας | *galaxias* | "milky" — root of "galaxy" | attested |
 | orbit | κύκλος | *kyklos* | circle, circuit | attested |
-| capture | captura | — | a seizing, a catching | constructed application of an attested Latin word |
-| release | ἄφεσις | *aphesis* | a letting-go, a discharge — used in Greek athletics for the release of a javelin | attested, and mechanically apt |
-| ink (currency) | acies | — | edge, cutting edge (of a chisel or blade) | constructed rename, attested word — see §6 |
+| capture | captura | — | a seizing | constructed use |
+| release | ἄφεσις | *aphesis* | a letting-go — used of a javelin's release | attested, apt |
+| ink (currency) | acies | — | a cutting edge | constructed rename — see §6 |
 | score | ἀριθμός | *arithmos* | number, count | attested |
-| chapter/sheet | tabula | — | tablet, panel, plate | **already the era's own word and already shipped** (`TABULA` rim caption) |
+| chapter/sheet | tabula | — | tablet, panel, plate | **already shipped** (`TABULA` rim caption) |
 | the run | cursus | — | a running, a course | attested |
-| personal best | ἄριστον | *ariston* | "the best" (substantive neuter, root of "aristocracy") | constructed application |
-| daily plate | Tabula diei | — | "the tablet/plate of the day" | **already shipped verbatim** as era III's own daily-plate title |
-| catalogue | κατάλογος | *katalogos* | a list, register — famously the Iliad's "Catalogue of Ships" | attested, and literally the root of the English word |
-| "Orbit" (title) | orbita | — | wheel-rut, wheel-track — the literal ancestor of the modern astronomical "orbit," though the astronomical sense is a 17th-c. (Keplerian) reuse, not ancient | attested word, anachronistic sense — see note |
+| personal best | ἄριστον | *ariston* | "the best" (root of "aristocracy") | constructed use |
+| daily plate | Tabula diei | — | "the tablet of the day" | **already shipped verbatim** |
+| catalogue | κατάλογος | *katalogos* | a list — the Iliad's "Catalogue of Ships" | attested, root of the English word |
+| "Orbit" (title) | orbita | — | wheel-rut/track, ancestor of "orbit" (a 17th-c. Keplerian reuse) | attested, anachronistic sense |
 
 ## 6. Currency and one rule
 
@@ -302,17 +302,16 @@ Latin (`Delineavit`, `Ex libris`).
 
 ## 11. Sound
 
-- **Capture** — a single mallet-on-chisel tap, short and dry, in place of the shipped game's brush
-  tick.
+- **Capture** — a single mallet-on-chisel tap, short and dry, replacing the shipped brush tick.
 - **Orbit hold** — a continuous fine abrasive hiss (rubbing-stone on marble), rising almost
-  imperceptibly in pitch the longer the orbit is held, standing in for `scratch()`.
+  imperceptibly the longer the orbit is held — stands in for `scratch()`.
 - **Release** — a short stone-dust scrape, a grain of grit skittering off a cut edge.
-- **Perfect transfer** — the mallet tap gains a second, higher harmonic: two chisels landing near-
-  simultaneously, the way a finishing point-chisel doubles a rough strike.
-- **Death/loss** — a single low crack, a struck-off marble chip, no ringing tail (stone does not
-  sustain the way the shipped game's descending tones do; keep it dry and short).
-- **Antikythera accent** (chapter 1 specifically, optional) — a faint bronze-gear tick-and-catch
-  under ambient sound, a mechanism ratcheting one tooth.
+- **Perfect transfer** — the tap gains a second, higher harmonic: two chisels landing near-
+  simultaneously, as a finishing point-chisel doubles a rough strike.
+- **Death/loss** — a single low crack, a struck-off chip, no ringing tail (stone doesn't sustain
+  the way the shipped descending tones do — keep it dry and short).
+- **Antikythera accent** (chapter 1, optional) — a faint bronze-gear tick-and-catch under ambient
+  sound, a mechanism ratcheting one tooth.
 
 ## 12. Risks and open questions
 

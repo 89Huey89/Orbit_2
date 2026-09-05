@@ -133,48 +133,35 @@ people wrote": by the time a species sends a self-replicating machine to the sta
 "handwriting" is a data format.
 
 **The plaque hand** is the Pioneer/Voyager engraved line: single-stroke, uniform weight, cut
-once, no serif, no shading, exactly what a burin or an engraving machine produces and exactly
-what the **Hershey fonts** are. Dr. Allen V. Hershey drew this vector font family (Latin, Greek,
-Cyrillic, Japanese and symbol sets) circa 1967; it began as stroke coordinate data for a
-pen-following device and is, structurally, engraving instructions rather than a filled typeface.
-It is not on Google Fonts and has no OFL release; the maintained modern reissue (verified this
-pass: `kamalmostafa/hershey-fonts` on GitHub) ships the glyph data itself under "a permissive
-use and redistribution license" separate from the surrounding library's GPLv2+, in the
-publisher's own `.jhf` coordinate format — public-domain-adjacent in spirit, not OFL, and its
-exact redistribution terms should be re-read verbatim before anything ships. **This is the one
-genuinely free technical finding of this research pass**: Hershey glyphs are *already* the
-game's stroke data, a full generation before fontkit exists to extract it from anything. The
-catch is real and worth spiking early — the game's pipeline (`scripts/glyphs.mjs`) extracts
-*contour outlines* from a woff2/ttf via fontkit and both strokes and floods them (§7 of
-GAME-BRIEF.md); Hershey has no contours to flood, only strokes, because there is no closed
-counter to fill. The plaque hand should skip the flood step entirely rather than force one — a
-genuinely different code path from every earlier era's lettering, and closer to what
-`writeText()`'s clip-reveal already does than to `penLettering()`'s stroke-then-flood. Either a
-small first-party `.jhf` parser bypassing fontkit, or a converted single-line TTF (several exist
-as hobbyist/plotter-community projects; none checked and verified this pass) would work; decide
-which before committing the face.
+once, no serif, no shading — exactly what a burin or an engraving machine produces, and exactly
+what the **Hershey fonts** are. Dr. Allen V. Hershey drew this vector family (Latin, Greek,
+Cyrillic, Japanese, symbols) circa 1967 as stroke coordinate data for a pen-following device —
+structurally engraving instructions, not a filled typeface. Not on Google Fonts, no OFL release;
+the maintained reissue verified this pass, `kamalmostafa/hershey-fonts` on GitHub, ships the
+glyph data under "a permissive use and redistribution license" (separate from the surrounding
+library's GPLv2+), in the publisher's own `.jhf` coordinate format — public-domain-adjacent, not
+OFL; re-read the exact terms before shipping. **The one genuinely free technical finding here**:
+Hershey glyphs are *already* the game's stroke data, a generation before fontkit existed to
+extract anything like it. The catch: the game's pipeline (`scripts/glyphs.mjs`) extracts filled
+*contour outlines* via fontkit and both strokes and floods them; Hershey has no contours to
+flood, only strokes, no closed counter to fill. The plaque hand should skip the flood step
+entirely — closer to `writeText()`'s clip-reveal than to `penLettering()`'s stroke-then-flood —
+via either a small `.jhf` parser bypassing fontkit, or a converted single-line TTF (hobbyist
+plotter-font projects exist; none checked this pass). Spike this before committing to the face.
 
-**The telemetry hand** wants a monospace face built for exactly this job. Three are verified
-this pass, all on Google Fonts under OFL:
-- **B612 Mono** — designed 2010–2012 by Airbus with ENAC and Université de Toulouse III,
-  purpose-built for aircraft cockpit displays (legibility under vibration, glare, low light);
-  released 2017 via the Polarsys/Eclipse Foundation project, originally under the Eclipse
-  Public License, and distributed on Google Fonts under OFL. The single most on-theme face
-  available for this era: an instrument font, literally.
-- **Share Tech Mono** — a Carrois Apostrophe monospace, on Google Fonts under OFL since 2012;
-  generic tech/console character, a plausible HUD body face next to B612's display role.
-- **DSEG** (`keshikan/DSEG` on GitHub, OFL-1.1, verified this pass) — a seven-/fourteen-segment
-  numeral face imitating LCD/LED readouts, over fifty weight/style variants. Matches
-  LETTERING.md's own suggestion for era V ("the numerals should update, not be written") even
-  better here: a ΔV or feedstock counter that *ticks over* like an odometer rather than being
-  inscribed fits a machine that has no hand to write with.
-- **OCR-A** and **OCR-B** (ANSI X3.17-1977's machine-readable faces, 1968) were named in the
-  brief and are the right period reference — but their free digitizations circulate as CTAN
-  packages (`ocr-a`, `ocr-b-outline`) rather than Google Fonts entries, and this pass could not
-  reach ctan.org or tug.org to confirm licence terms or check them against the commercial "OCR A
-  Extended" font that ships with some OSes and must not be confused with the free one. **Mark
-  OCR-A/B licensing unverified** until someone can reach CTAN directly; treat B612/DSEG/Share
-  Tech Mono as the safe fallback trio if OCR-A can't be cleared.
+**The telemetry hand** wants a monospace face built for the job. Three verified this pass, all
+Google Fonts/OFL: **B612 Mono** (Airbus, with ENAC and Université de Toulouse III, 2010–2012,
+purpose-built for cockpit-display legibility under vibration and glare; released 2017 via
+Polarsys/Eclipse Foundation, originally Eclipse Public License, now OFL on Google Fonts — the
+single most on-theme face available); **Share Tech Mono** (Carrois Apostrophe, OFL since 2012,
+generic tech-console character); **DSEG** (`keshikan/DSEG`, OFL-1.1, seven-/fourteen-segment
+LCD/LED emulation, 50+ variants) — matching LETTERING.md's own era-V idea that "numerals should
+update, not be written" even better here: a feedstock counter that ticks like an odometer suits
+a machine with no hand to write with. **OCR-A/OCR-B** (ANSI X3.17-1977, 1968) are the right
+period reference but their free digitizations live as CTAN packages, not Google Fonts entries;
+this pass could not reach ctan.org or tug.org to confirm licence terms or to rule out confusion
+with the commercial "OCR A Extended." **Mark OCR-A/B unverified**; B612/DSEG/Share Tech Mono are
+the safe fallback trio.
 
 No script needs shaping (no joining, no stacking) — both registers are Latin-alphabet and
 numerals, one stroke-only and one monospace-block. Numerals throughout are Arabic numerals set
@@ -331,47 +318,36 @@ rather than being inscribed; a "chapter" announces itself as a `PHASE` change, n
 
 ## 12. Risks and open questions
 
-- **The ladder's own numbering has moved.** `OVERVIEW.md` and `DANGERS.md` still describe a
-  five-era ladder (I Ceiling … V Observatory) that predates the nine-era ladder this brief
-  works from. Ceiling is now era 2, not I; Plate and Observatory are 6 and 7, not IV and V; Rock,
-  Disc, Marble and this era, the Probe, do not exist in those documents at all. Whoever builds
-  this era next should reconcile the numbering before extending DANGERS.md's per-era hazard
-  table, not silently append to it.
-- **Section 6 is deliberately incomplete.** The replication rule belongs to
-  `probe-mechanics.md`; this document only names the currency. Do not let this file's "no-twist
-  reading" get built as the *only* reading without checking that sibling document first.
-- **Rule 3's hardest test in the whole ladder.** "The same seven families, the same hazard rows,
-  only depicted differently" is easy to say and hard to keep once a body stops being *drawn* at
-  all and becomes a *readout*. §8's icon-plus-readout split is this document's proposed answer;
-  it has not been prototyped and should be spiked before the rest of the era is built on it.
-- **Overlap with era V/Observatory is the single biggest visual risk.** Both eras are
-  instrument-grammar, both eras' repulsor and crosswind rows are naturally a flare/wind-vector
-  idiom, and both are the two most "modern-looking" plates in the ladder. §3's palette and §7's
-  register choices (mesh/wedge/flux-arrow vs. rendered photon-ring/Hα-loop/vector-field) are
-  this document's attempt to keep them apart; they need to be checked side by side once both
-  exist, not just read side by side in prose.
-- **The Hershey/fontkit mismatch (§4) is a real pipeline risk, not a licensing footnote.** The
-  game's entire lettering pipeline assumes a filled, contoured glyph. A single-stroke face with
-  no counters to flood is a genuinely different code path, and it should be spiked (a handful of
-  glyphs, end to end) before the era's other nine sections are built against it.
-- **OCR-A/OCR-B licensing is unverified.** This pass could not reach ctan.org or tug.org, the
-  homes of the known free digitizations, because of this session's network egress policy. Do not
-  ship either face without independently confirming the licence text — and do not confuse the
-  free CTAN digitization with the commercial "OCR A Extended" font family, which is not free.
-- **Several factual claims in §1 carry an explicit unverified flag** (the Pioneer plaque's exact
-  manufacturing process; the precise division of labour between Linda Salzman Sagan and Jon
-  Lomberg on the Voyager cover's engravings; the Golden Record 2.0 project's final funding
-  outcome; StarChip's settled sail dimensions, since the program is still active R&D). None of
-  these affect the era's buildable grammar, but none should be asserted as fact in a shipped
-  caption without a second check.
-- **This whole era is speculative fiction resting on real objects, which is a different honesty
-  problem than every earlier era's.** Eras 0–7 depict things that were drawn. This era depicts a
-  machine that has not been built, using the drawing conventions of machines that *were* built
-  (Pioneer, Voyager, DSN, CCSDS). The design discipline that keeps this from becoming an
-  "invented era" (`OVERVIEW.md`'s standing warning) is to keep every visual and textual choice
-  traceable to one of the verified documents in §1, and to flag, loudly, the handful of places
-  (§8's icon set, most of §6, the daughter-probe motif in §10.4) that this document is
-  proposing rather than finding.
+- **The ladder's own numbering has moved.** `OVERVIEW.md`/`DANGERS.md` still describe the old
+  five-era ladder (I Ceiling … V Observatory); Ceiling is now era 2, Plate/Observatory are 6/7,
+  and Rock, Disc, Marble and this era do not exist in those documents at all. Reconcile the
+  numbering before extending DANGERS.md's hazard table, not silently append to it.
+- **Section 6 is deliberately incomplete** — the replication rule belongs to
+  `probe-mechanics.md`; don't let this file's "no-twist reading" get built as the only reading
+  without checking that sibling document.
+- **Rule 3's hardest test in the ladder.** "Same families, same hazard rows, only depicted
+  differently" is hard to keep once a body stops being drawn and becomes a readout. §8's
+  icon-plus-readout split is proposed, unprototyped, and should be spiked first.
+- **Overlap with era 7/Observatory is the biggest visual risk** — both eras are
+  instrument-grammar, both eras' repulsor/crosswind rows are naturally flare/wind-vector idioms.
+  §3 and §7's register choices (mesh/wedge/flux-arrow vs. rendered photon-ring/Hα-loop) are this
+  document's attempt to keep them apart; check side by side once both plates exist.
+- **The Hershey/fontkit mismatch (§4) is a pipeline risk, not a licensing footnote** — the
+  lettering pipeline assumes a filled, contoured glyph; a single-stroke face with no counters to
+  flood is a different code path and should be spiked end to end before the rest is built on it.
+- **OCR-A/OCR-B licensing is unverified** (ctan.org/tug.org were both blocked this pass). Don't
+  ship either face without confirming the licence text, and don't confuse the free digitization
+  with the commercial "OCR A Extended."
+- **Several §1 claims carry an explicit unverified flag** — the Pioneer plaque's manufacturing
+  process, the Salzman Sagan/Lomberg division of labour on the Voyager cover, Golden Record
+  2.0's funding outcome, StarChip's settled sail spec. None affect the buildable grammar, but
+  none should be asserted as fact in a shipped caption without a second check.
+- **This era is speculative fiction resting on real objects** — a different honesty problem than
+  eras 0–7, which depict things that were drawn. This one depicts a machine not yet built, using
+  the conventions of machines that were (Pioneer, Voyager, DSN, CCSDS). The discipline that keeps
+  it from becoming an "invented era" is keeping every choice traceable to §1, and flagging loudly
+  the handful of places (§8's icon set, most of §6, §10.4's daughter-probe motif) proposed here
+  rather than found.
 
 ## 13. Sources
 
