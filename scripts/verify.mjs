@@ -824,15 +824,18 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       ['pura',{observations:{}},false],['pura',{observations:{pureChart:1}},true],
       ['altitudo',{observations:{}},false],['altitudo',{observations:{fortyRows:1}},true],
       ['vigilia',{observations:{}},false],['vigilia',{observations:{threeMinutes:1}},true],
-      ['rectus',{observations:{}},false],['rectus',{observations:{rightAngle:1}},true]
+      ['rectus',{observations:{}},false],['rectus',{observations:{rightAngle:1}},true],
+      ['evasio',{shieldsSpent:12,reflectorsSpent:12},false],['evasio',{shieldsSpent:12,reflectorsSpent:13},true],
+      ['myrias',{captures:9999},false],['myrias',{captures:10000},true]
     ];
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,38,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,40,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
-    const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
+    const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
+      shieldsSpent:15,reflectorsSpent:15,
       observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});
     assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
   }
@@ -1314,8 +1317,8 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
 }
 // A ledger that has earned the whole catalogue, seeded into storage before the page boots, so the
 // unlocked half of every screen is exercised as well as the empty one.
-const FULL_LEDGER=JSON.stringify({captures:9000,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
-  deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:8,reflectorsSpent:6,maxSpeedSlings:400,inkwellsFound:14,badAngles:550,runs:{classic:140,relaxed:6,hardcore:20},
+const FULL_LEDGER=JSON.stringify({captures:10500,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
+  deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:20,reflectorsSpent:10,maxSpeedSlings:400,inkwellsFound:14,badAngles:550,runs:{classic:140,relaxed:6,hardcore:20},
   playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},
   observations:{perfectThree:6,skipFive:5,maxSpeed:3,graze:2,pureChart:2,fortyRows:9,threeMinutes:4,rightAngle:12},allFourInOneRun:true});
 const layouts=[
