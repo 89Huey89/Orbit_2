@@ -55,15 +55,67 @@ if(!(difficulty in DARKNESS_MULT))difficulty='classic';
 // pressure, with its own record. The choice itself is never remembered between visits.
 function utcDay(){try{return new Date().toISOString().slice(0,10);}catch(_){return '1970-01-01';}}
 function dayStamp(date){let h=0x811c9dc5;for(let i=0;i<date.length;i++){h=Math.imul(h^date.charCodeAt(i),0x01000193);}return h>>>0;}
-let dailyOn=false,dailyDay=utcDay(),dailySeed=dayStamp(dailyDay),dailyBest=0;
+let dailyOn=false,dailyDay=utcDay(),dailySeed=dayStamp(dailyDay),dailyBest=0,dailyReplay=false;
+// The ephemeris rests on one rule: a day is written into the log only while it is still that day, so a
+// past plate can be drawn again by the hand that drew it when it was current and by no other. The log is
+// a single document of date to {best, plays}; a blocked or malformed store simply reads as an empty one.
+const DAILY_LOG_KEY='orbit.dailyLog.v1';
+const isDayKey=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value);
+function readDailyLog(){
+  const out={},today=utcDay();
+  let raw=null;
+  try{raw=JSON.parse(storage.get(DAILY_LOG_KEY,'null'));}catch(_){raw=null;}
+  if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const key in raw){
+    if(!isDayKey(key)||key>today)continue;
+    const entry=raw[key];if(!entry||typeof entry!=='object')continue;
+    out[key]={best:Math.max(0,Math.floor(Number(entry.best)||0)),plays:Math.max(1,Math.floor(Number(entry.plays)||1))};
+  }
+  return out;
+}
+const dailyLog=readDailyLog();
+function saveDailyLog(){storage.set(DAILY_LOG_KEY,JSON.stringify(dailyLog));}
+// The one record that predates the log is folded into it once and left where it is: a player who has
+// already drawn today's plate finds that day open in the ephemeris.
+(function migrateDailyLog(){
+  try{
+    const raw=JSON.parse(storage.get('orbit.daily.v1','null'));
+    if(raw&&isDayKey(raw.date)&&raw.date<=utcDay()&&!dailyLog[raw.date]){
+      dailyLog[raw.date]={best:Math.max(0,Math.floor(Number(raw.best)||0)),plays:1};saveDailyLog();
+    }
+  }catch(_){}
+})();
+const dailyDrawn=date=>Object.prototype.hasOwnProperty.call(dailyLog,date);
+const dailyDates=()=>Object.keys(dailyLog).sort();
+// A plate is open to be drawn again only if it was drawn on its own day; today's is always open.
+const dailyOpen=date=>isDayKey(date)&&(date===utcDay()||dailyDrawn(date));
+function dailyEntry(date){
+  const entry=dailyLog[date]||(dailyLog[date]={best:0,plays:0});
+  return entry;
+}
+// Written when a daily run actually begins, and only while the plate is the current day's: a replay of
+// an older plate never enters a day into the log.
+function noteDailyPlay(){
+  if(!dailyOn||dailyReplay||dailyDay!==utcDay())return;
+  dailyEntry(dailyDay).plays++;saveDailyLog();
+}
 function readDailyBest(){
+  const entry=dailyLog[dailyDay];if(entry)return entry.best;
   try{const raw=JSON.parse(storage.get('orbit.daily.v1','null'));if(raw&&raw.date===dailyDay)return Math.max(0,Number(raw.best)||0);}catch(_){}
   return 0;
 }
+// What the plate is called on the title screen, the colophon and the copied line.
+const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
 const currentBest=()=>dailyOn?dailyBest:best;
 function recordBest(score){
-  if(dailyOn){if(score>dailyBest){dailyBest=score;storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));}}
+  if(dailyOn){
+    if(score>dailyBest){
+      dailyBest=score;
+      const entry=dailyEntry(dailyDay);
+      if(score>entry.best){entry.best=score;if(!entry.plays)entry.plays=1;saveDailyLog();}
+      if(dailyDay===utcDay())storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));
+    }
+  }
   else if(score>best){best=score;storage.set('orbit.best.v1',best);}
 }
 // The difficulty is set in-run, by which of the three opening targets the player captures
@@ -74,21 +126,31 @@ function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));
   $('daily-end').setAttribute('aria-pressed',String(dailyOn));
-  $('daily-date').textContent=dailyOn?'Tabula diei \u00b7 '+dailyDay:'';
+  $('daily-date').textContent=dailyOn?dailyLabel():'';
   $('best').textContent=currentBest();
   syncDifficulty();
 }
 // Toggled from the title screen before a run, or from the colophon after one: the run-complete screen
 // carries its own DAILY PLATE switch (see #daily-end in ui.js) precisely so the daily plate is never a
 // one-way door \u2014 tapping to try again always honours whichever plate was chosen last, standard included.
-function setDaily(on){
-  dailyOn=on;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+// A date may be named, which is how the ephemeris draws a past plate again; anything but a day that was
+// drawn on its own day falls back to the current one.
+function setDaily(on,date){
+  const today=utcDay();
+  dailyDay=on&&dailyOpen(date)?date:today;
+  dailyOn=on;dailyReplay=on&&dailyDay!==today;dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   syncDaily();
   if(world&&world.state==='ready'){newWorld();recordAtStart=currentBest();if(W&&H)render(0);}
 }
+// The ephemeris's own way in: draw the plate of a named day, if that day is open at all.
+function replayDaily(date){
+  if(!dailyOpen(date))return false;
+  setDaily(true,date);
+  return true;
+}
 function scoreLine(){
   const charts=world.constellationsCompleted;
-  return 'Orbit \u00b7 '+(dailyOn?'Tabula diei '+dailyDay:'Ascent')+' \u00b7 '+world.score+' points \u00b7 row '+Math.floor(world.progress)+
+  return 'Orbit \u00b7 '+(dailyOn?'Tabula diei '+dailyDay+(dailyReplay?' (iterum)':''):'Ascent')+' \u00b7 '+world.score+' points \u00b7 row '+Math.floor(world.progress)+
     ' \u00b7 '+charts+' constellation'+(charts===1?'':'s');
 }
 function copyScore(){
