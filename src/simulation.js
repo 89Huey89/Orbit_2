@@ -15,7 +15,7 @@ const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
 // keep working; only the printed word changes.
 const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER'};
 // Display names for the two carried charges, in the same Latin voice: SCUTUM the shield, that turns
-// aside a black hole; REPULSA the repulse, that turns the traveller back from the chart's edge. As with
+// aside a vortex; REPULSA the repulse, that turns the traveller back from the chart's edge. As with
 // DIFFICULTY_LABELS, the internal type strings ('shield', 'reflector') are unchanged so nothing that
 // reads them has to know the printed word.
 const POWERUP_LABELS = {shield:'SCUTUM', reflector:'REPULSA'};
@@ -43,6 +43,10 @@ const TRANSFER_SECONDS = 1.28;
 // then only on every third row, so a closed route stays an event rather than the standing state of
 // the chart. Before it, every route is left clear and a hazard is only something to give room to.
 const HAZARD_CLOSES_ROUTE = 12;
+// The row from which the chart begins to carry wind-heads, and then only on one row in five. They
+// arrive after the flares, so each of the three fields is met on its own before any two are: the
+// vortex that draws in, the sunspot that pushes off, and last the gust that simply blows.
+const WIND_FROM_ROW = 20;
 // How far along a course the pen will still set it down. At the opening pace the whole transfer is
 // drawn and nothing is hidden; as the chart's speed is earned the far part of a fast crossing is
 // left unset, so a run flown at full pace commits to the last of it unseen. The release marks and
@@ -156,7 +160,7 @@ const OBSERVATIONS = {
   perfectThree:{name:'THREE PERFECT TRANSFERS',latin:'TRES PERFECTI'},
   skipFive:{name:'FIVE ORBITS SKIPPED',latin:'SALTUS QUINQUE'},
   maxSpeed:{name:'THE FULL PACE OF THE CHART',latin:'VELOCITAS SUMMA'},
-  graze:{name:'A BLACK HOLE GRAZED AT FULL SPEED',latin:'PERICULUM'},
+  graze:{name:'A VORTEX GRAZED AT FULL SPEED',latin:'PERICULUM'},
   pureChart:{name:'A CONSTELLATION IN PERFECT TRANSFERS',latin:'LINEA PURA'},
   fortyRows:{name:'THE FORTIETH ROW',latin:'ALTITUDO'},
   threeMinutes:{name:'THREE MINUTES ALOFT',latin:'VIGILIA'},
@@ -164,18 +168,44 @@ const OBSERVATIONS = {
 };
 // An arrival whose incoming line meets the orbit's radius this close to a right angle is a square.
 const SQUARE_TOLERANCE = 1.5;
-// Black holes pull inward and are lethal to their drawn edge; sunspot flares push
-// outward over the same field and only their smaller core kills. An absent kind is a
-// black hole, so older hazards and fixtures keep their behaviour.
-function hazardCore(h) { return h.kind==='flare'?h.r*.6:h.r; }
-function gravityRadius(h) { return h.r+100; }
+// Every hazard the chart can carry is one row of this table rather than a branch in the code that
+// flies through it: which way its field turns a flight, how much of the drawn radius kills, and the
+// loss it reports. VORAGO, the whirlpool in the aether the old charts engrave at the edge of the
+// world, draws inward and is lethal to its drawn edge; MACULA, the sunspot, pushes outward over the
+// same reach and only its smaller core kills; VENTUS, the wind-head puffing in the margin, blows one
+// steady way across its reach and cannot kill at all. A later chart's black hole is this first row
+// under another name, which is why the shape here is a table it can be added to rather than a
+// condition it would have to be threaded through. An absent kind is the vortex, so a fixture that
+// names no kind keeps the behaviour it has always had.
+const HAZARD_KINDS = {
+  vortex:{sign:1,core:1,reach:100,lethal:true,latin:'VORAGO',loss:'DRAWN INTO A VORTEX'},
+  flare:{sign:-1,core:.6,reach:100,lethal:true,latin:'MACULA',loss:'SEARED BY A SUNSPOT FLARE'},
+  wind:{sign:0,core:0,reach:55,lethal:false,latin:'VENTUS',loss:null}
+};
+function hazardKind(h) { return HAZARD_KINDS[h.kind]||HAZARD_KINDS.vortex; }
+function hazardCore(h) { return h.r*hazardKind(h).core; }
+// A gust reaches less far than a gravity well. That is partly the thing itself — a wind-head blows
+// across a lane rather than warping the whole sheet around it — and partly a price: any field a
+// course passes through puts the guide on its curved prediction for that whole frame, so the reach
+// of a hazard that is met often is bought with the cost of drawing every course near it.
+function gravityRadius(h) { return h.r+hazardKind(h).reach; }
+// How hard a wind-head blows at the heart of its own reach. Like the radial fields it steers the
+// flight without touching its speed, so what this sets is really a turn rate. Across the whole of a
+// gust, a crossing at the chart's middle pace is carried about 40 world units off the line it left
+// on, and one at full pace about 20 — most of an orbit's own radius at the pace where there is time
+// to read it, and less where there is not. That is enough that a course has to be led into the gust
+// and not so much that one already released is lost to it.
+const WIND_FORCE = 210;
 function bendVelocity(p,hazards,dt) {
   let ax=0,ay=0;
   for(const h of hazards){
     const dx=h.x-p.x,dy=h.y-p.y,d2=dx*dx+dy*dy,reach=gravityRadius(h);
     if(d2>=reach*reach||d2<1e-10)continue;
-    const d=Math.sqrt(d2),edge=1-d/reach,sign=h.kind==='flare'?-1:1;
-    const pull=sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
+    const d=Math.sqrt(d2),edge=1-d/reach,kind=hazardKind(h);
+    // A wind-head blows one steady way over the whole of its reach instead of toward or away from a
+    // centre, so its is the one field that does not lie along the radius.
+    if(kind.sign===0){const gust=WIND_FORCE*edge*edge;ax+=Math.cos(h.dir||0)*gust;ay+=Math.sin(h.dir||0)*gust;continue;}
+    const pull=kind.sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
     ax+=dx/d*pull;ay+=dy/d*pull;
   }
   // This local arcade field turns momentum while preserving earned speed.
@@ -195,8 +225,9 @@ function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1) {
     if(contact&&contact.time<first){first=contact.time;hit={kind:'node',n,contact};}
   }
   for(const h of hazards){
+    if(!hazardKind(h).lethal)continue;
     const t=segmentCircle(x,y,bx,by,h.x,h.y,hazardCore(h)+3);
-    if(t!==null&&t*dt<=first){first=t*dt;hit={kind:'hole',h};}
+    if(t!==null&&t*dt<=first){first=t*dt;hit={kind:'hazard',h};}
   }
   const boundary=width/2+16;
   if(Math.abs(bx)>boundary){
@@ -269,7 +300,7 @@ class OrbitWorld {
     // The eight later figures come first, then the four opening ones, so a region past
     // the fourth never repeats a figure until the whole catalogue has been used.
     this.catalogueOrder=[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
-    this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.flarePhase=0;
+    this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.windRandom=seeded((seed*22699>>>0)^0x7715);this.flarePhase=0;
     this.perfectStreak=0;this.recklessStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1; this.capMult = 1;
@@ -419,10 +450,39 @@ class OrbitWorld {
       }
       const place=chosen||clearOf;
       if(place){
-        // From the third region, sunspot flares alternate with black holes under the
+        // From the third region, sunspot flares alternate with vortices under the
         // same placement rules: they repel instead of pulling and only their core kills.
-        const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'hole';
+        const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
         this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
+      }
+    }
+    // A wind-head sits across one of the tangent routes between the last two main nodes and blows
+    // one steady way over it. It is placed the way a nebula is rather than through the lethal
+    // placement above, because it is the one hazard that cannot shut a route: it kills nothing, so
+    // a crossing through it stays flyable and only has to be led into. It keeps clear of every
+    // capture band, drift envelope and other hazard field so the two fields are never read at once.
+    if (k >= WIND_FROM_ROW && k%5 === 3) {
+      const gale=this.windRandom,routes=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)],reach=HAZARD_KINDS.wind.reach;
+      for (let tries=0;tries<12&&routes.length;tries++) {
+        const path=routes[Math.floor(gale()*routes.length)],t=.36+gale()*.28;
+        const wx=lerp(path.x,path.bx,t),wy=lerp(path.y,path.by,t);
+        // The gust is grown to the largest head whose whole field still clears every capture band,
+        // drift envelope, other hazard field and cloud around it, and dropped if that is under 16.
+        // It is the field and not merely the head that is kept clear: a wind blowing over a capture
+        // band would bend the arrival itself, and a landing that cannot be aimed is not a landing.
+        // Away from one, the bend falls in the middle of the crossing, where it can be led into.
+        let room=34;
+        for(const q of this.nodes)room=Math.min(room,Math.hypot(wx-q.baseX,wy-q.baseY)-q.cap-q.amp-reach);
+        for(const h of this.hazards)room=Math.min(room,Math.hypot(wx-h.x,wy-h.y)-gravityRadius(h)-reach);
+        for(const g of this.nebulas)room=Math.min(room,Math.hypot(wx-g.x,wy-g.y)-g.r-reach);
+        if(room<16)continue;
+        // It blows across the crossing rather than along it, so the gust is felt as a drift off the
+        // line instead of a push down it, and always toward the middle of the sheet, so a course
+        // led into it is never led into the chart's own edge.
+        const along=Math.atan2(path.by-path.y,path.bx-path.x);
+        const dir=along+(wx>0?-1:1)*Math.PI/2;
+        this.hazards.push({x:wx,y:wy,r:room,kind:'wind',dir,row:k,seed:Math.floor(gale()*1e8),phase:gale()*TAU,near:false});
+        break;
       }
     }
     // A nebula patch lies across one of the tangent routes between the last two main
@@ -437,7 +497,11 @@ class OrbitWorld {
         // drift envelope and hazard field around it, and dropped if that is under 60.
         let room=90;
         for(const q of this.nodes)room=Math.min(room,Math.hypot(gx-q.baseX,gy-q.baseY)-q.cap-q.amp-8);
-        for(const h of this.hazards)room=Math.min(room,Math.hypot(gx-h.x,gy-h.y)-gravityRadius(h)+30);
+        // The 30 units of slack are allowed against a lethal hazard, whose outer field a cloud may
+        // just overlap without hiding anything that matters there. A gust is given none: a cloud
+        // over the stretch of a crossing a wind bends would hide exactly the bend the guide is
+        // there to show, and the bend is the whole of what a wind-head is.
+        for(const h of this.hazards)room=Math.min(room,Math.hypot(gx-h.x,gy-h.y)-gravityRadius(h)+(hazardKind(h).lethal?30:0));
         for(const g of this.nebulas)room=Math.min(room,Math.hypot(gx-g.x,gy-g.y)-g.r);
         if(room<60)continue;
         this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(90,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
@@ -564,12 +628,12 @@ class OrbitWorld {
     this.state='dead';this.reason=reason;this.player.deadTime=0;this.shake=5;
     this.emit('death',{x:this.player.x,y:this.player.y,reason,score:this.score});
   }
-  // A carried shield absorbs one black-hole contact: it consumes itself and
+  // A carried shield absorbs one contact with a lethal hazard: it consumes itself and
   // reflects the flight outward instead of ending the run.
   hazardHit(h) {
     if(this.state!=='playing')return;
     const p=this.player;
-    if(!p.shielded){this.die(h.kind==='flare'?'SEARED BY A SUNSPOT FLARE':'CAUGHT BY A BLACK HOLE');return;}
+    if(!p.shielded){this.die(hazardKind(h).loss);return;}
     p.shielded=false;
     const dx=p.x-h.x,dy=p.y-h.y,d=Math.hypot(dx,dy)||1,nx=dx/d,ny=dy/d,dot=p.vx*nx+p.vy*ny;
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
@@ -645,11 +709,13 @@ class OrbitWorld {
         // The line costs ink by its length. What the step drew is spent before anything else is
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
         p.ink=Math.max(0,p.ink-this.inkCost(Math.hypot(p.x-ax,p.y-ay)));
-        if(result.hit?.kind==='hole')this.hazardHit(result.hit.h);
+        if(result.hit?.kind==='hazard')this.hazardHit(result.hit.h);
         else if(result.hit?.kind==='edge')this.edgeHit();
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node&&p.ink<=0)this.die('THE NIB RAN DRY');
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
+          // A gust cannot be grazed: what a graze pays for is the room left beside something lethal.
+          if(!hazardKind(h).lethal)continue;
           if(!h.near&&pointSegment(h.x,h.y,ax,ay,p.x,p.y)<h.r+17){
             h.near=true;this.score+=5;this.emit('near',{x:p.x,y:p.y});
             if(h.kind!=='flare'&&Math.hypot(p.vx,p.vy)>=MAX_SPEED-.5)this.observe('graze');
@@ -658,6 +724,7 @@ class OrbitWorld {
       }
     }
     if(wasOrbiting)for(const h of this.hazards){
+      if(!hazardKind(h).lethal)continue;
       const d=pointSegment(h.x,h.y,oldX,oldY,p.x,p.y);
       if(d<hazardCore(h)+3)this.hazardHit(h);
     }
@@ -702,7 +769,7 @@ class OrbitWorld {
     const until=best?best.distance:reach;
     const gravity=this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
-    if(best&&this.hazards.some(h=>{const t=segmentCircle(p.x,p.y,bx,by,h.x,h.y,h.r+3);return t!==null&&t<=hitAt;}))return null;
+    if(best&&this.hazards.some(h=>{if(!hazardKind(h).lethal)return false;const t=segmentCircle(p.x,p.y,bx,by,h.x,h.y,hazardCore(h)+3);return t!==null&&t<=hitAt;}))return null;
     const length=best?best.distance:p.node.type==='sling'?speed*1.9:83;
     this.flightPreview={points:[{x:p.x,y:p.y,time:0,distance:0},{x:p.x+dx*length,y:p.y+dy*length,time:length/speed,distance:length}],aim:best,curved:false,blocked:false,steps:0};
     this.fogPreview();
