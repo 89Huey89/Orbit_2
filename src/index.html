@@ -185,6 +185,11 @@
     #catalogue .eyebrow{margin:0 0 6px;font-size:9px}
     #catalogue .title-rule{margin:9px auto 0;width:76px}
     .catalogue-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;margin-top:11px;padding:0 3px 4px}
+    /* The Record/Catalogue tab switch: two ordinary .diff-btn buttons in a row, the active one already
+       picked out in gold by the existing [aria-pressed="true"] rule. Only the inactive pane is hidden;
+       both are always in the DOM (see renderCatalogue in src/ui.js). */
+    .cat-tabs{display:flex;gap:9px;justify-content:center;margin:0 0 13px}
+    .cat-pane.hidden{display:none}
     .ledger-table{width:100%;border-collapse:collapse}
     .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--line)}
     .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;border-bottom:1px solid var(--line);color:var(--best)}
@@ -221,6 +226,7 @@
       #catalogue h2{font-size:19px}
       #catalogue .title-rule{margin-top:5px}
       #game .catalogue-body{margin-top:7px}
+      #game .cat-tabs{margin-bottom:8px}
       #game .cat-group{margin-top:11px}
       #game .exlibris{display:none}
       #game #end-unlocked{margin:2px 0 3px;font-size:9px}

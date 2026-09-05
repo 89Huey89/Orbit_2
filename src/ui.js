@@ -161,13 +161,26 @@ function showEnd(){
 // every cosmetic the atlas can be printed with: the ones that have been earned are selectable, the
 // rest are blank rules with their condition beside them. Nothing here touches the simulation, and the
 // button that opens it is only on the plate when no run is in progress.
-let pendingUnlocks=[],catalogueOpen=false;
+let pendingUnlocks=[],catalogueOpen=false,catalogueTab='record';
 const commas=n=>Math.round(Number(n)||0).toLocaleString('en-US');
 function chartTime(seconds){
   const total=Math.max(0,Math.round(Number(seconds)||0)),h=Math.floor(total/3600),m=Math.floor(total%3600/60);
   return h?h+'h '+m+'m':m?m+'m':total+'s';
 }
 const plainText=value=>String(value??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+// Chapter numbers are printed the way the running head and the plate reveal already print them — a
+// roman numeral beside the chapter's own name (see `numerals`/`chapters` in src/plates.js) — rather
+// than a bare digit. ledger.deepestChapter and ledger.deepestHardcoreChapter are stored 1-4, or 0 for
+// a ledger that has never yet folded in a finished run.
+function chapterLabel(value){
+  const n=Math.max(0,Math.min(chapters.length,Math.round(Number(value)||0)));
+  return n?numerals[n-1]+' · '+chapters[n-1]:'—';
+}
+// The atlas's eight named feats, in the order src/simulation.js's OBSERVATIONS lists them, paired with
+// the Latin caption the sheet inscribes when each first fires — must keep matching the medal entries
+// of the same name in src/ledger.js's UNLOCKS.
+const OBSERVATION_LABELS=[['perfectThree','Tres Perfecti'],['skipFive','Saltus Quinque'],['maxSpeed','Velocitas Summa'],
+  ['graze','Periculum'],['pureChart','Linea Pura'],['fortyRows','Altitudo'],['threeMinutes','Vigilia'],['rightAngle','Angulus Rectus']];
 function catalogueTable(){
   const rows=[
     ['Orbits captured',commas(ledger.captures)],
@@ -181,6 +194,45 @@ function catalogueTable(){
     rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
     '</tbody></table>';
 }
+// The score and the run count the ledger holds for each pressure, TIRO through MAGISTER, beside the
+// daily plate's own tally under its own name.
+function pressureTable(){
+  const rows=[['relaxed',DIFFICULTY_LABELS.relaxed],['classic',DIFFICULTY_LABELS.classic],
+    ['hardcore',DIFFICULTY_LABELS.hardcore],['daily','Tabula diei']];
+  return '<table class="ledger-table"><tbody>'+
+    rows.map(([key,label])=>`<tr><th scope="row">${plainText(label)}</th><td>${commas(ledger.personalBests[key]||0)} best · ${commas(ledger.runs[key]||0)} runs</td></tr>`).join('')+
+    '</tbody></table>';
+}
+// The fuller record: the original six lifetime figures the catalogue has always shown, then every
+// other stat the ledger keeps that otherwise never surfaces anywhere in the UI on its own — some of
+// it only ever leaking out as a locked cosmetic's "progress toward" text, and only until that rule is
+// unlocked and the text disappears for good.
+function catalogueRecord(){
+  const streak=typeof dailyStreak==='function'?dailyStreak():{current:0,longest:0};
+  const rows=[
+    ['Best flow',commas(ledger.bestFlow)+'×'],
+    ['Deepest chapter reached',chapterLabel(ledger.deepestChapter)],
+    ['Deepest chapter at '+DIFFICULTY_LABELS.hardcore+' pressure',chapterLabel(ledger.deepestHardcoreChapter)],
+    ['Black holes grazed',commas(ledger.grazes)],
+    [POWERUP_LABELS.shield+' spent',commas(ledger.shieldsSpent)],
+    [POWERUP_LABELS.reflector+' spent',commas(ledger.reflectorsSpent)],
+    ['Slingshots left at top speed',commas(ledger.maxSpeedSlings)],
+    ['Inkwells filled on a streak',commas(ledger.inkwellsFound)],
+    ['Arrivals too steep to score',commas(ledger.badAngles)],
+    ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
+  ];
+  let html=catalogueTable()+'<table class="ledger-table"><tbody>'+
+    rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
+    '</tbody></table>';
+  html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
+  html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3><table class="ledger-table"><tbody>'+
+    OBSERVATION_LABELS.map(([key,latin])=>`<tr><th scope="row">${plainText(latin)}</th><td>${commas(ledger.observations[key]||0)}</td></tr>`).join('')+
+    '</tbody></table></section>';
+  html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3><table class="ledger-table"><tbody>'+
+    CONSTELLATIONS.map(c=>`<tr><th scope="row">${plainText(c.name)}</th><td>${commas(ledger.constellations[c.name]||0)}</td></tr>`).join('')+
+    '</tbody></table></section>';
+  return html;
+}
 function catalogueRow(item,kind){
   const entry=UNLOCK_BY_ID[item.id];
   if(entry&&!isUnlocked(item.id)){
@@ -193,9 +245,10 @@ function catalogueRow(item,kind){
   const chosen=cosmetic(kind)===item.id;
   return `<li class="cat-row"><button class="cat-item" type="button" data-kind="${kind}" data-id="${item.id}" aria-pressed="${chosen}">${label}</button></li>`;
 }
-function renderCatalogue(){
-  const body=$('catalogue-body');if(!body)return;
-  let html=catalogueTable();
+// Every cosmetic group, the named feats as earned-or-not, and the engraver's credit — the catalogue
+// half of the leaf, unchanged from before the Record tab existed beside it.
+function catalogueItems(){
+  let html='';
   for(const group of COSMETIC_KINDS){
     html+=`<section class="cat-group"><h3>${group.title}<span class="cat-latin">${group.latin}</span></h3><ul>`;
     for(const item of cosmeticItems(group.kind))html+=catalogueRow(item,group.kind);
@@ -212,6 +265,22 @@ function renderCatalogue(){
       `<input id="initials" type="text" maxlength="3" size="3" autocomplete="off" spellcheck="false" value="${plainText(initials)}"></p>`;
   }
   html+='</section>';
+  return html;
+}
+// The leaf holds two sections — the ledger's Record and the unlockables' Catalogue — and a small tab
+// switch between them. Both are always rendered into the DOM on every pass; only the inactive one is
+// hidden with the .hidden class already used elsewhere for whole-screen show/hide (see .cat-pane.hidden
+// in src/index.html), so anything that reads the leaf's markup — including scripts/verify.mjs, which
+// searches catalogue-body's innerHTML right after opening it — finds both sections regardless of which
+// tab is showing.
+function renderCatalogue(){
+  const body=$('catalogue-body');if(!body)return;
+  const tabs=[['record','RECORD'],['catalogue','CATALOGUE']];
+  let html='<div class="cat-tabs">'+
+    tabs.map(([id,label])=>`<button type="button" class="diff-btn cat-tab-btn" data-tab="${id}" aria-pressed="${catalogueTab===id}">${label}</button>`).join('')+
+    '</div>';
+  html+=`<div class="cat-pane${catalogueTab==='record'?'':' hidden'}" data-pane="record">${catalogueRecord()}</div>`;
+  html+=`<div class="cat-pane${catalogueTab==='catalogue'?'':' hidden'}" data-pane="catalogue">${catalogueItems()}</div>`;
   body.innerHTML=html;
   const field=$('initials');
   if(field&&field.addEventListener&&!field.wired){
@@ -228,7 +297,8 @@ function syncCatalogueMarks(){
 }
 function openCatalogue(){
   if(ephemerisOpen)closeEphemeris();
-  catalogueOpen=true;renderCatalogue();
+  // Always opens on the Record tab, whichever tab was showing when the leaf was last closed.
+  catalogueOpen=true;catalogueTab='record';renderCatalogue();
   $('catalogue').classList.remove('hidden');$('catalogue').setAttribute('aria-hidden','false');
   $('catalogue-open').setAttribute('aria-expanded','true');
   game.classList.add('cataloguing');
@@ -344,6 +414,12 @@ $('catalogue-open').addEventListener('click',()=>{if(catalogueOpen)closeCatalogu
 $('catalogue-close').addEventListener('click',()=>closeCatalogue());
 $('catalogue').addEventListener('pointerdown',e=>{if(e.stopPropagation)e.stopPropagation();});
 $('catalogue-body').addEventListener('click',e=>{
+  const tabButton=e.target&&e.target.closest?e.target.closest('button[data-tab]'):null;
+  if(tabButton){
+    const wanted=tabButton.getAttribute('data-tab');
+    if(catalogueTab!==wanted){catalogueTab=wanted;renderCatalogue();if(audio.enabled)audio.brush(1400,.1);}
+    return;
+  }
   const button=e.target&&e.target.closest?e.target.closest('button[data-kind]'):null;
   if(!button)return;
   if(setCosmetic(button.getAttribute('data-kind'),button.getAttribute('data-id'))){
