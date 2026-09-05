@@ -4,25 +4,25 @@
   Built from docs/eras/research/observatory.md; every named mark below cites a section of it.
   Not shipped code — a standalone sheet for judging the era before any porting into src/.
 
-  Fonts (Google Fonts, both SIL Open Font License 1.1 — embeddable the way the game's Fell
-  faces already are; research.md §4 names both explicitly):
-    - IBM Plex Mono (IBM, 2017) — the FITS-card face. Latin, Latin-1 Supplement, Latin
-      Extended-A subset requested below (ASCII plus the punctuation a card and a catalogue
-      number actually set: = / − ″ ° ×).
+  Fonts (both SIL Open Font License 1.1 — embeddable the way the game's Fell faces already are;
+  research.md §4 names both explicitly), loaded from the local full-face copies this prototype
+  folder keeps beside itself (fonts/README.md) rather than from Google's CDN, so the sheet
+  paints correctly with no network at all — the game would ship them cut to its own charset via
+  `npm run fonts`, exactly as the Fell types are cut today:
+    - IBM Plex Mono (IBM, 2017) — the FITS-card face.
     - Space Grotesk (Florian Karsten, 2018, cut from Colophon Foundry's Space Mono) — the
       margin/small-caps face, "instrument label" register per research.md §4.
-  If the network is unavailable the stylesheet link simply fails; the font-family fallback
-  stacks below land on the platform's own monospace/grotesque rather than Times New Roman, so
-  the sheet still reads as an instrument, only in a house face instead of the named one.
+  If a face fails to parse the font-family fallback stacks below land on the platform's own
+  monospace/grotesque rather than Times New Roman, so the sheet still reads as an instrument,
+  only in a house face instead of the named one.
 -->
 <html>
 <head>
 <meta charset="utf-8">
 <title>Orbit — The Observatory</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'IBM Plex Mono';src:url('fonts/ibm-plex-mono.ttf') format('truetype');font-weight:400 600;font-display:block;}
+  @font-face{font-family:'Space Grotesk';src:url('fonts/space-grotesk.ttf') format('truetype');font-weight:400 600;font-display:block;}
   html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
   #stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;image-rendering:auto;}
@@ -59,6 +59,9 @@ const TOKENS={
   mono:'"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace',
   sc:'"Space Grotesk",ui-sans-serif,system-ui,sans-serif'
 };
+// One sun direction for the whole sheet — every lit body reads its terminator off this same
+// vector, so the specimen row looks like one case of worlds under one lamp, not seven poses.
+const SUN_DIR={x:-0.66,y:-0.75};
 // Body palettes: the exact hex the shipped `modern` plate token already registers
 // (src/planets.js PLATES.modern) — reused rather than re-invented, per this era's own rule
 // that a rendered world keeps its true colour instead of a plate tint.
@@ -273,22 +276,34 @@ function albedo(g,r,family,rng){
   g.restore();
 }
 function lightBody(g,r,family,rng){
-  const pal=BODY[family],lx=-r*.42,ly=-r*.46;
+  const pal=BODY[family];
+  // One sun for the whole sheet: every body is lit from this same direction, so the row reads as
+  // one specimen case under one lamp rather than seven separately-posed renders.
+  const nx=SUN_DIR.x,ny=SUN_DIR.y,lx=r*nx*.55,ly=r*ny*.55;
   g.save();g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
-  const day=g.createRadialGradient(lx,ly,r*.05,lx,ly,r*2.1);
-  day.addColorStop(0,'rgba(255,252,244,.32)');day.addColorStop(.2,'rgba(255,250,238,.08)');
-  day.addColorStop(.36,'rgba(0,0,0,0)');day.addColorStop(.6,'rgba(2,4,10,.32)');
-  day.addColorStop(.85,'rgba(1,3,8,.76)');day.addColorStop(1,'rgba(0,1,5,.92)');
-  g.fillStyle=day;g.fillRect(-r,-r,r*2,r*2);
-  const limb=g.createRadialGradient(0,0,r*.6,0,0,r);
-  limb.addColorStop(0,'rgba(0,0,0,0)');limb.addColorStop(1,`rgba(2,4,9,${.28+pal.air*.16})`);
+  // The terminator itself: a gradient run straight along the sun axis is the cheap-and-correct
+  // fake for a sphere's cosine falloff — it puts a clean, sun-relative line between the lit
+  // hemisphere and the dark one instead of a vague overall vignette. An airless world's line is a
+  // knife-edge; an atmosphere scatters light a little way past it, so the edge softens with air.
+  const soft=.05+pal.air*.24;
+  const term=g.createLinearGradient(r*nx,r*ny,-r*nx,-r*ny);
+  term.addColorStop(0,'rgba(0,0,0,0)');
+  term.addColorStop(Math.max(0,.5-soft),'rgba(0,0,0,0)');
+  term.addColorStop(.5,'rgba(2,4,10,.52)');
+  term.addColorStop(Math.min(1,.5+soft),'rgba(1,3,8,.84)');
+  term.addColorStop(1,'rgba(0,1,4,.95)');
+  g.fillStyle=term;g.fillRect(-r,-r,r*2,r*2);
+  // Limb darkening proper: even the lit face loses light toward its own edge, all the way round.
+  const limb=g.createRadialGradient(0,0,r*.5,0,0,r);
+  limb.addColorStop(0,'rgba(0,0,0,0)');limb.addColorStop(1,`rgba(2,4,9,${.24+pal.air*.14})`);
   g.fillStyle=limb;g.fillRect(-r,-r,r*2,r*2);
-  const rim=g.createLinearGradient(lx*2.2,ly*2.2,-lx*2.2,-ly*2.2);
-  rim.addColorStop(0,`rgba(${pal.rgb},${.5+pal.air*.4})`);rim.addColorStop(.42,`rgba(${pal.rgb},.08)`);rim.addColorStop(.75,`rgba(${pal.rgb},0)`);
-  hairArc(g,0,0,r-.6,0,Math.PI*2,{color:rim,width:1.6});
+  // The crescent of light caught right on the lit limb, brightest nearest the sun.
+  const rim=g.createRadialGradient(lx*1.5,ly*1.5,0,lx*1.5,ly*1.5,r*1.35);
+  rim.addColorStop(0,`rgba(${pal.rgb},${.55+pal.air*.35})`);rim.addColorStop(.45,`rgba(${pal.rgb},.1)`);rim.addColorStop(1,`rgba(${pal.rgb},0)`);
+  g.fillStyle=rim;g.fillRect(-r,-r,r*2,r*2);
   if(pal.spec){
-    const spec=g.createRadialGradient(lx*1.05,ly*1.05,0,lx*1.05,ly*1.05,r*.4);
-    spec.addColorStop(0,'rgba(255,255,255,.45)');spec.addColorStop(.5,'rgba(255,255,255,.08)');spec.addColorStop(1,'rgba(255,255,255,0)');
+    const spec=g.createRadialGradient(lx*1.15,ly*1.15,0,lx*1.15,ly*1.15,r*.38);
+    spec.addColorStop(0,'rgba(255,255,255,.5)');spec.addColorStop(.5,'rgba(255,255,255,.1)');spec.addColorStop(1,'rgba(255,255,255,0)');
     g.fillStyle=spec;g.fillRect(-r,-r,r*2,r*2);
   }
   if(pal.ring){ // the ring's own shadow on the globe — the clearest cue this is a sphere (§8)
@@ -649,8 +664,11 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize();
-if(document.fonts&&document.fonts.ready){document.fonts.ready.then(()=>{staticLayer=null;requestAnimationFrame(frame);});}
-requestAnimationFrame(frame);
+// Wait on the local faces before the first paint — nothing here is fetched over a network, so
+// document.fonts.ready settles almost immediately; the timeout is only a guard against a face
+// that fails to parse, so the sheet still starts rather than hanging on a broken font file.
+const fontsSettled=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+Promise.race([fontsSettled,new Promise(r=>setTimeout(r,800))]).then(()=>requestAnimationFrame(frame));
 </script>
 </body>
 </html>

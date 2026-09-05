@@ -201,28 +201,45 @@ function handStencil(g,x,y,scale,seedN,color){
   tg.save();tg.globalCompositeOperation='destination-out';tg.fillStyle=tg.strokeStyle='#000';
   drawHandMask(tg);
   tg.restore();
-  tg.save();tg.globalAlpha=0.28;tg.strokeStyle=color;tg.lineWidth=1.1;
+  // a dark residual rim right at the true edge, since no real stencil is razor-crisp AND
+  // because the hole needs SOME definite edge to read as a hand rather than just a gap in the
+  // speckle cloud when the bare rock beneath is close in value to the pigment.
+  tg.save();tg.globalAlpha=0.4;tg.strokeStyle=TOKENS.charcoal;tg.lineWidth=1.6;
   drawHandMaskStroke(tg);
   tg.restore();
   g.drawImage(tmp,x-size/2,y-size/2);
 }
+// Fingers spread across the palm's own top edge (bx runs the width of the palm, not a single
+// point) rather than fanning from one narrow hinge — a real spread hand, not a sheaf of reeds.
+const FINGER_DATA=[
+  {bx:-8,a:-1.0,len:17,w:6.2}, // thumb, splayed well out to the side
+  {bx:-5,a:-0.28,len:25,w:5.6},
+  {bx:-1.5,a:-0.08,len:29,w:5.6},
+  {bx:2,a:0.1,len:27,w:5.4},
+  {bx:6,a:0.3,len:22,w:5.0}
+];
 function drawHandMask(g){
   g.beginPath();g.ellipse(0,10,9,13,0.05,0,TAU);g.fill();
-  const fingers=[{a:-1.05,len:19,w:6.6},{a:-0.32,len:25,w:5.8},{a:-0.09,len:28,w:5.8},{a:0.13,len:26,w:5.6},{a:0.36,len:21,w:5.2}];
   g.lineCap='round';
-  fingers.forEach(f=>{
-    const bx=Math.sin(f.a)*6,by=-1-Math.cos(f.a)*2;
-    g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.sin(f.a)*f.len,by-Math.cos(f.a)*f.len);
+  FINGER_DATA.forEach(f=>{
+    const by=-2;
+    g.beginPath();g.moveTo(f.bx,by);g.lineTo(f.bx+Math.sin(f.a)*f.len,by-Math.cos(f.a)*f.len);
     g.lineWidth=f.w;g.stroke();
   });
 }
 function drawHandMaskStroke(g){
+  // a thin OUTLINE only — the caller sets a hairline lineWidth; tracing the mask's own thick
+  // finger width here would double back over it and read as a solid dark fist, not an edge.
+  const lw=g.lineWidth;
   g.beginPath();g.ellipse(0,10,9,13,0.05,0,TAU);g.stroke();
-  const fingers=[{a:-1.05,len:19},{a:-0.32,len:25},{a:-0.09,len:28},{a:0.13,len:26},{a:0.36,len:21}];
   g.lineCap='round';
-  fingers.forEach(f=>{
-    const bx=Math.sin(f.a)*6,by=-1-Math.cos(f.a)*2;
-    g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.sin(f.a)*f.len,by-Math.cos(f.a)*f.len);g.lineWidth=6.2;g.stroke();
+  FINGER_DATA.forEach(f=>{
+    const by=-2,dx=Math.sin(f.a),dy=-Math.cos(f.a),nx=-dy*f.w*0.5,ny=dx*f.w*0.5;
+    const tx=f.bx+dx*f.len,ty=by+dy*f.len;
+    g.lineWidth=lw;
+    g.beginPath();g.moveTo(f.bx+nx,by+ny);g.lineTo(tx+nx,ty+ny);g.stroke();
+    g.beginPath();g.moveTo(f.bx-nx,by-ny);g.lineTo(tx-nx,ty-ny);g.stroke();
+    g.beginPath();g.arc(tx,ty,f.w*0.5,0,TAU);g.stroke();
   });
 }
 // The engraved line: a flint burin scored into the rock, exposing paler stone beneath the dark
@@ -307,7 +324,7 @@ function paintGround(g){
   for(let y=0;y<H;y+=step){
     for(let x=0;x<W;x+=step){
       const s=reliefShade(x,y);
-      g.fillStyle=s<0.5?mixHex('#332c1c',TOKENS.groundDeep,s*2):mixHex(TOKENS.ground,TOKENS.groundHi,(s-0.5)*2);
+      g.fillStyle=s<0.5?mixHex(TOKENS.groundDeep,TOKENS.ground,s*2):mixHex(TOKENS.ground,TOKENS.groundHi,(s-0.5)*2);
       g.fillRect(x,y,step+0.6,step+0.6);
     }
   }
@@ -341,13 +358,18 @@ function paintGround(g){
     for(let s=0;s<7;s++){x+=(rnd()-0.5)*46;y+=H/7;g.lineTo(x,y);}
     g.stroke();g.restore();
   }
-  // cracks: natural fissures, not a human mark, so drawn directly rather than through a primitive.
-  for(let i=0;i<12;i++){
+  // cracks: natural fissures, not a human mark, so drawn directly rather than through a
+  // primitive. Seeded to start in the open margins between the specimen/hazard rows rather than
+  // scattered anywhere, so a crack reads as the wall's own geology instead of stray clutter
+  // slashed across a painted body.
+  const crackBands=[[0,110],[240,300],[500,610],[720,800]];
+  for(let i=0;i<10;i++){
     const rnd=mulberry32(6100+i*91);
-    let x=rng()*W,y=rng()*H,a=rnd()*TAU;
-    g.save();g.strokeStyle='rgba(20,15,9,.5)';g.lineWidth=1+rnd()*1.3;g.lineCap='round';
+    const band=crackBands[i%crackBands.length];
+    let x=rng()*W,y=band[0]+rng()*(band[1]-band[0]),a=rnd()*TAU;
+    g.save();g.strokeStyle='rgba(16,12,7,.4)';g.lineWidth=0.9+rnd()*1.1;g.lineCap='round';
     g.beginPath();g.moveTo(x,y);
-    for(let s=0;s<6;s++){a+=(rnd()-0.5)*1.1;x+=Math.cos(a)*(18+rnd()*32);y+=Math.sin(a)*(18+rnd()*32);g.lineTo(x,y);}
+    for(let s=0;s<5;s++){a+=(rnd()-0.5)*1.0;x+=Math.cos(a)*(14+rnd()*24);y+=Math.sin(a)*(14+rnd()*24);g.lineTo(x,y);}
     g.stroke();g.restore();
   }
   legend(10,10,'ground: relief-lit Lascaux limestone (torch-lit, cracks, calcite veils)');
@@ -361,45 +383,52 @@ function paintBody(g,cx,cy,r,family,seedN){
     case 'ocean': // an undulating engraved line filled with a dilute manganese wash, pooling unevenly.
       { const pts=[];for(let a=0;a<=TAU+0.001;a+=0.25){const rr=r*(0.86+Math.sin(a*3+seedN)*0.08);pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
         g.save();g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.clip();
-        for(let i=0;i<26;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*(0.3+rnd()*0.3),seedN+i,TOKENS.mnBlack,0.14);
+        g.globalAlpha=0.4;g.fillStyle=TOKENS.mnBlack;g.fillRect(cx-r*1.2,cy-r*1.2,r*2.4,r*2.4);g.globalAlpha=1;
+        for(let i=0;i<20;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*(0.32+rnd()*0.32),seedN+i,TOKENS.mnBlack,0.22);
         g.restore();
-        engravedLine(g,(gg,rr2)=>{pts.forEach(([x,y],i)=>i?gg.lineTo(x,y):gg.moveTo(x,y));gg.closePath();},1.6,seedN);
+        engravedLine(g,(gg,rr2)=>{pts.forEach(([x,y],i)=>i?gg.lineTo(x,y):gg.moveTo(x,y));gg.closePath();},1.8,seedN);
       }
       break;
     case 'crater': // ochre-washed disc, pocked with pecked cup marks reading by relief, not colour.
-      for(let i=0;i<30;i++)dab(g,cx+(rnd()-0.5)*r*1.7,cy+(rnd()-0.5)*r*1.7,r*0.28,seedN+i,TOKENS.yellowOchre,0.05);
-      engravedArc(g,cx,cy,r*0.92,0,TAU,1.4,seedN);
-      for(let i=0;i<16;i++){const a=rnd()*TAU,rr=rnd()*r*0.75;peckedCup(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r*0.1+rnd()*r*0.06,seedN+i);}
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.42;g.fillStyle=TOKENS.yellowOchre;g.fill();g.globalAlpha=1;
+      for(let i=0;i<20;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*0.3,seedN+i,TOKENS.yellowOchreDeep,0.16);
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.6,seedN);
+      for(let i=0;i<16;i++){const a=rnd()*TAU,rr=rnd()*r*0.75;peckedCup(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r*0.11+rnd()*r*0.07,seedN+i);}
       break;
     case 'ringed': // the cup-and-ring motif taken whole: a central cup, 1-3 pecked concentric rings.
-      peckedCup(g,cx,cy,r*0.18,seedN);
-      for(let b=1;b<=3;b++)engravedArc(g,cx,cy,r*(0.32+b*0.2),0,TAU,1.3,seedN+b*9,1.4);
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.16;g.fillStyle=TOKENS.yellowOchreDeep;g.fill();g.globalAlpha=1;
+      peckedCup(g,cx,cy,r*0.19,seedN);
+      for(let b=1;b<=3;b++)engravedArc(g,cx,cy,r*(0.34+b*0.2),0,TAU,1.6,seedN+b*9,1.6);
       break;
     case 'ice': // the "reserve": bare stone left almost entirely unmarked, a value not a colour.
-      engravedArc(g,cx,cy,r*0.92,0,TAU,1,seedN);
-      for(let i=0;i<20;i++){const a=-0.9+rnd()*1.8;dab(g,cx+Math.cos(a)*r*0.9,cy+Math.sin(a)*r*0.9,1.6,seedN+i,TOKENS.kaolin,0.5);}
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.18;g.fillStyle=TOKENS.kaolin;g.fill();g.globalAlpha=1;
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.2,seedN);
+      for(let i=0;i<26;i++){const a=-0.9+rnd()*1.8;dab(g,cx+Math.cos(a)*r*0.9,cy+Math.sin(a)*r*0.9,2,seedN+i,TOKENS.kaolin,0.7);}
       break;
     case 'dune': // finger-combed ochre flutings — the "macaroni" gesture, dragged not pressed.
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.3;g.fillStyle=TOKENS.yellowOchre;g.fill();g.globalAlpha=1;
       for(let i=0;i<9;i++){
         const yy=cy-r*0.68+i*r*0.16;
-        draggedDab(g,cx-r*0.75,yy,cx+r*0.62,yy+r*0.1,2.6,seedN+i*13,i%2?TOKENS.yellowOchreDeep:TOKENS.yellowOchre,0.6);
+        draggedDab(g,cx-r*0.75,yy,cx+r*0.62,yy+r*0.1,3,seedN+i*13,i%2?TOKENS.yellowOchreDeep:TOKENS.yellowOchreHi,0.85);
       }
-      engravedArc(g,cx,cy,r*0.92,0,TAU,1,seedN+3);
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.4,seedN+3);
       break;
     case 'volcanic': // the reddest ochre the palette allows, veined with scored black fissures.
-      for(let i=0;i<24;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*0.3,seedN+i,TOKENS.redOchre,0.09);
-      engravedArc(g,cx,cy,r*0.92,0,TAU,1.4,seedN);
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.55;g.fillStyle=TOKENS.redOchre;g.fill();g.globalAlpha=1;
+      for(let i=0;i<20;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*0.3,seedN+i,TOKENS.redOchreDeep,0.18);
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.6,seedN);
       { const ox=cx+r*0.15,oy=cy-r*0.1;
         for(let i=0;i<7;i++){const a=rnd()*TAU,len=r*(0.4+rnd()*0.45);
           engravedLine(g,(gg)=>{gg.moveTo(ox,oy);gg.quadraticCurveTo(ox+Math.cos(a)*len*0.5,oy+Math.sin(a)*len*0.5+6,ox+Math.cos(a)*len,oy+Math.sin(a)*len);},1.1,seedN+i*5);}
       }
       break;
     case 'storm': // a dense, directionless cluster of short comma-strokes (Lascaux's ~50 unread signs).
-      for(let i=0;i<26;i++){
-        const a=rnd()*TAU,cxr=cx+(rnd()-0.5)*r*1.4,cyr=cy+(rnd()-0.5)*r*1.4,len=3+rnd()*5;
-        engravedLine(g,(gg)=>{gg.moveTo(cxr,cyr);gg.quadraticCurveTo(cxr+Math.cos(a)*len*0.5,cyr+Math.sin(a)*len*0.5-2,cxr+Math.cos(a)*len,cyr+Math.sin(a)*len);},1,seedN+i*7);
+      g.beginPath();g.arc(cx,cy,r*0.9,0,TAU);g.globalAlpha=0.32;g.fillStyle=TOKENS.charcoal;g.fill();g.globalAlpha=1;
+      for(let i=0;i<34;i++){
+        const a=rnd()*TAU,cxr=cx+(rnd()-0.5)*r*1.5,cyr=cy+(rnd()-0.5)*r*1.5,len=5+rnd()*7;
+        engravedLine(g,(gg)=>{gg.moveTo(cxr,cyr);gg.quadraticCurveTo(cxr+Math.cos(a)*len*0.5,cyr+Math.sin(a)*len*0.5-2,cxr+Math.cos(a)*len,cyr+Math.sin(a)*len);},1.5,seedN+i*7);
       }
-      engravedArc(g,cx,cy,r*0.94,0,TAU,1,seedN+2);
+      engravedArc(g,cx,cy,r*0.94,0,TAU,1.6,seedN+2);
       break;
   }
   g.restore();
@@ -466,25 +495,36 @@ function paintHazard(g,cx,cy,r,kind,t){
 // are there, over the black bull's shoulder — only their meaning is in question. Three of the
 // six carry the game's ochre "star" warmth; the other three are left as plain manganese dabs,
 // so the sheet shows exactly what is attested and no more.
+function bullBody(gg){
+  gg.moveTo(-96,10);
+  gg.bezierCurveTo(-70,-34,-24,-46,18,-40);
+  gg.bezierCurveTo(48,-36,58,-20,70,-18);
+  gg.lineTo(60,-8);
+  gg.bezierCurveTo(50,-10,44,-4,40,6);
+  gg.bezierCurveTo(34,22,10,34,-24,32);
+  gg.bezierCurveTo(-56,30,-84,24,-96,10);
+  gg.closePath();
+}
 function paintBull(g,x,y,scale){
   g.save();g.translate(x,y);g.scale(scale,scale);
-  engravedLine(g,(gg)=>{
-    gg.moveTo(-96,10);
-    gg.bezierCurveTo(-70,-34,-24,-46,18,-40);
-    gg.bezierCurveTo(48,-36,58,-20,70,-18);
-    gg.lineTo(60,-8);
-    gg.bezierCurveTo(50,-10,44,-4,40,6);
-    gg.bezierCurveTo(34,22,10,34,-24,32);
-    gg.bezierCurveTo(-56,30,-84,24,-96,10);
-    gg.closePath();
-  },2.6,7301);
+  // Lascaux's bulls are SOLID black, not outlines — the largest is over 5m of unbroken charcoal
+  // (§1) — so the silhouette is filled first, layered dabs rather than one flat fill so the
+  // edge still frays into the rock the way a worked panel really does.
+  { const rnd=mulberry32(7300);
+    g.save();g.beginPath();bullBody(g);g.clip();
+    g.fillStyle=TOKENS.charcoal;g.fillRect(-100,-70,200,110);
+    for(let i=0;i<40;i++)dab(g,-70+rnd()*150,-50+rnd()*80,14+rnd()*10,7350+i,TOKENS.mnBlack,0.5);
+    g.restore();
+  }
+  engravedLine(g,bullBody,3,7301);
   // twisted-perspective horns and legs (§2): both drawn full even where they would occlude.
-  engravedLine(g,(gg)=>{gg.moveTo(6,-40);gg.quadraticCurveTo(2,-58,-14,-62);},2,7302);
-  engravedLine(g,(gg)=>{gg.moveTo(10,-39);gg.quadraticCurveTo(18,-56,10,-68);},2,7303);
-  [[-58,12],[-30,14],[10,16],[34,12]].forEach((p,i)=>engravedLine(g,(gg)=>{gg.moveTo(p[0],p[1]);gg.lineTo(p[0]-6+i,p[1]+30);},2.2,7310+i));
-  // the six-dot cluster over the shoulder — three warmed to "star," three left plain.
+  engravedLine(g,(gg)=>{gg.moveTo(6,-40);gg.quadraticCurveTo(2,-58,-14,-62);},2.4,7302);
+  engravedLine(g,(gg)=>{gg.moveTo(10,-39);gg.quadraticCurveTo(18,-56,10,-68);},2.4,7303);
+  [[-58,12],[-30,14],[10,16],[34,12]].forEach((p,i)=>engravedLine(g,(gg)=>{gg.moveTo(p[0],p[1]);gg.lineTo(p[0]-6+i,p[1]+34);},2.6,7310+i));
+  // the six-dot cluster over the shoulder — three warmed to "star," three left plain — sitting
+  // ON the black fill exactly as the real panel's dots sit over the painted shoulder.
   const dots=[[-6,-46],[2,-50],[10,-47],[-2,-40],[6,-38],[14,-42]];
-  dots.forEach((p,i)=>dab(g,p[0],p[1],3.4,7400+i,i%2?TOKENS.redOchre:TOKENS.mnBlack,i%2?0.95:0.55));
+  dots.forEach((p,i)=>dab(g,p[0],p[1],3.6,7400+i,i%2?TOKENS.redOchre:TOKENS.kaolin,i%2?0.95:0.7));
   g.restore();
 }
 
@@ -502,20 +542,21 @@ function paintEmber(g,x,y,seedN,heat){
 function paintEmberTrail(g,pts){
   pts.forEach((p,i)=>{
     const a=(i/pts.length);
-    g.save();g.globalAlpha=a*0.7;
-    g.beginPath();g.arc(p.x,p.y,1.4+a*1.6,0,TAU);
+    g.save();g.globalAlpha=a*0.9;
+    g.beginPath();g.arc(p.x,p.y,2+a*2.4,0,TAU);
     g.fillStyle=a>0.6?TOKENS.yellowOchreHi:TOKENS.redOchreDeep;g.fill();
+    if(a>0.7){g.globalAlpha=(a-0.7)*1.6;g.beginPath();g.arc(p.x,p.y,4.5,0,TAU);g.fillStyle='rgba(255,220,160,.5)';g.fill();}
     g.restore();
   });
 }
 
 // ================= pickups (four), reskinned in the era's own grammar =================
 function paintPickup(g,x,y,kind){
-  g.save();g.translate(x,y);
+  g.save();g.translate(x,y);g.scale(1.8,1.8);
   switch(kind){
     case 'spark': // sling → a struck spark-cluster, echoing the comet's own ember (constructed fit).
-      dab(g,0,0,4,701,TOKENS.yellowOchreHi,0.9);
-      for(let i=0;i<6;i++){const a=i/6*TAU;engravedLine(g,(gg)=>{gg.moveTo(Math.cos(a)*4,Math.sin(a)*4);gg.lineTo(Math.cos(a)*10,Math.sin(a)*10);},0.9,702+i);}
+      dab(g,0,0,4,701,TOKENS.yellowOchreHi,0.95);
+      for(let i=0;i<6;i++){const a=i/6*TAU;engravedLine(g,(gg)=>{gg.moveTo(Math.cos(a)*4,Math.sin(a)*4);gg.lineTo(Math.cos(a)*10,Math.sin(a)*10);},1.1,702+i);}
       break;
     case 'spiral': // shield (Scutum) → Newgrange's pecked triple spiral, an attested threshold/ward motif (§1).
       for(let s=0;s<3;s++){
@@ -523,11 +564,11 @@ function paintPickup(g,x,y,kind){
         engravedLine(g,(gg)=>{
           let a=off,rr=1;gg.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);
           for(let t=0;t<=1;t+=0.05){a=off+t*TAU*1.4;rr=1+t*8;gg.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
-        },1,720+s);
+        },1.2,720+s);
       }
       break;
     case 'reverse-hand': // reflector (Repulsa) → a hand stencil the opposite way; construction flagged (top-of-file note).
-      handStencil(g,0,0,0.32,730,TOKENS.mnBlack);
+      handStencil(g,0,0,0.5,730,TOKENS.redOchreDeep);
       break;
     case 'nodule': // inkwell → a raw ochre nodule, literal — the currency already IS this material (§6).
       { const rnd=mulberry32(740);
@@ -543,40 +584,55 @@ function paintPickup(g,x,y,kind){
   g.restore();
 }
 
+// A worked patch: a soft, low wash sitting behind a HUD cluster so it reads as a deliberately
+// prepared area of the wall — the way a real panel's ground is often thinned or rubbed smooth
+// before marks go on it — rather than a scatter of strokes floating on raw, untouched rock.
+function workedPatch(g,x,y,w,h,seedN,color){
+  const rnd=mulberry32(seedN>>>0||1);
+  g.save();
+  for(let i=0;i<16;i++)dab(g,x+(rnd()-0.5)*w,y+(rnd()-0.5)*h,Math.max(w,h)*0.22,seedN+i,color,0.028);
+  g.restore();
+}
+
 // ================= HUD: tally + dot-field only, no writing anywhere on the sheet (research §9) =================
 const state={score:342,speed:16,flow:3,best:610,chapter:0};
 function paintHUDStatic(g){
   // title / maker's mark: the hand stencil IS the title (brief direction) — the closest thing
   // this era has to a signature, standing where "ORBIT" sits on every other plate.
-  handStencil(g,92,78,1.5,9,TOKENS.redOchre);
-  legend(46,116,'title / maker\'s mark: hand stencil (stands for "ORBIT")');
+  workedPatch(g,92,78,120,110,900,TOKENS.groundHi);
+  handStencil(g,92,78,1.85,9,TOKENS.redOchre);
+  legend(40,140,'title / maker\'s mark: hand stencil (stands for "ORBIT")');
 
   // speed / flow: small fast-changing counts → tally rows, top-centre.
-  const cx=W/2-40;
-  tallyRow(g,cx,44,state.speed,{weight:1.5,seed:11});
-  tallyRow(g,cx,70,state.flow,{weight:1.5,seed:31,len:8});
-  legend(cx,90,'speed / flow: tally rows (units struck left to right)');
+  const cx=W/2-46;
+  workedPatch(g,cx+50,58,220,60,901,TOKENS.groundHi);
+  tallyRow(g,cx,46,state.speed,{weight:2,len:13,seed:11});
+  tallyRow(g,cx,76,state.flow,{weight:2,seed:31,len:10});
+  legend(cx,96,'speed / flow: tally rows (units struck left to right)');
 
   // best: large slow-changing → dot-field density, top-right.
-  dotField(g,W-66,58,34,state.best,51,TOKENS.yellowOchre);
-  legend(W-140,30,'best: dot-field (density communicates magnitude)');
+  workedPatch(g,W-70,56,110,100,902,TOKENS.groundHi);
+  dotField(g,W-70,56,42,state.best,51,TOKENS.yellowOchreHi);
+  legend(W-150,20,'best: dot-field (density communicates magnitude)');
 
   // chapter / chamber, footer strip: the chamber's own figure stands for its name.
   const chamberGlyphs=[
-    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,7,4.6,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // I: the Hall of the Bulls
-    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,4,7,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // II: the Shaft
-    (gg,x,y)=>{gg.beginPath();gg.arc(x-3,y,3.4,0,TAU);gg.arc(x+3,y-1,3.4,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // III: Chauvet's horses
-    (gg,x,y)=>{let a=0,rr=1;gg.beginPath();gg.moveTo(x+rr,y);for(let t=0;t<=1;t+=0.08){a=t*TAU*1.6;rr=1+t*6;gg.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1;gg.stroke();} // IV: Newgrange
+    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,9,6,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.6;gg.stroke();}, // I: the Hall of the Bulls
+    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,5,9,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.6;gg.stroke();}, // II: the Shaft
+    (gg,x,y)=>{gg.beginPath();gg.arc(x-4,y,4.4,0,TAU);gg.arc(x+4,y-1,4.4,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.6;gg.stroke();}, // III: Chauvet's horses
+    (gg,x,y)=>{let a=0,rr=1;gg.beginPath();gg.moveTo(x+rr,y);for(let t=0;t<=1;t+=0.06){a=t*TAU*1.6;rr=1+t*8;gg.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.3;gg.stroke();} // IV: Newgrange
   ];
-  const fy=H-40;
-  chamberGlyphs[state.chapter](g,54,fy);
-  tallyRow(g,74,fy+5,state.chapter+1,{len:7,weight:1.2,seed:61});
-  legend(40,fy+16,'chamber mark (chapter) + tally');
+  const fy=H-36;
+  workedPatch(g,86,fy,150,60,903,TOKENS.groundHi);
+  chamberGlyphs[state.chapter](g,56,fy);
+  tallyRow(g,80,fy+6,state.chapter+1,{len:9,weight:1.6,seed:61});
+  legend(40,fy+22,'chamber mark (chapter) + tally');
 
   // score: a tally row, bundled per-ten and grouped in fives (top-of-file note on the compromise).
-  const sy=H-40,tens=Math.round(state.score/10);
-  const sw=tallyRow(g,W/2-120,sy,tens,{len:9,weight:1.4,seed:81});
-  legend(W/2-120,sy+14,'score: tally row, one stroke per ten, grouped in fives');
+  const sy=H-36,tens=Math.round(state.score/10);
+  workedPatch(g,W/2,sy-10,260,50,904,TOKENS.groundHi);
+  tallyRow(g,W/2-130,sy,tens,{len:11,weight:1.8,seed:81});
+  legend(W/2-130,sy+16,'score: tally row, one stroke per ten, grouped in fives');
 }
 
 // ================= reveal animation: a caption's marks pressed as dabs, one per beat (brief item 9) =================
@@ -615,10 +671,19 @@ function bakeScene(){
   // the seven families, a row of specimens (brief item 3).
   FAMILIES.forEach((f,i)=>paintBody(g,LAYOUT.famX0+i*LAYOUT.famGap,LAYOUT.famY,LAYOUT.famR,f,i*17+3));
 
-  // the four dangers (brief item 4). "obscurer" draws nothing — legend still names the spot.
+  // the four dangers (brief item 4). "obscurer" draws no pigment at all (§7) — it sits in a
+  // deeper natural hollow of the SAME relief the ground bake already computed, so the spot
+  // reads as an unusually dark fold of real rock rather than an empty placeholder.
   const hazKinds=['vortex','flare','wind','obscurer'];
-  hazKinds.forEach((k,i)=>{paintHazard(g,LAYOUT.hazX[i],LAYOUT.hazY,LAYOUT.hazR,k,0);legend(LAYOUT.hazX[i]-30,LAYOUT.hazY+58,'danger: '+k);});
-  legend(LAYOUT.hazX[3]-30,LAYOUT.hazY-58,'"Unlit rock" — nothing drawn (§7): the darkness itself IS the hazard');
+  hazKinds.forEach((k,i)=>{
+    if(k==='obscurer'){
+      const grad=g.createRadialGradient(LAYOUT.hazX[i],LAYOUT.hazY,0,LAYOUT.hazX[i],LAYOUT.hazY,LAYOUT.hazR*1.3);
+      grad.addColorStop(0,'rgba(6,4,2,.65)');grad.addColorStop(1,'rgba(6,4,2,0)');
+      g.save();g.fillStyle=grad;g.beginPath();g.arc(LAYOUT.hazX[i],LAYOUT.hazY,LAYOUT.hazR*1.3,0,TAU);g.fill();g.restore();
+    }else paintHazard(g,LAYOUT.hazX[i],LAYOUT.hazY,LAYOUT.hazR,k,0);
+    legend(LAYOUT.hazX[i]-30,LAYOUT.hazY+58,'danger: '+k);
+  });
+  legend(LAYOUT.hazX[3]-30,LAYOUT.hazY-58,'"Unlit rock" — no pigment at all (§7): a hollow the torch never quite fills');
 
   // the orbited body and its dot-ring (brief item 6's stage; ember comet drawn live, per frame).
   peckedCup(g,LAYOUT.bodyCx,LAYOUT.bodyCy,3,1);
@@ -639,24 +704,30 @@ function bakeScene(){
 }
 
 // ================= torch: the "one twist" (research §6) — reach breathes, nothing in the simulation changes =================
-const TORCH_CX=660,TORCH_CY=430,TORCH_BASE=880,TORCH_MIN=640,TORCH_CYCLE=14;
+const TORCH_CX=660,TORCH_CY=420,TORCH_BASE=1040,TORCH_MIN=820,TORCH_CYCLE=14;
 function torchReach(t){
   const cyc=(t%TORCH_CYCLE)/TORCH_CYCLE;
   const burn=TORCH_BASE-(TORCH_BASE-TORCH_MIN)*cyc; // the brand burns down over the cycle
   const relight=cyc>0.92?(cyc-0.92)/0.08:0; // "pulses outward for a second on every capture"
-  return burn+relight*140;
+  return burn+relight*160;
 }
 function torchFlicker(t){
-  return 1+0.06*Math.sin(t*13.1)+0.04*Math.sin(t*7.7+1.3)+0.025*Math.sin(t*23.3+0.4);
+  return 1+0.07*Math.sin(t*13.1)+0.05*Math.sin(t*7.7+1.3)+0.03*Math.sin(t*23.3+0.4);
 }
 function paintTorchOverlay(g,t){
   const reach=torchReach(t)*torchFlicker(t);
   g.save();
-  const vig=g.createRadialGradient(TORCH_CX,TORCH_CY,reach*0.62,TORCH_CX,TORCH_CY,reach*1.18);
-  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(1,1,0,.92)');
+  // corner darkness (fixed, not breathing) so the frame's edges read as permanently beyond
+  // reach — the brief's "the wall has no margin, and the torchlight's reach is the frame" — with
+  // the breathing/flicker layered as a second, faster, animated darkening on top of it.
+  const corner=g.createRadialGradient(TORCH_CX,TORCH_CY,420,TORCH_CX,TORCH_CY,920);
+  corner.addColorStop(0,'rgba(0,0,0,0)');corner.addColorStop(1,'rgba(1,1,0,.7)');
+  g.fillStyle=corner;g.fillRect(0,0,W,H);
+  const vig=g.createRadialGradient(TORCH_CX,TORCH_CY,reach*0.6,TORCH_CX,TORCH_CY,reach*1.05);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(1,1,0,.6)');
   g.fillStyle=vig;g.fillRect(0,0,W,H);
-  const warm=g.createRadialGradient(TORCH_CX,TORCH_CY,0,TORCH_CX,TORCH_CY,reach*0.75);
-  warm.addColorStop(0,`rgba(255,178,96,${0.08*torchFlicker(t*1.7)})`);warm.addColorStop(1,'rgba(255,178,96,0)');
+  const warm=g.createRadialGradient(TORCH_CX,TORCH_CY,0,TORCH_CX,TORCH_CY,reach*0.7);
+  warm.addColorStop(0,`rgba(255,178,96,${0.14*torchFlicker(t*1.7)})`);warm.addColorStop(1,'rgba(255,178,96,0)');
   g.globalCompositeOperation='screen';g.fillStyle=warm;g.fillRect(0,0,W,H);
   g.restore();
 }
@@ -666,15 +737,15 @@ function paintTorchOverlay(g,t){
 // drives the ink gauge"), so the smear visibly breathes with the torch rather than tracking a
 // second, separate quantity.
 function paintCurrencySmear(g,t){
-  const ink=clamp((torchReach(t)-TORCH_MIN)/(TORCH_BASE-TORCH_MIN),0.12,1);
-  const x=70,y=H-92,maxR=30;
+  const ink=clamp((torchReach(t)-TORCH_MIN)/(TORCH_BASE-TORCH_MIN),0.15,1);
+  const x=96,y=H-118,maxR=44;
   g.save();
-  for(let i=0;i<5;i++){
+  for(let i=0;i<9;i++){
     const rnd=mulberry32(200+i);
-    dab(g,x+(rnd()-0.5)*maxR*0.6*ink,y+(rnd()-0.5)*maxR*0.5*ink,maxR*ink*(0.4+rnd()*0.3),300+i,TOKENS.redOchre,0.5);
+    dab(g,x+(rnd()-0.5)*maxR*0.7*ink,y+(rnd()-0.5)*maxR*0.55*ink,maxR*ink*(0.32+rnd()*0.3),300+i,i%3?TOKENS.redOchre:TOKENS.redOchreDeep,0.6);
   }
   g.restore();
-  legend(x-30,y-maxR-8,'currency: an ochre smear, shrinks as it is spent (drives torch reach too)');
+  legend(x-40,y-maxR-8,'currency: an ochre smear, shrinks as it is spent (drives torch reach too)');
 }
 
 // ================= draw loop =================

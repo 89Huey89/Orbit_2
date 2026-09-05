@@ -95,6 +95,7 @@ function reedArc(g,cx,cy,r,from,to,rgb,alpha,weight,seed,opts={}){
   const rng=mulberry32(seed>>>0||1),span=to-from,segs=opts.segments??clamp(Math.round(Math.abs(span)*r/7),5,60);
   const wobAmp=(opts.wobble??.4)*(1+rng()*.5),wobPhase=rng()*TAU,ry=opts.ry??r;
   g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineCap='round';
+  if(opts.pool)punchDot(g,cx+Math.cos(from)*r,cy+Math.sin(from)*ry,weight*1.3,`rgba(${rgb},${alpha*.8})`,null,seed+999); // ink pools where the reed sets down
   for(let i=0;i<segs;i++){
     const a0=from+span*i/segs,a1=from+span*(i+1)/segs,mid=(a0+a1)/2;
     const wob=Math.sin(mid*4+wobPhase)*wobAmp;
@@ -102,7 +103,10 @@ function reedArc(g,cx,cy,r,from,to,rgb,alpha,weight,seed,opts={}){
     g.beginPath();g.ellipse(cx,cy,Math.max(.2,r+wob),Math.max(.2,ry+wob),0,a0,a1);g.stroke();
   }
 }
-function reedPath(g,pts,closed,rgb,alpha,weight,seed){
+// reedPath — a qalam never lifts within a joined run (research §4), so the whole run gets
+// exactly one ink-pool at its own start, not one per segment.
+function reedPath(g,pts,closed,rgb,alpha,weight,seed,opts={}){
+  if(opts.pool)punchDot(g,pts[0][0],pts[0][1],weight*1.3,`rgba(${rgb},${alpha*.8})`,null,seed+999);
   for(let i=0;i<pts.length-(closed?0:1);i++){
     const a=pts[i],b=pts[(i+1)%pts.length];
     reedSegment(g,a[0],a[1],b[0],b[1],rgb,alpha,weight,seed+i*13,{segments:Math.max(3,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/10))});
@@ -192,14 +196,26 @@ function translitText(g,text,xRight,y,size,opts={}){
 }
 
 // ---------- the ground: sized cream paper, texture generated not flat ----------
+// paintGround — several generated layers baked once, per ART-CRITIQUE.md #1 ("a radial
+// gradient is not a material"): base tone, a directional pulp-fibre grain (handmade paper
+// felts in one dominant lay direction, not isotropic noise), coarse mottle, sparse foxing,
+// and an edge treatment (the sheet reads darker toward its own boundary, as a real leaf does
+// under raking light) rather than one flat swatch.
 function paintGround(g,w,h,seed){
   const rng=mulberry32(seed);
-  g.fillStyle=TOKENS.ground;g.fillRect(0,0,w,h);
-  // mineral fibre flecks and mottling — handmade Samarkand-paper ground, not laid-paper chain lines
-  for(let i=0;i<2400;i++){
-    const x=rng()*w,y=rng()*h,l=1+rng()*3,a=rng()*TAU,al=.02+rng()*.05;
+  g.fillStyle=TOKENS.ground;g.fillRect(0,0,w,h); // base tone
+  const grain=-0.08; // the felt's dominant lay — nearly horizontal, not isotropic
+  for(let i=0;i<2600;i++){
+    const x=rng()*w,y=rng()*h,l=1.5+rng()*4,a=grain+(rng()-.5)*.9,al=.02+rng()*.05;
     g.strokeStyle=`rgba(90,68,38,${al})`;g.lineWidth=.6;
     g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();
+  }
+  for(let i=0;i<26;i++){ // coarse mottle — larger, fainter blooms under the fine grain
+    const x=rng()*w,y=rng()*h,rx=40+rng()*90,ry=rx*(.5+rng()*.5);
+    const gr=g.createRadialGradient(x,y,0,x,y,Math.max(rx,ry));
+    gr.addColorStop(0,'rgba(200,172,120,.05)');gr.addColorStop(1,'rgba(200,172,120,0)');
+    g.save();g.translate(x,y);g.scale(rx/Math.max(rx,ry),ry/Math.max(rx,ry));g.fillStyle=gr;
+    g.beginPath();g.arc(0,0,Math.max(rx,ry),0,TAU);g.fill();g.restore();
   }
   for(let i=0;i<40;i++){ // foxing/tide marks, sparse
     const x=rng()*w,y=rng()*h,r=14+rng()*40;
@@ -211,6 +227,10 @@ function paintGround(g,w,h,seed){
   const wash=g.createLinearGradient(0,0,w,h);
   wash.addColorStop(0,'rgba(239,225,190,.5)');wash.addColorStop(.5,'rgba(230,212,168,.15)');wash.addColorStop(1,'rgba(214,193,142,.35)');
   g.fillStyle=wash;g.fillRect(0,0,w,h);
+  // edge treatment — the leaf sits under raking light, darker toward its own boundary
+  const vg=g.createRadialGradient(w*.5,h*.48,Math.min(w,h)*.32,w*.5,h*.5,Math.max(w,h)*.72);
+  vg.addColorStop(0,'rgba(60,42,20,0)');vg.addColorStop(1,'rgba(50,34,16,.16)');
+  g.fillStyle=vg;g.fillRect(0,0,w,h);
 }
 
 // ---------- frame: plain ruled border + fine gold rule inside (research §9 — this
@@ -228,12 +248,15 @@ function paintFrame(g,w,h,seed){
   // footer strip — matches the shipped game's footer-strip layout slot
   g.fillStyle='rgba(90,68,38,.08)';g.fillRect(36,h-58,w-72,20);
   reedSegment(g,36,h-58,w-36,h-58,'36,28,17',.4,.6,seed+9,{segments:40,wobble:.2});
-  [[52,52,1,1],[w-52,52,-1,1],[52,h-52,1,-1],[w-52,h-52,-1,-1]].forEach(([cx,cy,sx,sy],i)=>cornerOrnament(g,cx,cy,sx,sy,seed+60+i));
+  // small, tucked inside the double rule itself — a corner tick, not a bracket that would
+  // fight the HUD text sitting just inside it (the first pass sized this too large and it
+  // collided with "best"/"title"; ART-CRITIQUE.md's furniture-vs-content layering note)
+  [[30,30,1,1],[w-30,30,-1,1],[30,h-30,1,-1],[w-30,h-30,-1,-1]].forEach(([cx,cy,sx,sy],i)=>cornerOrnament(g,cx,cy,sx,sy,seed+60+i));
 }
 // cornerOrnament — kufic's angular, no-curve register, per research §4 ("anything meant to
 // look carved rather than written"): a stepped geometric bracket, not a European cartouche.
 function cornerOrnament(g,cx,cy,sx,sy,seed){
-  const s=14;
+  const s=8;
   const pts=[[0,0],[3*s*sx,0],[3*s*sx,s*sy],[2*s*sx,s*sy],[2*s*sx,2*s*sy],[s*sx,2*s*sy],[s*sx,3*s*sy],[0,3*s*sy]].map(([x,y])=>[cx+x,cy+y]);
   reedPath(g,pts,false,'201,162,39',.8,1.1,seed,{});
   reedArc(g,cx,cy,3,0,TAU,'36,28,17',.7,.8,seed+1,{segments:8});
@@ -282,8 +305,13 @@ function paintBody(g,cx,cy,r,family,seed){
       reedArc(g,cx,cy,r0,a,a+.9+rng()*.6,'20,20,70',.5,.9,seed+26+i,{segments:5,wobble:.2});}
   } // ocean: plain lapis disc, deliberately unornamented
   g.globalAlpha=1;g.restore();
+  // a thin shadow just inside the leaf, where a burnished gold rim always catches a dark
+  // reflection against its own disc — the one bit of "modelling" this flat-colour grammar
+  // permits itself, because it belongs to the metal, not the figure (ART-CRITIQUE.md #3/#6)
+  reedArc(g,cx,cy,r*.9,0,TAU,'40,28,14',.22,r*.05,seed+9,{segments:18,wobble:.1});
   reedArc(g,cx,cy,r*.985,0,TAU,'52,38,20',.9,1,seed+2,{segments:26,wobble:.15}); // fine dark contour
   reedArc(g,cx,cy,r*1.06,0,TAU,'212,175,55',.95,r*.1,seed+3,{segments:24,wobble:.12}); // burnished gold rim
+  reedArc(g,cx,cy,r*1.1,0,TAU,'160,120,50',.5,r*.02,seed+10,{segments:20,wobble:.08}); // the rim's own outer thread, a second pass of the leaf
 }
 
 // ---------- the four dangers (research §7) ----------
@@ -333,7 +361,7 @@ function paintFigureHalf(g,cx,cy,scale,mirror,seed){
   const pts=figurePoints(mirror).map(([x,y])=>[cx+x*scale,cy+y*scale]);
   g.save();g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();
   g.fillStyle=TOKENS.vermilion;g.globalAlpha=.92;g.fill();g.globalAlpha=1;g.restore();
-  reedPath(g,pts,true,'36,28,17',.92,1.15,seed);
+  reedPath(g,pts,true,'36,28,17',.92,1.15,seed,{pool:true}); // the contour's own start, where the reed first touched down
   const s=mirror?-1:1,headR=15*scale;
   g.fillStyle='#d8b98a';g.beginPath();g.arc(cx,cy+(-92)*scale,headR,0,TAU);g.fill();
   reedArc(g,cx,cy+(-92)*scale,headR,0,TAU,'36,28,17',.9,1,seed+1,{segments:14,wobble:.15});
@@ -427,7 +455,7 @@ function paintReveal(g,text,tr,xRight,y,size,t){
 // ---------- the player: the comet (al-mudhannab, "the tailed one" — the standard modern
 // word, applied here per the pickup-naming note above) on an orbit ring, live each frame ----------
 function paintPlayer(g,cx,cy,r,t,nextX,nextY){
-  reedArc(g,cx,cy,r,0,TAU,'52,38,20',.6,1.1,600,{segments:28,wobble:.12}); // the orbit ring itself, plainly outside the body's gold rim
+  reedArc(g,cx,cy,r,0,TAU,'52,38,20',.6,1.1,600,{segments:28,wobble:.12,pool:true}); // the orbit ring itself, plainly outside the body's gold rim
   const toNext=Math.atan2(nextY-cy,nextX-cx);
   reedArc(g,cx,cy,r,toNext-.5,toNext+.5,'201,162,39',.85,1.6,601,{segments:10,wobble:.1}); // the next-orbit aim guide, brightened toward the next body
   g.save();g.setLineDash([3,5]);g.globalAlpha=.5;

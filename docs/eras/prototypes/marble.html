@@ -139,8 +139,15 @@ function bezierPts(p0,p1,p2,p3,n){ // used to hand-place the celestial great cir
 function chiselCurve(g,pts,weight,seed,opts={}){for(let i=0;i<pts.length-1;i++)chiselSegment(g,pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],weight,seed+i*3,{...opts,segments:2});}
 // reliefShape — a filled relief silhouette with no drawn outline: each edge is stroked on
 // whichever single side actually catches the light or falls into shadow, per its own normal.
+// The fill is its own lit-to-shadowed gradient (by bounding box, same recipe as reliefBoss) —
+// a flat single tone would sit at the same value as the ground it's carved from and vanish.
 function reliefShape(g,pts,closed,fill,seed,opts={}){
-  g.fillStyle=fill;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));if(closed)g.closePath();g.fill();
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  pts.forEach(([x,y])=>{if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;});
+  const bcx=(minX+maxX)/2,bcy=(minY+maxY)/2,rad=Math.max(maxX-minX,maxY-minY)*0.7||1;
+  const grad=g.createRadialGradient(bcx+LIGHT_DIR.x*rad*.5,bcy+LIGHT_DIR.y*rad*.5,rad*.1,bcx,bcy,rad*1.15);
+  grad.addColorStop(0,opts.hi||TOKENS.groundHi);grad.addColorStop(.55,fill||TOKENS.ground);grad.addColorStop(1,opts.dark||TOKENS.groundDeep);
+  g.fillStyle=grad;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));if(closed)g.closePath();g.fill();
   const n=pts.length-(closed?0:1);
   for(let i=0;i<n;i++){
     const a=pts[i],b=pts[(i+1)%pts.length],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
@@ -214,21 +221,32 @@ function vCutText(g,text,x,y,size,opts={}){
 function paintGround(g,w,h,seed){
   const rng=mulberry32(seed);
   g.fillStyle=TOKENS.ground;g.fillRect(0,0,w,h);
-  const wash=g.createLinearGradient(0,0,w,h); // the raking light's own broad wash, warm from the upper-left
-  wash.addColorStop(0,'rgba(251,246,234,.55)');wash.addColorStop(.5,'rgba(237,230,214,.1)');wash.addColorStop(1,'rgba(200,188,158,.3)');
-  g.fillStyle=wash;g.fillRect(0,0,w,h);
-  for(let v=0;v<30;v++){ // veining — the marble's own wandering mineral seams
-    let x=rng()*w,y=rng()*h,a=rng()*TAU;
-    g.strokeStyle=`rgba(150,138,114,${.05+rng()*.07})`;g.lineWidth=.6+rng()*1.3;g.beginPath();g.moveTo(x,y);
-    for(let i=0;i<16;i++){a+=(rng()-.5)*.55;x+=Math.cos(a)*(13+rng()*11);y+=Math.sin(a)*(13+rng()*11);g.lineTo(x,y);}
-    g.stroke();
-  }
-  for(let i=0;i<40;i++){ // a rarer ochre patina bloom, weathered stone's age
-    const x=rng()*w,y=rng()*h,r=16+rng()*46,gr=g.createRadialGradient(x,y,0,x,y,r);
-    gr.addColorStop(0,'rgba(180,146,90,.05)');gr.addColorStop(1,'rgba(180,146,90,0)');
+  for(let c=0;c<11;c++){ // large-scale clouding — the crystalline matrix's own uneven density, quarried not printed
+    const x=rng()*w,y=rng()*h,r=90+rng()*220,tone=rng()<.5?'220,208,182':'234,226,204';
+    const gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,`rgba(${tone},${.16+rng()*.1})`);gr.addColorStop(1,`rgba(${tone},0)`);
     g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
   }
-  for(let i=0;i<1000;i++){g.fillStyle=`rgba(255,252,240,${.02+rng()*.05})`;g.fillRect(rng()*w,rng()*h,.8,.8);} // crystalline sparkle
+  const wash=g.createLinearGradient(0,0,w,h); // the raking light's own broad wash, warm from the upper-left
+  wash.addColorStop(0,'rgba(251,246,234,.5)');wash.addColorStop(.5,'rgba(237,230,214,.08)');wash.addColorStop(1,'rgba(196,182,150,.34)');
+  g.fillStyle=wash;g.fillRect(0,0,w,h);
+  for(let v=0;v<46;v++){ // veining — the marble's own wandering mineral seams, some faint, a few pronounced fractures
+    let x=rng()*w,y=rng()*h,a=rng()*TAU,bold=rng()<.22;
+    g.strokeStyle=`rgba(${bold?'118,104,78':'150,138,114'},${bold?.14+rng()*.1:.07+rng()*.09})`;
+    g.lineWidth=(bold?1.4:.6)+rng()*1.3;g.beginPath();g.moveTo(x,y);
+    for(let i=0;i<(bold?26:16);i++){a+=(rng()-.5)*.5;x+=Math.cos(a)*(13+rng()*11);y+=Math.sin(a)*(13+rng()*11);g.lineTo(x,y);}
+    g.stroke();
+    if(bold&&rng()<.5){g.strokeStyle=`rgba(210,198,168,.3)`;g.lineWidth=.5;g.beginPath();g.moveTo(x,y);g.stroke();} // a hairline sibling crack beside the bold one
+  }
+  for(let i=0;i<46;i++){ // ochre patina bloom, weathered stone's age
+    const x=rng()*w,y=rng()*h,r=16+rng()*50,gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,'rgba(180,146,90,.07)');gr.addColorStop(1,'rgba(180,146,90,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  }
+  for(let i=0;i<1400;i++){g.fillStyle=`rgba(255,252,240,${.02+rng()*.06})`;g.fillRect(rng()*w,rng()*h,.9,.9);} // crystalline sparkle
+  const vig=g.createRadialGradient(w*.42,h*.4,h*.35,w*.5,h*.5,h*.85); // a quarried slab's own edge-darkening, not a printed page's
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(60,52,38,.16)');
+  g.fillStyle=vig;g.fillRect(0,0,w,h);
 }
 
 // ---------- background stars: sparse, drilled-gilded, the bronze globe's mark scattered on
@@ -263,15 +281,25 @@ function paintCelestialCircles(g,w,h,seed){
 // blowing a gust in one direction. Used small at the four corners (frame furniture) and larger
 // for the crosswind danger specimen — one painter, two scales, per CLAUDE.md's own habit.
 function windHead(g,cx,cy,r,angle,seed,opts={}){
+  // one puffed cheek toward the blow direction only (not two, which read as a pair of eyes),
+  // a drilled mouth at its centre, hair streaming from the leeward side — a face with a
+  // direction, per the Tower of the Winds figures each carved on the face their wind blows from.
+  const fx=Math.cos(angle),fy=Math.sin(angle),perp=angle+Math.PI/2,px=Math.cos(perp),py=Math.sin(perp);
   reliefBoss(g,cx,cy,r,seed,{});
-  const bx=Math.cos(angle)*r*.55,by=Math.sin(angle)*r*.55;
-  reliefBoss(g,cx+bx*.6-by*.32,cy+by*.6+bx*.32,r*.3,seed+1,{});
-  reliefBoss(g,cx+bx*.6+by*.32,cy+by*.6-bx*.32,r*.3,seed+2,{});
-  for(let i=0;i<7;i++){const a=angle+Math.PI+((i/6)-.5)*1.7;
-    chiselSegment(g,cx+Math.cos(a)*r*.82,cy+Math.sin(a)*r*.82,cx+Math.cos(a)*r*1.3,cy+Math.sin(a)*r*1.3,1,seed+10+i,{segments:3,wobble:.3,alphaHi:.4,alphaSh:.35});}
-  const gusts=opts.gusts||5,glen=opts.gustLen||1.6;
-  for(let i=0;i<gusts;i++){const a=angle+(i/(gusts-1||1)-.5)*.55,len=r*glen*(.7+.3*Math.sin(i*1.7));
-    chiselSegment(g,cx+Math.cos(angle)*r*1.05,cy+Math.sin(angle)*r*1.05,cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len),1.05,seed+20+i,{segments:5,wobble:.4,alphaHi:.4,alphaSh:.34});}
+  // puckered lips, not a second nested circle (which reads as an iris/pupil) — a small teardrop
+  // bulge at the rim, tapering outward in the blow direction, with the mouth-hole at its tip.
+  const tipR=r*1.32,baseR=r*.9,halfW=r*.22;
+  reliefShape(g,[[cx+fx*tipR,cy+fy*tipR],[cx+fx*baseR+px*halfW,cy+fy*baseR+py*halfW],[cx+fx*baseR*.68,cy+fy*baseR*.68],[cx+fx*baseR-px*halfW,cy+fy*baseR-py*halfW]],true,TOKENS.ground,seed+1,{weight:.9});
+  drillPit(g,cx+fx*tipR*.96,cy+fy*tipR*.96,r*.09,seed+2,{alpha:.55});
+  for(let i=0;i<9;i++){ // hair, combed back opposite the blow direction
+    const a=angle+Math.PI+((i/8)-.5)*1.5,len=r*(.55+(i%3)*.12);
+    chiselCurve(g,bezierPts([cx-fx*r*.5,cy-fy*r*.5],[cx+Math.cos(a)*r*.9,cy+Math.sin(a)*r*.9],[cx+Math.cos(a)*(r*.9+len*.6),cy+Math.sin(a)*(r*.9+len*.6)],[cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len)],10),.9,seed+10+i,{wobble:.3,alphaHi:.42,alphaSh:.36});
+  }
+  const gusts=opts.gusts||6,glen=opts.gustLen||2.1,spread=opts.spread??.62;
+  for(let i=0;i<gusts;i++){ // the gust itself, fanned wide and unmistakably one-directional
+    const a=angle+(i/(gusts-1||1)-.5)*spread,len=r*glen*(.65+.5*((i*7)%5)/5);
+    chiselCurve(g,bezierPts([cx+fx*r*1.55,cy+fy*r*1.55],[cx+Math.cos(a)*r*2,cy+Math.sin(a)*r*2],[cx+Math.cos(a)*(r*2+len*.5),cy+Math.sin(a)*(r*2+len*.5)],[cx+Math.cos(a)*(r*2+len),cy+Math.sin(a)*(r*2+len)],8),1.15-i%3*.2,seed+20+i,{wobble:.45,alphaHi:.42,alphaSh:.36});
+  }
 }
 function paintFrame(g,w,h,seed){
   paintCelestialCircles(g,w,h,seed);
@@ -330,13 +358,17 @@ function paintHazard(g,cx,cy,r,kind,seed){
     for(let i=0;i<14;i++){const a=i/14*TAU,len=r*(.5+(i%3)*.15);
       chiselSegment(g,cx+Math.cos(a)*r*.5,cy+Math.sin(a)*r*.5,cx+Math.cos(a)*(r*.5+len),cy+Math.sin(a)*(r*.5+len),1.05,seed+10+i,{segments:4,wobble:.25,alphaHi:.44,alphaSh:.4});}
     chiselArc(g,cx,cy,r*.44,0,TAU,1.4,seed+2,{segments:14,wobble:.12,alphaHi:.68,alphaSh:.6}); // lethal core, legible
-    const wx=cx+r*.7,wy=cy+r*.48;
-    chiselArc(g,wx,wy,r*.15,0,TAU,.9,seed+3,{segments:10,wobble:.1});
-    for(let i=0;i<6;i++){const a=i/6*TAU;chiselSegment(g,wx,wy,wx+Math.cos(a)*r*.13,wy+Math.sin(a)*r*.13,.6,seed+30+i,{segments:2});}
-    for(let i=0;i<3;i++)drillPit(g,wx+r*.16+i*4,wy+r*.1+i*3,1.1,seed+40+i,{alpha:.35}); // debris chipping off as it falls
+    const wx=cx+r*.86,wy=cy+r*.58; // the chariot-wheel, tumbling off the disc's rim, large enough to read as a wheel not a fleck
+    reliefBoss(g,wx,wy,r*.34,seed+3,{});
+    chiselArc(g,wx,wy,r*.2,0,TAU,1,seed+4,{segments:10,wobble:.1,alphaHi:.5,alphaSh:.45});
+    for(let i=0;i<8;i++){const a=i/8*TAU;chiselSegment(g,wx+Math.cos(a)*r*.06,wy+Math.sin(a)*r*.06,wx+Math.cos(a)*r*.32,wy+Math.sin(a)*r*.32,1,seed+30+i,{segments:2,wobble:.15});}
+    for(let i=0;i<4;i++)drillPit(g,wx+r*.4+i*6,wy+r*.26+i*4,1.3-i*.2,seed+40+i,{alpha:.4}); // debris chipping off as it falls away
   }else if(kind==='crosswind'){windHead(g,cx,cy,r*.62,0,seed+1,{gusts:7,gustLen:1.85});}
   else{ // obscurer — Hera's spilled milk, γαλαξίας: a soft diffuse band, never a hard edge, never lethal
-    for(let i=0;i<95;i++){const a=rng()*TAU,d=rng()*r;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d*.5,.85+rng()*1,seed+50+i,{alpha:.12+rng()*.09});}
+    const bandGr=g.createRadialGradient(cx,cy,0,cx,cy,r*1.05);
+    bandGr.addColorStop(0,'rgba(150,138,114,.16)');bandGr.addColorStop(1,'rgba(150,138,114,0)');
+    g.save();g.fillStyle=bandGr;g.beginPath();g.ellipse(cx,cy,r,r*.55,0,0,TAU);g.fill();g.restore();
+    for(let i=0;i<130;i++){const a=rng()*TAU,d=rng()*r;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d*.5,.8+rng()*1.2,seed+50+i,{alpha:.16+rng()*.14});}
   }
 }
 
@@ -346,8 +378,14 @@ function paintPickup(g,cx,cy,kind,seed){
   const r=13;
   if(kind==='sling'){chiselArc(g,cx,cy,r,.2,TAU-.2,1,seed,{segments:12,wobble:.15});gildedPoint(g,cx,cy,r*.4,seed+1);}
   else if(kind==='shield'){reliefShape(g,[[0,-r],[r*.85,-r*.2],[r*.6,r*.9],[0,r*.6],[-r*.6,r*.9],[-r*.85,-r*.2]].map(([x,y])=>[cx+x,cy+y]),true,TOKENS.ground,seed,{weight:1});}
-  else if(kind==='reflector'){reliefBoss(g,cx,cy,r,seed,{});chiselArc(g,cx,cy,r*.6,.2,Math.PI-.2,1.1,seed+1,{segments:8,wobble:.15,alphaHi:.5});}
-  else{reliefBoss(g,cx,cy,r*.85,seed,{});chiselArc(g,cx,cy,r*.5,0,TAU,1,seed+1,{segments:10,wobble:.1});}
+  else if(kind==='reflector'){ // REPVLSA — a convex boss that throws a blow back the way it came, deflection arcs radiating
+    reliefBoss(g,cx,cy,r,seed,{});
+    for(let i=0;i<5;i++){const a=Math.PI+((i/4)-.5)*1.5;chiselArc(g,cx+Math.cos(a)*r*1.3,cy+Math.sin(a)*r*1.3,r*.9,a-.5,a+.5,.8,seed+1+i,{segments:6,wobble:.15,alphaHi:.4,alphaSh:.34});}
+  }else{ // ATRAMENTARIVM — a small carved vessel: narrow neck, round belly, distinct from the shield's angular hexagon
+    const pts=[[-r*.06,-r*.72],[r*.06,-r*.72],[r*.24,-r*.46],[r*.56,r*.12],[r*.38,r*.62],[-r*.38,r*.62],[-r*.56,r*.12],[-r*.24,-r*.46]].map(([x,y])=>[cx+x,cy+y]);
+    reliefShape(g,pts,true,TOKENS.ground,seed,{weight:1});
+    chiselSegment(g,cx-r*.1,cy-r*.72,cx+r*.1,cy-r*.72,1,seed+1,{segments:2}); // the stopper's lip
+  }
 }
 
 // ---------- Λύρα (Lyra) — the constellation figure, a Farnese-manner relief (research §2):

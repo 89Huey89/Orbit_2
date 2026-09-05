@@ -156,13 +156,13 @@ const OM=18;                 // the plate's own physical edge — double rule
 const EX0=74,EY0=74,EX1=1206,EY1=726, FW=EX1-EX0, FH=EY1-EY0; // the emulsion field proper
 
 const FAMILIES=[
-  {id:'ocean',    r:40, ry:40, density:1.00, halo:.05, tone:'silver', note:'reg.'},
-  {id:'crater',   r:44, ry:44, density:.92,  halo:.08, tone:'silver', note:'dbl.', dbl:true},
-  {id:'ringed',   r:46, ry:26, density:.85,  halo:.12, tone:'silver', note:'elong.'},
-  {id:'ice',      r:28, ry:28, density:.40,  halo:.03, tone:'silver', note:'faint'},
-  {id:'dune',     r:38, ry:38, density:.86,  halo:.06, tone:'sepia',  note:'reg.'},
-  {id:'volcanic', r:50, ry:50, density:1.00, halo:.24, tone:'silver', note:'dense', bloom:true},
-  {id:'storm',    r:48, ry:27, density:.80,  halo:.15, tone:'silver', note:'elong.', band:true}
+  {id:'ocean',    r:40, ry:40, density:1.00, halo:.04, tone:'silver', note:'reg.'},
+  {id:'crater',   r:44, ry:44, density:.90,  halo:.06, tone:'silver', note:'clump.'},
+  {id:'ringed',   r:46, ry:24, density:.85,  halo:.1,  tone:'silver', note:'elong.'},
+  {id:'ice',      r:26, ry:26, density:.78,  halo:0,   tone:'silver', note:'faint'},
+  {id:'dune',     r:38, ry:38, density:.86,  halo:.05, tone:'sepia',  note:'reg.'},
+  {id:'volcanic', r:50, ry:50, density:1.00, halo:.2,  tone:'silver', note:'dense'},
+  {id:'storm',    r:48, ry:26, density:.80,  halo:.12, tone:'silver', note:'mottled'}
 ];
 // Plausible plate/catalogue numbers in the attested "series letter + running number" form
 // (research §1/§12: the format is confirmed, this exact plate is not, so it is not offered
@@ -174,25 +174,43 @@ const off=document.createElement('canvas'); off.width=W; off.height=H; const og=
 
 function paintGround(g){
   // A wash from clear emulsion to its own faint blue-sensitive cast — near-white, not tinted
-  // paper, the one ground in the ladder that is transparent (research §3).
+  // paper, the one ground in the ladder that is transparent (research §3). (This base gradient
+  // used to be immediately painted over by an opaque full-canvas glass fill below — the bug that
+  // made the whole sheet read as flat diagram paper rather than an uneven poured emulsion; the
+  // glass now only repaints the margin it actually belongs to.)
+  // A previous pass here made the full-strength groundCool stop the base fill directly, which
+  // (once the flat-glass bug below stopped hiding it) read as a strong diagonal cast rather than
+  // the "faint" blue-sensitive tint research §3 describes — softened to a light wash of it instead.
   const grd=g.createLinearGradient(0,0,W,H);
-  grd.addColorStop(0,TOKENS.ground); grd.addColorStop(.55,TOKENS.groundCool); grd.addColorStop(1,TOKENS.ground);
+  grd.addColorStop(0,TOKENS.ground); grd.addColorStop(.55,'#e0e2d9'); grd.addColorStop(1,TOKENS.ground);
   g.fillStyle=grd; g.fillRect(0,0,W,H);
-  g.fillStyle=TOKENS.glass; g.fillRect(0,0,W,H); g.globalAlpha=1;
-  // glass margin band, a touch paler than the emulsion field it surrounds
-  g.save(); g.beginPath(); g.rect(0,0,W,H); g.rect(EX0,EY0,FW,FH); g.fill('evenodd'); g.restore();
+  // large-scale mottle: gelatin poured by hand a century ago is never one even tone — soft warm
+  // and cool blooms, well beneath the grain scale below, where the coating ran thick or thin.
+  // Each blob is its own soft radial fade rather than a flat disc, so overlaps blend into gentle
+  // tonal drift instead of compounding into a visible haze.
+  for(let i=0;i<13;i++){
+    const x=EX0+rng()*FW,y=EY0+rng()*FH,r=60+rng()*110,warm=rng()<.5;
+    const rg=g.createRadialGradient(x,y,0,x,y,r);
+    rg.addColorStop(0,warm?'rgba(92,69,48,.05)':'rgba(90,98,107,.05)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=rg; g.beginPath(); g.arc(x,y,r,0,7); g.fill();
+  }
+  // glass margin: only the trimmed emulsion field ever carried an exposure, so the border outside
+  // it is repainted back to bare, clear glass.
+  g.save(); g.fillStyle=TOKENS.glass; g.beginPath(); g.rect(0,0,W,H); g.rect(EX0,EY0,FW,FH); g.fill('evenodd'); g.restore();
   // the emulsion edge itself: gelatin does not sit perfectly flush against the glass it was
   // poured onto, so the boundary is a ragged, chipped line, not a ruled rectangle — small nicks
-  // of bare glass biting a pixel or two into the field, denser at the corners where the pour
-  // pooled thinnest.
+  // of bare glass biting into the field, plus the lip a poured coating leaves: a thin shadow just
+  // inside the edge where the gelatin is thickest, a thin highlight just outside it on the glass.
+  hairline(g,[[EX0-2,EY0-2],[EX1+2,EY0-2],[EX1+2,EY1+2],[EX0-2,EY1+2],[EX0-2,EY0-2]],{weight:1.4,color:TOKENS.glass,alpha:.6});
+  hairline(g,[[EX0+3,EY0+3],[EX1-3,EY0+3],[EX1-3,EY1-3],[EX0+3,EY1-3],[EX0+3,EY0+3]],{weight:1,color:TOKENS.reseau,alpha:.22});
   g.save();
   const side=[[EX0,EY0,EX1,EY0],[EX1,EY0,EX1,EY1],[EX1,EY1,EX0,EY1],[EX0,EY1,EX0,EY0]];
   for(const [x1,y1,x2,y2] of side){
-    const n=26;
+    const n=34;
     for(let i=0;i<n;i++){
-      if(rng()>.4) continue;
-      const t=i/n, x=x1+(x2-x1)*t, y=y1+(y2-y1)*t, r=.6+rng()*1.6;
-      g.beginPath(); g.fillStyle='rgba(239,236,226,.85)'; g.arc(x,y,r,0,7); g.fill();
+      if(rng()>.5) continue;
+      const t=i/n, x=x1+(x2-x1)*t, y=y1+(y2-y1)*t, r=.7+rng()*2.1;
+      g.beginPath(); g.fillStyle='rgba(239,236,226,.9)'; g.arc(x,y,r,0,7); g.fill();
     }
   }
   g.restore();
@@ -210,8 +228,8 @@ function paintGround(g){
   // two scratches: emulsion scraped off the glass along a stray path, ridge shadow either side
   for(const s of [{x:940,y:120,len:260,ang:.5},{x:210,y:610,len:180,ang:-.3}]){
     const p1=[s.x,s.y], p2=[s.x+Math.cos(s.ang)*s.len,s.y+Math.sin(s.ang)*s.len];
-    hairline(g,[p1,p2],{weight:2.4,color:TOKENS.glass,alpha:.95});
-    hairline(g,[p1,p2],{weight:.7,color:TOKENS.reseau,alpha:.35});
+    hairline(g,[p1,p2],{weight:2.6,color:TOKENS.glass,alpha:.95});
+    hairline(g,[p1,p2],{weight:.8,color:TOKENS.reseau,alpha:.4});
   }
 }
 
@@ -223,15 +241,28 @@ function starDensityAt(x,y){
   const d=Math.hypot(x-NEBULA.cx,y-NEBULA.cy);
   return d<NEBULA.r ? Math.max(.04,d/NEBULA.r) : 1;
 }
+// A handful of soft, overlapping centres give the field the clumped, unequal texture a real Milky
+// Way patch shows on a Barnard plate — star clouds and comparatively empty lanes between them,
+// not one uniform scatter (ART-CRITIQUE.md's "Barnard-like star-cloud density variation").
+const STAR_CLOUDS=[{x:540,y:520,r:280,amt:.85},{x:940,y:600,r:230,amt:.6},{x:230,y:600,r:190,amt:.4},{x:1030,y:230,r:170,amt:.45},{x:700,y:150,r:160,amt:-.3}];
+function cloudDensityAt(x,y){
+  let d=1;
+  for(const c of STAR_CLOUDS){ const dist=Math.hypot(x-c.x,y-c.y); d+=c.amt*Math.max(0,1-dist/c.r); }
+  return Math.max(.15,d);
+}
 function paintStarfield(g){
   // The background sky itself: a photographic field this dense is what makes a void or a nebula
   // legible at all — without it there is nothing for either to be an absence *in*.
-  for(let i=0;i<1100;i++){
+  for(let i=0;i<1500;i++){
     const x=EX0+rng()*FW, y=EY0+rng()*FH;
-    if(rng()>starDensityAt(x,y)) continue;
+    if(rng()>starDensityAt(x,y)*cloudDensityAt(x,y)*.4) continue;
     const cls=rng();
-    const r=cls<.55?.5+rng()*.45:cls<.86?1+rng()*.55:1.7+rng()*1.0;
-    const density=cls<.55?.32+rng()*.22:cls<.86?.55+rng()*.25:.82+rng()*.18;
+    const r=cls<.55?.5+rng()*.45:cls<.88?1+rng()*.55:1.7+rng()*1.0;
+    const density=cls<.55?.32+rng()*.22:cls<.88?.55+rng()*.25:.82+rng()*.18;
+    if(cls>.94){ // the brightest handful of field stars halate a little too, same as any dense silver deposit
+      grainDisc(g,x,y,r*3.4,r*3.4,.1,{color:TOKENS.silverMid,alpha:.4});
+      grainDisc(g,x,y,r*1.9,r*1.9,.22,{color:TOKENS.silverMid,alpha:.5});
+    }
     grainDisc(g,x,y,r,r,density,{color:TOKENS.silverDense});
   }
 }
@@ -285,20 +316,47 @@ function paintFrame(g){
 }
 
 function paintBody(g,fam,cx,cy){
-  const rx=fam.r,ry=fam.ry;
-  if(fam.bloom){ // volcanic verges on halation at its own edge without crossing into the danger
-    grainDisc(g,cx,cy,rx*1.6,ry*1.6,.14,{color:TOKENS.silverMid,alpha:.5});
-    grainDisc(g,cx,cy,rx*1.25,ry*1.25,.3,{color:TOKENS.silverMid,alpha:.6});
-  } else if(fam.halo>.06){
-    grainDisc(g,cx,cy,rx*1.35,ry*1.35,fam.halo,{color:TOKENS.silverMid,alpha:.55});
+  // Every specimen is still "an overexposed disc with no internal detail" per research §8 — the
+  // seven surfaces below differ only in how the silver itself built up (clumped, elongated,
+  // banded, cored), never in a drawn feature, which is the whole discipline this era enforces.
+  const rx=fam.r,ry=fam.ry, col=fam.tone==='sepia'?TOKENS.sepia:TOKENS.silverDense;
+  if(fam.id==='ice'){
+    // the family hardest to be sure is a real object: a small dense core lost inside a very
+    // wide, very faint halo near the plate's own fog level, rather than a smaller plain knot.
+    grainDisc(g,cx,cy,rx*2.9,ry*2.9,.045,{color:TOKENS.silverMid,alpha:.5});
+    grainDisc(g,cx,cy,rx*1.7,ry*1.7,.09,{color:TOKENS.silverMid,alpha:.55});
+    grainDisc(g,cx,cy,rx*.5,ry*.5,fam.density,{color:col});
+    return;
   }
-  const col=fam.tone==='sepia'?TOKENS.sepia:TOKENS.silverDense;
+  if(fam.id==='volcanic'){
+    // the densest knot on the plate, verging on halation at its own edge without crossing into
+    // the repulsor's danger radius — the same multi-pass bloom the hazard uses, one notch down.
+    grainDisc(g,cx,cy,rx*1.9,ry*1.9,.07,{color:TOKENS.silverMid,alpha:.45});
+    grainDisc(g,cx,cy,rx*1.5,ry*1.5,.16,{color:TOKENS.silverMid,alpha:.55});
+    grainDisc(g,cx,cy,rx*1.15,ry*1.15,.3,{color:TOKENS.silverMid,alpha:.7});
+    grainDisc(g,cx,cy,rx,ry,fam.density,{color:col});
+    return;
+  }
+  if(fam.halo>0) grainDisc(g,cx,cy,rx*1.3,ry*1.3,fam.halo,{color:TOKENS.silverMid,alpha:.5});
+  if(fam.id==='crater'){
+    // clumped grain: the exposure built up in a few uneven patches rather than one smooth radial
+    // falloff, as if two slightly misregistered passes were stacked (research §8's "crater").
+    for(const [dx,dy] of [[-.3,-.28],[.32,-.12],[-.08,.34],[.24,.3],[0,0]])
+      grainDisc(g,cx+dx*rx,cy+dy*ry,rx*.58,ry*.58,fam.density*.7,{color:col});
+    grainDisc(g,cx+3,cy+2,rx*1.05,ry*1.05,.2,{color:col,alpha:.6}); // the misregistered double edge
+    return;
+  }
   grainDisc(g,cx,cy,rx,ry,fam.density,{color:col});
-  if(fam.dbl){ // crater: a faint uneven double-density edge, as if two exposures were misregistered
-    grainDisc(g,cx+3,cy+2,rx*1.06,ry*1.06,.22,{color:col,alpha:.6});
+  if(fam.id==='ringed'){
+    // a genuine ring would not resolve as a ring — only a denser spindle along the stretch axis
+    grainDisc(g,cx,cy,rx*.92,ry*.4,fam.density*.55,{color:col,alpha:.65});
   }
-  if(fam.band){ // storm: soft banding inside the smear rather than a clean oval
-    for(let b=-1;b<=1;b+=2) grainDisc(g,cx+b*rx*.35,cy,rx*.5,ry*.55,.28,{color:TOKENS.ground,alpha:.5});
+  if(fam.id==='storm'){
+    // soft, uneven banding inside the smear — as much a guiding wobble as a feature (research §8)
+    for(let b=0;b<5;b++){
+      const bx=(rng()-.5)*rx*1.3, by=(rng()-.5)*ry*.7;
+      grainDisc(g,cx+bx,cy+by,rx*.4,ry*.32,.22,{color:b%2?TOKENS.ground:col,alpha:.4});
+    }
   }
 }
 
