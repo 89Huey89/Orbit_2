@@ -738,8 +738,13 @@ function drawGravitationalLenses(){
     // reaches zero at the edge; foreground targets and the player stay sharp.
     const twist=reducedMotion?0:Math.sin(world.time*.32+(h.phase||0))*.024;
     ctx.save();ctx.translate(x,y);
-    for(let band=0;band<24;band++){
-      const a=band/24,b=(band+1)/24,ro=lerp(outer,inner,a),ri=lerp(outer,inner,b);
+    // Each band costs a clip (the one genuinely expensive Canvas2D call here) plus a rotate, scale
+    // and drawImage, every frame this hole is on screen. The magnification only ever spans 1x-1.7x
+    // across the whole radius, so a coarser band count is not visible; scale it down for a small or
+    // distant hole, where it matters least, and cap it well under the old fixed 24 everywhere else.
+    const bands=Math.max(10,Math.min(16,Math.round(outer/6)));
+    for(let band=0;band<bands;band++){
+      const a=band/bands,b=(band+1)/bands,ro=lerp(outer,inner,a),ri=lerp(outer,inner,b);
       const weight=((a+b)/2)**2,magnify=1+.7*weight;
       ctx.save();ctx.beginPath();ctx.arc(0,0,ro+.2,0,TAU);ctx.arc(0,0,ri,TAU,0,true);ctx.closePath();ctx.clip();
       ctx.rotate(twist*weight);ctx.scale(magnify,magnify);ctx.drawImage(lensPatch,-outer,-outer,diameter,diameter);ctx.restore();
@@ -858,51 +863,113 @@ function drawNebula(h){
   const sprite=nebulaSprite(h.seed,r);
   ctx.drawImage(sprite.canvas,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);
 }
+// The dark core, its edge, rim, faint arcs and outer glow depend only on h.seed and the plate —
+// never on pull or the pulse — so, exactly like flareSprite and nebulaSprite above, they are cut
+// once into a sprite instead of being replayed (including the paper core's own RNG-jittered edge)
+// every single frame a hole is on screen.
+const hazardCoreSprites=new Map();
+function hazardCoreSprite(seed,radius){
+  const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+plateName+':'+DPR.toFixed(2);
+  const cached=hazardCoreSprites.get(key);if(cached)return cached;
+  const size=Math.max(4,Math.ceil((rBucket+18)*2));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const rng=seeded(seed),r=rBucket;
+  if(onPaper()){
+    // A pooled ink blot with a slightly ragged, hand-drawn edge rather than a clean printed circle.
+    g.fillStyle=ink.marks.hazardCore;g.beginPath();
+    const edges=20;
+    for(let i=0;i<=edges;i++){const a=i/edges*TAU,jr=r*(1+(rng()-.5)*.14);const px=Math.cos(a)*jr,py=Math.sin(a)*jr;if(i===0)g.moveTo(px,py);else g.lineTo(px,py);}
+    g.closePath();g.fill();
+  }else{
+    g.fillStyle=ink.marks.hazardCore;g.beginPath();g.arc(0,0,r,0,TAU);g.fill();
+  }
+  burinArc(g,0,0,r,0,TAU,ink.marks.hazardEdge,.62,.85,seed+3,{segments:28,skips:2});
+  burinArc(g,-.7,-.3,r,Math.PI*1.04,Math.PI*1.82,ink.marks.hazardRim,.8,1.35,seed+11,{segments:14,skips:1});
+  for(let i=0;i<6;i++)burinArc(g,0,0,r+3+i*1.35,Math.PI*(1+i*.05),Math.PI*(1.8-i*.04),ink.marks.hazardArcFaint,.12-i*.014,.5,seed+17+i,{segments:8,skips:1});
+  burinArc(g,0,0,r+15,0,TAU,ink.marks.hazardOuter,.16,.4,seed+41,{segments:18,skips:3});
+  const sprite={canvas:c,size};
+  hazardCoreSprites.set(key,sprite);
+  if(hazardCoreSprites.size>24)hazardCoreSprites.delete(hazardCoreSprites.keys().next().value);
+  return sprite;
+}
+// The 54 hatch strokes' angles and lengths come only from h.seed, bucketed by alpha band so
+// same-alpha strokes share one stroke() call. Only the bucket alphas (via the live pulse) change
+// frame to frame, so the geometry — the RNG walk and the Map/array bucketing, the biggest
+// allocation in drawHazard — is cached; every stroke is still issued live at its exact current
+// alpha, so the breathing pulse animation is untouched.
+const hazardHatchCache=new Map();
+function hazardHatchGeometry(seed,radius){
+  const rBucket=Math.round(radius),key=seed+':'+rBucket;
+  const cached=hazardHatchCache.get(key);if(cached)return cached;
+  const rng=seeded(seed),buckets=new Map();
+  for(let i=0;i<54;i++){
+    const a=i/54*TAU,l=2+rng()*rBucket*.42,base=.08+rng()*.27,bucket=Math.min(11,Math.floor((base-.08)/.27*12));
+    let seg=buckets.get(bucket);if(!seg){seg=[];buckets.set(bucket,seg);}
+    seg.push(Math.cos(a)*(rBucket+3),Math.sin(a)*(rBucket+3),Math.cos(a+.035)*(rBucket+l+3),Math.sin(a+.035)*(rBucket+l+3));
+  }
+  const entries=[...buckets.entries()];
+  hazardHatchCache.set(key,entries);
+  if(hazardHatchCache.size>32)hazardHatchCache.delete(hazardHatchCache.keys().next().value);
+  return entries;
+}
+// The accretion rings' shape depends only on h.seed, the plate and the viewport scale; their alpha
+// is scaled uniformly by (1+pull*.5), and pull is 0 whenever the player is orbiting — the
+// overwhelming majority of play, since it only turns nonzero during a brief free flight close
+// enough to a hole to feel its pull. That common (pull===0) case is baked once and blitted; the
+// rare pulled case falls back to the exact original live drawing rather than approximate it, so
+// the pulled look never changes.
+const hazardAccretionSprites=new Map();
+function hazardAccretionSprite(seed,radius){
+  const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+plateName+':'+DPR.toFixed(2)+':'+scale.toFixed(3);
+  const cached=hazardAccretionSprites.get(key);if(cached)return cached;
+  const outer=rBucket*1.91+Math.max(10,rBucket*.15),size=Math.max(4,Math.ceil(outer*2));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);g.rotate(-.35);
+  for(let i=0;i<4;i++){
+    const rr=rBucket*(1.64+i*.09);
+    burinArc(g,0,0,rr,0,TAU,ink.marks.hazardAccretion,.23-i*.04,(i===0?.9:.45)*scale,seed+i*29,{segments:20,skips:2,flatten:(.47+i*.028)/(1.64+i*.09)});
+  }
+  const sprite={canvas:c,size};
+  hazardAccretionSprites.set(key,sprite);
+  if(hazardAccretionSprites.size>24)hazardAccretionSprites.delete(hazardAccretionSprites.keys().next().value);
+  return sprite;
+}
 function drawHazard(h){
   if(h.kind==='nebula')return drawNebula(h);
   if(h.kind==='flare')return drawFlare(h);
   const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(y<-r*3||y>H+r*3)return;
-  ctx.save();ctx.translate(x,y);const rng=seeded(h.seed),pulse=reducedMotion?1:.95+.05*Math.sin(world.time*1.2+(h.phase||0)),paper=onPaper();
+  ctx.save();ctx.translate(x,y);const pulse=reducedMotion?1:.95+.05*Math.sin(world.time*1.2+(h.phase||0)),paper=onPaper();
   const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
   // Ink does not glow: the paper plate drops the warm gravity-well halo and reads the pull only through the
   // rubrication accretion rings and the dark radiating hatch below.
   if(!paper){
     const halo=ctx.createRadialGradient(0,0,r*.7,0,0,r*3.4);halo.addColorStop(0,`rgba(${ink.marks.hazardHalo0},${(.25+pull*.12)*pulse})`);halo.addColorStop(.5,`rgba(${ink.marks.hazardHaloMid},.07)`);halo.addColorStop(1,`rgba(${ink.marks.hazardHaloEdge},0)`);ctx.fillStyle=halo;ctx.fillRect(-r*3.4,-r*3.4,r*6.8,r*6.8);
   }
-  ctx.save();ctx.rotate(-.35);
-  for(let i=0;i<4;i++){
-    const rr=r*(1.64+i*.09);
-    burinArc(ctx,0,0,rr,0,TAU,ink.marks.hazardAccretion,(.23-i*.04)*(1+pull*.5),(i===0?.9:.45)*scale,h.seed+i*29,{segments:20,skips:2,flatten:(.47+i*.028)/(1.64+i*.09)});
-  }
-  ctx.restore();
-  {
-    const buckets=new Map();
-    for(let i=0;i<54;i++){
-      const a=i/54*TAU,l=2+rng()*r*.42,base=.08+rng()*.27,bucket=Math.min(11,Math.floor((base-.08)/.27*12));
-      let seg=buckets.get(bucket);if(!seg){seg=[];buckets.set(bucket,seg);}
-      seg.push(Math.cos(a)*(r+3),Math.sin(a)*(r+3),Math.cos(a+.035)*(r+l+3),Math.sin(a+.035)*(r+l+3));
+  if(pull>0){
+    ctx.save();ctx.rotate(-.35);
+    for(let i=0;i<4;i++){
+      const rr=r*(1.64+i*.09);
+      burinArc(ctx,0,0,rr,0,TAU,ink.marks.hazardAccretion,(.23-i*.04)*(1+pull*.5),(i===0?.9:.45)*scale,h.seed+i*29,{segments:20,skips:2,flatten:(.47+i*.028)/(1.64+i*.09)});
     }
+    ctx.restore();
+  }else{
+    const ring=hazardAccretionSprite(h.seed,r);
+    ctx.drawImage(ring.canvas,-ring.size/2,-ring.size/2,ring.size,ring.size);
+  }
+  {
+    const hatch=hazardHatchGeometry(h.seed,r);
     ctx.lineWidth=.5;
-    for(const [bucket,seg] of buckets){
+    for(const [bucket,seg] of hatch){
       ctx.strokeStyle=`rgba(${ink.marks.hazardHatch},${(.08+(bucket+.5)/12*.27)*pulse})`;
       ctx.beginPath();
       for(let j=0;j<seg.length;j+=4){ctx.moveTo(seg[j],seg[j+1]);ctx.lineTo(seg[j+2],seg[j+3]);}
       ctx.stroke();
     }
   }
-  if(paper){
-    // A pooled ink blot with a slightly ragged, hand-drawn edge rather than a clean printed circle.
-    ctx.fillStyle=ink.marks.hazardCore;ctx.beginPath();
-    const edges=20;
-    for(let i=0;i<=edges;i++){const a=i/edges*TAU,jr=r*(1+(rng()-.5)*.14);const px=Math.cos(a)*jr,py=Math.sin(a)*jr;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
-    ctx.closePath();ctx.fill();
-  }else{
-    ctx.fillStyle=ink.marks.hazardCore;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
-  }
-  burinArc(ctx,0,0,r,0,TAU,ink.marks.hazardEdge,.62,.85,h.seed+3,{segments:28,skips:2});
-  burinArc(ctx,-.7,-.3,r,Math.PI*1.04,Math.PI*1.82,ink.marks.hazardRim,.8,1.35,h.seed+11,{segments:14,skips:1});
-  for(let i=0;i<6;i++)burinArc(ctx,0,0,r+3+i*1.35,Math.PI*(1+i*.05),Math.PI*(1.8-i*.04),ink.marks.hazardArcFaint,.12-i*.014,.5,h.seed+17+i,{segments:8,skips:1});
-  burinArc(ctx,0,0,r+15,0,TAU,ink.marks.hazardOuter,.16,.4,h.seed+41,{segments:18,skips:3});ctx.restore();
+  const core=hazardCoreSprite(h.seed,r);
+  ctx.drawImage(core.canvas,-core.size/2,-core.size/2,core.size,core.size);
+  ctx.restore();
 }
 function drawAim(aim){
   const p=world.player;if(!p.node||world.state==='dead')return;

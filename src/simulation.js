@@ -215,6 +215,19 @@ function freeFlightStep(p,hazards,remaining) {
   // Skip force-free sections on the same 120 Hz grid as real flight.
   return Math.min(remaining,Math.max(FLIGHT_STEP,Math.floor(entry/FLIGHT_STEP)*FLIGHT_STEP));
 }
+// The curved guide re-predicts its whole course every frame while the player orbits near a
+// gravity field, so its points must not allocate: one shared array and a pool of point objects,
+// indexed by position and overwritten in place, stand in for what would otherwise be a fresh
+// object per sampled point (up to 384) and a fresh array every single render frame. Safe because
+// flightPreview.points is only ever read synchronously within the frame that computed it (see
+// drawAim, ambientClearance) — nothing retains a reference across frames.
+const previewPointPool=[],previewPoints=[];
+function pooledPoint(index,x,y,time,distance){
+  let pt=previewPointPool[index];
+  if(!pt){pt={x,y,time,distance};previewPointPool[index]=pt;}
+  else{pt.x=x;pt.y=y;pt.time=time;pt.distance=distance;}
+  return pt;
+}
 // The arrival angle: 90 is a line exactly tangent to the drawn ring. A smooth entry that joined a
 // little inside or outside reads a few degrees under or over; a flight coming straight down at the
 // centre reads near nothing. One definition, shared by the landing and by the guide that predicts it.
@@ -655,9 +668,13 @@ class OrbitWorld {
     if(p.y>this.floorY-4)this.die('THE DARK CAUGHT UP');
     if(Math.abs(p.x)>this.width/2+16)this.edgeHit();
     this.ensureAhead();
-    this.nodes=this.nodes.filter(n=>n===p.node||n.y<this.floorY+170);
-    this.hazards=this.hazards.filter(h=>h.y<this.floorY+170);
-    this.nebulas=this.nebulas.filter(g=>g.y-g.r<this.floorY+170);
+    // Pruning runs every physics tick (120 Hz), but the darkness only crosses any given element's
+    // threshold now and then — checking first avoids allocating a new array on every tick that has
+    // nothing to remove, which is nearly all of them.
+    const pruneY=this.floorY+170;
+    if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(n=>n===p.node||n.y<pruneY);
+    if(this.hazards.some(h=>h.y>=pruneY))this.hazards=this.hazards.filter(h=>h.y<pruneY);
+    if(this.nebulas.some(g=>g.y-g.r>=pruneY))this.nebulas=this.nebulas.filter(g=>g.y-g.r<pruneY);
     if(this.constellations.length>14)this.constellations=this.constellations.slice(-14);
     for(const chart of this.constellations){
       chart.flash=Math.max(0,chart.flash-dt);
@@ -729,21 +746,25 @@ class OrbitWorld {
         if(first===null||t<first)first=t;
       }
       if(first===null)continue;
-      const entry={x:lerp(a.x,b.x,first),y:lerp(a.y,b.y,first),time:lerp(a.time,b.time,first),distance:lerp(a.distance,b.distance,first)};
-      preview.points=pts.slice(0,i+1).concat([entry]);preview.fogged=true;break;
+      // Truncate in place and append the cut point, rather than slicing and concatenating into
+      // two fresh arrays every time the pace or a nebula fogs the course (see previewPointPool).
+      const ex=lerp(a.x,b.x,first),ey=lerp(a.y,b.y,first),et=lerp(a.time,b.time,first),ed=lerp(a.distance,b.distance,first);
+      pts.length=i+1;pts.push(pts===previewPoints?pooledPoint(pts.length,ex,ey,et,ed):{x:ex,y:ey,time:et,distance:ed});
+      preview.fogged=true;break;
     }
     return preview;
   }
   curvedAim(launch,duration) {
     const source=this.player,p={x:source.x,y:source.y,vx:launch.vx,vy:launch.vy};
-    const preview={points:[{x:p.x,y:p.y,time:0,distance:0}],aim:null,curved:false,blocked:false,steps:0};
+    previewPoints.length=0;previewPoints.push(pooledPoint(0,p.x,p.y,0,0));
+    const preview={points:previewPoints,aim:null,curved:false,blocked:false,steps:0};
     let time=0,distance=0,bend=0;
     while(time<duration-1e-9&&preview.steps<4096){
       const dt=freeFlightStep(p,this.hazards,duration-time),x=p.x,y=p.y;
       const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width,this.perfectMult);
       time+=result.dt;distance+=Math.hypot(p.x-x,p.y-y);bend+=Math.abs(result.turn);preview.steps++;
       const last=preview.points[preview.points.length-1];
-      if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push({x:p.x,y:p.y,time,distance});
+      if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push(pooledPoint(preview.points.length,p.x,p.y,time,distance));
       if(result.hit){
         if(result.hit.kind==='node')preview.aim=arrivalAim(result.hit.n,result.hit.contact,distance,p.vx,p.vy);
         else preview.blocked=result.hit.kind;

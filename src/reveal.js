@@ -76,21 +76,19 @@ const reveal=(function(){
         const anchor=c.stars.length?c.stars[0]:c.entry;
         if(anchor&&anchor.y>top&&anchor.y<bottom)primeList.push(anchor.y,c,CHART_REVEAL);
       }
-      // Lowest on the sheet first: those marks are the nearest, and the ones already finished free a slot.
-      for(let i=0;i<primeList.length;i+=3){
-        for(let j=i+3;j<primeList.length;j+=3){
-          if(primeList[j]>primeList[i]){
-            for(let k=0;k<3;k++){const swap=primeList[i+k];primeList[i+k]=primeList[j+k];primeList[j+k]=swap;}
-          }
-        }
-      }
+      // Lowest on the sheet first: those marks are the nearest, and the ones already finished free a
+      // slot. Sorted by index into the reused primeList (native sort, not the busy fork's own
+      // triple-swap) so a crowded fork does not turn a frame quadratic.
+      primeOrder.length=0;
+      for(let i=0;i<primeList.length;i+=3)primeOrder.push(i);
+      primeOrder.sort((a,b)=>primeList[b]-primeList[a]);
       // The three opening paths are drawn at once, never waiting on the cap: the player must see every
       // difficulty on offer immediately, not have one appear only once a slot frees up.
-      for(let i=0;i<primeList.length;i+=3)this.progress(primeList[i+1],primeList[i+2],primeList[i]>inView||!!primeList[i+1].difficultyChoice);
+      for(const i of primeOrder)this.progress(primeList[i+1],primeList[i+2],primeList[i]>inView||!!primeList[i+1].difficultyChoice);
     }
   };
 })();
-const primeList=[];
+const primeList=[],primeOrder=[];
 // Fraction of a reveal spent inside one stage of it.
 const revealSpan=(t,from,to)=>clamp((t-from)/(to-from),0,1);
 // One shared record, refilled per node per frame: reveal state must not allocate while the chart moves.

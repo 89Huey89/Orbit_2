@@ -296,17 +296,38 @@ function drawPlateFrame(){
 // The score, the pace and the flow are DOM, printed in the middle of the HUD band, and the chart scrolls up
 // beneath them. While a run is on, a soft leaf of the sheet's own ground is laid under that column,
 // feathered to nothing all round, so the figures never print straight across a planet.
+// A gradient's stops depend only on the plate, never on where or how large it is painted — the
+// translate+scale around each fillRect below place and size it — so, like the plate frame layer
+// above, it is built once per plate and reused rather than reallocated every single frame.
+const hudLeafGradients=new Map();
+function hudLeafGradient(){
+  let g=hudLeafGradients.get(plateName);
+  if(!g){
+    g=ctx.createRadialGradient(0,0,0,0,0,1);
+    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.8:.62})`);g.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.6:.46})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    hudLeafGradients.set(plateName,g);
+  }
+  return g;
+}
 function drawHudLeaf(){
   if(!world||world.state==='ready'||world.state==='dead')return;
   const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=band*.64;
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
-  const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
-  leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.8:.62})`);leaf.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.6:.46})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-  ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+  ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
 // The running head: the plate's own number and name, engraved at the foot of the sheet where a printer
 // sets one, in the frame's ink rather than in the DOM. It names the chapter the ascent has reached, and
 // the page turn writes the same name large across the chart as the sheet changes.
+const runningHeadGradients=new Map();
+function runningHeadGradient(){
+  let g=runningHeadGradients.get(plateName);
+  if(!g){
+    g=ctx.createRadialGradient(0,0,0,0,0,1);
+    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.72:.6})`);g.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    runningHeadGradients.set(plateName,g);
+  }
+  return g;
+}
 function drawRunningHead(){
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
@@ -316,9 +337,7 @@ function drawRunningHead(){
   // The running head keeps a soft leaf of the sheet's own ground under it, feathered to nothing, so it is
   // still read once the spilled ink has risen past the foot of the plate.
   ctx.save();ctx.translate(W*.5,y-size*.35);ctx.scale(Math.min(W*.34,116),size*1.9);
-  const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
-  leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.72:.6})`);leaf.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-  ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+  ctx.fillStyle=runningHeadGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
   ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
   ctx.fillStyle=colors.text;
   ctx.fillText(head,W*.5,y);

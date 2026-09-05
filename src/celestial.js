@@ -1,6 +1,9 @@
 'use strict';
 /* Orbit · src/celestial.js
    Chapter plates, ambient events, chapter reveal, region atmosphere. */
+// The grain overlay pattern is only as fresh as the grain canvas it wraps (rebuilt on resize —
+// see plates.js), so it is memoized here instead of re-wrapped every frame.
+let grainPattern=null,grainPatternSource=null;
 // ---------- Chapter plates: `distantGlobe` (a reusable engraved world) and `celestialPlate` (the four
 // cached full-bleed illustrations), plus their placement and blit. Night keeps every original literal
 // untouched; paper redraws the same compositions with hairline hatching, stipple and dilute washes —
@@ -391,14 +394,24 @@ function drawPlateCaptions(index,weight,place){
 // across the channel and fading out over a 60-pixel feather either side, so the transition is graded
 // rather than cut and nothing changes but the contrast under the chart.
 const CHANNEL_FEATHER=60;
+// Painted in the plain DPR-scaled transform render() sets up top of frame, so this gradient's
+// absolute coordinates stay valid across frames until a resize or a plate switch changes W, DPR
+// or the ground colour — exactly the sort of thing already cached everywhere else in this file.
+const channelVeils=new Map();
 function drawChannelVeil(){
   const half=playChannel(),edge=half+CHANNEL_FEATHER,cx=W*.5,alpha=onPaper()?.3:.34;
-  const veil=ctx.createLinearGradient(cx-edge,0,cx+edge,0),stop=CHANNEL_FEATHER/(edge*2);
-  const ground=ink.base.paperRgb;
-  veil.addColorStop(0,`rgba(${ground},0)`);
-  veil.addColorStop(stop,`rgba(${ground},${alpha})`);
-  veil.addColorStop(1-stop,`rgba(${ground},${alpha})`);
-  veil.addColorStop(1,`rgba(${ground},0)`);
+  const key=W+':'+DPR+':'+plateName;
+  let veil=channelVeils.get(key);
+  if(!veil){
+    veil=ctx.createLinearGradient(cx-edge,0,cx+edge,0);const stop=CHANNEL_FEATHER/(edge*2);
+    const ground=ink.base.paperRgb;
+    veil.addColorStop(0,`rgba(${ground},0)`);
+    veil.addColorStop(stop,`rgba(${ground},${alpha})`);
+    veil.addColorStop(1-stop,`rgba(${ground},${alpha})`);
+    veil.addColorStop(1,`rgba(${ground},0)`);
+    channelVeils.set(key,veil);
+    if(channelVeils.size>8)channelVeils.delete(channelVeils.keys().next().value);
+  }
   ctx.save();ctx.fillStyle=veil;ctx.fillRect(Math.max(0,cx-edge),0,Math.min(W,edge*2),H);ctx.restore();
 }
 function ambientPoint(e,progress){
@@ -531,6 +544,16 @@ function revealPoint(){
     compact
   };
 }
+const chapterRevealLeaves=new Map();
+function chapterRevealLeaf(){
+  let g=chapterRevealLeaves.get(plateName);
+  if(!g){
+    g=ctx.createRadialGradient(0,0,0,0,0,1);
+    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.66:.56})`);g.addColorStop(.5,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    chapterRevealLeaves.set(plateName,g);
+  }
+  return g;
+}
 function drawChapterReveal(dt){
   if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
@@ -547,9 +570,7 @@ function drawChapterReveal(dt){
     // disc included — without a hard edge anywhere on the page.
     const spread=Math.min(95,W*.21)+72;
     ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
-    const leaf=ctx.createRadialGradient(0,0,0,0,0,1);
-    leaf.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.66:.56})`);leaf.addColorStop(.5,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);leaf.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-    ctx.fillStyle=leaf;ctx.fillRect(-1,-1,2,2);ctx.restore();
+    ctx.fillStyle=chapterRevealLeaf();ctx.fillRect(-1,-1,2,2);ctx.restore();
   }
   ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
@@ -701,5 +722,8 @@ function drawAtmosphere(dt=0,aim=null){
     line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);
     ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
   }
-  ctx.save();ctx.globalAlpha=.32;ctx.fillStyle=ctx.createPattern(grain,'repeat');ctx.fillRect(0,0,W,H);ctx.restore();
+  // grain itself is only rebuilt on resize (see resize()); the pattern built from it is just as
+  // reusable, so it is memoized against the same canvas instead of re-wrapped every frame.
+  if(grainPatternSource!==grain){grainPattern=ctx.createPattern(grain,'repeat');grainPatternSource=grain;}
+  ctx.save();ctx.globalAlpha=.32;ctx.fillStyle=grainPattern;ctx.fillRect(0,0,W,H);ctx.restore();
 }
