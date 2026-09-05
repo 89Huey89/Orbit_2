@@ -52,14 +52,26 @@ definePlate('inks',{
     // A reckless line's ink: soot-black bistre, warm rather than the iron gall's cool near-black.
     bistre:{wet:[232,208,168],dry:[138,112,82],wash:'210,182,140',edge:'176,148,108',bleed:'218,192,150',blotWet:[230,206,166],blotDry:[140,114,84],path:'150,122,88'},
     // Orpiment: the old illuminators' bright, faintly dangerous yellow-orange mineral.
-    orpiment:{wet:[255,196,96],dry:[190,124,54],wash:'224,158,72',edge:'196,128,58',bleed:'236,172,84',blotWet:[252,194,94],blotDry:[188,122,52],path:'176,116,50'}
+    orpiment:{wet:[255,196,96],dry:[190,124,54],wash:'224,158,72',edge:'196,128,58',bleed:'236,172,84',blotWet:[252,194,94],blotDry:[188,122,52],path:'176,116,50'},
+    // The badAngles ladder: five pigments running common to precious, the way the slingshot ladder
+    // runs chalk to gold leaf, but earned by a lifetime of arrivals too steep to score at all.
+    umber:{wet:[214,188,140],dry:[124,100,64],wash:'192,166,118',edge:'158,132,90',bleed:'200,174,124',blotWet:[212,186,138],blotDry:[126,102,66],path:'142,116,78'},
+    woad:{wet:[176,196,224],dry:[92,112,148],wash:'140,160,196',edge:'108,128,164',bleed:'156,176,210',blotWet:[174,194,222],blotDry:[94,114,150],path:'104,124,158'},
+    vermilion:{wet:[248,138,96],dry:[186,84,58],wash:'214,110,76',edge:'182,88,60',bleed:'228,124,86',blotWet:[246,136,94],blotDry:[188,86,60],path:'176,84,56'},
+    malachite:{wet:[168,224,196],dry:[70,132,102],wash:'120,182,152',edge:'92,152,120',bleed:'142,202,172',blotWet:[166,222,194],blotDry:[72,134,104],path:'84,146,114'},
+    ultramarine:{wet:[150,178,240],dry:[64,86,168],wash:'104,132,206',edge:'78,102,178',bleed:'126,154,224',blotWet:[148,176,238],blotDry:[66,88,170],path:'72,96,176'}
   },
   paper:{
     sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
     silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252',path:'118,122,128'},
     goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'},
     bistre:{wet:[58,44,30],dry:[146,112,72],wash:'96,74,50',edge:'80,60,40',bleed:'104,80,54',blotWet:[56,42,28],blotDry:[148,114,74],path:'112,86,58'},
-    orpiment:{wet:[150,88,20],dry:[196,140,58],wash:'176,112,36',edge:'140,88,30',bleed:'198,142,60',blotWet:[148,86,18],blotDry:[198,142,60],path:'168,106,40'}
+    orpiment:{wet:[150,88,20],dry:[196,140,58],wash:'176,112,36',edge:'140,88,30',bleed:'198,142,60',blotWet:[148,86,18],blotDry:[198,142,60],path:'168,106,40'},
+    umber:{wet:[68,52,30],dry:[138,108,66],wash:'92,70,42',edge:'76,58,34',bleed:'100,76,46',blotWet:[66,50,28],blotDry:[140,110,68],path:'108,82,50'},
+    woad:{wet:[36,46,84],dry:[100,116,158],wash:'64,78,120',edge:'48,60,100',bleed:'76,92,134',blotWet:[34,44,82],blotDry:[102,118,160],path:'72,86,126'},
+    vermilion:{wet:[142,38,20],dry:[198,96,60],wash:'168,64,36',edge:'134,42,22',bleed:'176,72,40',blotWet:[140,36,18],blotDry:[200,98,62],path:'158,58,32'},
+    malachite:{wet:[16,64,44],dry:[86,142,108],wash:'40,96,68',edge:'28,78,52',bleed:'52,108,78',blotWet:[14,62,42],blotDry:[88,144,110],path:'60,116,84'},
+    ultramarine:{wet:[20,30,110],dry:[76,96,180],wash:'40,56,140',edge:'28,42,120',bleed:'52,70,156',blotWet:[18,28,108],blotDry:[78,98,182],path:'48,64,150'}
   }
 });
 // The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen.

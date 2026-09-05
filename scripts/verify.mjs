@@ -772,8 +772,8 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     const fresh=JSON.parse(JSON.stringify(context.test.ledger));
     assert.deepEqual({captures:fresh.captures,perfects:fresh.perfects,bestFlow:fresh.bestFlow,constellations:fresh.constellations,
       grazes:fresh.grazes,shieldsSpent:fresh.shieldsSpent,reflectorsSpent:fresh.reflectorsSpent,maxSpeedSlings:fresh.maxSpeedSlings,
-      inkwellsFound:fresh.inkwellsFound,runs:fresh.runs,observations:fresh.observations,personalBests:fresh.personalBests,allFourInOneRun:fresh.allFourInOneRun},
-      {captures:0,perfects:0,bestFlow:0,constellations:{},grazes:0,shieldsSpent:0,reflectorsSpent:0,maxSpeedSlings:0,inkwellsFound:0,runs:{},observations:{},personalBests:{},allFourInOneRun:false},
+      inkwellsFound:fresh.inkwellsFound,badAngles:fresh.badAngles,runs:fresh.runs,observations:fresh.observations,personalBests:fresh.personalBests,allFourInOneRun:fresh.allFourInOneRun},
+      {captures:0,perfects:0,bestFlow:0,constellations:{},grazes:0,shieldsSpent:0,reflectorsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,runs:{},observations:{},personalBests:{},allFourInOneRun:false},
       'A fresh or unreadable ledger opens empty');
     assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius'},'Cosmetics default to the classic look');
     assert.equal(context.test.isUnlocked('cellarius'),false);
@@ -784,7 +784,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   {
     const empty=context.test.ledger&&JSON.parse(JSON.stringify(context.test.ledger));
     const at=fields=>Object.assign(JSON.parse(JSON.stringify(empty)),{captures:0,perfects:0,bestRow:0,maxSpeedSlings:0,runs:{},
-      constellations:{},personalBests:{},deepestHardcoreChapter:0,allFourInOneRun:false,inkwellsFound:0},fields);
+      constellations:{},personalBests:{},deepestHardcoreChapter:0,allFourInOneRun:false,inkwellsFound:0,badAngles:0},fields);
     const cases=[
       ['cellarius',{captures:999},false],['cellarius',{captures:1000},true],
       ['verdigris',{deepestHardcoreChapter:3},false],['verdigris',{deepestHardcoreChapter:4},true],
@@ -799,6 +799,11 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       ['sanguine',{maxSpeedSlings:9},false],['sanguine',{maxSpeedSlings:10},true],
       ['silverpoint',{maxSpeedSlings:49},false],['silverpoint',{maxSpeedSlings:50},true],
       ['goldleaf',{maxSpeedSlings:199},false],['goldleaf',{maxSpeedSlings:200},true],
+      ['umber',{badAngles:9},false],['umber',{badAngles:10},true],
+      ['woad',{badAngles:24},false],['woad',{badAngles:25},true],
+      ['vermilion',{badAngles:74},false],['vermilion',{badAngles:75},true],
+      ['malachite',{badAngles:199},false],['malachite',{badAngles:200},true],
+      ['ultramarine',{badAngles:499},false],['ultramarine',{badAngles:500},true],
       ['bistre',{inkwellsFound:2},false],['bistre',{inkwellsFound:3},true],
       ['orpiment',{inkwellsFound:9},false],['orpiment',{inkwellsFound:10},true],
       ['rose',{captures:249},false],['rose',{captures:250},true],
@@ -823,10 +828,10 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,33,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,38,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
     const everything=at({captures:5000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
-      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,
+      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
       observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});
     assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
   }
@@ -1227,7 +1232,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
 // A ledger that has earned the whole catalogue, seeded into storage before the page boots, so the
 // unlocked half of every screen is exercised as well as the empty one.
 const FULL_LEDGER=JSON.stringify({captures:9000,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
-  deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:8,reflectorsSpent:6,maxSpeedSlings:400,inkwellsFound:14,runs:{classic:140,relaxed:6,hardcore:20},
+  deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:8,reflectorsSpent:6,maxSpeedSlings:400,inkwellsFound:14,badAngles:550,runs:{classic:140,relaxed:6,hardcore:20},
   playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},
   observations:{perfectThree:6,skipFive:5,maxSpeed:3,graze:2,pureChart:2,fortyRows:9,threeMinutes:4,rightAngle:12},allFourInOneRun:true});
 const layouts=[

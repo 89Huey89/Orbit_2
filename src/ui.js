@@ -26,7 +26,7 @@ function event(type,e){
     if(e.max)tally('maxSpeedSlings');
     audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
   }else if(type==='capture'){
-    tally('captures');if(e.perfect)tally('perfects');
+    tally('captures');if(e.perfect)tally('perfects');if(e.steep)tally('badAngles');
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
     if(e.steep){
