@@ -1,0 +1,646 @@
+<!doctype html>
+<!--
+  Orbit — Era I, "The Disc": European Bronze Age, c. 1600 BCE, pulled from the Nebra sky disc
+  (Landesmuseum für Vorgeschichte, Halle) per docs/eras/research/disc.md. No script exists in
+  Bronze Age temperate Europe (research §4) — that absence is the era's whole grammar, so
+  nothing on this sheet is a letterform. No OFL face is loaded: reaching for one (Linear B was
+  considered and declined, §4) would relocate the "invented era" mistake into type. Numerals are
+  drawn as stacked repoussé bands (research §4/§9: "the honest equivalent is repeated identical
+  marks, grouped ... not digits") — one horizontal zone per decimal digit, a count of small
+  punched dots in that zone, exactly the gold hats' band logic (§1). The ground is fresh cast
+  bronze (§3, #8C6239), dark and near-black, NOT the museum's verdigris — a hint of patina only
+  bleeds in at the rim per the era brief, so the sheet still reads as a made object rather than a
+  dug one. Gold is always damascened: a chiselled groove, then a slightly irregular foil fill
+  (§4) — never a flat fill. Every mark on the sheet routes through one of three struck
+  primitives (chiselGroove, punchDot, repousseBand) in place of the shipped game's burin, per
+  §4's note that the disc's technique is discrete strikes, not a continuous drawn line.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Disc — Orbit era prototype</title>
+<style>
+  :root{color-scheme:dark;}
+  html,body{margin:0;padding:0;background:#050403;height:100%;overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#050403;}
+  canvas{display:block;box-shadow:0 0 60px 10px rgba(0,0,0,.6);}
+  #legend{position:fixed;left:0;top:0;pointer-events:none;font:11px/1.4 monospace;color:#9c9;}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="legend"></div>
+<script>
+'use strict';
+// ---------- seeded randomness: page paints identically every load ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(0xDA13C0DE);
+const TAU=Math.PI*2;
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+// ---------- TOKENS: the disc's own palette (docs/eras/research/disc.md §3) ----------
+const TOKENS={
+  bronze:'#8C6239',        // fresh cast bronze, unoxidised — the ground's true colour
+  bronzeDeep:'#5c3f24',    // recessed/shadowed bronze, hammer-lows
+  bronzeHi:'#B5834D',      // burnished highlight, rim catching light
+  patina:'#3c5c52',        // verdigris creeping in only at the margins (§3, "aged reading only")
+  patinaDeep:'#2E4B44',
+  gold:'#D4AF37',          // hammered gold foil, damascened — stars, sun/moon, arcs, ship
+  goldHi:'#E8CD7A',        // pale electrum highlight
+  goldLow:'#9c7a1f',       // groove-shadow side of a foil fill
+  sheetGold:'#C9A227',     // hats/lozenge sheet gold — warmer, used for pickups only
+  copper:'#B15C36',        // raw unalloyed copper — the volcanic family only
+  copperDeep:'#7a3b21',
+  grooveShadow:'rgba(15,10,6,.85)',
+  ink:'rgba(20,14,9,.9)'
+};
+const FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+
+// ---------- canvas setup: draw at devicePixelRatio, scale a fixed 1280x800 logical frame ----------
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1280,H=800;
+let DPR=Math.max(1,window.devicePixelRatio||1);
+function fit(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/W,vh/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';
+  DPR=Math.max(1,window.devicePixelRatio||1);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+}
+window.addEventListener('resize',fit);fit();
+
+let showLegend=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+const legendItems=[];
+function legend(x,y,label){if(showLegend)legendItems.push({x,y,label});}
+
+// ================= STRUCK PRIMITIVES — every mark on the sheet goes through one of these =================
+
+// A chisel groove: a short irregular-walled cut, then a damascened gold fill laid slightly
+// unevenly inside it (research §4 — cut, place, close; never a flat colour fill).
+function chiselGroove(g,path,weight,seedN){
+  const rnd=mulberry32(seedN>>>0||7);
+  g.save();
+  g.lineJoin='round';g.lineCap='round';
+  g.strokeStyle=TOKENS.grooveShadow;g.lineWidth=weight+1.6;g.beginPath();
+  path(g,rnd,0);g.stroke();
+  g.strokeStyle=TOKENS.bronzeDeep;g.lineWidth=weight+0.6;g.beginPath();
+  path(g,rnd,0.3);g.stroke();
+  // foil fill: two close, slightly offset gold strokes so the edge reads hand-hammered, not vector-flat.
+  g.strokeStyle=TOKENS.goldLow;g.lineWidth=weight*0.72;g.beginPath();
+  path(g,rnd,0.55);g.stroke();
+  g.strokeStyle=TOKENS.gold;g.lineWidth=weight*0.5;g.beginPath();
+  path(g,rnd,0.8);g.stroke();
+  g.strokeStyle=TOKENS.goldHi;g.lineWidth=weight*0.2;g.globalAlpha=0.8;g.beginPath();
+  path(g,rnd,1.1);g.stroke();
+  g.restore();
+}
+// A chiselled arc, the groove primitive specialised to a circle segment (orbit rings, chart furniture).
+function chiselArc(g,cx,cy,r,from,to,weight,seedN,jitter){
+  jitter=jitter??Math.max(0.6,r*0.006);
+  chiselGroove(g,(gg,rnd,off)=>{
+    const span=to-from,segs=clamp(Math.round(Math.abs(span)*r/9),6,64);
+    for(let i=0;i<=segs;i++){
+      const t=i/segs,a=from+span*t;
+      const wob=(rnd()-0.5)*jitter*2*(0.4+off);
+      const rr=r+wob;
+      const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+      i===0?gg.moveTo(x,y):gg.lineTo(x,y);
+    }
+  },weight,seedN);
+}
+// A struck gold star/point: the disc's own technique, a single vertical tap, not a drawn stroke.
+// flash 0..1 animates the moment of the strike for the reveal animation (§4: "appears, struck ...
+// an audible/visual settle").
+function punchDot(g,x,y,r,seedN,flash){
+  flash=flash||0;
+  const rnd=mulberry32((seedN>>>0||3)*2654435761>>>0);
+  g.save();
+  // the depression: a dark dimple with a bronze rim thrown up by the strike.
+  g.beginPath();g.arc(x,y,r*1.35,0,TAU);g.fillStyle=TOKENS.bronzeDeep;g.globalAlpha=0.5;g.fill();
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=TOKENS.goldLow;g.globalAlpha=1;g.fill();
+  const grad=g.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
+  grad.addColorStop(0,TOKENS.goldHi);grad.addColorStop(0.6,TOKENS.gold);grad.addColorStop(1,TOKENS.goldLow);
+  g.beginPath();g.arc(x,y,r*0.84,0,TAU);g.fillStyle=grad;g.fill();
+  // a couple of irregular facets, as if the foil disc was tapped rather than perfectly round.
+  for(let i=0;i<3;i++){
+    const a=rnd()*TAU,rr=r*(0.3+rnd()*0.5);
+    g.beginPath();g.arc(x+Math.cos(a)*r*0.25,y+Math.sin(a)*r*0.25,rr*0.35,0,TAU);
+    g.fillStyle=i%2?TOKENS.goldHi:TOKENS.goldLow;g.globalAlpha=0.25;g.fill();
+  }
+  g.restore();
+  if(flash>0){
+    g.save();g.globalAlpha=flash;
+    g.beginPath();g.arc(x,y,r*(1+flash*2.4),0,TAU);
+    g.strokeStyle='#fff6dc';g.lineWidth=1.4;g.stroke();
+    g.beginPath();g.arc(x,y,r*0.6,0,TAU);g.fillStyle='#fffdf4';g.fill();
+    g.restore();
+  }
+}
+// Repoussé band: the gold-hats' zone unit, a horizontal ring of identically repeated punched
+// circles worked from the reverse (§4). Used for the ringed family and for numeral zones.
+function repousseBand(g,cx,cy,rInner,rOuter,count,seedN,hue){
+  hue=hue||TOKENS.gold;
+  const rnd=mulberry32((seedN>>>0||11)*40503);
+  const rMid=(rInner+rOuter)/2,dotR=(rOuter-rInner)*0.42;
+  g.save();
+  g.beginPath();g.arc(cx,cy,rMid,0,TAU);g.strokeStyle=TOKENS.grooveShadow;g.lineWidth=rOuter-rInner+1;g.stroke();
+  for(let i=0;i<count;i++){
+    const a=(i/count)*TAU+rnd()*0.05;
+    const x=cx+Math.cos(a)*rMid,y=cy+Math.sin(a)*rMid;
+    punchDot(g,x,y,dotR,seedN+i*7,0);
+  }
+  g.restore();
+}
+
+// ================= paintGround: hammered bronze field, patina bleeding in at the margins =================
+function paintGround(g){
+  // base is weighted toward the deep/recessed bronze rather than the highlight hex: research
+  // calls the disc "dark brown, near-black when new," and the sheet needs that headroom for
+  // struck gold to read as the accent, not compete with an already-bright field.
+  g.fillStyle=TOKENS.bronzeDeep;g.fillRect(0,0,W,H);
+  const base=g.createLinearGradient(0,0,W,H);
+  base.addColorStop(0,'#4a3018');base.addColorStop(0.5,TOKENS.bronze);base.addColorStop(1,'#3f2a16');
+  g.globalAlpha=0.75;g.fillStyle=base;g.fillRect(0,0,W,H);g.globalAlpha=1;
+  // cast/hammer texture: thousands of tiny irregular facets, denser variance near centre.
+  const n=9000;
+  for(let i=0;i<n;i++){
+    const x=rng()*W,y=rng()*H;
+    const shade=rng();
+    g.globalAlpha=0.05+rng()*0.07;
+    g.fillStyle=shade<0.5?'#241608':TOKENS.bronzeHi;
+    const r=0.6+rng()*1.8;
+    g.beginPath();g.ellipse(x,y,r,r*(0.5+rng()*0.6),rng()*TAU,0,TAU);g.fill();
+  }
+  g.globalAlpha=1;
+  // broad hammer-swept low-frequency mottling, kept faint so it varies the field without
+  // washing it back toward a flat glow.
+  for(let i=0;i<22;i++){
+    const x=rng()*W,y=rng()*H,r=50+rng()*130;
+    const grad=g.createRadialGradient(x,y,0,x,y,r);
+    const c=rng()<0.6?'#2c1c0d':TOKENS.bronzeHi;
+    grad.addColorStop(0,c);grad.addColorStop(1,'transparent');
+    g.globalAlpha=0.045;g.fillStyle=grad;g.beginPath();g.rect(x-r,y-r,r*2,r*2);g.fill();
+  }
+  g.globalAlpha=1;
+  // patina creeping in from the sheet's edge only (research: the disc's own attested tarnish,
+  // kept to the margins so the ground still reads as the object "as made," per the era brief).
+  const edge=g.createRadialGradient(W/2,H/2,Math.min(W,H)*0.32,W/2,H/2,Math.min(W,H)*0.62);
+  edge.addColorStop(0,'rgba(46,75,68,0)');edge.addColorStop(1,'rgba(46,75,68,.42)');
+  g.fillStyle=edge;g.fillRect(0,0,W,H);
+  const vig=g.createRadialGradient(W/2,H/2,Math.min(W,H)*0.15,W/2,H/2,Math.max(W,H)*0.72);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.68)');
+  g.fillStyle=vig;g.fillRect(0,0,W,H);
+  legend(10,10,'ground: fresh cast bronze (dark), patina at margins only');
+}
+// The disc's own composition, per research §2: "no register bands, no ground line ... its sky
+// scattered across the whole circular field," every star an identical small punched gold disc,
+// "differentiated only by position" — never size-coded by brightness. Painted once to an
+// offscreen sprite (item 9's static-layer rule) since the marks never move.
+let skySprite=null;
+function buildSky(){
+  const off=document.createElement('canvas');off.width=W;off.height=H;
+  const og=off.getContext('2d');
+  const srnd=mulberry32(0xB20B2E);
+  for(let i=0;i<70;i++){
+    const x=40+srnd()*(W-80),y=40+srnd()*(H-80);
+    punchDot(og,x,y,2,i*31+2,0);
+  }
+  skySprite=off;
+}
+function paintSky(g){g.drawImage(skySprite,0,0);legend(50,50,'stars: identical punched gold discs, scattered (no magnitude coding)');}
+
+// ================= paintFrame: the disc's own rim, pierced with punched holes =================
+// Research §9: no border/cartouche/scale-bar exists for this era, but the disc has a real
+// physical rim of ~35-40 mounting perforations — the one true piece of frame furniture, and
+// the era's equivalent of the game's plate-mark/tick-ring. No compass rose, no colophon: a
+// Bronze Age sheet metal object does not carry that kind of paratext (§9).
+const RIM_HOLES=37; // "somewhat under 40," per research — an unverified exact count, so a mid value
+function paintFrame(g){
+  const m=26;
+  g.save();
+  g.strokeStyle=TOKENS.bronzeDeep;g.lineWidth=6;g.strokeRect(m,m,W-m*2,H-m*2);
+  g.strokeStyle=TOKENS.bronzeHi;g.lineWidth=1.4;g.globalAlpha=0.5;g.strokeRect(m+4,m+4,W-m*2-8,H-m*2-8);
+  g.globalAlpha=1;
+  // the rim's punched mounting holes, evenly spaced around the plate edge — standing in for
+  // RA-hour/declination ticks, no numeral needed beside them (research §9).
+  const cx=W/2,cy=H/2,per=(W-m*2)*2+(H-m*2)*2;
+  for(let i=0;i<RIM_HOLES;i++){
+    const t=i/RIM_HOLES,d=t*per;
+    let x,y;
+    const ww=W-m*2,hh=H-m*2;
+    if(d<ww){x=m+d;y=m;}
+    else if(d<ww+hh){x=W-m;y=m+(d-ww);}
+    else if(d<ww*2+hh){x=W-m-(d-ww-hh);y=H-m;}
+    else{x=m;y=H-m-(d-ww*2-hh);}
+    g.beginPath();g.arc(x,y,3.6,0,TAU);g.fillStyle=TOKENS.grooveShadow;g.fill();
+    g.beginPath();g.arc(x,y,2.3,0,TAU);g.fillStyle=TOKENS.bronzeHi;g.globalAlpha=0.7;g.fill();g.globalAlpha=1;
+  }
+  g.restore();
+  legend(m+6,m+16,'frame: the disc\'s rim, punched mounting holes stand in for tick-ring');
+}
+// No maker's mark or colophon: a Bronze Age sheet-metal object carries no paratext of that
+// kind (research §9) — inventing one would be furniture the record doesn't have. Called for
+// the record, per the brief's "frame furniture ... or its deliberate absence."
+function paintColophon(){}
+// The era's equivalent of the magnitude key (brief item 2): research §2 says there IS no
+// magnitude coding — "every star is the same small punched gold disc regardless of
+// brightness" — so the honest key is a single reference mark showing that one size is the
+// whole scale, not a ladder of sizes.
+function paintMagnitudeKey(g){
+  const x=W-58,y=H-58;
+  punchDot(g,x,y,2,55,0);
+  g.save();g.strokeStyle=TOKENS.goldLow;g.globalAlpha=0.55;g.lineWidth=0.9;g.setLineDash([1,2]);
+  g.beginPath();g.arc(x,y,7,0,TAU);g.stroke();g.restore();
+  legend(x-30,y-14,'magnitude key: one size stands for all (no coding)');
+}
+
+// ================= body specimens — the seven families (research §8) =================
+function paintBody(g,cx,cy,r,family,seedN){
+  const rnd=mulberry32((seedN>>>0||1)*97+FAMILIES.indexOf(family)*131);
+  g.save();
+  // every body is a struck/worked gold (or copper) disc let into the bronze ground — the
+  // keyline is the damascening groove that seats it, chased exactly like an orbit ring.
+  chiselArc(g,cx,cy,r,0,TAU,2.2,seedN);
+  const base=family==='volcanic'?TOKENS.copper:family==='ice'?'#cfe3da':TOKENS.gold;
+  const grad=g.createRadialGradient(cx-r*0.3,cy-r*0.35,r*0.1,cx,cy,r);
+  grad.addColorStop(0,family==='ice'?'#eef7f2':TOKENS.goldHi);
+  grad.addColorStop(0.55,base);
+  grad.addColorStop(1,family==='volcanic'?TOKENS.copperDeep:TOKENS.goldLow);
+  g.beginPath();g.arc(cx,cy,r*0.94,0,TAU);g.fillStyle=grad;g.fill();
+  switch(family){
+    case 'ocean': // plain, unadorned, left smooth and bright — the disc's own moon (§8).
+      g.beginPath();g.arc(cx-r*0.3,cy-r*0.32,r*0.22,0,TAU);g.fillStyle='rgba(255,250,230,.35)';g.fill();
+      break;
+    case 'crater': // pocked with individual punch-marks at irregular intervals.
+      for(let i=0;i<14;i++){
+        const a=rnd()*TAU,rr=rnd()*r*0.78;
+        punchDot(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r*0.09+rnd()*r*0.05,seedN+i,0);
+      }
+      break;
+    case 'ringed': // the gold-hat treatment at body scale: horizontal repoussé bands (§8).
+      for(let b=0;b<3;b++){
+        const rr=r*(0.42+b*0.19);
+        repousseBand(g,cx,cy,rr-r*0.05,rr+r*0.05,7+b*2,seedN+b*5);
+      }
+      break;
+    case 'ice': // cool electrum, almost plain, one hard highlight edge (§8) — a colder white-silver
+      // fill than every neighbour's warm gold, so temperature (not pattern) carries the reading.
+      g.beginPath();g.arc(cx,cy,r*0.94,0,TAU);g.fillStyle='rgba(210,232,224,.4)';g.fill();
+      g.beginPath();g.arc(cx,cy,r*0.9,-0.75,0.15);g.strokeStyle='#ffffff';g.lineWidth=2.6;g.globalAlpha=0.95;g.stroke();g.globalAlpha=1;
+      break;
+    case 'dune': // parallel raked short-stroke texture, the ship's oar-strokes repurposed (§8).
+      for(let i=0;i<10;i++){
+        const yy=cy-r*0.7+i*r*0.15;
+        g.beginPath();g.moveTo(cx-r*0.75,yy);g.lineTo(cx+r*0.6,yy+r*0.1);
+        g.strokeStyle=i%2?TOKENS.goldLow:TOKENS.goldHi;g.lineWidth=1.4;g.globalAlpha=0.55;g.stroke();
+      }
+      g.globalAlpha=1;
+      break;
+    case 'volcanic': // raw unalloyed copper, cracked lines chiselled outward off-centre (§8).
+      { const ox=cx+r*0.18,oy=cy-r*0.12;
+        for(let i=0;i<9;i++){
+          const a=rnd()*TAU,len=r*(0.5+rnd()*0.5);
+          chiselGroove(g,(gg)=>{gg.moveTo(ox,oy);gg.lineTo(ox+Math.cos(a)*len,oy+Math.sin(a)*len);},1.4,seedN+i*3);
+        }
+      }
+      break;
+    case 'storm': // the spiral again, loose and open rather than pulling tight (§8).
+      chiselGroove(g,(gg,rnd2)=>{
+        let a=0,rr=r*0.15;
+        gg.moveTo(cx+rr,cy);
+        for(let t=0;t<=1;t+=0.02){a=t*TAU*2.4;rr=r*0.15+t*r*0.7;gg.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}
+      },1.8,seedN+3);
+      break;
+  }
+  g.restore();
+  // caption: no script exists for this culture, so each family carries a small pictographic
+  // punch-mark rather than a word or transliteration (research §4/§5 — nothing to write).
+  paintFamilyGlyph(g,cx,cy+r+16,family,seedN);
+  legend(cx-r,cy+r+26,family);
+}
+function paintFamilyGlyph(g,x,y,family,seedN){
+  g.save();g.translate(x,y);g.strokeStyle=TOKENS.goldLow;g.fillStyle=TOKENS.gold;g.lineWidth=1.1;
+  const s=7;
+  switch(family){
+    case 'ocean':g.beginPath();g.arc(0,0,s*0.6,0,TAU);g.fill();break;
+    case 'crater':g.beginPath();g.arc(0,0,s*0.6,0,TAU);g.stroke();g.beginPath();g.arc(-1,-1,1,0,TAU);g.arc(2,1,1,0,TAU);g.fill();break;
+    case 'ringed':g.beginPath();g.arc(0,0,s*0.62,0,TAU);g.stroke();g.beginPath();g.arc(0,0,s*0.3,0,TAU);g.stroke();break;
+    case 'ice':g.beginPath();g.arc(0,0,s*0.6,-0.6,0.6);g.stroke();break;
+    case 'dune':for(let i=-1;i<=1;i++){g.beginPath();g.moveTo(-s*0.6,i*3);g.lineTo(s*0.6,i*3+1);g.stroke();}break;
+    case 'volcanic':for(let i=0;i<6;i++){const a=i/6*TAU;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*s*0.7,Math.sin(a)*s*0.7);g.stroke();}break;
+    case 'storm':g.beginPath();let a=0,r=1;g.moveTo(r,0);for(let t=0;t<=1;t+=0.1){a=t*TAU*1.6;r=1+t*s*0.6;g.lineTo(Math.cos(a)*r,Math.sin(a)*r);}g.stroke();break;
+  }
+  g.restore();
+}
+
+// ================= dangers — the four rows, drawn per research §7 =================
+function paintHazard(g,cx,cy,r,kind,t){
+  g.save();
+  switch(kind){
+    case 'vortex': // the spiral (attractor / VORAGO) — tightening bronze-dark rings, a gold thread spiralling into the core.
+      for(let ring=0;ring<4;ring++){
+        const rr=r*(1-ring*0.2);
+        g.beginPath();g.arc(cx,cy,rr,0,TAU);g.strokeStyle=TOKENS.bronzeDeep;g.lineWidth=3-ring*0.4;g.globalAlpha=0.55;g.stroke();
+      }
+      g.globalAlpha=1;
+      chiselGroove(g,(gg)=>{
+        for(let tt=0;tt<=1;tt+=0.02){const a=tt*TAU*2.6-t*TAU*0.3,rr=r*(0.08+tt*0.85);
+          const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;tt===0?gg.moveTo(x,y):gg.lineTo(x,y);}
+      },1.6,cx|0);
+      g.beginPath();g.arc(cx,cy,r*0.14,0,TAU);g.fillStyle='#08060a';g.fill(); // legible lethal core
+      break;
+    case 'flare': // the sun-wheel / sun-cross (repulsor / MACULA) — hammered gold spokes bursting outward.
+      g.beginPath();g.arc(cx,cy,r*0.6,0,TAU);g.fillStyle=TOKENS.bronzeDeep;g.fill();
+      for(let i=0;i<8;i++){
+        const a=i/8*TAU+t*0.6;
+        chiselGroove(g,(gg)=>{gg.moveTo(cx+Math.cos(a)*r*0.22,cy+Math.sin(a)*r*0.22);gg.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);},2,cx+i);
+      }
+      g.beginPath();g.arc(cx,cy,r*0.38,0,TAU);g.fillStyle=TOKENS.gold;g.fill(); // legible lethal core (0.6r per HAZARD_KINDS)
+      break;
+    case 'wind': // the ship's fringing oar-strokes (crosswind / VENTUS) — weakest-attested of the four (§7).
+      g.beginPath();g.ellipse(cx,cy,r*0.95,r*0.6,0,0,TAU);g.fillStyle='rgba(20,13,7,.4)';g.fill();
+      for(let i=0;i<8;i++){
+        const yy=cy-r*0.56+i*r*0.16,off=Math.sin(t*TAU+i)*3;
+        g.beginPath();g.moveTo(cx-r*0.85+off,yy);g.lineTo(cx+r*0.5+off,yy+4);
+        g.strokeStyle=TOKENS.grooveShadow;g.lineWidth=3.4;g.globalAlpha=0.5;g.stroke();
+        g.beginPath();g.moveTo(cx-r*0.85+off,yy);g.lineTo(cx+r*0.5+off,yy+4);
+        g.strokeStyle=TOKENS.gold;g.lineWidth=1.8;g.globalAlpha=0.95;g.stroke();
+      }
+      g.globalAlpha=1;
+      break;
+    case 'obscurer': // the cup-mark swarm (nebula) — small dark pecked hollows clustering over the field.
+      { const rnd=mulberry32((cx*13+cy*7)>>>0);
+        g.beginPath();g.arc(cx,cy,r*0.92,0,TAU);g.fillStyle='rgba(15,10,6,.32)';g.fill();
+        for(let i=0;i<48;i++){
+          const a=rnd()*TAU,rr=rnd()*r*0.85;
+          const px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;
+          g.beginPath();g.arc(px,py,2.6+rnd()*1.8,0,TAU);g.fillStyle=TOKENS.grooveShadow;g.globalAlpha=0.85;g.fill();
+          g.beginPath();g.arc(px-0.6,py-0.6,1.1+rnd()*0.8,0,TAU);g.fillStyle=TOKENS.bronzeHi;g.globalAlpha=0.4;g.fill();
+        }
+        g.globalAlpha=1;
+      }
+      break;
+  }
+  g.restore();
+}
+
+// ================= the constellation figure =================
+// Research names no period constellation vocabulary (§5) — this culture left no star-figure
+// text at all — so the figure's "name" is a small pictographic punch-mark, not a word: the
+// ship (skipą), the one attested narrative motif on the disc itself (§2), stands in as the
+// identifying stamp beside the shape, exactly as the family glyphs do above.
+function paintFigureShip(g,x,y,scale){
+  g.save();g.translate(x,y);g.scale(scale,scale);
+  chiselGroove(g,(gg)=>{
+    gg.moveTo(-14,3);
+    gg.quadraticCurveTo(0,-9,14,3);
+  },2.6,9001);
+  for(let i=-11;i<=11;i+=3.4){
+    g.beginPath();g.moveTo(i,4.5);g.lineTo(i,9.5);
+    g.strokeStyle=TOKENS.goldLow;g.lineWidth=1;g.globalAlpha=0.7;g.stroke();
+  }
+  g.globalAlpha=1;
+  g.restore();
+}
+
+// ================= the comet / player vehicle: the solar barge (research §1/§2, disc's added ship) =================
+function paintBarge(g,x,y,heading,seedN){
+  g.save();g.translate(x,y);g.rotate(heading);
+  // a soft gold glow behind the hull so the player reads instantly against the ring/ground.
+  const halo=g.createRadialGradient(0,0,0,0,0,26);
+  halo.addColorStop(0,'rgba(232,205,122,.55)');halo.addColorStop(1,'rgba(232,205,122,0)');
+  g.fillStyle=halo;g.beginPath();g.arc(0,0,26,0,TAU);g.fill();
+  chiselGroove(g,(gg)=>{gg.moveTo(-22,4);gg.quadraticCurveTo(0,-13,22,4);},4.2,seedN);
+  for(let i=-16;i<=16;i+=5){
+    g.beginPath();g.moveTo(i,6);g.lineTo(i,13);
+    g.strokeStyle=TOKENS.goldLow;g.lineWidth=1.5;g.globalAlpha=0.75;g.stroke();
+  }
+  g.globalAlpha=1;
+  g.beginPath();g.arc(3,-7,5.4,0,TAU);g.fillStyle=TOKENS.gold;g.fill(); // the disc it bears aloft
+  g.beginPath();g.arc(1.5,-8.5,2,0,TAU);g.fillStyle=TOKENS.goldHi;g.fill();
+  g.restore();
+}
+
+// ================= numerals: stacked repoussé bands, one zone per decimal digit (research §4) =================
+// "The honest equivalent is repeated identical marks, grouped for legibility the way the hats'
+// bands already are, not digits." A zone with zero count is an empty struck groove — the band
+// still exists (a hat's zone is never skipped), it just carries no marks.
+function punchNumeral(g,x,y,value,opts={}){
+  const digits=String(Math.max(0,Math.round(value))).split('').map(Number);
+  const dotR=opts.dotR??3.2,gap=opts.gap??2.6,bandH=opts.bandH??(dotR*2+gap+3),align=opts.align||'left';
+  let maxW=0;
+  const rows=digits.map(d=>{const w=d>0?d*(dotR*2+gap)-gap:dotR*1.4;maxW=Math.max(maxW,w);return w;});
+  digits.forEach((d,i)=>{
+    const rowW=rows[i];
+    const bx=align==='left'?x:align==='right'?x-rowW:x-rowW/2;
+    const by=y+i*bandH;
+    g.save();
+    g.strokeStyle=TOKENS.bronzeDeep;g.lineWidth=bandH*0.7;g.globalAlpha=0.35;
+    g.beginPath();g.moveTo(bx-2,by);g.lineTo(bx+Math.max(rowW,dotR*1.4)+2,by);g.stroke();g.globalAlpha=1;
+    if(d===0){
+      // an empty zone still gets struck — the band exists, it just carries no marks — so it
+      // is drawn as a closed groove with small end-caps, legible as deliberate rather than a
+      // stray mark (a hat's zone is never simply skipped, research §4).
+      g.strokeStyle=TOKENS.goldLow;g.lineWidth=1.4;g.globalAlpha=0.75;
+      g.beginPath();g.moveTo(bx,by);g.lineTo(bx+dotR*1.4,by);g.stroke();
+      g.beginPath();g.arc(bx,by,1,0,TAU);g.arc(bx+dotR*1.4,by,1,0,TAU);g.fillStyle=TOKENS.goldLow;g.fill();
+      g.globalAlpha=1;
+    }else{
+      for(let k=0;k<d;k++)punchDot(g,bx+dotR+k*(dotR*2+gap),by,dotR,(x+y+k+i*13)|0,0);
+    }
+    g.restore();
+  });
+  return {width:maxW,height:digits.length*bandH};
+}
+
+// ================= HUD: the disc's own layout logic, no writing anywhere on it =================
+// Positions follow the shipped game (title top-left, speed/HUD top-centre, best top-right,
+// inscriptions bottom-left, footer strip) per the prototype brief, so the era still reads as
+// the same game despite carrying no text at all.
+let state={score:342,speed:1.6,flow:3,best:610,row:14,chapter:0,gold:0.42};
+function paintHUD(g){
+  // title: per the era brief, "the title is the disc's own sun" — no word for the game exists,
+  // so the identity mark IS the sun/moon disc + crescent, drawn exactly as phase I of the disc.
+  paintSunMoonMark(g,64,54,26);
+  legend(40,90,'title mark: the disc\'s own sun+moon (stands in for "ORBIT")');
+
+  // speed/flow read as grouped punch-marks top-centre, mirroring "SPEED x1.0 / FLOW x3."
+  const cx=W/2;
+  punchNumeral(g,cx,40,Math.round(state.speed*10),{align:'center',dotR:2.6,gap:2});
+  punchNumeral(g,cx,40+22,state.flow,{align:'center',dotR:2.6,gap:2});
+  legend(cx-10,96,'speed / flow bands');
+
+  // best, top-right.
+  punchNumeral(g,W-70,40,state.best,{align:'right',dotR:2.6,gap:2});
+  legend(W-140,40,'BEST band-stack');
+
+  // score / currency readout, echoing the ledger's gold-foil economy (research §6): a foil
+  // strip narrowing as it's spent, plus the running score as a band-stack beneath it.
+  const gx=44,gy=H-96;
+  g.save();
+  g.strokeStyle=TOKENS.bronzeDeep;g.lineWidth=10;g.beginPath();g.moveTo(gx,gy);g.lineTo(gx+120,gy);g.stroke();
+  chiselGroove(g,(gg)=>{gg.moveTo(gx,gy);gg.lineTo(gx+120*state.gold,gy);},7,555);
+  g.restore();
+  punchNumeral(g,gx,gy+14,state.score,{dotR:3,gap:2.4});
+  legend(gx,gy-14,'gold foil reach (currency) + score band-stack');
+
+  // chapter/sheet mark, footer strip: a pictograph per research §10's four chapter plates,
+  // paired with a band-stack for the row/chapter index rather than a "TAB." numeral.
+  const chapterGlyphs=[
+    (gg,x,y)=>{gg.beginPath();gg.arc(x,y,6,0,TAU);gg.fillStyle=TOKENS.gold;gg.fill();}, // I: the disc at rest
+    (gg,x,y)=>{gg.beginPath();gg.arc(x,y,5,0,TAU);gg.fillStyle=TOKENS.gold;gg.fill();gg.beginPath();gg.ellipse(x,y+7,7,2,0,0,TAU);gg.strokeStyle=TOKENS.goldLow;gg.stroke();}, // II: the sun chariot
+    (gg,x,y)=>{gg.beginPath();gg.arc(x,y+4,7,Math.PI*1.18,Math.PI*1.82);gg.strokeStyle=TOKENS.gold;gg.lineWidth=2;gg.stroke();}, // III: the horizon closes
+    (gg,x,y)=>{for(let i=0;i<3;i++){gg.beginPath();gg.arc(x,y+4-i*4,5-i,0,TAU);gg.strokeStyle=TOKENS.gold;gg.stroke();}} // IV: the counted hat
+  ];
+  const fy=H-44;
+  g.save();g.translate(44,fy);chapterGlyphs[state.chapter](g,0,0);g.restore();
+  punchNumeral(g,64,fy-6,state.chapter+1,{dotR:2.2,gap:1.8,bandH:7});
+  legend(40,fy+14,'chapter mark + band-stack (footer strip)');
+}
+function paintSunMoonMark(g,x,y,r){
+  g.save();
+  chiselArc(g,x,y,r,0,TAU,2,4242);
+  const grad=g.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
+  grad.addColorStop(0,TOKENS.goldHi);grad.addColorStop(1,TOKENS.gold);
+  g.beginPath();g.arc(x,y,r*0.9,0,TAU);g.fillStyle=grad;g.fill();
+  // the crescent, laid alongside exactly as phase I of the disc pairs sun/moon disc + crescent.
+  g.save();g.translate(x+r*1.55,y);
+  chiselGroove(g,(gg)=>{
+    gg.arc(0,0,r*0.5,Math.PI*0.35,Math.PI*1.65);
+    gg.arc(r*0.22,0,r*0.38,Math.PI*1.65,Math.PI*0.35,true);
+  },1.6,4243);
+  g.restore();
+  g.restore();
+}
+
+// ================= pickups (four), reskinned per research where it names an option =================
+// Sling/star -> "the young moon": research §6 proposes exactly this reskin for the Pleiades-rule
+// twist ("reskinning an existing pickup as 'the young moon'"), so a slim crescent stands in.
+// Gold detour -> a raw foil nugget, literal, needs no reskin (the currency already is gold).
+// Shield (SCUTUM) -> the Bush Barrow lozenge (§1): sheet gold, cross-hatched incised geometry,
+// a technique deliberately distinct from damascening — a different object class read as a ward.
+// Reflector (REPULSA) -> a small burnished bronze mirror-disc, bright radiating burnish lines;
+// grounded in the palette's "burnished highlight" role (§3) rather than an attested source —
+// flagged here, not presented as equally solid as the other three.
+function paintPickup(g,x,y,kind){
+  g.save();g.translate(x,y);
+  switch(kind){
+    case 'moon':
+      chiselGroove(g,(gg)=>{gg.arc(0,0,9,Math.PI*0.35,Math.PI*1.65);gg.arc(4,0,7,Math.PI*1.65,Math.PI*0.35,true);},2,701);
+      break;
+    case 'gold':
+      chiselGroove(g,(gg,rnd)=>{gg.moveTo(-7,3);for(let i=0;i<6;i++){const a=i/6*TAU;gg.lineTo(Math.cos(a)*(6+rnd()*2),Math.sin(a)*(6+rnd()*2));}gg.closePath();},2,702);
+      break;
+    case 'lozenge':
+      g.save();g.rotate(Math.PI/4);
+      chiselGroove(g,(gg)=>{gg.rect(-7,-7,14,14);},2,703);
+      for(let i=-6;i<=6;i+=3){g.beginPath();g.moveTo(-7,i);g.lineTo(7,i);g.strokeStyle=TOKENS.goldLow;g.lineWidth=0.6;g.globalAlpha=0.6;g.stroke();}
+      g.globalAlpha=1;g.restore();
+      break;
+    case 'mirror':
+      g.beginPath();g.arc(0,0,8,0,TAU);g.fillStyle=TOKENS.bronzeHi;g.fill();
+      for(let i=0;i<6;i++){const a=i/6*TAU;g.beginPath();g.moveTo(Math.cos(a)*3,Math.sin(a)*3);g.lineTo(Math.cos(a)*9,Math.sin(a)*9);
+        g.strokeStyle='#f2dfa8';g.lineWidth=0.8;g.globalAlpha=0.7;g.stroke();}
+      g.globalAlpha=1;
+      break;
+  }
+  g.restore();
+}
+
+// ================= reveal animation: a punch striking marks one after another =================
+// Research §4: not a nib stroke, "a mark appears, struck into place with one percussive beat...
+// then the next strikes — paced by the punch, not by handwriting speed." 8 marks laid out as a
+// tally, looping ~6s, each with a bright flash and a faint expanding ring on its beat.
+const REVEAL_MARKS=8,REVEAL_PERIOD=6.0;
+function paintReveal(g,x,y,t){
+  const spacing=17,beat=REVEAL_PERIOD/REVEAL_MARKS;
+  const cycle=(t%REVEAL_PERIOD);
+  for(let i=0;i<REVEAL_MARKS;i++){
+    const strikeAt=i*beat,dt=cycle-strikeAt;
+    if(dt<0)continue;
+    const settle=clamp(dt/0.22,0,1);
+    const flash=dt<0.22?(1-settle):0;
+    const bx=x+(i%4)*spacing,by=y+Math.floor(i/4)*spacing;
+    const pop=1+Math.sin(clamp(dt/0.3,0,1)*Math.PI)*0.4*(dt<0.3?1:0);
+    g.save();g.translate(bx,by);g.scale(pop,pop);
+    punchDot(g,0,0,4,900+i,flash);
+    g.restore();
+  }
+  legend(x,y-14,'reveal: punch striking marks in sequence (loops 6s)');
+}
+
+// ================= ambient: solar barge drifting on its orbit ring, chased circles =================
+function drawScene(t){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  legendItems.length=0;
+
+  paintGround(ctx);
+  if(!skySprite)buildSky();
+  paintSky(ctx);
+  paintFrame(ctx);
+
+  // orbit rings — chased circles, the disc's own concentric grammar (§2: "no register bands...
+  // scattered across the whole circular field").
+  const bodyCx=520,bodyCy=430,bodyR=42;
+  chiselArc(ctx,bodyCx,bodyCy,bodyR+34,0,TAU,1.4,1,1.1);
+  legend(bodyCx+bodyR+34,bodyCy,'orbit ring (chased circle)');
+
+  // the seven families, arranged as a row of specimens (brief item 3).
+  const famY=170,famX0=110,famGap=150;
+  FAMILIES.forEach((f,i)=>paintBody(ctx,famX0+i*famGap,famY,44,f,i*17+3));
+
+  // the four dangers (brief item 4).
+  const hz=[['vortex',150,640],['flare',330,650],['wind',520,660],['obscurer',700,650]];
+  hz.forEach(([kind,x,y])=>{paintHazard(ctx,x,y,40,kind,t);legend(x-30,y+46,'danger: '+kind);});
+
+  // one constellation figure, three stars on top, the ship as its identifying pictograph.
+  const fx=920,fy=250;
+  chiselGroove(ctx,(gg)=>{
+    gg.moveTo(fx-46,fy+18);gg.lineTo(fx,fy-24);gg.lineTo(fx+46,fy+10);
+  },1.6,808);
+  [[fx-46,fy+18],[fx,fy-24],[fx+46,fy+10]].forEach(([sx,sy],i)=>punchDot(ctx,sx,sy,4.4,900+i,0));
+  paintFigureShip(ctx,fx,fy+46,0.9);
+  legend(fx-46,fy+64,'constellation figure + name-pictograph (the ship)');
+
+  // pickups, small and captioned with the same family-glyph vocabulary.
+  const pk=[['moon',920,470],['gold',990,470],['lozenge',1060,470],['mirror',1130,470]];
+  pk.forEach(([kind,x,y])=>{ctx.save();ctx.translate(0,0);paintPickup(ctx,x,y,kind);ctx.restore();legend(x-10,y+16,'pickup: '+kind);});
+
+  // the player: the solar barge on its ring, trailing flight path, next-orbit aim guide.
+  const orbT=t*0.5;
+  const px=bodyCx+Math.cos(orbT)*(bodyR+34),py=bodyCy+Math.sin(orbT)*(bodyR+34);
+  ctx.save();
+  ctx.strokeStyle=TOKENS.goldLow;ctx.setLineDash([2,5]);ctx.lineWidth=1.2;ctx.globalAlpha=0.6;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+70,py-40);ctx.stroke();
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+  ctx.restore();
+  paintBarge(ctx,px,py,orbT+Math.PI/2,77);
+  legend(px,py+18,'player: the solar barge, trailing flight path + aim guide');
+
+  paintColophon(ctx);
+  paintMagnitudeKey(ctx);
+  paintHUD(ctx);
+  paintReveal(ctx,W/2-34,H/2+8,t);
+
+  if(showLegend){
+    ctx.save();ctx.font='11px monospace';ctx.fillStyle='#8fdc9c';
+    legendItems.forEach(it=>{
+      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(it.x-2,it.y-11,ctx.measureText(it.label).width+4,14);
+      ctx.fillStyle='#8fdc9c';ctx.fillText(it.label,it.x,it.y);
+    });
+    ctx.restore();
+  }
+}
+
+let start=performance.now();
+function frame(now){
+  drawScene((now-start)/1000);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

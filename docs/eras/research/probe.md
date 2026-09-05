@@ -2,18 +2,17 @@
 
 **The far future.** A self-replicating (von Neumann) interstellar probe, long after crewed
 astronomy, long after even the Observatory's survey pipelines. No era file exists yet for this
-row of the ladder; this document is the first pass, written to the research brief's template. A
-sibling document, `docs/eras/research/probe-mechanics.md` (a separate agent's work, not this
-one's), owns the replication rule in depth — section 6 here names the currency and stops there.
+row; this document is the first pass, to the research brief's template. A sibling document,
+`docs/eras/research/probe-mechanics.md` (a separate agent's work), owns the replication rule in
+depth — §6 here names the currency and stops there.
 
-The brief's thesis, stated plainly because it is the reason this era is worth building at all:
-**the ladder's two ends rhyme.** Era 0, the Rock, is marks struck into stone because striking
-stone was the only durable writing available. Era 8, the Probe, is a species that has invented
-radio, lasers, and machine memory — and when it needed a message to survive a billion years in
-vacuum and radiation, it *still* chose a metal plate and a burin-line drawing, because nothing
-else lasts. The Pioneer plaque and the Voyager record cover are, technically, engravings. The
-ladder does not have to invent this rhyme; it only has to notice the record already contains it,
-which is what §§1–4 below verify.
+The brief's thesis, stated plainly because it is the reason this era is worth building: **the
+ladder's two ends rhyme.** Era 0, the Rock, is marks struck into stone because that was the only
+durable writing available. Era 8, the Probe, is a species that invented radio, lasers, machine
+memory — and when it needed a message to survive a billion years in vacuum, it *still* chose a
+metal plate and a burin-line drawing, because nothing else lasts. The Pioneer plaque and the
+Voyager cover are, technically, engravings. §§1–4 below verify that the record already contains
+this rhyme; the ladder only has to notice it.
 
 ## 1. The documents
 
@@ -73,31 +72,26 @@ which is what §§1–4 below verify.
 
 Two grammars share this era, in visible tension, and the tension is the point.
 
-**The telemetry half** does not draw the sky at all — it *instruments* it. A body is not
-rendered, it is a set of numbers: mass, mean density, a spectral class tag, a ΔV budget to
-reach it, a periapsis/apoapsis pair. An orbit is not a drawn ellipse traced by eye, it is a
-Keplerian element set — the same six numbers JPL's Horizons system and "Eyes on the Solar
-System" actually use to place every tracked object, rendered as thin conic sections in a
-navigation-display style: black or near-black ground, monochrome vector lines, no shading, no
-perspective beyond the flattening a top-down orbital plot already has. A hazard is a field, not
-a figure — drawn as a contour mesh (equipotential lines around a mass) or a flux-vector
-overlay, the same idiom the Observatory era (era V/7) already claims for its solar wind, so this
-era must render it in a colder, more schematic register to avoid simply repeating that plate's
-look (see §7 and §12).
+**The telemetry half** does not draw the sky — it *instruments* it. A body is not rendered, it
+is numbers: mass, mean density, a spectral class tag, a ΔV budget to reach it, a
+periapsis/apoapsis pair. An orbit is a Keplerian element set, not a drawn ellipse traced by eye —
+the same six numbers JPL's Horizons/"Eyes on the Solar System" use for every tracked object,
+rendered as thin conic sections: black ground, monochrome vector lines, no shading, no
+perspective beyond a top-down plot's own flattening. A hazard is a field, not a figure — a
+contour mesh or a flux-vector overlay, the idiom era 7/Observatory already claims for its solar
+wind, so this era needs a colder, more schematic register to avoid repeating that plate (§7, §12).
 
-**The plaque half** is the opposite of all that: a single continuous engraved line, uniform
-weight, no shading, drawn once and never re-inked — literally what the Pioneer plaque and the
-Voyager cover are. This is where the probe's constellation figures, its "chapter" plates and its
-title lettering belong, because a self-replicating machine does not *decorate*, but it still
-carries — bolted to its hull, unread by anything it has met yet — the same ancestral plaque
-every daughter probe copies along with its blueprint. The two halves never merge into one
-picture. The HUD is instrument; the plaque is inheritance. A player should be able to tell which
-one they are looking at without reading a caption.
+**The plaque half** is the opposite: a single continuous engraved line, uniform weight, drawn
+once and never re-inked — literally the Pioneer plaque and the Voyager cover. This is where the
+constellation figures, the chapter plates and the title lettering belong: a self-replicating
+machine does not decorate, but it still carries — bolted to its hull, unread by anything it has
+met — the same ancestral plaque every daughter copies along with its blueprint. The two halves
+never merge; the HUD is instrument, the plaque is inheritance, and a player should be able to
+tell which one they're looking at without a caption.
 
-**Emphatically not present:** perspective, atmosphere, colour gradients (outside the narrow
-telemetry-green/amber-vs-white convention in §3), any painterly rendering of a body's surface,
-and — the hardest restraint for this era — no picture of the sky *as seen*. The probe has no
-eye. Everything a player is shown is either a measurement or an inheritance.
+**Not present:** perspective, atmosphere, colour gradients outside §3's green/amber/white
+convention, any painterly surface rendering, and — the hardest restraint here — no picture of
+the sky *as seen*. The probe has no eye; everything shown is a measurement or an inheritance.
 
 ## 3. Palette
 
@@ -114,16 +108,14 @@ eye. Everything a player is shown is either a measurement or an inheritance.
 | Sail film, alternate | Kapton-tinted sail material, warmer variant | `#C2914A` |
 | Hex-dump texture | not a colour — see below | `#7A8A7A` (as a dim ground wash) |
 
-**Gold** is engraved-gold — the plaque, the cover, the one warm and worked material on the
-probe, standing in for the game's existing "gold leaf/gold accent" role (Cellarius's gilt is
-this era's closest surviving relative). **Ink** is telemetry green or amber depending on plate
-variant — a CRT-console choice mirroring the game's existing night/paper split. **Ground** is
-interstellar black, unbroken except by the radiator's glow and starlight. **Hex** is not a
-colour swatch at all: it is a *texture*, meaning literal hexadecimal — a scrolling memory-dump
-of bytes, the probe-era equivalent of the engraving plate's down-and-right hatching. The 2023
-Voyager 1 flight-data-system fault, which for months returned a repeating pattern of ones and
-zeros instead of readable telemetry, is the real precedent for treating raw hex as *decoration
-with a cause* rather than invented sci-fi wallpaper (see §12 for how firm this precedent is).
+**Gold** is engraved-gold — the plaque, the cover, the one warm worked material aboard, standing
+in for the game's existing gold-leaf/gold-accent role (Cellarius's gilt is the closest surviving
+relative). **Ink** is telemetry green or amber by plate variant, mirroring the night/paper
+split. **Ground** is interstellar black, unbroken but for the radiator's glow and starlight.
+**Hex** is not a colour but a *texture* — scrolling hexadecimal, this era's down-and-right
+hatching. The 2023 Voyager 1 flight-data-system fault, which returned a repeating pattern of
+ones and zeros for months instead of readable telemetry, is real-world precedent for hex-as-
+decoration-with-a-cause rather than invented wallpaper (unverified this pass — see §12).
 
 ## 4. Lettering and how people wrote
 
@@ -163,19 +155,17 @@ this pass could not reach ctan.org or tug.org to confirm licence terms or to rul
 with the commercial "OCR A Extended." **Mark OCR-A/B unverified**; B612/DSEG/Share Tech Mono are
 the safe fallback trio.
 
-No script needs shaping (no joining, no stacking) — both registers are Latin-alphabet and
-numerals, one stroke-only and one monospace-block. Numerals throughout are Arabic numerals set
-in DSEG or B612 Mono; the plaque hand, when it does set a number (as the real plaques do, in
-binary), draws binary tick marks exactly as the Voyager cover's own playback-speed diagram does,
-not digits at all.
+No script needs shaping — both registers are Latin-alphabet, one stroke-only and one
+monospace-block. Numerals are Arabic, set in DSEG or B612 Mono; when the plaque hand sets a
+number (as the real plaques do) it draws binary tick marks as the Voyager cover does, not digits.
 
 ## 5. Names for the game's things
 
-Constructed throughout — no attested "probe language" exists to draw from — but grounded in a
-real, attested convention: CCSDS/JPL telemetry mnemonics, which are genuinely short, genuinely
-all-caps, and genuinely built from clipped English roots. Where a term is the real name of a
-real spacecraft event or field, it is marked attested; the specific choice of mnemonic string
-applied to this game's specific thing is always constructed.
+Constructed throughout — no attested "probe language" exists — but grounded in a real, attested
+convention: CCSDS/JPL telemetry mnemonics, genuinely short, all-caps, built from clipped English
+roots. No separate transliteration column: the mnemonic already sets in the Roman alphabet it's
+read in. Where a term is the real name of a real spacecraft event or field it is marked attested;
+the specific mnemonic string applied to this game's specific thing is always constructed.
 
 | Game term | Probe's word | Gloss | Status |
 |---|---|---|---|
@@ -209,39 +199,34 @@ applied to this game's specific thing is always constructed.
 
 **Currency: mass.** Not ink as pigment or exposure as light, but **feedstock/propellant mass** —
 regolith, asteroid material, or sail film mined or scavenged and consumed as reaction mass and
-as raw material for the next daughter probe. This is the one currency in the whole ladder that
-is not consumed by *use* alone but is also the literal substance of the *next generation*, which
-is the natural hook for the mechanics doc's replication rule and exactly why this document stops
-here rather than designing it: `docs/eras/research/probe-mechanics.md` owns how mass is earned,
-spent, and converted into a spawned daughter.
+as raw material for the next daughter probe. It is the one currency in the ladder not consumed
+by use alone but also the literal substance of the *next generation* — the natural hook for the
+mechanics doc's replication rule, and exactly why this document stops here rather than designing
+it: `probe-mechanics.md` owns how mass is earned, spent, and converted into a spawned daughter.
 
 **No-twist reading**, for completeness: rename `ink` to `FEED`, keep `inkCost(distance)` and
-every existing gain (`INK_ORBIT_GAIN`, `INK_SLING_GAIN`, the landing dividends) bit-for-bit, and
-let the HUD read mass units instead of a bar. This alone earns the era its skin with zero
-simulation risk, per rule 1.
+every existing gain bit-for-bit, and let the HUD read mass units instead of a bar — the era's
+skin at zero simulation risk, per rule 1.
 
 ## 7. Dangers
 
 All three rows keep their existing field/core/reach/lethality (rule 3); only depiction and
-naming change, and this era must consciously avoid re-drawing what era V/Observatory already
-claims for the same rows (a rendered black hole with a photon ring; an Hα coronal mass ejection;
-a solar-wind vector field), since both eras sit at the technological end of the ladder and would
-otherwise look like the same plate twice.
+naming change, and this era must avoid re-drawing what era 7/Observatory already claims for the
+same rows (a rendered black hole with a photon ring; an Hα coronal mass ejection; a solar-wind
+vector field) — both sit at the technological end of the ladder and would otherwise repeat a plate.
 
-- **Attractor — `WELL`.** Not a photographed black hole (that is era V's) but an **equipotential
-  mesh**: a warped grid of thin lines converging on the mass, exactly the diagnostic plot a
-  navigation computer would actually draw, with the mass given as a number rather than shown as
-  a disc. A pulsar's presence can be marked by a rotating tick on the mesh's centre, tying it to
-  the plaque's own pulsar-map iconography without duplicating it.
-- **Repulsor — `BEAM`.** A pulsar's swept beam or a flare's radiation-pressure front, drawn as a
-  rotating sector wedge (a lighthouse beam) rather than era V's rendered active-region loop —
-  the difference between an instrument reading and a photograph.
-- **Crosswind — `ISM FLUX`.** The interstellar medium's particle flux, drawn as a field of thin
-  flux-vector arrows. This is the row most at risk of visually duplicating era V's solar-wind
-  vector field (§2, §12); the mitigation is register, not idiom — monochrome telemetry lines
-  and a numeric flux readout, no colour gradient, no Hα.
-- **Obscurer — `EXT`.** A dust cloud read the only way a probe can read one: as **extinction**,
-  a shaded attenuation region with a logged magnitude of signal loss, not a rendered nebula.
+- **Attractor — `WELL`.** Not a photographed black hole but an **equipotential mesh**: a warped
+  grid converging on the mass, the diagnostic plot a navigation computer would actually draw,
+  mass given as a number rather than a disc. A pulsar's presence marks as a rotating tick at the
+  mesh's centre, tying it to the plaque's pulsar-map iconography without duplicating it.
+- **Repulsor — `BEAM`.** A pulsar's swept beam or a flare's radiation-pressure front, a rotating
+  sector wedge rather than era 7's rendered active-region loop — an instrument reading, not a
+  photograph.
+- **Crosswind — `ISM FLUX`.** The interstellar medium's particle flux as thin flux-vector arrows
+  — the row most at risk of duplicating era 7's solar wind; the mitigation is register, not
+  idiom: monochrome lines and a numeric readout, no colour gradient, no Hα.
+- **Obscurer — `EXT`.** A dust cloud read the only way a probe can: as **extinction**, a shaded
+  attenuation region with a logged magnitude of signal loss, not a rendered nebula.
 
 ## 8. The seven families
 
@@ -250,149 +235,129 @@ Hershey-line **icon** (the plaque's own reductive style — the Pioneer plaque d
 as bare circles with a radial tick for identification) sitting beside a monospace **class
 readout**.
 
-- **Ocean (`CLASS-H2O`).** Icon: a plain circle with a single horizontal chord line, the
-  plaque's own shorthand for "a world with a surface state distinct from its bulk." Readout
-  gives a density figure low enough to read as volatile-rich.
-- **Crater (`CLASS-REG`).** Icon: a circle stippled with a scatter of small unfilled rings,
-  cratering read as a texture rather than shaded relief — no terminator, no shadow, because this
-  grammar never shades.
-- **Ringed (`CLASS-RNG`).** Icon: a circle crossed by one or two thin ellipse arcs, exactly the
-  Pioneer plaque's own reduction of Saturn — a solved problem, borrowed directly.
-- **Ice (`CLASS-CRYO`).** Icon: a circle with a fine crosshatch fill at low density, reading as
-  frost rather than rock without ever shading a surface.
-- **Dune (`CLASS-AEOL`).** Icon: a circle crossed by parallel wave-lines, the closest this
-  grammar gets to depicting motion (wind-formed ripples) without implying light or perspective.
-- **Volcanic (`CLASS-IGN`).** Icon: a circle with a small radiating tick-cluster — reads as
-  "energetic" the same way the plaque's own hydrogen-transition diagram reads as "a discrete
-  emission," never as flame or glow — that colour is reserved for the radiator-heat palette
-  accent, never used on a body itself.
-- **Storm (`CLASS-ATM`).** Icon: a circle with one internal spiral stroke, a minimal weather
-  motif that never becomes a rendered cloud band.
+- **Ocean (`CLASS-H2O`).** A plain circle with a single horizontal chord — the plaque's own
+  shorthand for a surface state distinct from the bulk. Readout: low density, volatile-rich.
+- **Crater (`CLASS-REG`).** A circle stippled with small unfilled rings — cratering as texture,
+  never shaded relief; no terminator, no shadow, because this grammar never shades.
+- **Ringed (`CLASS-RNG`).** A circle crossed by one or two thin ellipse arcs — the Pioneer
+  plaque's own reduction of Saturn, a solved problem, borrowed directly.
+- **Ice (`CLASS-CRYO`).** A circle with a fine crosshatch fill at low density — frost read as
+  texture, never as a shaded surface.
+- **Dune (`CLASS-AEOL`).** A circle crossed by parallel wave-lines — the one family allowed to
+  imply motion (wind-formed ripples) without implying light or perspective.
+- **Volcanic (`CLASS-IGN`).** A circle with a small radiating tick-cluster, reading "energetic"
+  the way the plaque's hydrogen-transition diagram reads as a discrete emission — never flame or
+  glow, which stays reserved for the radiator-heat palette accent.
+- **Storm (`CLASS-ATM`).** A circle with one internal spiral stroke — a minimal weather motif,
+  never a rendered cloud band.
 
-The class readout beside each icon is where the numeric half of the grammar lives: mass number,
-mean density, a periapsis/apoapsis pair if the body is orbited by something, set in DSEG or
-B612 Mono.
+Each icon sits beside a class readout carrying the numeric half of the grammar — mass number,
+mean density, a periapsis/apoapsis pair where relevant — set in DSEG or B612 Mono.
 
 ## 9. Chart furniture, frame, HUD
 
-No cartouche, no colophon, no engraver's credit in the era-III sense — the closest the record
-carries is the plaque's own small identifying marks (a schematic Earth-to-launch-site locator on
-the Voyager cover, functionally a maker's mark). The frame becomes a **CCSDS transfer-frame
-border**: a header bar reading the sync marker in hex (`1ACFFC1D`), a virtual-channel ID and a
-running frame counter across the top, closing on a checksum/error-control field at the bottom —
-literally the wrapper real telemetry travels in, doing the job era III's plate-mark and double
-rule did. A margin strip in the DSN-Now idiom — one-way light time, signal strength, which
-antenna/complex is locked — replaces the compass rose. HUD numerals tick over (§4's DSEG note)
-rather than being inscribed; a "chapter" announces itself as a `PHASE` change, not a page turn.
+No cartouche, no colophon, no engraver's credit in the era-III sense — the closest is the
+plaque's own small identifying marks (a schematic Earth-to-launch-site locator on the Voyager
+cover, functionally a maker's mark). The frame becomes a **CCSDS transfer-frame border**: a
+header bar with the sync marker in hex (`1ACFFC1D`), a virtual-channel ID and a running frame
+counter, closing on a checksum/error-control field — the wrapper real telemetry travels in,
+doing the job era III's plate-mark and double rule did. A margin strip in the DSN-Now idiom
+(one-way light time, signal strength, which antenna is locked) replaces the compass rose. HUD
+numerals tick over (§4) rather than being inscribed; a chapter announces a `PHASE` change, not a
+page turn.
 
 ## 10. Four chapter plates
 
-1. **First light** — the Pioneer plaque's own face, engraved gold, filling the frame at launch:
-   the hydrogen-transition diagram, the pulsar map, the human figures, before the probe has left
-   the system that built it.
+1. **First light** — the Pioneer plaque's face, engraved gold, filling the frame at launch: the
+   hydrogen-transition diagram, the pulsar map, the human figures, before departure.
 2. **The instructions** — the Voyager cover's playback diagram, binary tick marks ringing a
    stylus-and-groove drawing, doubling as the chapter's own "how to read this chart" plate.
 3. **Sail deployment** — a Starshot-scaled lightsail unfurling against interstellar black, sail
-   film palette catching a laser's push, the probe's own hull reduced to a bright point at the
-   sail's centre.
-4. **The first daughter** — a second, smaller probe departing the first on an escape burn
-   (`ESC`), the replication event the mechanics doc will define the rule for; visually, the
-   plaque motif repeats in miniature on the daughter's hull, the ancestral engraving copied
-   along with everything else.
+   film catching a laser's push, the hull reduced to a bright point at the sail's centre.
+4. **The first daughter** — a second, smaller probe departing on an escape burn (`ESC`), the
+   replication event `probe-mechanics.md` will define the rule for; the plaque motif repeats in
+   miniature on the daughter's hull, the ancestral engraving copied along with everything else.
 
 ## 11. Sound
 
 - **Reaction-wheel hum** — a steady low tone, rising in pitch under load, replacing the
-  engraving era's quill-scratch (`scratch()`) as the "continuous while flying" cue.
-- **DSN carrier lock** — a pure, held tone that only sounds while telemetry is actually getting
-  through; its dropout (silence, not a sound effect) is the era's version of a loss cue.
-- **Plasma-wave sonification swell** — genuine, verified: Voyager 1's Plasma Wave Subsystem
-  recorded real oscillations in the interstellar plasma at the 2012 heliopause crossing (and
-  again after a 2014 solar event), and NASA released the frequency-shifted result as audible
-  sound. A rising swell built from this idiom fits a capture or a constellation-completion cue.
+  engraving era's quill-scratch (`scratch()`) as the continuous while-flying cue.
+- **DSN carrier lock** — a pure held tone that only sounds while telemetry is getting through;
+  its dropout (silence, not an effect) is the era's loss cue.
+- **Plasma-wave sonification swell** — Voyager 1's Plasma Wave Subsystem did record real
+  oscillations in the interstellar plasma near the 2012 heliopause crossing, released by NASA
+  as frequency-shifted audible sound (**unverified this pass** — see §12/§13); a rising swell
+  built from that idiom fits a capture or constellation-completion cue.
 - **Frame sync chirp** — a short two-tone blip on every `OI`, standing in for `capture()`'s
-  tone-plus-brush: the sound of a transfer frame locking onto its sync marker.
+  tone-plus-brush: a transfer frame locking onto its sync marker.
 - **Escape-burn tone** — a tone climbing and cutting off cleanly, for `release()`.
-- **A mechanical clock tick** — sparse, marking elapsed mission time rather than danger,
-  available as an ambient bed under `darkness`'s rising pursuit.
+- **A mechanical clock tick** — sparse, marking elapsed mission time, an ambient bed under
+  `darkness`'s rising pursuit.
 
 ## 12. Risks and open questions
 
-- **The ladder's own numbering has moved.** `OVERVIEW.md`/`DANGERS.md` still describe the old
-  five-era ladder (I Ceiling … V Observatory); Ceiling is now era 2, Plate/Observatory are 6/7,
-  and Rock, Disc, Marble and this era do not exist in those documents at all. Reconcile the
-  numbering before extending DANGERS.md's hazard table, not silently append to it.
-- **Section 6 is deliberately incomplete** — the replication rule belongs to
-  `probe-mechanics.md`; don't let this file's "no-twist reading" get built as the only reading
-  without checking that sibling document.
-- **Rule 3's hardest test in the ladder.** "Same families, same hazard rows, only depicted
-  differently" is hard to keep once a body stops being drawn and becomes a readout. §8's
-  icon-plus-readout split is proposed, unprototyped, and should be spiked first.
-- **Overlap with era 7/Observatory is the biggest visual risk** — both eras are
-  instrument-grammar, both eras' repulsor/crosswind rows are naturally flare/wind-vector idioms.
-  §3 and §7's register choices (mesh/wedge/flux-arrow vs. rendered photon-ring/Hα-loop) are this
-  document's attempt to keep them apart; check side by side once both plates exist.
-- **The Hershey/fontkit mismatch (§4) is a pipeline risk, not a licensing footnote** — the
-  lettering pipeline assumes a filled, contoured glyph; a single-stroke face with no counters to
-  flood is a different code path and should be spiked end to end before the rest is built on it.
-- **OCR-A/OCR-B licensing is unverified** (ctan.org/tug.org were both blocked this pass). Don't
-  ship either face without confirming the licence text, and don't confuse the free digitization
-  with the commercial "OCR A Extended."
-- **Several §1 claims carry an explicit unverified flag** — the Pioneer plaque's manufacturing
-  process, the Salzman Sagan/Lomberg division of labour on the Voyager cover, Golden Record
-  2.0's funding outcome, StarChip's settled sail spec. None affect the buildable grammar, but
-  none should be asserted as fact in a shipped caption without a second check.
-- **This era is speculative fiction resting on real objects** — a different honesty problem than
-  eras 0–7, which depict things that were drawn. This one depicts a machine not yet built, using
-  the conventions of machines that were (Pioneer, Voyager, DSN, CCSDS). The discipline that keeps
-  it from becoming an "invented era" is keeping every choice traceable to §1, and flagging loudly
-  the handful of places (§8's icon set, most of §6, §10.4's daughter-probe motif) proposed here
-  rather than found.
+- **The ladder's numbering has moved.** `OVERVIEW.md`/`DANGERS.md` still describe the old
+  five-era ladder (I Ceiling … V Observatory); reconcile it against this brief's nine before
+  extending DANGERS.md's hazard table, not silently append to it.
+- **§6 is deliberately incomplete** — the replication rule belongs to `probe-mechanics.md`;
+  don't build this file's "no-twist reading" as the only one without checking that document.
+- **Rule 3's hardest test in the ladder** — "same rows, only depicted differently" is hard to
+  keep once a body stops being drawn and becomes a readout. §8's icon-plus-readout split is
+  proposed, unprototyped, and should be spiked first.
+- **Overlap with era 7/Observatory is the biggest visual risk** — both instrument-grammar, both
+  eras' repulsor/crosswind rows naturally flare/wind-vector idioms. §3/§7's register choices
+  (mesh/wedge/flux-arrow vs. rendered photon-ring/Hα-loop) attempt to keep them apart; check side
+  by side once both plates exist.
+- **The Hershey/fontkit mismatch (§4) is a pipeline risk, not a footnote** — the lettering
+  pipeline assumes a filled, contoured glyph; a single-stroke face with no counters to flood
+  needs a different code path, spiked end to end first.
+- **OCR-A/OCR-B licensing is unverified** (ctan.org/tug.org blocked this pass) — confirm the
+  licence text before shipping either, and don't confuse it with the commercial "OCR A Extended."
+- **Several §1 claims carry an explicit unverified flag** (plaque manufacturing process, the
+  Salzman Sagan/Lomberg division of labour, Golden Record 2.0's funding outcome, StarChip's
+  settled spec) — none affect the buildable grammar, but none should ship as fact unchecked.
+- **This era is speculative fiction resting on real objects**, unlike eras 0–7, which depict
+  things that were drawn. The discipline that keeps it from becoming an "invented era" is keeping
+  every choice traceable to §1, and flagging the places (§8's icon set, most of §6, §10.4's
+  daughter-probe motif) proposed here rather than found.
 
 ## 13. Sources
 
-Search-snippet verified (WebSearch; direct fetch of the underlying page was blocked by this
-session's network egress policy in every case below, so treat as corroborated-by-search rather
-than primary-source-read, except where noted):
+Search-snippet verified (WebSearch; direct fetch was blocked by this session's network egress
+policy in every case below unless marked "fetched"):
 
-- Pioneer plaque — [Wikipedia](https://en.wikipedia.org/wiki/Pioneer_plaque), [The Planetary
+- Pioneer plaque: [Wikipedia](https://en.wikipedia.org/wiki/Pioneer_plaque), [The Planetary
   Society](https://www.planetary.org/articles/0120-the-pioneer-plaque-science-as-a-universal-language),
   [Smithsonian Magazine](https://www.smithsonianmag.com/smart-news/original-engraver-reproducing-replicas-iconic-pioneer-10-plaque-180963363/).
-- Voyager record cover — [Smithsonian Music](https://music.si.edu/object-day/spacecraft-voyager-sounds-earth-record-cover),
-  [Smithsonian NASM object record](https://airandspace.si.edu/collection-objects/record-cover-voyager-duplicate/nasm_A19772740000),
-  [NASA, "Instructions for Aliens"](https://www.nasa.gov/image-article/instructions-for-aliens).
-- Arecibo message — [ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/0019103575901165),
-  [U. Oregon course notes](https://pages.uoregon.edu/jimbrau/astr123/Notes/ch28/AreciboMessage.html),
-  [National Geographic](https://www.nationalgeographic.com/science/article/40-years-ago-earth-beamed-its-first-postcard-to-the-stars).
-- LAGEOS plaque — [NASA Goddard](https://earth.gsfc.nasa.gov/geo/missions/lageos/message),
-  [Aeon Essays](https://aeon.co/essays/voyager-space-probes-the-easter-island-statues-of-our-times).
-- Rosetta Disk — [Amusing Planet](https://www.amusingplanet.com/2017/04/the-rosetta-disk-preserving-worlds.html),
+- Voyager cover: [Smithsonian Music](https://music.si.edu/object-day/spacecraft-voyager-sounds-earth-record-cover),
+  [Smithsonian NASM](https://airandspace.si.edu/collection-objects/record-cover-voyager-duplicate/nasm_A19772740000),
+  [NASA "Instructions for Aliens"](https://www.nasa.gov/image-article/instructions-for-aliens).
+- Arecibo: [ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/0019103575901165),
+  [U. Oregon notes](https://pages.uoregon.edu/jimbrau/astr123/Notes/ch28/AreciboMessage.html),
+  [Nat Geo](https://www.nationalgeographic.com/science/article/40-years-ago-earth-beamed-its-first-postcard-to-the-stars).
+- LAGEOS: [NASA Goddard](https://earth.gsfc.nasa.gov/geo/missions/lageos/message), [Aeon
+  Essays](https://aeon.co/essays/voyager-space-probes-the-easter-island-statues-of-our-times).
+- Rosetta Disk: [Amusing Planet](https://www.amusingplanet.com/2017/04/the-rosetta-disk-preserving-worlds.html),
   [Rosetta Project](https://rosettaproject.org/disk/concept/), [ESA](https://sci.esa.int/web/rosetta/-/31242-rosetta-disk-goes-back-to-the-future).
-- Earth Tapestry — [CMU news](https://www.cmu.edu/news/stories/archives/2015/april/message-to-future.html)
-  (current flight status unverified).
-- Breakthrough Starshot / StarChip — [Breakthrough Initiatives](https://breakthroughinitiatives.org/concept/3),
+- Earth Tapestry: [CMU news](https://www.cmu.edu/news/stories/archives/2015/april/message-to-future.html) (flight status unverified).
+- Starshot/StarChip: [Breakthrough Initiatives](https://breakthroughinitiatives.org/concept/3),
   [Space.com](https://www.space.com/40512-breatkthrough-starshot-interstellar-sail-technology.html),
-  [Scientific American](https://www.scientificamerican.com/article/building-sails-for-interstellar-probes-will-be-tough-but-not-impossible/).
-- "Golden Record 2.0" — [Space.com](https://www.space.com/37922-one-earth-message-new-horizons-golden-record.html),
+  [Sci. American](https://www.scientificamerican.com/article/building-sails-for-interstellar-probes-will-be-tough-but-not-impossible/).
+- "Golden Record 2.0": [Space.com](https://www.space.com/37922-one-earth-message-new-horizons-golden-record.html),
   [NBC News Mach](https://www.nbcnews.com/mach/science/golden-record-2-0-could-let-space-probe-communicate-aliens-ncna796031).
-- CCSDS transfer frame / sync marker — [MathWorks](https://www.mathworks.com/help/satcom/ref/ccsdstmframesynchronizer-system-object.html),
+- CCSDS frame/sync marker: [MathWorks](https://www.mathworks.com/help/satcom/ref/ccsdstmframesynchronizer-system-object.html),
   [ResearchGate](https://www.researchgate.net/figure/Structure-of-the-TM-Transfer-Frame-Primary-Header_fig6_254966725)
-  (the CCSDS 131.0-B standard itself not directly fetched).
-- DSN Now / Eyes on the Solar System — [JPL](https://www.jpl.nasa.gov/deep-space-network-now/),
-  [eyes.nasa.gov/apps/dsn-now](https://eyes.nasa.gov/apps/dsn-now/) (exact colour coding is
-  general-knowledge, unverified — see §3/§9).
+  (CCSDS 131.0-B itself not fetched).
+- DSN Now/Eyes: [JPL](https://www.jpl.nasa.gov/deep-space-network-now/), [eyes.nasa.gov/apps/dsn-now](https://eyes.nasa.gov/apps/dsn-now/)
+  (exact colour coding is general-knowledge, unverified — §3/§9).
+- Fetched directly (primary read): [`kamalmostafa/hershey-fonts`](https://github.com/kamalmostafa/hershey-fonts)
+  (origin, `.jhf` format, licence text, §4); Google Fonts metadata via
+  `raw.githubusercontent.com/google/fonts` (`ofl/b612mono/METADATA.pb` + `DESCRIPTION.en_us.html`,
+  `ofl/sharetechmono/METADATA.pb`: designer credits, licence, B612's Airbus/Polarsys origin);
+  [`keshikan/DSEG`](https://github.com/keshikan/DSEG) (OFL-1.1 confirmed).
 
-Directly fetched this pass (primary source read, not just search snippet):
-
-- [`kamalmostafa/hershey-fonts`](https://github.com/kamalmostafa/hershey-fonts) — Hershey
-  fonts' origin, `.jhf` format, licence language quoted in §4.
-- Google Fonts metadata via `raw.githubusercontent.com/google/fonts` — `ofl/b612mono/METADATA.pb`
-  and `DESCRIPTION.en_us.html`, `ofl/sharetechmono/METADATA.pb` — B612 Mono and Share Tech Mono
-  designer credits, licence, and B612's Airbus/Polarsys origin.
-- [`keshikan/DSEG`](https://github.com/keshikan/DSEG) — OFL-1.1 licence confirmed.
-
-**Not verified this pass**, both flagged in §4/§12 rather than asserted: OCR-A/OCR-B licensing
-(ctan.org and tug.org were both blocked by this session's network egress policy); the Voyager 1
-2023–24 telemetry-fault incident and the Voyager plasma-wave sonifications (this session's
-WebSearch budget was exhausted before either could be checked — both are widely reported and
-consistent with general knowledge, but unconfirmed by a source read this session).
+**Not verified this pass** (flagged in §4/§12, not asserted): OCR-A/OCR-B licensing — ctan.org
+and tug.org were both blocked by this session's egress policy; the Voyager 1 2023–24
+telemetry-fault incident and the plasma-wave sonifications — this session's WebSearch budget was
+exhausted before either could be checked. Both are widely reported and consistent with general
+knowledge but unconfirmed by a source read this session.

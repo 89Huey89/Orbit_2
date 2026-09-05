@@ -12,98 +12,83 @@ any single artefact does.
 
 ## 1. The documents
 
-- **Lascaux, the Hall of the Bulls** (Salle des Taureaux/Rotunda), Dordogne, France. In situ,
-  closed to the public since 1963; broadly Magdalenian/late Solutrean, commonly cited around
-  17,000–15,000 BCE (the parietal art's dating is itself debated; treat any single year as
-  approximate). The rotunda is roughly 18–20 m long, 5.5–7.5 m wide, 4–5 m high, and carries
-  about 130 figures including four monumental black aurochs, one over 5 m long — the largest
-  animal figure known from Palaeolithic art. This is the room the era's grammar is pulled from:
-  no frame, no ground line, animals scaled to the rock's own relief rather than to each other.
-  One bull carries a cluster of six dots over its shoulder; Michael Rappenglück (building on a
-  1992 proposal by Luz Antequera Congregado) reads this as the Pleiades rising over a Taurus the
-  bull already anticipates. **Contested** — see §12.
-- **Lascaux, the Shaft Scene** (Scène du Puits), the same site, down a genuine vertical drop at
-  the cave's far end: a disembowelled bison, a stick-figure bird-headed man fallen backward, a
-  bird on a staff, a departing woolly rhinoceros. Rappenglück reads the three central figures as
-  Deneb, Vega and Altair — the Summer Triangle. **Contested**, and weaker than the Pleiades
-  reading: critics (Bahn; Hayden & Villeneuve 2011, *Cambridge Archaeological Journal* 21(3))
-  note that dot-and-mark clusters of every size recur throughout Lascaux, that no independent
-  Magdalenian source confirms sky-reading, and that "the Summer Triangle" is a Near
-  Eastern/Greek construction retrojected onto Ice Age marks. Kept here as the era's best lesson
-  in how not to assert a claim.
-- **Chauvet Cave**, Ardèche, France (in situ, closed; a full-scale replica, the Caverne du
-  Pont-d'Arc, is open). Aurignacian, roughly 36,000 years old. The Panel of Hand Dots and Panel
-  of Hand Stencils, documented by the French Ministry of Culture's own excavation site
-  (archeologie.culture.gouv.fr): three red ochre hand stencils, two dot clusters, two black
-  animals. The dots were made by loading a palm with wet red pigment and pressing it to the wall
-  repeatedly — not blown, not fingertip — with size and spacing consistent enough to suggest one
-  person made a whole cluster in one sitting. The era's clearest attested mark-making, and its
-  meaning is openly unknown.
+- **Lascaux, the Hall of the Bulls** (Salle des Taureaux/Rotunda), Dordogne. In situ, closed
+  since 1963; broadly Magdalenian/late Solutrean, commonly cited c. 17,000–15,000 BCE (debated;
+  treat any single year as approximate). Roughly 18–20 m long, 5.5–7.5 m wide, 4–5 m high, about
+  130 figures including four monumental black aurochs, one over 5 m long — the largest animal
+  figure known from Palaeolithic art. The room this era's grammar is pulled from: no frame, no
+  ground line, animals scaled to the rock's own relief. One bull carries six dots over its
+  shoulder; Rappenglück (building on a 1992 proposal by Luz Antequera Congregado) reads this as
+  the Pleiades over a Taurus the bull anticipates. **Contested** — see §12.
+- **Lascaux, the Shaft Scene** (Scène du Puits), same site, down a genuine vertical drop: a
+  disembowelled bison, a bird-headed man fallen backward, a bird on a staff, a departing woolly
+  rhinoceros. Rappenglück reads the three as Deneb, Vega and Altair — the Summer Triangle.
+  **Contested**, and weaker than the Pleiades reading: critics (Bahn; Hayden & Villeneuve 2011,
+  *Cambridge Archaeological Journal* 21(3)) note dot-clusters of every size recur throughout
+  Lascaux, no independent source confirms sky-reading, and "the Summer Triangle" is a Near
+  Eastern/Greek construction retrojected onto Ice Age marks — the era's best lesson in how not to
+  assert a claim.
+- **Chauvet Cave**, Ardèche (in situ, closed; a full-scale replica, the Caverne du Pont-d'Arc, is
+  open). Aurignacian, roughly 36,000 years old. The Panel of Hand Dots and Panel of Hand
+  Stencils, per the French Ministry of Culture's own excavation site: three red ochre hand
+  stencils, two dot clusters, two black animals, the dots palm-loaded with wet red pigment and
+  pressed to the wall repeatedly — not blown, not fingertip. The era's clearest attested
+  mark-making, its meaning openly unknown.
 - **El Castillo Cave**, Cantabria, Spain. Uranium-series dating on the calcite crust over the
   paint (Pike et al. 2012, *Science*) gives a minimum age of 40,800 years for a red disc and
-  37,290 years for an underlying hand stencil — among the oldest securely dated cave art in
-  Europe. The discs and stencils sit under the cave's whole painted sequence, the era's
-  non-figurative opening move before any animal is drawn at all.
-- **The Abri Blanchard plaque**, Sergeac, Dordogne, France. Aurignacian, roughly 34,000–32,000
-  BCE. A bone plaquette bearing a serpentine sequence of engraved pits — 69 marks in the main
-  run, 24 changes of engraving technique along it, plus 81 further marginal marks. Alexander
-  Marshack (1972) read the technique-changes as tracking the moon's illumination — crescent,
-  gibbous, full, dark — across a run of lunar months. The current, more cautious reading
-  (following methodological critiques of Marshack's broader method, notably by Francesco
-  d'Errico) treats the marks as sequential tallies of *observed* lunar events, not a forward
-  calendar. Either way, the clearest evidence someone was counting the moon.
-- **The tally bones — Ishango and Lebombo.** The **Ishango bone** (Semliki River, DR Congo;
-  Royal Belgian Institute of Natural Sciences) is a baboon fibula about 10 cm long, roughly
-  20,000 years old, notched in three distinct columns rather than one running tally — a
-  structure that invites, without proving, a relational rather than purely additive reading.
-  Marshack's lunar-calendar reading is contested on the same grounds as Blanchard; a
-  "prehistoric calculator" reading (base-counting, prime groupings) is argued by some and
-  rejected by others as pattern-seeking after the fact. The **Lebombo bone** (Border Cave,
-  Eswatini) is a baboon fibula with 29 clear notches, among the oldest deliberately marked
-  objects known — commonly cited 37,000–43,000 years old, older end from recent redating; treat
-  the precise figure as (unverified). A 29-notch count invites a lunar-month reading (David
-  Darling among others; also proposed as a menstrual tally) but the function, like Ishango's, is
-  inferred, not inscribed.
+  37,290 years for a hand stencil beneath it — among the oldest securely dated cave art in
+  Europe, the era's non-figurative opening move before any animal is painted at all.
+- **The Abri Blanchard plaque**, Sergeac, Dordogne. Aurignacian, c. 34,000–32,000 BCE. A bone
+  plaquette with a serpentine sequence of engraved pits — 69 marks, 24 changes of technique,
+  plus 81 marginal marks. Marshack (1972) read the changes as tracking the moon's illumination
+  across a run of lunar months; the current, more cautious reading (after methodological
+  critiques of Marshack's broader method, notably by Francesco d'Errico) treats the marks as
+  sequential tallies of *observed* lunar events, not a forward calendar — either way, the
+  clearest evidence someone was counting the moon.
+- **The tally bones — Ishango and Lebombo.** **Ishango** (Semliki River, DR Congo): a baboon
+  fibula ~10 cm long, roughly 20,000 years old, notched in three distinct columns rather than
+  one running tally, inviting a relational reading without proving it; Marshack's lunar-calendar
+  reading is contested on the same grounds as Blanchard, and a "prehistoric calculator" reading
+  is argued by some, rejected by others as pattern-seeking after the fact. **Lebombo** (Border
+  Cave, Eswatini): a baboon fibula with 29 clear notches, among the oldest deliberately marked
+  objects known, commonly cited 37,000–43,000 years old (older end from recent redating; treat
+  as unverified) — a 29-notch count invites a lunar-month reading, but the function, like
+  Ishango's, is inferred, not inscribed.
 - **Newgrange and Knowth**, Boyne Valley, Ireland. Neolithic passage tombs, built c. 3200 BCE —
-  right at this era's closing edge, and the strongest bridge from cave to open sky the record
-  offers. Their kerbstones (97 at Newgrange) carry pecked spirals, lozenges and concentric
-  circles — Newgrange's entrance triple spiral is the single most recognisable image to survive
-  the era. Newgrange's roofbox is genuinely, uncontroversially aligned to sunrise on the winter
-  solstice. Knowth's case is weaker: Philip Stooke has proposed an engraving in its eastern
-  passage as the earliest known map of the Moon's maria, and others read its kerbstone spirals as
-  calendrical. Both readings are **minority positions**, not consensus.
+  this era's closing edge, its strongest bridge from cave to open sky. Kerbstones (97 at
+  Newgrange) carry pecked spirals, lozenges and concentric circles — the entrance triple spiral
+  is the single most recognisable image to survive the era, and its roofbox is genuinely,
+  uncontroversially aligned to winter-solstice sunrise. Knowth's case is weaker: Philip Stooke
+  proposes an eastern-passage engraving as the earliest known map of the Moon's maria, and others
+  read its spirals as calendrical — both **minority positions**, not consensus.
 
-Two further monuments recur in the leads for this era and are treated in §6, §7 and §12 rather
-than listed here as documents proper, because their sky-reading claims are the most contested
-material in the whole brief: **Göbekli Tepe** (Şanlıurfa, Turkey, monumental construction from
-c. 9600 BCE) and **Nabta Playa's Calendar Circle** (Nubian Desert, Egypt, erected c. 4800 BCE).
+**Göbekli Tepe** (Şanlıurfa, Turkey, monumental construction from c. 9600 BCE) and **Nabta
+Playa's Calendar Circle** (Nubian Desert, Egypt, erected c. 4800 BCE) recur in the leads too, and
+are treated in §6, §7 and §12 rather than listed above, since their sky-reading claims are the
+most contested material in the whole brief.
 
 ## 2. The grammar
 
-There is no chart. That is the single fact every other section answers to. Egypt has registers,
-the Globe a projected circle, the Engraving a plate and graticule — this era has a cave wall, and
-a cave wall is not laid out, it is *found*. Painters at Lascaux and Chauvet worked with the
-rock's own bulges and hollows: a boss becomes a bison's shoulder, a crack a horn or a spine, so
-the animal reads as modelled in low relief without a single shaded stroke. There is no ground
-line and no horizon — figures float and overlap at whatever scale the rock demands, largest
-animal often not nearest, major panels overpainted or re-engraved by later visitors over what may
-be centuries (a real palimpsest, not a design choice). Where there is perspective at all it is
-"twisted perspective": body in profile, horns or antlers turned toward the viewer, both pairs of
-legs drawn as if seen from the side even where they would occlude one another in a true profile.
+There is no chart — the single fact every other section answers to. Egypt has registers, the
+Globe a projected circle, the Engraving a plate and graticule; this era has a cave wall, and a
+cave wall is not laid out, it is *found*. Painters worked the rock's own bulges and hollows — a
+boss becomes a shoulder, a crack a horn — so the animal reads as modelled in low relief without a
+shaded stroke. No ground line, no horizon: figures float and overlap at whatever scale the rock
+demands, major panels overpainted or re-engraved by later visitors over what may be centuries (a
+real palimpsest, not a design choice). Where perspective exists at all it is "twisted
+perspective": body in profile, horns turned toward the viewer, both pairs of legs drawn side-on
+even where they would occlude one another.
 
-Three registers of mark exist, and the game should keep them distinct because the real record
-does: **painted figures** (animals — bison/aurochs/horse/deer/lion/mammoth/rhinoceros, never
-constellation-figures in the Greek sense), **engraved lines** (scored with a flint burin into
-rock or bone/ivory/antler, sometimes left bare, sometimes subsequently rubbed with pigment — both
-plain-incised and incised-then-painted pieces are attested, though which technique any one panel
-used is not always independently confirmed), and **non-figurative marks** — dots, hand stencils,
-finger flutings in soft clay or mineral crust ("macaroni" marks), and the roughly fifty geometric
-signs catalogued at Lascaux alone, whose meaning nobody has recovered. Emphatically NOT present:
-any coordinate system, any zodiac figure, any notion of "the sky" as a surface distinct from the
-rock it is drawn on, writing, and — barring Newgrange's genuinely solar-aligned roofbox — any
-confirmed astronomy at all. The megalithic close of the era (Newgrange, Knowth, Nabta Playa) is a
-second grammar layered on top: pecked relief on exposed stone, under open sky, arranged as a ring
-around a monument's threshold rather than a picture on a wall.
+Three registers of mark, kept distinct because the real record keeps them distinct: **painted
+figures** (animals — bison, aurochs, horse, deer, lion, mammoth, rhinoceros — never
+constellation-figures in the Greek sense), **engraved lines** (flint-scored into rock or
+bone/ivory/antler, sometimes left bare, sometimes rubbed with pigment afterward), and
+**non-figurative marks** — dots, hand stencils, finger flutings in soft clay ("macaroni" marks),
+and the roughly fifty geometric signs at Lascaux alone, meaning unrecovered. NOT present: any
+coordinate system, zodiac figure, notion of "the sky" as a surface distinct from the rock it is
+drawn on, writing, or — barring Newgrange's roofbox — confirmed astronomy at all. The megalithic
+close of the era layers a second grammar on top: pecked relief on exposed stone under open sky,
+a ring around a monument's threshold rather than a picture on a wall.
 
 ## 3. Palette
 
@@ -120,33 +105,27 @@ Real pigments only; nothing here is a modern paint colour standing in for one.
 | Torchlit limestone (ground, Chauvet) | `#D6D0BF` | Cooler and paler than Lascaux's — the two show and light differently and should not share one ground. |
 | Open-air kerbstone (Newgrange/Knowth) | `#A9A79C` | Weathered greywacke/granite, unpainted; the spiral is pecked, not pigmented, and reads by shadow, not colour. |
 
-There is no gold in this era, exactly as there is none in era I's painted ceiling — reserve gold
-for later plates. The nearest equivalent accent is the reddest ochre, used the way every other
-era's gold is used: sparingly, on the thing that matters most in a composition. Black (charcoal
-or manganese, chosen per panel, never mixed) is the era's "ink" — the line that carries the
-figure. The two limestone grounds are not interchangeable; a plate built on one should not borrow
-the other's warmth.
+There is no gold in this era, exactly as in era I's painted ceiling — reserve gold for later
+plates. The nearest equivalent accent is the reddest ochre, used sparingly, the way every other
+era's gold is used. Black (charcoal or manganese, chosen per panel, never mixed) is the era's
+"ink" — the line that carries the figure. The two limestone grounds are not interchangeable.
 
 ## 4. Lettering and how people wrote
 
 There is no script, so this section is not about a typeface — it is about what marks stand in for
 one, and it should be read as the era's actual answer to Rule 2, not a placeholder for it.
 
-**What was made, and how.** Four techniques, each attested, each mechanically distinct enough to
-animate differently:
-
-- **Dots**, palm- or fingertip-loaded with wet ochre and pressed to the wall repeatedly (Chauvet's
-  Panel of Hand Dots). A dab, not a stroke — no direction, no leading edge.
-- **Hand stencils**, negative: a hand held flat to the wall, pigment blown around it by mouth or
-  through a hollow bone tube, leaving a silhouette. Widely attested across Chauvet, El Castillo
-  and elsewhere; some panels carry the same individual's hand returning at different points,
-  identifiable by finger proportion — the closest thing this era has to a signature.
-- **Positive handprints**, the hand dipped in pigment and pressed to the rock — rarer than the
-  stencil, and the opposite gesture: contact leaves the mark rather than protecting the rock from it.
-- **Engraved tallies**, cut into bone, antler, ivory or soft rock with a flint burin — Blanchard,
-  Ishango, Lebombo. One incision per unit counted, sometimes grouped by a change of tool,
-  pressure, or sitting rather than any fixed base; Lebombo's own notches vary slightly in depth
-  and spacing, consistent with more than one sitting.
+**What was made, and how.** Four attested techniques, each mechanically distinct enough to
+animate differently: **dots**, palm- or fingertip-loaded with wet ochre and pressed to the wall
+repeatedly (Chauvet's Panel of Hand Dots) — a dab, not a stroke, no direction, no leading edge;
+**hand stencils**, negative, pigment blown by mouth or through a hollow bone tube around a hand
+held flat to the wall (Chauvet, El Castillo and elsewhere) — some panels carry the same
+individual's hand returning at different points, identifiable by finger proportion, the closest
+thing this era has to a signature; **positive handprints**, the hand dipped in pigment and
+pressed to the rock — the opposite gesture, contact leaving the mark rather than protecting the
+rock from it; and **engraved tallies**, cut into bone, antler or ivory with a flint burin
+(Blanchard, Ishango, Lebombo) — one incision per unit, sometimes grouped by a change of tool,
+pressure or sitting rather than any fixed base.
 
 **How this drives the reveal.** `writeText()` and `penLettering()` both assume a script with a
 stroke order. This era has none to give them, so retire both for chart content and replace them
@@ -157,30 +136,28 @@ short stroke per unit, left to right in the order counted, no ligature between s
 place a real "stroke order" survives, since each notch was genuinely cut after the last). None of
 these needs a glyph outline from `glyphs.js` or `fontkit` run against a new face.
 
-**Numerals.** There were none, in the sense every later era has them — no positional system, no
-zero. What existed was one-to-one correspondence: one notch per unit observed. See §9 for the HUD.
+**Numerals.** None, in the sense every later era has them — no positional system, no zero; only
+one-to-one correspondence, one notch per unit observed (§9 for the HUD).
 
 **Fonts: what to embed, and what not to.** Nothing needs embedding for the chart itself — the
 whole point. `IM Fell English`/`IM Fell English SC` stay for any meta-chrome outside the
-in-fiction chart, if any survives once the DOM is drawn in the era's own hand (§9's open
-question); no new OFL face is required. One check the brief specifically asked for: **do not use
-any of the commercial "petroglyph"/"primitive" novelty typefaces that exist** (P22's Petroglyphs
-picture font, ParaType's PT Petroglyph, and a tail of "primitive"-tagged display faces on font
-marketplaces). They are not OFL, and — more to the point — using one is exactly the fantasy-rune
-move this document rules out: a font implies a fixed, repeatable sign-to-sound alphabet, and this
-era had no such thing. A fourth reveal primitive, if one is ever needed, should come from an
-attested motif (§5), not a typeface catalogue.
+in-fiction chart, if any survives (§9); no new OFL face is required. One check the brief asked
+for: **do not use any of the commercial "petroglyph"/"primitive" novelty typefaces that exist**
+(P22's Petroglyphs picture font, ParaType's PT Petroglyph, a tail of "primitive"-tagged display
+faces on font marketplaces) — not OFL, and, more to the point, exactly the fantasy-rune move this
+document rules out: a font implies a fixed, repeatable sign-to-sound alphabet this era never had.
+A fourth reveal primitive, if one is ever needed, should come from an attested motif (§5), not a
+typeface catalogue.
 
 ## 5. Names for the game's things
 
-No word from this era survives, spoken or written, for anything in this table — there is no
-Palaeolithic or early Neolithic language on record at all, attested or reconstructed, and treating
-any invented syllable-string as "the era's word" would be exactly the fabrication `OVERVIEW.md`
-rules out. What the record does hand over instead is **marks**: motifs that recur often enough,
-in the right period, to count as attested vocabulary in the only sense this era has one. The table
-below therefore swaps "the era's own word" for "the era's own mark," and "transliteration" for how
-that mark was physically made. Where a real motif's *shape* fits the game's thing but its
-*meaning* is invented for this purpose (true of nearly every row — the actual meaning of a cup mark
+No word from this era survives, spoken or written — no Palaeolithic or early Neolithic language is
+on record at all, attested or reconstructed, and an invented syllable-string would be exactly the
+fabrication `OVERVIEW.md` rules out. What the record hands over instead is **marks**: motifs
+recurring often enough, in period, to count as attested vocabulary in the only sense this era has
+one. The table below swaps "the era's own word" for "the era's own mark," and "transliteration"
+for how that mark was physically made. Where a motif's *shape* fits but its *meaning* is invented
+for this purpose (true of nearly every row — the actual meaning of a cup mark
 or a spiral is not recovered), that is called out plainly rather than implied.
 
 | Game term | The era's own mark | How it is made | Gloss / fit | Attested / constructed |
@@ -211,31 +188,26 @@ or a spiral is not recovered), that is called out plainly rather than implied.
 ## 6. Currency and one rule
 
 **The currency is ochre**, and pigment generally — this needs no renaming, only naming correctly.
-It was mined (a worked haematite mine at Bomvu Ridge/Lion Cave in the Lebombo Mountains, near
-where the tally bone was found, is commonly cited as one of the oldest known mines, on the order
-of 40,000+ years old — treat the figure as approximate), ground on a stone palette, and mixed
-with a binder — water, animal fat, plant sap, saliva or blood have all been proposed and are not
-always distinguishable archaeologically. Getting pigment onto a wall meant sourcing the mineral,
-grinding it, and carrying it — often kilometres, often deep into total darkness by a light source
-itself burning down as you worked. That is already almost exactly the shape of the ink resource:
-scarce, physically carried, spent by the act of making a mark, replenished only by more labour.
+It was mined (a worked haematite mine at Bomvu Ridge/Lion Cave, Lebombo Mountains, near where the
+tally bone was found, is commonly cited as one of the oldest known mines, on the order of
+40,000+ years — treat as approximate), ground, and mixed with a binder — water, fat, plant sap,
+saliva or blood have all been proposed and are not always distinguishable archaeologically.
+Sourcing, grinding and carrying pigment often kilometres, deep into total darkness by a light
+source itself burning down as you worked, is already almost exactly the shape of the ink
+resource: scarce, physically carried, spent by the act of making a mark, replenished only by
+more labour.
 
-**"No twist" reading:** rename ink to ochre, keep every number, every mechanic, every hazard row
-exactly as shipped. This costs nothing and is legitimate on its own — the currency substance
-changing while the arithmetic stays put is exactly what era II and era IV are expected to do too.
+**"No twist" reading:** rename ink to ochre, keep every number and mechanic exactly as shipped —
+legitimate on its own, and exactly what era II and IV are expected to do too.
 
-**The one twist**, kept as small and as render-side as it can be, in the spirit of DANGERS.md's
-option A: **the torch breathes.** Nothing about `HAZARD_KINDS`, ink cost, or scoring changes. What
-changes is the aiming guide's own reach — the radius ahead of the player it draws destinations
-within — which the game brief already establishes is a render-side quantity the guide computes
-fresh each frame, not a simulation constant. On this era's plate, that reach contracts as ink
-drains (the torch guttering) and pulses outward for a second on every capture (the torch's flame
-catching again, as a real relit torch does) rather than holding one fixed value. The player reads
-exactly the same underlying flight physics on every plate; only how far ahead the dark lets them
-*see* changes, and it changes with the same number that already drives the ink gauge. This is
-cosmetic by the architecture's own definition — no new hazard, no new field in `HAZARD_KINDS`, no
-new ledger stat — and it gives the era's signature feeling (a torch, not a lamp) without touching
-anything DANGERS.md flags as unsafe.
+**The one twist**, kept small and render-side, in the spirit of DANGERS.md's option A: **the
+torch breathes.** Nothing about `HAZARD_KINDS`, ink cost, or scoring changes. What changes is the
+aiming guide's own reach — a render-side quantity the guide already computes fresh each frame,
+not a simulation constant — which contracts as ink drains (the torch guttering) and pulses
+outward for a second on every capture (the flame catching again, as a real relit torch does). The
+player flies exactly the same physics on every plate; only how far ahead the dark lets them *see*
+changes, driven by the same number that already drives the ink gauge. Cosmetic by the
+architecture's own definition — no new hazard, no new field, no new ledger stat.
 
 ## 7. Dangers
 
@@ -252,60 +224,47 @@ here is a new hazard, only a new name and a new drawing for an existing one.
 ## 8. The seven families
 
 **Ocean** is an undulating engraved line filled with a thin, dilute manganese wash — no flat
-colour, the wash pooling unevenly, the body's edge a single scored contour rather than a keyline.
-
+colour, the wash pooling unevenly, the edge a single scored contour rather than a keyline.
 **Crater** wears its own logic on its face: a rounded, ochre-washed disc pocked with pecked cup
-marks, each catching torchlight on one edge and shadow on the other, the way a real cup mark
-reads by relief rather than colour.
-
-**Ringed** is a cup-and-ring motif taken whole — a central pecked cup with one to three concentric
-pecked rings around it, the rings themselves the whole depiction of "ringed," no separate
-ring-plane needed.
+marks, each catching torchlight on one edge and shadow on the other, reading by relief rather
+than colour. **Ringed** is a cup-and-ring motif taken whole — a central pecked cup with one to
+three concentric pecked rings, the rings themselves the whole depiction, no separate ring-plane
+needed.
 
 **Ice** is bare stone, kaolin-pale, deliberately under-marked — the "reserve" principle turned
-into a body: the least-worked surface in the family, a rim of white chalk stipple at the limb and
-nothing else, so it reads as withheld rather than empty.
-
-**Dune** is an ochre wash raked by finger-combed flutings, ridged lines dragged through wet
-pigment exactly as the era's "macaroni" marks are dragged through soft clay — texture carrying
-the family, not a drawn silhouette.
-
-**Volcanic** is the reddest ochre the palette allows, veined with scored black fissures that
-follow the disc's curve rather than crossing it — the most saturated body, matching how red is
-the era's most reserved pigment.
-
-**Storm** is a dense, directionless cluster of short comma-strokes cut fast with the burin — drawn
-from the same catalogue of unread geometric signs Lascaux carries roughly fifty of, so the
-reading is honestly built from a real sign-class whose meaning nobody has recovered.
+into a body, a rim of white chalk stipple at the limb and nothing else, reading as withheld
+rather than empty. **Dune** is an ochre wash raked by finger-combed flutings, ridged lines
+dragged through wet pigment exactly as the era's "macaroni" marks are dragged through soft clay —
+texture carrying the family, not a drawn silhouette. **Volcanic** is the reddest ochre the
+palette allows, veined with scored black fissures following the disc's curve rather than
+crossing it — the most saturated body, matching how red is the era's most reserved pigment.
+**Storm** is a dense, directionless cluster of short comma-strokes cut fast with the burin, drawn
+from the same catalogue of unread geometric signs Lascaux carries roughly fifty of — a reading
+honestly built from a sign-class whose meaning nobody has recovered.
 
 ## 9. Chart furniture, frame, HUD
 
-Nothing surrounds this era's sky. No border, no cartouche, no colophon, no scale, no maker's mark
-— the rock has no margin, and a figure's edge is wherever the rock or the torchlight stops, not
-wherever a rule was drawn. This is the era's most extreme departure from every other plate on the
-ladder, and it should be played as exactly that: the plate-mark and double rule dissolve into a
-soft vignette — a pool of visible warmth against unlit dark at the edges, contracting and pulsing
-per §6's torch rule — and the compass rose, RA-hour and declination ticks simply do not exist on
-this plate. Where a border must exist for playability, the natural substitute is an irregular
-rock edge or crack rather than a drawn rectangle.
+Nothing surrounds this era's sky: no border, cartouche, colophon, scale, or maker's mark — a
+figure's edge is wherever the rock or the torchlight stops, not wherever a rule was drawn. The
+era's most extreme departure from every other plate on the ladder: the plate-mark and double rule
+dissolve into a soft vignette, a pool of warmth against unlit dark, contracting and pulsing per
+§6; the compass rose and RA/declination ticks simply do not exist. Where a border must exist for
+playability, the natural substitute is an irregular rock edge or crack, not a drawn rectangle.
 
 **HUD numbers become tally marks — the honest and the hard version of that idea.** Small,
-fast-changing counts (flow ×n, orbits skipped, a shield's single charge) fit the era's own
-one-to-one tally logic directly: a short burin-tally cluster, left to right, one stroke per unit
-(§4). Large, slow-changing numbers (score, personal best, lifetime captures) do not — nobody
-tallied into the hundreds by single notches, and a literal one-per-unit four-digit score would be
-illegible or absurdly long. The honest move is to let large numbers become **a dot-field whose
-density communicates magnitude rather than exact count** — closer to how the real bones read at a
-glance than to a printed digit. This is the one point in the whole document to flag as a real UX
-risk before it is built: tallies and dot-density are not as instantly legible as Arabic numerals,
-and this game is timed. §12 proposes a spike.
+fast-changing counts (flow ×n, orbits skipped, a shield's charge) fit the era's one-to-one tally
+logic directly: a short burin-tally cluster, one stroke per unit (§4). Large, slow-changing
+numbers (score, personal best, lifetime captures) do not — nobody tallied into the hundreds by
+single notches, and a literal four-digit tally would be illegible or absurdly long. The honest
+move is **a dot-field whose density communicates magnitude rather than exact count** — closer to
+how the real bones read at a glance than to a printed digit. Flagged as a real UX risk: tallies
+and dot-density are less instantly legible than Arabic numerals, and this game is timed. §12
+proposes a spike.
 
 **Captions become no words at all.** Named-feat medals and constellation names, currently Latin
-strings, have no equivalent script to be set in; the honest substitute is a small pictogram — an
-animal silhouette or an attested sign standing for the event, exactly as the animals themselves
-already carry the era's narrative content. A hand stencil, genuinely the closest thing this era
-has to a signature, is proposed as the mark for a personal best or a completed run — the same
-gesture the real record's most individually identifiable marks were made with.
+strings, have no script to be set in; the honest substitute is a small pictogram, an animal
+silhouette or attested sign standing for the event. A hand stencil, the closest thing this era
+has to a signature, is proposed as the mark for a personal best or completed run.
 
 ## 10. Four chapter plates
 
@@ -341,76 +300,65 @@ gesture the real record's most individually identifiable marks were made with.
 ## 12. Risks and open questions
 
 - **The star-map claims are minority readings, not findings, and the game should not assert them
-  as fact.** Lascaux-as-Pleiades, Lascaux-as-Summer-Triangle, the Adorant-as-Orion
-  (Geißenklösterle, an Aurignacian mammoth-ivory figure, c. 35,000–32,000 BCE — scholars note its
-  apparent "belt" and "sword" derive from the ivory's own grain structure, not intentional
-  carving), Knowth-as-lunar-map, and Göbekli Tepe's Pillar 43 as a comet-impact zodiac (Sweatman &
-  Tsikritsis 2017, rebutted at length by the site's own excavators — Notroff, Dietrich, Clare et
-  al., "More than a vulture," *Mediterranean Archaeology and Archaeometry* 17(2), 2017) are all
-  genuinely contested, several by the archaeologists who excavate the sites in question. Depict
-  the marks honestly and let a chapter's own flavour text carry the claim as a claim ("some read
-  this as...") rather than as the game's authorial voice — these are live disputes, not settled
-  history the game is merely stylising.
+  as fact.** Lascaux-as-Pleiades, Lascaux-as-Summer-Triangle, the Adorant-as-Orion (the ivory's
+  apparent "belt" and "sword" are scholarly-noted to derive from its own grain structure, not
+  intentional carving), Knowth-as-lunar-map, and Göbekli Tepe Pillar 43 as a comet-impact zodiac
+  (Sweatman & Tsikritsis 2017, rebutted at length by the site's own excavators — Notroff, Dietrich,
+  Clare et al., "More than a vulture," *Mediterranean Archaeology and Archaeometry* 17(2), 2017)
+  are all genuinely contested, several by the archaeologists who excavate the sites in question.
+  Depict the marks honestly and let a chapter's flavour text carry the claim as a claim ("some
+  read this as...") rather than as the game's authorial voice — these are live disputes, not
+  settled history the game is merely stylising.
 - **Two attested grammars exist for this era and should not be blended.** The Franco-Cantabrian
   painted cave (Lascaux, Chauvet, El Castillo) is this document's primary grammar, matching how
   era I leans on one Egyptian ceiling rather than every Egyptian source at once. Australian
   Aboriginal dark-constellation astronomy — the Emu in the Sky, formed from the Coalsack and
   other dark nebulae, correlated with a real pecked emu engraving at Elvina Track, Ku-ring-gai
-  Chase National Park, NSW — is an extraordinary, genuinely attested, and *still living*
-  tradition, and answers the brief's "dark constellation" lead better than anything European
-  does. It is deliberately **not** folded into the grammar above: it belongs to a different
-  continent and culture than the cave-painting material here, and, more importantly, it is living
-  Indigenous cultural knowledge, not an extinct practice recovered only through excavation — a
-  distinction a commercial game should treat with real caution before using as a hazard skin. If
-  a future pass wants Aboriginal sky-tradition specifically, that should be its own deliberate
-  decision, probably with consultation, not inherited by default from this write-up.
-- **Rule 1 is tested hardest by the "torch breathes" twist** in §6: confirm in a spike that it
-  never needs to read simulation state beyond what the guide already reads today, or it becomes a
-  B/C-shaped change per DANGERS.md.
+  Chase, NSW — is extraordinary, genuinely attested, and *still living*, and answers the brief's
+  "dark constellation" lead better than anything European does. It is deliberately **not** folded
+  into the grammar above: it is a different continent's culture, and, more importantly, living
+  Indigenous knowledge rather than an extinct practice recovered by excavation — a distinction a
+  commercial game should treat with real caution before using as a hazard skin. If a future pass
+  wants it specifically, that should be a deliberate decision, probably with consultation, not
+  inherited by default from this write-up.
+- **Rule 1 is tested hardest by the "torch breathes" twist** in §6: confirm in a spike it never
+  needs to read simulation state beyond what the guide already reads, or it becomes a B/C-shaped
+  change per DANGERS.md.
 - **The tally/dot-field HUD (§9) is a genuine legibility risk.** Spike one screen of it — score,
-  flow and a skip bonus all firing within a few seconds, as a real run produces — before
-  committing. A hybrid fallback (tallies for lore captions, a plain numeral face kept for
-  safety-critical HUD numbers) is the honest retreat if the spike fails.
-- **No frame at all (§9) is the era's strongest and riskiest idea at once.** Every other plate
-  keeps some border the eye can use to judge the chart's edge; removing it is the most authentic
-  choice and also removes chrome every other era relies on. Build one chapter plate as a spike
-  first, exactly as `01-ceiling.md` recommends for its own smaller version of this problem.
+  flow and a skip bonus firing within a few seconds, as a real run produces — before committing.
+  A hybrid fallback (tallies for lore captions, a plain numeral face for safety-critical HUD
+  numbers) is the honest retreat if the spike fails.
+- **No frame at all (§9) is the era's strongest and riskiest idea at once.** It removes chrome
+  every other era relies on to judge the chart's edge. Build one chapter plate as a spike first,
+  exactly as `01-ceiling.md` recommends for its own smaller version of this problem.
 - **Dates throughout are approximate and, in several cases, actively debated** (Lascaux's own
   dating has shifted across publications); treat any range given as the claim, not a settled year.
-- **Bush Barrow's gold lozenge, named as a lead, does not belong to this era.** It is an Early
-  Bronze Age grave good, c. 1950 BCE, near Stonehenge — past this era's c. 3,000 BCE close and
-  inside era 1's (The Disc, Nebra, c. 1600 BCE) territory instead. Cup-and-ring marks have the
-  same problem in miniature (the motif class runs c. 3800–1500 BCE); only its earliest phase sits
-  inside this era's window. Recommend dropping Bush Barrow from this era's reference list.
+- **Bush Barrow's gold lozenge, named as a lead, does not belong to this era** — an Early Bronze
+  Age grave good, c. 1950 BCE, near Stonehenge, past this era's c. 3,000 BCE close and inside era
+  1's (The Disc, Nebra, c. 1600 BCE) territory instead. Cup-and-ring marks have the same problem
+  in miniature (the motif class runs c. 3800–1500 BCE); only its earliest phase sits inside this
+  era's window. Recommend dropping Bush Barrow from this era's reference list.
 
 ## 13. Sources
 
-- [Rock Art Blog — Are Lascaux cave paintings encoded Palaeolithic star charts?](https://rockartblog.blogspot.com/2018/08/are-lascaux-cave-paintings-encoded.html)
-- [Rock Art Blog — Another supposed star map at Lascaux: the Summer Triangle](https://rockartblog.blogspot.com/2018/08/another-supposed-star-map-painted-in.html)
+- [Rock Art Blog — Are Lascaux cave paintings encoded Palaeolithic star charts?](https://rockartblog.blogspot.com/2018/08/are-lascaux-cave-paintings-encoded.html) / [the Summer Triangle](https://rockartblog.blogspot.com/2018/08/another-supposed-star-map-painted-in.html)
 - [CBC News — Oldest star map found among cave drawings](https://www.cbc.ca/news/science/oldest-star-map-found-among-cave-drawings-1.213876)
-- [Cambridge Archaeological Journal — Astronomy in the Upper Palaeolithic? (Hayden & Villeneuve, 2011)](https://www.cambridge.org/core/journals/cambridge-archaeological-journal/article/astronomy-in-the-upper-palaeolithic/DF41D037273839A3793C15CCEF250AB8)
-- [Cambridge Archaeological Journal — Evaluating the Evidence for Lunar Calendars in Upper Palaeolithic Parietal Art](https://www.cambridge.org/core/journals/cambridge-archaeological-journal/article/evaluating-the-evidence-for-lunar-calendars-in-upper-palaeolithic-parietal-art/33D4BE1ACD91E3B01A5B2ED83015D36B)
+- Cambridge Archaeological Journal — [Astronomy in the Upper Palaeolithic? (Hayden & Villeneuve, 2011)](https://www.cambridge.org/core/journals/cambridge-archaeological-journal/article/astronomy-in-the-upper-palaeolithic/DF41D037273839A3793C15CCEF250AB8) / [Evaluating the Evidence for Lunar Calendars in Upper Palaeolithic Parietal Art](https://www.cambridge.org/core/journals/cambridge-archaeological-journal/article/evaluating-the-evidence-for-lunar-calendars-in-upper-palaeolithic-parietal-art/33D4BE1ACD91E3B01A5B2ED83015D36B)
 - [Phys.org — Cave markings show Ice Age hunter-gatherers used a lunar calendar (Bacon et al., 2023)](https://phys.org/news/2023-01-cave-ice-age-hunter-gatherers-lunar.html)
-- [UCL News — Ice Age markings show evidence of early writing dating back 20,000 years](https://www.ucl.ac.uk/news/2023/jan/ice-age-markings-show-evidence-early-writing-dating-back-20000-years)
-- [Wikidata / de.wikipedia — Michael Rappenglück, credentials and 1998 dissertation](https://de.wikipedia.org/wiki/Michael_Rappengl%C3%BCck)
+- [de.wikipedia — Michael Rappenglück, credentials and 1998 dissertation](https://de.wikipedia.org/wiki/Michael_Rappengl%C3%BCck)
 - [La Brújula Verde — The Adorant, and the Orion claim's reception](https://www.labrujulaverde.com/en/2025/04/the-adorant-the-ice-age-sculpture-that-is-the-oldest-figurative-representation-of-a-constellation/)
-- [French Ministry of Culture — Panel of Hand Dots, Chauvet-Pont d'Arc cave](https://archeologie.culture.gouv.fr/chauvet/en/panel-hand-dots)
-- [French Ministry of Culture — Panel of Negative Hand Prints, Chauvet-Pont d'Arc cave](https://archeologie.culture.gouv.fr/chauvet/en/panel-negative-hand-prints)
-- [ResearchGate — Chronology of hand stencils in European Palaeolithic rock art: El Castillo U-series results](https://www.researchgate.net/publication/271537040_The_chronology_of_hand_stencils_in_European_Palaeolithic_rock_art_implications_of_new_U-series_results_from_El_Castillo_Cave_Cantabria_Spain)
+- French Ministry of Culture — [Panel of Hand Dots](https://archeologie.culture.gouv.fr/chauvet/en/panel-hand-dots) / [Panel of Negative Hand Prints](https://archeologie.culture.gouv.fr/chauvet/en/panel-negative-hand-prints), Chauvet-Pont d'Arc
 - [National Geographic — World's oldest cave art found, El Castillo](https://www.nationalgeographic.com/adventure/article/120614-neanderthal-cave-paintings-spain-science-pike)
 - [Cantor's Paradise — From Blanchard Plaque to Selenographia](https://www.cantorsparadise.com/from-blanchard-plaque-to-selenographia-a-concise-history-of-visualising-the-moons-face-8f1822ed5e1f)
 - [UNESCO Portal to the Heritage of Astronomy — The Ishango Bone, DRC](https://web.astronomicalheritage.net/index.php/show-entity?identity=85&idsubentity=1)
 - [History of Information — The Lebombo Bone, oldest known mathematical artefact](https://www.historyofinformation.com/detail.php?entryid=2338)
-- [Newgrange.com — Kerbstone K52, description and dating](https://www.newgrange.com/newgrange-k52.htm)
-- [Mythical Ireland — Knowth: the Calendar Stone](https://mythicalireland.com/blogs/ancient-sites/knowth-the-calendar-stone)
-- [LiveScience — Nabta Playa, a mysterious stone circle that may be the world's oldest astronomical observatory](https://www.livescience.com/archaeology/nabta-playa-a-mysterious-stone-circle-that-may-be-the-worlds-oldest-astronomical-observatory)
-- [Astronomy.com — Nabta Playa: the world's first astronomical site was built in Africa](https://www.astronomy.com/observing/nabta-playa-the-worlds-first-astronomical-site-was-built-in-africa-and-is-older-than-stonehenge/)
+- [Newgrange.com — Kerbstone K52](https://www.newgrange.com/newgrange-k52.htm) · [Mythical Ireland — Knowth: the Calendar Stone](https://mythicalireland.com/blogs/ancient-sites/knowth-the-calendar-stone)
+- [LiveScience — Nabta Playa](https://www.livescience.com/archaeology/nabta-playa-a-mysterious-stone-circle-that-may-be-the-worlds-oldest-astronomical-observatory) · [Astronomy.com — Nabta Playa](https://www.astronomy.com/observing/nabta-playa-the-worlds-first-astronomical-site-was-built-in-africa-and-is-older-than-stonehenge/)
 - [Dainst Tepe Telegrams — More than a vulture: a response to Sweatman and Tsikritsis](https://www.dainst.blog/the-tepe-telegrams/2017/07/03/more-than-a-vulture-a-response-to-sweatman-and-tsikritsis/)
 - [Türkiye Today — Debunking claims about Göbeklitepe](https://www.turkiyetoday.com/culture/debunking-claims-gobeklitepe-75895)
-- [National Museum of Australia — Emu in the night sky constellation](https://digital-classroom.nma.gov.au/images/emu-night-sky-constellation)
-- [ABC News Australia — Can you spot the emu in the sky?](https://www.abc.net.au/news/2017-04-05/aboriginal-astronomy-basis-of-dreamtime-stories-stargazing/8413492)
+- [National Museum of Australia — Emu in the night sky constellation](https://digital-classroom.nma.gov.au/images/emu-night-sky-constellation) · [ABC News Australia — Can you spot the emu in the sky?](https://www.abc.net.au/news/2017-04-05/aboriginal-astronomy-basis-of-dreamtime-stories-stargazing/8413492)
 - [TripAdvisor — Elvina Track Aboriginal Engraving Site, Ku-ring-gai](https://www.tripadvisor.com.au/ShowUserReviews-g2651172-d6748619-r209810214-Elvina_Track_Aboriginal_Engraving_Site-Ku_ring_gai_Greater_Sydney_New_South_Wal.html)
 - [WebExhibits — Pigments through the ages: prehistory](https://www.webexhibits.org/pigments/intro/early.html)
-- [Wikipedia (via search excerpt) — Neolithic and Bronze Age rock art in the British Isles, cup-and-ring dating](https://en.wikipedia.org/wiki/Neolithic_and_Bronze_Age_rock_art_in_the_British_Isles)
+- [Wikipedia — Neolithic and Bronze Age rock art in the British Isles, cup-and-ring dating](https://en.wikipedia.org/wiki/Neolithic_and_Bronze_Age_rock_art_in_the_British_Isles)
 - [Wiltshire Museum — Bush Barrow lozenge](https://www.wiltshiremuseum.org.uk/news-articles/artworks/bush-barrow-lozenge/)
 - [P22 Type Foundry — Petroglyphs fonts (commercial, not OFL — cited to confirm what to avoid)](https://p22.com/fonts/petroglyphs/)
