@@ -32,17 +32,18 @@
   Font: B612 Mono, SIL Open Font License 1.1. Designed by Airbus with ENAC and Université de
   Toulouse III (2010–2012) for cockpit-display legibility under vibration and glare; released 2017
   via Polarsys/Eclipse, now served OFL on Google Fonts (research §4 — "the single most on-theme
-  face available"). Google Fonts subsets loaded: latin, latin-ext. Used for the telemetry hand
-  only; if it fails to load, `monospace` is the fallback stack below — never a serif face.
+  face available"). Loaded locally from fonts/b612-mono.ttf (docs/eras/prototypes/fonts/, fetched
+  from Google Fonts for prototype use, per that folder's own README) rather than over the network —
+  this page has no external resources at all. Unicode coverage per Google Fonts metadata: Latin +
+  Latin Extended. Used for the telemetry hand only; if the file cannot be read, `monospace` is the
+  fallback stack below — never a serif face.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>The Probe — Orbit era prototype</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=B612+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'B612 Mono';src:url('fonts/b612-mono.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:block;}
   :root{color-scheme:dark;}
   html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;}
@@ -101,10 +102,6 @@ function fit(){
 }
 window.addEventListener('resize',fit);fit();
 
-let fontReady=false;
-if(document.fonts&&document.fonts.load){
-  document.fonts.load('12px "B612 Mono"').then(()=>document.fonts.load('700 12px "B612 Mono"')).then(()=>{fontReady=true;}).catch(()=>{});
-}
 function tfont(px,weight,italic){return `${italic?'italic ':''}${weight||400} ${px}px "B612 Mono", ui-monospace, "SFMono-Regular", monospace`;}
 
 let showLegend=false;
@@ -155,8 +152,14 @@ function vectorLine(g,pathFn,opts){
   opts=opts||{};
   g.save();
   if(opts.dash)g.setLineDash(opts.dash);
-  g.strokeStyle=opts.color||TOKENS.white;g.lineWidth=opts.width||1;g.globalAlpha=opts.alpha??1;
   g.lineJoin='round';g.lineCap=opts.cap||'round';
+  // an instrument trace, not a diagram line: a soft wide pass under the crisp one, the way a live
+  // plot glows faintly on its own trail without ever losing the plotter's dead-even width.
+  if(opts.glow){
+    g.strokeStyle=opts.color||TOKENS.white;g.lineWidth=(opts.width||1)*3.4;g.globalAlpha=(opts.alpha??1)*0.16;
+    g.beginPath();pathFn(g);g.stroke();
+  }
+  g.strokeStyle=opts.color||TOKENS.white;g.lineWidth=opts.width||1;g.globalAlpha=opts.alpha??1;
   g.beginPath();pathFn(g);g.stroke();
   g.restore();
 }
@@ -207,7 +210,12 @@ function plaqueWord(g,word,x,y,scale,reveal){
 }
 
 // ================= static offscreen sprites: painted once (item 9's 60fps rule) =================
-let starSprite=null,hexSprite=null;
+// The void is a genuinely thin material (research §2/§8's own reading: "the void" is this era's
+// ground, the same way plaster or marble is another era's), but a thin material is still a made
+// one — baked here from several generated layers rather than one flat fill, per the standard the
+// rest of the ladder is held to: a base tone, a broad vignette, fine sensor-noise grain, a scanline
+// weave, and the hex-fault wash, each its own pass.
+let starSprite=null,groundSprite=null;
 function buildStars(){
   const off=document.createElement('canvas');off.width=W;off.height=H;const og=off.getContext('2d');
   const srnd=mulberry32(0x57A2B11E);
@@ -220,11 +228,28 @@ function buildStars(){
   }
   starSprite=off;
 }
-// The 2023 Voyager 1 flight-data-system fault returned hex noise where telemetry should have been
-// (research §3, "hex-as-decoration-with-a-cause") — a static field of it, dim, doing the down-and
-// -right hatching job every other era's burin hand does, without pretending to scroll live.
-function buildHex(){
+function buildGround(){
   const off=document.createElement('canvas');off.width=W;off.height=H;const og=off.getContext('2d');
+  og.fillStyle=TOKENS.voidBlack;og.fillRect(0,0,W,H);
+  const vig=og.createRadialGradient(W*0.5,H*0.46,80,W*0.5,H*0.46,Math.max(W,H)*0.75);
+  vig.addColorStop(0,'#0a0c10');vig.addColorStop(1,'#000000');
+  og.fillStyle=vig;og.fillRect(0,0,W,H);
+  // sensor read noise: a fine, per-pixel-scale grain, the only texture a bare CCD/CMOS array in
+  // deep vacuum actually has — sparse and dim, never a wash.
+  const nrnd=mulberry32(0xC0FFEE01);
+  for(let i=0;i<5200;i++){
+    const x=nrnd()*W,y=nrnd()*H,v=nrnd();
+    og.fillStyle=v>0.5?'rgba(232,236,242,'+(0.03+nrnd()*0.05)+')':'rgba(0,0,0,'+(0.2+nrnd()*0.2)+')';
+    og.fillRect(x,y,1,1);
+  }
+  // a faint scanline weave, the readout-raster texture behind the hex fault, at half-pixel spacing
+  // so it stays a wash rather than a moiré at native resolution.
+  og.globalAlpha=0.035;og.strokeStyle=TOKENS.white;og.lineWidth=1;
+  for(let y=0;y<H;y+=3){og.beginPath();og.moveTo(0,y+0.5);og.lineTo(W,y+0.5);og.stroke();}
+  og.globalAlpha=1;
+  // the 2023 Voyager 1 flight-data-system fault returned hex noise where telemetry should have
+  // been (research §3, "hex-as-decoration-with-a-cause") — a static field of it, dim, doing the
+  // down-and-right hatching job every other era's burin hand does, without pretending to scroll.
   const hrnd=mulberry32(0xFEEDFACE);
   og.font=tfont(11);og.textBaseline='top';
   const cols=Math.ceil(W/13),rows=Math.ceil(H/15);
@@ -234,18 +259,14 @@ function buildHex(){
     og.fillText((hrnd()*16|0).toString(16).toUpperCase(),c*13,r*15);
   }
   og.globalAlpha=1;
-  hexSprite=off;
+  groundSprite=off;
 }
 
 // ================= paintGround: interstellar black, unbroken but for glow and stars =================
 function paintGround(g){
-  g.fillStyle=TOKENS.voidBlack;g.fillRect(0,0,W,H);
-  const vig=g.createRadialGradient(W*0.5,H*0.46,80,W*0.5,H*0.46,Math.max(W,H)*0.75);
-  vig.addColorStop(0,'#0a0c10');vig.addColorStop(1,'#000000');
-  g.fillStyle=vig;g.fillRect(0,0,W,H);
-  if(!hexSprite)buildHex();g.drawImage(hexSprite,0,0);
+  if(!groundSprite)buildGround();g.drawImage(groundSprite,0,0);
   if(!starSprite)buildStars();g.drawImage(starSprite,0,0);
-  legend(10,14,'ground: interstellar black, static hex-fault texture, no scroll');
+  legend(10,14,'ground: void — base + vignette + sensor grain + scanline weave + static hex fault');
 }
 
 // ================= paintFrame: a CCSDS transfer-frame border wrapping a plaque-cut edge =================
@@ -291,6 +312,24 @@ function paintPhaseFooter(g,phaseIdx){
   g.font=tfont(12,700);g.textBaseline='middle';g.fillStyle=TOKENS.white;
   g.fillText('PHASE '+['I','II','III','IV'][phaseIdx]+' · '+PHASES[phaseIdx],40,y);
   legend(40,y-14,'phase / chapter label (footer strip)');
+}
+
+// The era's equivalent of the magnitude key (brief item 2): the shipped game codes background
+// stars into six seeded brightness classes (GAME-BRIEF.md §3); this era's navigation display does
+// the same thing to the same starfield (buildStars below), so the honest key translates that
+// brightness code into the instrument's own vocabulary rather than a painted point-size ladder.
+function paintSignalKey(g,cx,cy){
+  const w=200,h=64,x=cx-w/2,y=cy-h/2;
+  vectorLine(g,(gg)=>{gg.rect(x,y,w,h);},{width:0.8,alpha:0.4});
+  g.font=tfont(10,700);g.fillStyle=TOKENS.white;g.fillText('SIGNAL KEY',x+10,y+16);
+  const rows=[[1.1,'WEAK SOURCE'],[1.7,'STRONG SOURCE'],[2.4,'TRACKED · LOCKED']];
+  rows.forEach(([r,label],i)=>{
+    const ry=y+30+i*11;
+    g.beginPath();g.arc(x+16,ry-3,r,0,TAU);g.fillStyle=i===2?TOKENS.amber:TOKENS.white;g.globalAlpha=i===2?1:0.6+i*0.15;g.fill();g.globalAlpha=1;
+    if(i===2){g.beginPath();g.arc(x+16,ry-3,r+2.4,0,TAU);g.strokeStyle=TOKENS.amber;g.lineWidth=0.6;g.globalAlpha=.7;g.stroke();g.globalAlpha=1;}
+    g.font=tfont(9);g.fillStyle='rgba(232,236,242,.75)';g.fillText(label,x+30,ry);
+  });
+  legend(x,y-12,'signal key: the era\'s magnitude key (background-star brightness classes)');
 }
 
 // ================= the maker's mark: a wordless locator, per the Voyager cover (research §9) =================
@@ -352,12 +391,26 @@ function paintFigure(g,cx,cy,revealName){
 function paintBody(g,cx,cy,r,family,seedN){
   const rnd=mulberry32((seedN>>>0||1)*97);
   const info=FAMILY_INFO[family];
-  const val=200+FAMILIES.indexOf(family)*4; // slight per-family value shift, never a hue shift
+  const val=198+FAMILIES.indexOf(family)*5; // slight per-family value shift, never a hue shift
   const base=`rgb(${val},${val+4},${val+8})`;
-  const grad=g.createRadialGradient(cx-r*0.35,cy-r*0.4,r*0.05,cx,cy,r);
-  grad.addColorStop(0,'#ffffff');grad.addColorStop(0.35,base);grad.addColorStop(1,'#1a1d22');
-  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.fillStyle=grad;g.globalAlpha=0.92;g.fill();g.globalAlpha=1;g.restore();
-  vectorLine(g,(gg)=>{gg.arc(cx,cy,r,0,TAU);},{width:1,alpha:0.8});
+  // one consistent light direction across every specimen (upper-left, matching the ground's own
+  // implied source) — the reading a "lit sphere" needs even at low detail (ART-CRITIQUE.md #3).
+  const lx=cx-r*0.4,ly=cy-r*0.45;
+  const grad=g.createRadialGradient(lx,ly,r*0.04,cx,cy,r*1.05);
+  grad.addColorStop(0,'#ffffff');grad.addColorStop(0.32,base);grad.addColorStop(0.78,'rgb('+(val-70)+','+(val-66)+','+(val-60)+')');grad.addColorStop(1,'#0c0e11');
+  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.clip();
+  g.fillStyle=grad;g.fillRect(cx-r,cy-r,r*2,r*2);
+  // sensed-surface speckle: a sparse noise field over the disc, the one texture a low-detail
+  // sensor read actually has, kept far short of a painted albedo map.
+  for(let i=0;i<26;i++){
+    const a=rnd()*TAU,rr=Math.sqrt(rnd())*r;
+    g.fillStyle=rnd()<0.5?'rgba(255,255,255,.10)':'rgba(0,0,0,.14)';
+    g.fillRect(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,1,1);
+  }
+  g.restore();
+  // a thin rim highlight on the lit edge, opposite the dark limb the gradient already carries.
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r*0.985,Math.PI*1.08,Math.PI*1.72);},{width:1,alpha:0.55});
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r,0,TAU);},{width:1,alpha:0.85,glow:true});
   g.save();g.strokeStyle=TOKENS.white;g.lineWidth=1;g.globalAlpha=0.85;
   switch(family){
     case 'ocean':g.beginPath();g.moveTo(cx-r*0.62,cy+r*0.1);g.lineTo(cx+r*0.62,cy+r*0.1);g.stroke();break;
@@ -418,7 +471,7 @@ function paintWell(g,cx,cy,r,t){
   // a rotating tick at the mesh's centre marks a pulsar's presence — ties to the plaque's pulsar
   // map without redrawing it (research §7).
   vectorLine(g,(gg)=>{const a=t*TAU*0.4;gg.moveTo(cx,cy);gg.lineTo(cx+Math.cos(a)*10,cy+Math.sin(a)*10);},{width:1.4,color:TOKENS.amber});
-  vectorLine(g,(gg)=>{gg.arc(cx,cy,coreR,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3],alpha:0.9});
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,coreR,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3],alpha:0.9,glow:true});
   g.restore();
   g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';
   g.fillText('WELL',cx,cy+r+18);g.font=tfont(9);g.fillStyle=TOKENS.amber;g.fillText('CORE = FULL DISC',cx,cy+r+31);
@@ -432,7 +485,7 @@ function paintBeam(g,cx,cy,r,t){
   g.save();g.beginPath();g.moveTo(cx,cy);g.arc(cx,cy,r*1.5,a,a+wedge);g.closePath();
   const gr=g.createRadialGradient(cx,cy,0,cx,cy,r*1.5);gr.addColorStop(0,'rgba(255,176,0,.35)');gr.addColorStop(1,'rgba(255,176,0,0)');
   g.fillStyle=gr;g.fill();g.restore();
-  vectorLine(g,(gg)=>{gg.arc(cx,cy,r*0.6,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3]}); // core=.6r, HAZARD_KINDS.flare
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r*0.6,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3],glow:true}); // core=.6r, HAZARD_KINDS.flare
   vectorLine(g,(gg)=>{gg.arc(cx,cy,r,0,TAU);},{width:0.8,alpha:0.4});
   g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';g.fillText('BEAM',cx,cy+r+18);
   g.font=tfont(9);g.fillStyle=TOKENS.amber;g.fillText('CORE 0.6×R',cx,cy+r+31);g.textAlign='left';
@@ -483,7 +536,7 @@ function paintPlayerOrbit(g,cx,cy,rx,ry,tilt,t,seedN){
       const ty=cy+Math.cos(a)*rx*Math.sin(tilt)+Math.sin(a)*ry*Math.cos(tilt);
       a===ang-1.1?gg.moveTo(tx,ty):gg.lineTo(tx,ty);
     }
-  },{width:1.6,alpha:0.7});
+  },{width:1.6,alpha:0.7,glow:true});
   // the faint next-orbit aim guide — a dashed tangent, exactly item 6's "faint next-orbit aim guide."
   const headAng=ang+Math.PI/2;
   vectorLine(g,(gg)=>{gg.moveTo(px,py);gg.lineTo(px+Math.cos(headAng)*60,py+Math.sin(headAng)*60);},{width:0.9,alpha:0.35,dash:[2,4]});
@@ -612,9 +665,12 @@ function drawScene(t){
   paintPlayerOrbit(ctx,bodyCx,bodyCy,150,58,-0.12,t,55);
   paintDaughter(ctx,bodyCx,bodyCy-40,t,11);
 
-  // one constellation figure: THE ARGO, the plaque's own panel (brief item 5).
+  // one constellation figure: THE ARGO, the plaque's own panel (brief item 5) — parked clear of
+  // the specimen row above and the dangers beside it, its own quiet corner of the sheet.
   const nameReveal=paintReveal(ctx,t);
-  paintFigure(ctx,1100,300,nameReveal);
+  paintFigure(ctx,1118,472,nameReveal);
+
+  paintSignalKey(ctx,1118,615);
 
   // pickups, small and captioned (brief item 8).
   const py=700;
@@ -628,8 +684,6 @@ function drawScene(t){
   paintFrame(ctx,t);
   paintHUD(ctx,t);
 
-  if(!fontReady){ctx.font=tfont(10);ctx.fillStyle=TOKENS.amber;ctx.textAlign='right';ctx.fillText('(B612 Mono loading — monospace fallback shown)',W-40,H-84);ctx.textAlign='left';}
-
   if(showLegend){
     ctx.save();ctx.font='11px monospace';
     legendItems.forEach(it=>{
@@ -640,12 +694,22 @@ function drawScene(t){
   }
 }
 
-let start=performance.now();
+// The local face must actually be laid out before the first paint (a canvas measures/sets text
+// with whatever is ready at call time, no re-flow), so the loop waits on it rather than racing it —
+// the file is local and small, so this resolves in a frame or two, not a network round trip.
+let start=null;
 function frame(now){
+  if(start===null)start=now;
   drawScene((now-start)/1000);
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+function boot(){requestAnimationFrame(frame);}
+if(document.fonts&&document.fonts.load){
+  Promise.race([
+    document.fonts.load('700 34px "B612 Mono"').then(()=>document.fonts.load('12px "B612 Mono"')),
+    new Promise(res=>setTimeout(res,800))
+  ]).catch(()=>{}).then(boot);
+}else boot();
 </script>
 </body>
 </html>

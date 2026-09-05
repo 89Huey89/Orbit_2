@@ -53,10 +53,12 @@
 <head>
 <title>The Ceiling</title>
 <meta charset="utf-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap" rel="stylesheet">
 <style>
+  /* Noto Sans Egyptian Hieroglyphs, SIL OFL 1.1, © The Noto Project — local copy beside this
+     file (docs/eras/prototypes/fonts/), the same face Google Fonts serves; not fetched over
+     the network so the prototype renders identically offline and in a sandboxed headless
+     browser. Unicode "Egyptian Hieroglyphs" block, U+13000–U+1342F (research §4). */
+  @font-face{font-family:'Noto Sans Egyptian Hieroglyphs';src:url('fonts/noto-egyptian-hieroglyphs.ttf') format('truetype');font-display:block;}
   :root{--plaster:#e8dcc0;}
   html,body{margin:0;height:100%;background:#151009;overflow:hidden;}
   body{display:flex;align-items:center;justify-content:center;}
@@ -126,13 +128,18 @@ function fit(){const s=Math.min(innerWidth/W,innerHeight/H);cv.style.width=(W*s)
 addEventListener('resize',fit);fit();
 cv.width=W*DPR;cv.height=H*DPR;
 
-// ---- font readiness: hand-drawn fallback if Noto Sans Egyptian Hieroglyphs never lands. -
+// ---- font readiness: hand-drawn fallback (see FALLBACK below) if the local face never lands.
 let fontReady=false;
 (function(){
   const probe='40px "Noto Sans Egyptian Hieroglyphs"';
-  const timeout=new Promise(res=>setTimeout(res,1800));
-  const load=(document.fonts&&document.fonts.load)?document.fonts.load(probe,String.fromCodePoint(G.n)).catch(()=>{}):Promise.resolve();
-  Promise.race([load,timeout]).then(()=>{
+  const timeout=new Promise(res=>setTimeout(res,2000));
+  const ready=(async()=>{
+    try{
+      if(document.fonts&&document.fonts.load)await document.fonts.load(probe,String.fromCodePoint(G.n));
+      if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    }catch(e){}
+  })();
+  Promise.race([ready,timeout]).then(()=>{
     try{fontReady=!!(document.fonts&&document.fonts.check(probe));}catch(e){fontReady=false;}
     console.log('[ceiling] Noto Sans Egyptian Hieroglyphs ready:',fontReady);
     buildStatic();
@@ -157,7 +164,12 @@ function reedStroke(x1,y1,x2,y2,opt){
     ctx.lineWidth=w*(.55+taper*.6);
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   }
-  ctx.stroke();ctx.restore();
+  ctx.stroke();
+  // a reed brush pools a bead of ink where it first touches plaster — heavier than a burin's
+  // even incision, and only worth showing on strokes thick enough to read as brushwork rather
+  // than a hatch tick.
+  if(opt.pool!==false&&w>=2){ctx.globalAlpha=a*.85;ctx.fillStyle=col;ctx.beginPath();ctx.arc(x1,y1,w*.6,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
 }
 function reedArc(cx,cy,r,a0,a1,opt){
   opt=opt||{};const steps=Math.max(6,Math.round(Math.abs(a1-a0)*r/8));
@@ -591,7 +603,10 @@ function buildStatic(){
   paintFooter();
   ctx.restore();
   octx.clearRect(0,0,off.width,off.height);
-  octx.setTransform(DPR,0,0,DPR,0,0);octx.drawImage(cv,0,0,W,H,0,0,W,H);
+  // cv's backing store is W*DPR x H*DPR device pixels; the source rect below must say so —
+  // asking for a W x H source (logical units) silently grabbed only the top-left quarter of
+  // it at DPR=2, which is what the first render of this file actually shipped.
+  octx.drawImage(cv,0,0,cv.width,cv.height,0,0,off.width,off.height);
 }
 
 // ==== per-frame dynamic overlay: the comet's ambient orbit + the one live reveal ==========

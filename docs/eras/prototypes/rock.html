@@ -135,7 +135,11 @@ function reliefHeight(x,y){
 function reliefShade(x,y){
   const h=reliefHeight(x,y),hx=reliefHeight(x+3,y),hy=reliefHeight(x,y+3);
   const nx=h-hx,ny=h-hy;
-  return clamp(0.5+(nx*LIGHT.x+ny*LIGHT.y)*7+h*0.05,0,1);
+  // slope term reads as the raking edge of a boss/hollow; the h*0.22 term is the boss's own
+  // bulk catching (or missing) the torch even on its flatter faces — without it, relief only
+  // shows at edges and the wall's broad swells go flat, exactly the "radial gradient is not a
+  // material" failure the brief warns against.
+  return clamp(0.5+(nx*LIGHT.x+ny*LIGHT.y)*13+h*0.22,0,1);
 }
 
 // ================= STRUCK/PAINTED PRIMITIVES — the three attested techniques (research §4) =================
@@ -174,27 +178,33 @@ function draggedDab(g,x1,y1,x2,y2,width,seedN,color,alpha){
 // The cloud is built first, then the hand shape is punched back out to bare rock; a faint
 // residual fray is left right at the true edge, since no real stencil is razor-crisp.
 function handStencil(g,x,y,scale,seedN,color){
+  // Built on its own small transparent canvas first, then composited with source-over: erasing
+  // the hand shape straight on the destination (the baked sceneSprite) would punch through to
+  // whatever is behind the WHOLE canvas, not the rock beneath just this mark — a real stencil
+  // only ever reveals the wall it was blown against.
   const rnd=mulberry32(seedN>>>0||21);
-  g.save();g.translate(x,y);g.scale(scale,scale);
-  g.save();
-  for(let i=0;i<260;i++){
+  const size=Math.ceil(150*scale);
+  const tmp=document.createElement('canvas');tmp.width=size;tmp.height=size;
+  const tg=tmp.getContext('2d');
+  tg.translate(size/2,size/2);tg.scale(scale,scale);
+  for(let i=0;i<300;i++){
     const a=rnd()*TAU,d=Math.pow(rnd(),0.62);
-    const rr=6+d*42;
+    const rr=6+d*44;
     const px=Math.cos(a)*rr*1.25,py=Math.sin(a)*rr*1.55-4;
     // densest in a band just outside the hand's true edge, thinning further out — "fades up
     // from the outside in" (§4): strongest near the silhouette, faint at the cloud's limit.
-    const band=clamp(1-Math.abs(d-0.42)*2.1,0,1);
-    g.globalAlpha=band*(0.28+rnd()*0.3);
-    g.beginPath();g.arc(px,py,0.8+rnd()*1.7,0,TAU);g.fillStyle=color;g.fill();
+    const band=clamp(1-Math.abs(d-0.4)*2,0,1);
+    tg.globalAlpha=band*(0.4+rnd()*0.4);
+    tg.beginPath();tg.arc(px,py,0.9+rnd()*1.9,0,TAU);tg.fillStyle=color;tg.fill();
   }
-  g.restore();
-  g.save();g.globalCompositeOperation='destination-out';g.fillStyle=g.strokeStyle='#000';
-  drawHandMask(g);
-  g.restore();
-  g.save();g.globalAlpha=0.22;g.strokeStyle=color;g.lineWidth=1.1;
-  drawHandMaskStroke(g);
-  g.restore();
-  g.restore();
+  tg.globalAlpha=1;
+  tg.save();tg.globalCompositeOperation='destination-out';tg.fillStyle=tg.strokeStyle='#000';
+  drawHandMask(tg);
+  tg.restore();
+  tg.save();tg.globalAlpha=0.28;tg.strokeStyle=color;tg.lineWidth=1.1;
+  drawHandMaskStroke(tg);
+  tg.restore();
+  g.drawImage(tmp,x-size/2,y-size/2);
 }
 function drawHandMask(g){
   g.beginPath();g.ellipse(0,10,9,13,0.05,0,TAU);g.fill();
@@ -292,20 +302,32 @@ function dotField(g,cx,cy,radius,value,seedN,color){
 
 // ================= paintGround: relief-lit limestone, cracks, calcite veils (research §2/§3) =================
 function paintGround(g){
-  g.fillStyle=TOKENS.ground;g.fillRect(0,0,W,H);
+  g.fillStyle='#4d452f';g.fillRect(0,0,W,H); // a dark base so the relief bake reads as lit rock, not lit paper
   const step=4;
   for(let y=0;y<H;y+=step){
     for(let x=0;x<W;x+=step){
       const s=reliefShade(x,y);
-      g.fillStyle=s<0.5?mixHex('#5c5238',TOKENS.ground,s*2):mixHex(TOKENS.ground,TOKENS.groundHi,(s-0.5)*2);
+      g.fillStyle=s<0.5?mixHex('#332c1c',TOKENS.groundDeep,s*2):mixHex(TOKENS.ground,TOKENS.groundHi,(s-0.5)*2);
       g.fillRect(x,y,step+0.6,step+0.6);
     }
+  }
+  // a few broad, low-frequency bulges swept over the relief, the way real cave photography
+  // shows whole bosses of rock catching or missing the torch — the per-pixel octaves alone read
+  // as grain, not mass, without this.
+  for(let i=0;i<10;i++){
+    const rnd=mulberry32(9900+i*13);
+    const x=rnd()*W,y=rnd()*H,r=90+rnd()*220;
+    const grad=g.createRadialGradient(x-LIGHT.x*r*0.3,y-LIGHT.y*r*0.3,0,x,y,r);
+    const lit=rnd()<0.55;
+    grad.addColorStop(0,lit?'rgba(240,228,190,.16)':'rgba(20,16,10,.22)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=grad;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
   }
   // fine hand-worked grain: thousands of tiny irregular facets over the relief.
   for(let i=0;i<7000;i++){
     const x=rng()*W,y=rng()*H;
-    g.globalAlpha=0.03+rng()*0.05;
-    g.fillStyle=rng()<0.5?'#3a331f':TOKENS.groundHi;
+    g.globalAlpha=0.04+rng()*0.06;
+    g.fillStyle=rng()<0.5?'#241f13':TOKENS.groundHi;
     const r=0.6+rng()*1.6;
     g.beginPath();g.ellipse(x,y,r,r*(0.5+rng()*0.6),rng()*TAU,0,TAU);g.fill();
   }

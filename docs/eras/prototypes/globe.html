@@ -119,10 +119,22 @@ function punchDot(g,x,y,r,fill,rim,seed){
 // ---------- lettering: Amiri for Arabic (shaped by the browser), a plain serif gloss
 // beneath for transliteration. faceFor keeps every ctx.font in one place, the way the
 // shipped game's plateFace() does, so a later port only edits this function. ----------
-let amiriReady=false;
+let amiriReady=false,reemReady=false;
 function faceFor(size,script,weight){
+  if(script==='ku')return `${weight||''} ${size}px ${reemReady?"'Reem Kufi', ":''}${amiriReady?'Amiri, ':''}sans-serif`.trim();
   if(script==='ar')return `${weight||''} ${size}px ${amiriReady?'Amiri, ':''}"Noto Naskh Arabic", "Arial", sans-serif`.trim();
   return `${weight||'italic'} ${size}px Georgia, "Times New Roman", serif`;
+}
+// kufiText — Reem Kufi, the era's third, monumental/carved hand (research §4), used only
+// for the colophon's coin-like roundel: kufic is for "cartouches, coin-like roundels,
+// architectural bands," never for running captions. Falls back to Amiri (still correct
+// Arabic, just the wrong register) before ever falling back to the hand-drawn squiggle.
+function kufiText(g,text,x,y,size,opts={}){
+  if(reemReady||amiriReady||opts.forceType){
+    g.save();g.direction='rtl';g.textAlign=opts.align||'center';g.textBaseline='alphabetic';
+    g.font=faceFor(size,'ku',opts.weight);g.fillStyle=`rgba(${opts.rgb||'36,28,17'},${opts.alpha??1})`;
+    g.fillText(text,x,y);g.restore();
+  }else fakeNaskh(g,text,x,y,size,opts.rgb||'36,28,17',opts.alpha??1,opts.seed);
 }
 // fakeNaskh — the graceful fallback. If Amiri never loads, captions are not left to fall
 // back onto Times New Roman; instead a qalam sketches an abstract joined-run silhouette
@@ -391,8 +403,14 @@ function paintHUDDynamic(g,w,h,state){
 // dots (iʿjām) landing after the run — research §4's two-pass rhythm made literal ----------
 function paintReveal(g,text,tr,xRight,y,size,t){
   const run=clamp(t/.72,0,1),dotPhase=clamp((t-.72)/.28,0,1);
-  const w=text.length*size*.62;
-  g.save();g.beginPath();g.rect(xRight-w-4,y-size*1.4,w*run+8,size*1.9);g.clip();
+  // The clip box must match the glyphs actually drawn, not a guessed width — a naskh run's
+  // measured width and a per-character estimate disagree enough to clip real Amiri to
+  // nothing, so real text is measured via the canvas itself; the fallback keeps its own
+  // formula, since fakeNaskh's drawn width never matches font metrics either.
+  let w;
+  if(amiriReady){g.save();g.direction='rtl';g.font=faceFor(size,'ar','700');w=g.measureText(text).width;g.restore();}
+  else w=size*.58*clamp(Math.round(text.replace(/\s/g,'').length*.55),3,10);
+  g.save();g.beginPath();g.rect(xRight-w-6,y-size*1.4,w*run+10,size*1.9);g.clip();
   if(amiriReady){g.direction='rtl';g.textAlign='right';g.font=faceFor(size,'ar','700');g.fillStyle='rgba(36,28,17,1)';g.fillText(text,xRight,y);}
   else fakeNaskh(g,text,xRight,y,size,'36,28,17',1,909);
   g.restore();
@@ -484,10 +502,12 @@ function buildSheet(){
   });
   translitText(sctx,'sheet 1 · al-Jabbār',64,700,12,{align:'left',rgb:'60,48,30'});
   arabicText(sctx,NAMES.sheet+' ١ · '+NAMES.chapter+' ١',260,700,14,{align:'right',seed:22});
-  // colophon + brass vignette
-  paintVignetteGlobe(sctx,1180,742,26,900);
-  arabicText(sctx,'نسخة · '+NAMES.daily+' · ١',1206,752,13,{align:'right',seed:23});
-  legend(1180,742,"colophon · maker's-mark equivalent (brass-globe vignette)");
+  // colophon + brass vignette. The roundel's own word is set in kufic — the era's carved,
+  // coin-like register (research §4) — with the running colophon line beneath it in naskh.
+  paintVignetteGlobe(sctx,1180,748,22,900);
+  kufiText(sctx,'نسخة',1180,712,16,{align:'center'});
+  arabicText(sctx,NAMES.daily+' · ١',1218,784,12,{align:'right',seed:23});
+  legend(1180,748,"colophon · maker's-mark equivalent (brass-globe vignette)");
   legend(150,58,'title (ORBIT)');legend(640,58,'HUD: score');legend(1220,52,'HUD: personal best');
   legend(168,124,'HUD: ink/currency gauge');legend(260,700,'HUD: chapter/sheet label');
   layoutFigureAndLegend();
@@ -528,21 +548,27 @@ function boot(){
   layout();buildSheet();fitCanvas();
   requestAnimationFrame(drawFrame);
 }
-// Amiri load: measure a glyph before/after so a genuine failure is detectable, not assumed.
-const probe=document.createElement('canvas').getContext('2d');
-probe.font='40px sans-serif';const before=probe.measureText('فلك').width;
-let settled=false;
-function finish(loaded){if(settled)return;settled=true;amiriReady=loaded;boot();}
-if(document.fonts&&document.fonts.load){
-  Promise.race([
-    document.fonts.load('700 40px Amiri','فلك').then(()=>document.fonts.load('400 16px Amiri','بحر')),
-    new Promise(res=>setTimeout(res,1400))
-  ]).then(()=>{
-    probe.font='700 40px Amiri, sans-serif';const after=probe.measureText('فلك').width;
-    finish(document.fonts.check('700 40px Amiri')&&Math.abs(after-before)>0.01);
-  }).catch(()=>finish(false));
-  setTimeout(()=>finish(document.fonts.check('700 40px Amiri')),1600);
-}else finish(false);
+// The faces are now local files (fonts/amiri.ttf, fonts/reem-kufi.ttf) — no network race is
+// needed. document.fonts.ready is awaited so the very first paint already sets in the real
+// hand; document.fonts.check() afterward is the genuine pass/fail (font truly missing or
+// corrupt), not a network timeout guess, and only that failure reaches the qalam-squiggle.
+async function boot_fonts(){
+  let ok=true;
+  try{
+    if(document.fonts&&document.fonts.load){
+      await Promise.all([
+        document.fonts.load('700 40px Amiri','فلك'),
+        document.fonts.load('400 16px Amiri','بحر'),
+        document.fonts.load('400 20px "Reem Kufi"','نسخة')
+      ]);
+      await document.fonts.ready;
+    }
+  }catch(e){ok=false}
+  amiriReady=!!(document.fonts&&document.fonts.check('700 16px Amiri'));
+  reemReady=!!(document.fonts&&document.fonts.check('400 16px "Reem Kufi"'));
+  boot();
+}
+boot_fonts();
 </script>
 </body>
 </html>
