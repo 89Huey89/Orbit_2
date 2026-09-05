@@ -68,6 +68,15 @@ layers the engine already blits:
   world rotates beneath it.
 - **`weather`** — cloud decks, scrolled across the body and wrapped.
 
+## Dangers
+
+**The black hole belongs here.** The vortex commit on `main` did not delete it — it moved it to the
+century it belongs to and said so: *"The black hole is left unspent for a later, modern plate."* This
+is that plate. Lensing, a photon ring and an accretion disc, over the same hazard row VORAGO occupies
+on the engraving. **Coronal mass ejection** for the repulsor and **solar wind** for the crosswind.
+See [DANGERS.md](DANGERS.md) — under option A this is three drawing functions and three captions, and
+could be built now.
+
 ## Chapter plates
 
 1. A rendered gas giant close, its moon transiting and casting a shadow on the cloud deck.

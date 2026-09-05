@@ -51,19 +51,33 @@ simply where very good runs live?
 
 ---
 
-## 2. What earns an era?
+## 2. Do the dangers change per era, or only their depiction?
+
+Set out in full in [DANGERS.md](DANGERS.md). The short of it: `HAZARD_KINDS` sits inside the
+simulation slice, so this is the one axis where an era stops being cosmetic. Three shapes —
+**A** depiction only (free, safe, buildable today), **B** era-specific rules (richest, breaks the
+daily plate and comparable scores), **C** per-era rosters with the daily widened to name an era and
+the ledger kept per era (coherent, and the largest change in the plan).
+
+Worth noticing that the vortex PR already did both halves without separating them: replacing the
+black hole with VORAGO was A, and adding VENTUS was B. The first cost nothing; the second is a new
+rule every player has to learn, on every plate.
+
+## 3. What earns an era?
 
 Every existing plate is earned on a lifetime figure (1,000 captures, 100 runs, 25 grazes). An era
 ladder may instead want each era opened by the one before it — a shape of condition `UNLOCKS` has
 no example of today. Sequential unlocking makes the ladder read as a campaign; lifetime figures
 keep it consistent with everything already in the catalogue.
 
-## 3. One ledger, or one per era?
+## 4. One ledger, or one per era?
 
 Sharing is simpler and is what the catalogue does now. Per-era records would make each era feel
-like its own campaign, but needs `orbit.ledger.v1` bumped and migrated forward.
+like its own campaign, but needs `orbit.ledger.v1` bumped and migrated forward. Note that question 2
+can force this one: if the dangers differ by era then scores across eras are not comparable, and the
+records have to be kept apart whether or not that was wanted for its own sake.
 
-## 4. Does the frame change per era?
+## 5. Does the frame change per era?
 
 The engraved frame — wind-heads, compass rose, MAGNITUDINES key, RA/dec scale — is era III's.
 Era V wants a thin instrument margin, era I wants none at all. `plainPlate()` already proves that
@@ -71,7 +85,7 @@ omitting a whole class of drawing works. Unresolved because the observatory plat
 era III's frame and **reads better than expected doing so**: rendered bodies inside atlas
 furniture looks deliberate. That may be an accident worth keeping.
 
-## 5. Typefaces and reveal animations per era
+## 6. Typefaces and reveal animations per era
 
-Answered in [LETTERING.md](LETTERING.md), which finds that the reveal animations are cheap and
-already half-built, and the typefaces are the expensive half — not for the reason expected.
+Answered and largely closed in [LETTERING.md](LETTERING.md): the typefaces are done — every font in
+the game now goes through one plate token — and the reveal modes remain, cheap and unbuilt.

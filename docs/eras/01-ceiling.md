@@ -67,6 +67,13 @@ small figure painted inside the disc, exactly as a decan is identified in the ta
 3. A diagonal star table — the raw grid of decans against weeks, drawn as the coffin lids draw it.
 4. The Dendera circle, with its Egyptian decans and imported zodiacal signs together.
 
+## Dangers
+
+**Apep** for the attractor — the serpent of the underworld that swallows the sun, coiled flat in the
+register. **The Eye of Ra** for the repulsor, **Shu** for the crosswind. Egypt is the era with the
+least trouble here: its sky is *full* of named threats, which is more than can be said for its
+bodies. See [DANGERS.md](DANGERS.md).
+
 ## Risk
 
 The highest of any era. A flat, unmodelled, register-based sky is genuinely beautiful and

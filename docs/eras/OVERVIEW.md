@@ -55,17 +55,22 @@ The ladder extends outward from a middle that is already finished.
 
 An era that breaks any of these is a different game, not another plate.
 
-1. **The simulation never learns about it.** `simulation.js` stays DOM-free and era-free.
-   Every era is cosmetic, exactly as every plate is today. A run flown on the Ceiling and a run
-   flown on the Observatory are the same run.
+1. **The simulation never learns about it — as far as it can.** `simulation.js` stays DOM-free, and
+   an era is cosmetic exactly as every plate is today. This holds cleanly for grounds, bodies,
+   lettering, figures and frames. It does **not** survive contact with dangers: `HAZARD_KINDS` lives
+   inside the simulation slice, so an era that changes which dangers a chart carries changes the
+   chart itself. [DANGERS.md](DANGERS.md) sets out what that costs and the three ways round it; until
+   one is chosen, an era re-*depicts* and re-*names* the existing hazard rows and adds none.
 2. **Every era speaks in its own hand.** The Latin captions are not neutral — they are era
    III's voice. Egypt captions in hieroglyphs with a transliteration; the Globe in Arabic;
    the Plate in survey designations and plate numbers; the Observatory in catalogue numbers.
    An era that borrows another's lettering has not been built yet.
-3. **Every era keeps the same seven families.** Ocean, crater, ringed, ice, dune, volcanic,
-   storm are the vocabulary of the game's bodies. An era changes how they are *depicted* — a
-   painted disc, a gilt roundel, an engraved specimen, a photographic blur, a lit sphere — and
-   never what they are. The player must read the chart the same way on any sheet.
+3. **Every era keeps the same seven families, and the same hazard rows.** Ocean, crater, ringed,
+   ice, dune, volcanic, storm are the vocabulary of the game's bodies; the attractor, the repulsor
+   and the crosswind are the vocabulary of its dangers. An era changes how they are *depicted* — a
+   painted disc, a gilt roundel, an engraved specimen, a photographic blur, a lit sphere; a serpent,
+   a dragon, a whirlpool, a dead patch of emulsion, a black hole — and never what they are. The
+   player must read the chart the same way on any sheet.
 4. **No dependencies, no external resources.** The build fails if the bundled page references
    anything over the network. Every era's fonts are embedded and its art is generated.
 

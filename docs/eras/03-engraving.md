@@ -25,6 +25,15 @@ all three already cut.
   terminator and crater rims on The Quiet's moon, Saturn as a disc with two handles on The Drift,
   sunspot groups on The Eclipse, and Jupiter's Medicean stars as `O * * *` on The Deep.
 
+## Dangers
+
+Era III's dangers landed on `main` after this ladder was first written down, and they are the model
+for every other era's: **VORAGO**, the whirlpool in the aether the old charts engrave at the edge of
+the world and Descartes' own account of what the heavens are made of; **MACULA**, Galileo's sunspot;
+and **VENTUS**, the cheek-blown wind-head — which the frame had already been carrying in its four
+corners for a long time before it was given a rule. That is the standard to hold the others to:
+**find the thing the era already draws, and give it a rule.** See [DANGERS.md](DANGERS.md).
+
 ## What it already owns
 
 Everything registered as `night` or `paper` in the thirteen `definePlate` sections, plus the six

@@ -72,6 +72,12 @@ takes a concentric gold band; the storm world takes an interlace.
 3. An astrolabe's rete — the pierced star map itself, its pointers naming the bright stars.
 4. The Samarkand observatory's great sextant arc, cut into the hillside.
 
+## Dangers
+
+**al-Ghūl / the tinnīn** for the attractor — the dragon of the lunar nodes, *ra's al-jawzahar*, whose
+head and tail devour sun and moon at eclipse, and whose name survives in the star Algol. The burning
+of **al-Shams** for the repulsor and **al-Rīḥ** for the crosswind. See [DANGERS.md](DANGERS.md).
+
 ## Risk
 
 Moderate. Arabic shaping is real work and should be spiked early. Everything else — flat colour,

@@ -76,6 +76,13 @@ this plate** — that is era V.
 3. A Carte du Ciel plate with its réseau grid over the whole field and its margin annotations.
 4. A plate half-spoiled: a tracking error trailing every star, and the observer's ink note about it.
 
+## Dangers
+
+The era where the danger is the plate's own failure rather than anything in the sky: an **emulsion
+void** where the silver lifted off the glass for the attractor, **halation** blooming off an
+overexposed star for the repulsor, and **tracking drift** smearing a field one way for the crosswind.
+See [DANGERS.md](DANGERS.md).
+
 ## Risk
 
 Lowest of any unbuilt era. It is a duotone, a grid, a blur and a set of annotations, all over

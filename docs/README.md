@@ -16,6 +16,7 @@ docs/
     ├── ARCHITECTURE.md       what an era costs in this codebase, and where the seams already are
     ├── OPEN-QUESTIONS.md     what is undecided — read this before building anything
     ├── LETTERING.md          typefaces and reveal animations per era, and the font budget
+    ├── DANGERS.md            hazards per era, and the one place an era stops being cosmetic
     ├── 01-ceiling.md         Egypt, c. 1479 BCE — the tomb ceiling
     ├── 02-globe.md           Islamic Golden Age, 964 CE — al-Ṣūfī's fixed stars
     ├── 03-engraving.md       Europe, 1600–1801 — the era the game is already set in

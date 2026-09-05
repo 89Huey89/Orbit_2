@@ -42,7 +42,13 @@ them from `night` — they answer `onPaper() === false` and every existing fork 
 then replace the boolean with a style id, once there is real evidence of what the third and
 fourth answers actually want to be.
 
-### 2. Everything is an engraving
+### 2. `HAZARD_KINDS` is inside the simulation
+
+The one place the "an era is cosmetic" rule does not hold. Depicting the hazard rows differently per
+era is free and render-side; *changing* the rows is a gameplay change with consequences for the daily
+plate, comparable scores and the ledger. [DANGERS.md](DANGERS.md).
+
+### 3. Everything is an engraving
 
 Every stroke goes through `burinArc` / `burinSegment` / `burinRect` (`src/marks.js`), which
 deliberately swell, taper, wobble and skip. There are about 80 call sites. This is a chokepoint,
@@ -65,6 +71,7 @@ line at all in places. All three are one function each.
 | Four chapter plates | `celestial.js` | **the dominant cost — the existing four are ~170 dense lines each** |
 | Typeface | `assets/fonts.css` + a `FACES` row + `npm run glyphs` | an hour, if an OFL face exists |
 | Figure hand | `figures.js`, one object the four primitives consult | 1 day |
+| Hazard depictions | `figures.js`, `drawHazard()` already branches on kind | half a day |
 | README prose | root `README.md`, in the game's own voice | not to be underestimated |
 
 **Roughly the size of the paper plate.** Linear, incremental, never a rewrite.
