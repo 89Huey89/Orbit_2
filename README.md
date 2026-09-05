@@ -2,6 +2,17 @@
 
 The playable game is a single file. Run `npm run build` to produce **dist/index.html**, which contains the complete game, artwork, sound, and styles, with the seventeenth-century Fell typefaces embedded in `dist/assets/fonts.css` beside it. That built page needs no installation, server, or network access to play, and it is what GitHub Pages serves. During development, open `src/index.html` directly or run `npm start` and visit the printed address: the template loads the same code as separate module scripts, so no build is needed between edits.
 
+## Gameplay overview
+
+- **The loop:** capture a node, orbit it, then release along your current tangent to glide into the next one — tap/click or press Space/Enter, the entire input. A pricked preview line shows your predicted path and marks the release point for a perfect transfer.
+- **The goal:** climb as many rows as you can before the rising darkness catches you. Perfect transfers, skipped orbits, and completed three-star constellation routes all score points; slingshot stars add speed and refill your ink.
+- **The resource:** every flight spends ink from a nib that recharges while you orbit; run it dry mid-flight and the run ends.
+- **The chapters:** the ascent runs through four illustrated chapters — The Quiet, The Drift, The Eclipse, The Deep — each with its own backdrop plate, escalating hazards (black holes, sunspot flares, nebulae), and a 12-figure constellation catalogue to draw from.
+- **The pressures:** every run opens on a choice of three difficulty worlds — Tiro, Adeptus, Magister — and a daily plate deals the same seeded chart to everyone each day.
+- **The record:** a persistent ledger unlocks cosmetic plates, trail inks, capture marks, frame ornaments, and named-feat medals — all kept in the browser's local storage, no account or install required.
+
+What follows is the full mechanical reference — every rule and number below is deliberate and load-bearing.
+
 Tap or click to begin. While circling a node, tap to release along your current tangent. The next node captures you automatically. Space or Enter performs the same action. Tap after a loss to restart.
 
 The pricked line of small wedges shows your predicted trajectory. Pale ticks on your orbit mark clear tangent release points: skim the next orbit's rim so your incoming flight continues smoothly into the new orbit. A perfect preview includes a short curve showing the arrival direction. Near black holes, the guide bends and a bright mark appears at the current release point when the curved flight gives a perfect landing. The wider faint arc remains a forgiving capture window, and on Tiro it is drawn 30% wider still, since missing a body outright is a harsher loss than only missing the perfect band inside it. Stay ahead of the rising dark and give black-hole centers room. Blue orbit rims mark drifting nodes; copper orbit rims mark nodes that fade 4.5 seconds after capture. Small gold nodes offer a harder bonus route.
@@ -125,6 +136,42 @@ The other five categories are the same idea one level down. Observer marks are a
 The catalogue itself is a ruled library page in Fell type, opened with the book icon in the footer from the title and end screens and closed by its own button or Escape. It opens on two tabs, **Record** and **Catalogue**, both always drawn onto the leaf with only the inactive one out of sight, so switching between them never redraws either. `Record` prints the ledger's figures as it always has — orbits captured, perfect transfers, constellations traced, highest row, runs, and time in the chart — and beside them everything else the ledger keeps that otherwise surfaces nowhere in the game on its own: best flow, the deepest chapter reached at any pressure and at Magister's, black holes grazed, Scutum and Repulsa charges spent, slingshot stars left at top speed, inkwells filled on a reckless streak, and arrivals too steep to score, followed by the daily streak, current and longest, read off the ephemeris's own log. Under that, one table gives the best score and the runs played at each of the three pressures and under the daily plate; a second lists all eight named feats by their Latin caption against how many times each has fired in all; a third lists all twelve catalogue figures against how many times each has been traced, an untraced one printing a plain nought rather than dropping from the list. `Catalogue` holds what the leaf has always held: one ruled section per category listing every item with its Latin caption. An earned item is a button that selects it; an unearned one is a blank rule with its condition and progress set greyed beside it. A three-letter initials field appears once the engraver's credit is earned. The page scrolls inside its own leaf on a phone, holds the gameplay input while it is open, and is printed on whichever plate is on the press. When a run's write earns something new, the colophon prints an engraved line, `NEW IN THE CATALOGUE · <name>`, under two short tones; nothing else interrupts play.
 
 ## Source
+
+```
+.
+├── src/                      classic scripts sharing one global scope, in <script> load order
+│   ├── index.html            template + script tags; open directly (or `npm start`) to develop
+│   ├── simulation.js         OrbitWorld: seeded generation, fixed-step movement, swept collisions,
+│   │                         scoring, difficulty — DOM-free (see below)
+│   ├── audio.js              synthesizes the Web Audio sounds
+│   ├── plates.js             render globals, storage, night/paper colour tokens, derived plates
+│   ├── ledger.js             the persistent ledger, catalogue of unlockables, chosen cosmetics
+│   ├── backdrop.js           paints the two sheets
+│   ├── planets.js            builds the procedural specimens (planets)
+│   ├── celestial.js          draws the chapter plates and ambient events
+│   ├── marks.js              bakes the burin rings, the route lines, lettering set along a curve
+│   ├── glyphs.js             generated — the extracted Fell outlines (see scripts/glyphs.mjs)
+│   ├── reveal.js             the living pen: reveal state, the nib, masks each mark draws through
+│   ├── figures.js            constellation figures, nodes, lenses, hazards, the aim guide
+│   ├── inscriptions.js       writes what the run has to say onto the chart
+│   ├── effects.js            paints the rising darkness, the comet, and its trail
+│   ├── frame.js              builds the plate frame and composes each frame
+│   ├── ephemeris.js          rules the daily-plate almanac leaf, deals a past plate again
+│   └── ui.js                 screens, viewport, the single input, bootstrap
+├── scripts/                  Node-only tooling, no runtime dependencies
+│   ├── bundle.mjs            shared bundler: inlines the src/ modules into one <script>,
+│   │                         used identically by build.mjs and verify.mjs
+│   ├── build.mjs             `npm run build` — validates and writes dist/index.html + dist/assets/
+│   ├── serve.mjs             `npm start` — dev server for src/ (and dist/ after a build)
+│   ├── glyphs.mjs            `npm run glyphs` — regenerates src/glyphs.js (needs fontkit)
+│   └── verify.mjs            `npm test` — the full test suite, deterministic, no browser
+├── assets/
+│   └── fonts.css             embedded IM Fell typefaces (SIL Open Font License)
+├── .github/workflows/
+│   └── deploy-pages.yml      CI: npm test && npm run build, then deploy dist/ to GitHub Pages
+├── .openai/hosting.json      static-hosting config for an external preview/deploy integration
+└── package.json               scripts, plus the one dev dependency (fontkit, for npm run glyphs)
+```
 
 The source lives in `src/` as classic scripts that share one global scope, listed in load order in `src/index.html`. `simulation.js` holds the independent `OrbitWorld` class: seeded generation, fixed-step movement, swept collisions, scoring, and difficulty. `audio.js` synthesizes the Web Audio sounds. `plates.js` owns the render globals, storage, and the night and paper colour tokens along with the derived plates built from them; `ledger.js` holds the persistent ledger, the catalogue of unlockables and the chosen cosmetics; `backdrop.js` paints the two sheets; `planets.js` builds the procedural specimens; `celestial.js` draws the chapter plates and ambient events; `marks.js` bakes the burin rings, the route lines and the lettering set along a curve; `glyphs.js` holds the extracted Fell outlines and `reveal.js` the living pen: reveal state, the nib, and the masks each kind of mark is drawn through; `figures.js` draws constellation figures, nodes, lenses, hazards, and the aim guide; `inscriptions.js` writes what the run has to say onto the chart; `effects.js` paints the rising darkness, the comet, and its trail; `frame.js` builds the plate frame and composes each frame; `ephemeris.js` rules the almanac leaf of the daily plates and deals a past one again; `ui.js` handles the screens, viewport, and the single input. `scripts/bundle.mjs` inlines the modules into one script for both the build and the tests.
 
