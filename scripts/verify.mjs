@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import {bundle} from './bundle.mjs';
 const {html,script}=await bundle();
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
-const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM};',sandbox);
-const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM}=sandbox.api;
+const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN};',sandbox);
+const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
 const step=1/120;
 
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
@@ -341,6 +341,26 @@ const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=pa
   for(let i=0;i<120*10&&last.state==='playing'&&!last.player.node;i++)last.update(step);
   assert.equal(last.player.node,target,'A transfer that arrives on the last drop stands');
   assert.equal(last.state,'playing');
+}
+// A skipped orbit is flown past at the same distance-based cost as a landing, so it now pays half the
+// dividend a landing on it would have, rather than the flight paying full price for dividends it
+// never stopped to collect.
+{
+  const captures=[];
+  const w=new OrbitWorld(11,440,860,(type,e)=>{if(type==='capture')captures.push(e);});w.start();
+  const origin=w.player.node,target=w.makeNode(origin.x+origin.r+25,origin.y-600,54,4,'still');
+  w.nodes=[origin,target];w.lastMain=target;w.player.angle=0;w.player.dir=-1;w.positionPlayer();
+  const aim=w.aim();assert.equal(aim?.n,target);assert.equal(aim.steep,false,'the fixture must actually score');
+  w.release();
+  let flown=0;
+  for(let i=0;i<120*10&&w.state==='playing'&&!w.player.node;i++){
+    const x=w.player.x,y=w.player.y;w.update(step);flown+=Math.hypot(w.player.x-x,w.player.y-y);
+  }
+  assert.equal(w.player.node,target,'the long transfer lands');
+  assert.equal(captures.length,1);assert.equal(captures[0].skipped,3,'three main orbits lie between them');
+  const dividend=(captures[0].perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN)*(1+3*.5);
+  assert(Math.abs(w.player.ink-Math.min(1,1-w.inkCost(flown)+dividend))<1e-6,
+    'each of the three skipped orbits pays half the landing dividend on top of the one landed');
 }
 // Holding a ring re-charges the nib; a slingshot star fills it over its lap; a landing pays back more
 // for a tangent arrival than for a hard turn. Dwelling is how ink is bought, and time is what it costs.

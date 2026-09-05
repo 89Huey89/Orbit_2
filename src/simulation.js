@@ -506,9 +506,12 @@ class OrbitWorld {
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
+    const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0;
     // A landing pays the nib back. A clean tangent arrival pays better than a hard turn; a steep one
-    // pays nothing, exactly what it cost to get there.
-    p.ink=Math.min(1,p.ink+(steep?0:perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN));p.dryAnnounced=false;
+    // pays nothing, exactly what it cost to get there. A skipped orbit was flown past at the same
+    // distance-based cost as if it had been landed on, so each one still pays half that dividend,
+    // rather than the flight paying full price for a landing it never stopped to take.
+    p.ink=Math.min(1,p.ink+(steep?0:(perfect?INK_PERFECT_GAIN:INK_CAPTURE_GAIN)*(1+skipped*.5)));p.dryAnnounced=false;
     if(n.difficultyChoice){
       this.nodes=this.nodes.filter(q=>q===n||!q.difficultyChoice);
       this.difficultyPending=false;this.lastMain=n;
@@ -518,7 +521,7 @@ class OrbitWorld {
       this.emit('difficulty',{value:n.difficultyChoice});
     }
     this.positionPlayer();
-    const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0,skipBonus=steep?0:Math.round(skipped*10*scoreMultiplier);
+    const skipBonus=steep?0:Math.round(skipped*10*scoreMultiplier);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     // An inkwell only pays out on a streak already standing when the traveller reaches it — the streak
     // this landing itself extends or breaks is read below, after it is folded in.
