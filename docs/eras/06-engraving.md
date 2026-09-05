@@ -1,10 +1,10 @@
-# III · The Engraving
+# VI · The Engraving
 
 **Europe, 1600–1801.** The era the game is already set in, written down so the ladder has a
-middle and so the other four know what they are departing from.
+reference point and so the other eight know what they are departing from.
 
 **This era is finished. Nothing in this file is outstanding work.** It is here as the reference
-point: when era II asks "what does a figure hand cost?", the answer is Hevelius, Bayer and Bode,
+point: when era V asks "what does a figure hand cost?", the answer is Hevelius, Bayer and Bode,
 all three already cut.
 
 ## The documents the game already quotes
@@ -25,9 +25,21 @@ all three already cut.
   terminator and crater rims on The Quiet's moon, Saturn as a disc with two handles on The Drift,
   sunspot groups on The Eclipse, and Jupiter's Medicean stars as `O * * *` on The Deep.
 
+## Its place on the nine-era ladder
+
+The sixth of nine, and, at the provisional score gate in DECISIONS.md §1, the median run's home:
+most runs cross into it (at 260) and never reach VII. It keeps the render-side chapter machinery
+built for it and nowhere else — the four shipped chapter plates go on cycling by row exactly as
+today, where every other era shows one signature sheet. Its row in the `ECONOMY` table
+(DECISIONS.md §2) is the shipped currency, named **ink**, under a currency name that render already
+reads: `INK_CAPTURE_GAIN`=0.05, `INK_PERFECT_GAIN`=0.12, `INK_ORBIT_GAIN`=0.13,
+`INK_SLING_GAIN`=0.85, spent via `inkCost(distance)=distance/INK_REACH·inkMult` — untouched by the
+ladder, the number every other era's currency is measured against. No twist: this era carries no
+`ECONOMY` rule column entry, being the rule every other era's twist departs from or returns to.
+
 ## Dangers
 
-Era III's dangers landed on `main` after this ladder was first written down, and they are the model
+Era VI's dangers landed on `main` after this ladder was first written down, and they are the model
 for every other era's: **VORAGO**, the whirlpool in the aether the old charts engrave at the edge of
 the world and Descartes' own account of what the heavens are made of; **MACULA**, Galileo's sunspot;
 and **VENTUS**, the cheek-blown wind-head — which the frame had already been carrying in its four
