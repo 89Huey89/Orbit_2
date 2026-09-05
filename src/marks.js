@@ -147,8 +147,18 @@ function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
 // The small seeded vocabulary the plate letters round its orbits.
 const RIM_CAPTIONS=['ORBITA','TABULA','MOTUS','SILENTIUM','ASCENSUS','VIGILIA'];
 const ringSprites=new Map();
+// The ring the sprite is actually cut at. A held orbit's radius changes on every frame, so bucketing it
+// to the nearest half pixel meant re-cutting the sprite — a fresh canvas and ninety-odd burin segments —
+// two or three times a second for the planet the player is holding, and evicting the other planets'
+// rings from the cache while it did. The ladder below steps by about two per cent of the radius
+// instead, and the blit is scaled to the exact radius asked for, so a whole orbit is served by a
+// handful of sprites and the line lands where it always did.
+function ringRadiusStep(radius){
+  const r=Math.max(1,radius);
+  return Math.max(.5,Math.round(Math.exp(Math.round(Math.log(r)*48)/48)*1000)/1000);
+}
 function engravedRing(radius,rgb,alpha,weight,seed){
-  const rBucket=Math.round(radius*2)/2,aBucket=Math.round(alpha/.05)*.05;
+  const rBucket=ringRadiusStep(radius),aBucket=Math.round(alpha/.05)*.05;
   const key=rBucket+'|'+rgb+'|'+aBucket.toFixed(2)+'|'+weight+'|'+plateName+'|'+scale.toFixed(3)+'|'+seed;
   const cached=ringSprites.get(key);if(cached)return cached;
   const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
@@ -163,7 +173,7 @@ function engravedRing(radius,rgb,alpha,weight,seed){
   // A fainter second pass a hairline off the true circle, where the hand went round twice.
   const hairGaps=2+((seed>>>5)&1),hairR=rBucket+((seed&1)?.9:-.9),slot=TAU/hairGaps,startOffset=((seed>>>7)%997)/997*TAU;
   for(let k=0;k<hairGaps;k++)burinArc(g,0,0,hairR,startOffset+k*slot,startOffset+k*slot+slot*.7,rgb,Number((aBucket*.4).toFixed(3)),Math.max(.25,weight*.35),seed+k*37,{skips:0,wobble:.12});
-  const sprite={canvas:c,size};
+  const sprite={canvas:c,size,radius:rBucket};
   ringSprites.set(key,sprite);
   if(ringSprites.size>64)ringSprites.delete(ringSprites.keys().next().value);
   return sprite;

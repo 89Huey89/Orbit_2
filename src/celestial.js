@@ -3,7 +3,11 @@
    Chapter plates, ambient events, chapter reveal, region atmosphere. */
 // The grain overlay pattern is only as fresh as the grain canvas it wraps (rebuilt on resize —
 // see plates.js), so it is memoized here instead of re-wrapped every frame.
-let grainPattern=null,grainPatternSource=null;
+let grainPattern=null,grainPatternSource=null,grainSheetCanvas=null,grainSheetKey='',grainSheetSource=null;
+// The grain used to be laid as a repeating pattern across the whole sheet every frame: a full screen of
+// wrapped, filtered texture lookups, which is the most expensive way a canvas can paint a flat field.
+// It is tiled once into a sheet the size of the plate instead — exactly as the laid paper already is —
+// and that sheet is then blitted one device pixel to one device pixel. Same grain, a straight copy.
 // ---------- Chapter plates: `distantGlobe` (a reusable engraved world) and `celestialPlate` (the four
 // cached full-bleed illustrations), plus their placement and blit. Night keeps every original literal
 // untouched; paper redraws the same compositions with hairline hatching, stipple and dilute washes —
@@ -348,7 +352,13 @@ function drawCelestialScene(index,weight){
   const plate=celestialPlate(index),place=celestialPlacement(index);
   // On paper the plate sits back as a distant engraving beneath the gameplay marks, so it is blitted
   // at a reduced alpha; night is unaffected.
-  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;ctx.drawImage(plate,place.x,place.y,plate.width*place.fit,plate.height*place.fit);ctx.restore();
+  // The plate is laid larger than the sheet so it fills it at any aspect; on a phone that is half a
+  // screen of engraving blended in beyond both margins every frame. Only the part on the sheet is
+  // blitted, with a little overhang so the resampler still has neighbours to read at the edges.
+  const dw=plate.width*place.fit,dh=plate.height*place.fit;
+  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;
+  blitVisible(plate,place.x,place.y,dw,dh,Math.max(2,Math.ceil(place.fit*2)));
+  ctx.restore();
   drawPlateCaptions(index,weight,place);
 }
 // The plate's caption block — its Latin title, the table numeral, the figure line and, on two of the plates,
@@ -403,16 +413,23 @@ function drawChannelVeil(){
   const key=W+':'+DPR+':'+plateName;
   let veil=channelVeils.get(key);
   if(!veil){
-    veil=ctx.createLinearGradient(cx-edge,0,cx+edge,0);const stop=CHANNEL_FEATHER/(edge*2);
     const ground=ink.base.paperRgb;
-    veil.addColorStop(0,`rgba(${ground},0)`);
-    veil.addColorStop(stop,`rgba(${ground},${alpha})`);
-    veil.addColorStop(1-stop,`rgba(${ground},${alpha})`);
-    veil.addColorStop(1,`rgba(${ground},0)`);
+    // The wash is flat across the channel and only graded over the two feathers, so it is laid as the
+    // three bands it actually is: one plain fill down the middle, where a gradient was being evaluated
+    // per pixel for a colour that never changes, and a short gradient either side of it.
+    const left=ctx.createLinearGradient(cx-edge,0,cx-half,0);
+    left.addColorStop(0,`rgba(${ground},0)`);left.addColorStop(1,`rgba(${ground},${alpha})`);
+    const right=ctx.createLinearGradient(cx+half,0,cx+edge,0);
+    right.addColorStop(0,`rgba(${ground},${alpha})`);right.addColorStop(1,`rgba(${ground},0)`);
+    veil={left,right,flat:`rgba(${ground},${alpha})`};
     channelVeils.set(key,veil);
     if(channelVeils.size>8)channelVeils.delete(channelVeils.keys().next().value);
   }
-  ctx.save();ctx.fillStyle=veil;ctx.fillRect(Math.max(0,cx-edge),0,Math.min(W,edge*2),H);ctx.restore();
+  ctx.save();
+  ctx.fillStyle=veil.left;ctx.fillRect(Math.max(0,cx-edge),0,Math.max(0,Math.min(cx-half,W)-Math.max(0,cx-edge)),H);
+  ctx.fillStyle=veil.flat;ctx.fillRect(Math.max(0,cx-half),0,Math.max(0,Math.min(cx+half,W)-Math.max(0,cx-half)),H);
+  ctx.fillStyle=veil.right;ctx.fillRect(Math.max(0,cx+half),0,Math.max(0,Math.min(cx+edge,W)-Math.max(0,cx+half)),H);
+  ctx.restore();
 }
 function ambientPoint(e,progress){
   if(e.kind==='comet')return {x:lerp(e.x,e.endX,progress)*W,y:lerp(e.y,e.endY,progress)*H};
@@ -638,6 +655,22 @@ function regionPlate(index,near){
   }
   regionPlates.set(key,c);return c;
 }
+// One copy of a wrapped, scrolling backdrop tile, blitted with only the slice of it that lands on the
+// sheet. The two copies a wrap needs stand 1.7-1.9 screens tall each, so drawing them whole asked the
+// canvas to blend better than six screens of texture per plate that were never going to be seen; the
+// source rectangle here costs exactly the screen the plate actually covers. A couple of destination
+// pixels of overhang either side keep the resampler's edge clamping off the visible seam, so the
+// sliced blit is the same picture as the whole one.
+function blitVisible(image,dx,dy,dw,dh,overhang){
+  if(!(dw>0&&dh>0)||!image||!(image.width>0)||!(image.height>0))return;
+  const x0=Math.max(-overhang,dx),x1=Math.min(W+overhang,dx+dw);
+  const y0=Math.max(-overhang,dy),y1=Math.min(H+overhang,dy+dh);
+  if(!(x1>x0)||!(y1>y0))return;
+  const kx=image.width/dw,ky=image.height/dh;
+  const sx0=(x0-dx)*kx,sy0=(y0-dy)*ky,sw=(x1-x0)*kx,sh=(y1-y0)*ky;
+  if(!(sw>0)||!(sh>0))return;
+  ctx.drawImage(image,sx0,sy0,sw,sh,x0,y0,x1-x0,y1-y0);
+}
 function drawRegion(index,weight){
   if(weight<.001)return;
   const region=atlasRegions[index],rc=regionInk(region),time=reducedMotion?0:world.time,paper=onPaper();
@@ -647,8 +680,9 @@ function drawRegion(index,weight){
     const plate=regionPlate(index,near),height=H*(near?1.7:1.9);
     const travel=reducedMotion?0:world.cameraY*scale*(near?.17:.055)+time*(near?1.1:.35);
     const offset=((travel%height)+height)%height;
+    const overhang=Math.max(2,Math.ceil(height/plate.height)*2);
     ctx.globalAlpha=weight*(paper?(near?.17:.27):(near?.4:.62));
-    ctx.drawImage(plate,0,-offset,W,height);ctx.drawImage(plate,0,height-offset,W,height);
+    blitVisible(plate,0,-offset,W,height,overhang);blitVisible(plate,0,height-offset,W,height,overhang);
   }
   ctx.restore();
 }
@@ -677,6 +711,19 @@ function drawSheetEdge(y,strength){
   ctx.save();ctx.globalAlpha=strength;ctx.strokeStyle=colors.markEdge;ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(inset+.5,H);ctx.lineTo(inset+.5,y+inset+.5);ctx.lineTo(W-inset-.5,y+inset+.5);ctx.lineTo(W-inset-.5,H);ctx.stroke();
   ctx.restore();
+}
+function grainSheet(){
+  if(!grain||!W||!H)return null;
+  const key=W+'x'+H+':'+DPR;
+  if(grainSheetCanvas&&grainSheetKey===key&&grainSheetSource===grain)return grainSheetCanvas;
+  const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');
+  if(!g||!g.createPattern)return null;
+  // Painted through the same DPR transform the pattern fill used, so the tile lands at the same size
+  // and phase it always did.
+  g.setTransform(DPR,0,0,DPR,0,0);
+  const pattern=g.createPattern(grain,'repeat');if(!pattern)return null;
+  g.fillStyle=pattern;g.fillRect(0,0,W,H);
+  grainSheetCanvas=c;grainSheetKey=key;grainSheetSource=grain;return c;
 }
 function drawAtmosphere(dt=0,aim=null){
   ctx.drawImage(backdrop,0,0,W,H);
@@ -724,6 +771,9 @@ function drawAtmosphere(dt=0,aim=null){
   }
   // grain itself is only rebuilt on resize (see resize()); the pattern built from it is just as
   // reusable, so it is memoized against the same canvas instead of re-wrapped every frame.
-  if(grainPatternSource!==grain){grainPattern=ctx.createPattern(grain,'repeat');grainPatternSource=grain;}
-  ctx.save();ctx.globalAlpha=.32;ctx.fillStyle=grainPattern;ctx.fillRect(0,0,W,H);ctx.restore();
+  const sheet=grainSheet();
+  ctx.save();ctx.globalAlpha=.32;
+  if(sheet)ctx.drawImage(sheet,0,0,W,H);
+  else{if(grainPatternSource!==grain){grainPattern=ctx.createPattern(grain,'repeat');grainPatternSource=grain;}ctx.fillStyle=grainPattern;ctx.fillRect(0,0,W,H);}
+  ctx.restore();
 }
