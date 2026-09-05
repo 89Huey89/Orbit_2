@@ -62,10 +62,9 @@ any single artefact does.
   proposes an eastern-passage engraving as the earliest known map of the Moon's maria, and others
   read its spirals as calendrical — both **minority positions**, not consensus.
 
-**Göbekli Tepe** (Şanlıurfa, Turkey, monumental construction from c. 9600 BCE) and **Nabta
-Playa's Calendar Circle** (Nubian Desert, Egypt, erected c. 4800 BCE) recur in the leads too, and
-are treated in §6, §7 and §12 rather than listed above, since their sky-reading claims are the
-most contested material in the whole brief.
+(Göbekli Tepe, Şanlıurfa, from c. 9600 BCE, and Nabta Playa's Calendar Circle, Egypt, c. 4800 BCE,
+recur in the leads too, and are treated in §6/§7/§12 instead — their sky-reading claims are the
+most contested material in the whole brief.)
 
 ## 2. The grammar
 
