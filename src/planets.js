@@ -279,9 +279,17 @@ function planetWeather(family,core,seed){
 // the atlas) for Adeptus, and a volcanic world for Magister, so the choice reads at a glance before
 // its caption is even legible.
 const DIFFICULTY_FAMILY = {relaxed:'ocean', classic:'ringed', hardcore:'volcanic'};
+const planetFamilyFor=(type,row,runSeed,difficultyChoice)=>
+  type==='gold'?'gold':type==='shield'?'shield':type==='reflector'?'reflector':type==='inkwell'?'inkwell':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed);
+const glyphKey=(seed,type,row,runSeed,difficultyChoice)=>seed+':'+type+':'+planetFamilyFor(type,row,runSeed,difficultyChoice);
+// Cutting one planet costs three or four offscreen sheets and something like a thousand marks laid on
+// them, so a planet that arrives without warning is a stutter, and two arriving together are a worse
+// one. Two things keep that off the frame: a planet still on the sheet is never the one evicted (the
+// cache is kept in the order it was last read, not the order it was cut), and one planet still to come
+// is cut per frame, well before the pen reaches it — see prewarmGlyph().
 function glyph(seed,type,row,runSeed,difficultyChoice){
-  const family=type==='gold'?'gold':type==='shield'?'shield':type==='reflector'?'reflector':type==='inkwell'?'inkwell':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed),key=seed+':'+type+':'+family;
-  if(glyphs.has(key))return glyphs.get(key);
+  const family=planetFamilyFor(type,row,runSeed,difficultyChoice),key=glyphKey(seed,type,row,runSeed,difficultyChoice);
+  if(glyphs.has(key)){const held=glyphs.get(key);glyphs.delete(key);glyphs.set(key,held);return held;}
   const paper=onPaper();
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
@@ -343,10 +351,29 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   if(glyphs.size>=24)glyphs.delete(glyphs.keys().next().value);
   glyphs.set(key,art);return art;
 }
+// One planet that has not been cut yet, taken a frame at a time from those the chart is about to
+// carry, so the work lands on a frame that has room for it rather than on the frame that needs it.
+function prewarmGlyph(){
+  if(!world||!W||!H)return;
+  const top=world.cameraY-460,bottom=world.cameraY+world.height+120;
+  for(const n of world.nodes){
+    if(n.y<top||n.y>bottom)continue;
+    if(glyphs.has(glyphKey(n.seed,n.type,n.row,world.seed,n.difficultyChoice)))continue;
+    glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice);return;
+  }
+}
 function drawPlanet(art,r,time){
   const t=reducedMotion?0:time,angle=art.tilt+t*art.spin;
   ctx.save();ctx.scale(r/60,r/60);ctx.drawImage(art.back,-72,-72,144,144);
-  ctx.save();ctx.beginPath();ctx.arc(0,0,art.core,0,TAU);ctx.clip();ctx.rotate(angle);
+  // The disc is only clipped when something is laid over it that could run past its edge: the weather
+  // scrolls across the body, and the embers are stroked over the fissures on an unclipped layer. The
+  // surface itself was already cut to the disc when it was engraved, and turning a circle leaves it a
+  // circle, so a planet with neither of those needs no clip at all — and a clip is one of the dearest
+  // things a canvas can be asked for, paid once per planet per frame.
+  const spills=!!(art.weather||art.embers);
+  ctx.save();
+  if(spills){ctx.beginPath();ctx.arc(0,0,art.core,0,TAU);ctx.clip();}
+  ctx.rotate(angle);
   ctx.drawImage(art.surface,-40,-40,80,80);
   if(art.embers){
     ctx.save();ctx.globalAlpha*=.18+.32*(.5+.5*Math.sin(t*.65+art.phase));ctx.drawImage(art.embers,-40,-40,80,80);ctx.restore();

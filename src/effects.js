@@ -88,11 +88,22 @@ function trailInk(){
 // ever climbs — and a hard cap holds the rest whatever happens. Reduced motion keeps it, since a line
 // already on the page is not motion; a paused run adds nothing to it because nothing is sampled.
 const INK_PATH_CAP=3000;
+// The wet trail is sampled on the run's own clock rather than once per frame drawn. Sampled per frame,
+// a 120 Hz screen laid down twice as many segments over the same second of flight as a 60 Hz one and
+// then stroked every one of them four or five times over — the same line, at twice the cost, on
+// exactly the phones that refresh fastest. A sixtieth of a second between samples gives both screens
+// the same line, and the cap is the longest any of it stays wet, so no dead sample is walked at all.
+const TRAIL_STEP=1/60,TRAIL_LIFE=1.25;
+let trailSampledAt=-1;
 function recordTrail(){
   if(world.state!=='playing'&&world.state!=='ready')return;
   const p=world.player;
-  trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
-  const limit=reducedMotion?64:148;if(trail.length>limit)trail.splice(0,trail.length-limit);
+  if(trailSampledAt<0||world.time<trailSampledAt||world.time-trailSampledAt>=TRAIL_STEP){
+    trailSampledAt=world.time;
+    trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
+    const limit=reducedMotion?32:Math.ceil(TRAIL_LIFE/TRAIL_STEP);
+    if(trail.length>limit)trail.splice(0,trail.length-limit);
+  }
   const last=inkPath[inkPath.length-1];
   if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
   pruneInkPath();

@@ -118,7 +118,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trail=[];inkPath=[];particles=[];rings=[];floaters=[];surveys=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trail=[];trailSampledAt=-1;inkPath=[];particles=[];rings=[];floaters=[];surveys=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
@@ -333,9 +333,15 @@ function updateUI(dt){
   inked('reflector',world.player.reflectorArmed?POWERUP_LABELS.reflector+' ARMED':'');
   // The nib's reservoir. The rule drains with the ink in hand and takes the copper of a warning
   // once what is left will not carry an ordinary transfer.
-  const level=world.inkLevel(),gauge=$('ink'),held=(level*100).toFixed(1);
+  // The reservoir is a CSS gradient on a DOM element laid over the chart. Assigning one makes the
+  // browser re-parse the gradient, recalculate that element's style and repaint its layer — and this
+  // was assigned on every single frame, with a figure that changed on every single frame, for a rule
+  // that had moved a fraction of a pixel. The mark is read to a quarter of a per cent and written only
+  // when it actually moves, so the gauge repaints when it has something to show and not otherwise.
+  const level=world.inkLevel(),gauge=$('ink'),held=(Math.round(level*400)/4).toFixed(2);
   const wet=level<=.34?'var(--copper)':'var(--gold)';
-  gauge.style.background='linear-gradient(to right,'+wet+' 0 '+held+'%,var(--line) '+held+'% 100%)';
+  const paint='linear-gradient(to right,'+wet+' 0 '+held+'%,var(--line) '+held+'% 100%)';
+  if(paint!==inkGaugePaint){inkGaugePaint=paint;gauge.style.background=paint;}
   gauge.classList.toggle('dry',level<=.12);
   const chapter=Math.min(3,Math.floor(world.progress/8));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
@@ -382,7 +388,7 @@ function handleInput(){
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing')world.release();
   else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
-  else if(world.state==='paused'){world.state='playing';accumulator=0;frameTime=performance.now();$('pause').classList.add('hidden');}
+  else if(world.state==='paused'){world.state='playing';accumulator=0;renderDue=0;paceIntervals.length=0;frameTime=performance.now();$('pause').classList.add('hidden');}
 }
 game.addEventListener('pointerdown',e=>{
   if(e.target.closest('button')||!e.isPrimary||e.button!==0)return;
@@ -405,7 +411,7 @@ document.addEventListener('visibilitychange',()=>{
     // unlocked for the colophon to name when the run does end.
     for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
     if(audio.ctx)audio.ctx.suspend().catch(()=>{});
-  }else frameTime=performance.now();
+  }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
 });
 window.addEventListener('blur',pause);
 $('sound').addEventListener('click',()=>{audio.toggle();storage.set('orbit.sound.v1',audio.enabled?'on':'off');syncSound();if(audio.enabled)audio.tone(440,.25,0,.2);});
@@ -452,8 +458,41 @@ $('fullscreen').addEventListener('click',()=>{
 if(!game.requestFullscreen&&!game.webkitRequestFullscreen)$('fullscreen').style.visibility='hidden';
 document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('aria-label',document.fullscreenElement?'Exit fullscreen':'Enter fullscreen');resize();});
 if('ResizeObserver'in window)new ResizeObserver(resize).observe(game);else window.addEventListener('resize',resize);
+// ---------- Presenting: painting the sheet only as often as it can actually be laid down ----------
+// A phone with a 120 Hz screen asks for a frame every eight milliseconds. This chart is a wide,
+// heavily blended engraving, and on a screen that fast the press cannot always pull a sheet in the
+// time it is given — so frames arrive late and unevenly, which is exactly what a stutter is. The
+// cadence the screen is actually achieving is measured over a short window; if the screen is a fast
+// one and the press is plainly missing it, the sheet is pulled every other frame instead, which lands
+// on a steady sixty rather than a ragged eighty. The flight is stepped on its own fixed clock either
+// way, so nothing about the simulation, the input timing or the run changes — only how often the page
+// is painted, and the elapsed time is handed to the renderer whole so every animation still runs at
+// its own speed. It probes back up at widening intervals, so a screen the press can keep up with is
+// never held down for long, and on an ordinary sixty-hertz screen it never engages at all.
+const PACE_WINDOW=48,PACE_FAST_PANEL=11.5,PACE_MISS=1.5;
+const paceIntervals=[];
+let presentEvery=1,presentIn=1,renderDue=0,paceProbeIn=0,paceProbeWait=5;
+function pacePresent(dt,raw){
+  if(presentEvery>1){
+    paceProbeIn-=dt;
+    if(paceProbeIn<=0){presentEvery=1;presentIn=1;paceIntervals.length=0;}
+    return;
+  }
+  // A frame that took longer than a tenth of a second was not slow drawing: it was a tab waking up,
+  // a plate being rebuilt, or the phone attending to something else. Those say nothing about cadence.
+  if(!(raw>0)||raw>100)return;
+  paceIntervals.push(raw);
+  if(paceIntervals.length<PACE_WINDOW)return;
+  const sorted=paceIntervals.slice().sort((a,b)=>a-b);
+  const native=sorted[Math.floor(sorted.length*.1)],achieved=sorted[sorted.length>>1];
+  paceIntervals.length=0;
+  if(native<PACE_FAST_PANEL&&achieved>native*PACE_MISS){
+    presentEvery=2;presentIn=1;paceProbeIn=paceProbeWait;paceProbeWait=Math.min(30,paceProbeWait*2);
+  }
+}
 function tick(now){
-  const dt=frameTime?Math.min((now-frameTime)/1000,.05):0;frameTime=now;
+  const raw=frameTime?now-frameTime:0;
+  const dt=frameTime?Math.min(raw/1000,.05):0;frameTime=now;
   if(!document.hidden){
     accumulator+=dt;
     while(accumulator>=FLIGHT_STEP){
@@ -461,7 +500,9 @@ function tick(now){
     }
     recordTrail();
     audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
-    render(dt);
+    pacePresent(dt,raw);
+    renderDue+=dt;
+    if(--presentIn<=0){presentIn=presentEvery;render(renderDue);renderDue=0;}
   }
   requestAnimationFrame(tick);
 }

@@ -10,7 +10,7 @@ definePlate('frame',{
   night:{markEdge:'rgba(155,174,171,.14)',mark:'rgba(198,187,155,.08)',rule:'rgba(198,187,155,.4)',ruleFaint:'rgba(155,174,171,.22)',tick:'rgba(198,187,155,.32)',tickMinor:'rgba(155,174,171,.16)',text:'rgba(198,187,155,.42)',orn:'rgba(198,187,155,.26)'},
   paper:{markEdge:'rgba(96,74,52,.18)',mark:'rgba(58,42,28,.1)',rule:'rgba(58,42,28,.52)',ruleFaint:'rgba(96,74,52,.3)',tick:'rgba(58,42,28,.42)',tickMinor:'rgba(96,74,52,.24)',text:'rgba(58,42,28,.48)',orn:'rgba(58,42,28,.36)'}
 });
-let frameLayer=null,frameKey='';
+let frameLayer=null,frameKey='',frameInset=Infinity;
 function frameWide(){return W>780;}
 function frameBand(){return frameWide()?26:14;}
 function frameEdgeTicks(len){const unitPx=frameWide()?7:5,n=Math.max(20,Math.round(len/unitPx));return {n,step:len/n};}
@@ -276,10 +276,69 @@ function buildFrameLayer(){
   }
   return c;
 }
+// How far into the sheet the frame layer actually carries ink. The layer is cut at the size of the
+// whole plate, but nearly all of it is bare: the double rule, the graduated scales and the corner
+// ornaments all live in the margin, and only a wide sheet's flank marginalia — the rose, the scale
+// bar, the key to the magnitudes — reach further in. Laying the whole layer down meant blending a
+// screenful of empty sheet over the finished chart on every frame. It is measured once, when the
+// layer is cut, from a thumbnail of it, and a sheet whose ink runs too deep to be worth banding
+// simply reports back that the whole layer should be laid as before.
+// The thumbnail is reduced by halves. A single big downscale samples too sparsely to see a hairline
+// rule or eight-point lettering at all, and a probe that cannot see a mark would band the layer so
+// tightly that the mark is cut off the sheet; halving averages every source pixel into the one below
+// it, so nothing on the layer can go unnoticed. Anything but a wholly transparent block counts.
+const FRAME_PROBE=700;
+function frameLayerInset(layer){
+  if(!layer||!(layer.width>0)||!(layer.height>0))return Infinity;
+  try{
+    let source=layer,w=layer.width,h=layer.height;
+    while(w>FRAME_PROBE&&w>4&&h>4){
+      const nw=Math.max(2,Math.ceil(w/2)),nh=Math.max(2,Math.ceil(h/2));
+      const half=makeCanvas(nw,nh),hg=half.getContext('2d');
+      if(!hg||typeof hg.drawImage!=='function')return Infinity;
+      hg.drawImage(source,0,0,w,h,0,0,nw,nh);
+      source=half;w=nw;h=nh;
+    }
+    const g=source.getContext?source.getContext('2d'):null;
+    if(!g||typeof g.getImageData!=='function')return Infinity;
+    const data=g.getImageData(0,0,w,h);
+    if(!data||!data.data||data.data.length<w*h*4)return Infinity;
+    const d=data.data;
+    let deepest=0;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      if(d[(y*w+x)*4+3]===0)continue;
+      const depth=Math.min(Math.min(x+1,w-x)/w*W,Math.min(y+1,h-y)/h*H);
+      if(depth>deepest)deepest=depth;
+    }
+    if(!(deepest>0))return Infinity;
+    // Two whole probe cells of margin either way, and a multiple of four CSS pixels so the band edges
+    // land on whole device pixels at any of the ratios the plate is drawn at.
+    const margin=Math.max(W/w,H/h)*2+4;
+    return Math.ceil((deepest+margin)/4)*4;
+  }catch(_){return Infinity;}
+}
+// The frame layer laid down as the four bands that carry it, rather than as a screenful of mostly
+// empty sheet. The bands never overlap, so nothing is blended twice, and each is a whole-device-pixel
+// copy of the layer, so the picture is the one the full blit drew.
+function blitFrameLayer(layer){
+  const d=frameInset;
+  // The layer is painted through the same device-pixel scale the plate is, so a CSS coordinate maps to
+  // a layer pixel by exactly that ratio: the bands are cut on it and laid back at one to one, no
+  // resampling and so no seam. A layer that is not the plate's own size, or a sheet whose ink runs
+  // deeper than half of it, is laid whole as before.
+  if(!(d>0)||!(d*2<Math.min(W,H))||layer.width!==Math.max(1,Math.ceil(W*DPR))||layer.height!==Math.max(1,Math.ceil(H*DPR))){
+    ctx.drawImage(layer,0,0,W,H);return;
+  }
+  const k=DPR,mid=H-d*2,sd=d*k,sw=layer.width,sh=layer.height;
+  ctx.drawImage(layer,0,0,sw,sd,0,0,W,d);
+  ctx.drawImage(layer,0,Math.max(0,sh-sd),sw,Math.min(sd,sh),0,H-d,W,d);
+  ctx.drawImage(layer,0,sd,sd,mid*k,0,d,d,mid);
+  ctx.drawImage(layer,Math.max(0,sw-sd),sd,Math.min(sd,sw),mid*k,W-d,d,d,mid);
+}
 function drawPlateFrame(){
   if(!W||!H)return;
   const key=W+'x'+H+'x'+DPR+':'+plateName;
-  if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;}
+  if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
   const framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
   // ascending with the player; everything else in the frame stays perfectly still.
@@ -344,7 +403,7 @@ function drawRunningHead(){
   ctx.restore();
 }
 function render(dt){
-  reveal.prime();
+  reveal.prime();prewarmGlyph();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);

@@ -33,7 +33,7 @@ function footerBand(){return Math.min(H*.42,(H<=530&&W>H?58:70)+safeAreaBottom()
 // held back inside it and left fuller in the margins either side, so the moving parts read first.
 function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
 let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,lastScore=-1;
-let lastChapter=-1,recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
+let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
@@ -302,8 +302,8 @@ definePlate('base',{
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
-  if(world)for(const n of world.nodes){n._glowKey=null;}
-  grain=grainTexture();laidTile=null;laidSheet=null;if(W&&H)backdrop=paintBackdrop();
+  glowSprites.clear();regionInkCache.clear();
+  grain=grainTexture();laidTile=null;laidSheet=null;grainSheetCanvas=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
 }
 function syncPlate(){

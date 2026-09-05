@@ -610,6 +610,28 @@ function captionOffset(x,y,r,gap){
   if(nearBand&&y+below>band.top&&y+below<band.bottom+12)below=band.bottom+12-y;
   return below;
 }
+// The halo behind a planet. It used to be a radial gradient built per node and rasterised over a box
+// four planet-diameters across, every frame — and, because the held orbit's radius changes constantly,
+// the gradient behind the active planet was rebuilt on every single frame as well. The falloff does
+// not depend on the radius, only on the plate and whether the orbit is held, so it is baked once into
+// a small sprite and blitted at whatever size the planet needs: the same halo, as a plain copy rather
+// than a screenful of gradient evaluation.
+const glowSprites=new Map();
+function nodeGlow(rgb,active,paper){
+  const key=plateName+'|'+(active?1:0)+'|'+(paper?'-':rgb);
+  const cached=glowSprites.get(key);if(cached!==undefined)return cached;
+  const size=192,c=makeCanvas(size,size),g=c&&c.getContext?c.getContext('2d'):null;
+  if(!g||!g.createRadialGradient){glowSprites.set(key,null);return null;}
+  g.setTransform(size/2,0,0,size/2,size/2,size/2);
+  // Ink does not glow: the night gradient is a coloured light bloom, the paper one a pale halo of raised, worn paper.
+  const glow=g.createRadialGradient(0,0,.2/2.1,0,0,1);
+  if(paper){glow.addColorStop(0,`rgba(${ink.base.paperRgb},${active?.55:.2})`);glow.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);}
+  else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
+  g.fillStyle=glow;g.fillRect(-1,-1,2,2);
+  glowSprites.set(key,c);
+  if(glowSprites.size>24)glowSprites.delete(glowSprites.keys().next().value);
+  return c;
+}
 function drawNode(n,aim){
   const p=world.player,active=p.node===n,used=n.visited&&!active,target=aim&&aim.n.id===n.id;
   const x=sx(n.x),y=sy(n.y),r=(active?p.rad:n.r)*scale;
@@ -626,15 +648,15 @@ function drawNode(n,aim){
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
-  const paper=onPaper(),glowKey=r.toFixed(2)+':'+active+':'+paper;
-  if(n._glowKey!==glowKey){
+  const paper=onPaper();
+  const halo=nodeGlow(rgb,active,paper);
+  if(halo)ctx.drawImage(halo,-r*2.1,-r*2.1,r*4.2,r*4.2);
+  else{
     const glow=ctx.createRadialGradient(0,0,r*.2,0,0,r*2.1);
-    // Ink does not glow: the night gradient is a coloured light bloom, the paper one a pale halo of raised, worn paper.
     if(paper){glow.addColorStop(0,`rgba(${ink.base.paperRgb},${active?.55:.2})`);glow.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);}
     else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
-    n._glow=glow;n._glowKey=glowKey;
+    ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   }
-  ctx.fillStyle=n._glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed);
   if(sling&&pen.survey>0){
     const charge=active?world.charge():0,band=r*.73;
@@ -660,7 +682,11 @@ function drawNode(n,aim){
     }
   }
   const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
-  {const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed);ctx.drawImage(ring.canvas,-ring.size/2,-ring.size/2,ring.size,ring.size);}
+  {
+    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed);
+    const fit=ring.size*(ring.radius>0?r/ring.radius:1);
+    ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
+  }
   ctx.lineWidth=.45;ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
   ctx.strokeStyle=`rgba(${rgb},${target?.36:.11})`;ctx.setLineDash([1*scale,5*scale]);ctx.beginPath();ctx.arc(0,0,n.cap*scale,0,TAU);ctx.stroke();ctx.setLineDash([]);
   ctx.lineWidth=.5;ctx.strokeStyle=paper?`rgba(${ink.base.ink},.4)`:`rgba(${rgb},.16)`;ctx.beginPath();

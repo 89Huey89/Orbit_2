@@ -328,14 +328,14 @@ function penPerimeterPoint(t){
 }
 function revealFrame(layer){
   const t=reveal.progress('frame',reveal.runs>0?.5:1.4,true);
-  if(t>=1){ctx.drawImage(layer,0,0,W,H);return 1;}
+  if(t>=1){blitFrameLayer(layer);return 1;}
   const colors=ink.frame,band=frameBand(),wide=frameWide(),outer=band*.56,inner=band*.92;
   penDashRect(outer+.5,outer+.5,Math.max(1,W-outer*2-1),Math.max(1,H-outer*2-1),colors.rule,wide?1.4:1,revealSpan(t,0,.5));
   penDashRect(inner+.5,inner+.5,Math.max(1,W-inner*2-1),Math.max(1,H-inner*2-1),colors.ruleFaint,wide?1:.7,revealSpan(t,.12,.6));
   const sweep=revealSpan(t,.25,.85);
   if(sweep>0){ctx.save();framePerimeterClip(sweep,band*1.5);ctx.drawImage(layer,0,0,W,H);ctx.restore();}
   const settle=revealSpan(t,.72,1);
-  if(settle>0){ctx.save();ctx.globalAlpha=settle;ctx.drawImage(layer,0,0,W,H);ctx.restore();}
+  if(settle>0){ctx.save();ctx.globalAlpha=settle;blitFrameLayer(layer);ctx.restore();}
   if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8);}
   return t;
 }
