@@ -802,6 +802,34 @@ function manicule(x,y,dir,size,rgb,alpha){
   ctx.beginPath();ctx.moveTo(-.1,.1);ctx.lineTo(.16,.13);ctx.moveTo(-.14,.3);ctx.lineTo(.1,.32);ctx.stroke();
   ctx.restore();
 }
+// A run lost off the side of the chart is not a burst but a spill: the hand jittered as the nib left the
+// sheet, so ink pools where it left rather than exploding outward. `r.dir` (+1 right, -1 left) biases the
+// flung droplets and the jittery flicked strokes toward the side the flight was headed, in the pen's own
+// registered ink, drying from wet to dry exactly as the release blot does. Reduced motion keeps only the
+// pool itself, at its full size at once, and drops the flicks and droplets as the decorative filaments
+// they are.
+function drawInkSplat(r,t){
+  const rng=seeded(r.seed),grow=reducedMotion?1:clamp(t*7,.3,1);
+  const dry=clamp((t-.12)/.88,0,1),alpha=r.alpha*clamp(1-t*t,0,1);
+  const pen=trailInk(),rgb=mixRgb(pen.blotWet,pen.blotDry,dry),base=r.dir>=0?0:Math.PI;
+  ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
+  if(!reducedMotion){
+    for(let i=0;i<5;i++){
+      const a=base+(rng()-.5)*2.6,len=(16+rng()*34)*grow;
+      burinSegment(ctx,0,0,Math.cos(a)*len,Math.sin(a)*len,rgb,alpha*.5,.5+rng()*.6,r.seed+i*31+1,{segments:5,wobble:1.5,hair:false});
+    }
+    for(let i=0;i<7;i++){
+      const a=base+(rng()-.5)*2.6,d=(8+rng()*32)*grow,size=(1.4+rng()*3.6)*grow;
+      landContour(ctx,Math.cos(a)*d,Math.sin(a)*d,size,size*.8,seeded(r.seed+i*17+3));
+      ctx.fillStyle=`rgba(${rgb},${alpha*.68})`;ctx.fill();
+    }
+  }
+  const size=r.size*grow;
+  landContour(ctx,0,0,size,size*.86,seeded(r.seed));
+  ctx.fillStyle=`rgba(${rgb},${alpha*.85})`;ctx.fill();
+  ctx.strokeStyle=`rgba(${rgb},${alpha*.55})`;ctx.lineWidth=.5;ctx.stroke();
+  ctx.restore();
+}
 function drawEffects(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];if(world.state!=='paused'){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.5);p.vy*=Math.exp(-dt*1.5);}
@@ -813,6 +841,7 @@ function drawEffects(dt){
     const r=rings[i];if(world.state!=='paused')r.age+=dt;if(r.age>r.life){rings.splice(i,1);continue;}
     const t=r.age/r.life;
     if(r.kind==='capture'){drawTransferMark(r,t);continue;}
+    if(r.kind==='splat'){drawInkSplat(r,t);continue;}
     if(r.kind==='blot'){
       // A bead of ink pools at the release point, then dries lighter as it soaks in.
       const grow=reducedMotion?1:clamp(t*6,.25,1),dry=clamp((t-.15)/.85,0,1),alpha=r.alpha*clamp(1-t*t,0,1);
