@@ -5,6 +5,11 @@ authoritative gameplay/design spec — it documents every rule and number in the
 game, in the game's own atlas-engraving prose. Read it for *what the game
 does*; this file is the map for working on *the code*.
 
+`docs/` holds work that has not been built yet — currently `docs/eras/`, the
+long-term plan to extend the plate system into a progression through the history
+of the star atlas. Read it before adding a plate; nothing in it describes shipped
+behaviour.
+
 ## Commands
 
 - `npm start` — dev server (prints the URL); or just open `src/index.html`
