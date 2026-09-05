@@ -123,26 +123,23 @@ rock from it; and **engraved tallies**, cut into bone, antler or ivory with a fl
 pressure or sitting rather than any fixed base.
 
 **How this drives the reveal.** `writeText()` and `penLettering()` both assume a script with a
-stroke order. This era has none to give them, so retire both for chart content and replace them
-with three primitives keyed to the techniques above: a **dab** (opacity ramps in on contact, no
-clip, no direction — for the marks that carry numbers, see §9), a **stencil bloom** (a soft-edged
-silhouette fades up from the outside in, as blown pigment settles), and a **burin tally** (one
-short stroke per unit, left to right in the order counted, no ligature between strokes — the one
-place a real "stroke order" survives, since each notch was genuinely cut after the last). None of
-these needs a glyph outline from `glyphs.js` or `fontkit` run against a new face.
+stroke order this era has none of, so retire both for chart content and replace them with three
+primitives: a **dab** (opacity ramps in on contact, no clip, no direction — for numbers, see §9),
+a **stencil bloom** (a soft-edged silhouette fades up from the outside in), and a **burin tally**
+(one short stroke per unit, left to right, no ligature — the one place a real "stroke order"
+survives, since each notch was genuinely cut after the last). None needs a glyph outline from
+`glyphs.js` or `fontkit` run against a new face.
 
 **Numerals.** None, in the sense every later era has them — no positional system, no zero; only
 one-to-one correspondence, one notch per unit observed (§9 for the HUD).
 
-**Fonts: what to embed, and what not to.** Nothing needs embedding for the chart itself — the
-whole point. `IM Fell English`/`IM Fell English SC` stay for any meta-chrome outside the
-in-fiction chart, if any survives (§9); no new OFL face is required. One check the brief asked
-for: **do not use any of the commercial "petroglyph"/"primitive" novelty typefaces that exist**
-(P22's Petroglyphs picture font, ParaType's PT Petroglyph, a tail of "primitive"-tagged display
-faces on font marketplaces) — not OFL, and, more to the point, exactly the fantasy-rune move this
-document rules out: a font implies a fixed, repeatable sign-to-sound alphabet this era never had.
-A fourth reveal primitive, if one is ever needed, should come from an attested motif (§5), not a
-typeface catalogue.
+**Fonts.** Nothing needs embedding for the chart itself — the whole point. `IM Fell English`/`IM
+Fell English SC` stay for any meta-chrome outside the in-fiction chart, if any survives (§9); no
+new OFL face is required. One check the brief asked for: **do not use any commercial
+"petroglyph"/"primitive" novelty typefaces** (P22's Petroglyphs, ParaType's PT Petroglyph, a tail
+of "primitive"-tagged display faces) — not OFL, and, more to the point, exactly the fantasy-rune
+move this document rules out: a font implies a fixed sign-to-sound alphabet this era never had. A
+fourth reveal primitive, if ever needed, should come from an attested motif (§5), not a typeface.
 
 ## 5. Names for the game's things
 
@@ -152,8 +149,8 @@ fabrication `OVERVIEW.md` rules out. What the record hands over instead is **mar
 recurring often enough, in period, to count as attested vocabulary in the only sense this era has
 one. The table below swaps "the era's own word" for "the era's own mark," and "transliteration"
 for how that mark was physically made. Where a motif's *shape* fits but its *meaning* is invented
-for this purpose (true of nearly every row — the actual meaning of a cup mark
-or a spiral is not recovered), that is called out plainly rather than implied.
+for this purpose (true of nearly every row — the actual meaning of a cup mark or a spiral is not
+recovered), that is called out plainly rather than implied.
 
 | Game term | The era's own mark | How it is made | Gloss / fit | Attested / constructed |
 |---|---|---|---|---|
