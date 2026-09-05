@@ -9,11 +9,11 @@ one's), owns the replication rule in depth — section 6 here names the currency
 The brief's thesis, stated plainly because it is the reason this era is worth building at all:
 **the ladder's two ends rhyme.** Era 0, the Rock, is marks struck into stone because striking
 stone was the only durable writing available. Era 8, the Probe, is a species that has invented
-radio, lasers, and machine memory — and when it needed a message that would survive a billion
-years in vacuum and radiation, it *still* chose a metal plate and a burin-line drawing, because
-nothing else lasts. The Pioneer plaque and the Voyager record cover are, technically, engravings.
-The ladder does not have to invent this rhyme; it only has to notice that the record already
-contains it, and that is what sections 1–4 below verify.
+radio, lasers, and machine memory — and when it needed a message to survive a billion years in
+vacuum and radiation, it *still* chose a metal plate and a burin-line drawing, because nothing
+else lasts. The Pioneer plaque and the Voyager record cover are, technically, engravings. The
+ladder does not have to invent this rhyme; it only has to notice the record already contains it,
+which is what §§1–4 below verify.
 
 ## 1. The documents
 
