@@ -83,8 +83,11 @@ function event(type,e){
   }else if(type==='death'){
     audio.death();
     if(e.reason==='LEFT THE STAR CHART'){
-      // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than bursting.
-      rings.push({kind:'splat',x:e.x,y:e.y,dir:e.x>=0?1:-1,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
+      // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than
+      // bursting. The kill boundary sits 16 units past the visible edge, so the splat is pulled back
+      // to just inside it — on the edge the player actually left by, not out past where it is unseen.
+      const dir=e.x>=0?1:-1,edgeX=dir*Math.max(0,world.width/2-50);
+      rings.push({kind:'splat',x:edgeX,y:e.y,dir,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
     }else{
       burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
       rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});
