@@ -50,10 +50,12 @@
     .action-copy{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
     .instruction{font-family:'IM Fell English',Georgia,serif;color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
     .footer{position:absolute;bottom:max(17px,calc(env(safe-area-inset-bottom) + 7px));left:max(15px,env(safe-area-inset-left));right:max(15px,env(safe-area-inset-right));z-index:6;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-    .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;cursor:pointer;opacity:.6;transition:opacity .2s;display:grid;place-items:center}
-    .utility:hover,.utility:focus-visible{opacity:1}
+    .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;color:var(--muted);cursor:pointer;transition:color .2s;display:grid;place-items:center}
+    .utility:hover,.utility:focus-visible{color:var(--gold)}
     .utility:focus-visible{outline:1px solid var(--gold);outline-offset:-4px;border-radius:50%}
-    .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+    /* Keylined light-on-dark like the pen's own nib, rather than a flat button chip: a doubled soft-edge
+       shadow of the sheet's own ground (--veil) so the ink reads over whatever the plate draws behind it. */
+    .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1.5px rgba(var(--veil),1)) drop-shadow(0 0 1.5px rgba(var(--veil),1))}
     .utility .mute-mark{display:none}
     .utility.muted .mute-mark{display:block}
     .utility.muted .sound-wave{display:none}
