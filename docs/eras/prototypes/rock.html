@@ -14,9 +14,10 @@
   wall is a value-noise height field of six octaves; every pixel of the ground is shaded from that
   field's own gradient against the direction of the flame, so bulges take the light warm on the
   flank that faces the torch and go cold-dark on the flank that turns away, hollows fill with
-  shadow, and calcite runs pick up a wet sheen. That is baked once. Per frame only the flame's
-  breath moves: a warm blob and a closing vignette, both jittered, re-composited over the baked
-  wall — the noise is never repainted.
+  shadow, and calcite runs pick up a wet sheen. Rock, flame and sheen are baked into three separate
+  sheets and multiplied together, because pigment has to lie on the ROCK and be lit with it. Per
+  frame only the flame's breath moves: one pre-struck halo, re-blitted at a jittered offset and a
+  breathing strength — the noise is never repainted and the relief is never re-shaded.
 
   PIGMENT SITS IN THE RELIEF. Every ochre mark is laid down on its own layer and multiplied into
   the lit rock, so paint darkens stone rather than sitting on it, and each dab's strength is
@@ -79,7 +80,7 @@ const W=1280,H=800;
 const TX=302,TY=766,AMB=.085;
 
 /* ---------- canvas: a fixed 1280x800 face of rock, drawn at devicePixelRatio ---------- */
-const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false});
 let DPR=1;
 function fit(){DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));const s=Math.min(window.innerWidth/W,window.innerHeight/H);
   cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
@@ -122,7 +123,7 @@ function edgeAt(x,y){const n=(calAt(x,y)-.5)*54+(hAt(x,y)-.5)*30;
 const fall=d=>AMB+.44/(1+2.6*(d/430)*(d/430))+.50/(1+.80*(d/1180)*(d/1180));
 function lightAt(x,y){return fall(Math.hypot(x-TX,y-TY))*edgeAt(x,y);}
 /* the colour a pigment takes when it is lit rather than lain under the light — kaolin only */
-function litRGB(hex,x,y,k){const n=parseInt(hex.slice(1),16),L=lightAt(x,y)*(k||1)*1.28+.055;
+function litRGB(hex,x,y,k){const n=parseInt(hex.slice(1),16),L=lightAt(x,y)*(k||1)*1.5+.07;
   return 'rgb('+Math.min(255,(n>>16&255)*L|0)+','+Math.min(255,(n>>8&255)*(L*.83)|0)+','+Math.min(255,(n&255)*(L*.62)|0)+')';}
 
 /* ---------- bake the wall once, per pixel, in three parts ----------
@@ -159,7 +160,7 @@ function paintGround(){
     const L=fall(d)*ss(clamp((Math.min(x,W-x,y*1.15,(H-y)*1.1)+(cal-.5)*54+(h-.5)*30)/112,0,1));
     let lam=.60-(gx*dx+gy*dy)*.40;if(lam<0)lam=0;else if(lam>1.6)lam=1.6;
     const ao=.60+.46*h,                                  // hollows keep less of the light than crests
-          lit=lam*L*ao*1.36,
+          lit=lam*L*ao*1.02,
           amb=AMB*1.35*ss(clamp((Math.min(x,W-x,y,H-y))/150,0,1))+.018;
     let lr=(lit+amb*.30)*255,lgc=(lit*.775+amb*.42)*255,lb=(lit*.545+amb*.72)*255;
     LD[p]=lr>255?255:lr;LD[p+1]=lgc>255?255:lgc;LD[p+2]=lb>255?255:lb;LD[p+3]=255;
@@ -517,9 +518,9 @@ function paintCuts(g){
   paintOrbit(g,true);
   // the bull's three stars, ringed so the game can find them without the sheet claiming anything
   const st=bullStars(g,BULLPOS.x,BULLPOS.y,BULLPOS.s);
-  for(const s of st)if(s[2]){const p=[];for(let i=0;i<=30;i++){const t=i/30*TAU;p.push([s[0]+Math.cos(t)*13,s[1]+Math.sin(t)*13]);}
-    scratch(g,p,{w:1.4,alpha:.6,brk:.22,seed:s[0]|0});}
-  scratch(g,[[st[0][0],st[0][1]],[st[1][0],st[1][1]],[st[2][0],st[2][1]]],{w:1.5,alpha:.5,brk:.3,seed:99});
+  for(const s of st)if(s[2]){const p=[];for(let i=0;i<=34;i++){const t=i/34*TAU;p.push([s[0]+Math.cos(t)*16,s[1]+Math.sin(t)*16]);}
+    scratch(g,p,{w:1.9,alpha:.85,brk:.12,seed:s[0]|0});}
+  scratch(g,[[st[0][0],st[0][1]],[st[1][0],st[1][1]],[st[2][0],st[2][1]]],{w:1.7,alpha:.62,brk:.24,seed:99});
   // the pickups that are relief: the spark-cluster, the triple spiral, the ochre nodule's shadow
   for(let i=0;i<13;i++){const a=i/13*TAU+.2;
     scratch(g,[[PICK[0].x+Math.cos(a)*9,PICK[0].y+Math.sin(a)*9],[PICK[0].x+Math.cos(a)*(21+(i%3)*7),PICK[0].y+Math.sin(a)*(21+(i%3)*7)]],{w:2,alpha:1,seed:i+3});}
@@ -555,15 +556,22 @@ paintCuts(bake.g);
 function glow(stops){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
   const gr=g.createRadialGradient(128,128,0,128,128,128);for(const st of stops)gr.addColorStop(st[0],st[1]);
   g.fillStyle=gr;g.fillRect(0,0,256,256);return c;}
-const WARM=glow([[0,'rgba(255,186,110,1)'],[.14,'rgba(255,172,92,.82)'],[.45,'rgba(255,146,66,.3)'],[1,'rgba(255,132,52,0)']]),
-      VIG =glow([[0,'rgba(2,2,3,0)'],[.34,'rgba(2,2,3,0)'],[.72,'rgba(2,2,3,.42)'],[1,'rgba(2,2,3,1)']]);
+const EMBER=glow([[0,'rgba(255,240,205,1)'],[.14,'rgba(255,168,74,.75)'],[.5,'rgba(224,88,26,.2)'],[1,'rgba(200,70,20,0)']]);
 function blit(g,c,x,y,r,a,op){g.save();g.globalAlpha=a;if(op)g.globalCompositeOperation=op;
   g.drawImage(c,x-r,y-r,r*2,r*2);g.restore();}
+/* The flame's own halo, struck once at the sheet's exact size so the per-frame blit is a straight
+   1:1 copy: a scaled one costs more than every other thing in the frame put together. The flicker
+   is then only its strength and a pixel or two of travel, which is all a real flame does anyway. */
+const HALO=layer();
+(function(){const g=HALO.g,gr=g.createRadialGradient(TX,TY,50,TX,TY,780);
+  gr.addColorStop(0,'rgba(255,190,116,1)');gr.addColorStop(.17,'rgba(255,172,92,.78)');
+  gr.addColorStop(.5,'rgba(255,146,66,.26)');gr.addColorStop(1,'rgba(255,132,52,0)');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);})();
 function flicker(g,t){
-  const f=Math.sin(t*10.7)*.5+Math.sin(t*6.3+1.3)*.32+Math.sin(t*21.1+.7)*.18,
-        jx=TX+f*11,jy=TY+Math.sin(t*8.1+.4)*7;
-  blit(g,WARM,jx,jy,780+f*46,.115+.045*f,'lighter');
-  blit(g,VIG,jx,jy,1330-f*70,.62-f*.1);
+  const f=Math.sin(t*10.7)*.5+Math.sin(t*6.3+1.3)*.32+Math.sin(t*21.1+.7)*.18;
+  // one blit: when the flame dips the halo weakens, and the dark that was always there leans in
+  g.save();g.globalAlpha=.16+.13*f;g.globalCompositeOperation='lighter';
+  g.drawImage(HALO.c,Math.round(f*8),Math.round(Math.sin(t*8.1+.4)*6),W,H);g.restore();
   return .9+f*.1;}
 
 /* ---------- the reveal: dabs pressed one per beat, each bleeding into the grain as it dries ---------- */
@@ -587,15 +595,9 @@ function paintEmber(g,t,br){
     const px=lerp(x,nx,q)+Math.sin(q*2.2)*22,py=lerp(y,ny,q)-Math.sin(q*Math.PI)*54;
     stamp(g,px,py,4,T.ochreDeep,.55*(1-q*.55),i*7);}
   g.restore();
-  g.save();g.globalCompositeOperation='lighter';
-  const gr=g.createRadialGradient(x,y,0,x,y,46*br);
-  gr.addColorStop(0,'rgba(255,236,196,.95)');gr.addColorStop(.14,'rgba(255,166,72,.72)');gr.addColorStop(.5,'rgba(224,88,26,.2)');gr.addColorStop(1,'rgba(200,70,20,0)');
-  g.fillStyle=gr;g.beginPath();g.arc(x,y,46*br,0,TAU);g.fill();
-  for(let i=1;i<12;i++){const b=a-i*.055,q=1-i/12;
-    const gx2=g.createRadialGradient(PLAY.x+Math.cos(b)*PLAY.r,PLAY.y+Math.sin(b)*PLAY.r*.96,0,PLAY.x+Math.cos(b)*PLAY.r,PLAY.y+Math.sin(b)*PLAY.r*.96,10*q+3);
-    gx2.addColorStop(0,'rgba(255,150,60,'+(.3*q*q).toFixed(3)+')');gx2.addColorStop(1,'rgba(255,120,40,0)');
-    g.fillStyle=gx2;g.beginPath();g.arc(PLAY.x+Math.cos(b)*PLAY.r,PLAY.y+Math.sin(b)*PLAY.r*.96,10*q+3,0,TAU);g.fill();}
-  g.restore();}
+  for(let i=11;i>0;i--){const b=a-i*.055,q=1-i/12;
+    blit(g,EMBER,PLAY.x+Math.cos(b)*PLAY.r,PLAY.y+Math.sin(b)*PLAY.r*.96,13*q+4,.45*q*q,'lighter');}
+  blit(g,EMBER,x,y,46*br,.95,'lighter');}
 
 /* ---------- the currency: a smear of ochre that shrinks as it is spent ---------- */
 function paintOchre(g,t){const left=.26+.74*(1-((t%14)/14));
@@ -614,13 +616,13 @@ const LEGEND=[
   [1140,60,'BEST — how deep the torch carried you: the dimmest mark on the wall'],
   [894,132,'constellation figure: the aurochs, with 3 of its 6 shoulder dots ringed'],
   [172,392,'ocean'],[318,474,'crater'],[470,340,'ringed — the player\'s body, dot-ring orbit + ember'],
-  [632,502,'ice'],[790,424,'dune'],[944,510,'volcanic'],[1084,440,'storm'],
+  [632,486,'ice'],[790,424,'dune'],[944,510,'volcanic'],[1084,440,'storm'],
   [214,588,'VORAGO — the Shaft'],[398,622,'MACULA — the Flare'],[592,648,'VENTUS — the Draught'],
   [1186,540,'nebula — unlit rock: nothing is drawn'],
   [744,634,'sling'],[848,634,'scutum'],[952,634,'repulsa'],[1056,634,'inkwell'],
   [96,674,'chapter I — the chamber'],[220,752,'reveal: the run tallied, one dab per beat'],
   [640,790,'footer — the run\'s notch-rule'],
-  [700,236,'dot cluster (Chauvet) — the nearest this era has to a magnitude key: one dab per star'],
+  [700,116,'dot cluster (Chauvet) — the nearest this era has to a magnitude key: one dab per star'],
   [640,40,'the frame is the end of the torch\'s reach: this era owns no border at all (§9)']];
 function paintLegend(g){g.save();g.fillStyle='rgba(3,6,10,.6)';g.fillRect(0,0,W,H);
   for(const[x,y,s]of LEGEND){g.font='10.5px Georgia,"Times New Roman",serif';g.textAlign='center';
@@ -635,8 +637,7 @@ let showLegend=false;
 window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
 const t0=performance.now();
 function frame(now){const t=(now-t0)/1000;
-  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.drawImage(bake.c,0,0,W,H);
+  ctx.drawImage(bake.c,0,0,W,H);   // the baked wall is opaque, so nothing needs clearing first
   paintReveal(ctx,t);
   paintOchre(ctx,t);
   const br=flicker(ctx,t);
