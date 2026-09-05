@@ -110,12 +110,12 @@ coordinates) and `EQUINOX` (the coordinate epoch, conventionally `2000.0`). This
 in the same sense hieroglyphs are era I's: an exact, attested, fixed-format alphabet, and it should
 be typeset verbatim rather than paraphrased.
 
-The instrument carrying it is not a pen at all: it is a **terminal**, and the writing motion is a
-teletype reveal — text appears whole-glyph by whole-glyph at a constant cadence with a blinking
-block cursor, never a stroked line. `LETTERING.md` already specifies exactly this ("Typewriter (era
-V): snap the clip to whole-glyph boundaries... swap `penNib()` for a block cursor that blinks") and
-that a chapter's numerals should *update* rather than be written, "like an instrument readout." Both
-of those match the FITS-card reveal precisely and need no new design, only the implementation.
+The instrument carrying it is not a pen: it is a **terminal**, and the writing motion is a teletype
+reveal — text appears whole-glyph by whole-glyph at a constant cadence with a blinking block
+cursor, never a stroked line. `LETTERING.md` already specifies exactly this ("snap the clip to
+whole-glyph boundaries... swap `penNib()` for a block cursor that blinks") and that a chapter's
+numerals should *update* rather than be written, "like an instrument readout." Both match the
+FITS-card reveal precisely and need no new design, only implementation.
 
 Typefaces (all Google Fonts, all SIL Open Font License 1.1, so all embeddable the way the Fell
 faces already are):
@@ -171,8 +171,8 @@ invented, because the game's own mechanics were built to mirror how an observing
 | catalogue | catalogue | NGC/IC/Messier/Gaia source-ID conventions | attested |
 | "Orbit" (title) | orbit | stays exactly itself — the game's title is already this era's currency unit | attested |
 
-The overlap between "orbit" as the game's title and "orbit" as HST's unit of allocated time is not
-a coincidence worth manufacturing — it already exists, and §6 below is built entirely around it.
+The overlap between "orbit" the title and "orbit" the HST time-unit is not manufactured — it
+already exists, and §6 is built entirely around it.
 
 ## 6. Currency and one rule
 

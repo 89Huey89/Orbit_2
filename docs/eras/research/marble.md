@@ -200,28 +200,23 @@ inherited unbroken. That continuity is worth keeping visible rather than paperin
 ## 6. Currency and one rule
 
 **No-twist reading:** rename `ink` to **the edge** (Latin *acies*), the same 0–1 gauge, spent by
-distance flown and restored the same ways. This is not cosmetic dressing so much as a correction:
-"ink" presumes a stylus-and-fluid lettering medium, and this era's primary grammar is *subtractive*
-— stone or metal is cut away, nothing is added. A depleting chisel-edge (which dulls with use and
-is restored by a pause to hone it — mapped directly onto the existing orbit-hold ink-gain mechanic)
-is the era's real rationed resource: ancient relief carving was in fact metered this way, by tool
-wear and the mason's own stamina, not by a consumable poured from a well.
+distance flown, restored the same ways. This is a correction, not just dressing: "ink" presumes a
+stylus-and-fluid medium, and this era's grammar is *subtractive* — stone or metal is cut away,
+nothing added. A depleting chisel-edge, dulling with use and restored by a pause to hone it (mapped
+directly onto the existing orbit-hold ink-gain mechanic), is the era's real rationed resource:
+ancient relief carving was in fact metered this way, by tool wear and stamina, not a poured fluid.
 
 **The twist:** give the six-class Ptolemaic **μέγεθος** (magnitude) scale to the *main nodes*
-themselves, not just to decorative background stars. The engine already renders exactly six
-magnitude forms for background dots (`plain / ringed / 4-/6-/8-point / haloed 8-point`, from 6th to
-1st); this era's rule reuses that existing asset on the nodes the player actually flies to. Each
-main node is assigned a Ptolemaic class 1–6 at spawn (seeded, as today): a 1st-magnitude node — the
-haloed, most emphatic mark — pays the richest score but demands a **narrower** perfect-tangent
-window (`rimWindow` shrunk, not widened, for the brightest class); a 6th-magnitude node is the
-plainest mark, forgiving to land on, and pays least. This is squarely Ptolemy's own idea — brighter
-stars are *harder to mistake, but a fainter one is easier to catch* is close to how his catalogue
-actually reads, ranking difficulty of observation alongside brilliance — and it costs almost
-nothing to build: no new node type, no new field on `HAZARD_KINDS`, just a magnitude tag on
-existing main nodes read by the two systems (rendering, `rimWindow`) that already exist. It fits
-the existing economy the way a graze or a perfect landing already does: a visible, seeded,
-skill-legible trade the player can read before committing to a capture, exactly like today's
-tangent-vs-hard-turn choice.
+themselves, not just decorative background stars. The engine already renders six magnitude forms
+for background dots (`plain / ringed / 4-/6-/8-point / haloed 8-point`, 6th to 1st); reuse that
+asset on the nodes the player actually flies to. Each main node gets a Ptolemaic class 1–6 at spawn
+(seeded, as today): a 1st-magnitude node — the haloed, most emphatic mark — pays the richest score
+but demands a **narrower** perfect-tangent window (`rimWindow` shrunk, not widened); a 6th-
+magnitude node is plainest, forgiving, and pays least. This is Ptolemy's own idea — brighter is
+harder to mistake but a fainter target easier to catch — and it costs almost nothing: no new node
+type, no new `HAZARD_KINDS` field, just a magnitude tag read by two systems that already exist. It
+fits the economy the way a graze or perfect landing already does: a visible, seeded, skill-legible
+trade the player reads before committing.
 
 ## 7. Dangers
 

@@ -154,18 +154,14 @@ outline (black)**, four steps, and `penLettering()` should model that count.
   ligatured and, per Unicode's own working documents, "not currently supported in any font."
   The game should not attempt a hieratic caption face; if hieratic texture is wanted (an
   ostracon prop), it has to be hand-drawn strokes, not a font.
-- **Numerals**: base-10, additive, no place value, no zero. 1 = a single vertical stroke
-  (repeated up to nine times); 10 = a heel-bone/cattle-hobble; 100 = a coil of rope; 1,000 = a
-  lotus flower; 10,000 = a raised/pointing finger; 100,000 = a tadpole; 1,000,000 = a kneeling
-  god with raised arms (Heh, "infinity/eternity"). Repeated identical strokes are conventionally
-  arranged in a tidy stacked block rather than a single row — this is itself the authentic
-  ancient convention and it happens to solve the game's own readability problem: a HUD counter
-  set in these numerals reads cleanly for small values (row number, combo multiplier, a medal
-  count) if grouped in rows of up to four, but a four-digit score (hundreds of lotus flowers'
-  worth of strokes is absurd) does not scale — recommend Egyptian numerals for **small HUD
-  counters only** (row, flow multiplier, skip bonus), and either Hindu-Arabic digits set in the
-  hieroglyph caption face, or a large abbreviated cartouche-style score glyph, for the score
-  itself.
+- **Numerals**: base-10, additive, no place value, no zero. 1 = a stroke (repeated up to nine);
+  10 = a heel-bone; 100 = a coil of rope; 1,000 = a lotus flower; 10,000 = a pointing finger;
+  100,000 = a tadpole; 1,000,000 = a kneeling god with raised arms (Heh, "eternity"). Repeated
+  strokes are conventionally stacked in a tidy block rather than a single row — the authentic
+  ancient convention, and it happens to solve the game's own readability problem: it reads
+  cleanly for small values (row number, combo multiplier, a medal count) grouped in rows of up
+  to four, but a four-digit score does not scale. Recommend Egyptian numerals for **small HUD
+  counters only**, Hindu-Arabic digits (in the hieroglyph caption face) for the score itself.
 
 ## 5. Names for the game's things
 
