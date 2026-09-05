@@ -94,12 +94,7 @@ metaphor, since these really are different sheets from different centuries.
 
 ## Open questions
 
-- **Do eras share a ledger, or does each era keep its own record?** Sharing is simpler and is
-  what the catalogue does today. Per-era records would make the ladder feel like a campaign but
-  would need `orbit.ledger.v1` bumped and migrated.
-- **What earns an era?** The existing plates are earned on lifetime figures. An era ladder may
-  want the eras earned in sequence instead — each opened by the one before it — which is a
-  different shape of condition than anything in `UNLOCKS` today.
-- **Does the frame change per era?** The engraved frame with its wind-heads and compass rose is
-  era III's. Era V wants a thin instrument margin; era I wants none at all. `plainPlate()` already
-  proves that omitting a whole class of drawing works.
+Collected in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md), and none of them settled. The one that
+governs everything else is the first: whether the progression happens *within* a run, *between*
+runs, or — the shape most worth considering — a run that opens on the era you have earned and
+drifts forward from there.

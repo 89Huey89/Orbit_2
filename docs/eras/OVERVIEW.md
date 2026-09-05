@@ -25,10 +25,16 @@ the chapters the eras — Egypt at row 0, the space age by row 32. Resist it. It
 fully cached art direction to change four times a run, restarts every run in Egypt, and spends
 four thousand years in ninety seconds. See `ARCHITECTURE.md` for what that actually costs.
 
-The reading that works: **you earn your way forward through the centuries**, and each era you
-have earned still has its own four chapters. Egypt's four chapters are four Egyptian skies. The
+The reading that works, *as far as the architecture is concerned*: **you earn your way forward
+through the centuries**, and each era you have earned still has its own four chapters. Egypt's four chapters are four Egyptian skies. The
 observatory's four are four modern ones. The ladder is the meta-progression; the chapters stay
 the shape of a run. Nothing about the plate/chapter split has to be fought.
+
+Whether that is the reading the *game* wants is a separate matter, and it is not settled — it
+trades away any sense of the centuries turning while you play. A third shape, where a run opens on
+the era you have earned and drifts forward from there, is set out in
+[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md#1-where-does-the-progression-actually-happen-the-big-one).
+Read that before building against this one.
 
 ## The ladder
 
