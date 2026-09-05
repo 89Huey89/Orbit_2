@@ -137,7 +137,7 @@ function setPlaying(){
 function showEnd(){
   deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
   $('end-score').textContent=world.score;$('end-reason').textContent=world.reason;
-  $('record').textContent=world.score>recordAtStart?'A NEW PERSONAL BEST':'BEST '+currentBest();
+  $('record').textContent=world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
   const row=Math.floor(world.progress),newRow=row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
