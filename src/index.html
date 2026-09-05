@@ -136,7 +136,7 @@
     .footer{bottom:max(20px,calc(env(safe-area-inset-bottom) + 10px));left:max(17px,calc(env(safe-area-inset-left) + 3px));right:max(17px,calc(env(safe-area-inset-right) + 3px))}
     @media(min-width:800px){.hud{left:46px;right:46px;top:40px}.footer{left:35px;right:35px;bottom:27px}}
     /* — Daily plate, the ascent record, and the run's observations — */
-    .daily-group{pointer-events:auto;display:flex;gap:11px;align-items:center;justify-content:center;margin-top:11px}
+    .daily-group{pointer-events:auto;display:flex;flex-wrap:wrap;gap:9px 11px;align-items:center;justify-content:center;margin-top:11px}
     .daily-note{color:var(--muted);letter-spacing:.2em;font-size:10px;min-height:12px}
     #game.daily #daily{color:var(--gold);border-color:var(--gold)}
     #end .end-stats{flex-wrap:nowrap;gap:0;min-width:0}
@@ -225,6 +225,52 @@
       #game .exlibris{display:none}
       #game #end-unlocked{margin:2px 0 3px;font-size:9px}
     }
+    /* — The ephemeris: an almanac leaf of the daily plates, ruled as a month table — */
+    #ephemeris{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
+    .eph-leaf{max-width:min(460px,100%)}
+    #ephemeris h2{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
+    #ephemeris .eyebrow{margin:0 0 6px;font-size:9px}
+    #ephemeris .title-rule{margin:9px auto 0;width:76px}
+    .eph-month{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px}
+    .eph-title{min-width:11em;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+    .eph-arrow{pointer-events:auto;padding:2px 11px;background:none;border:0;border-radius:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;transition:color .2s,opacity .2s}
+    .eph-arrow:hover,.eph-arrow:focus-visible{color:var(--gold)}
+    .eph-arrow:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
+    .eph-arrow.spent,.eph-arrow:disabled{opacity:.22;color:var(--muted);cursor:default}
+    .eph-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;margin-top:12px;padding:0 3px 2px}
+    /* The month as an engraver would rule it: one hairline between every square, and the sheet showing
+       through the squares of the days that were never drawn. */
+    .eph-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+    .eph-head,.eph-cell{border-width:0 1px 1px 0;border-style:solid;border-color:var(--line)}
+    .eph-head{padding:5px 1px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
+    .eph-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;margin:0;padding:5px 2px;background:none;border-radius:0;font:inherit;color:inherit;text-align:center}
+    .eph-num{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
+    .eph-best{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.09em;color:var(--muted);font-variant-numeric:tabular-nums}
+    .eph-rule{width:15px;height:1px;background:var(--line)}
+    .eph-blank .eph-num{opacity:.34}
+    .eph-hence .eph-num{opacity:.13}
+    button.eph-cell{pointer-events:auto;cursor:pointer;transition:background .2s}
+    button.eph-cell:hover,button.eph-cell:focus-visible{background:rgba(var(--veil),.45)}
+    button.eph-cell:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
+    .eph-drawn .eph-num{color:var(--gold)}
+    .eph-drawn:hover .eph-num,.eph-drawn:focus-visible .eph-num{color:var(--ivory)}
+    .eph-drawn .eph-best{color:var(--best)}
+    .eph-hodie{color:var(--gold);font-style:italic;letter-spacing:.14em}
+    /* Today keeps a second rule inside its square; the plate now chosen is pricked with a lozenge. */
+    .eph-today::after{content:'';position:absolute;inset:2px;border:1px solid var(--line);pointer-events:none}
+    .eph-cell[aria-pressed="true"]::before{content:'';position:absolute;top:3px;left:50%;width:4px;height:4px;margin-left:-2px;border:1px solid var(--gold);transform:rotate(45deg)}
+    .eph-note{flex:0 0 auto;margin:10px 0 0;font-style:italic;font-size:10.5px;line-height:1.5;text-align:center;color:var(--muted);opacity:.75}
+    #ephemeris-close{flex:0 0 auto;margin:11px auto 0}
+    @media(max-height:530px) and (orientation:landscape){
+      #game .eph-leaf{padding:8px 12px 8px;max-width:min(560px,100%)}
+      #ephemeris h2{font-size:19px}
+      #ephemeris .title-rule{margin-top:5px}
+      #game .eph-month{margin-top:7px}
+      #game .eph-body{margin-top:7px}
+      #game .eph-cell{min-height:34px;gap:1px}
+      #game .eph-num{font-size:13px}
+      #game .eph-note{display:none}
+    }
     /* — The living pen in the DOM: the same hand that draws the chart writes the HUD, the
        frontispiece and the colophon. Every base style below is the finished state and every animation
        starts from the unwritten one, so the reduced-motion rule above prints all of it at once. — */
@@ -291,6 +337,7 @@
     <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</p>
       <div class="daily-group">
         <button id="daily" class="diff-btn" type="button" aria-pressed="false">DAILY PLATE</button>
+        <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
         <span id="daily-date" class="small daily-note"></span>
       </div>
       <p class="printer-line">Impressum &middot; MDCXX</p>
@@ -319,6 +366,23 @@
       </div>
       <div id="catalogue-body" class="catalogue-body"></div>
       <button id="catalogue-close" class="diff-btn" type="button">CLOSE</button>
+    </div>
+  </section>
+  <section id="ephemeris" class="screen hidden" aria-label="Ephemeris of the daily plates" aria-hidden="true">
+    <div class="catalogue-leaf eph-leaf">
+      <div class="catalogue-head">
+        <p class="eyebrow">TABUL&AElig; DIEI</p>
+        <h2>EPHEMERIS</h2>
+        <div class="title-rule"><span></span></div>
+      </div>
+      <div class="eph-month">
+        <button id="eph-prev" class="eph-arrow" type="button" aria-label="The month before">&lsaquo;</button>
+        <span id="eph-title" class="eph-title"></span>
+        <button id="eph-next" class="eph-arrow" type="button" aria-label="The month after">&rsaquo;</button>
+      </div>
+      <div id="ephemeris-body" class="eph-body"></div>
+      <p id="eph-note" class="eph-note"></p>
+      <button id="ephemeris-close" class="diff-btn" type="button">CLOSE</button>
     </div>
   </section>
   <div class="footer">
@@ -358,6 +422,7 @@
 <script src="inscriptions.js"></script>
 <script src="effects.js"></script>
 <script src="frame.js"></script>
+<script src="ephemeris.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>

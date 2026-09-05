@@ -98,8 +98,18 @@ function event(type,e){
     audio.tone(698.46,.28,0,.16);floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
     recordBest(world.score);
   }else if(type==='death'){
-    audio.death();burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
-    rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});screenFlash=1;
+    audio.death();
+    if(e.reason==='LEFT THE STAR CHART'){
+      // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than
+      // bursting. The kill boundary sits 16 units past the visible edge, so the splat is pulled back
+      // to just inside it — on the edge the player actually left by, not out past where it is unseen.
+      const dir=e.x>=0?1:-1,edgeX=dir*Math.max(0,world.width/2-50);
+      rings.push({kind:'splat',x:edgeX,y:e.y,dir,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
+    }else{
+      burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
+      rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});
+    }
+    screenFlash=1;
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
   }else if(type==='difficulty'){
@@ -116,6 +126,9 @@ function newWorld(){
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
 function setPlaying(){
+  // A daily plate is entered in the log the moment its run begins, and only while it is the current
+  // day's: that entry is the whole of what opens a past plate to be drawn again.
+  noteDailyPlay();
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   clearInscriptions();
   $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
@@ -132,7 +145,7 @@ function showEnd(){
   const charts=world.constellationsCompleted;
   $('end-constellations').textContent=charts+' constellation'+(charts===1?'':'s')+' traced';
   $('end-observations').textContent=world.observations.map(o=>o.latin).join(', ');
-  $('end-daily').textContent=dailyOn?'Tabula diei · '+dailyDay:'';
+  $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
   const fresh=[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
@@ -214,6 +227,7 @@ function syncCatalogueMarks(){
   if(mark)mark.textContent=initials||'ORBIS';
 }
 function openCatalogue(){
+  if(ephemerisOpen)closeEphemeris();
   catalogueOpen=true;renderCatalogue();
   $('catalogue').classList.remove('hidden');$('catalogue').setAttribute('aria-hidden','false');
   $('catalogue-open').setAttribute('aria-expanded','true');
@@ -287,7 +301,7 @@ function enterFullscreen(){
   try{const request=game.requestFullscreen||game.webkitRequestFullscreen;if(request){const p=request.call(game,{navigationUI:'hide'});if(p&&p.catch)p.catch(()=>{});}}catch(_){}
 }
 function handleInput(){
-  if(catalogueOpen)return;
+  if(catalogueOpen||ephemerisOpen)return;
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing')world.release();
@@ -302,8 +316,8 @@ game.addEventListener('pointerdown',e=>{
 // Audio, so also unlock on the touch events it does recognize.
 for(const type of ['touchstart','touchend'])game.addEventListener(type,()=>audio.unlock(),{passive:true});
 window.addEventListener('keydown',e=>{
-  if(e.code==='Escape'&&catalogueOpen){e.preventDefault();closeCatalogue();return;}
-  if(catalogueOpen)return;
+  if(e.code==='Escape'&&(catalogueOpen||ephemerisOpen)){e.preventDefault();if(catalogueOpen)closeCatalogue();else closeEphemeris();return;}
+  if(catalogueOpen||ephemerisOpen)return;
   if((e.code==='Space'||e.code==='Enter')&&!e.repeat&&!e.target.closest('button')){e.preventDefault();handleInput();}
 });
 game.addEventListener('contextmenu',e=>e.preventDefault());

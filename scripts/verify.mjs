@@ -756,6 +756,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
+openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead};',context);
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
@@ -876,6 +877,88 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   events['daily:click']();
   assert.equal(context.test.dailyOn,false);assert.equal(element('daily-date').textContent,'');
   assert(context.test.world!==beforeDaily&&context.test.world.state==='ready','Leaving the daily plate deals a fresh ordinary course');
+  // ---------- The ephemeris: the almanac of daily plates, and drawing a past one again ----------
+  // One rule holds the whole leaf up: a day is written into the log only by a run begun while it was
+  // the current day, and it is the log alone that opens a plate to be drawn again.
+  {
+    const today=new Date().toISOString().slice(0,10),drawnDay='2019-03-07',seededLog=!!seed['orbit.dailyLog.v1'];
+    // A log seeded into storage is read as written where it is a day with a record on it and ignored
+    // everywhere else, and the one record that predates the log opens the day it was set on.
+    if(seededLog){
+      assert.equal(context.test.dailyDates().join(),'2018-05-04,2019-11-30','Only well-formed past days are read from the log');
+      assert.equal(context.test.dailyLog['2018-05-04'].best,420);
+      assert.equal(context.test.dailyLog['2018-05-04'].plays,3);
+      assert.equal(context.test.dailyLog['2019-11-30'].best,88,'The record that predates the log opens its own day');
+      assert(saved.get('orbit.dailyLog.v1').includes('2019-11-30'),'The folded-in record is written to the log once');
+    }
+    assert.equal(context.test.roman(2026),'MMXXVI','The almanac dates its months in Roman numerals');
+    assert.equal(context.test.roman(1620),'MDCXX');
+    assert.equal(context.test.dailyOpen(drawnDay),false,'A day that was never drawn is closed');
+    assert.equal(context.test.replayDaily(drawnDay),false,'A plate that was never drawn can never be dealt');
+    assert.equal(context.test.dailyOn,false,'A refused entry leaves the ordinary chart exactly as it was');
+    context.test.openEphemeris();
+    assert.equal(context.test.ephemerisOpen,true);
+    {
+      const leaf=element('ephemeris-body').innerHTML;
+      assert(leaf.includes('data-date="'+today+'"'),'Today\'s plate is always open in the almanac: '+leaf);
+      assert(leaf.includes('eph-hodie'),'Today is captioned as today until it has been drawn');
+      assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
+      assert(element('eph-title').textContent.includes(context.test.roman(Number(today.slice(0,4)))),element('eph-title').textContent);
+      assert(element('eph-note').textContent.includes('only on the day it was drawn'),element('eph-note').textContent);
+    }
+    const held=context.test.world.state;
+    context.test.handleInput();
+    assert.equal(context.test.world.state,held,'The ephemeris holds the gameplay input while it is open');
+    events['window:keydown']({code:'Escape',preventDefault(){},repeat:false,target:{closest:()=>null}});
+    assert.equal(context.test.ephemerisOpen,false,'Escape closes the ephemeris');
+    // A daily run begun today writes that day into the log, which is what opens it ever after.
+    context.test.setDaily(true);
+    assert.equal(context.test.dailyReplay,false);
+    context.test.setPlaying();
+    assert(context.test.dailyLog[today].plays>=1,'A daily run begun today enters that day in the log');
+    assert.equal(context.test.dailyOpen(today),true);
+    if(!storageBlocked)assert(JSON.parse(saved.get('orbit.dailyLog.v1'))[today],'The log of drawn days is kept in storage');
+    // A plate drawn on its own day is dealt again from that day's own seed, and says so.
+    context.test.dailyLog[drawnDay]={best:410,plays:2};
+    assert.equal(context.test.replayDaily(drawnDay),true);
+    assert.equal(context.test.dailyDay,drawnDay);assert.equal(context.test.dailyReplay,true);
+    assert.equal(context.test.world.seed,context.test.dailySeed,'A repeated plate is dealt from its own date');
+    assert.equal(new OrbitWorld(context.test.dailySeed).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A repeat deals exactly the plate of that day');
+    assert.equal(context.test.world.darknessMult,1,'A repeated daily plate keeps its Classic pressure');
+    assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+drawnDay)&&element('daily-date').textContent.includes('iterum'),element('daily-date').textContent);
+    assert(context.test.scoreLine().includes('Tabula diei '+drawnDay+' (iterum)'),context.test.scoreLine());
+    // Repeating an old plate never opens a new day, and its score is kept under the day it repeats.
+    const openDays=context.test.dailyDates().join();
+    context.test.setPlaying();
+    assert.equal(context.test.dailyDates().join(),openDays,'Repeating an old plate never opens another day');
+    assert.equal(context.test.dailyLog[drawnDay].plays,2,'A repeat is not counted as having drawn that day');
+    const currentRecord=saved.get('orbit.daily.v1');
+    context.test.recordBest(999);
+    assert.equal(context.test.dailyLog[drawnDay].best,999,'A repeat improves the record of the day it repeats');
+    if(!storageBlocked)assert.equal(saved.get('orbit.daily.v1'),currentRecord,'A repeat never touches the current day\'s record');
+    context.test.openEphemeris();
+    {
+      const leaf=element('ephemeris-body').innerHTML;
+      assert(leaf.includes('data-date="'+drawnDay+'"')&&leaf.includes('>999<'),'The almanac opens on the month of the plate in hand and prints its record: '+leaf);
+      assert(leaf.includes('aria-pressed="true"'),'The plate now in hand is pricked in the almanac');
+      assert(!leaf.includes('data-date="2019-03-08"'),'A day that was never drawn can never be chosen');
+    }
+    // The almanac leafs between the earliest plate on record and the current month, and no further.
+    assert.equal(context.test.ephMonth.y+'-'+context.test.ephMonth.m,'2019-2','The leaf opens on the month of the plate in hand');
+    if(!seededLog){
+      assert.equal(element('eph-prev').disabled,true,'There is nothing to leaf back to before the earliest plate');
+      context.test.leafMonth(-1);
+      assert.equal(context.test.ephMonth.y+'-'+context.test.ephMonth.m,'2019-2','The almanac never leafs past its earliest plate');
+    }
+    context.test.leafMonth(1);
+    assert.equal(context.test.ephMonth.y+'-'+context.test.ephMonth.m,'2019-3','April follows March');
+    context.test.closeEphemeris();
+    assert.equal(context.test.ephemerisOpen,false);
+    delete context.test.dailyLog[drawnDay];
+    context.test.setDaily(false);
+    assert.equal(context.test.dailyOn,false);assert.equal(context.test.dailyReplay,false);
+    context.test.newWorld();
+  }
   for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
   // Both plates must boot, draw every chapter, and switch mid-run without touching the simulation.
   context.test.setPlate('paper');assert.equal(context.test.plateName,'paper');
@@ -1242,8 +1325,12 @@ const layouts=[
   runtime(1440,900,false,false,{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB',
     'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}),
   runtime(844,390),
-  // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one.
-  runtime(320,568,false,false,{'orbit.ledger.v1':'{ this is not a ledger'}),
+  // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one. The
+  // ephemeris log is seeded here too, with junk among the days, beside a daily record from before the
+  // log existed for the boot to fold in.
+  runtime(320,568,false,false,{'orbit.ledger.v1':'{ this is not a ledger',
+    'orbit.dailyLog.v1':JSON.stringify({'2018-05-04':{best:'420',plays:3},nonsense:{best:9},'3000-01-01':{best:5},'2018-05-05':7}),
+    'orbit.daily.v1':JSON.stringify({date:'2019-11-30',best:88})}),
   // The same, under reduced motion, with a derived plate, an ink, a mark, an ornament and a hand chosen.
   runtime(412,915,false,true,{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
     'orbit.cosmetics.v1':JSON.stringify({plate:'cellarius',mark:'saturn',trail:'goldleaf',capture:'seal',frame:'seamonsters',figures:'bode'})})
@@ -1343,4 +1430,4 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 }
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rim that turns away a flight falling at it, marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rim that turns away a flight falling at it, marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
