@@ -34,7 +34,7 @@ function frameCompassRose(g,cx,cy,r,colors){
   if(plainPlate())return;
   const size=Math.max(4.6,r*.42),ring=r*1.9;
   g.strokeStyle=colors.tickMinor;g.lineWidth=.5;g.beginPath();g.arc(cx,cy,ring-1.5,0,TAU);g.stroke();
-  g.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  g.font=plateFace(size,'sc');
   g.fillStyle=colors.text;
   const opts={align:'center',size,spacing:size*.14};
   textAlongArc(g,'SEPTENTRIO',cx,cy,ring+size,-Math.PI/2,opts);
@@ -211,7 +211,7 @@ function frameScaleBar(g,x,y,colors){
   g.lineWidth=1;g.strokeStyle=colors.rule;g.strokeRect(x+.5,y+.5,w,h);
   g.fillStyle=colors.orn;for(let i=0;i<4;i+=2)g.fillRect(x+i*w/4,y,w/4,h);
   if(plainPlate())return;
-  g.font=`italic 7px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
+  g.font=plateFace(7,'text','italic');g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
 }
 function buildFrameLayer(){
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
@@ -233,7 +233,7 @@ function buildFrameLayer(){
     g.beginPath();g.moveTo(x,outerR);g.lineTo(x,outerR+len);g.stroke();
     g.beginPath();g.moveTo(x,H-outerR);g.lineTo(x,H-outerR-len);g.stroke();
     if(numbered&&!plainPlate()){
-      g.font=`${wide?8:6.5}px 'IM Fell English',Georgia,serif`;g.textAlign='center';g.fillStyle=colors.text;
+      g.font=plateFace(wide?8:6.5);g.textAlign='center';g.fillStyle=colors.text;
       g.fillText(String(i),x,outerR+tickLen*.72+2);g.fillText(String(i),x,H-outerR-tickLen*.72+5);
     }
   }
@@ -260,14 +260,14 @@ function buildFrameLayer(){
     frameScaleBar(g,rightX,oy-2,colors);
     if(plainPlate())return c;
     // The engraver's line, which carries the player's initials once the catalogue has granted them.
-    g.font=`italic 6.5px 'IM Fell English',Georgia,serif`;g.fillStyle=colors.text;g.textAlign='left';
+    g.font=plateFace(6.5,'text','italic');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText(engraverCredit(),rightX,oy+10);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     const keyX=rightX,keyTop=Math.max(H*.28,band+70);
-    g.font="8px 'IM Fell English SC','IM Fell English',Georgia,serif";g.fillStyle=colors.text;g.textAlign='left';
+    g.font=plateFace(8,'sc');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('MAGNITUDINES',keyX,keyTop);
     g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+66,keyTop+3.5);g.stroke();
-    g.font="italic 7.5px 'IM Fell English',Georgia,serif";
+    g.font=plateFace(7.5,'text','italic');
     for(let m=5;m>=0;m--){
       const row=keyTop+17+(5-m)*12;
       starGlyph(g,keyX+7,row-4.5,m,ink.atmosphere.starGlyph,.62,1.3);
@@ -345,7 +345,7 @@ function drawPlateFrame(){
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
   if(framePen<.8||plainPlate())return;
   const {n,step}=frameEdgeTicks(Math.max(1,H-band*2)),scroll=Math.round(-world.cameraY*.015);
-  ctx.font=`${frameWide()?8:6.5}px 'IM Fell English',Georgia,serif`;ctx.fillStyle=colors.text;
+  ctx.font=plateFace(frameWide()?8:6.5);ctx.fillStyle=colors.text;
   for(let i=0;i<=n;i+=10){
     const y=band+i*step,value=(((i+scroll)%90)+90)%90;
     ctx.textAlign='left';ctx.fillText(String(value),outerR+tickLen*.72-2,y+2.5);
@@ -397,7 +397,7 @@ function drawRunningHead(){
   // still read once the spilled ink has risen past the foot of the plate.
   ctx.save();ctx.translate(W*.5,y-size*.35);ctx.scale(Math.min(W*.34,116),size*1.9);
   ctx.fillStyle=runningHeadGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
-  ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+  ctx.font=plateFace(size,'sc');
   ctx.fillStyle=colors.text;
   ctx.fillText(head,W*.5,y);
   ctx.restore();

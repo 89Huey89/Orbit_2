@@ -10,5 +10,7 @@ if(!html.includes('new OrbitWorld('))throw new Error('Game bootstrap missing.');
 const dist=new URL('../dist/',import.meta.url);
 await mkdir(dist,{recursive:true});
 await writeFile(new URL('index.html',dist),html);
-await cp(new URL('../assets/',import.meta.url),new URL('assets/',dist),{recursive:true});
+// The full faces in assets/fonts.source.css are what fonts.css and glyphs.js are cut from; only the
+// cut stylesheet is served, so the built page never carries a character the atlas cannot set.
+await cp(new URL('../assets/',import.meta.url),new URL('assets/',dist),{recursive:true,filter:src=>!src.endsWith('.source.css')});
 console.log(`Orbit built from ${names.length} modules: ${Buffer.byteLength(html).toLocaleString()} bytes of HTML plus the embedded-font stylesheet in assets/.`);

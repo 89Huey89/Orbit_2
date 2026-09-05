@@ -9,6 +9,9 @@
   <title>Orbit</title>
   <link rel="stylesheet" href="../assets/fonts.css">
   <style>
+    /* The three faces the plate letters in, so a plate cut for another century overrides them
+       beside its colours; the canvas reads the same values through plateFace() in plates.js. */
+    :root{--face-text:'IM Fell English',Georgia,serif;--face-sc:'IM Fell English SC','IM Fell English',Georgia,serif;--face-body:'IM Fell English',Georgia,'Times New Roman',serif}
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
@@ -23,33 +26,33 @@
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
-    body{font-family:'IM Fell English',Georgia,'Times New Roman',serif;user-select:none;-webkit-user-select:none;touch-action:none}
+    body{font-family:var(--face-body);user-select:none;-webkit-user-select:none;touch-action:none}
     button{font:inherit;color:inherit}
     #game{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden;isolation:isolate}
     #sky{display:block;width:100%;height:100%;outline:none;touch-action:none}
     #sky:focus-visible{outline:1px solid var(--gold);outline-offset:-5px}
     .hud{position:absolute;z-index:2;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:max(24px,calc(env(safe-area-inset-top) + 12px));display:grid;grid-template-columns:1fr auto 1fr;align-items:start;pointer-events:none;opacity:0;transition:opacity .5s}
-    .brand{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:17px;letter-spacing:.24em;line-height:1.2;padding-top:7px}
+    .brand{font-family:var(--face-sc);font-size:17px;letter-spacing:.24em;line-height:1.2;padding-top:7px}
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
-    .small{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    #score{display:block;font-family:'IM Fell English',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
+    .small{font-family:var(--face-sc);font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
+    #score{display:block;font-family:var(--face-text);font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
     #flow{height:23px;margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.18em;transition:opacity .3s}
     #pace{margin-top:6px;font-size:12px;letter-spacing:.09em;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
     .best-block{text-align:right;padding-top:7px}
-    #best{display:block;font-family:'IM Fell English',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
+    #best{display:block;font-family:var(--face-text);font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
     .screen{position:absolute;inset:0;z-index:3;pointer-events:none;text-align:center;transition:opacity .45s,transform .6s}
     .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
     .title-group{position:absolute;top:19%;left:20px;right:20px}
-    .eyebrow{margin:0 0 13px;color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.37em}
-    h1{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1;text-shadow:0 4px 30px var(--ink)}
+    .eyebrow{margin:0 0 13px;color:var(--gold);font-family:var(--face-sc);font-size:11px;letter-spacing:.37em}
+    h1{margin:0;font-family:var(--face-sc);font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1;text-shadow:0 4px 30px var(--ink)}
     .title-rule{width:100px;margin:24px auto 0;display:flex;align-items:center;gap:11px;color:var(--gold)}
     .title-rule::before,.title-rule::after{content:'';height:1px;background:linear-gradient(90deg,transparent,var(--gold));flex:1;opacity:.5}
     .title-rule::after{transform:rotate(180deg)}
     .title-rule span{width:4px;height:4px;border:1px solid var(--gold);transform:rotate(45deg)}
     .start-copy{position:absolute;bottom:max(15%,95px);left:24px;right:24px}
-    .action-copy{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
-    .instruction{font-family:'IM Fell English',Georgia,serif;color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
+    .action-copy{font-style:italic;font-family:var(--face-text);font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
+    .instruction{font-family:var(--face-text);color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
     .footer{position:absolute;bottom:max(17px,calc(env(safe-area-inset-bottom) + 7px));left:max(15px,env(safe-area-inset-left));right:max(15px,env(safe-area-inset-right));z-index:6;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
     .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;cursor:pointer;opacity:.6;transition:opacity .2s;display:grid;place-items:center}
     .utility:hover,.utility:focus-visible{opacity:1}
@@ -71,15 +74,15 @@
     .colophon::before{inset:0;border-width:1.5px}
     .colophon::after{inset:5px;opacity:.6}
     #end .eyebrow{margin:0 0 15px;font-size:10px}
-    #end h2{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
-    #end-score{font-family:'IM Fell English',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
-    #record{color:var(--gold);height:23px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+    #end h2{font-style:italic;font-family:var(--face-text);font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
+    #end-score{font-family:var(--face-text);font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+    #record{color:var(--gold);height:23px;font-family:var(--face-sc);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
     .end-stats{display:flex;gap:28px;justify-content:center;margin:25px 0 37px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-width:220px}
     .stat{position:relative;display:flex;flex-direction:column;gap:7px;padding:0 22px;font-size:19px;font-variant-numeric:tabular-nums}
     .stat .small{font-size:9px}
     #end-constellations{margin:-18px 0 23px;font-size:13px;color:var(--gold)}
     #end .action-copy{font-size:19px;margin-bottom:12px}
-    .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
+    .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
     .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
     .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
     /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and
@@ -90,7 +93,7 @@
     #shield{color:var(--shield)}
     #reflector{color:var(--reflector)}
     #pause{background:rgba(var(--veil),.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
-    #pause strong{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
+    #pause strong{font-style:italic;font-family:var(--face-text);font-size:40px;font-weight:400;letter-spacing:.04em}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -99,12 +102,12 @@
     #game.playing .hud,#game.over .hud{opacity:1}
     @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
     /* — Frontispiece / colophon: engraved atlas title page for #intro, #end, #pause — */
-    .subtitle-latin{margin:0 0 13px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.26em;color:var(--muted);opacity:.9}
+    .subtitle-latin{margin:0 0 13px;font-family:var(--face-sc);font-size:11px;letter-spacing:.26em;color:var(--muted);opacity:.9}
     .cartouche{position:relative;display:inline-block}
     .cartouche-frame{position:absolute;top:-.22em;left:-.55em;right:-.55em;bottom:-.3em;width:calc(100% + 1.1em);height:calc(100% + .52em);z-index:-1;color:var(--gold);opacity:.55;pointer-events:none}
     .compass-star{position:absolute;left:50%;bottom:0;width:16px;height:16px;transform:translate(-50%,55%);color:var(--gold);opacity:.85;pointer-events:none}
     .title-group .eyebrow{margin:18px 0 0}
-    .printer-line{margin:20px 0 0;font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
+    .printer-line{margin:20px 0 0;font-style:italic;font-family:var(--face-text);font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
@@ -145,8 +148,8 @@
     #game.daily #daily{color:var(--gold);border-color:var(--gold)}
     #end .end-stats{flex-wrap:nowrap;gap:0;min-width:0}
     #end .stat{padding:0 clamp(5px,3vw,22px)}
-    #end-row-note{color:var(--gold);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:10px;letter-spacing:.2em;min-height:12px;margin-top:3px}
-    #end-observations{margin:-15px 0 19px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:10px;letter-spacing:.17em;color:var(--muted);line-height:1.7;max-width:30em}
+    #end-row-note{color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.2em;min-height:12px;margin-top:3px}
+    #end-observations{margin:-15px 0 19px;font-family:var(--face-sc);font-size:10px;letter-spacing:.17em;color:var(--muted);line-height:1.7;max-width:30em}
     #end-observations:empty{display:none}
     .end-plate-line{display:flex;gap:13px;align-items:center;justify-content:center;margin-top:13px;min-height:1px}
     #end-daily{margin:0}
@@ -185,7 +188,7 @@
     .catalogue-leaf::before{inset:0;border-width:1.5px}
     .catalogue-leaf::after{inset:5px;opacity:.6}
     .catalogue-head{flex:0 0 auto;text-align:center}
-    #catalogue h2{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
+    #catalogue h2{margin:0;font-family:var(--face-sc);font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
     #catalogue .eyebrow{margin:0 0 6px;font-size:9px}
     #catalogue .title-rule{margin:9px auto 0;width:76px}
     .catalogue-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;margin-top:11px;padding:0 3px 4px}
@@ -195,10 +198,10 @@
     .cat-tabs{display:flex;gap:9px;justify-content:center;margin:0 0 13px}
     .cat-pane.hidden{display:none}
     .ledger-table{width:100%;border-collapse:collapse}
-    .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--line)}
+    .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--line)}
     .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;border-bottom:1px solid var(--line);color:var(--best)}
     .cat-group{margin-top:17px}
-    .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1px solid var(--line);font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+    .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-weight:400;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
     .cat-group ul{margin:0;padding:0;list-style:none}
     .cat-row{border-bottom:1px solid var(--line)}
     .cat-item,.cat-granted{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;padding:7px 2px;margin:0;background:none;border:0;border-radius:0;text-align:left;font:inherit;color:var(--copy)}
@@ -212,18 +215,18 @@
     .cat-row.locked{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:7px 2px}
     .cat-blank{flex:0 0 74px;height:1px;background:var(--line)}
     .cat-cond{font-style:italic;font-size:11px;line-height:1.5;text-align:right;color:var(--muted);opacity:.72}
-    .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:'IM Fell English',Georgia,serif;font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
+    .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
+    .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:var(--face-text);font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
     .cat-initials input:focus-visible{outline:none;border-color:var(--gold)}
     #catalogue-close{flex:0 0 auto;margin:11px auto 0}
     #game.playing #catalogue-open{display:none}
     /* — The catalogue's marks on the colophon: what a run has just granted, and the library stamp — */
-    #end-unlocked{margin:-9px 0 13px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:10px;letter-spacing:.19em;color:var(--gold)}
+    #end-unlocked{margin:-9px 0 13px;font-family:var(--face-sc);font-size:10px;letter-spacing:.19em;color:var(--gold)}
     #end-unlocked:empty{display:none}
     .exlibris{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:98px;height:58px;margin:13px auto 0;border:1px solid var(--line);border-radius:50%;color:var(--gold);opacity:.85}
     .exlibris::before{content:'';position:absolute;inset:3px;border:1px solid var(--line);border-radius:50%;opacity:.7}
-    .exlibris-line{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.24em}
-    #exlibris-initials{font-family:'IM Fell English',Georgia,serif;font-size:16px;letter-spacing:.2em;line-height:1.1}
+    .exlibris-line{font-family:var(--face-sc);font-size:8px;letter-spacing:.24em}
+    #exlibris-initials{font-family:var(--face-text);font-size:16px;letter-spacing:.2em;line-height:1.1}
     .exlibris.hidden{display:none}
     @media(max-height:530px) and (orientation:landscape){
       #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
@@ -238,11 +241,11 @@
     /* — The ephemeris: an almanac leaf of the daily plates, ruled as a month table — */
     #ephemeris{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
     .eph-leaf{max-width:min(460px,100%)}
-    #ephemeris h2{margin:0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
+    #ephemeris h2{margin:0;font-family:var(--face-sc);font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
     #ephemeris .eyebrow{margin:0 0 6px;font-size:9px}
     #ephemeris .title-rule{margin:9px auto 0;width:76px}
     .eph-month{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px}
-    .eph-title{min-width:11em;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+    .eph-title{min-width:11em;font-family:var(--face-sc);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
     .eph-arrow{pointer-events:auto;padding:2px 11px;background:none;border:0;border-radius:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;transition:color .2s,opacity .2s}
     .eph-arrow:hover,.eph-arrow:focus-visible{color:var(--gold)}
     .eph-arrow:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
@@ -252,10 +255,10 @@
        through the squares of the days that were never drawn. */
     .eph-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
     .eph-head,.eph-cell{border-width:0 1px 1px 0;border-style:solid;border-color:var(--line)}
-    .eph-head{padding:5px 1px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
+    .eph-head{padding:5px 1px;font-family:var(--face-sc);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
     .eph-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;margin:0;padding:5px 2px;background:none;border-radius:0;font:inherit;color:inherit;text-align:center}
-    .eph-num{font-family:'IM Fell English',Georgia,serif;font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
-    .eph-best{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.09em;color:var(--muted);font-variant-numeric:tabular-nums}
+    .eph-num{font-family:var(--face-text);font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
+    .eph-best{font-family:var(--face-sc);font-size:8px;letter-spacing:.09em;color:var(--muted);font-variant-numeric:tabular-nums}
     .eph-rule{width:15px;height:1px;background:var(--line)}
     .eph-blank .eph-num{opacity:.34}
     .eph-hence .eph-num{opacity:.13}

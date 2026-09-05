@@ -564,7 +564,7 @@ function drawConstellations(){
         const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
         const guard=Math.abs(ex-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner,below=ey-ring-size<guard;
         ctx.save();ctx.translate(ex,ey);
-        ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+        ctx.font=plateFace(size,'sc');
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${chart.completed?.34:.52})`;
         textAlongArc(ctx,chart.name,0,0,ring,below?Math.PI/2:-Math.PI/2,{align:'center',size,spacing:size*.24,inward:below});
         ctx.restore();
@@ -579,15 +579,15 @@ function drawConstellations(){
       // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption does.
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
       const y=star+captionOffset(sx(label.x),star,r,46*scale);
-      ctx.textAlign=label.x>0?'right':'left';ctx.font="14px 'IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
-      ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText('COMPLETE · +60',x,y+16);
+      ctx.textAlign=label.x>0?'right':'left';ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
+      ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText('COMPLETE · +60',x,y+16);
     }
     // Skipped where the node already carries the early-run "NEXT" caption (see drawNode in figures.js):
     // the wide-orbit hint sits on the same main-line node right after a constellation's entry, and the
     // two captions would otherwise print on top of each other.
     const nextCaptioned=world.captures<2&&chart.main[0]&&chart.main[0].row===Math.floor(world.progress)+1;
     if(world.player.node===chart.entry&&chart.main[0]&&!nextCaptioned&&!plainPlate()&&!captionsHeld()){
-      const n=chart.main[0];ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
+      const n=chart.main[0];ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
     }
     ctx.restore();
   }
@@ -670,7 +670,7 @@ function drawNode(n,aim){
       ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
     }
     if(!used&&!captionsHeld()){
-      ctx.textAlign='center';ctx.font="13px 'IM Fell English SC','IM Fell English',Georgia,serif";ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
+      ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
       const pace=world.speedMultiplier().toFixed(1);
       const caption=active?(p.speed>=MAX_SPEED?'MAX SPEED  ·  ×'+pace:charge>=1?'SPEED HELD  ·  ×'+pace:'BUILDING SPEED  ·  ×'+pace):'SLINGSHOT STAR';
       // The caption for the orbit being held is always set below the planet, where it cannot cover the
@@ -708,7 +708,7 @@ function drawNode(n,aim){
   // ring, which are drawn on the current orbit alone.
   if(!active&&!sling&&!gold&&!shield&&!reflector&&!inkwell&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
-    ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
+    ctx.font=plateFace(size,'sc');
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
     textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true});
   }
@@ -734,7 +734,7 @@ function drawNode(n,aim){
     }
   }
   if(!used&&!captionsHeld()){
-    ctx.font=`${Math.max(9,10*scale)}px 'IM Fell English',Georgia,serif`;ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
+    ctx.font=plateFace(Math.max(9,10*scale));ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
     const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
@@ -744,7 +744,7 @@ function drawNode(n,aim){
     // star is always row 2, so without this the two captions would print on top of each other.
     if(world.captures<2&&!active&&!sling&&n.row===Math.floor(world.progress)+1){
       const label=n.difficultyChoice?DIFFICULTY_LABELS[n.difficultyChoice]:'NEXT';
-      ctx.textAlign='center';ctx.font=`${Math.max(9,9*scale)}px 'IM Fell English SC','IM Fell English',Georgia,serif`;ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
+      ctx.textAlign='center';ctx.font=plateFace(Math.max(9,9*scale),'sc');ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
     }
   }
   ctx.restore();

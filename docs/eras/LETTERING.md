@@ -1,8 +1,9 @@
 # Typefaces and reveal animations per era
 
 Short answer: **yes to both, and they are not the same size of problem.** The reveal animations
-are cheap and mostly already built. The typefaces are the expensive half — but not for the reason
-you would expect, and the expensive part is not the glyph pipeline.
+are cheap and mostly already built and none of them exist yet. The typefaces *were* the expensive
+half — but not for the reason expected, and both of the things that made them expensive have since
+been fixed, so per-era type now costs three values.
 
 ---
 
@@ -69,43 +70,45 @@ Adding a face to the *outline* pipeline is: embed the woff2, add one row, `npm r
 generated `src/glyphs.js` is ~20 KB for the two current faces at 39 characters each, committed, so
 neither the runtime nor CI ever needs `fontkit`. This part is genuinely solved.
 
-### Problem one: the family name is hardcoded 93 times
+### Problem one: the family name was hardcoded in 65 places — **done**
 
-`'IM Fell English'` appears 62 times and `'IM Fell English SC'` 31 times, as string literals inside
-`ctx.font` assignments across eight files:
+`'IM Fell English'` and `'IM Fell English SC'` were string literals inside `ctx.font` assignments in
+six files and inside `font-family` declarations in the stylesheet. That, not the glyph pipeline, was
+what blocked per-era typefaces.
 
-```js
-ctx.font = `${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
-```
+Now: the three faces are a plate token registered by `definePlate('type', ...)` like any colour, the
+canvas builds every font through `plateFace(size, variant, style)`, and the stylesheet reads
+`var(--face-text)`, `var(--face-sc)` and `var(--face-body)`. **An era sets its captions in its own
+type by naming three values.** Nothing else has to be touched.
 
-**This, not the glyph pipeline, is what blocks per-era typefaces.** The fix is mechanical and
-should be done once, before any era needs it: register the faces as a plate section and read them
-through one helper, so every call site becomes `ctx.font = face(size,'sc')`. It is a large,
-boring, low-risk change and it wants to happen on its own commit, uncoupled from any era.
+### Problem two: the payload — smaller than it looked, and not a real constraint
 
-### Problem two: the payload
+Two corrections to what this file first claimed.
 
-`assets/fonts.css` is **233 KB of base64 for three faces** — roman, italic and small caps at about
-57 KB of woff2 each. The whole built game is 513 KB.
+**The fonts were never inlined.** `dist/index.html` is the single script; `dist/assets/fonts.css` is
+a *sibling* file loaded beside it. So the earlier "233 KB against a 513 KB build" was a conflation —
+they are separate downloads, fetched in parallel and cached separately.
 
-Five eras at two or three faces each would add somewhere around **600–850 KB**, more than doubling
-the game, for a page whose entire pitch is that it is one self-contained file with no network
-access. This is the real constraint on the ladder and it should be treated as a hard budget, not
-discovered late.
+**And the single-file build is a convenience, not the point.** It is what makes GitHub Pages testing
+easy; it is not a property the game is obliged to keep. That removes the budget as a hard constraint,
+and it opens the option that actually dissolves the problem: **since the faces are already a separate
+stylesheet, an era's faces need only load when that era's plate is on the press.** A player who never
+leaves the engraving never downloads a hieroglyph. Per-era fonts cost per-era, not up front.
 
-Three things bring it down, and they are cumulative:
+**What was done anyway, because it pays regardless:** `assets/fonts.source.css` now holds the faces
+as their publisher drew them and is never served; `scripts/fonts.mjs` (`npm run fonts`) writes
+`assets/fonts.css` with the same three faces cut to the characters the atlas can actually set. The
+charset is **read off `src/` rather than kept as a list here**, so it cannot drift out of step with
+the captions.
 
-1. **Subset the faces to the characters actually set.** The embedded fonts appear to carry their
-   full character sets; the game sets Latin, digits and a handful of punctuation. Subsetting is the
-   single biggest saving available and is worth doing to the *existing* fonts regardless of whether
-   the ladder is ever built.
-2. **One face per era, not three.** Era III has three because it is the game's home era and sets
-   body copy, italic asides and small caps. An era that only has to caption a chart needs one.
-3. **Let some eras carry no webfont at all.** Era IV's annotations are a grotesque and a
-   typewriter face — both of which the system stack provides adequately, and a photographic plate's
-   annotation is *supposed* to look mechanical rather than designed. Era V is the same. **The two
-   cheapest eras to build are also the two that need no font payload**, which is a good reason to
-   build them first, and a good reason the ladder's expensive end is its ancient end.
+Result: 230 glyphs to 110, 171 KB of woff2 to 109 KB, and the served stylesheet from 233 KB to
+149 KB — **36% off, for a sheet that renders identically.** The source stylesheet stays in the
+repository because a subset cannot be widened back out, and `scripts/glyphs.mjs` reads it rather
+than the cut one, so `src/glyphs.js` still regenerates byte-identical.
+
+One thing the measurement taught: the Fell faces carry only 230 glyphs, so a generous character range
+saved almost nothing (15%). The saving is entirely in cutting to what is *used*. Any future era's
+faces should be cut the same way and measured, not assumed.
 
 ### Problem three: shaping
 
@@ -118,11 +121,12 @@ should spike this before anything else in it is designed.
 
 ## Recommendation
 
-1. **Do the `face()` refactor now**, on its own, decoupled from the ladder. Ninety-three literals
-   into one helper. It is worth doing even if no era is ever built, and every era needs it.
-2. **Subset the existing fonts** at the same time. Pure win today.
+1. ~~Do the `face()` refactor~~ — **done.** Every font in the game goes through `plateFace()` or a
+   `--face-*` custom property.
+2. ~~Subset the existing fonts~~ — **done.** `npm run fonts`, 36% off the served stylesheet.
 3. **Build the reveal modes per era, as each era lands.** They are small and they are where a
    surprising amount of an era's character lives — a typewriter says "instrument" faster than any
-   palette does.
-4. **Treat the font budget as a hard constraint from the start**, and let it inform which eras get
-   built: the ones needing no webfont are the cheap ones.
+   palette does. Nothing here is built yet.
+4. **Load an era's faces with its plate, not up front.** The stylesheet is already a separate file,
+   so this is the shape that keeps the ladder affordable however many eras it grows to. Not built,
+   and not needed until a second era's faces exist.

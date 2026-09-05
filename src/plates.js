@@ -323,6 +323,22 @@ definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'}
 });
+// ---------- The hand the plate letters in ----------
+// Every `ctx.font` in the game is built here. The Fell faces are era III's — the engraved atlas the
+// game is set in — and are registered as a plate token like any colour, so a plate cut for another
+// century sets its captions in its own type by naming one value rather than by rewriting the font
+// string at every place text is drawn. `text` is the roman, `sc` the small caps, `body` the stack the
+// stylesheet's running copy uses; each keeps its own fallbacks so a face that fails to load still
+// lands on something with the right proportions.
+const FELL_FACES={
+  text:"'IM Fell English',Georgia,serif",
+  sc:"'IM Fell English SC','IM Fell English',Georgia,serif",
+  body:"'IM Fell English',Georgia,'Times New Roman',serif"
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES});
+// A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
+// the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
+const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
