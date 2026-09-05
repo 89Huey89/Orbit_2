@@ -196,6 +196,27 @@ function paintGround(g){
   }
 }
 
+// The dark nebula's centre/radius, needed by both the background starfield (so it can thin out
+// approaching the cloud, per §7's "fades into the field, not a hard silhouette") and the hazard
+// painter itself, so the two agree on where the sky actually goes quiet.
+const NEBULA={cx:236,cy:258,r:76};
+function starDensityAt(x,y){
+  const d=Math.hypot(x-NEBULA.cx,y-NEBULA.cy);
+  return d<NEBULA.r ? Math.max(.04,d/NEBULA.r) : 1;
+}
+function paintStarfield(g){
+  // The background sky itself: a photographic field this dense is what makes a void or a nebula
+  // legible at all — without it there is nothing for either to be an absence *in*.
+  for(let i=0;i<1100;i++){
+    const x=EX0+rng()*FW, y=EY0+rng()*FH;
+    if(rng()>starDensityAt(x,y)) continue;
+    const cls=rng();
+    const r=cls<.55?.5+rng()*.45:cls<.86?1+rng()*.55:1.7+rng()*1.0;
+    const density=cls<.55?.32+rng()*.22:cls<.86?.55+rng()*.25:.82+rng()*.18;
+    grainDisc(g,x,y,r,r,density,{color:TOKENS.silverDense});
+  }
+}
+
 function paintReseau(g){
   // The réseau: 27h × 27v lines at 5mm on the real plate — simplified in count here for
   // legibility at this scale, ruled straight through the whole field per research §2/§9.
@@ -283,29 +304,32 @@ function paintHazard(g,kind,cx,cy){
     g.strokeStyle=TOKENS.reseau; g.globalAlpha=.5; g.lineWidth=1.2; g.stroke();
     tickLabel(g,'EMULSION VOID',cx,cy+66,9);
   } else if(kind==='halation'){ // repulsor — the bloom past an overexposed star's own disc
-    grainDisc(g,cx,cy,58,58,.1,{color:TOKENS.silverMid,alpha:.4});
-    grainDisc(g,cx,cy,38,38,.22,{color:TOKENS.silverMid,alpha:.6});
-    grainDisc(g,cx,cy,17,17,1,{color:TOKENS.silverDense});
-    hairlineCircle(g,cx,cy,17,{weight:1,color:TOKENS.inkRed,alpha:.7,dash:[2,3]});
-    tickLabel(g,'HALATION',cx,cy+70,9);
+    grainDisc(g,cx,cy,60,60,.22,{color:TOKENS.silverMid,alpha:.55});
+    grainDisc(g,cx,cy,42,42,.4,{color:TOKENS.silverMid,alpha:.7});
+    grainDisc(g,cx,cy,24,24,.7,{color:TOKENS.silverMid,alpha:.85});
+    grainDisc(g,cx,cy,15,15,1,{color:TOKENS.silverDense}); // the small, lethal, overexposed core
+    hairlineCircle(g,cx,cy,15,{weight:1.2,color:TOKENS.inkRed,alpha:.8,dash:[2,3]});
+    tickLabel(g,'HALATION',cx,cy+72,9);
   } else if(kind==='drift'){ // crosswind — tracking drift: every star trailed one steady direction
-    for(let i=0;i<26;i++){
-      const dx=(rng()-.5)*FW*.24, dy=(rng()-.5)*90, len=10+rng()*22;
-      grainDisc(g,cx+dx,cy+dy,1.6,1.6,.5+rng()*.4,{color:TOKENS.silverDense,alpha:.7});
-      hairline(g,[[cx+dx,cy+dy],[cx+dx+len,cy+dy+len*.22]],{weight:1,alpha:.55});
+    for(let i=0;i<34;i++){
+      const dx=(rng()-.5)*FW*.24, dy=(rng()-.5)*100, len=16+rng()*30;
+      const dens=.5+rng()*.4;
+      grainDisc(g,cx+dx,cy+dy,1.7,1.7,dens,{color:TOKENS.silverDense});
+      hairline(g,[[cx+dx,cy+dy],[cx+dx+len,cy+dy+len*.22]],{weight:1+rng()*.6,alpha:.35+dens*.4});
     }
-    tickLabel(g,'TRACKING DRIFT',cx,cy+58,9);
+    tickLabel(g,'TRACKING DRIFT',cx,cy+64,9);
   } else if(kind==='nebula'){ // obscurer — dark nebula: stars simply absent, a soft uneven edge
-    g.globalCompositeOperation='destination-out';
-    for(let i=0;i<10;i++){
-      const r=60-i*4; g.beginPath();
-      g.arc(cx+(rng()-.5)*10,cy+(rng()-.5)*10,r,0,7);
-      g.fillStyle=`rgba(0,0,0,${.06+ (10-i)*.008})`; g.fill();
+    // The cloud is not a black silhouette: real dark nebulae read almost entirely as the *absence*
+    // of the stars the starfield already thinned out here (starDensityAt) — this pass only adds
+    // the faintest warm-grey extinction so the patch is not perfectly invisible on its own.
+    for(let i=0;i<16;i++){
+      const r=NEBULA.r*(1-i*.055), ox=(rng()-.5)*20, oy=(rng()-.5)*20;
+      g.beginPath(); g.arc(cx+ox,cy+oy,r,0,7);
+      g.fillStyle=`rgba(60,50,40,${.012+i*.0026})`; g.fill();
     }
-    g.globalCompositeOperation='source-over';
-    inkStroke(g,[[cx+30,cy+34],[cx+52,cy+40]],{weight:1,color:TOKENS.inkBlack,alpha:.7});
-    g.fillStyle=TOKENS.inkBlack; g.font=`italic 10px ${FACE_HAND}`; g.fillText('B 33',cx+54,cy+43);
-    tickLabel(g,'DARK NEBULA',cx,cy-58,9);
+    inkStroke(g,[[cx+34,cy+40],[cx+58,cy+48]],{weight:1,color:TOKENS.inkBlack,alpha:.7});
+    g.fillStyle=TOKENS.inkBlack; g.font=`italic 10px ${FACE_HAND}`; g.fillText('B 33',cx+60,cy+51);
+    tickLabel(g,'DARK NEBULA',cx,cy-70,9);
   }
   g.restore();
 }
@@ -369,7 +393,7 @@ function paintHUDStatic(g){
 
 function buildStatic(){
   const g=og; g.clearRect(0,0,W,H);
-  paintGround(g); paintReseau(g); paintFrame(g);
+  paintGround(g); paintStarfield(g); paintReseau(g); paintFrame(g);
   paintFigure(g);
   paintHazard(g,'nebula',236,258);
   paintHazard(g,'void',706,238);
@@ -383,6 +407,7 @@ function buildStatic(){
   });
   paintOrbitFurniture(g);
   paintHUDStatic(g);
+  paintStamp(g);
 }
 buildStatic();
 
@@ -405,9 +430,10 @@ function paintCapturedBody(g,t){
   const wash=Math.max(0,Math.min(1,(k-.7)/.3));
   const fadeOut = dt>DEV_IN+DEV_HOLD ? 1-Math.min(1,(dt-DEV_IN-DEV_HOLD)/.25) : 1;
   g.save(); g.globalAlpha=fadeOut;
-  if(wash>0) grainDisc(g,cx,cy,26*(.6+wash*.4),26*(.6+wash*.4),wash*.18,{color:TOKENS.silverMid,alpha:.5});
-  if(midtone>0) grainDisc(g,cx,cy,14+midtone*7,14+midtone*7,.25+midtone*.35,{color:TOKENS.silverMid});
-  if(highlight>0) grainDisc(g,cx,cy,4+highlight*3,4+highlight*3,highlight,{color:TOKENS.silverDense});
+  if(wash>0) grainDisc(g,cx,cy,34*(.6+wash*.4),34*(.6+wash*.4),wash*.22,{color:TOKENS.silverMid,alpha:.5});
+  if(midtone>0) grainDisc(g,cx,cy,18+midtone*9,18+midtone*9,.3+midtone*.4,{color:TOKENS.silverMid});
+  if(highlight>0) grainDisc(g,cx,cy,5+highlight*4,5+highlight*4,highlight,{color:TOKENS.silverDense});
+  if(k>0){ g.globalAlpha=.5*fadeOut; tickLabel(g,'DEVELOPING',cx,cy-56,9); }
   g.restore();
 }
 
@@ -442,6 +468,15 @@ function paintIDBlock(g,t){
   }
   g.font=`9px ${FACE_GROTESQUE}`; g.globalAlpha=.6; g.fillText('PLATE IDENTITY',92,766);
   g.restore();
+}
+
+function paintStamp(g){
+  // the observatory's own stamp — research §9's substitute for a colophon: no maker's mark
+  // beyond this, an oval ink stamp worked into the identity block's corner.
+  const cx=430,cy=750;
+  hairlineCircle(g,cx,cy,17,{weight:1.1,color:TOKENS.inkRed,alpha:.55});
+  g.save(); g.globalAlpha=.6; g.fillStyle=TOKENS.inkRed; g.textAlign='center'; g.font=`7px ${FACE_GROTESQUE}`;
+  g.fillText('YERKES',cx,cy-1); g.fillText('OBSY.',cx,cy+8); g.restore();
 }
 
 /* legend: press L to overlay small grey labels naming each element by the game's own term */

@@ -1,0 +1,632 @@
+<!doctype html>
+<!--
+  Orbit — era prototype II · THE CEILING (Egypt, Senenmut's ceiling, c. 1479 BCE).
+  Spec: docs/eras/research/ceiling.md (primary), docs/eras/01-ceiling.md (superseded by it).
+  Not shipped. See docs/eras/OVERVIEW.md for the ladder this belongs to.
+
+  FONT — Noto Sans Egyptian Hieroglyphs, SIL Open Font License 1.1, © The Noto Project,
+  served by Google Fonts. Covers the Unicode "Egyptian Hieroglyphs" block, U+13000–U+1342F
+  (research §4). Loaded here only; the shipped game would embed and subset it as
+  assets/fonts.source.css already does for the Fell faces (CLAUDE.md "npm run fonts").
+  If the face fails to load this page never falls back to a system font over hieroglyph
+  text (that would show tofu, not a period mark) — it falls back to a small bank of
+  hand-drawn pictographs, one per sign actually used on this sheet (see FALLBACK below).
+
+  HIEROGLYPH SOURCING — research.md gives five caption glyphs verbatim (ocean/ringed/ice/
+  dune families, the shield pickup); those five are copied byte-for-byte from the research
+  file. Every other caption on this sheet spells its transliteration phonetically from
+  Gardiner's standard uniliteral alphabet (plus four one-sign logograms: the eye D4 + sun
+  disc N5 for the Eye of Ra, the Set-animal E20 for storm/Set, the feather H6 for Shu) —
+  the same convention Egyptologists use to write a name the record does not itself spell
+  out. Every codepoint below was looked up individually this session (WebFetch/WebSearch
+  page fetches were EGRESS_BLOCKED against unicode.org, Wikipedia, codepoints.net and
+  compart.com all session, exactly as research.md's own methodology note describes — only
+  search-snippet answers were reachable, cross-checked where two snippets agreed and
+  against the five verbatim glyphs copied from research.md). "Crater" has no attested name
+  at all (research §5: "constructed, no attested source") and is captioned "(unattested)"
+  rather than invented.
+
+  OPTIONS TAKEN (research offered more than one; each is picked once, here, per the brief):
+  - Title: "Nwt" (Nut, the sky) over "pḫr" — research offers both; Nwt needed only signs
+    already in the vocabulary below and reads as a name rather than a verb on a HUD.
+  - Constellation: Meskhetiu (the Bull's Foreleg / Big Dipper) over Sah — research calls it
+    "the one certainly identified constellation on the Senenmut ceiling" and its
+    mooring-post/chain story (§1, Book of Day and Night) gives the figure something to do.
+  - Currency: the "no-twist" reading (§6) — ink renamed khar, spent/gained exactly as
+    shipped, no every-10th-row dividend. The dividend is flagged in research as a "B" (an
+    economy rule, not a depiction) needing the DANGERS.md sign-off this prototype doesn't
+    have; the khar gauge and its hand-drawn numeral are depiction only.
+  - Dangers: DANGERS.md option A (depiction only) — the four rows (attractor/repulsor/
+    crosswind/obscurer) are the shipped VORAGO/MACULA/VENTUS table, redrawn and renamed.
+  - Reveal step order: research's correction to 01-ceiling.md — sketch (red) → correct
+    (black) → flood (colour) → outline (black), four passes, not three.
+
+  NOT ACHIEVED / would fix next with more time: quadrat stacking (research §4 — real
+  hieroglyphic text packs 2-4 signs into one square; this sheet sets every caption as a
+  plain one-sign-per-line column, which research explicitly sanctions as the fallback but
+  is not the authentic layout); the northern panel's month-circle grid and the Ramesside
+  star-clock's 12×7 body-keyed grid (research §1, §10) are both strong chapter-plate
+  candidates this single sheet has no room for; Reret the hippopotamus, who in the source
+  actually holds Meskhetiu's mooring chain, is cut to a bare post for space.
+-->
+<html>
+<head>
+<title>The Ceiling</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap" rel="stylesheet">
+<style>
+  :root{--plaster:#e8dcc0;}
+  html,body{margin:0;height:100%;background:#151009;overflow:hidden;}
+  body{display:flex;align-items:center;justify-content:center;}
+  canvas{display:block;box-shadow:0 0 0 1px #000, 0 20px 60px rgba(0,0,0,.6);cursor:default;}
+  #hint{position:fixed;left:8px;bottom:6px;font:11px/1.4 ui-monospace,monospace;color:#a89572;opacity:.65;pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c" width="1280" height="800"></canvas>
+<div id="hint">L — legend</div>
+<script>
+'use strict';
+// ---- seeded randomness: the sheet paints identically every load. -----------------------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(1479); // the era's own year, c. 1479 BCE — the seed is a date, as the daily plate's is.
+
+// ---- palette & faces, named tokens in the spirit of the game's definePlate sections. ---
+const TOKENS={
+  plasterCream:'#e8dcc0', plasterCreamDeep:'#ddcda8', plasterCrack:'#00000022',
+  nightBlue:'#12244a', nightBlueDeep:'#0c1a38', underworld:'#241812', underworldDeep:'#1a1009',
+  redOchre:'#a63b23', redOchreDark:'#7c2c19', yellowOchre:'#c9a227', yellowOchreDark:'#9c7d1c',
+  orpiment:'#f4c430', orpimentDark:'#c99a1a', malachite:'#145a32', malachiteDark:'#0e3f22',
+  carbon:'#1b1b1b', huntite:'#f1ead9', ink:'#241a10', inkFaint:'#241a1088',
+  captionGrey:'#6a7fa0', gold:'#e2b23a',
+  faceHiero:'"Noto Sans Egyptian Hieroglyphs", serif', faceTranslit:'italic 12px Georgia, "Times New Roman", serif',
+  faceBody:'"Georgia", "Times New Roman", serif'
+};
+
+// ---- Gardiner uniliterals + logograms actually used on this sheet, codepoints as sourced
+// in the header comment. The five compound values marked "research" are copied verbatim
+// (as codepoints) from docs/eras/research/ceiling.md so no re-typing risk enters the file.
+const G={
+  a:0x1313F,  i:0x131CB,  w:0x13171,  b:0x130C0,  p:0x132AA,  f:0x13191,
+  m:0x13153,  n:0x13216,  r:0x1308B,  h:0x13254,  H:0x1339B,  x:0x1340D,
+  s:0x132F4,  g:0x133BC,  t:0x133CF,
+  eye:0x13079, sun:0x131F3, setAnimal:0x130E9, feather:0x13184
+};
+const RESEARCH_GLYPH={mw:[0x13217], bhdty:[0x13193,0x13143], hd:[0x13321,0x133CF], dsrt:[0x132AA,0x133CF], ikm:[0x133BC,0x13153]};
+const WORD={
+  title:{cps:[G.n,G.w,G.t],translit:'nwt',gloss:'Nut, the sky'},
+  chapter:{cps:[G.w,G.n,G.w,G.t],translit:'wnwt',gloss:'hour / register'},
+  currency:{cps:[G.x,G.a,G.r],translit:'ḫꜣr',gloss:'khar, the grain ration'},
+  score:{cps:[G.H,G.s,G.b],translit:'ḥsb',gloss:'reckoning'},
+  best:{cps:[G.t,G.p],translit:'tp',gloss:'foremost'},
+  ocean:{cps:RESEARCH_GLYPH.mw,translit:'mw',gloss:'water',name:'ocean'},
+  crater:{cps:[],translit:'(unattested)',gloss:'—',name:'crater'},
+  ringed:{cps:RESEARCH_GLYPH.bhdty,translit:'bḥdty',gloss:'winged disc',name:'ringed'},
+  ice:{cps:RESEARCH_GLYPH.hd,translit:'ḥḏ',gloss:'white',name:'ice'},
+  dune:{cps:RESEARCH_GLYPH.dsrt,translit:'dšrt',gloss:'red land',name:'dune'},
+  volcanic:{cps:[G.s,G.x,G.m,G.t],translit:'sḫmt',gloss:'Sekhmet',name:'volcanic'},
+  storm:{cps:[G.setAnimal],translit:'stẖ',gloss:'Set',name:'storm'},
+  attractor:{cps:[G.a,G.p,G.p],translit:'ꜣpp',gloss:'Apep',name:'attractor'},
+  repulsor:{cps:[G.eye,G.sun],translit:'jrt rꜥ',gloss:'Eye of Ra',name:'repulsor'},
+  crosswind:{cps:[G.feather],translit:'šw',gloss:'Shu',name:'crosswind'},
+  obscurer:{cps:[G.n,G.w,G.n],translit:'nwn',gloss:'Nun',name:'obscurer'},
+  sling:{cps:[G.w,G.p,G.r,G.n,G.p,G.t],translit:'wp rnpt',gloss:'opener of the year',name:'slingshot star'},
+  shield:{cps:RESEARCH_GLYPH.ikm,translit:'ikm',gloss:'shield',name:'scutum'},
+  reflector:{cps:[G.x,G.s,G.f],translit:'ḫsf',gloss:'repel',name:'repulsa'},
+  inkwell:{cps:[G.g,G.s,G.t,G.i],translit:'gsti',gloss:'palette',name:'inkwell'},
+  meskhetiu:{cps:[G.m,G.s,G.x,G.t,G.i,G.w],translit:'msḫtjw',gloss:'Meskhetiu, the Bull’s Foreleg'}
+};
+
+// ---- canvas / DPR / scale-to-fit -------------------------------------------------------
+const W=1280,H=800,cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+function fit(){const s=Math.min(innerWidth/W,innerHeight/H);cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
+addEventListener('resize',fit);fit();
+cv.width=W*DPR;cv.height=H*DPR;
+
+// ---- font readiness: hand-drawn fallback if Noto Sans Egyptian Hieroglyphs never lands. -
+let fontReady=false;
+(function(){
+  const probe='40px "Noto Sans Egyptian Hieroglyphs"';
+  const timeout=new Promise(res=>setTimeout(res,1800));
+  const load=(document.fonts&&document.fonts.load)?document.fonts.load(probe,String.fromCodePoint(G.n)).catch(()=>{}):Promise.resolve();
+  Promise.race([load,timeout]).then(()=>{
+    try{fontReady=!!(document.fonts&&document.fonts.check(probe));}catch(e){fontReady=false;}
+    console.log('[ceiling] Noto Sans Egyptian Hieroglyphs ready:',fontReady);
+    buildStatic();
+  });
+})();
+
+// ==== THE ERA'S OWN STROKE PRIMITIVE =====================================================
+// Every line on this sheet is cut by one of these two — a reed brush laid on wet plaster,
+// not the burin the shipped engraving era uses. A reed stroke swells slightly at the lay-in
+// and thins toward the lift, wobbles a fraction of a pixel with the hand, and — unlike a
+// burin line — never skips: plaster does not let a brush "run dry" mid-stroke the way a
+// graver can.
+function reedStroke(x1,y1,x2,y2,opt){
+  opt=opt||{};const w=opt.w||2.4,col=opt.col||TOKENS.carbon,a=opt.a==null?1:opt.a;
+  const segs=Math.max(2,Math.round(Math.hypot(x2-x1,y2-y1)/9));
+  ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();
+  for(let i=0;i<=segs;i++){
+    const t=i/segs,taper=Math.sin(Math.PI*Math.min(1,t*1.15))*.5+.5;
+    const jx=(rng()-.5)*.7,jy=(rng()-.5)*.7;
+    const x=x1+(x2-x1)*t+jx,y=y1+(y2-y1)*t+jy;
+    ctx.lineWidth=w*(.55+taper*.6);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();ctx.restore();
+}
+function reedArc(cx,cy,r,a0,a1,opt){
+  opt=opt||{};const steps=Math.max(6,Math.round(Math.abs(a1-a0)*r/8));
+  let px=cx+Math.cos(a0)*r,py=cy+Math.sin(a0)*r;
+  for(let i=1;i<=steps;i++){
+    const t=a0+(a1-a0)*i/steps,x=cx+Math.cos(t)*r,y=cy+Math.sin(t)*r;
+    reedStroke(px,py,x,y,opt);px=x;py=y;
+  }
+}
+// A closed flat shape, painted in the wall's own real order (research §4's correction):
+// sketch in red, correct in black, flood the colour, close every edge in black. `frac`
+// (0..1) lets the reveal animation stop the sequence partway through; 1 = the shape as it
+// sits finished on every other body on the sheet.
+function paintFlatShape(pts,fill,frac){
+  frac=frac==null?1:frac;
+  const n=pts.length,revealTo=Math.floor(n*Math.min(1,frac/0.28));
+  ctx.save();
+  // sketch (red), first ~28% of the cycle draws it stroke-by-stroke; afterwards it is a
+  // faint pentimento peeking a pixel past the black keyline, exactly as the real plaster
+  // shows today where later paint has worn.
+  const redA=frac<0.28?1:0.35;
+  for(let i=0;i<(frac<0.28?revealTo:n);i++){const a=pts[i],b=pts[(i+1)%n];reedStroke(a.x,a.y,b.x,b.y,{w:1.4,col:TOKENS.redOchre,a:redA});}
+  if(frac<0.28){ctx.restore();return;}
+  // correct (black), a thin true-weight pass over the red — visible ~0.28-0.42 of the cycle.
+  if(frac<0.55)for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];reedStroke(a.x,a.y,b.x,b.y,{w:1.6,col:TOKENS.carbon,a:.8});}
+  if(frac<0.42){ctx.restore();return;}
+  // flood — the flat colour wash, wiped in top-to-bottom as a painter's hand would work a register.
+  const floodT=Math.min(1,(frac-0.42)/0.33);
+  ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+  let minY=Infinity,maxY=-Infinity;pts.forEach(p=>{if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;});
+  ctx.save();ctx.clip();ctx.fillStyle=fill;ctx.fillRect(pts[0].x-999,minY,2000,(maxY-minY)*floodT+1);ctx.restore();
+  if(frac<0.75){ctx.restore();return;}
+  // outline — the final heavy black keyline every other era routes through burinArc/Segment;
+  // here it is the fourth and last reed pass, and it is what makes the shape read as done.
+  const outA=Math.min(1,(frac-0.75)/0.2);
+  for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];reedStroke(a.x,a.y,b.x,b.y,{w:2.6,col:TOKENS.carbon,a:outA});}
+  ctx.restore();
+}
+function circlePts(cx,cy,r,n){const p=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2;p.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}return p;}
+// The five-pointed Egyptian star sign (Gardiner N14), drawn by hand rather than set from
+// the font: it appears dozens of times a frame (backdrop, magnitude key, constellation,
+// pickups) and a hand path keeps every one identical regardless of whether the face loaded.
+function punchStar(cx,cy,r,opt){
+  opt=opt||{};const col=opt.col||TOKENS.huntite,fill=opt.fill!==false,a=opt.a==null?1:opt.a;
+  const pts=[];for(let i=0;i<10;i++){const ang=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;pts.push({x:cx+Math.cos(ang)*rr,y:cy+Math.sin(ang)*rr});}
+  ctx.save();ctx.globalAlpha=a;
+  if(fill){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=col;ctx.fill();}
+  ctx.restore();
+  if(opt.keyline)for(let i=0;i<pts.length;i++){const a2=pts[i],b=pts[(i+1)%pts.length];reedStroke(a2.x,a2.y,b.x,b.y,{w:1,col:TOKENS.carbon,a:.7});}
+}
+
+// ==== hand-drawn glyph fallback (see header comment) ======================================
+// One small pictograph per sign actually used on this sheet, built from reedStroke, so a
+// caption is never shown as a font tofu-box even if Google Fonts is unreachable.
+function fallbackGlyph(cx,cy,s,code){
+  const r=s*.5,o={w:s*.06,col:TOKENS.carbon};
+  ctx.save();
+  switch(code){
+    case G.a: reedStroke(cx-r*.5,cy+r*.3,cx,cy-r*.6,o);reedStroke(cx,cy-r*.6,cx+r*.6,cy+r*.2,o);reedStroke(cx-r*.5,cy+r*.3,cx+r*.6,cy+r*.2,o);break; // vulture, reduced to a wing tent
+    case G.i: reedStroke(cx,cy-r*.7,cx-r*.15,cy+r*.7,o);break; // reed leaf
+    case G.w: ctx.beginPath();ctx.ellipse(cx,cy,r*.5,r*.4,0,0,7);ctx.fillStyle=TOKENS.carbon;ctx.globalAlpha=.85;ctx.fill();break; // quail chick, reduced to its body
+    case G.b: reedStroke(cx-r*.4,cy-r*.6,cx-r*.1,cy+r*.1,o);reedStroke(cx-r*.1,cy+r*.1,cx+r*.5,cy+r*.55,o);break; // leg
+    case G.p: reedStroke(cx-r*.5,cy-r*.3,cx+r*.5,cy-r*.3,o);reedStroke(cx-r*.5,cy-r*.3,cx-r*.35,cy+r*.6,o);reedStroke(cx+r*.5,cy-r*.3,cx+r*.35,cy+r*.6,o);break; // stool
+    case G.f: reedStroke(cx-r*.6,cy,cx+r*.6,cy,{w:s*.05,col:TOKENS.carbon});reedStroke(cx+r*.3,cy-r*.3,cx+r*.55,cy,o);break; // horned viper
+    case G.m: ctx.beginPath();ctx.arc(cx,cy-r*.1,r*.42,0,7);ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.07;ctx.stroke();reedStroke(cx,cy+r*.3,cx,cy+r*.65,o);break; // owl
+    case G.n: for(let i=-1;i<=1;i++)reedStroke(cx-r*.55,cy+i*r*.3,cx+r*.55,cy+i*r*.3,{w:s*.045,col:TOKENS.carbon});break; // water
+    case G.r: ctx.beginPath();ctx.ellipse(cx,cy,r*.55,r*.28,0,0,7);ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.06;ctx.stroke();break; // mouth
+    case G.h: ctx.strokeRect(cx-r*.5,cy-r*.4,r,r*.8);reedStroke(cx-r*.5,cy-r*.4,cx+r*.5,cy+r*.4,{w:s*.04,col:TOKENS.carbon});break; // courtyard
+    case G.H: for(let i=-1;i<=1;i++)reedArc(cx+i*r*.28,cy,r*.22,0,Math.PI*2,{w:s*.05,col:TOKENS.carbon});break; // wick
+    case G.x: ctx.beginPath();ctx.arc(cx,cy,r*.45,0,7);ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.06;ctx.stroke();for(let i=0;i<3;i++)reedStroke(cx-r*.3,cy-r*.15+i*r*.15,cx+r*.3,cy-r*.15+i*r*.15,{w:s*.03,col:TOKENS.carbon});break; // placenta
+    case G.s: reedStroke(cx-r*.5,cy-r*.5,cx+r*.4,cy-r*.1,o);reedStroke(cx+r*.4,cy-r*.1,cx-r*.4,cy+r*.25,o);reedStroke(cx-r*.4,cy+r*.25,cx+r*.5,cy+r*.55,o);break; // folded cloth
+    case G.g: reedStroke(cx,cy-r*.55,cx,cy+r*.1,o);reedStroke(cx-r*.4,cy-r*.55,cx+r*.4,cy-r*.55,o);reedStroke(cx-r*.35,cy+r*.55,cx+r*.35,cy+r*.55,o);reedStroke(cx-r*.35,cy+r*.55,cx,cy+r*.1,o);reedStroke(cx+r*.35,cy+r*.55,cx,cy+r*.1,o);break; // jar stand
+    case G.t: ctx.beginPath();ctx.ellipse(cx,cy+r*.1,r*.55,r*.3,0,0,7);ctx.fillStyle=TOKENS.yellowOchre;ctx.fill();ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.05;ctx.stroke();break; // bread loaf
+    case G.eye: ctx.beginPath();ctx.ellipse(cx,cy,r*.6,r*.32,0,0,7);ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.06;ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,r*.12,0,7);ctx.fillStyle=TOKENS.carbon;ctx.fill();break;
+    case G.sun: ctx.beginPath();ctx.arc(cx,cy,r*.45,0,7);ctx.fillStyle=TOKENS.orpiment;ctx.fill();ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.05;ctx.stroke();break;
+    case G.setAnimal: reedStroke(cx-r*.5,cy+r*.4,cx+r*.2,cy-r*.3,o);reedStroke(cx+r*.2,cy-r*.3,cx+r*.55,cy-r*.55,o);reedStroke(cx-r*.35,cy-r*.55,cx-r*.2,cy-r*.2,o);reedStroke(cx-r*.5,cy+r*.4,cx+r*.5,cy+r*.5,o);break; // Set-animal, reduced to snout+ears+tail
+    case G.feather: reedStroke(cx,cy-r*.65,cx,cy+r*.6,o);for(let i=-2;i<=2;i++)if(i)reedStroke(cx,cy-r*.4+i*r*.2,cx+i*r*.28,cy-r*.4+i*r*.2+r*.08,{w:s*.03,col:TOKENS.carbon});break;
+    default: ctx.beginPath();ctx.arc(cx,cy,r*.4,0,7);ctx.strokeStyle=TOKENS.carbon;ctx.lineWidth=s*.05;ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawGlyph(cx,cy,s,code,fillCol){
+  if(fontReady){
+    ctx.save();ctx.font=s+'px '+TOKENS.faceHiero;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=fillCol||TOKENS.carbon;ctx.fillText(String.fromCodePoint(code),cx,cy+s*.06);ctx.restore();
+  }else fallbackGlyph(cx,cy,s,code);
+}
+// A caption is a short column, per the brief: one sign per line, transliteration in the
+// small hand beneath. Real quadrat stacking (research §4) is a layout engine this
+// prototype does not build — the column is the sanctioned fallback, not a shortcut taken
+// unknowingly.
+function captionColumn(word,cx,topY,s,opt){
+  opt=opt||{};const gap=s*1.05;
+  if(!word.cps.length){
+    ctx.save();ctx.font=TOKENS.faceTranslit;ctx.fillStyle=TOKENS.ink;ctx.textAlign='center';ctx.fillText(word.translit,cx,topY+8);ctx.restore();
+    return topY+18;
+  }
+  word.cps.forEach((c,i)=>drawGlyph(cx,topY+i*gap+s*.55,s,c));
+  const y=topY+word.cps.length*gap+2;
+  ctx.save();ctx.font=TOKENS.faceTranslit;ctx.fillStyle=TOKENS.ink;ctx.textAlign='center';ctx.fillText(word.translit,cx,y+10);ctx.restore();
+  return y+22;
+}
+function captionRow(word,cx,y,s){ // same column, laid sideways — used where height is short and width is free (specimen strip, HUD).
+  const gap=s*.95,n=word.cps.length,x0=cx-(n-1)*gap/2;
+  if(!n){ctx.save();ctx.font=TOKENS.faceTranslit;ctx.fillStyle=TOKENS.ink;ctx.textAlign='center';ctx.fillText(word.translit,cx,y+s*.7+12);ctx.restore();return;}
+  word.cps.forEach((c,i)=>drawGlyph(x0+i*gap,y+s*.5,s,c));
+  ctx.save();ctx.font=TOKENS.faceTranslit;ctx.fillStyle=TOKENS.ink;ctx.textAlign='center';ctx.fillText(word.translit,cx,y+s*.7+13);ctx.restore();
+}
+
+// ==== Egyptian numerals, hand-drawn — strokes / heel-bone / coil, research §4. ============
+// Reserved for small HUD counters (khar charge, chapter number, flow); the score itself
+// stays Hindu-Arabic per research's own recommendation — see paintHUD.
+function paintNumeral(n,cx,y,scale){
+  scale=scale||1;const unitW=6*scale,rowGap=9*scale,tenW=13*scale;
+  let x=cx,hundreds=Math.floor(n/100),tens=Math.floor(n%100/10),units=n%10;
+  for(let h=0;h<hundreds;h++){reedArc(x,y,4*scale,0,Math.PI*1.7,{w:1.3,col:TOKENS.carbon});reedArc(x,y,2.2*scale,0,Math.PI*1.7,{w:1.1,col:TOKENS.carbon});x+=11*scale;}
+  for(let h=0;h<tens;h++){reedStroke(x,y+5*scale,x+tenW*.5,y-5*scale,{w:1.6,col:TOKENS.carbon});reedStroke(x+tenW*.5,y-5*scale,x+tenW,y+3*scale,{w:1.6,col:TOKENS.carbon});x+=tenW+3*scale;}
+  const rows=Math.ceil(units/4)||0;
+  for(let i=0;i<units;i++){const col=i%4,row=Math.floor(i/4);reedStroke(x+col*unitW*.6,y-4*scale+row*rowGap,x+col*unitW*.6,y+4*scale+row*rowGap,{w:1.6,col:TOKENS.carbon});}
+  return x+(units?4*unitW*.6:0);
+}
+
+// ==== legend overlay =======================================================================
+let legendOn=false,legendMarks=[];
+addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L'){legendOn=!legendOn;}});
+function mark(x,y,label,dynamic){legendMarks.push({x,y,label,dynamic:!!dynamic});}
+function paintLegend(){
+  if(!legendOn)return;
+  ctx.save();ctx.font='10px ui-monospace,monospace';ctx.textAlign='center';
+  legendMarks.forEach(m=>{
+    const w=ctx.measureText(m.label).width+6;
+    ctx.fillStyle='#000000aa';ctx.fillRect(m.x-w/2,m.y-11,w,13);
+    ctx.fillStyle='#d9e4ff';ctx.fillText(m.label,m.x,m.y-1);
+  });
+  ctx.restore();
+}
+
+// ==== texture: plaster ground, crazing, flaked patches, two register grounds ==============
+function paintPlaster(x,y,w,h,base){
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  ctx.fillStyle=base;ctx.fillRect(x,y,w,h);
+  const n=Math.round(w*h/900);
+  for(let i=0;i<n;i++){const px=x+rng()*w,py=y+rng()*h,v=(rng()-.5)*22;ctx.fillStyle='rgba('+(v>0?'255,250,230,':'40,30,10,')+Math.abs(v)/60+')';ctx.fillRect(px,py,1.6,1.6);}
+  ctx.strokeStyle='#00000014';ctx.lineWidth=.6;
+  for(let i=0;i<Math.round(w/70);i++){
+    let px=x+rng()*w,py=y+rng()*h;ctx.beginPath();ctx.moveTo(px,py);
+    const legs=2+Math.floor(rng()*3);
+    for(let k=0;k<legs;k++){px+=(rng()-.5)*40;py+=(rng()-.5)*26;ctx.lineTo(px,py);}
+    ctx.stroke();
+  }
+  for(let i=0;i<Math.round(w/260);i++){ // flaked patches
+    const px=x+rng()*w,py=y+rng()*h,r=6+rng()*10;
+    ctx.fillStyle='rgba(120,60,30,.10)';ctx.beginPath();ctx.arc(px,py,r,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(90,45,20,.18)';ctx.lineWidth=.7;ctx.stroke();
+  }
+  ctx.restore();
+}
+function paintNightGround(x,y,w,h){
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  ctx.fillStyle=TOKENS.nightBlue;ctx.fillRect(x,y,w,h);
+  const n=Math.round(w*h/700);
+  for(let i=0;i<n;i++){const px=x+rng()*w,py=y+rng()*h,v=rng();ctx.fillStyle=v>.5?'rgba(255,255,255,'+(rng()*.5)+')':'rgba(0,0,0,'+(rng()*.35)+')';const r=v>.92?1.6+rng()*1.4:.7;ctx.beginPath();ctx.arc(px,py,r,0,7);ctx.fill();}
+  ctx.restore();
+}
+function paintUnderworldGround(x,y,w,h){
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  ctx.fillStyle=TOKENS.underworld;ctx.fillRect(x,y,w,h);
+  for(let i=0;i<Math.round(w*h/900);i++){const px=x+rng()*w,py=y+rng()*h;ctx.fillStyle='rgba(80,30,10,'+(rng()*.25)+')';ctx.fillRect(px,py,1.4,1.4);}
+  ctx.restore();
+}
+
+// ==== frame furniture: plate margin, double rule, tick marks, corner buds =================
+function ruleDouble(y,x0,x1){reedStroke(x0,y,x1,y,{w:1.6,col:TOKENS.ink,a:.75});reedStroke(x0,y+3,x1,y+3,{w:1,col:TOKENS.ink,a:.5});}
+function ticks(x0,x1,y0,y1){
+  ctx.save();
+  for(let x=x0;x<=x1;x+=40)reedStroke(x,4,x,12,{w:1,col:TOKENS.ink,a:.5}),reedStroke(x,H-12,x,H-4,{w:1,col:TOKENS.ink,a:.5});
+  for(let y=y0;y<=y1;y+=40)reedStroke(4,y,12,y,{w:1,col:TOKENS.ink,a:.5}),reedStroke(W-12,y,W-4,y,{w:1,col:TOKENS.ink,a:.5});
+  ctx.restore();
+}
+function budCorner(x,y,sx,sy){ // a small stylised lotus bud, the ceiling's corner flourish in place of a wind-head.
+  reedStroke(x,y,x+18*sx,y,{w:1.4,col:TOKENS.malachite,a:.8});
+  reedStroke(x,y,x,y+18*sy,{w:1.4,col:TOKENS.malachite,a:.8});
+  reedArc(x+9*sx,y+9*sy,7,0,Math.PI*2,{w:1.2,col:TOKENS.redOchre,a:.7});
+}
+
+// ==== layout constants ======================================================================
+const L={x0:16,x1:W-16, hud:[18,150], night:[156,470], spec:[476,616], danger:[622,730], foot:[736,H-16]};
+
+// ==== bodies: the seven families, research §8 ===============================================
+function bodySpec(fam,cx,cy,r,frac){
+  frac=frac==null?1:frac;
+  const pts=circlePts(cx,cy,r,26);
+  const fills={ocean:'#2f5f96',crater:TOKENS.yellowOchre,ringed:TOKENS.orpiment,ice:TOKENS.huntite,dune:TOKENS.redOchre,volcanic:'#8a2418',storm:'#3a3550'};
+  paintFlatShape(pts,fills[fam],frac);
+  if(frac<0.75)return;
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.clip();
+  if(fam==='ocean'){for(let i=0;i<3;i++)reedArc(cx,cy+r*.3+i*4,r*.7,Math.PI*.15,Math.PI*.85,{w:1.1,col:'#1c3f68',a:.6});}
+  if(fam==='crater'){for(let i=0;i<9;i++){const a=rng()*7,rr=rng()*r*.8,px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;reedArc(px,py,1.6+rng()*2,0,Math.PI*2,{w:.9,col:TOKENS.carbon,a:.7});}}
+  if(fam==='ringed'){reedStroke(cx-r,cy,cx-r*.25,cy-r*.35,{w:5,col:TOKENS.redOchreDark,a:.85});reedStroke(cx+r,cy,cx+r*.25,cy-r*.35,{w:5,col:TOKENS.redOchreDark,a:.85});reedStroke(cx-r*.9,cy+2,cx+r*.9,cy+2,{w:2,col:TOKENS.carbon,a:.8});}
+  if(fam==='dune'){for(let i=0;i<3;i++)reedStroke(cx-r*.6,cy-r*.2+i*6,cx+r*.6,cy-r*.2+i*6,{w:1,col:TOKENS.yellowOchreDark,a:.5});}
+  if(fam==='volcanic'){for(let i=0;i<5;i++)reedStroke(cx-4+i*2,cy-r*.55,cx-4+i*2-3,cy-r*.9,{w:1.2,col:TOKENS.orpiment,a:.85});}
+  if(fam==='storm'){for(let i=0;i<10;i++){const a=rng()*7;reedStroke(cx+Math.cos(a)*r*.55,cy+Math.sin(a)*r*.55,cx+Math.cos(a)*r*.95,cy+Math.sin(a)*r*.95,{w:1.1,col:'#17141f',a:.6});}}
+  ctx.restore();
+}
+const FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+
+// ==== dangers: attractor / repulsor / crosswind / obscurer, research §7 ====================
+function drawApep(cx,cy,r){ // coiled flat within the register — never destroyed, only survived.
+  const pts=[];for(let i=0;i<40;i++){const t=i/40,a=t*Math.PI*3.4,rr=r*(0.2+0.75*t);pts.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr*.7});}
+  ctx.save();
+  reedArc(cx,cy,r*1.35,0,Math.PI*2,{w:1,col:TOKENS.redOchre,a:.5}); // kill radius = the drawn coil's own reach
+  for(let i=0;i<pts.length-1;i++)reedStroke(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,{w:6,col:TOKENS.malachiteDark,a:.9});
+  for(let i=0;i<pts.length-1;i++)reedStroke(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,{w:6.6,col:TOKENS.carbon,a:.35});
+  const head=pts[pts.length-1];reedArc(head.x,head.y,4,0,Math.PI*2,{w:2,col:TOKENS.carbon,a:.9});
+  ctx.restore();
+}
+function drawEyeOfRa(cx,cy,r){
+  ctx.save();
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;reedStroke(cx+Math.cos(a)*r*.65,cy+Math.sin(a)*r*.65,cx+Math.cos(a)*r*1.25,cy+Math.sin(a)*r*1.25,{w:1.6,col:TOKENS.orpiment,a:.8});}
+  paintFlatShape(circlePts(cx,cy,r*.65,20),TOKENS.orpiment,1);
+  paintFlatShape(circlePts(cx,cy,r*.36,16),'#8a1c14',1); // the lethal core, 0.6 of the drawn radius per HAZARD_KINDS
+  ctx.restore();
+}
+function drawShu(cx,cy,r){ // kneeling, arms raised — holding Nut off Geb, which is already "a steady push."
+  ctx.save();
+  paintFlatShape(circlePts(cx,cy-r*.55,r*.28,14),TOKENS.yellowOchre,1); // head
+  const body=[{x:cx-r*.3,y:cy-r*.2},{x:cx+r*.3,y:cy-r*.2},{x:cx+r*.35,y:cy+r*.6},{x:cx-r*.35,y:cy+r*.6}];
+  paintFlatShape(body,TOKENS.yellowOchre,1);
+  reedStroke(cx-r*.3,cy-r*.15,cx-r*.9,cy-r*.5,{w:3,col:TOKENS.carbon,a:.85});
+  reedStroke(cx+r*.3,cy-r*.15,cx+r*.9,cy-r*.5,{w:3,col:TOKENS.carbon,a:.85});
+  for(let i=0;i<3;i++){reedStroke(cx-r*1.5,cy-r*.5+i*3,cx-r*1.1,cy-r*.5+i*3,{w:1,col:TOKENS.captionGrey,a:.4});reedStroke(cx+r*1.1,cy-r*.5+i*3,cx+r*1.5,cy-r*.5+i*3,{w:1,col:TOKENS.captionGrey,a:.4});}
+  ctx.restore();
+}
+function drawNun(cx,cy,r){ // the formless waters — inert, hides rather than harms.
+  ctx.save();
+  for(let i=0;i<5;i++){const yy=cy-r*.5+i*r*.25;ctx.globalAlpha=.5;reedArc(cx,yy,r*.9,Math.PI*.1,Math.PI*.9,{w:5,col:'#1c3f68',a:.5});}
+  ctx.globalAlpha=1;
+  punchStar(cx+r*.3,cy-r*.1,4,{col:TOKENS.huntite,a:.3}); // a star half-hidden behind the waters
+  ctx.restore();
+}
+
+// ==== pickups, small & captioned ===========================================================
+function drawPickupSling(cx,cy){punchStar(cx,cy,11,{col:TOKENS.orpiment,keyline:true});reedArc(cx,cy,15,0,Math.PI*1.6,{w:1,col:TOKENS.orpiment,a:.6});}
+function drawPickupShield(cx,cy){paintFlatShape([{x:cx-9,y:cy-11},{x:cx+9,y:cy-11},{x:cx+9,y:cy+4},{x:cx,y:cy+13},{x:cx-9,y:cy+4}],'#b9d3e6',1);}
+function drawPickupReflector(cx,cy){paintFlatShape(circlePts(cx,cy,10,10),'#8a6bb0',1);reedStroke(cx-5,cy,cx+5,cy,{w:2,col:TOKENS.carbon,a:.7});}
+function drawPickupInkwell(cx,cy){paintFlatShape(circlePts(cx-6,cy,7,10),TOKENS.carbon,1);paintFlatShape(circlePts(cx+6,cy,7,10),TOKENS.redOchre,1);}
+
+// ==== the constellation figure: Meskhetiu, the Bull's Foreleg =============================
+// A bent adze/foreleg silhouette, tied by a chain to the mooring post Isis-Djamet holds so
+// that Set (drawn elsewhere on this sheet as the storm family) cannot roam the pole — the
+// Book of Day and Night's own gloss on the figure (research §1). This is the sheet's one
+// live reveal target: it is redrawn every frame at the loop's current phase, never cached.
+const MESK_PTS=[{x:0,y:-70},{x:14,y:-64},{x:24,y:-40},{x:20,y:-6},{x:34,y:18},{x:30,y:36},{x:8,y:30},{x:6,y:6},{x:-10,y:-2},{x:-16,y:-34}];
+const MESK_STARS=[{x:0,y:-70},{x:20,y:-6},{x:8,y:30}];
+function drawMeskhetiu(cx,cy,frac,twinkle){
+  const pts=MESK_PTS.map(p=>({x:cx+p.x,y:cy+p.y}));
+  paintFlatShape(pts,TOKENS.redOchreDark,frac);
+  // the mooring post and its chain — present once the figure is at least corrected, a fixed prop.
+  if(frac>0.42){
+    const post={x:cx-70,y:cy+40};
+    reedStroke(post.x,post.y-26,post.x,post.y+14,{w:3,col:TOKENS.carbon,a:.8});
+    reedStroke(post.x-8,post.y-24,post.x+8,post.y-24,{w:2,col:TOKENS.carbon,a:.8});
+    let px=post.x,py=post.y-20;const tail=pts[9];
+    for(let i=1;i<=5;i++){const t=i/5,x=px+(tail.x-px)*t,y=py+(tail.y-py)*t+Math.sin(t*Math.PI)*-6;reedStroke(px,py,x,y,{w:2,col:TOKENS.orpiment,a:.85});px=x;py=y;}
+  }
+  if(frac>0.75){
+    MESK_STARS.forEach((s,i)=>{
+      const sc=.7+.3*Math.min(1,(frac-0.75)/0.2)+ (twinkle?Math.sin(twinkle*2+i)*.06:0);
+      punchStar(cx+s.x,cy+s.y,7*sc,{col:TOKENS.huntite});
+    });
+    for(let i=0;i<MESK_STARS.length-1;i++)reedStroke(cx+MESK_STARS[i].x,cy+MESK_STARS[i].y,cx+MESK_STARS[i+1].x,cy+MESK_STARS[i+1].y,{w:.8,col:TOKENS.huntite,a:.35});
+  }
+}
+
+// ==== the player: the sun-barque, per research's option (the comet OR a star-figure) =======
+// A flat boat-and-disc silhouette standing in for the comet — Ra's night-bark (msktt),
+// which the research names directly as the run's own analogue (§5).
+function drawBarque(cx,cy,ang){
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);
+  reedStroke(-11,4,11,4,{w:2.4,col:TOKENS.carbon,a:.9});
+  reedStroke(-11,4,-15,-2,{w:2.2,col:TOKENS.carbon,a:.9});
+  reedStroke(11,4,15,-2,{w:2.2,col:TOKENS.carbon,a:.9});
+  paintFlatShape(circlePts(0,-6,5,12),TOKENS.orpiment,1);
+  ctx.restore();
+}
+
+// ==== HUD =====================================================================================
+function paintCartouche(cx,cy,w,h){
+  ctx.save();
+  reedArc(cx-w/2+h/2,cy,h/2,Math.PI/2,Math.PI*1.5,{w:2,col:TOKENS.carbon,a:.85});
+  reedArc(cx+w/2-h/2,cy,h/2,-Math.PI/2,Math.PI/2,{w:2,col:TOKENS.carbon,a:.85});
+  reedStroke(cx-w/2+h/2,cy-h/2,cx+w/2-h/2,cy-h/2,{w:2,col:TOKENS.carbon,a:.85});
+  reedStroke(cx-w/2+h/2,cy+h/2,cx+w/2-h/2,cy+h/2,{w:2,col:TOKENS.carbon,a:.85});
+  reedStroke(cx-w/2-2,cy+h/2+3,cx+w/2+2,cy+h/2+3,{w:2.4,col:TOKENS.carbon,a:.85}); // the closing bar under the ring (shenu)
+  ctx.restore();
+}
+function paintDigits(str,cx,cy,size,col){
+  ctx.save();ctx.font='bold '+size+'px '+TOKENS.faceBody;ctx.fillStyle=col||TOKENS.ink;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(str,cx,cy);ctx.restore();
+}
+const DEMO={score:1247,best:2860,khar:6,kharMax:9,flow:3,pace:'×1.4',chapter:1};
+function paintHUD(){
+  const cx=(L.x0+L.x1)/2;
+  // title, top-left — a short column, as every other caption on the sheet.
+  captionColumn(WORD.title,70,26,26);
+  mark(70,80,'title (ORBIT)');
+  // score, top-centre — Hindu-Arabic per research's own split (numerals for small counters
+  // only, digits for the score) so a four-figure run total stays legible.
+  paintDigits(String(DEMO.score),cx,58,42);
+  captionRow(WORD.score,cx,84,16);
+  const px=paintNumeral(DEMO.flow,cx-58,128,1.15);
+  ctx.save();ctx.font='10px '+TOKENS.faceBody;ctx.fillStyle=TOKENS.captionGrey;ctx.textAlign='left';ctx.fillText('flow',px+6,131);ctx.restore();
+  paintNumeral(Math.round(parseFloat(DEMO.pace.slice(1))*10)%20||1,cx+70,128,1.15);
+  ctx.save();ctx.font='10px '+TOKENS.faceBody;ctx.fillStyle=TOKENS.captionGrey;ctx.textAlign='left';ctx.fillText('pace '+DEMO.pace,cx+92,131);ctx.restore();
+  mark(cx,64,'score (ḥsb)');
+  // best, top-right — inside a cartouche, per research §9's UI note.
+  captionRow(WORD.best,L.x1-118,20,15);
+  paintCartouche(L.x1-118,66,140,46);
+  paintDigits(String(DEMO.best),L.x1-118,66,26);
+  mark(L.x1-118,66,'best (cartouche)');
+  // magnitude key — three star classes, the ceiling's equivalent of MAGNITUDINES.
+  const mkx=430,mky=44;
+  [ [1,7],[2,10.5],[3,14] ].forEach((s,i)=>{
+    punchStar(mkx+i*46,mky,s[1],{col:TOKENS.huntite,keyline:true});
+    paintNumeral(s[0],mkx+i*46,mky+22,.8);
+  });
+  mark(mkx+46,mky+10,'magnitude key');
+  // currency (khar) gauge, under the title — the flat-fill bar the game's ink meter becomes here.
+  const gx=30,gy=112,gw=150,gh=10;
+  ctx.save();ctx.strokeStyle=TOKENS.ink;ctx.lineWidth=1.4;ctx.strokeRect(gx,gy,gw,gh);
+  ctx.fillStyle=TOKENS.malachite;ctx.fillRect(gx+1,gy+1,(gw-2)*(DEMO.khar/DEMO.kharMax),gh-2);ctx.restore();
+  captionRow(WORD.currency,gx+gw+34,gy-6,13);
+  paintNumeral(DEMO.khar,gx+gw+70,gy+16,.85);
+  mark(gx+gw/2,gy,'currency (ḫꜣr gauge)');
+}
+function paintFooter(){
+  const cy=(L.foot[0]+L.foot[1])/2;
+  // bottom-left: the "maker's mark" this era actually has, per research §9 — not a
+  // colophon (none survives in the modern sense) but the literal proof of the wall's own
+  // working order: a scrap of the red sketch left visible where the final black paint has
+  // worn, exactly as it is found on the real ceiling today.
+  reedStroke(L.x0+10,L.foot[0]+14,L.x0+40,L.foot[0]+9,{w:1.2,col:TOKENS.redOchre,a:.7});
+  reedStroke(L.x0+14,L.foot[0]+20,L.x0+44,L.foot[0]+17,{w:1.2,col:TOKENS.redOchre,a:.6});
+  ctx.save();ctx.font=TOKENS.faceTranslit;ctx.fillStyle=TOKENS.ink;ctx.textAlign='left';ctx.fillText('sketch pentimento, red ochre',L.x0+52,L.foot[0]+18);ctx.restore();
+  mark(L.x0+30,L.foot[0]+14,'colophon (pentimento)');
+  // bottom-centre: the chapter / register label, "wnwt" + a hand-drawn numeral for register I.
+  const cx=(L.x0+L.x1)/2;
+  captionRow(WORD.chapter,cx-16,L.foot[0]+8,15);
+  paintNumeral(DEMO.chapter,cx+70,L.foot[0]+26,1.1);
+  ctx.save();ctx.font='10px '+TOKENS.faceBody;ctx.fillStyle=TOKENS.captionGrey;ctx.textAlign='left';ctx.fillText('register',cx+86,L.foot[0]+29);ctx.restore();
+  mark(cx,L.foot[0]+16,'chapter/sheet label');
+  // bottom-right: legend hint, non-diegetic by necessity (an evaluator's affordance, not a caption).
+  ctx.save();ctx.font='11px ui-monospace,monospace';ctx.fillStyle=TOKENS.captionGrey;ctx.textAlign='right';ctx.globalAlpha=.7;ctx.fillText('press L for legend',L.x1-8,L.foot[1]-10);ctx.restore();
+  // a thin rubble fringe along the very bottom edge, the ceiling meeting the tomb wall.
+  ctx.save();for(let x=L.x0;x<L.x1;x+=3){const h=1+rng()*3;ctx.fillStyle='rgba(30,20,10,'+(.1+rng()*.15)+')';ctx.fillRect(x,H-14-h,2,h);}ctx.restore();
+}
+
+// ==== static sheet, built once to an offscreen canvas and blitted every frame =============
+const off=document.createElement('canvas');off.width=W*DPR;off.height=H*DPR;const octx=off.getContext('2d');
+let comet={ang:0.6,speed:.5,node:null},night={};
+function buildStatic(){
+  legendMarks=[];
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  paintPlaster(0,0,W,H,TOKENS.plasterCream);
+  // frame
+  reedStroke(L.x0,10,L.x1,10,{w:2,col:TOKENS.ink});reedStroke(L.x0,H-10,L.x1,H-10,{w:2,col:TOKENS.ink});
+  reedStroke(10,16,10,H-16,{w:2,col:TOKENS.ink});reedStroke(W-10,16,W-10,H-16,{w:2,col:TOKENS.ink});
+  ticks(L.x0,L.x1,20,H-20);
+  budCorner(20,20,1,1);budCorner(W-20,20,-1,1);budCorner(20,H-20,1,-1);budCorner(W-20,H-20,-1,-1);
+  ruleDouble(L.hud[1],L.x0,L.x1);
+  paintHUD();
+  // night register — the field of play.
+  paintNightGround(L.x0,L.night[0],L.x1-L.x0,L.night[1]-L.night[0]);
+  ruleDouble(L.night[1],L.x0,L.x1);
+  const nx0=L.x0+30,nx1=L.x1-30,ny=(L.night[0]+L.night[1])/2;
+  for(let i=0;i<70;i++){const px=nx0+rng()*(nx1-nx0),py=L.night[0]+8+rng()*(L.night[1]-L.night[0]-16),v=rng();
+    if(v>.985)punchStar(px,py,3.6,{col:TOKENS.huntite,keyline:true});
+    else if(v>.93)punchStar(px,py,2.2,{col:TOKENS.huntite,a:.85});
+    else{ctx.save();ctx.globalAlpha=.5+rng()*.4;ctx.fillStyle=TOKENS.huntite;ctx.fillRect(px,py,1,1);ctx.restore();}
+  }
+  // constellation figure area is intentionally left to the live overlay (see render()) —
+  // record its anchor now so the static pass and the dynamic pass agree on where it sits.
+  night.figX=nx0+150;night.figY=ny-6;
+  // the route: a chain of small main-node bodies, cycling families, one of them "captured."
+  const routeN=5,routeFam=['ringed','ocean','ice','volcanic','storm'];
+  night.route=[];
+  for(let i=0;i<routeN;i++){
+    const t=i/(routeN-1),x=nx0+430+t*(nx1-nx0-460),y=ny+Math.sin(t*3.1)*70-20;
+    night.route.push({x,y,r:24,fam:routeFam[i]});
+    bodySpec(routeFam[i],x,y,24,1);
+    reedArc(x,y,29,0,Math.PI*2,{w:1,col:TOKENS.huntite,a:.35});
+  }
+  for(let i=0;i<routeN-1;i++)reedStroke(night.route[i].x,night.route[i].y,night.route[i+1].x,night.route[i+1].y,{w:1,col:TOKENS.huntite,a:.2});
+  night.captured=night.route[1];
+  comet.node=night.captured;
+  drawPickupSling(night.route[3].x,night.route[3].y-40);
+  captionRow(WORD.sling,night.route[3].x,night.route[3].y-70,11);
+  mark(night.route[3].x,night.route[3].y-40,'pickup: slingshot star');
+  drawPickupShield(night.route[4].x-6,night.route[4].y-42);
+  captionRow(WORD.shield,night.route[4].x-6,night.route[4].y-68,11);
+  mark(night.route[4].x-6,night.route[4].y-42,'pickup: scutum (shield)');
+  drawPickupReflector(night.route[0].x+34,night.route[0].y+40);
+  captionRow(WORD.reflector,night.route[0].x+34,night.route[0].y+52,11);
+  mark(night.route[0].x+34,night.route[0].y+40,'pickup: repulsa (reflector)');
+  drawPickupInkwell(night.route[2].x+2,night.route[2].y+44);
+  captionRow(WORD.inkwell,night.route[2].x+2,night.route[2].y+56,11);
+  mark(night.route[2].x+2,night.route[2].y+44,'pickup: inkwell');
+  // specimens register
+  ruleDouble(L.spec[0],L.x0,L.x1);
+  paintPlaster(L.x0,L.spec[0],L.x1-L.x0,L.spec[1]-L.spec[0],TOKENS.plasterCreamDeep);
+  const sw=(L.x1-L.x0)/7;
+  FAMILIES.forEach((fam,i)=>{
+    const cx=L.x0+sw*i+sw/2,cy=L.spec[0]+58;
+    bodySpec(fam,cx,cy,42,1);
+    captionRow(WORD[fam],cx,L.spec[0]+108,14);
+    mark(cx,cy,'body: '+fam);
+  });
+  ruleDouble(L.spec[1],L.x0,L.x1);
+  // dangers register
+  paintUnderworldGround(L.x0,L.danger[0],L.x1-L.x0,L.danger[1]-L.danger[0]);
+  const dw=(L.x1-L.x0)/4,dnames=['attractor','repulsor','crosswind','obscurer'],dfns=[drawApep,drawEyeOfRa,drawShu,drawNun];
+  dnames.forEach((nm,i)=>{
+    const cx=L.x0+dw*i+dw/2,cy=L.danger[0]+52;
+    dfns[i](cx,cy,30);
+    captionRow(WORD[nm],cx,L.danger[0]+92,13);
+    mark(cx,cy,nm+' ('+WORD[nm].gloss+')');
+  });
+  ruleDouble(L.danger[1],L.x0,L.x1);
+  // footer
+  paintPlaster(L.x0,L.foot[0],L.x1-L.x0,L.foot[1]-L.foot[0],TOKENS.plasterCream);
+  paintFooter();
+  ctx.restore();
+  octx.clearRect(0,0,off.width,off.height);
+  octx.setTransform(DPR,0,0,DPR,0,0);octx.drawImage(cv,0,0,W,H,0,0,W,H);
+}
+
+// ==== per-frame dynamic overlay: the comet's ambient orbit + the one live reveal ==========
+let t0=performance.now();
+function render(now){
+  const t=(now-t0)/1000;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(off,0,0,off.width,off.height,0,0,W,H);
+  legendMarks=legendMarks.filter(m=>!m.dynamic); // static marks persist; last frame's moving marks don't.
+  // comet: orbiting one captured node, a trailing flight path, a faint next-orbit aim guide.
+  if(night.captured){
+    const n=night.captured,ang=t*comet.speed,orbR=n.r+13;
+    reedArc(n.x,n.y,orbR,0,Math.PI*2,{w:1,col:TOKENS.orpiment,a:.5});
+    for(let i=1;i<=14;i++){const a=ang-i*0.11;reedStroke(n.x+Math.cos(a)*orbR,n.y+Math.sin(a)*orbR,n.x+Math.cos(a-.02)*orbR,n.y+Math.sin(a-.02)*orbR,{w:1.6,col:TOKENS.orpiment,a:.35*(1-i/14)});}
+    const bx=n.x+Math.cos(ang)*orbR,by=n.y+Math.sin(ang)*orbR;
+    drawBarque(bx,by,ang+Math.PI/2);
+    if(night.route&&night.route[2]){ // faint next-orbit aim guide toward the next node
+      const nxt=night.route[2];
+      ctx.save();ctx.setLineDash([3,4]);ctx.strokeStyle=TOKENS.huntite;ctx.globalAlpha=.3;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(nxt.x,nxt.y);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }
+    mark(n.x,n.y-40,'player: sun-barque on orbit',true);
+  }
+  // the one live reveal: Meskhetiu built over ~3s (sketch/correct/flood/outline), held
+  // finished for ~3s, then begun again — a loop close to the brief's ~6s, weighted so the
+  // sheet spends most of its time legible rather than mid-stroke.
+  const cyc=6.0,buildDur=3.0,tc=t%cyc,ph=tc<buildDur?tc/buildDur:1;
+  drawMeskhetiu(night.figX,night.figY,ph,t);
+  captionColumn(WORD.meskhetiu,night.figX+96,night.figY-54,15);
+  mark(night.figX,night.figY+90,'constellation: Meskhetiu',true);
+  paintLegend();
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!doctype html>
+<!--
+  Orbit — Era VIII, "The Probe": the far future, a self-replicating interstellar probe, per
+  docs/eras/research/probe.md and docs/eras/research/probe-mechanics.md. Two grammars share this
+  sheet and never merge (research §2): the PLAQUE hand — a single continuous engraved gold line,
+  uniform weight, cut once — for the frame's structural rule, the title, the constellation figure
+  and the maker's mark; and the NAVIGATION DISPLAY — black void, thin monochrome vector lines, no
+  shading, no perspective — for every sensed body, hazard, orbit and readout. A reader should be
+  able to tell which half they are looking at without a caption.
+
+  Choices made where research offered options: bodies are drawn as low-detail lit spheres WRAPPED
+  in their data (mass, ΔV, material, harvest) rather than research §8's icon+readout pair — §8 is
+  explicit that the icon idea is "proposed, unprototyped, and should be spiked first" (§12), and
+  the prototype brief for this era asks for the sphere-plus-data reading directly, so that is the
+  one spiked here. The constellation drawn is THE ARGO (GAME-BRIEF.md §3's 12-figure catalogue) —
+  a ship, thematically apt for a probe under sail, and a smaller new-letter set than its neighbours
+  in the catalogue. Ink is instrument white with amber reserved for alerts, not telemetry green —
+  the era brief calls out "no CRT-green cliché" and the DSN-Now/Eyes-on-the-Solar-System white
+  convention (research §3) as the safer, more modern register. Family colour is deliberately
+  restrained to value (not hue): research §8 asks the seven families to read "by spectra/labels as
+  much as by look," so distinction here comes from each body's motif and its class readout, not a
+  rainbow of tints — the one exception is a thin radiator-glow accent on the volcanic body, the
+  probe's single attested warm light source (§3). The plaque hand is not a loaded font — the brief
+  is explicit on this point — so ORBIT and THE ARGO are hand-built here as single-stroke polyline
+  glyphs (a small Hershey-style table below), constructed for this page rather than traced from
+  the real Hershey coordinate data (§4 flags that data as unverified-licence and a pipeline spike
+  of its own). The hex-dump ground texture (§3) is rendered as a static field rather than a
+  scrolling one, so every stroke on the sheet stays honest about which two layers are animated
+  live (brief item 9): the reveal (a telemetry field typing under a cursor, and the constellation's
+  name being engraved stroke by stroke) and one ambient motion (the probe drifting its orbit).
+
+  Font: B612 Mono, SIL Open Font License 1.1. Designed by Airbus with ENAC and Université de
+  Toulouse III (2010–2012) for cockpit-display legibility under vibration and glare; released 2017
+  via Polarsys/Eclipse, now served OFL on Google Fonts (research §4 — "the single most on-theme
+  face available"). Google Fonts subsets loaded: latin, latin-ext. Used for the telemetry hand
+  only; if it fails to load, `monospace` is the fallback stack below — never a serif face.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Probe — Orbit era prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:dark;}
+  html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;}
+  canvas{display:block;box-shadow:0 0 70px 14px rgba(0,0,0,.7);}
+  #legend{position:fixed;left:0;top:0;pointer-events:none;font:11px/1.4 monospace;color:#9cf;}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="legend"></div>
+<script>
+'use strict';
+// ---------- seeded randomness: the page paints identically every load ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(0x0BE0BE1D);
+const TAU=Math.PI*2;
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+// ---------- TOKENS: the probe's palette (docs/eras/research/probe.md §3, trimmed per the era brief) ----------
+const TOKENS={
+  voidBlack:'#050505',      // interstellar black — the ground, unbroken but for glow and stars
+  voidHi:'#0d1013',
+  gold:'#C7A24C',           // engraved gold — Pioneer plaque / Voyager cover, the plaque hand's only colour
+  goldHi:'#EAD190',
+  goldLow:'#8a6f34',
+  radiator:'#B8451F',       // RTG waste-heat glow — the probe's one warm light source, used sparingly
+  white:'#E8ECF2',          // instrument white — the telemetry hand's ink (DSN-Now convention, not CRT green)
+  amber:'#FFB000',          // alert amber — warnings, hazard cores, the sync flash — never decorative
+  hexDim:'#3c4550'          // the hex-dump ground texture, a dim wash, never a foreground colour
+};
+const FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+// Material mapping and class mnemonics, docs/eras/research/probe-mechanics.md §2 and probe.md §5/§8.
+const FAMILY_INFO={
+  ocean:  {cls:'CLASS-H2O',  material:'VOLATILES', mass:'2.1E23', dv:'1.8'},
+  crater: {cls:'CLASS-REG',  material:'SILICATES', mass:'4.6E22', dv:'0.9'},
+  ringed: {cls:'CLASS-RNG',  material:'VOLATILES', mass:'5.7E26', dv:'6.2'},
+  ice:    {cls:'CLASS-CRYO', material:'VOLATILES', mass:'8.9E22', dv:'2.4'},
+  dune:   {cls:'CLASS-AEOL', material:'SILICATES', mass:'6.4E23', dv:'3.1'},
+  volcanic:{cls:'CLASS-IGN', material:'METALS',    mass:'1.2E24', dv:'4.0'},
+  storm:  {cls:'CLASS-ATM',  material:'FUEL',      mass:'1.9E27', dv:'7.6'}
+};
+const MATERIALS=['VOLATILES','SILICATES','METALS','FUEL'];
+const MATERIAL_TAG={VOLATILES:'VOL',SILICATES:'SIL',METALS:'MET',FUEL:'FUEL'};
+
+// ---------- canvas setup: draw at devicePixelRatio, scale a fixed 1280x800 logical frame ----------
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1280,H=800;
+let DPR=Math.max(1,window.devicePixelRatio||1);
+function fit(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/W,vh/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';
+  DPR=Math.max(1,window.devicePixelRatio||1);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+}
+window.addEventListener('resize',fit);fit();
+
+let fontReady=false;
+if(document.fonts&&document.fonts.load){
+  document.fonts.load('12px "B612 Mono"').then(()=>document.fonts.load('700 12px "B612 Mono"')).then(()=>{fontReady=true;}).catch(()=>{});
+}
+function tfont(px,weight,italic){return `${italic?'italic ':''}${weight||400} ${px}px "B612 Mono", ui-monospace, "SFMono-Regular", monospace`;}
+
+let showLegend=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+const legendItems=[];
+function legend(x,y,label){if(showLegend)legendItems.push({x,y,label});}
+
+// ================= THE PLAQUE PRIMITIVE — a single continuous engraved line, cut once =================
+// Research §2: "drawn once and never re-inked," the opposite of the burin's swelling wobble every
+// other era's line carries. No jitter, minimal weight variance — the mark of a machine, not a hand.
+function plaqueStroke(g,pathFn,weight){
+  weight=weight||1.6;
+  g.save();g.lineJoin='round';g.lineCap='round';
+  g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=weight+1;g.beginPath();pathFn(g);g.stroke();
+  g.strokeStyle=TOKENS.gold;g.lineWidth=weight;g.beginPath();pathFn(g);g.stroke();
+  g.globalAlpha=.65;g.strokeStyle=TOKENS.goldHi;g.lineWidth=weight*0.35;g.beginPath();pathFn(g);g.stroke();
+  g.globalAlpha=1;g.restore();
+}
+// A struck gold point — the plaque's own stars and rivets, a filled disc with one hard highlight.
+function plaqueDot(g,x,y,r){
+  g.save();
+  const grad=g.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
+  grad.addColorStop(0,TOKENS.goldHi);grad.addColorStop(1,TOKENS.goldLow);
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=grad;g.fill();
+  g.beginPath();g.arc(x,y,r+0.6,0,TAU);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=0.8;g.stroke();
+  g.restore();
+}
+// Binary tick marks — the Voyager cover's own numeral, radiating from a point in place of a digit
+// (research §4: "when the plaque hand sets a number ... it draws binary tick marks, not digits").
+function binaryTicks(g,x,y,angle,n,unit,seedN){
+  const rnd=mulberry32((seedN>>>0||1)*2654435761>>>0);
+  const bits=Math.max(3,Math.min(9,Math.round(n)));
+  g.save();g.translate(x,y);g.rotate(angle);
+  let d=unit*0.6;
+  for(let i=0;i<bits;i++){
+    const long=rnd()<0.5;
+    plaqueStroke(g,(gg)=>{gg.moveTo(d,-unit*0.16);gg.lineTo(d,unit*(long?0.5:0.2));},1);
+    d+=unit*0.34;
+  }
+  g.restore();
+}
+
+// ================= THE NAVIGATION-DISPLAY PRIMITIVE — thin monochrome vector lines =================
+// Research §2: "no shading, no perspective beyond a top-down plot's own flattening." Every telemetry
+// mark — orbits, mesh cells, flux arrows, hazard wedges, readout rules — routes through this instead
+// of a raw ctx.stroke(), exactly as the plaque half routes through plaqueStroke above.
+function vectorLine(g,pathFn,opts){
+  opts=opts||{};
+  g.save();
+  if(opts.dash)g.setLineDash(opts.dash);
+  g.strokeStyle=opts.color||TOKENS.white;g.lineWidth=opts.width||1;g.globalAlpha=opts.alpha??1;
+  g.lineJoin='round';g.lineCap=opts.cap||'round';
+  g.beginPath();pathFn(g);g.stroke();
+  g.restore();
+}
+
+// ================= plaque lettering: hand-built single-stroke capitals (no font loaded) =================
+// A small table of this page's own letters, in the spirit of the Hershey vector fonts (research
+// §4) but authored directly for ORBIT and THE ARGO rather than traced from any font file — the
+// brief's own instruction. Unit box: x 0..7, y 0(cap-top)..12(baseline).
+const GLYPHS={
+  O:[{arc:[3.4,6,3.4,0,TAU]}],
+  R:[{line:[[0,12],[0,0]]},{bezier:[[0,0],[6.2,0.1],[6.2,5.3],[0,6]]},{line:[[1.1,6],[6.3,12]]}],
+  B:[{line:[[0,12],[0,0]]},{bezier:[[0,0],[6,0.1],[6,5.3],[0,5.7]]},{bezier:[[0,5.7],[6.8,6.1],[6.8,11.6],[0,12]]}],
+  I:[{line:[[3,0],[3,12]]}],
+  T:[{line:[[0,0],[7,0]]},{line:[[3.5,0],[3.5,12]]}],
+  H:[{line:[[0,0],[0,12]]},{line:[[6,0],[6,12]]},{line:[[0,6],[6,6]]}],
+  E:[{line:[[6,0],[0,0],[0,12],[6,12]]},{line:[[0,6],[4.4,6]]}],
+  A:[{line:[[0,12],[3.5,0],[7,12]]},{line:[[1.5,7.6],[5.5,7.6]]}],
+  G:[{arc:[3.4,6,3.4,0.55,TAU-0.55,false]},{line:[[6.8,6],[4.0,6]]}]
+};
+function plaqueGlyph(g,letter,x,y,scale){
+  const glyph=GLYPHS[letter];if(!glyph)return;
+  const w=Math.max(1.1,scale*0.3);
+  glyph.forEach(seg=>{
+    plaqueStroke(g,(gg)=>{
+      if(seg.line){const p=seg.line.map(([lx,ly])=>[x+lx*scale,y+ly*scale]);gg.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)gg.lineTo(p[i][0],p[i][1]);}
+      else if(seg.arc){const[cx,cy,r,a0,a1,ccw]=seg.arc;gg.arc(x+cx*scale,y+cy*scale,r*scale,a0,a1,ccw);}
+      else if(seg.bezier){const p=seg.bezier.map(([bx,by])=>[x+bx*scale,y+by*scale]);gg.moveTo(p[0][0],p[0][1]);gg.bezierCurveTo(p[1][0],p[1][1],p[2][0],p[2][1],p[3][0],p[3][1]);}
+    },w);
+  });
+}
+// Draws a word and returns its total width; `reveal` 0..1 clips the word left-to-right (used by
+// paintReveal for the "engraved stroke by stroke" motion — research's clip-reveal reading of the
+// technique, closer to writeText() than to a stroke-then-flood pen, since a single-stroke glyph
+// has no counter to flood).
+function plaqueWord(g,word,x,y,scale,reveal){
+  const advance=7.6*scale,spaceW=advance*0.7;
+  let cx=x,total=x;
+  for(const ch of word){total+=ch===' '?spaceW:advance;}
+  if(reveal!=null&&reveal<1){
+    g.save();g.beginPath();g.rect(x-4,y-scale*2,Math.max(0,(total-x))*clamp(reveal,0,1),scale*16);g.clip();
+  }
+  for(const ch of word){
+    if(ch===' '){cx+=spaceW;continue;}
+    plaqueGlyph(g,ch,cx,y,scale);cx+=advance;
+  }
+  if(reveal!=null&&reveal<1)g.restore();
+  return total-x;
+}
+
+// ================= static offscreen sprites: painted once (item 9's 60fps rule) =================
+let starSprite=null,hexSprite=null;
+function buildStars(){
+  const off=document.createElement('canvas');off.width=W;off.height=H;const og=off.getContext('2d');
+  const srnd=mulberry32(0x57A2B11E);
+  for(let i=0;i<420;i++){
+    const x=srnd()*W,y=srnd()*H,b=srnd();
+    const r=b<0.85?0.5+srnd()*0.6:0.9+srnd()*0.9;
+    og.beginPath();og.arc(x,y,r,0,TAU);
+    og.fillStyle=b<0.85?'rgba(232,236,242,.55)':'rgba(232,236,242,.9)';og.fill();
+    if(b>0.96){og.beginPath();og.arc(x,y,r+1.6,0,TAU);og.strokeStyle='rgba(232,236,242,.2)';og.lineWidth=0.6;og.stroke();}
+  }
+  starSprite=off;
+}
+// The 2023 Voyager 1 flight-data-system fault returned hex noise where telemetry should have been
+// (research §3, "hex-as-decoration-with-a-cause") — a static field of it, dim, doing the down-and
+// -right hatching job every other era's burin hand does, without pretending to scroll live.
+function buildHex(){
+  const off=document.createElement('canvas');off.width=W;off.height=H;const og=off.getContext('2d');
+  const hrnd=mulberry32(0xFEEDFACE);
+  og.font=tfont(11);og.textBaseline='top';
+  const cols=Math.ceil(W/13),rows=Math.ceil(H/15);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(hrnd()>0.5)continue;
+    og.fillStyle=TOKENS.hexDim;og.globalAlpha=0.05+hrnd()*0.06;
+    og.fillText((hrnd()*16|0).toString(16).toUpperCase(),c*13,r*15);
+  }
+  og.globalAlpha=1;
+  hexSprite=off;
+}
+
+// ================= paintGround: interstellar black, unbroken but for glow and stars =================
+function paintGround(g){
+  g.fillStyle=TOKENS.voidBlack;g.fillRect(0,0,W,H);
+  const vig=g.createRadialGradient(W*0.5,H*0.46,80,W*0.5,H*0.46,Math.max(W,H)*0.75);
+  vig.addColorStop(0,'#0a0c10');vig.addColorStop(1,'#000000');
+  g.fillStyle=vig;g.fillRect(0,0,W,H);
+  if(!hexSprite)buildHex();g.drawImage(hexSprite,0,0);
+  if(!starSprite)buildStars();g.drawImage(starSprite,0,0);
+  legend(10,14,'ground: interstellar black, static hex-fault texture, no scroll');
+}
+
+// ================= paintFrame: a CCSDS transfer-frame border wrapping a plaque-cut edge =================
+// The frame's rule is plaque-cut (research: "the frame's margin" is the plaque hand's, guidance
+// item 1); the telemetry printed along it — sync marker, frame counter, checksum, DSN strip — is
+// the telemetry hand's, so even the border itself carries both grammars at once.
+const SYNC='1ACFFC1D';
+function paintFrame(g,t){
+  const m=22;
+  plaqueStroke(g,(gg)=>{gg.rect(m,m,W-m*2,H-m*2);},2.2);
+  plaqueStroke(g,(gg)=>{gg.rect(m+5,m+5,W-m*2-10,H-m*2-10);},0.8);
+  // corner rivets — the plaque's own bolt-holes, standing in for the tick-ring every other era cuts.
+  [[m,m],[W-m,m],[m,H-m],[W-m,H-m]].forEach(([x,y])=>plaqueDot(g,x,y,3.4));
+  // header bar: sync marker, virtual-channel id, a frame counter that actually ticks (§9).
+  const frameNo=48213+Math.floor(t*7);
+  g.textBaseline='middle';
+  g.font=tfont(12,700);g.fillStyle=TOKENS.white;g.textAlign='left';
+  const flash=(Math.sin(t*TAU*0.5)>0.965);
+  g.fillStyle=flash?TOKENS.amber:TOKENS.white;
+  g.fillText('SYNC '+SYNC,m+14,m-10);
+  g.textAlign='center';g.fillStyle=TOKENS.white;
+  g.fillText('VC-02 · FRAME '+frameNo,W/2,m-10);
+  g.textAlign='right';
+  g.fillText('CRC 0x'+(((frameNo*2654435761)>>>16)&0xFFFF).toString(16).toUpperCase().padStart(4,'0'),W-m-14,m-10);
+  g.textAlign='left';
+  legend(m+14,m-24,'frame: plaque-cut rule + CCSDS header (sync/VC/frame counter/CRC)');
+}
+// The margin strip, DSN-Now idiom, replacing the compass rose (research §9). One-way light time,
+// signal strength, which antenna is locked.
+function paintDSNStrip(g,t){
+  const y=H-22-10,owlt=4*3600+12*60+7+Math.floor(t)%3;
+  const hh=String(Math.floor(owlt/3600)).padStart(2,'0'),mm=String(Math.floor(owlt/60)%60).padStart(2,'0'),ss=String(owlt%60).padStart(2,'0');
+  g.font=tfont(11);g.textBaseline='middle';g.textAlign='right';g.fillStyle=TOKENS.white;
+  g.fillText(`DSS-14 LOCKED · OWLT ${hh}:${mm}:${ss} · SIG -161dBm`,W-40,y);
+  g.textAlign='left';
+  legend(W-360,y-14,'DSN-Now margin strip (replaces the compass rose)');
+}
+// Footer PHASE label — the chapter running head's equivalent (research §9: "a chapter announces a
+// PHASE change, not a page turn"). Chapter names per research §10.
+const PHASES=['FIRST LIGHT','THE INSTRUCTIONS','SAIL DEPLOYMENT','THE FIRST DAUGHTER'];
+function paintPhaseFooter(g,phaseIdx){
+  const y=H-22-10;
+  g.font=tfont(12,700);g.textBaseline='middle';g.fillStyle=TOKENS.white;
+  g.fillText('PHASE '+['I','II','III','IV'][phaseIdx]+' · '+PHASES[phaseIdx],40,y);
+  legend(40,y-14,'phase / chapter label (footer strip)');
+}
+
+// ================= the maker's mark: a wordless locator, per the Voyager cover (research §9) =================
+function paintMakerMark(g,x,y){
+  g.save();g.translate(x,y);
+  plaqueDot(g,0,0,2.6);
+  const rnd=mulberry32(0x51A7E);
+  for(let i=0;i<3;i++){
+    const a=i*TAU/3+0.4,len=14+rnd()*8;
+    plaqueStroke(g,(gg)=>{gg.moveTo(0,0);gg.lineTo(Math.cos(a)*len,Math.sin(a)*len);},1);
+    binaryTicks(g,0,0,a,4+i,len/4,i+9);
+  }
+  g.restore();
+  legend(x-10,y+26,'maker\'s mark: wordless locator diagram (no caption, per the plaque\'s own idiom)');
+}
+
+// ================= title plaque: a small bolted panel bearing ORBIT (the plaque hand) =================
+function paintTitlePanel(g){
+  const x=40,y=40,w=210,h=76;
+  plaqueStroke(g,(gg)=>{gg.roundRect?gg.roundRect(x,y,w,h,4):gg.rect(x,y,w,h);},1.4);
+  [[x+8,y+8],[x+w-8,y+8],[x+8,y+h-8],[x+w-8,y+h-8]].forEach(([rx,ry])=>plaqueDot(g,rx,ry,2.2));
+  plaqueWord(g,'ORBIT',x+22,y+16,2.55);
+  plaqueStroke(g,(gg)=>{gg.moveTo(x+22,y+52);gg.lineTo(x+128,y+52);},1);
+  paintMakerMark(g,x+w-34,y+58);
+  legend(x,y-12,'title: hand-built single-stroke plaque lettering, no font loaded');
+}
+
+// ================= the constellation figure: a bolted plaque, pulsar map, three stars, its name =================
+// THE ARGO, per GAME-BRIEF.md §3's twelve-figure catalogue — chosen here (research does not name
+// which figure to draw) both for the ship's thematic fit and its short new-letter cost (§ header
+// comment). The pulsar map is the Pioneer plaque's own device (research §1): radial lines with
+// binary-length tick marks fixing position and epoch, reduced here to a legible handful.
+const FIGURE_STARS=[[0,-46],[-40,20],[36,28]];
+function paintFigure(g,cx,cy,revealName){
+  const w=230,h=210,x=cx-w/2,y=cy-h/2;
+  plaqueStroke(g,(gg)=>{gg.roundRect?gg.roundRect(x,y,w,h,4):gg.rect(x,y,w,h);},1.4);
+  [[x+8,y+8],[x+w-8,y+8],[x+8,y+h-8],[x+w-8,y+h-8]].forEach(([rx,ry])=>plaqueDot(g,rx,ry,2.2));
+  const mapY=y+70,rnd=mulberry32(0xB612);
+  plaqueDot(g,cx,mapY,2.4);
+  const pulsarN=7;
+  for(let i=0;i<pulsarN;i++){
+    const a=(i/pulsarN)*TAU+0.3;
+    binaryTicks(g,cx,mapY,a,3+Math.floor(rnd()*5),7,i*3+1);
+  }
+  // the three stars, on top of the map, per brief item 5 — connected by one continuous plaque line.
+  plaqueStroke(g,(gg)=>{
+    FIGURE_STARS.forEach(([dx,dy],i)=>{const px=cx+dx,py=mapY-30+dy*0.55;i===0?gg.moveTo(px,py):gg.lineTo(px,py);});
+  },1.8);
+  FIGURE_STARS.forEach(([dx,dy])=>plaqueDot(g,cx+dx,mapY-30+dy*0.55,3.4));
+  plaqueWord(g,'THE ARGO',x+34,y+h-30,1.9,revealName);
+  legend(x,y-12,'constellation: THE ARGO — pulsar map (binary ticks) + 3 stars + name');
+}
+
+// ================= bodies: a lit sphere wrapped in its data (the navigation-display half) =================
+// Low detail, no painterly shading — a two-stop gradient and a thin motif line stand in for the
+// "sensed mass" a real tracking display would show. Distinction comes from the class readout and
+// each body's minimal motif (research §8's shapes, redrawn here as vector lines, not engraving),
+// not from a rainbow of hue — see the header comment.
+function paintBody(g,cx,cy,r,family,seedN){
+  const rnd=mulberry32((seedN>>>0||1)*97);
+  const info=FAMILY_INFO[family];
+  const val=200+FAMILIES.indexOf(family)*4; // slight per-family value shift, never a hue shift
+  const base=`rgb(${val},${val+4},${val+8})`;
+  const grad=g.createRadialGradient(cx-r*0.35,cy-r*0.4,r*0.05,cx,cy,r);
+  grad.addColorStop(0,'#ffffff');grad.addColorStop(0.35,base);grad.addColorStop(1,'#1a1d22');
+  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.fillStyle=grad;g.globalAlpha=0.92;g.fill();g.globalAlpha=1;g.restore();
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r,0,TAU);},{width:1,alpha:0.8});
+  g.save();g.strokeStyle=TOKENS.white;g.lineWidth=1;g.globalAlpha=0.85;
+  switch(family){
+    case 'ocean':g.beginPath();g.moveTo(cx-r*0.62,cy+r*0.1);g.lineTo(cx+r*0.62,cy+r*0.1);g.stroke();break;
+    case 'crater':for(let i=0;i<9;i++){const a=rnd()*TAU,rr=rnd()*r*0.72;g.beginPath();g.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,1.6+rnd()*1.6,0,TAU);g.stroke();}break;
+    case 'ringed':g.beginPath();g.ellipse(cx,cy,r*1.42,r*0.32,-0.18,0,TAU);g.stroke();g.beginPath();g.ellipse(cx,cy,r*1.22,r*0.24,-0.18,0,TAU);g.globalAlpha=0.5;g.stroke();break;
+    case 'ice':for(let i=-2;i<=2;i++){g.globalAlpha=0.5;g.beginPath();g.moveTo(cx-r*0.6,cy+i*r*0.22);g.lineTo(cx+r*0.6,cy+i*r*0.22);g.stroke();}g.globalAlpha=0.5;for(let i=-2;i<=2;i++){g.beginPath();g.moveTo(cx+i*r*0.22,cy-r*0.6);g.lineTo(cx+i*r*0.22,cy+r*0.6);g.stroke();}break;
+    case 'dune':for(let i=0;i<4;i++){const yy=cy-r*0.5+i*r*0.28;g.beginPath();g.moveTo(cx-r*0.6,yy);g.quadraticCurveTo(cx,yy+r*0.18,cx+r*0.6,yy);g.stroke();}break;
+    case 'volcanic':
+      for(let i=0;i<7;i++){const a=i/7*TAU;g.beginPath();g.moveTo(cx+Math.cos(a)*r*0.2,cy+Math.sin(a)*r*0.2);g.lineTo(cx+Math.cos(a)*r*0.68,cy+Math.sin(a)*r*0.68);g.stroke();}
+      g.save();const rg=g.createRadialGradient(cx,cy,0,cx,cy,r*0.3);rg.addColorStop(0,'rgba(184,69,31,.85)');rg.addColorStop(1,'rgba(184,69,31,0)');g.fillStyle=rg;g.beginPath();g.arc(cx,cy,r*0.3,0,TAU);g.fill();g.restore();
+      break;
+    case 'storm':{g.beginPath();let a=0,rr=r*0.1;g.moveTo(cx+rr,cy);for(let tt=0;tt<=1;tt+=0.04){a=tt*TAU*2.1;rr=r*0.1+tt*r*0.55;g.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}g.stroke();}break;
+  }
+  g.restore();
+  // the data wrap: orbit ellipse, class readout, mass/ΔV, material and a small harvest bar.
+  vectorLine(g,(gg)=>{gg.ellipse(cx,cy,r*1.7,r*0.62,0,0,TAU);},{width:0.8,alpha:0.35,dash:[2,3]});
+  g.font=tfont(10.5,700);g.textAlign='center';g.fillStyle=TOKENS.white;
+  g.fillText(info.cls,cx,cy+r+16);
+  g.font=tfont(9.5);g.fillStyle='rgba(232,236,242,.7)';
+  g.fillText('M '+info.mass+' · ΔV '+info.dv,cx,cy+r+30);
+  g.fillStyle=TOKENS.gold;g.fillText(info.material,cx,cy+r+43);
+  const bw=64,bx=cx-bw/2,by=cy+r+50,fill=0.3+rnd()*0.6;
+  vectorLine(g,(gg)=>{gg.rect(bx,by,bw,4);},{width:0.8,alpha:0.5});
+  g.fillStyle=TOKENS.white;g.fillRect(bx,by,bw*fill,4);
+  g.textAlign='left';
+  legend(cx-r,cy+r+58,family+' — sphere wrapped in data (no font-loaded icon)');
+}
+
+// ================= dangers — the four rows, drawn per research §7 =================
+// All four keep HAZARD_KINDS' field/core/reach/lethality unchanged (probe-mechanics.md rule 3);
+// only depiction and naming differ, and only from this era's colder, instrument register.
+function paintWell(g,cx,cy,r,t){
+  const coreR=r; // vortex core=1×drawn radius (GAME-BRIEF.md §4) — the whole disc is the kill zone.
+  const n=9;
+  g.save();
+  for(let row=-4;row<=4;row++){
+    vectorLine(g,(gg)=>{
+      for(let i=0;i<=n;i++){
+        const fx=cx-r*1.7+i*(r*3.4/n),fy=cy+row*(r*0.36);
+        const dx=fx-cx,dy=fy-cy,d=Math.max(18,Math.hypot(dx,dy));
+        const pull=clamp(1-d/(r*2.2),0,1);const k=1-pull*0.85;
+        const px=cx+dx*k,py=cy+dy*k;
+        i===0?gg.moveTo(px,py):gg.lineTo(px,py);
+      }
+    },{width:0.7,alpha:0.45});
+  }
+  for(let col=-4;col<=4;col++){
+    vectorLine(g,(gg)=>{
+      for(let i=0;i<=n;i++){
+        const fy=cy-r*1.7+i*(r*3.4/n),fx=cx+col*(r*0.36);
+        const dx=fx-cx,dy=fy-cy,d=Math.max(18,Math.hypot(dx,dy));
+        const pull=clamp(1-d/(r*2.2),0,1);const k=1-pull*0.85;
+        const px=cx+dx*k,py=cy+dy*k;
+        i===0?gg.moveTo(px,py):gg.lineTo(px,py);
+      }
+    },{width:0.7,alpha:0.45});
+  }
+  // a rotating tick at the mesh's centre marks a pulsar's presence — ties to the plaque's pulsar
+  // map without redrawing it (research §7).
+  vectorLine(g,(gg)=>{const a=t*TAU*0.4;gg.moveTo(cx,cy);gg.lineTo(cx+Math.cos(a)*10,cy+Math.sin(a)*10);},{width:1.4,color:TOKENS.amber});
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,coreR,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3],alpha:0.9});
+  g.restore();
+  g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';
+  g.fillText('WELL',cx,cy+r+18);g.font=tfont(9);g.fillStyle=TOKENS.amber;g.fillText('CORE = FULL DISC',cx,cy+r+31);
+  g.textAlign='left';
+  legend(cx-r,cy-r-14,'attractor — WELL: equipotential mesh, pulsar tick at centre');
+}
+function paintBeam(g,cx,cy,r,t){
+  const a=t*1.1;
+  const wedge=0.5;
+  vectorLine(g,(gg)=>{gg.moveTo(cx,cy);gg.arc(cx,cy,r*1.5,a,a+wedge);gg.closePath();},{width:1,color:TOKENS.amber,alpha:0.85});
+  g.save();g.beginPath();g.moveTo(cx,cy);g.arc(cx,cy,r*1.5,a,a+wedge);g.closePath();
+  const gr=g.createRadialGradient(cx,cy,0,cx,cy,r*1.5);gr.addColorStop(0,'rgba(255,176,0,.35)');gr.addColorStop(1,'rgba(255,176,0,0)');
+  g.fillStyle=gr;g.fill();g.restore();
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r*0.6,0,TAU);},{width:1.2,color:TOKENS.amber,dash:[3,3]}); // core=.6r, HAZARD_KINDS.flare
+  vectorLine(g,(gg)=>{gg.arc(cx,cy,r,0,TAU);},{width:0.8,alpha:0.4});
+  g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';g.fillText('BEAM',cx,cy+r+18);
+  g.font=tfont(9);g.fillStyle=TOKENS.amber;g.fillText('CORE 0.6×R',cx,cy+r+31);g.textAlign='left';
+  legend(cx-r,cy-r-14,'repulsor — BEAM: rotating sector wedge, not a rendered flare loop');
+}
+function paintFlux(g,cx,cy,w,h,t){
+  const cols=7,rows=3;
+  for(let ry=0;ry<rows;ry++)for(let rx=0;rx<cols;rx++){
+    const px=cx-w/2+((rx+0.5)/cols)*w,py=cy-h/2+((ry+0.5)/rows)*h;
+    const jig=Math.sin(t*1.6+rx*0.7+ry)*4;
+    vectorLine(g,(gg)=>{gg.moveTo(px-10,py+jig*0.2);gg.lineTo(px+10,py+jig*0.2);gg.moveTo(px+10,py+jig*0.2);gg.lineTo(px+5,py-3+jig*0.2);gg.moveTo(px+10,py+jig*0.2);gg.lineTo(px+5,py+3+jig*0.2);},{width:0.9,alpha:0.7});
+  }
+  g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';g.fillText('ISM FLUX',cx,cy+h/2+18);
+  g.font=tfont(9);g.fillStyle='rgba(232,236,242,.7)';g.fillText('n 0.08 cm⁻³',cx,cy+h/2+31);g.textAlign='left';
+  legend(cx-w/2,cy-h/2-14,'crosswind — ISM FLUX: vector-arrow field, monochrome, no colour gradient');
+}
+function paintExt(g,cx,cy,rx,ry){
+  g.save();g.beginPath();g.ellipse(cx,cy,rx,ry,0.3,0,TAU);g.fillStyle='rgba(232,236,242,.1)';g.fill();g.restore();
+  vectorLine(g,(gg)=>{gg.ellipse(cx,cy,rx,ry,0.3,0,TAU);},{width:0.9,alpha:0.6,dash:[4,3]});
+  g.font=tfont(11,700);g.fillStyle=TOKENS.white;g.textAlign='center';g.fillText('EXT',cx,cy+ry+18);
+  g.font=tfont(9);g.fillStyle='rgba(232,236,242,.7)';g.fillText('+2.3 MAG LOSS',cx,cy+ry+31);g.textAlign='left';
+  legend(cx-rx,cy-ry-14,'obscurer — EXT: extinction region + logged magnitude, not a rendered nebula');
+}
+
+// ================= the player: the probe itself, sail, orbit ellipse, periapsis/apoapsis ticks =================
+function paintProbe(g,x,y,heading,seedN){
+  g.save();g.translate(x,y);g.rotate(heading);
+  vectorLine(g,(gg)=>{gg.moveTo(-16,0);gg.lineTo(-4,-3);gg.lineTo(10,0);gg.lineTo(-4,3);gg.closePath();},{width:1.2});
+  // the sail — aluminised-film sheen, a thin quadrilateral trailing the hull (research §10.3).
+  vectorLine(g,(gg)=>{gg.moveTo(-14,0);gg.lineTo(-30,-13);gg.lineTo(-34,0);gg.lineTo(-30,13);gg.closePath();},{width:0.9,alpha:0.75,color:'#D9E4EA'});
+  g.beginPath();g.arc(6,0,1.6,0,TAU);g.fillStyle=TOKENS.radiator;g.globalAlpha=0.9;g.fill();g.globalAlpha=1; // the RTG glow point
+  g.restore();
+}
+function paintPlayerOrbit(g,cx,cy,rx,ry,tilt,t,seedN){
+  vectorLine(g,(gg)=>{gg.ellipse(cx,cy,rx,ry,tilt,0,TAU);},{width:1,alpha:0.55});
+  // periapsis/apoapsis ticks — the two ends of the major axis, the item the brief asks to be legible.
+  [[-1,'PERI'],[1,'APO']].forEach(([s])=>{
+    const px=cx+Math.cos(tilt)*rx*s,py=cy+Math.sin(tilt)*rx*s;
+    vectorLine(g,(gg)=>{gg.moveTo(px-5*Math.sin(tilt),py+5*Math.cos(tilt));gg.lineTo(px+5*Math.sin(tilt),py-5*Math.cos(tilt));},{width:1.4,color:TOKENS.amber});
+  });
+  const ang=t*0.6;
+  const px=cx+Math.cos(ang)*rx*Math.cos(tilt)-Math.sin(ang)*ry*Math.sin(tilt);
+  const py=cy+Math.cos(ang)*rx*Math.sin(tilt)+Math.sin(ang)*ry*Math.cos(tilt);
+  // trailing flight path: the arc just flown, fading — a telemetry trace, not an engraved line.
+  vectorLine(g,(gg)=>{
+    for(let a=ang-1.1;a<=ang;a+=0.05){
+      const tx=cx+Math.cos(a)*rx*Math.cos(tilt)-Math.sin(a)*ry*Math.sin(tilt);
+      const ty=cy+Math.cos(a)*rx*Math.sin(tilt)+Math.sin(a)*ry*Math.cos(tilt);
+      a===ang-1.1?gg.moveTo(tx,ty):gg.lineTo(tx,ty);
+    }
+  },{width:1.6,alpha:0.7});
+  // the faint next-orbit aim guide — a dashed tangent, exactly item 6's "faint next-orbit aim guide."
+  const headAng=ang+Math.PI/2;
+  vectorLine(g,(gg)=>{gg.moveTo(px,py);gg.lineTo(px+Math.cos(headAng)*60,py+Math.sin(headAng)*60);},{width:0.9,alpha:0.35,dash:[2,4]});
+  paintProbe(g,px,py,headAng,seedN);
+  return{px,py};
+}
+// A daughter probe peeling away on an escape hyperbola — probe-mechanics.md §4's replication beat,
+// the "constellation-completion moment" of this era. Loops on its own longer period so it reads as
+// a discrete event rather than competing with the ambient orbit above.
+function paintDaughter(g,cx,cy,t,period){
+  const cyc=(t%period)/period;
+  if(cyc>0.6)return;
+  const p=cyc/0.6,ang=-0.7+p*1.9;
+  const rr=40+p*p*340;
+  const x=cx+Math.cos(ang)*rr,y=cy-30-Math.sin(ang)*rr*0.5;
+  const alpha=p<0.08?p/0.08:(1-clamp((p-0.75)/0.25,0,1));
+  g.save();g.globalAlpha=alpha;
+  vectorLine(g,(gg)=>{
+    for(let q=0;q<=p;q+=0.02){const a=-0.7+q*1.9,r2=40+q*q*340;gg.lineTo(cx+Math.cos(a)*r2,cy-30-Math.sin(a)*r2*0.5);}
+  },{width:1,alpha:0.5,dash:[1,3]});
+  paintProbe(g,x,y,ang-Math.PI/2,3);
+  g.font=tfont(10,700);g.fillStyle=TOKENS.amber;g.fillText('ESC',x+12,y-10);
+  g.restore();
+  legend(cx,cy-40,'the first daughter — ESC on an escape hyperbola (probe-mechanics.md §4)');
+}
+
+// ================= pickups (four), read as finished parts per probe-mechanics.md §2 =================
+function paintPickup(g,x,y,kind){
+  g.save();g.translate(x,y);
+  switch(kind){
+    case 'dv': vectorLine(g,(gg)=>{gg.arc(0,0,7,0,TAU);},{width:1});vectorLine(g,(gg)=>{gg.moveTo(-9,0);gg.lineTo(9,0);gg.moveTo(0,-9);gg.lineTo(0,9);},{width:0.8,alpha:0.6});break;
+    case 'shld': vectorLine(g,(gg)=>{gg.moveTo(0,-9);gg.lineTo(7.8,-4.5);gg.lineTo(7.8,4.5);gg.lineTo(0,9);gg.lineTo(-7.8,4.5);gg.lineTo(-7.8,-4.5);gg.closePath();},{width:1});break;
+    case 'defl': vectorLine(g,(gg)=>{gg.moveTo(-7,-6);gg.lineTo(7,-3);gg.lineTo(7,6);gg.lineTo(-7,3);gg.closePath();},{width:1,color:'#D9E4EA'});break;
+    case 'cache': vectorLine(g,(gg)=>{gg.rect(-5,-8,10,16);},{width:1});g.fillStyle=TOKENS.gold;g.globalAlpha=0.8;g.fillRect(-5,2,10,6);g.globalAlpha=1;break;
+  }
+  g.restore();
+}
+const PICKUPS=[['dv','DV ASSIST'],['shld','SHLD'],['defl','DEFL'],['cache','CACHE']];
+
+// ================= HUD: score/telemetry block, MAX GEN, MANIFEST bars, phase footer =================
+let state={score:1240,speed:1.3,flow:4,gen:2,maxGen:5,bill:[3,4,1,2],phase:2};
+function bar(g,x,y,w,h,fill,color){
+  vectorLine(g,(gg)=>{gg.rect(x,y,w,h);},{width:0.8,alpha:0.5});
+  g.fillStyle=color||TOKENS.white;g.fillRect(x,y,w*clamp(fill,0,1),h);
+}
+function paintHUD(g,t){
+  paintTitlePanel(g);
+  // score / speed / flow / gen — top-centre, mirroring the shipped layout (item 7).
+  const cx=W/2;
+  g.textAlign='center';
+  g.font=tfont(34,700);g.fillStyle=TOKENS.white;g.fillText(String(state.score),cx,86);
+  g.font=tfont(12);g.fillStyle='rgba(232,236,242,.8)';
+  g.fillText('SPEED ×'+state.speed.toFixed(1),cx,106);
+  g.fillText('FLOW ×'+state.flow,cx,122);
+  g.fillStyle=TOKENS.gold;g.fillText('GEN ×'+state.gen,cx,138);
+  vectorLine(g,(gg)=>{gg.moveTo(cx-34,146);gg.lineTo(cx+34,146);},{width:1,alpha:0.6});
+  g.textAlign='left';
+  legend(cx-40,60,'HUD: score / SPEED / FLOW / GEN (generation count, probe-mechanics.md §4)');
+
+  // MAX GEN, top-right — personal best, renamed per probe.md §5.
+  g.textAlign='right';g.font=tfont(11);g.fillStyle='rgba(232,236,242,.8)';g.fillText('MAX GEN',W-40,52);
+  g.font=tfont(22,700);g.fillStyle=TOKENS.white;g.fillText(String(state.maxGen),W-40,74);
+  g.textAlign='left';
+  legend(W-140,40,'MAX GEN — personal best, probe.md §5');
+
+  // MANIFEST — bill of materials for the next daughter probe, four bars (probe-mechanics.md §4/§7:
+  // "the HUD owes the player exactly one new gauge ... not four counters competing for space" — read
+  // here as four short bars sharing one small block, not four separate HUD regions).
+  const mx=44,my=H-170;
+  g.font=tfont(12,700);g.fillStyle=TOKENS.gold;g.fillText('MANIFEST · NEXT DAUGHTER',mx,my);
+  MATERIALS.forEach((mat,i)=>{
+    const by=my+18+i*16,need=4,have=state.bill[i];
+    g.font=tfont(10);g.fillStyle=TOKENS.white;g.fillText(MATERIAL_TAG[mat],mx,by+7);
+    bar(g,mx+46,by,90,7,have/need,have>=need?TOKENS.amber:TOKENS.white);
+    g.fillStyle='rgba(232,236,242,.7)';g.fillText(have+'/'+need,mx+144,by+7);
+  });
+  legend(mx,my-14,'bill of materials: VOL/SIL/MET/FUEL, 4 of each per daughter');
+
+  // a short telemetry log line, typed under a cursor — half of item 9's reveal (§ header comment).
+  paintLogLine(g,mx,H-58,t);
+
+  paintPhaseFooter(g,state.phase);
+  paintDSNStrip(g,t);
+}
+const LOG_MSG='OI CONFIRMED · FEED 64% · GEN 2 STANDING';
+function paintLogLine(g,x,y,t){
+  const period=6.0,typeFor=period*0.7;
+  const cyc=t%period,chars=Math.floor(clamp(cyc/typeFor,0,1)*LOG_MSG.length);
+  g.font=tfont(11);g.fillStyle=TOKENS.white;
+  g.fillText('TX> '+LOG_MSG.slice(0,chars),x,y);
+  if(cyc<typeFor&&Math.floor(t*3)%2===0){
+    const w=g.measureText('TX> '+LOG_MSG.slice(0,chars)).width;
+    g.fillStyle=TOKENS.amber;g.fillRect(x+w+2,y-9,6,12);
+  }
+  legend(x,y-14,'reveal: telemetry field typing under a cursor (loops 6s)');
+}
+
+// ================= reveal: the constellation's name engraved stroke by stroke (loops 6s) =================
+function paintReveal(g,t){
+  const period=6.0,cyc=(t%period)/period;
+  const reveal=clamp(cyc/0.65,0,1); // engraves across the first ~4s of the loop, holds, resets
+  return reveal;
+}
+
+// ================= composition =================
+function drawScene(t){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  legendItems.length=0;
+
+  paintGround(ctx);
+
+  // the seven families — a row of specimen bodies, each wrapped in its data (brief item 3).
+  const famY=200,famX0=132,famGap=163;
+  FAMILIES.forEach((f,i)=>paintBody(ctx,famX0+i*famGap,famY,42,f,i*17+3));
+
+  // the four dangers (brief item 4).
+  paintWell(ctx,150,470,46,t);
+  paintBeam(ctx,362,470,44,t);
+  paintFlux(ctx,610,470,190,70,t);
+  paintExt(ctx,900,470,72,44);
+
+  // the player — the probe on an orbit ellipse, around a body it is presently harvesting.
+  const bodyCx=640,bodyCy=630;
+  paintBody(ctx,bodyCx,bodyCy,26,'ringed',701);
+  paintPlayerOrbit(ctx,bodyCx,bodyCy,150,58,-0.12,t,55);
+  paintDaughter(ctx,bodyCx,bodyCy-40,t,11);
+
+  // one constellation figure: THE ARGO, the plaque's own panel (brief item 5).
+  const nameReveal=paintReveal(ctx,t);
+  paintFigure(ctx,1100,300,nameReveal);
+
+  // pickups, small and captioned (brief item 8).
+  const py=700;
+  PICKUPS.forEach(([kind,label],i)=>{
+    const px=900+i*70;
+    paintPickup(ctx,px,py,kind);
+    ctx.font=tfont(9);ctx.fillStyle='rgba(232,236,242,.75)';ctx.textAlign='center';ctx.fillText(label,px,py+20);ctx.textAlign='left';
+    legend(px-16,py-16,'pickup: '+label);
+  });
+
+  paintFrame(ctx,t);
+  paintHUD(ctx,t);
+
+  if(!fontReady){ctx.font=tfont(10);ctx.fillStyle=TOKENS.amber;ctx.textAlign='right';ctx.fillText('(B612 Mono loading — monospace fallback shown)',W-40,H-84);ctx.textAlign='left';}
+
+  if(showLegend){
+    ctx.save();ctx.font='11px monospace';
+    legendItems.forEach(it=>{
+      ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(it.x-2,it.y-11,ctx.measureText(it.label).width+4,14);
+      ctx.fillStyle='#9cf';ctx.fillText(it.label,it.x,it.y);
+    });
+    ctx.restore();
+  }
+}
+
+let start=performance.now();
+function frame(now){
+  drawScene((now-start)/1000);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

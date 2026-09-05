@@ -171,7 +171,7 @@ function paintGround(g,rng){
   g.fillStyle=glow;g.fillRect(0,0,BASE_W,BASE_H);
   // The narrowband patch, in the amber-teal a real SII/Hα/OIII composite reads as (§3: SII and
   // Hα both register across most of a real nebula, so a pure-primary mix would be wrong).
-  const nebX=980,nebY=140;
+  const nebX=560,nebY=195;
   for(let i=0;i<14;i++){
     const ox=nebX+(rng()-.5)*190,oy=nebY+(rng()-.5)*130,rr=40+rng()*70;
     const mix=rng();const c=mix<.4?TOKENS.sii:mix<.75?TOKENS.ha:TOKENS.oiii;
@@ -191,13 +191,13 @@ function paintGround(g,rng){
   g.restore();
   // One deliberate dust lane in the foreground, dark enough to caption (obscurer, §7/§8: "the
   // modern-era equivalent of era IV's Barnard numbers" — an LDN-style number).
-  const laneX=260,laneY=470;
+  const laneX=430,laneY=500;
   g.save();g.translate(laneX,laneY);g.rotate(-.3);
   const lane=g.createRadialGradient(0,0,0,0,0,1);
   lane.addColorStop(0,'rgba(4,5,10,.6)');lane.addColorStop(.6,'rgba(4,5,10,.28)');lane.addColorStop(1,'rgba(4,5,10,0)');
   g.scale(150,34);g.fillStyle=lane;g.fillRect(-1,-1,2,2);
   g.restore();
-  window.__laneCaptionAt={x:laneX+40,y:laneY+56};
+  window.__laneCaptionAt={x:laneX+70,y:laneY+38};
   // The field. Most of it unresolved single photosites, thicker through a faint galactic band.
   g.save();g.translate(BASE_W*.5,BASE_H*.52);g.rotate(-.5);
   for(let i=0;i<2600;i++){
@@ -410,9 +410,9 @@ function paintObscurerCaption(g){
    single dashed pointer line naming the field rather than joining the stars into a shape.
    ========================================================================================== */
 const FIGURE={name:'THE LYRE',cat:'FIELD 7',stars:[
-  {x:1000,y:150,id:'GAIA DR3 6042118395027744000'},
-  {x:1068,y:196,id:'HIP 91262'},
-  {x:1128,y:140,id:'HD 172167'}
+  {x:912,y:392,id:'GAIA DR3 6042118395027744000'},
+  {x:980,y:438,id:'HIP 91262'},
+  {x:1040,y:382,id:'HD 172167'}
 ]};
 function paintFigure(g){
   for(const s of FIGURE.stars){
@@ -434,7 +434,7 @@ function paintFigure(g){
    a reticle reads as the instrument's own acquisition marker, closer to this era's grammar
    than a drawn comet.
    ========================================================================================== */
-const RING={cx:560,cy:430,r:92};
+const RING={cx:620,cy:410,r:88};
 function paintOrbitRing(g){
   hairArc(g,RING.cx,RING.cy,RING.r,0,Math.PI*2,{color:TOKENS.inkFaint,width:1});
   for(let i=0;i<24;i++){ // arcsecond-tick styled rim graduations, in place of the engraved rim's hatch
@@ -449,7 +449,7 @@ function paintProbe(g,t){
   let prevx=null,prevy=null;
   for(let i=40;i>=1;i--){
     const aa=a-i*.045,x=RING.cx+Math.cos(aa)*RING.r,y=RING.cy+Math.sin(aa)*RING.r;
-    if(prevx!==null)plotterSegment(g,prevx,prevy,x,y,t,{color:TOKENS.cyan,width:1,period:10,alpha:.06+.5*(1-i/40)});
+    if(prevx!==null)plotterSegment(g,prevx,prevy,x,y,t,{color:TOKENS.cyan,width:1.5,period:10,alpha:.1+.7*(1-i/40)});
     prevx=x;prevy=y;
   }
   // the faint next-orbit aim guide, a short lead into where the release would carry it
@@ -457,7 +457,10 @@ function paintProbe(g,t){
   plotterSegment(g,px,py,RING.cx+Math.cos(aimA)*RING.r*1.5,RING.cy+Math.sin(aimA)*RING.r*1.5,t,{color:TOKENS.inkFaint,width:.8,period:8,alpha:.35});
   // the reticle itself: corner brackets around a crosshair, an acquisition marker not a drawing
   g.save();g.translate(px,py);g.rotate(a+Math.PI/2);
-  const s=9;
+  const glow=g.createRadialGradient(0,0,0,0,0,16);
+  glow.addColorStop(0,'rgba(143,214,232,.35)');glow.addColorStop(1,'rgba(143,214,232,0)');
+  g.fillStyle=glow;g.fillRect(-16,-16,32,32);
+  const s=11;
   hairline(g,-s,-s,-s*.4,-s,{color:TOKENS.ink,width:1.3});hairline(g,-s,-s,-s,-s*.4,{color:TOKENS.ink,width:1.3});
   hairline(g,s,-s,s*.4,-s,{color:TOKENS.ink,width:1.3});hairline(g,s,-s,s,-s*.4,{color:TOKENS.ink,width:1.3});
   hairline(g,-s,s,-s*.4,s,{color:TOKENS.ink,width:1.3});hairline(g,-s,s,-s,s*.4,{color:TOKENS.ink,width:1.3});
@@ -473,10 +476,10 @@ function paintProbe(g,t){
    reserve tank), flagged here rather than presented as attested.
    ========================================================================================== */
 const PICKUPS=[
-  {x:330,y:230,color:TOKENS.gold, name:'GUIDE LOCK'},
-  {x:900,y:470,color:'#8fd0ff', name:'SAFE MODE'},
-  {x:1080,y:470,color:'#c8a8f2', name:'SLEW GUARD'},
-  {x:700,y:180,color:'#e8b06a', name:'RESERVE'}
+  {x:400,y:270,color:TOKENS.gold, name:'GUIDE LOCK'},
+  {x:1190,y:400,color:'#8fd0ff', name:'SAFE MODE'},
+  {x:1190,y:490,color:'#c8a8f2', name:'SLEW GUARD'},
+  {x:760,y:330,color:'#e8b06a', name:'RESERVE'}
 ];
 function paintPickups(g,rng){
   for(const p of PICKUPS){
@@ -539,7 +542,7 @@ const FITS_CARDS=[
   fitsCard('NAXIS2','800'),
   fitsCard('OBJECT','ORBIT / '+FIGURE.name),
   fitsCard('DATE-OBS','2026-09-05T00:00:00'),
-  fitsCard('EXPTIME','0.0','seconds, counts up in-run'),
+  fitsCard('EXPTIME','__EXPTIME__','seconds, counts up in-run'),
   fitsCard('FILTER','Hα'),
   fitsCard('TELESCOP','ORBIT-2.4M'),
   fitsCard('INSTRUME','WFC-ARCADE'),
@@ -573,7 +576,7 @@ function paintHUDLive(g,t){
   g.save();g.font=monoFont(11);
   let cy=112;
   for(let i=0;i<FITS_CARDS.length;i++){
-    const startAt=i*perCard,text=FITS_CARDS[i].replace('0.0',(Math.min(t%period,999)).toFixed(1));
+    const startAt=i*perCard,text=FITS_CARDS[i].replace('__EXPTIME__',(t%period).toFixed(1));
     const chars=Math.max(0,Math.min(text.length,Math.floor((tt-startAt)/0.014)));
     if(chars<=0){cy+=15.5;continue;}
     const shownText=text.slice(0,chars);
@@ -592,12 +595,12 @@ function paintHUDLive(g,t){
    ========================================================================================== */
 let showLegend=false;
 const LEGEND_MARKS=[
-  {x:34,y:30,t:'HUD: title'},{x:640,y:96,t:'HUD: score/currency'},{x:1246,y:30,t:'HUD: personal best'},
+  {x:34,y:30,t:'HUD: title'},{x:640,y:96,t:'HUD: score/currency'},{x:1120,y:30,t:'HUD: personal best'},
   {x:34,y:700,t:'HUD: inscriptions'},{x:34,y:104,t:'HUD: FITS header (reveal)'},
-  {x:170,y:238,t:'attractor (vortex/VORAGO)'},{x:1120,y:250,t:'repulsor (flare/MACULA)'},
-  {x:220,y:260,t:'crosswind (wind/VENTUS)'},{x:225,y:530,t:'obscurer (nebula)'},
-  {x:1000,y:100,t:'constellation figure'},{x:560,y:330,t:'player (comet → probe)'},
-  {x:900,y:440,t:'pickup: shield'},{x:1080,y:440,t:'pickup: reflector'},{x:330,y:200,t:'pickup: sling'},{x:700,y:150,t:'pickup: inkwell'},
+  {x:175,y:400,t:'attractor (vortex/VORAGO)'},{x:1145,y:155,t:'repulsor (flare/MACULA)'},
+  {x:660,y:118,t:'crosswind (wind/VENTUS)'},{x:500,y:480,t:'obscurer (nebula)'},
+  {x:912,y:360,t:'constellation figure'},{x:620,y:310,t:'player (comet → probe)'},
+  {x:1190,y:378,t:'pickup: shield'},{x:1190,y:468,t:'pickup: reflector'},{x:400,y:248,t:'pickup: sling'},{x:760,y:308,t:'pickup: inkwell'},
   {x:90,y:600,t:'body: ocean'},{x:250,y:600,t:'body: crater'},{x:410,y:600,t:'body: ringed'},
   {x:570,y:600,t:'body: ice'},{x:730,y:600,t:'body: dune'},{x:890,y:600,t:'body: volcanic'},{x:1050,y:600,t:'body: storm'}
 ];
@@ -618,13 +621,13 @@ function buildStatic(){
   const rng=mulberry32(SEED);
   paintGround(g,rng);
   paintOrbitRing(g);
-  paintAttractor(g,170,300,50,mulberry32(SEED^1));
-  paintRepulsor(g,1120,300,42,mulberry32(SEED^2));
-  paintCrosswind(g,360,60,mulberry32(SEED^3));
+  paintAttractor(g,175,475,48,mulberry32(SEED^1));
+  paintRepulsor(g,1145,225,40,mulberry32(SEED^2));
+  paintCrosswind(g,780,85,mulberry32(SEED^3));
   paintObscurerCaption(g);
   paintFigure(g);
   paintPickups(g,mulberry32(SEED^4));
-  const bx0=100,gap=(1240-100)/6;
+  const bx0=110,gap=(1170-110)/6;
   FAMILY_ORDER.forEach((fam,i)=>paintBody(g,bx0+gap*i,600,46,fam,mulberry32(SEED^(10+i)),FAMILY_NAME[fam]));
   paintMargin(g);
   paintHUDStatic(g);

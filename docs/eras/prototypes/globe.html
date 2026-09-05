@@ -5,21 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orbit — IV · The Globe (prototype)</title>
 <!--
-  Font: Amiri — SIL Open Font License 1.1, by Khaled Hosny (github.com/aliftype/amiri),
-  a naskh revival closest to the Baghdad book hand this era draws in (see
-  docs/eras/research/globe.md §4). Loaded from Google Fonts for the prototype only, per
-  PROTOTYPE-BRIEF.md — the shipped game embeds the face itself. Unicode block set: Arabic
-  U+0600–06FF (base letters, digits, diacritics) plus the presentation forms Amiri's own
-  shaping draws on (Arabic Presentation Forms-A/B, U+FB50–FEFF) for correct naskh joining.
-  The browser's own bidi/shaping engine does the joining and right-to-left ordering; this
-  file never hand-shapes a glyph run, only calls fillText with ctx.direction='rtl'.
-  If Amiri fails to load within the timeout below, captions fall back to a hand-drawn
-  qalam squiggle (fakeNaskh) standing in for the word-shape, never to a wrong Latin face.
+  Fonts: Amiri (naskh, captions) and Reem Kufi (kufic, the colophon's monumental register) —
+  both SIL Open Font License 1.1, by Khaled Hosny. See fonts/README.md for provenance; both
+  are now the full local faces the prototype folder ships, loaded here by @font-face exactly
+  as the game will later embed a cut subset (per CLAUDE.md's `npm run fonts`). Unicode block
+  set: Arabic U+0600–06FF (base letters, digits, diacritics) plus the presentation forms
+  Amiri's own shaping draws on (Arabic Presentation Forms-A/B, U+FB50–FEFF) for correct naskh
+  joining. The browser's own bidi/shaping engine does the joining and right-to-left ordering;
+  this file never hand-shapes a glyph run, only calls fillText with ctx.direction='rtl'.
+  document.fonts.ready is awaited before the first paint, so the sheet's first frame is
+  already set in the real hand. The hand-drawn qalam-squiggle fallback (fakeNaskh/fakeDigits)
+  is kept only for a genuine load failure — it is no longer on the normal path.
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'Amiri';src:url('fonts/amiri.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:block}
+  @font-face{font-family:'Reem Kufi';src:url('fonts/reem-kufi.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block}
   html,body{margin:0;padding:0;background:#0c0906;height:100%;overflow:hidden}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
   canvas{display:block;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -128,26 +128,50 @@ function faceFor(size,script,weight){
 // back onto Times New Roman; instead a qalam sketches an abstract joined-run silhouette
 // (a baseline stroke, a few connected teeth, a dot pass) standing in for the word-shape,
 // which is closer to what an unlettered viewer of this sheet would actually see happen.
+function textSeed(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0)||1}
 function fakeNaskh(g,text,xRight,y,size,rgb,alpha,seed){
-  const rng=mulberry32(seed>>>0||1),n=clamp(Math.round(text.replace(/\s/g,'').length*.6),3,9);
-  const w=size*.62*n,x0=xRight-w;
-  reedSegment(g,x0,y,xRight,y,rgb,alpha,size*.09,seed,{segments:n*3,wobble:.5});
+  seed=seed||textSeed(text);const rng=mulberry32(seed);
+  const n=clamp(Math.round(text.replace(/\s/g,'').length*.55),3,10),unit=size*.58,w=unit*n;
+  const base=[];for(let i=0;i<=n;i++){const t=i/n;base.push([xRight-w*t,y+Math.sin(t*7+seed%5)*size*.045]);}
+  reedPath(g,base,false,rgb,alpha,size*.075,seed); // the unbroken baseline run — the pen never lifts mid-word
   for(let i=0;i<n;i++){
-    const tx=xRight-w*(i+.5)/n,th=size*(.28+rng()*.22)*(rng()<.5?-1:1);
-    reedSegment(g,tx,y,tx+size*.06*(rng()<.5?1:-1),y+th,rgb,alpha*.9,size*.07,seed+i*5,{segments:3});
+    const t=(i+.5)/n,bx=xRight-w*t,by=y+Math.sin(t*7+seed%5)*size*.045,roll=rng();
+    if(roll<.4){const h=size*(.5+rng()*.35); // an ascender's hooked rise — lām/alif-like
+      reedArc(g,bx+size*.05,by-h*.5,h*.42,2.4,4.6,rgb,alpha*.95,size*.06,seed+i*9,{segments:6,wobble:.15});
+    }else if(roll<.68){const h=size*(.32+rng()*.22); // a descender's curling tail — wāw/yā-like
+      reedArc(g,bx-size*.04,by+h*.55,h*.5,.4,3.4,rgb,alpha*.9,size*.055,seed+i*9+3,{segments:6,wobble:.15});
+    }
   }
-  for(let i=0;i<Math.round(n*.4);i++)punchDot(g,xRight-w*rng(),y+size*.32,size*.045,`rgba(${rgb},${alpha})`,null,seed+90+i);
-  const tw=w*.7;reedSegment(g,xRight-w+tw*.15,y+size*.6,xRight-w+tw*.85,y+size*.6,rgb,alpha*.5,size*.03,seed+50,{segments:4,wobble:.3});
+  for(let i=0;i<Math.max(1,Math.round(n*.45));i++)punchDot(g,xRight-w*rng(),y+(rng()<.5?-size*.34:size*.3),size*.042,`rgba(${rgb},${alpha})`,null,seed+90+i); // iʿjām
+}
+// fakeDigits — Eastern numerals are set, not joined the way a naskh word is (a numeral
+// run stays left-to-right even inside an RTL line), so each glyph is its own isolated mark.
+function fakeDigits(g,text,xRight,y,size,rgb,alpha,seed){
+  seed=seed||textSeed(text);const rng=mulberry32(seed);
+  const glyphs=[...text],unit=size*.6,w=unit*glyphs.length,x0=xRight-w;
+  glyphs.forEach((ch,i)=>{
+    const cx=x0+unit*(i+.5),cy=y-size*.28,r=size*.22;
+    if(ch==='.'||ch===','){punchDot(g,cx,y,size*.035,`rgba(${rgb},${alpha})`,null,seed+i);return}
+    if(ch==='×'){reedSegment(g,cx-r*.5,cy-r*.3,cx+r*.5,cy+r*.3,rgb,alpha,size*.05,seed+i,{segments:3});
+      reedSegment(g,cx-r*.5,cy+r*.3,cx+r*.5,cy-r*.3,rgb,alpha,size*.05,seed+i+1,{segments:3});return}
+    const from=rng()*1.2;reedArc(g,cx,cy,r,from,from+3.4+rng()*1.6,rgb,alpha,size*.08,seed+i*7,{segments:8,wobble:.12,ry:r*.9});
+  });
 }
 // arabicText — right-to-left, right-anchored (manuscript captions are right-set), with a
 // graceful hand-drawn fallback. Every Arabic caption on the sheet goes through this.
-function arabicText(g,text,xRight,y,size,opts={}){
-  const rgb=opts.rgb||'36,28,17',alpha=opts.alpha??1;
+function arabicText(g,text,x,y,size,opts={}){
+  const rgb=opts.rgb||'36,28,17',alpha=opts.alpha??1,align=opts.align||'right',kind=opts.kind||'word';
   if(amiriReady||opts.forceType){
-    g.save();g.direction='rtl';g.textAlign='right';g.textBaseline='alphabetic';
+    g.save();g.direction='rtl';g.textAlign=align;g.textBaseline='alphabetic';
     g.font=faceFor(size,'ar',opts.weight);g.fillStyle=`rgba(${rgb},${alpha})`;
-    g.fillText(text,xRight,y);g.restore();
-  }else fakeNaskh(g,text,xRight,y,size,rgb,alpha,opts.seed||1);
+    g.fillText(text,x,y);g.restore();
+  }else{
+    let xRight=x;
+    if(align==='center'){const n=kind==='digits'?text.length:clamp(Math.round(text.replace(/\s/g,'').length*.55),3,10);
+      xRight=x+(kind==='digits'?size*.6:size*.58)*n/2;}
+    if(kind==='digits')fakeDigits(g,text,xRight,y,size,rgb,alpha,opts.seed);
+    else fakeNaskh(g,text,xRight,y,size,rgb,alpha,opts.seed);
+  }
 }
 function translitText(g,text,xRight,y,size,opts={}){
   g.save();g.textAlign=opts.align||'right';g.textBaseline='alphabetic';
@@ -192,6 +216,15 @@ function paintFrame(g,w,h,seed){
   // footer strip — matches the shipped game's footer-strip layout slot
   g.fillStyle='rgba(90,68,38,.08)';g.fillRect(36,h-58,w-72,20);
   reedSegment(g,36,h-58,w-36,h-58,'36,28,17',.4,.6,seed+9,{segments:40,wobble:.2});
+  [[52,52,1,1],[w-52,52,-1,1],[52,h-52,1,-1],[w-52,h-52,-1,-1]].forEach(([cx,cy,sx,sy],i)=>cornerOrnament(g,cx,cy,sx,sy,seed+60+i));
+}
+// cornerOrnament — kufic's angular, no-curve register, per research §4 ("anything meant to
+// look carved rather than written"): a stepped geometric bracket, not a European cartouche.
+function cornerOrnament(g,cx,cy,sx,sy,seed){
+  const s=14;
+  const pts=[[0,0],[3*s*sx,0],[3*s*sx,s*sy],[2*s*sx,s*sy],[2*s*sx,2*s*sy],[s*sx,2*s*sy],[s*sx,3*s*sy],[0,3*s*sy]].map(([x,y])=>[cx+x,cy+y]);
+  reedPath(g,pts,false,'201,162,39',.8,1.1,seed,{});
+  reedArc(g,cx,cy,3,0,TAU,'36,28,17',.7,.8,seed+1,{segments:8});
 }
 
 // ---------- the brass globe vignette: instrument grammar reduced to a colophon roundel
@@ -342,21 +375,16 @@ function paintHUDStatic(g,w,h){
   translitText(g,NAMES.bestTr,1220,68,10,{align:'right',rgb:'80,64,40'});
 }
 function paintHUDDynamic(g,w,h,state){
-  arabicText(g,toEastern(state.score),640,58,34,{weight:'700',align:'center',seed:3});
-  g.save();g.textAlign='center';g.font=faceFor(34,'ar','700');g.restore(); // (font already set by arabicText; center handled there)
+  arabicText(g,toEastern(state.score),640,58,34,{weight:'700',align:'center',kind:'digits',seed:3});
   translitText(g,'SPEED ×'+state.speed.toFixed(1),640,82,11,{align:'center',rgb:'80,64,40'});
   translitText(g,'FLOW ×'+state.flow,640,98,11,{align:'center',rgb:'80,64,40'});
   reedSegment(g,600,108,680,108,'201,162,39',.8,1,72,{segments:14,wobble:.15});
-  arabicText(g,toEastern(state.best),1220,90,22,{weight:'700',seed:4});
+  arabicText(g,toEastern(state.best),1220,90,22,{weight:'700',kind:'digits',seed:4});
   // ink gauge, labelled ḥibr — the currency, rationed by the well (research §6)
   arabicText(g,NAMES.currency,150,128,15,{seed:5});
   reedSegment(g,168,124,258,124,'150,100,32',.35,7,73,{segments:1});
   reedSegment(g,168,124,168+90*state.ink,124,'27,63,143',.85,6,74,{segments:Math.round(10+state.ink*20),wobble:.3});
   reedArc(g,168,124,3.2,0,TAU,'201,162,39',.9,1,75,{segments:8});
-}
-function paintCenterArabic(g,text,cx,y,size,seed){ // arabicText forces textAlign; a small centred variant for the score
-  if(amiriReady){g.save();g.direction='rtl';g.textAlign='center';g.font=faceFor(size,'ar','700');g.fillStyle='rgba(36,28,17,1)';g.fillText(text,cx,y);g.restore();}
-  else fakeNaskh(g,text,cx+size*1.3,y,size,'36,28,17',1,seed);
 }
 
 // ---------- reveal: the qalam writes right-to-left, clip growing from the right, the
@@ -364,9 +392,9 @@ function paintCenterArabic(g,text,cx,y,size,seed){ // arabicText forces textAlig
 function paintReveal(g,text,tr,xRight,y,size,t){
   const run=clamp(t/.72,0,1),dotPhase=clamp((t-.72)/.28,0,1);
   const w=text.length*size*.62;
-  g.save();g.beginPath();g.rect(xRight-w-4,y-size*1.2,w*run+8,size*1.6);g.clip();
+  g.save();g.beginPath();g.rect(xRight-w-4,y-size*1.4,w*run+8,size*1.9);g.clip();
   if(amiriReady){g.direction='rtl';g.textAlign='right';g.font=faceFor(size,'ar','700');g.fillStyle='rgba(36,28,17,1)';g.fillText(text,xRight,y);}
-  else fakeNaskh(g,text,xRight,y,size,'36,28,17',run,909);
+  else fakeNaskh(g,text,xRight,y,size,'36,28,17',1,909);
   g.restore();
   if(dotPhase>0){ // dots only after the joined skeleton is fully laid, per the two-pass rhythm
     g.save();g.globalAlpha=dotPhase;
@@ -381,13 +409,16 @@ function paintReveal(g,text,tr,xRight,y,size,t){
 // ---------- the player: the comet (al-mudhannab, "the tailed one" — the standard modern
 // word, applied here per the pickup-naming note above) on an orbit ring, live each frame ----------
 function paintPlayer(g,cx,cy,r,t,nextX,nextY){
-  reedArc(g,cx,cy,r,0,TAU,'52,38,20',.55,1,600,{segments:26,wobble:.15}); // the orbit ring itself
-  reedArc(g,cx,cy,r,Math.PI*1.15,Math.PI*1.65,'201,162,39',.35,1,601,{segments:10,wobble:.1,ry:r}); // faint next-orbit aim guide
-  for(let i=0;i<3;i++){g.save();g.setLineDash([2,4]);reedSegment(g,cx+r*Math.cos(1.4),cy+r*Math.sin(1.4),nextX,nextY,'201,162,39',.3,.6,602,{segments:1});g.restore();}
-  const a=t*.9,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r*.94;
-  for(let i=1;i<=7;i++){const ta=a-i*.09,tx=cx+Math.cos(ta)*r,ty=cy+Math.sin(ta)*r*.94;
-    punchDot(g,tx,ty,1.6*(1-i/9),`rgba(212,175,55,${.5*(1-i/8)})`,null,700+i);} // trailing flight path
-  punchDot(g,px,py,3.4,TOKENS.gold,'36,28,17',701);
+  reedArc(g,cx,cy,r,0,TAU,'52,38,20',.6,1.1,600,{segments:28,wobble:.12}); // the orbit ring itself, plainly outside the body's gold rim
+  const toNext=Math.atan2(nextY-cy,nextX-cx);
+  reedArc(g,cx,cy,r,toNext-.5,toNext+.5,'201,162,39',.85,1.6,601,{segments:10,wobble:.1}); // the next-orbit aim guide, brightened toward the next body
+  g.save();g.setLineDash([3,5]);g.globalAlpha=.5;
+  reedSegment(g,cx+r*Math.cos(toNext),cy+r*Math.sin(toNext),nextX,nextY,'201,162,39',.7,.9,602,{segments:10,wobble:.2});
+  g.restore();
+  const a=t*.9,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+  for(let i=1;i<=8;i++){const ta=a-i*.11,tx=cx+Math.cos(ta)*r,ty=cy+Math.sin(ta)*r;
+    punchDot(g,tx,ty,2.2*(1-i/10),`rgba(227,66,52,${.55*(1-i/9)})`,null,700+i);} // the trailing flight path, rubrication-red
+  punchDot(g,px,py,4.2,TOKENS.gold,'36,28,17',701); // the comet itself
 }
 
 // ---------- legend ----------

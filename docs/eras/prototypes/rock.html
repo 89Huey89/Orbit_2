@@ -1,0 +1,700 @@
+<!doctype html>
+<!--
+  Orbit — Era 0, "The Rock": the Palaeolithic cave, c. 17,000 BCE, pulled primarily from
+  Lascaux's Hall of the Bulls, with Chauvet's Panel of Hand Dots for the mark-making technique
+  and Newgrange's pecked kerb-spirals for the megalithic close, per docs/eras/research/rock.md.
+
+  Every mark on this sheet routes through exactly three primitives, because that is what the
+  record actually attests (§4): dab() — a fingertip/pad pressed to the wall, soft-edged, no
+  direction; handStencil() — pigment blown around a placed hand, a negative silhouette; and
+  engravedLine()/engravedArc() — a flint scratch, pale and bright-edged, cut through the rock's
+  own dark patina. "Pecked" marks (cup-and-ring, crater pitting) are not a fourth primitive —
+  they are engravedLine composed into small circular pits, since a peck and a scratch are both a
+  tool biting the rock rather than pigment sitting on it. There is no script (§2/§4): nothing on
+  this sheet is a letterform, no OFL face is loaded, and the HUD is built from the two counting
+  primitives §9 actually proposes — tallyRow() (grouped burin strokes, small fast counts) and
+  dotField() (density-coded dot clusters, large slow counts) — never a digit.
+
+  The ground is one relief, not a flat colour: reliefHeight() layers six seeded low-frequency
+  sine octaves into a heightmap, lit from one fixed torch bearing (LIGHT). Per the brief's own
+  instruction ("animate the light, not the drawing"), that lit relief — and every body, hazard,
+  figure and HUD mark on it — is baked ONCE to an offscreen sceneSprite; the only things redrawn
+  live are the torch's flicker/reach overlay, the ember comet and its trail, the aim guide, the
+  ochre-smear currency (its pulse tied to the same reach number, research §6's "one twist"), and
+  the reveal. That is also the whole performance strategy: one ~64,000-cell relief bake at load,
+  then a cheap per-frame overlay, holding 60fps without a WebGL trick.
+
+  Ground colour is Lascaux's own torchlit limestone, #C7BC9E (§3) — Chauvet's paler #D6D0BF is
+  named in the palette but deliberately not mixed in, since §3 is explicit the two grounds "should
+  not share one ground." The Lascaux six-dot-over-the-shoulder reading (Rappenglück, after
+  Antequera Congregado, as the Pleiades over an anticipated Taurus) is CONTESTED per research §1
+  and §12 and is drawn honestly ambiguous: six dots sit on the bull's shoulder exactly as they do
+  at Lascaux, three of them warmed to the game's "star" ochre and three left as ordinary dabs,
+  with nothing on the sheet asserting the reading as settled fact (the doubt lives here, in this
+  comment, and in the legend label — never in the art itself, which just shows what is really
+  there). Pickups are reskinned per era grammar and flagged where the fit is constructed rather
+  than attested: sling→a struck spark-cluster (echoes the comet's own ember, §1/§2's "the era's
+  vehicle"), shield→Newgrange's pecked triple spiral (an attested threshold/ward motif, §1),
+  reflector→a hand stencil turned the opposite way — pigment settling back in as the hand lifts
+  (§5's "Release" gloss, borrowed; construction flagged), inkwell→a raw ochre nodule, literal,
+  no reskin needed since the currency already is the material (§6). Score is drawn as a tally
+  row per the brief's direction, but bundled per-ten-per-stroke and grouped in fives rather than
+  one notch per point — research §9 flags a literal one-notch-per-point score as illegible at
+  three digits, and this is the honest compromise between the two instructions, called out here
+  rather than silently resolved.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Rock — Orbit era prototype</title>
+<style>
+  :root{color-scheme:dark;}
+  html,body{margin:0;padding:0;background:#020201;height:100%;overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#020201;}
+  canvas{display:block;box-shadow:0 0 70px 14px rgba(0,0,0,.7);}
+  #legend{position:fixed;left:0;top:0;pointer-events:none;font:11px/1.4 monospace;color:#9c9;}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="legend"></div>
+<script>
+'use strict';
+// ---------- seeded randomness: the page paints identically every load ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(0xB0A57000);
+const TAU=Math.PI*2;
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function mixHex(h1,h2,t){
+  const a=parseInt(h1.slice(1),16),b=parseInt(h2.slice(1),16);
+  const ar=(a>>16)&255,ag=(a>>8)&255,ab=a&255,br=(b>>16)&255,bg=(b>>8)&255,bb=b&255;
+  const r=Math.round(lerp(ar,br,t)),g=Math.round(lerp(ag,bg,t)),bl=Math.round(lerp(ab,bb,t));
+  return `rgb(${r},${g},${bl})`;
+}
+
+// ---------- TOKENS: real pigments and the two named limestone grounds (research §3) ----------
+const TOKENS={
+  ground:'#C7BC9E',        // Lascaux torchlit limestone — this sheet's chosen ground, not Chauvet's
+  groundDeep:'#847A5C',     // rock in a hollow, turned from the torch
+  groundHi:'#E7DCB9',       // a boss catching the light full-on
+  redOchre:'#9C3B22',       // haematite — the era's most reserved colour, its nearest "gold"
+  redOchreDeep:'#5E2313',
+  redOchreHi:'#C1583A',
+  yellowOchre:'#C9962E',
+  yellowOchreDeep:'#8F6A1C',
+  yellowOchreHi:'#E0B454',
+  mnBlack:'#211F1E',        // manganese — cooler, blue-black
+  charcoal:'#2C2622',       // charcoal — warmer, softer-edged
+  kaolin:'#EAE1CF',         // white clay, rarest pigment, used sparingly
+  scratchShadow:'rgba(18,13,9,.55)',
+  scratch:'#E7DEC4',        // a flint scratch exposes paler rock beneath the surface patina
+  scratchHi:'#F8F1DD',
+  cave:'#020201'
+};
+const FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+// the torch's fixed bearing: relief is lit from up-and-left throughout the bake; only the
+// overlay's INTENSITY and REACH animate later, per the brief's "animate the light, not the
+// drawing."
+const LIGHT={x:-0.56,y:-0.78};
+(function(){const m=Math.hypot(LIGHT.x,LIGHT.y);LIGHT.x/=m;LIGHT.y/=m;})();
+
+// ---------- canvas setup: draw at devicePixelRatio, fit a fixed 1280x800 logical frame ----------
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1280,H=800;
+let DPR=Math.max(1,window.devicePixelRatio||1);
+function fit(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/W,vh/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';
+  DPR=Math.max(1,window.devicePixelRatio||1);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+}
+window.addEventListener('resize',fit);fit();
+
+let showLegend=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+const legendItems=[];
+function legend(x,y,label){if(showLegend)legendItems.push({x,y,label});}
+
+// ================= relief: six seeded low-frequency octaves stand in for the rock's own bulges and hollows =================
+const reliefOctaves=(()=>{
+  const rnd=mulberry32(0x0C0C0AA);
+  const arr=[];
+  for(let i=0;i<6;i++)arr.push({
+    fx:(0.0016+rnd()*0.0032)*(1+i*0.6),
+    fy:(0.0016+rnd()*0.0032)*(1+i*0.6),
+    px:rnd()*TAU,py:rnd()*TAU,amp:1/(i+1)
+  });
+  return arr;
+})();
+function reliefHeight(x,y){
+  let v=0;for(const o of reliefOctaves)v+=Math.sin(x*o.fx+o.px)*Math.cos(y*o.fy+o.py)*o.amp;
+  return v; // roughly -2.4..2.4, unnormalised — used only relatively, for shading
+}
+function reliefShade(x,y){
+  const h=reliefHeight(x,y),hx=reliefHeight(x+3,y),hy=reliefHeight(x,y+3);
+  const nx=h-hx,ny=h-hy;
+  return clamp(0.5+(nx*LIGHT.x+ny*LIGHT.y)*7+h*0.05,0,1);
+}
+
+// ================= STRUCK/PAINTED PRIMITIVES — the three attested techniques (research §4) =================
+
+// The dab: a fingertip or pad of pigment pressed to the wall, denser at the centre, no
+// direction, no leading edge (§4 — "not a stroke"). Speckle-frays the rim so it bleeds into the
+// rock's own texture rather than reading as a clean vector disc (Chauvet's Panel of Hand Dots).
+function dab(g,x,y,r,seedN,color,alpha){
+  alpha=alpha??1;
+  const rnd=mulberry32((seedN>>>0||5)*2654435761>>>0);
+  g.save();
+  const grad=g.createRadialGradient(x,y,0,x,y,r);
+  grad.addColorStop(0,color);grad.addColorStop(0.6,color);grad.addColorStop(1,'rgba(0,0,0,0)');
+  g.globalAlpha=alpha*0.82;g.fillStyle=grad;
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  g.globalAlpha=alpha*0.45;
+  for(let i=0;i<9;i++){
+    const a=rnd()*TAU,rr=r*(0.65+rnd()*0.5);
+    g.beginPath();g.arc(x+Math.cos(a)*rr,y+Math.sin(a)*rr,r*(0.07+rnd()*0.13),0,TAU);
+    g.fillStyle=color;g.fill();
+  }
+  g.restore();
+}
+// A dab dragged along a short path: the finger-combed fluting (dune family) and the streaked
+// charcoal draught (crosswind hazard) are both, physically, this same gesture — pigment or soot
+// smeared sideways rather than pressed once (§5's "fingers raked through a wet wash").
+function draggedDab(g,x1,y1,x2,y2,width,seedN,color,alpha){
+  const n=Math.max(4,Math.round(Math.hypot(x2-x1,y2-y1)/(width*0.6)));
+  for(let i=0;i<=n;i++){
+    const t=i/n;
+    dab(g,lerp(x1,x2,t),lerp(y1,y2,t),width*(0.5+0.5*Math.sin(t*Math.PI)),seedN+i*3,color,(alpha??1)*(0.5+0.5*Math.sin(t*Math.PI)));
+  }
+}
+// The hand stencil: pigment blown by mouth (or a hollow bone tube) around a hand held flat to
+// the wall — a NEGATIVE silhouette, contact protecting the rock rather than marking it (§4).
+// The cloud is built first, then the hand shape is punched back out to bare rock; a faint
+// residual fray is left right at the true edge, since no real stencil is razor-crisp.
+function handStencil(g,x,y,scale,seedN,color){
+  const rnd=mulberry32(seedN>>>0||21);
+  g.save();g.translate(x,y);g.scale(scale,scale);
+  g.save();
+  for(let i=0;i<260;i++){
+    const a=rnd()*TAU,d=Math.pow(rnd(),0.62);
+    const rr=6+d*42;
+    const px=Math.cos(a)*rr*1.25,py=Math.sin(a)*rr*1.55-4;
+    // densest in a band just outside the hand's true edge, thinning further out — "fades up
+    // from the outside in" (§4): strongest near the silhouette, faint at the cloud's limit.
+    const band=clamp(1-Math.abs(d-0.42)*2.1,0,1);
+    g.globalAlpha=band*(0.28+rnd()*0.3);
+    g.beginPath();g.arc(px,py,0.8+rnd()*1.7,0,TAU);g.fillStyle=color;g.fill();
+  }
+  g.restore();
+  g.save();g.globalCompositeOperation='destination-out';g.fillStyle=g.strokeStyle='#000';
+  drawHandMask(g);
+  g.restore();
+  g.save();g.globalAlpha=0.22;g.strokeStyle=color;g.lineWidth=1.1;
+  drawHandMaskStroke(g);
+  g.restore();
+  g.restore();
+}
+function drawHandMask(g){
+  g.beginPath();g.ellipse(0,10,9,13,0.05,0,TAU);g.fill();
+  const fingers=[{a:-1.05,len:19,w:6.6},{a:-0.32,len:25,w:5.8},{a:-0.09,len:28,w:5.8},{a:0.13,len:26,w:5.6},{a:0.36,len:21,w:5.2}];
+  g.lineCap='round';
+  fingers.forEach(f=>{
+    const bx=Math.sin(f.a)*6,by=-1-Math.cos(f.a)*2;
+    g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.sin(f.a)*f.len,by-Math.cos(f.a)*f.len);
+    g.lineWidth=f.w;g.stroke();
+  });
+}
+function drawHandMaskStroke(g){
+  g.beginPath();g.ellipse(0,10,9,13,0.05,0,TAU);g.stroke();
+  const fingers=[{a:-1.05,len:19},{a:-0.32,len:25},{a:-0.09,len:28},{a:0.13,len:26},{a:0.36,len:21}];
+  g.lineCap='round';
+  fingers.forEach(f=>{
+    const bx=Math.sin(f.a)*6,by=-1-Math.cos(f.a)*2;
+    g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.sin(f.a)*f.len,by-Math.cos(f.a)*f.len);g.lineWidth=6.2;g.stroke();
+  });
+}
+// The engraved line: a flint burin scored into the rock, exposing paler stone beneath the dark
+// patina — a shadow groove on one side, a bright chipped edge on the other (§4). This is the one
+// place the shipped game's burin survives almost unchanged, because the record itself says a
+// scratch is a scratch.
+function engravedLine(g,path,weight,seedN){
+  const rnd=mulberry32(seedN>>>0||13);
+  g.save();g.lineJoin='round';g.lineCap='round';
+  g.strokeStyle=TOKENS.scratchShadow;g.lineWidth=weight+1.2;g.beginPath();path(g,rnd,-0.5);g.stroke();
+  g.strokeStyle=TOKENS.scratch;g.lineWidth=weight;g.beginPath();path(g,rnd,0);g.stroke();
+  g.strokeStyle=TOKENS.scratchHi;g.lineWidth=Math.max(0.6,weight*0.38);g.globalAlpha=0.85;g.beginPath();path(g,rnd,0.4);g.stroke();
+  g.restore();
+}
+function engravedArc(g,cx,cy,r,from,to,weight,seedN,jitter){
+  jitter=jitter??Math.max(0.5,r*0.007);
+  engravedLine(g,(gg,rnd,off)=>{
+    const span=to-from,segs=clamp(Math.round(Math.abs(span)*r/8),6,72);
+    for(let i=0;i<=segs;i++){
+      const t=i/segs,a=from+span*t;
+      const wob=(rnd()-0.5)*jitter*2*(0.5+off*0.5);
+      const rr=r+wob;
+      const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+      i===0?gg.moveTo(x,y):gg.lineTo(x,y);
+    }
+  },weight,seedN);
+}
+// A pecked cup: percussive stone-on-stone pitting (Newgrange kerbstones, the crater family's
+// cup marks) rendered as a scratch-family mark rather than a fourth primitive — both a peck and
+// a scratch are a tool BITING the rock, unlike a dab or a stencil which apply pigment to it.
+function peckedCup(g,x,y,r,seedN){
+  g.save();
+  g.beginPath();g.arc(x,y,r*1.1,0,TAU);g.fillStyle='rgba(18,13,9,.32)';g.fill();
+  const grad=g.createRadialGradient(x-LIGHT.x*r*0.4,y-LIGHT.y*r*0.4,0,x,y,r);
+  grad.addColorStop(0,'rgba(14,10,7,.7)');grad.addColorStop(1,'rgba(14,10,7,0)');
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=grad;g.fill();
+  engravedArc(g,x+LIGHT.x*r*0.1,y+LIGHT.y*r*0.1,r*0.72,Math.atan2(LIGHT.y,LIGHT.x)-1.1,Math.atan2(LIGHT.y,LIGHT.x)+1.1,1,seedN,r*0.05);
+  g.restore();
+}
+
+// ================= the orbit primitive: a dot-ring — a circle of dabs, not a drawn line (research §5) =================
+function dotRing(g,cx,cy,r,count,seedN,color,alpha){
+  const rnd=mulberry32(seedN>>>0||31);
+  for(let i=0;i<count;i++){
+    const a=(i/count)*TAU+rnd()*0.02;
+    dab(g,cx+Math.cos(a)*r,cy+Math.sin(a)*r,2.1+rnd()*0.6,seedN+i*7,color,alpha??0.8);
+  }
+}
+
+// ================= counting: two primitives replace every digit (research §9) =================
+// tallyRow: units struck one at a time, left to right, grouped in fives with a small gap — the
+// one place a real "stroke order" survives (§4), since each notch was genuinely cut after the
+// last. Used for small fast-changing counts (speed, flow) and, bundled per ten, for score —
+// see the top-of-file note on why score is NOT one notch per point.
+function tallyRow(g,x,y,count,opts={}){
+  const len=opts.len??10,gap=opts.gap??3.4,group=opts.group??5,groupGap=opts.groupGap??7,weight=opts.weight??1.6,seed=opts.seed??1;
+  count=Math.max(0,Math.round(count));
+  let cx=x;
+  for(let i=0;i<count;i++){
+    if(i>0&&i%group===0)cx+=groupGap;
+    engravedLine(g,(gg)=>{gg.moveTo(cx,y);gg.lineTo(cx,y-len);},weight,seed+i*11);
+    cx+=gap;
+  }
+  return cx-x;
+}
+// dotField: a cluster whose DENSITY communicates magnitude rather than an exact count — closer
+// to how the tally bones actually read at a glance than to a printed digit (§9). Packed into a
+// fixed disc; more dabs, tighter-packed, as the value climbs toward a soft ceiling.
+function dotField(g,cx,cy,radius,value,seedN,color){
+  const rnd=mulberry32(seedN>>>0||41);
+  const n=clamp(Math.round(6+Math.sqrt(value)*1.6),6,90);
+  for(let i=0;i<n;i++){
+    const a=rnd()*TAU,rr=Math.sqrt(rnd())*radius;
+    dab(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,1.5+rnd()*1.1,seedN+i*5,color,0.75);
+  }
+}
+
+// ================= paintGround: relief-lit limestone, cracks, calcite veils (research §2/§3) =================
+function paintGround(g){
+  g.fillStyle=TOKENS.ground;g.fillRect(0,0,W,H);
+  const step=4;
+  for(let y=0;y<H;y+=step){
+    for(let x=0;x<W;x+=step){
+      const s=reliefShade(x,y);
+      g.fillStyle=s<0.5?mixHex('#5c5238',TOKENS.ground,s*2):mixHex(TOKENS.ground,TOKENS.groundHi,(s-0.5)*2);
+      g.fillRect(x,y,step+0.6,step+0.6);
+    }
+  }
+  // fine hand-worked grain: thousands of tiny irregular facets over the relief.
+  for(let i=0;i<7000;i++){
+    const x=rng()*W,y=rng()*H;
+    g.globalAlpha=0.03+rng()*0.05;
+    g.fillStyle=rng()<0.5?'#3a331f':TOKENS.groundHi;
+    const r=0.6+rng()*1.6;
+    g.beginPath();g.ellipse(x,y,r,r*(0.5+rng()*0.6),rng()*TAU,0,TAU);g.fill();
+  }
+  g.globalAlpha=1;
+  // calcite veils: pale translucent flows, as if water once ran down the face.
+  for(let i=0;i<9;i++){
+    const rnd=mulberry32(5000+i*77);
+    let x=80+rnd()*(W-160),y=0,w=14+rnd()*22;
+    g.save();g.globalAlpha=0.06+rnd()*0.05;g.strokeStyle=TOKENS.kaolin;g.lineWidth=w;g.lineCap='round';
+    g.beginPath();g.moveTo(x,y);
+    for(let s=0;s<7;s++){x+=(rnd()-0.5)*46;y+=H/7;g.lineTo(x,y);}
+    g.stroke();g.restore();
+  }
+  // cracks: natural fissures, not a human mark, so drawn directly rather than through a primitive.
+  for(let i=0;i<12;i++){
+    const rnd=mulberry32(6100+i*91);
+    let x=rng()*W,y=rng()*H,a=rnd()*TAU;
+    g.save();g.strokeStyle='rgba(20,15,9,.5)';g.lineWidth=1+rnd()*1.3;g.lineCap='round';
+    g.beginPath();g.moveTo(x,y);
+    for(let s=0;s<6;s++){a+=(rnd()-0.5)*1.1;x+=Math.cos(a)*(18+rnd()*32);y+=Math.sin(a)*(18+rnd()*32);g.lineTo(x,y);}
+    g.stroke();g.restore();
+  }
+  legend(10,10,'ground: relief-lit Lascaux limestone (torch-lit, cracks, calcite veils)');
+}
+
+// ================= the seven families (research §8) =================
+function paintBody(g,cx,cy,r,family,seedN){
+  const rnd=mulberry32((seedN>>>0||1)*97+FAMILIES.indexOf(family)*131);
+  g.save();
+  switch(family){
+    case 'ocean': // an undulating engraved line filled with a dilute manganese wash, pooling unevenly.
+      { const pts=[];for(let a=0;a<=TAU+0.001;a+=0.25){const rr=r*(0.86+Math.sin(a*3+seedN)*0.08);pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
+        g.save();g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.clip();
+        for(let i=0;i<26;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*(0.3+rnd()*0.3),seedN+i,TOKENS.mnBlack,0.14);
+        g.restore();
+        engravedLine(g,(gg,rr2)=>{pts.forEach(([x,y],i)=>i?gg.lineTo(x,y):gg.moveTo(x,y));gg.closePath();},1.6,seedN);
+      }
+      break;
+    case 'crater': // ochre-washed disc, pocked with pecked cup marks reading by relief, not colour.
+      for(let i=0;i<30;i++)dab(g,cx+(rnd()-0.5)*r*1.7,cy+(rnd()-0.5)*r*1.7,r*0.28,seedN+i,TOKENS.yellowOchre,0.05);
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.4,seedN);
+      for(let i=0;i<16;i++){const a=rnd()*TAU,rr=rnd()*r*0.75;peckedCup(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r*0.1+rnd()*r*0.06,seedN+i);}
+      break;
+    case 'ringed': // the cup-and-ring motif taken whole: a central cup, 1-3 pecked concentric rings.
+      peckedCup(g,cx,cy,r*0.18,seedN);
+      for(let b=1;b<=3;b++)engravedArc(g,cx,cy,r*(0.32+b*0.2),0,TAU,1.3,seedN+b*9,1.4);
+      break;
+    case 'ice': // the "reserve": bare stone left almost entirely unmarked, a value not a colour.
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1,seedN);
+      for(let i=0;i<20;i++){const a=-0.9+rnd()*1.8;dab(g,cx+Math.cos(a)*r*0.9,cy+Math.sin(a)*r*0.9,1.6,seedN+i,TOKENS.kaolin,0.5);}
+      break;
+    case 'dune': // finger-combed ochre flutings — the "macaroni" gesture, dragged not pressed.
+      for(let i=0;i<9;i++){
+        const yy=cy-r*0.68+i*r*0.16;
+        draggedDab(g,cx-r*0.75,yy,cx+r*0.62,yy+r*0.1,2.6,seedN+i*13,i%2?TOKENS.yellowOchreDeep:TOKENS.yellowOchre,0.6);
+      }
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1,seedN+3);
+      break;
+    case 'volcanic': // the reddest ochre the palette allows, veined with scored black fissures.
+      for(let i=0;i<24;i++)dab(g,cx+(rnd()-0.5)*r*1.6,cy+(rnd()-0.5)*r*1.6,r*0.3,seedN+i,TOKENS.redOchre,0.09);
+      engravedArc(g,cx,cy,r*0.92,0,TAU,1.4,seedN);
+      { const ox=cx+r*0.15,oy=cy-r*0.1;
+        for(let i=0;i<7;i++){const a=rnd()*TAU,len=r*(0.4+rnd()*0.45);
+          engravedLine(g,(gg)=>{gg.moveTo(ox,oy);gg.quadraticCurveTo(ox+Math.cos(a)*len*0.5,oy+Math.sin(a)*len*0.5+6,ox+Math.cos(a)*len,oy+Math.sin(a)*len);},1.1,seedN+i*5);}
+      }
+      break;
+    case 'storm': // a dense, directionless cluster of short comma-strokes (Lascaux's ~50 unread signs).
+      for(let i=0;i<26;i++){
+        const a=rnd()*TAU,cxr=cx+(rnd()-0.5)*r*1.4,cyr=cy+(rnd()-0.5)*r*1.4,len=3+rnd()*5;
+        engravedLine(g,(gg)=>{gg.moveTo(cxr,cyr);gg.quadraticCurveTo(cxr+Math.cos(a)*len*0.5,cyr+Math.sin(a)*len*0.5-2,cxr+Math.cos(a)*len,cyr+Math.sin(a)*len);},1,seedN+i*7);
+      }
+      engravedArc(g,cx,cy,r*0.94,0,TAU,1,seedN+2);
+      break;
+  }
+  g.restore();
+  paintFamilyGlyph(g,cx,cy+r+18,family,seedN);
+  legend(cx-r,cy+r+30,'family: '+family);
+}
+// Caption substitute: this culture has no script (§4), so each family carries a miniature of
+// its own motif — the honest reading of "a small pictogram... standing for the event" (§9).
+function paintFamilyGlyph(g,x,y,family,seedN){
+  g.save();g.translate(x,y);g.strokeStyle=TOKENS.scratch;g.lineWidth=1;
+  const s=6;
+  switch(family){
+    case 'ocean':g.beginPath();for(let a=-s;a<=s;a+=1.4)g.lineTo(a,Math.sin(a*0.9)*2.4);g.stroke();break;
+    case 'crater':g.beginPath();g.arc(0,0,s*0.6,0,TAU);g.stroke();g.beginPath();g.arc(-1.5,-1,1,0,TAU);g.arc(2,1.4,1,0,TAU);g.fillStyle=TOKENS.scratch;g.fill();break;
+    case 'ringed':g.beginPath();g.arc(0,0,s*0.62,0,TAU);g.stroke();g.beginPath();g.arc(0,0,s*0.28,0,TAU);g.stroke();break;
+    case 'ice':g.beginPath();g.arc(0,0,s*0.6,-0.7,0.7);g.stroke();break;
+    case 'dune':for(let i=-1;i<=1;i++){g.beginPath();g.moveTo(-s*0.6,i*3);g.lineTo(s*0.6,i*3+1);g.stroke();}break;
+    case 'volcanic':for(let i=0;i<6;i++){const a=i/6*TAU;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*s*0.7,Math.sin(a)*s*0.7);g.stroke();}break;
+    case 'storm':for(let i=0;i<5;i++){const a=(i/5)*TAU+seedN;g.beginPath();g.moveTo(Math.cos(a)*1,Math.sin(a)*1);g.lineTo(Math.cos(a)*s*0.7,Math.sin(a)*s*0.7);g.stroke();}break;
+  }
+  g.restore();
+}
+
+// ================= dangers — the four rows, drawn per research §7 =================
+function paintHazard(g,cx,cy,r,kind,t){
+  g.save();
+  switch(kind){
+    case 'vortex': // "The Shaft" — a dark drop rimmed by a pecked spiral; the eye is drawn DOWN into it, not around a whirlpool.
+      { const grad=g.createRadialGradient(cx,cy,0,cx,cy,r);
+        grad.addColorStop(0,'#020201');grad.addColorStop(0.6,'#100c08');grad.addColorStop(1,'rgba(16,12,8,0)');
+        g.beginPath();g.ellipse(cx,cy,r*0.62,r,0,0,TAU);g.fillStyle=grad;g.fill();
+        engravedLine(g,(gg)=>{
+          let a=0,rr=r*0.1;gg.moveTo(cx,cy-rr);
+          for(let s=0;s<=1;s+=0.02){a=s*TAU*2.2;rr=r*0.1+s*r*0.95;gg.lineTo(cx+Math.cos(a)*rr*0.62,cy+Math.sin(a)*rr);}
+        },1.4,cx|0);
+        g.beginPath();g.ellipse(cx,cy,r*0.16,r*0.24,0,0,TAU);g.fillStyle='#000';g.fill(); // legible lethal core
+      }
+      break;
+    case 'flare': // "The Flare" — a soot-blackened halo around an ember-red core, a guttering torch's scorch.
+      { g.beginPath();g.arc(cx,cy,r*0.95,0,TAU);g.fillStyle='rgba(10,8,6,.5)';g.fill();
+        for(let i=0;i<40;i++){const rnd=mulberry32(cx+i*13);const a=rnd()*TAU,rr=r*(0.55+rnd()*0.4);
+          dab(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r*0.14,cx+i,TOKENS.mnBlack,0.2);}
+        const flick=0.7+0.3*Math.sin(t*9+cx);
+        const core=g.createRadialGradient(cx,cy,0,cx,cy,r*0.6);
+        core.addColorStop(0,`rgba(255,${140+flick*40|0},${60+flick*30|0},${0.9})`);core.addColorStop(1,'rgba(120,30,10,0)');
+        g.beginPath();g.arc(cx,cy,r*0.6,0,TAU);g.fillStyle=core;g.fill(); // legible lethal core (0.6r)
+      }
+      break;
+    case 'wind': // "The Draught" — a streaked charcoal smear, dragged sideways by a real cave airflow.
+      for(let i=0;i<7;i++){
+        const yy=cy-r*0.5+i*r*0.16,off=Math.sin(t*1.6+i)*4;
+        draggedDab(g,cx-r*0.9+off,yy,cx+r*0.55+off,yy+3,3.4,900+cx+i,TOKENS.charcoal,0.4);
+      }
+      break;
+    case 'obscurer': // "Unlit rock" — nothing is drawn; the era's one hazard depicted with total fidelity (§7).
+      break;
+  }
+  g.restore();
+}
+
+// ================= the constellation figure: the Hall of the Bulls, charcoal outline (research §1) =================
+// CONTESTED (§1/§12): Rappenglück's six-dots-as-Pleiades reading, over a bull read as
+// anticipating Taurus, is a minority scholarly position, not settled fact. The six dots really
+// are there, over the black bull's shoulder — only their meaning is in question. Three of the
+// six carry the game's ochre "star" warmth; the other three are left as plain manganese dabs,
+// so the sheet shows exactly what is attested and no more.
+function paintBull(g,x,y,scale){
+  g.save();g.translate(x,y);g.scale(scale,scale);
+  engravedLine(g,(gg)=>{
+    gg.moveTo(-96,10);
+    gg.bezierCurveTo(-70,-34,-24,-46,18,-40);
+    gg.bezierCurveTo(48,-36,58,-20,70,-18);
+    gg.lineTo(60,-8);
+    gg.bezierCurveTo(50,-10,44,-4,40,6);
+    gg.bezierCurveTo(34,22,10,34,-24,32);
+    gg.bezierCurveTo(-56,30,-84,24,-96,10);
+    gg.closePath();
+  },2.6,7301);
+  // twisted-perspective horns and legs (§2): both drawn full even where they would occlude.
+  engravedLine(g,(gg)=>{gg.moveTo(6,-40);gg.quadraticCurveTo(2,-58,-14,-62);},2,7302);
+  engravedLine(g,(gg)=>{gg.moveTo(10,-39);gg.quadraticCurveTo(18,-56,10,-68);},2,7303);
+  [[-58,12],[-30,14],[10,16],[34,12]].forEach((p,i)=>engravedLine(g,(gg)=>{gg.moveTo(p[0],p[1]);gg.lineTo(p[0]-6+i,p[1]+30);},2.2,7310+i));
+  // the six-dot cluster over the shoulder — three warmed to "star," three left plain.
+  const dots=[[-6,-46],[2,-50],[10,-47],[-2,-40],[6,-38],[14,-42]];
+  dots.forEach((p,i)=>dab(g,p[0],p[1],3.4,7400+i,i%2?TOKENS.redOchre:TOKENS.mnBlack,i%2?0.95:0.55));
+  g.restore();
+}
+
+// ================= the player: a spark / burning brand's ember trail (research §1/§2's "the era's vehicle") =================
+function paintEmber(g,x,y,seedN,heat){
+  heat=heat??1;
+  g.save();g.translate(x,y);
+  const halo=g.createRadialGradient(0,0,0,0,0,20);
+  halo.addColorStop(0,`rgba(255,${170+heat*40|0},110,${0.55*heat})`);halo.addColorStop(1,'rgba(255,140,60,0)');
+  g.fillStyle=halo;g.beginPath();g.arc(0,0,20,0,TAU);g.fill();
+  g.beginPath();g.arc(0,0,3.4,0,TAU);g.fillStyle='#fff3d8';g.fill();
+  g.beginPath();g.arc(0,0,5.2,0,TAU);g.fillStyle=`rgba(255,150,70,${0.7*heat})`;g.fill();
+  g.restore();
+}
+function paintEmberTrail(g,pts){
+  pts.forEach((p,i)=>{
+    const a=(i/pts.length);
+    g.save();g.globalAlpha=a*0.7;
+    g.beginPath();g.arc(p.x,p.y,1.4+a*1.6,0,TAU);
+    g.fillStyle=a>0.6?TOKENS.yellowOchreHi:TOKENS.redOchreDeep;g.fill();
+    g.restore();
+  });
+}
+
+// ================= pickups (four), reskinned in the era's own grammar =================
+function paintPickup(g,x,y,kind){
+  g.save();g.translate(x,y);
+  switch(kind){
+    case 'spark': // sling → a struck spark-cluster, echoing the comet's own ember (constructed fit).
+      dab(g,0,0,4,701,TOKENS.yellowOchreHi,0.9);
+      for(let i=0;i<6;i++){const a=i/6*TAU;engravedLine(g,(gg)=>{gg.moveTo(Math.cos(a)*4,Math.sin(a)*4);gg.lineTo(Math.cos(a)*10,Math.sin(a)*10);},0.9,702+i);}
+      break;
+    case 'spiral': // shield (Scutum) → Newgrange's pecked triple spiral, an attested threshold/ward motif (§1).
+      for(let s=0;s<3;s++){
+        const off=s*TAU/3;
+        engravedLine(g,(gg)=>{
+          let a=off,rr=1;gg.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);
+          for(let t=0;t<=1;t+=0.05){a=off+t*TAU*1.4;rr=1+t*8;gg.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
+        },1,720+s);
+      }
+      break;
+    case 'reverse-hand': // reflector (Repulsa) → a hand stencil the opposite way; construction flagged (top-of-file note).
+      handStencil(g,0,0,0.32,730,TOKENS.mnBlack);
+      break;
+    case 'nodule': // inkwell → a raw ochre nodule, literal — the currency already IS this material (§6).
+      { const rnd=mulberry32(740);
+        g.beginPath();
+        for(let i=0;i<8;i++){const a=i/8*TAU;const rr=6+rnd()*3;g.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
+        g.closePath();
+        const grad=g.createRadialGradient(-2,-2,0,0,0,9);
+        grad.addColorStop(0,TOKENS.redOchreHi);grad.addColorStop(1,TOKENS.redOchreDeep);
+        g.fillStyle=grad;g.fill();
+      }
+      break;
+  }
+  g.restore();
+}
+
+// ================= HUD: tally + dot-field only, no writing anywhere on the sheet (research §9) =================
+const state={score:342,speed:16,flow:3,best:610,chapter:0};
+function paintHUDStatic(g){
+  // title / maker's mark: the hand stencil IS the title (brief direction) — the closest thing
+  // this era has to a signature, standing where "ORBIT" sits on every other plate.
+  handStencil(g,92,78,1.5,9,TOKENS.redOchre);
+  legend(46,116,'title / maker\'s mark: hand stencil (stands for "ORBIT")');
+
+  // speed / flow: small fast-changing counts → tally rows, top-centre.
+  const cx=W/2-40;
+  tallyRow(g,cx,44,state.speed,{weight:1.5,seed:11});
+  tallyRow(g,cx,70,state.flow,{weight:1.5,seed:31,len:8});
+  legend(cx,90,'speed / flow: tally rows (units struck left to right)');
+
+  // best: large slow-changing → dot-field density, top-right.
+  dotField(g,W-66,58,34,state.best,51,TOKENS.yellowOchre);
+  legend(W-140,30,'best: dot-field (density communicates magnitude)');
+
+  // chapter / chamber, footer strip: the chamber's own figure stands for its name.
+  const chamberGlyphs=[
+    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,7,4.6,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // I: the Hall of the Bulls
+    (gg,x,y)=>{gg.beginPath();gg.ellipse(x,y,4,7,0,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // II: the Shaft
+    (gg,x,y)=>{gg.beginPath();gg.arc(x-3,y,3.4,0,TAU);gg.arc(x+3,y-1,3.4,0,TAU);gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1.2;gg.stroke();}, // III: Chauvet's horses
+    (gg,x,y)=>{let a=0,rr=1;gg.beginPath();gg.moveTo(x+rr,y);for(let t=0;t<=1;t+=0.08){a=t*TAU*1.6;rr=1+t*6;gg.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}gg.strokeStyle=TOKENS.scratch;gg.lineWidth=1;gg.stroke();} // IV: Newgrange
+  ];
+  const fy=H-40;
+  chamberGlyphs[state.chapter](g,54,fy);
+  tallyRow(g,74,fy+5,state.chapter+1,{len:7,weight:1.2,seed:61});
+  legend(40,fy+16,'chamber mark (chapter) + tally');
+
+  // score: a tally row, bundled per-ten and grouped in fives (top-of-file note on the compromise).
+  const sy=H-40,tens=Math.round(state.score/10);
+  const sw=tallyRow(g,W/2-120,sy,tens,{len:9,weight:1.4,seed:81});
+  legend(W/2-120,sy+14,'score: tally row, one stroke per ten, grouped in fives');
+}
+
+// ================= reveal animation: a caption's marks pressed as dabs, one per beat (brief item 9) =================
+const REVEAL_MARKS=8,REVEAL_PERIOD=6.0;
+function paintReveal(g,x,y,t){
+  const spacing=17,beat=REVEAL_PERIOD/REVEAL_MARKS;
+  const cycle=t%REVEAL_PERIOD;
+  for(let i=0;i<REVEAL_MARKS;i++){
+    const strikeAt=i*beat,dt=cycle-strikeAt;
+    if(dt<0)continue;
+    const settle=clamp(dt/0.5,0,1);
+    const bx=x+(i%4)*spacing,by=y+Math.floor(i/4)*spacing;
+    const bleed=1+(1-settle)*0.6; // pigment still bleeding into the rock's texture on contact
+    g.save();g.translate(bx,by);g.scale(bleed,bleed);
+    dab(g,0,0,4.2,900+i,TOKENS.redOchre,0.25+settle*0.65);
+    g.restore();
+  }
+  legend(x,y-14,'reveal: dabs pressed one per beat, pigment bleeding in (loops 6s)');
+}
+
+// ================= scene bake: everything that does not move, painted once (brief item 9) =================
+let sceneSprite=null;
+const LAYOUT={
+  famY:172,famX0:118,famGap:150,famR:44,
+  hazY:672,hazX:[250,470,690,910],hazR:46,
+  bodyCx:600,bodyCy:452,bodyR:40,orbitR:76,
+  figX:990,figY:300,figScale:1.05,
+  pkY:566,pkX:[850,924,998,1072],
+  aimTargetX:934,aimTargetY:330
+};
+function bakeScene(){
+  const off=document.createElement('canvas');off.width=W;off.height=H;
+  const g=off.getContext('2d');
+  paintGround(g);
+
+  // the seven families, a row of specimens (brief item 3).
+  FAMILIES.forEach((f,i)=>paintBody(g,LAYOUT.famX0+i*LAYOUT.famGap,LAYOUT.famY,LAYOUT.famR,f,i*17+3));
+
+  // the four dangers (brief item 4). "obscurer" draws nothing — legend still names the spot.
+  const hazKinds=['vortex','flare','wind','obscurer'];
+  hazKinds.forEach((k,i)=>{paintHazard(g,LAYOUT.hazX[i],LAYOUT.hazY,LAYOUT.hazR,k,0);legend(LAYOUT.hazX[i]-30,LAYOUT.hazY+58,'danger: '+k);});
+  legend(LAYOUT.hazX[3]-30,LAYOUT.hazY-58,'"Unlit rock" — nothing drawn (§7): the darkness itself IS the hazard');
+
+  // the orbited body and its dot-ring (brief item 6's stage; ember comet drawn live, per frame).
+  peckedCup(g,LAYOUT.bodyCx,LAYOUT.bodyCy,3,1);
+  paintBody(g,LAYOUT.bodyCx,LAYOUT.bodyCy,LAYOUT.bodyR,'crater',5);
+  dotRing(g,LAYOUT.bodyCx,LAYOUT.bodyCy,LAYOUT.orbitR,30,44,TOKENS.scratch,0.55);
+  legend(LAYOUT.bodyCx-LAYOUT.orbitR,LAYOUT.bodyCy-LAYOUT.orbitR-10,'orbit: a dot-ring (a circle of dabs, research §5)');
+
+  // one constellation figure, three (of the attested six) stars warmed, name left as the figure itself.
+  paintBull(g,LAYOUT.figX,LAYOUT.figY,LAYOUT.figScale);
+  legend(LAYOUT.figX-90,LAYOUT.figY+50,'figure: the Hall of the Bulls — 6 dots, reading CONTESTED (§1/§12)');
+
+  // pickups, small and captioned via legend only (no script to caption them in).
+  const pkKinds=['spark','spiral','reverse-hand','nodule'];
+  pkKinds.forEach((k,i)=>{g.save();g.translate(LAYOUT.pkX[i],LAYOUT.pkY);paintPickup(g,0,0,k);g.restore();legend(LAYOUT.pkX[i]-14,LAYOUT.pkY+18,'pickup: '+k);});
+
+  paintHUDStatic(g);
+  sceneSprite=off;
+}
+
+// ================= torch: the "one twist" (research §6) — reach breathes, nothing in the simulation changes =================
+const TORCH_CX=660,TORCH_CY=430,TORCH_BASE=880,TORCH_MIN=640,TORCH_CYCLE=14;
+function torchReach(t){
+  const cyc=(t%TORCH_CYCLE)/TORCH_CYCLE;
+  const burn=TORCH_BASE-(TORCH_BASE-TORCH_MIN)*cyc; // the brand burns down over the cycle
+  const relight=cyc>0.92?(cyc-0.92)/0.08:0; // "pulses outward for a second on every capture"
+  return burn+relight*140;
+}
+function torchFlicker(t){
+  return 1+0.06*Math.sin(t*13.1)+0.04*Math.sin(t*7.7+1.3)+0.025*Math.sin(t*23.3+0.4);
+}
+function paintTorchOverlay(g,t){
+  const reach=torchReach(t)*torchFlicker(t);
+  g.save();
+  const vig=g.createRadialGradient(TORCH_CX,TORCH_CY,reach*0.62,TORCH_CX,TORCH_CY,reach*1.18);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(1,1,0,.92)');
+  g.fillStyle=vig;g.fillRect(0,0,W,H);
+  const warm=g.createRadialGradient(TORCH_CX,TORCH_CY,0,TORCH_CX,TORCH_CY,reach*0.75);
+  warm.addColorStop(0,`rgba(255,178,96,${0.08*torchFlicker(t*1.7)})`);warm.addColorStop(1,'rgba(255,178,96,0)');
+  g.globalCompositeOperation='screen';g.fillStyle=warm;g.fillRect(0,0,W,H);
+  g.restore();
+}
+
+// ================= currency: an ochre smear that shrinks as it is spent (research §6) =================
+// Its radius is driven by the SAME reach number as the torch overlay (§6: "the same number that
+// drives the ink gauge"), so the smear visibly breathes with the torch rather than tracking a
+// second, separate quantity.
+function paintCurrencySmear(g,t){
+  const ink=clamp((torchReach(t)-TORCH_MIN)/(TORCH_BASE-TORCH_MIN),0.12,1);
+  const x=70,y=H-92,maxR=30;
+  g.save();
+  for(let i=0;i<5;i++){
+    const rnd=mulberry32(200+i);
+    dab(g,x+(rnd()-0.5)*maxR*0.6*ink,y+(rnd()-0.5)*maxR*0.5*ink,maxR*ink*(0.4+rnd()*0.3),300+i,TOKENS.redOchre,0.5);
+  }
+  g.restore();
+  legend(x-30,y-maxR-8,'currency: an ochre smear, shrinks as it is spent (drives torch reach too)');
+}
+
+// ================= draw loop =================
+let start=performance.now();
+function drawScene(t){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  legendItems.length=0;
+  if(!sceneSprite)bakeScene();
+  ctx.drawImage(sceneSprite,0,0);
+
+  // the player: an ember on its dot-ring, trailing a fading spark path, a pale aim guide ahead.
+  const orbT=t*0.55;
+  const px=LAYOUT.bodyCx+Math.cos(orbT)*LAYOUT.orbitR,py=LAYOUT.bodyCy+Math.sin(orbT)*LAYOUT.orbitR;
+  const trail=[];
+  for(let i=1;i<=14;i++){const tt=orbT-i*0.05;trail.push({x:LAYOUT.bodyCx+Math.cos(tt)*LAYOUT.orbitR,y:LAYOUT.bodyCy+Math.sin(tt)*LAYOUT.orbitR});}
+  paintEmberTrail(ctx,trail);
+  ctx.save();
+  ctx.strokeStyle=TOKENS.scratch;ctx.setLineDash([1.5,4]);ctx.lineWidth=1;ctx.globalAlpha=0.5;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(LAYOUT.aimTargetX,LAYOUT.aimTargetY);ctx.stroke();
+  ctx.setLineDash([]);ctx.globalAlpha=1;ctx.restore();
+  paintEmber(ctx,px,py,77,0.85+0.15*Math.sin(t*10));
+  legend(px,py+18,'player: an ember on its dot-ring, trailing sparks + aim guide');
+
+  paintCurrencySmear(ctx,t);
+  paintReveal(ctx,W/2-34,H/2+18,t);
+  paintTorchOverlay(ctx,t);
+
+  if(showLegend){
+    ctx.save();ctx.font='11px monospace';ctx.fillStyle='#8fdc9c';
+    legendItems.forEach(it=>{
+      ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(it.x-2,it.y-11,ctx.measureText(it.label).width+4,14);
+      ctx.fillStyle='#8fdc9c';ctx.fillText(it.label,it.x,it.y);
+    });
+    ctx.restore();
+  }
+}
+function frame(now){
+  drawScene((now-start)/1000);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
