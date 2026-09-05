@@ -100,86 +100,71 @@ draws on a lit page, and per 02-globe.md's own correct observation, does not pai
 
 ## 4. Lettering and how people wrote
 
-**Scripts, in role:** **naskh** (نسخ, "copying") for running text and captions — small, rounded,
-even, designed for legibility at book scale; **thuluth** (ثلث, "a third," naming the proportion of
-the pen-nib's slant used in its curves) for headings, titles and anything monumental — larger,
-more ornamental, permits extreme vertical extension and interlace; **kufic** — angular, no
-curves, the oldest formal Arabic hand — for anything meant to look carved or struck rather than
-written: cartouches, coin-like roundels, architectural bands. All three set **right-to-left**.
-This era is also, not incidentally, the exact moment the proportioned system behind naskh and
-thuluth was codified — Ibn Muqla (886–940) and, a generation later, Ibn al-Bawwāb (d. 1022) fixed
-the "six pens" (*al-aqlām al-sitta*) as geometric ratios of a single rhombic dot cut by the nib —
-so a Baghdad scribe working within a few decades of al-Ṣūfī's own lifetime is literally inventing
-the rules this era's captions would be following. *(This paragraph rests on established
-art-historical record rather than a page fetched this session — flagged per the brief's
-instruction, though it is standard and uncontested.)*
+**Scripts, in role:** **naskh** (نسخ, "copying") for running text/captions — small, rounded, even,
+legible at book scale; **thuluth** (ثلث, "a third," the pen-nib slant ratio its curves are built
+from) for headings and anything monumental — larger, ornamental, extreme vertical extension and
+interlace; **kufic** — angular, no curves, the oldest formal hand — for anything meant to look
+carved rather than written: cartouches, coin-like roundels, architectural bands. All three set
+**right-to-left**. This era is also, not incidentally, the exact moment the proportioned system
+behind naskh and thuluth was codified — Ibn Muqla (886–940) and, a generation later, Ibn al-Bawwāb
+(d. 1022) fixed the "six pens" (*al-aqlām al-sitta*) as geometric ratios of a single rhombic dot
+cut by the nib — a Baghdad scribe within decades of al-Ṣūfī's own lifetime is literally inventing
+the rules this era's captions would follow. *(Rests on established art-historical record rather
+than a page fetched this session — standard and uncontested, but flagged per the brief.)*
 
-**The instrument:** the **qalam**, a length of dried reed (traditionally from the marshes near
-Wasit or Basra) cut to a nib with a knife (*qaṭṭ*), sliced at a shallow diagonal so the stroke
-swells and thins purely by the angle the pen is dragged at — no pressure modulation needed, unlike
-a Latin quill. **The pen never lifts within a joined run of letters**; a whole connected word (or
-run of connected letters) is one continuous stroke, and only after the skeleton is fully laid does
-the scribe go back and add the dots (*iʿjām*) that disambiguate letters sharing a base shape, in a
-second pass. That two-pass rhythm — draw the whole joined run unbroken, dot afterward — is the
-concrete motion for the game's large-hand reveal: not "one glyph at a time," but "one *run* at a
-time, then a second sweep of dots." Ink was lamp-black soot bound in gum arabic (*ḥibr*, or
-*midād* for the reservoir it's kept in), carried in an inkwell the qalam is dipped into, not a
-self-feeding pen.
+**The instrument:** the **qalam**, dried reed (traditionally from marshes near Wasit or Basra) cut
+to a nib with a knife (*qaṭṭ*), sliced at a shallow diagonal so the stroke swells and thins purely
+by drag angle — no pressure modulation, unlike a quill. **The pen never lifts within a joined run
+of letters**; a whole connected run is one continuous stroke, and only after the skeleton is laid
+does the scribe add the dots (*iʿjām*) disambiguating letters that share a base shape, in a second
+pass. That two-pass rhythm — draw the joined run unbroken, dot afterward — is the concrete motion
+for the game's large-hand reveal: one *run* at a time, then a sweep of dots, not one glyph at a
+time. Ink was lamp-black soot in gum arabic (*ḥibr*, or *midād* for its reservoir), dipped from an
+inkwell, not a self-feeding pen.
 
 **Typefaces (all OFL, all embeddable):**
 
 | Face | Style | Glyphs | Google Fonts | Notes |
 |---|---|---|---|---|
-| **Amiri** | naskh, book text | ~6,000+ (Wikipedia's figure; a narrower internal count of ~535 unique outlines plus positional/ligature variants also circulates — treat the headline number as "everything the font can produce," not base letterforms) | yes | by Khaled Hosny; revival of the Bulaq Press "Amiri" naskh; the closest OFL face to this era's actual book hand |
-| **Noto Naskh Arabic** | naskh, book text | full Arabic block + extensions | yes | Google/Noto project; broad Unicode coverage, slightly more mechanical letterforms than Amiri |
-| **Scheherazade New** | naskh, wide diacritic support | full Arabic + Quranic annotation marks | no (SIL) | best diacritic/mark positioning of the three; heaviest stroke weight |
-| **Reem Kufi** | kufic, display | Arabic core set | yes | by Khaled Hosny; a *modern revival* kufic, geometric rather than a period-accurate monumental kufic — good enough for cartouche/roundel use, not for claiming manuscript authenticity |
-| **Aref Ruqaa** | *ruqʿah*, not thuluth | Arabic core set | yes | closer to informal fast handwriting than to thuluth's formal monumental register; if a genuine thuluth-flavoured display face is wanted, none of the above is quite it and a fourth face may need sourcing later |
+| **Amiri** | naskh, book text | ~6,000+ per Wikipedia (a narrower ~535-unique-outline count also circulates; treat the larger figure as "everything the font can produce," not base letterforms) | yes | by Khaled Hosny, revival of the Bulaq Press naskh; closest OFL face to this era's book hand |
+| **Noto Naskh Arabic** | naskh, book text | full Arabic block + extensions | yes | Google/Noto; broad coverage, slightly more mechanical letterforms than Amiri |
+| **Scheherazade New** | naskh, wide diacritics | full Arabic + Quranic marks | no (SIL) | best mark positioning of the three; heaviest stroke weight |
+| **Reem Kufi** | kufic, display | Arabic core set | yes | by Khaled Hosny; a *modern revival* kufic, geometric rather than period monumental — fine for cartouches, not for claiming manuscript authenticity |
+| **Aref Ruqaa** | *ruqʿah*, not thuluth | Arabic core set | yes | fast informal handwriting, not thuluth's monumental register — a genuine thuluth display face isn't in this set and needs a later search |
 
-Unicode: **Arabic block U+0600–06FF** (256 code points, the base letters, digits, diacritics) is
-the floor; captions built from presentation forms also draw on **Arabic Presentation Forms-A,
-U+FB50–FDFF** (688 code points — ligatures and contextual variants mainly needed for Persian/
-Urdu/Sindhi, so partially relevant given Samarkand's Persianate end of this era) and **Arabic
-Presentation Forms-B, U+FE70–FEFF** — the block that actually carries the plain initial/medial/
-final/isolated forms and the lām-alif ligatures every naskh caption needs.
+Unicode: **Arabic block U+0600–06FF** (256 code points: base letters, digits, diacritics) is the
+floor; presentation-form captions also draw on **Arabic Presentation Forms-A, U+FB50–FDFF** (688
+code points — ligatures/contextual variants mainly for Persian/Urdu/Sindhi, partially relevant
+given Samarkand's Persianate end of this era) and **Arabic Presentation Forms-B, U+FE70–FEFF** —
+the block carrying the plain initial/medial/final/isolated forms and lām-alif ligatures naskh
+captions actually need.
 
-**Shaping — concretely, for this pipeline.** Arabic is the one script in this ladder that
-actually needs shaping (Egyptian quadrat stacking is a layout problem, not a glyph-substitution
-one; Latin needs neither). Two real options, both checked this session:
+**Shaping.** Arabic is the one script in this ladder that needs it (Egyptian quadrat stacking is
+layout, not glyph-substitution; Latin needs neither). Two options, both checked this session:
+**(a) manual presentation-forms table** — a small joining-class table (does a letter join left,
+right, both, neither) plus a Presentation-Forms-B lookup and one special-cased lām-alif ligature
+gets naskh to roughly the brief's own 95% estimate, and Arabic's joining rules really are simpler
+than Indic reordering; **(b) pre-shape at build time with fontkit itself** — confirmed this
+session, **fontkit ships its own OpenType layout engine**, `font.layout(string)`, and **has a
+dedicated `ArabicShaper`** (`src/opentype/shapers/ArabicShaper.js` in `foliojs/fontkit`)
+implementing real GSUB/GPOS joining/ligature/mark-positioning, not a hand-rolled approximation.
 
-- **(a) Manual presentation-forms table.** A small joining-class table (each letter: does it join
-  to its left neighbour, right neighbour, both, neither) plus a lookup into Presentation Forms-B
-  for the four positional variants, plus one special-cased lām-alif ligature, gets naskh to roughly
-  95% correctness by hand — this is the brief's own estimate and it's a reasonable one; Arabic's
-  joining rules are genuinely simpler than Indic reordering or Hangul composition.
-- **(b) Pre-shape at build time with fontkit itself.** Confirmed this session: **fontkit ships its
-  own OpenType layout engine**, `font.layout(string)`, built on an `OTLayoutEngine` that picks a
-  script-specific shaper — and **fontkit has a dedicated `ArabicShaper`**
-  (`src/opentype/shapers/ArabicShaper.js` in `foliojs/fontkit`) implementing the standard Arabic
-  joining/ligature/mark-positioning feature stages through real GSUB/GPOS tables, not a hand-rolled
-  approximation.
+**Recommend (b).** The pipeline already treats captions as a closed set extracted once at build
+time (`scripts/glyphs.mjs` walks `src/` for the character set before cutting the font); Arabic
+captions are no different, just longer strings. Call `font.layout(caption)` once per caption
+during glyph extraction and store the *already-shaped* glyph-id/outline sequence in `src/glyphs.js`
+exactly as Latin glyphs are today — `textAlongArc` and the reveal functions then place a
+pre-resolved right-to-left run and never see raw Arabic characters, a change to iteration
+direction only. Cheaper than maintaining a joining-class table by hand, reuses a dependency the
+build already has, and degrades gracefully: (a) remains the fallback for whatever captions fontkit
+mis-shapes.
 
-**Recommend (b).** The game's own pipeline already accepts that captions are a closed, known set
-extracted once at build time (`scripts/glyphs.mjs` already walks `src/` for the character set
-before cutting the font) — Arabic captions are no different, just bigger sentences instead of
-single characters. Call `font.layout(caption)` once per caption string during the glyph-extraction
-step, and store the *already-shaped* glyph-id sequence (with each shaped glyph's outline) directly
-in `src/glyphs.js`, exactly as Latin glyphs are stored today. `textAlongArc` and the reveal
-functions then never see raw Arabic characters at all — they place a pre-resolved run of glyph
-outlines right-to-left, which is a change to iteration direction only, not a shaping engine. This
-avoids writing and maintaining a joining-class table by hand, reuses a dependency the build already
-has (fontkit, per `npm run glyphs`), and only degrades gracefully — if fontkit's Arabic shaper
-turns out to have gaps, option (a)'s manual table remains the fallback for whatever it misses,
-scoped down to only the captions that render wrong.
-
-**Numerals:** Eastern Arabic-Indic numerals, **٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩** (0–9), are what this era's own
-astronomers and scribes set numbers in (the "Arabic numerals" of the West are the *Western* Arabic
-forms that travelled through Iberia — a different, later-diverging branch of the same Indian-
-origin system). Set the HUD in these. One regional nuance worth knowing even if not acted on:
-Samarkand and the Persianate end of this era's date range would in practice lean toward the
-closely related but distinct Perso-Arabic digit forms (۰۱۲۳۴۵۶۷۸۹, notably a different four, five
-and six) rather than the Mashriqi set given above — the brief specifies the Mashriqi set, so use
-that, but the distinction is real if a later pass wants Samarkand-specific accuracy.
+**Numerals:** Eastern Arabic-Indic numerals, **٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩** (0–9) — the West's "Arabic
+numerals" are actually the *Western* Arabic forms that travelled through Iberia, a different,
+later-diverging branch of the same Indian-origin system. Set the HUD in these. One nuance: the
+Samarkand/Persianate end of this era would in practice lean toward the related but distinct
+Perso-Arabic digits (۰۱۲۳۴۵۶۷۸۹ — a different four, five, six); the brief specifies the Mashriqi
+set above, so use that, but the distinction matters for a Samarkand-specific pass later.
 
 ## 5. Names for the game's things
 
@@ -216,65 +201,52 @@ is flagged as such rather than dressed up as period vocabulary.
 
 ## 6. Currency and one rule
 
-**What the era's resource actually was: gold and lapis, rationed by weight, and time.** Two
-separate historical facts anchor this. First, **illumination materials were priced and measured by
-weight** — gold by the *mithqal* (the standard medieval weight-unit, ~4.25 g, also the basis of the
-gold dinar coin itself) and lapis lazuli sometimes costing *more* than the gold it sat beside on
-the page, imported as it was from a single source region (Badakhshan, in what is now Afghanistan)
-and processed at real expense to extract usable ultramarine from raw stone. Second, **scribal and
-illuminator labour was itself paid, by the unit of work done**: a documented 15th-century Herat
-account shows a calligrapher paid 250 dinars per thousand copied couplets — real, attested,
-period-typical piece-work pricing — and "Chinese" paper billed at 20 dinars a page in the same
-account. A luxury manuscript with full gold illumination could cost as much as a house. The
-resource, in short, was never free-flowing: every gold disc and every lapis wash was a rationed,
-weighed, purchased quantity, and every line of finished text was paid labour.
+**The era's resource: gold and lapis, rationed by weight, and paid labour.** Two facts anchor this.
+First, **illumination materials were priced by weight** — gold by the *mithqal* (the standard
+medieval weight-unit, ~4.25 g, also the basis of the gold dinar) and lapis lazuli sometimes costing
+*more* than the gold beside it on the page, imported from a single source region (Badakhshan) and
+processed at real expense. Second, **scribal labour was paid by the unit of work**: a documented
+15th-century Herat account shows a calligrapher paid 250 dinars per thousand copied couplets, and
+"Chinese" paper billed at 20 dinars a page in the same account; a fully-illuminated luxury
+manuscript could cost as much as a house. Every gold disc and lapis wash was a weighed, purchased
+quantity, and every line of finished text was paid labour.
 
-**The "no twist" reading:** ink stays ink, renamed. Rename `INK_REACH`'s currency to *ḥibr* in
-the HUD, keep every number identical. This alone would be honest to the record — an atlas page's
-ink genuinely was rationed by the well.
+**No-twist reading:** ink stays ink, renamed *ḥibr* in the HUD, every number identical — honest
+enough on its own, since an atlas page's ink genuinely was rationed by the well.
 
-**The proposed twist, grounded in the twice-drawn convention specifically (§1, §2):** al-Ṣūfī drew
-every constellation twice for a stated pedagogical reason — so the globe view and the sky view
-would never be mistaken for each other. Orbit already mirrors a constellation's fork onto the
-branch side it spawns from; make that mirroring *count*. **A constellation traced to completion on
-one fork spawns its mirrored twin later in the same run, on the opposite side of the chart,
-worth its own +60 only if traced within the same chapter** — echoing al-Ṣūfī's own logic that the
-two drawings must agree, and rewarding a player who recognises the same figure reversed rather
-than one who only ever plays one side of the fork. This slots into the existing economy without
-new numbers: it reuses `CONSTELLATIONS`' existing fork/mirror machinery and the existing +60/4s-
-reprieve constellation-completion reward, just gated on a second, mirrored instance of the same
-figure appearing before the chapter ends. It costs a spawn-scheduling rule, not a new stat.
+**Proposed twist, grounded in the twice-drawn convention (§1–2):** al-Ṣūfī drew every constellation
+twice so the globe view and sky view would never be mistaken for each other. Orbit already mirrors
+a constellation's fork onto the branch side it spawns from; make that mirroring *count*. **A
+constellation traced to completion on one fork spawns its mirrored twin later in the same run, on
+the opposite side of the chart, worth its own +60 only if traced within the same chapter** —
+echoing al-Ṣūfī's own logic that the two drawings must agree, rewarding a player who recognises the
+figure reversed. Reuses existing fork/mirror machinery and the existing +60/4s-reprieve reward,
+gated on a second mirrored instance before the chapter ends — a spawn-scheduling rule, not a new
+stat.
 
 ## 7. Dangers
 
 Per DANGERS.md's option A (depiction only, safe under the current architecture): same three rows,
 this era's own name and image over each.
 
-- **Attractor — al-Jawzahar / raʾs al-tinnīn ("the head of the dragon").** Verified and more
-  specific than 02-globe.md's phrasing: Islamic astronomy inherited a Middle Persian concept
-  (*gōzihr*) of an eighth, invisible "planet" responsible for eclipses, identified with the Moon's
-  two orbital nodes — the ascending node is *raʾs al-tinnīn* / *raʾs al-jawzahar* ("head of the
-  dragon"), the descending node *dhanab al-tinnīn* / *dhanab al-jawzahar* ("tail"). Depict as a
-  coiled dragon/serpent whose head is the pull. Separately and just as well attested: **al-Ghūl**
-  ("the ghoul"), the desert demon that gives the star Algol its name (*raʾs al-ghūl*, "the demon's
-  head") — a second, equally valid attractor-name if the dragon reads as too close to Egypt's Apep.
-  Either is real and period; use one, not both, to avoid diluting the row.
-- **Repulsor — al-Shams' burning.** As 02-globe.md already has it: the sun figured on an
-  astrolabe or in a manuscript throws heat as radiating lines from a gilt disc. No new correction
-  needed here; it is squarely attested practice (sun-figures with radiating rays are standard
-  astrolabe/manuscript iconography) even though no single named "sunspot" concept exists in this
-  record the way Galileo's does for era III.
-- **Crosswind — al-Rīḥ, or specifically simoom (*sammūm* / *nār al-samūm*, "fire of the scorching
-  winds").** *Sammūm* is the period/regional name for the specific violent hot desert wind, more
-  vivid and more specific than the bare word for "wind"; use it in the caption, gloss it with
-  *al-Rīḥ* as the general term.
-- **Obscurer/nebula — al-shayʾ al-saḥābī, "the little cloud."** Al-Ṣūfī's own words, used of the
-  Andromeda nebula (M31) in his Andromeda chapter — the earliest surviving description of a galaxy
-  beyond the Milky Way anywhere in the historical record — and, separately, of the Large
-  Magellanic Cloud as visible from southern Arabia. This is the one hazard row where the *name* is
-  perfectly attested and the *drawing convention* genuinely is not (DANGERS.md already flags this
-  correctly) — no period image of a nebula as a hazard-shape exists to copy, so the game would be
-  inventing the depiction while borrowing only the name and the astronomical fact.
+- **Attractor — al-Jawzahar / raʾs al-tinnīn ("the head of the dragon").** More specific than
+  02-globe.md's phrasing: Islamic astronomy inherited a Middle Persian concept (*gōzihr*) of an
+  eighth, invisible "planet" causing eclipses, identified with the Moon's two orbital nodes — the
+  ascending node *raʾs al-tinnīn*/*raʾs al-jawzahar* ("head of the dragon"), the descending node
+  *dhanab al-tinnīn*/*dhanab al-jawzahar* ("tail"). Depict as a coiled dragon whose head is the
+  pull. Equally attested alternative: **al-Ghūl** ("the ghoul"), the desert demon behind the star
+  Algol's name (*raʾs al-ghūl*, "the demon's head") — use one, not both, to avoid diluting the row.
+- **Repulsor — al-Shams' burning.** As 02-globe.md already has it: the sun figured on an astrolabe
+  throws heat as radiating lines from a gilt disc — squarely attested iconography, though no named
+  "sunspot" concept exists here the way it does for era III's Galileo.
+- **Crosswind — al-Rīḥ, or specifically simoom (*sammūm*/*nār al-samūm*, "fire of the scorching
+  winds").** *Sammūm* names the specific violent hot desert wind, more vivid than the bare word for
+  "wind"; use it in caption, gloss with *al-Rīḥ* as the general term.
+- **Obscurer/nebula — al-shayʾ al-saḥābī, "the little cloud."** Al-Ṣūfī's own words for the
+  Andromeda nebula (M31) — the earliest surviving description of a galaxy beyond the Milky Way —
+  and, separately, of the Large Magellanic Cloud. The name is perfectly attested; the drawing
+  convention genuinely isn't (DANGERS.md already flags this) — no period image of a nebula as a
+  hazard-shape exists, so the depiction would be invented while only the name is borrowed.
 
 ## 8. The seven families
 
@@ -302,18 +274,15 @@ staged as a globe or astrolabe chapter-plate (§10).
 ## 9. Chart furniture, frame, HUD
 
 Manuscript-mode furniture: a plain ruled border, sometimes a fine gold rule inside it; a colophon
-at the close of the text (scribe's name, place, date — exactly the kind of line whose disputed
-accuracy opens this document); no cartouche in the European engraved-atlas sense, no scale bar —
-this tradition doesn't chart the sky to a projection grid the way era III does, it *lists and
-draws*, table and figure side by side, not a single unified plate. Instrument-mode furniture: an
-astrolabe's outer ring is graduated in degrees, sometimes double-banked (solar and zodiacal
-scales); its throne and shackle at the top are the closest thing to a maker's mark, alongside an
-engraved dedication. A globe's furniture is its brass meridian ring and horizon ring, both
-graduated, holding the sphere rather than framing a page. For the game's HUD: keep the double-rule
-plate-mark discipline the engine already has for era III, but drop RA/declination hour-ticks (a
-grid convention this era doesn't use) in favour of a graduated ring-scale reading like an
-astrolabe's limb; a colophon-style line at run's end (scribe/place/date, i.e. player name/plate/
-seed) is a natural, attested-shaped fit for the existing end-screen.
+at the close (scribe's name, place, date — the kind of line whose disputed accuracy opens this
+document); no European-style cartouche, no scale bar — this tradition *lists and draws*, table and
+figure side by side, not one unified plate. Instrument-mode furniture: an astrolabe's outer ring
+is graduated in degrees, sometimes double-banked; its throne and shackle at the top are the
+closest thing to a maker's mark, alongside an engraved dedication. A globe's furniture is its
+brass meridian and horizon rings, graduated, holding the sphere rather than framing a page. For
+the HUD: keep the double-rule plate-mark discipline era III already has, but drop RA/declination
+hour-ticks (a grid convention unused here) for a graduated ring-scale reading like an astrolabe's
+limb; a colophon-style end-of-run line (scribe/place/date → player/plate/seed) is a natural fit.
 
 ## 10. Four chapter plates
 

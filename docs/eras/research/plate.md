@@ -6,65 +6,60 @@ flagged inline as **(correction)**. Anything I could not independently confirm i
 
 ## 1. The documents
 
-- **The Carte du Ciel / Astrographic Catalogue** (agreed 1887, Paris congress; plates exposed
-  into the 1940s, some reductions not finished until the 1960s). Twenty observatories world-wide
-  used matched **"normal astrographs"** — 13-inch (33 cm) aperture, 11-foot (3.4 m) focal length,
-  giving a uniform plate scale of ~60″/mm over a 2°×2° field. More than 22,000 glass plates were
-  exposed. Each plate is 16×16 cm with a 13×13 cm emulsion area, blue-sensitive only (peak
-  ~430 nm), limiting magnitude ~14. Before exposure, a **réseau** — 27 photographically-printed
-  horizontal and 27 vertical lines at 5 mm spacing — was printed onto the emulsion, so every star
-  position could be measured against a fixed grid even if the emulsion itself later shrank or
-  distorted. This grid, more than anything else photographed, is the era's fingerprint: no other
-  document in the ladder carries a machine-ruled coordinate lattice baked into the picture itself.
+- **The Carte du Ciel / Astrographic Catalogue** (agreed 1887, Paris congress; plates exposed into
+  the 1940s, some reductions not finished until the 1960s). Twenty observatories world-wide used
+  matched **"normal astrographs"** — 13-inch (33 cm) aperture, 11-foot (3.4 m) focal length, a
+  uniform plate scale of ~60″/mm over a 2°×2° field. More than 22,000 glass plates were exposed,
+  each 16×16 cm with a 13×13 cm emulsion area, blue-sensitive only (peak ~430 nm), limiting
+  magnitude ~14. Before exposure a **réseau** — 27 photographically-printed horizontal and 27
+  vertical lines at 5 mm spacing — was printed onto the emulsion, so positions could be measured
+  against a fixed grid however the emulsion itself later shrank or distorted. This grid, more than
+  anything else photographed, is the era's fingerprint: no other document in the ladder carries a
+  machine-ruled coordinate lattice baked into the picture itself.
 - **E. E. Barnard, *A Photographic Atlas of Selected Regions of the Milky Way*** (negatives taken
   1889–1905 mostly at Mount Wilson and Yerkes; published 1927, posthumously edited by Edwin B.
-  Frost and Mary R. Calvert, in an edition of about 700). Barnard shot on the **Bruce photographic
-  telescope** at Yerkes — twin photographic lenses of 10-inch and roughly 6¼-inch aperture on one
-  mount, plus a separate 5-inch guide scope — and on similar instruments at Mount Wilson, on glass
-  negatives up to about 12 inches square. The plates were **reproduced as negatives** — dark stars
-  on a pale ground — in half-tone photogravure, which is the one place the "read the negative
-  directly" grammar is attested in print rather than only on the glass itself. The **35,700
-  plates** figure repeated in some secondary accounts for how many plates Barnard examined could
-  not be independently confirmed in this pass — treat as **(unverified)**; what is confirmed is
-  the ~700-copy print run and the instrument specs above.
+  Frost and Mary R. Calvert, in an edition of about 700). Shot on the **Bruce photographic
+  telescope** at Yerkes — twin lenses of 10-inch and roughly 6¼-inch aperture on one mount plus a
+  separate 5-inch guide scope — and similar instruments at Mount Wilson, on glass negatives up to
+  about 12 inches square. The plates were **reproduced as negatives** — dark stars on a pale
+  ground — in half-tone photogravure, the one place the "read the negative directly" grammar is
+  attested in print, not only on the glass. The **35,700 plates** figure repeated in some
+  secondary accounts for how many plates Barnard examined could not be reconfirmed here — treat
+  as **(unverified)**; the ~700-copy print run and instrument specs above are confirmed.
 - **The Palomar Observatory Sky Survey (POSS-I)**, November 1949 – December 1958, on the 48-inch
-  Samuel Oschin Schmidt telescope. Each field was shot twice on 14-inch glass plates: a **blue-
-  sensitive plate (Kodak 103a-O)** and a **red-sensitive plate (Kodak 103a-E)**, covering roughly
-  6°×6° per field, 936–937 field-pairs to cover the accessible sky. The paired **O/E** plates —
-  the same field in two emulsions, meant to be compared — are the survey's own version of the
-  Harvard blink pair, and a strong candidate for a "two-plate" chart variant.
-- **The Franklin-Adams Charts** (exposed by the amateur John Franklin-Adams from Johannesburg and
-  Godalming; published posthumously 1913–14 by the Royal Astronomical Society after his 1912
-  death). 206 sections, each 15° square, limiting magnitude 15 — the **first photographic atlas
-  of the entire sky**, predating the Carte du Ciel's completion by decades and a plainer, single-
-  observer counterpart to that project's twenty-observatory bureaucracy.
+  Samuel Oschin Schmidt telescope. Each field was shot twice on 14-inch glass plates: **blue-
+  sensitive (Kodak 103a-O)** and **red-sensitive (Kodak 103a-E)**, ~6°×6° per field, 936–937
+  field-pairs. The paired **O/E** plates — same field, two emulsions, meant to be compared — are
+  the survey's own version of the Harvard blink pair, a strong candidate for a two-plate variant.
+- **The Franklin-Adams Charts** (exposed by amateur John Franklin-Adams from Johannesburg and
+  Godalming; published posthumously 1913–14 by the RAS after his 1912 death). 206 sections, each
+  15° square, limiting magnitude 15 — the **first photographic atlas of the entire sky**,
+  predating the Carte du Ciel's completion by decades, a plainer single-observer counterpart to
+  that project's twenty-observatory bureaucracy.
 - **Argelander's *Bonner Durchmusterung*** (1859–62, atlas 1863) — folded into this era per
-  `OVERVIEW.md`, with the caveat repeated here because it matters for the grammar section below:
-  **the BD is not photographic.** Argelander and his assistants plotted 324,189 stars to about
-  9th magnitude by eye, through a small refractor, onto lithographed charts. It belongs here only
-  as the moment the *figures* were abandoned for a *grid of numbered dots* — the graphic idea the
-  photographic era inherits, not the graphic method. Its numbering — `BD +38°3238`, a 1°-wide
-  declination zone plus a running number counted from 0h right ascension — is the direct ancestor
-  of every catalogue designation this era's charts carry in the margin.
+  `OVERVIEW.md`, with the caveat repeated here because it matters for §2 below: **the BD is not
+  photographic.** Argelander and his assistants plotted 324,189 stars to about 9th magnitude by
+  eye, through a small refractor, onto lithographed charts. It belongs here only as the moment
+  *figures* were abandoned for a *grid of numbered dots* — the graphic idea the photographic era
+  inherits, not the method. Its numbering — `BD +38°3238`, a 1°-wide declination zone plus a
+  running number counted from 0h right ascension — is the direct ancestor of every catalogue
+  designation this era's charts carry in the margin.
 - **The Harvard Plate Stacks** (Harvard College Observatory, 1880s–1989 in continuous operation;
-  archive of 500,000+ glass plates). Not a single document but the era's *labour*: the "Harvard
-  Computers" — Williamina Fleming, Antonia Maury, Annie Jump Cannon, Henrietta Swan Leavitt,
-  Cecilia Payne-Gaposchkin among ~80 women employed 1885–1927 — measured, classified and annotated
-  these plates by hand. Plates are catalogued by a **letter series plus a running plate number**
-  (confirmed series include `b` — the Bache 8-inch doublet's patrol series — and `AM`, `MC`, `RB`,
-  `AX`, `DSB`, with 88 series total in Harvard's own reckoning, from Martha Hazen's *History of
-  the Plate Series*); a plate cited elsewhere in this brief as **"B 20650"** is entirely plausible
-  in *form* — the `b` series alone ran into the tens of thousands of plates over its operating
-  decades — but I could not confirm that specific plate exists, so treat the exact number as
-  **(unverified)** while the format (`<series letter(s)> <running number>`) is attested.
-  Annotations are made **in ink on the back of the glass, not on the emulsion side** — India ink
-  or coloured inks circling or flagging a star of interest — and roughly 20% of the collection
-  carries historically significant markings of this kind. **(correction to `04-plate.md`:** the
-  existing file's aside that annotation is "handwritten in ink directly on the emulsion" should
-  read *on the glass*, specifically the plate's back, not the light-sensitive side — writing on
-  the emulsion itself would damage or obscure the image.) The DASCH project (Digital Access to a
-  Sky Century at Harvard) finished scanning the entire collection in 2024, releasing it as Data
-  Release 7.
+  500,000+ glass plates). Not a single document but the era's *labour*: the "Harvard Computers" —
+  Williamina Fleming, Antonia Maury, Annie Jump Cannon, Henrietta Swan Leavitt, Cecilia
+  Payne-Gaposchkin among ~80 women employed 1885–1927 — measured, classified and annotated these
+  plates by hand. Plates are catalogued by a **letter series plus a running plate number**
+  (confirmed series include `b`, the Bache 8-inch doublet's patrol series, and `AM`, `MC`, `RB`,
+  `AX`, `DSB`, with 88 series total per Martha Hazen's *History of the Plate Series*); a plate
+  cited elsewhere in this brief as **"B 20650"** is plausible in *form* — the `b` series alone ran
+  into the tens of thousands of plates — but that specific plate could not be confirmed, so treat
+  the exact number as **(unverified)** while the format (`<series letter(s)> <running number>`)
+  is attested. Annotations are made **in ink on the back of the glass, not the emulsion side** —
+  India ink or coloured inks circling or flagging a star — and roughly 20% of the collection
+  carries historically significant markings of this kind. **(correction to `04-plate.md`:** its
+  aside that annotation is "handwritten in ink directly on the emulsion" should read *on the
+  glass*, specifically the back — writing on the emulsion itself would damage the image.) DASCH
+  finished scanning the entire collection in 2024, released as Data Release 7.
 
 ## 2. The grammar
 
@@ -134,26 +129,19 @@ letter by letter with a nib (era III's engraving hand) but a **single continuous
 cursive line**, laid on in one unbroken pass — someone circling a star and writing three words
 beside it while looking through a loupe, not composing a caption.
 
-**(b) The typewriter — plate labels and logbooks.** Confirmed by design, not primary-source
-citation, but well within the era: plate jackets, logbook pages and survey publications of this
-period were typed on office typewriters (Underwood, Remington, Smith-Corona all in wide use
-1900–1950). Two OFL-compatible faces, both verified on Google Fonts:
-  - **Special Elite** — licensed **Apache License 2.0** (not OFL, but compatible and freely
-    embeddable), designed by Brian J. Bonislawsky (Astigmatic), added to Google Fonts 2011. It
-    explicitly models the **Smith-Corona "Special Elite" Type No. NR6 and Remington Noiseless**
-    faces, with deliberately irregular, slightly off-register glyphs — a distressed look, good
-    for a single dramatic plate-jacket label, less good for dense body text.
-  - **Courier Prime** — licensed **SIL Open Font License 1.1**, designed by Alan Dague-Greene for
-    Quote-Unquote Apps (commissioned by screenwriter John August), a redrawn descendant of the
-    **IBM Courier** face Howard Kettler drew for IBM in 1955–56. Cleaner, more legible at small
-    sizes, three variants (Prime, Sans, Code). Better fit for the survey's own typed exposure
-    logs and margin data (`2h 15m`, `Bruce 10-inch`) where legibility matters more than period
-    grain. **Recommended as the primary numeral/log face**, with Special Elite reserved for one
-    or two dramatic plate-jacket labels if the era wants the distressed look at all.
-  - "Elite" itself names a **typewriter pitch**: 12 characters per inch, versus the wider 10-per-
-    inch "Pica." Both were standard office-machine pitches through this whole era — the plate
-    label vocabulary genuinely borrows a real typewriter's own terminology, which is a nice
-    coincidence for a face named Special *Elite*.
+**(b) The typewriter — plate labels and logbooks.** Plate jackets, logbook pages and survey
+publications of this period were typed on office typewriters (Underwood, Remington, Smith-Corona,
+all in wide use 1900–1950). Two verified, freely embeddable faces on Google Fonts:
+  - **Special Elite** — **Apache License 2.0** (not OFL, but compatible), by Brian J. Bonislawsky
+    (Astigmatic), added 2011. Explicitly models the **Smith-Corona "Special Elite" Type No. NR6
+    and Remington Noiseless** machines, with deliberately irregular, off-register glyphs — good
+    for one dramatic plate-jacket label, less good for dense text.
+  - **Courier Prime** — **SIL OFL 1.1**, by Alan Dague-Greene for Quote-Unquote Apps, a redrawn
+    descendant of **IBM Courier** (Howard Kettler, 1955–56). Cleaner and more legible at small
+    sizes; three variants (Prime, Sans, Code). **Recommended as the primary numeral/log face**,
+    reserving Special Elite for a dramatic label or two.
+  - "Elite" itself names a **typewriter pitch** (12 characters/inch, vs. the wider 10-per-inch
+    "Pica") — both standard office-machine pitches of the era, a nice coincidence for the name.
 
 **(c) The printed grotesque — charts, catalogues, margin type.** Akzidenz-Grotesk (1896, the
 model grotesque of the whole period) is **not** free. The correct, verified free equivalent
@@ -205,42 +193,34 @@ exists to borrow.
 
 ## 6. Currency and one rule
 
-**Currency: EXPOSURE TIME.** In the period, telescope time was rationed by the number of clear,
-steady nights an observatory got in a year, and within a night by how long one observer could
-physically hold a guide star on a crosshair without a break — guiding was manual (an observer at
-the eyepiece for the whole exposure, correcting by hand, or from the 1880s A. A. Common's
-micrometer-screw plate-holder guiding) so an exposure's *actual* cost was a person's unbroken
-attention for however many hours the plate needed. Faint objects — nebulosity, dim companions —
-needed the longest exposures; a short exposure only ever caught the brightest stars. Glass itself
-was a real, if modest, expense (plates were mass-manufactured gelatin-on-glass from the 1880s
+**Currency: EXPOSURE TIME.** Telescope time was rationed by the number of clear, steady nights an
+observatory got in a year, and within a night by how long one observer could physically hold a
+guide star on a crosshair without a break — guiding was manual (an observer at the eyepiece for
+the whole exposure, or from the 1880s A. A. Common's micrometer-screw plate-holder guiding), so an
+exposure's real cost was a person's unbroken attention for however many hours the plate needed.
+Faint objects needed the longest exposures; a short one only ever caught the brightest stars.
+Glass itself was a real, if modest, expense — mass-manufactured gelatin-on-glass from the 1880s
 onward, which is what made large surveys affordable at all, but a cracked plate was still a night
-and a pane lost).
+and a pane lost.
 
 **The "hold to develop" twist, grounded in exposure:** a captured orbit already gains the game's
-resource by being *held* (`INK_ORBIT_GAIN` per second, GAME-BRIEF §2) — this era does not need a
-new rule so much as a new reading of the existing one. Rename ink **EXPOSURE**, and let the body
-itself visibly "develop" the longer it is held: on capture it appears only as a bare point (a
-short exposure catches only the brightest core of the object), and continued holding — the same
-timer that already pays out `INK_ORBIT_GAIN` — brings up successive rings of detail the way a
-print in the tray brings up highlights first, then midtones, then the faint outer wash last
-(confirmed real darkroom timing: highlights resolve in the first several seconds of development,
-midtones follow, the faint tones last, and the same tonal *order* — bright core first, faint
-surround last — governs an under-tray plate as much as an over-tray print). Practically: extend
-the existing hold-to-gain-ink mechanic with a cosmetic reveal keyed to the same clock, so a body
-held past roughly one full orbit is fully "developed" (fully rendered) rather than a bare dot —
-no new number needs adding to the simulation, only a render-side threshold read off ink-gain
-progress already being tracked. The natural risk this reintroduces for free: hold **too** long
-and the same overexposure that halos a bright star into halation (already this era's repulsor)
-can fog the body itself — a released cue for "you have exposed this one enough," reusing a danger
-the era already needs rather than adding a new one.
+resource by being *held* (`INK_ORBIT_GAIN` per second, GAME-BRIEF §2) — this era wants a new
+reading of the existing rule, not a new one. Rename ink **EXPOSURE**, and let the body visibly
+"develop" the longer it is held: on capture it appears only as a bare point (a short exposure
+catches only the brightest core), and continued holding — the same timer already paying out
+`INK_ORBIT_GAIN` — brings up successive rings of detail the way a tray print brings up highlights
+first, then midtones, then the faint outer wash last (confirmed real timing: highlights resolve
+in the first seconds of development, midtones follow, faint tones last). No new number need be
+added to the simulation, only a render-side threshold read off ink-gain progress already tracked.
+The risk this reintroduces for free: hold **too** long and the same overexposure that halos a
+bright star into halation (already this era's repulsor) can fog the body itself — reusing a
+danger the era already needs rather than adding one.
 
 **The "no twist" reading:** rename ink EXPOSURE and change nothing else. This era's fit is
-unusually strong for a no-twist reading specifically because the existing loss condition **"THE
-DARK CAUGHT UP"** — the rising darkness overtaking the player — already reads, without a single
-line of code changing, as **dawn overtaking the exposure**: every real photographic night ends
-the same way, the sky brightening until the plate can no longer be usefully exposed. No other
-era's darkness-pursuit mechanic maps this cleanly onto an attested period constraint by rename
-alone.
+unusually strong here because the existing loss condition **"THE DARK CAUGHT UP"** already reads,
+with no code change, as **dawn overtaking the exposure**: every real photographic night ends the
+same way, the sky brightening until the plate can no longer be usefully exposed. No other era's
+darkness-pursuit mechanic maps this cleanly onto an attested period constraint by rename alone.
 
 ## 7. Dangers
 
@@ -282,25 +262,24 @@ size and density are a function of brightness and exposure, not of the object's 
 seven families are distinguished by **size, density, and a bracketed annotation naming what the
 plate shows**, not by drawn surface detail:
 
-- **Ocean** — a small, dense, perfectly round knot: reads as the plate's most "ordinary" star-like
-  point, densest black at centre, negligible halo.
-- **Crater** — a slightly larger knot with a faint, uneven double-density edge, as if two
-  exposures of very slightly different registration were stacked — the closest this grammar comes
-  to suggesting relief, and it is a printing artefact, not a drawn terminator.
-- **Ringed** — an elongated, oval smear rather than a round knot: on a plate, a genuine ring would
-  not resolve as a ring at all, only as an object slightly stretched along one axis, exactly as
-  `04-plate.md` already proposes and this pass confirms is the correct photographic reading.
-- **Ice** — smaller and fainter than ocean, a thinner deposit, sitting closer to the plate's own
-  fog level — the family that is hardest to be sure is even a real object rather than a grain of
-  chemical fog, which is true to how faint icy bodies actually behave on period plates.
-- **Dune** — a slightly warm-toned knot against the print's sepia base, no different in shape from
-  ocean, carrying the difference entirely in the annotation bracket beside it.
+- **Ocean** — a small, dense, perfectly round knot, densest black at centre, negligible halo: the
+  plate's most "ordinary" star-like point.
+- **Crater** — a slightly larger knot with a faint, uneven double-density edge, as if two slightly
+  misregistered exposures were stacked — the closest this grammar comes to suggesting relief, and
+  it is a printing artefact, not a drawn terminator.
+- **Ringed** — an elongated, oval smear rather than a round knot: a genuine ring would not resolve
+  as a ring on a plate, only as an object stretched along one axis, exactly as `04-plate.md`
+  already proposes and this pass confirms is the correct photographic reading.
+- **Ice** — smaller and fainter than ocean, a thinner deposit near the plate's own fog level — the
+  family hardest to be sure is even a real object rather than a grain of chemical fog, true to how
+  faint icy bodies behave on period plates.
+- **Dune** — a warm-toned knot against the print's sepia base, no different in shape from ocean,
+  carrying the difference entirely in the annotation bracket beside it.
 - **Volcanic** — the densest, largest knot on the plate, verging on halation at its own edge
-  (without crossing into the repulsor's danger radius) — brightness standing in for the family's
-  usual visual heat.
+  without crossing into the repulsor's danger radius — brightness standing in for heat.
 - **Storm** — like ringed, elongated, but with a soft banding inside the smear rather than a clean
-  oval — the closest this grammar gets to showing internal structure, and even that reads as a
-  guiding wobble as much as a feature.
+  oval — the closest this grammar gets to internal structure, and even that reads as a guiding
+  wobble as much as a feature.
 
 **No diffraction spikes anywhere in this era**, confirmed: diffraction spikes are produced by a
 reflector's spider-vane secondary-mirror support, an obstruction a refracting lens (the Bruce
@@ -315,23 +294,20 @@ than asserted for the whole era without qualification.)
 
 ## 9. Chart furniture, frame, HUD
 
-What actually surrounds the image on a real plate of this era, confirmed across the documents
-above: a **plain rectangular border** (the plate's own edge, sometimes with an un-exposed margin
-left specifically for writing); the **réseau grid**, where present, ruled straight through the
-whole field rather than confined to a border; a **stamped or written plate identity block** —
-series letter, running number, date, exposure start/length, sometimes observer initials —
-generally in one corner or margin, in the typed or handwritten hand rather than engraved; and,
-on survey charts proper (as opposed to the raw plate), a printed grid of RA/Dec coordinate labels
-in the grotesque face. There is no cartouche, no colophon in the era-III sense, no maker's mark
-beyond the observatory's own stamp. The game's frame becomes: the plate-mark and double rule
-survive as the plate's own physical edge; RA-hour and declination ticks survive nearly unchanged
-(this era's charts already carry exactly this kind of tick, more literally than era III's do);
-the four corner wind-heads have no equivalent and should be dropped or replaced with plain
-fiducial crosses; the compass rose likewise has no equivalent in this grammar and would need to
-become a small printed N/E/S/W the way a finder-chart's corner marks work, if kept at all. The
-HUD reads naturally as the plate's own margin data: ink/exposure as a literal `<n>h <n>m` reading,
-score as a plate/catalogue number that grows, best as the survey's own "limiting magnitude
-reached."
+What surrounds the image on a real plate of this era: a **plain rectangular border** (the plate's
+own edge, sometimes with an un-exposed margin left for writing); the **réseau grid**, where
+present, ruled straight through the whole field rather than confined to a border; a **stamped or
+written plate identity block** — series letter, running number, date, exposure start/length,
+sometimes observer initials — generally in one corner, typed or handwritten rather than engraved;
+and, on survey charts proper, a printed grid of RA/Dec coordinate labels in the grotesque face.
+There is no cartouche, no colophon in the era-III sense, no maker's mark beyond the observatory's
+own stamp. The game's frame becomes: plate-mark and double rule survive as the plate's own
+physical edge; RA-hour and declination ticks survive nearly unchanged (this era's charts already
+carry exactly this kind of tick, more literally than era III's do); the four corner wind-heads
+have no equivalent and should drop or become plain fiducial crosses; the compass rose likewise has
+no equivalent and would need to become a small printed N/E/S/W, if kept at all. The HUD reads
+naturally as the plate's own margin data: exposure as a literal `<n>h <n>m` reading, score as a
+growing plate/catalogue number, best as the survey's own "limiting magnitude reached."
 
 ## 10. Four chapter plates
 
