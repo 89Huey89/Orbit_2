@@ -200,7 +200,7 @@ rather than the research's untested icon-plus-readout pair, spikes the plaque ha
 single-stroke polyline glyphs rather than loaded Hershey data (licence and pipeline mismatch both
 still open), and chooses instrument white over telemetry green, the brief's own "no CRT-green
 cliché" call. It loads B612 Mono (OFL) locally and draws THE ARGO as its constellation, a ship apt
-for a probe under sail. Painter verdict: _to be recorded in PROTOTYPES.md_.
+for a probe under sail. Painter verdict: Sonnet reached a prototype standard; budget Opus for the plaque hand. See [PROTOTYPES.md](PROTOTYPES.md).
 
 ## Risk
 

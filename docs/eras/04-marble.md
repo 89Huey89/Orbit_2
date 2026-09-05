@@ -156,7 +156,7 @@ both attested and the game's own "THE LYRE." Fonts are Cinzel and GFS Didot, awa
 `document.fonts.ready` before first paint — GFS Didot alone covers both the epigraphic capitals and
 Ptolemy's magnitude ranks, so no second Greek face is used.
 
-Painter verdict: _to be recorded in PROTOTYPES.md_.
+Painter verdict: acceptable from Sonnet, with an Opus polish pass for depth. See [PROTOTYPES.md](PROTOTYPES.md).
 
 ## Risk
 

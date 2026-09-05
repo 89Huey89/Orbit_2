@@ -157,8 +157,7 @@ Elite and Libre Franklin from a local `fonts/` folder rather than a network the 
 cannot reach, and states its one honest compromise up front: no cursive face models the unverified
 Harvard hand, so the ink-on-glass annotations are Libre Franklin Italic with per-glyph jitter
 (`roundHand()`) rather than a claimed period script. Its token set matches this file's palette
-exactly, proof the duotone reasoning above ports cleanly. Painter verdict: _to be recorded in
-PROTOTYPES.md_.
+exactly, proof the duotone reasoning above ports cleanly. Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md).
 
 ## Risk
 

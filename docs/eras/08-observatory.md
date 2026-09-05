@@ -178,8 +178,7 @@ yet, it borrows era VI's four.
 `docs/eras/prototypes/observatory.html` loads IBM Plex Mono and Space Grotesk (both OFL) from a
 local `fonts/` folder for a network-free headless rig, and names its tokens exactly as
 `definePlate()` would — sensor-black ground, the SII/Hα/OIII triad, EHT amber, a cyan/gold/legend
-ink family — matching this file's palette table directly. Painter verdict: _to be recorded in
-PROTOTYPES.md_.
+ink family — matching this file's palette table directly. Painter verdict: Sonnet reached the standard; a polish pass is enough. See [PROTOTYPES.md](PROTOTYPES.md).
 
 ## Risk
 

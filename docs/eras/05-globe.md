@@ -168,7 +168,7 @@ browser's own bidi/shaping (`ctx.direction='rtl'`, plain `fillText`), not fontki
 DECISIONS.md §4 commits the shipped build to build-time pre-shaping instead, so this is a fallback
 to verify against, not the final pipeline.
 
-Painter verdict: _to be recorded in PROTOTYPES.md_.
+Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md).
 
 ## Risk
 
