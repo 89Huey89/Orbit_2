@@ -356,7 +356,9 @@ function drawCelestialScene(index,weight){
   // screen of engraving blended in beyond both margins every frame. Only the part on the sheet is
   // blitted, with a little overhang so the resampler still has neighbours to read at the edges.
   const dw=plate.width*place.fit,dh=plate.height*place.fit;
-  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:weight;
+  // The chapter plates are engraved illustrations; on the observatory plate they are held far back, so
+  // they read as the faint deep-sky field a long exposure returns rather than as a printed globe.
+  ctx.save();ctx.globalAlpha=onPaper()?weight*.72:modernPlate()?weight*.22:weight;
   blitVisible(plate,place.x,place.y,dw,dh,Math.max(2,Math.ceil(place.fit*2)));
   ctx.restore();
   drawPlateCaptions(index,weight,place);
