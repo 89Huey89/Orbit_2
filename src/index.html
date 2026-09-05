@@ -340,7 +340,7 @@
         <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
         <span id="daily-date" class="small daily-note"></span>
       </div>
-      <p class="printer-line">Impressum &middot; MDCXX</p>
+      <p class="printer-line">Impressum &middot; MDCCXXV</p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
@@ -387,17 +387,39 @@
   </section>
   <div class="footer">
     <button id="sound" class="utility" aria-label="Mute sound" aria-pressed="true" title="Sound">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h4l5-4v12l-5-4H4z"/><path class="sound-wave" d="M16 9c2 2 2 4 0 6m3-9c4 3 4 9 0 12"/><path class="mute-mark" d="m17 10 4 4m0-4-4 4"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 10h4l5-4v12l-5-4H4z"/>
+        <path d="M4 10h4l5-4v12l-5-4H4z" transform="translate(.6,.5)" opacity=".35" stroke-width=".5"/>
+        <path class="sound-wave" d="M16.6 8.3l2.6-1.5M17.1 12h3.4M16.6 15.7l2.6 1.5"/>
+        <path class="mute-mark" d="m17 10 4 4m0-4-4 4"/>
+      </svg>
     </button>
     <span class="footer-tools">
     <button id="catalogue-open" class="utility" aria-label="Open the catalogue" aria-expanded="false" title="Catalogue">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z"/><path d="M12 6.4v14.2"/><path d="M7.3 8.3h2.4M7.3 11h2.4M14.3 8.3h2.4M14.3 11h2.4" stroke-width=".8"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z"/>
+        <path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
+        <path d="M12 6.4v14.2"/>
+        <path d="M7.3 8.3h2.4M7.3 11h2.4M14.3 8.3h2.4M14.3 11h2.4" stroke-width=".8"/>
+      </svg>
     </button>
     <button id="plate" class="utility" aria-label="Switch to paper plate" title="Paper or night plate">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path class="plate-night" d="M9 12h6M9 15.5h6M9 8.5h3"/><path class="plate-paper" d="M10 15.5a3 3 0 1 0 0-6"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 3h9l4 4v14H6z"/>
+        <path d="M6 3h9l4 4v14H6z" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
+        <path d="M15 3v4h4"/>
+        <path class="plate-night" d="M9 12h6M9 15.5h6M9 8.5h3"/>
+        <path class="plate-paper" d="M9.6 12.5c.3-1 1.3-1.7 2.3-1.4 1.1.3 1.7 1.5 1.3 2.5-.3.9-1.2 1.7-2.6 2-.4-1-1.3-2.1-1-3.1z" fill="currentColor" stroke="none"/>
+      </svg>
     </button>
     <button id="fullscreen" class="utility" aria-label="Enter fullscreen" title="Fullscreen">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/>
+        <circle cx="5.6" cy="5.6" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="18.4" cy="5.6" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="5.6" cy="18.4" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="18.4" cy="18.4" r="1" fill="currentColor" stroke="none"/>
+      </svg>
     </button>
     </span>
   </div>
