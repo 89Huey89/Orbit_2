@@ -59,8 +59,11 @@ An era that breaks any of these is a different game, not another plate.
    an era is cosmetic exactly as every plate is today. This holds cleanly for grounds, bodies,
    lettering, figures and frames. It does **not** survive contact with dangers: `HAZARD_KINDS` lives
    inside the simulation slice, so an era that changes which dangers a chart carries changes the
-   chart itself. [DANGERS.md](DANGERS.md) sets out what that costs and the three ways round it; until
-   one is chosen, an era re-*depicts* and re-*names* the existing hazard rows and adds none.
+   chart itself. [DANGERS.md](DANGERS.md) sets out what that costs and the ways round it — the
+   strongest being to gate the eras on total score, which makes the era a function of the score and
+   so keeps two runs at the same score comparable however much their dangers differ
+   ([OPEN-QUESTIONS.md](OPEN-QUESTIONS.md#1-where-does-the-progression-actually-happen-the-big-one)).
+   Until one is chosen, an era re-*depicts* and re-*names* the existing hazard rows and adds none.
 2. **Every era speaks in its own hand.** The Latin captions are not neutral — they are era
    III's voice. Egypt captions in hieroglyphs with a transliteration; the Globe in Arabic;
    the Plate in survey designations and plate numbers; the Observatory in catalogue numbers.
