@@ -1,0 +1,485 @@
+<!--
+  Orbit — era VI prototype, "The Plate" (1887–1958), per docs/eras/research/plate.md.
+  Google Fonts, OFL/Apache faces named in that research, embedded here ONLY for this
+  prototype (the shipped game will embed the woff2s per CLAUDE.md's `npm run fonts`):
+    - Courier Prime      SIL OFL 1.1  — Basic Latin + Latin-1 Supplement. Primary numeral/log face.
+    - Special Elite       Apache 2.0   — Basic Latin + Latin-1 Supplement. One dramatic jacket label.
+    - Libre Franklin      SIL OFL 1.1  — Basic Latin + Latin-1 Supplement. Printed grotesque/margins.
+  No cursive/copperplate face is loaded: research §4a flags the Harvard Computers' actual hand as
+  (unverified) and no free webfont models it, so the "round hand" ink-on-glass annotations below
+  are Libre Franklin Italic with per-glyph jitter (see roundHand()) rather than a claimed period
+  script — an honest stand-in, not a citation.
+-->
+<title>The Plate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=Libre+Franklin:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{ color-scheme:light dark; }
+  body{ margin:0; background:#0c0c0b; display:flex; align-items:center; justify-content:center; min-height:100vh; overflow:hidden; }
+  #stage{ position:relative; box-shadow:0 20px 70px rgba(0,0,0,.6); }
+  canvas{ display:block; }
+  #hint{ position:fixed; left:10px; bottom:8px; font:11px/1.4 system-ui,sans-serif; color:#8a8378; opacity:.7; }
+</style>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="hint">L — legend</div>
+<script>
+'use strict';
+/* ---------- mulberry32, seeded so the sheet paints identically every load ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(0xB20650);
+
+/* ---------- palette & faces, named tokens in the spirit of definePlate() ---------- */
+const TOKENS={
+  ground:'#e8e4da',      // clear emulsion, unexposed sky — the era's ground is transparent, not tinted
+  groundCool:'#c9d6d2',  // the emulsion's own blue-sensitive cast, unprinted
+  glass:'#efece2',       // clear glass margin outside the emulsion proper
+  silverDense:'#1a1714', // fully-exposed star — dense metallic silver
+  silverMid:'#8a8378',   // partial exposure, a fainter star
+  sepia:'#5c4530',       // warm chemical print tone (older plates, the dune family)
+  coldGrey:'#5a626b',    // cold blue-grey mid-century print tone
+  inkBlack:'#141210',    // India ink, glass back
+  inkRed:'#8a2318',      // grease pencil / red ink flag
+  reseau:'#3a3630',      // réseau grid & fiducial hairlines — same silver, printed fine
+  paper:'#0c0c0b'
+};
+const FACE_TYPE='"Courier Prime",monospace';           // typed numerals & logbook lines
+const FACE_LABEL='"Special Elite",monospace';           // one dramatic plate-jacket label
+const FACE_GROTESQUE='"Libre Franklin",Arial,sans-serif'; // printed catalogue/margin grotesque
+const FACE_HAND='"Libre Franklin",Arial,sans-serif';     // base face for the jittered round hand
+
+/* ---------- canvas setup: fixed 1280x800 logical frame, drawn at devicePixelRatio ---------- */
+const W=1280,H=800;
+const cnv=document.getElementById('c'),ctx=cnv.getContext('2d');
+let DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+function fit(){
+  const vw=innerWidth,vh=innerHeight,s=Math.min(vw/W,vh/H,1);
+  cnv.style.width=(W*s)+'px'; cnv.style.height=(H*s)+'px';
+  DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  cnv.width=Math.round(W*DPR); cnv.height=Math.round(H*DPR);
+}
+addEventListener('resize',fit); fit();
+
+/* ================= era stroke primitives — every mark on the sheet goes through one of these ================= */
+
+// hairline(): a mechanically ruled or photographically-printed straight/curved line — the réseau
+// grid, the plate's own double-rule edge, RA/Dec ticks, fiducial crosses, the orbit ring and the
+// next-orbit aim guide. A hairline still carries a whisper of grain (it was exposed onto the same
+// emulsion as the stars), so it is stroked as a chain of short jittered segments, never one flat path.
+function hairline(g,pts,opt){
+  opt=opt||{}; const w=opt.weight||1,col=opt.color||TOKENS.reseau,a=opt.alpha??1,dash=opt.dash;
+  g.save(); g.globalAlpha=a; g.strokeStyle=col; g.lineWidth=w; g.lineCap='round';
+  if(dash) g.setLineDash(dash);
+  g.beginPath();
+  for(let i=0;i<pts.length-1;i++){
+    const [x1,y1]=pts[i],[x2,y2]=pts[i+1];
+    const steps=Math.max(1,Math.round(Math.hypot(x2-x1,y2-y1)/9));
+    for(let s=0;s<steps;s++){
+      const t0=s/steps,t1=(s+1)/steps;
+      const jx=(rng()-.5)*.35,jy=(rng()-.5)*.35;
+      const ax=x1+(x2-x1)*t0+jx, ay=y1+(y2-y1)*t0+jy;
+      const bx=x1+(x2-x1)*t1+jx, by=y1+(y2-y1)*t1+jy;
+      if(s===0) g.moveTo(ax,ay); g.lineTo(bx,by);
+    }
+  }
+  g.stroke(); g.restore();
+}
+function hairlineCircle(g,cx,cy,r,opt){
+  const pts=[]; const n=Math.max(24,Math.round(r/3));
+  for(let i=0;i<=n;i++){const a=i/n*Math.PI*2;pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}
+  hairline(g,pts,opt);
+}
+
+// grainDisc(): the era's only real "fill" — brightness as literal opacity, a growing knot of
+// built-up silver stippled from many small grains rather than a flat vector disc, so density
+// falls off the way an emulsion actually thins toward the edge of an exposure.
+function grainDisc(g,cx,cy,rx,ry,density,opt){
+  opt=opt||{}; const col=opt.color||TOKENS.silverDense, n=Math.round(rx*ry*.9*density);
+  g.save(); g.fillStyle=col;
+  for(let i=0;i<n;i++){
+    const t=Math.pow(rng(),.55), ang=rng()*Math.PI*2;
+    const ex=Math.cos(ang)*t*rx, ey=Math.sin(ang)*t*ry;
+    const edgeFall=1-t; // grains thin out toward the rim of the exposure
+    g.globalAlpha=Math.min(1,(.18+edgeFall*.7)*density)*(opt.alpha??1);
+    const gs=.55+rng()*.9;
+    g.fillRect(cx+ex-gs/2,cy+ey-gs/2,gs,gs);
+  }
+  g.restore();
+}
+
+// inkStroke(): the Harvard hand — a single continuous, faster, looser cursive line laid on in one
+// unbroken pass (research §4a), used for the grease-pencil circling mark and the pencilled
+// constellation line. Never built up letterform-by-letterform like era III's burin.
+function inkStroke(g,pts,opt){
+  opt=opt||{}; const w=opt.weight||1.6,col=opt.color||TOKENS.inkRed,a=opt.alpha??1;
+  g.save(); g.globalAlpha=a; g.strokeStyle=col; g.lineWidth=w; g.lineCap='round'; g.lineJoin='round';
+  g.beginPath();
+  for(let i=0;i<pts.length;i++){
+    const [x,y]=pts[i], jx=(rng()-.5)*.6, jy=(rng()-.5)*.6;
+    if(i===0) g.moveTo(x+jx,y+jy); else g.lineTo(x+jx,y+jy);
+  }
+  g.stroke(); g.restore();
+}
+function inkCircle(g,cx,cy,r,opt){
+  const pts=[]; const n=22, wob=opt&&opt.wobble||1.6;
+  for(let i=0;i<=n;i++){
+    const a=i/n*Math.PI*2 - Math.PI/2;
+    const rr=r+(rng()-.5)*wob;
+    pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr*.94]);
+  }
+  inkStroke(g,pts,opt);
+}
+
+// roundHand(): renders text glyph-by-glyph with small per-character rotation/baseline jitter over
+// an existing licensed italic face, simulating "a round hand" without claiming a specific period
+// script no free webfont attests (research §4a, §12). The one deliberately hand-drawn lettering
+// mark on the sheet, as distinct from the typed jacket label as ink is from a typewriter strike.
+function roundHand(g,text,x,y,size,opt){
+  opt=opt||{}; const col=opt.color||TOKENS.inkBlack, a=opt.alpha??1;
+  g.save(); g.globalAlpha=a; g.fillStyle=col; g.font=`italic ${size}px ${FACE_HAND}`; g.textBaseline='alphabetic';
+  let cx=x;
+  for(const ch of text){
+    const rot=(rng()-.5)*.09, dy=(rng()-.5)*size*.09;
+    g.save(); g.translate(cx,y+dy); g.rotate(rot); g.fillText(ch,0,0); g.restore();
+    cx+=g.measureText(ch).width*.97;
+  }
+  g.restore();
+  return cx-x;
+}
+
+/* ================= layout ================= */
+const OM=18;                 // the plate's own physical edge — double rule
+const EX0=74,EY0=74,EX1=1206,EY1=726, FW=EX1-EX0, FH=EY1-EY0; // the emulsion field proper
+
+const FAMILIES=[
+  {id:'ocean',    r:40, ry:40, density:1.00, halo:.05, tone:'silver', note:'reg.'},
+  {id:'crater',   r:44, ry:44, density:.92,  halo:.08, tone:'silver', note:'dbl.', dbl:true},
+  {id:'ringed',   r:46, ry:26, density:.85,  halo:.12, tone:'silver', note:'elong.'},
+  {id:'ice',      r:28, ry:28, density:.40,  halo:.03, tone:'silver', note:'faint'},
+  {id:'dune',     r:38, ry:38, density:.86,  halo:.06, tone:'sepia',  note:'reg.'},
+  {id:'volcanic', r:50, ry:50, density:1.00, halo:.24, tone:'silver', note:'dense', bloom:true},
+  {id:'storm',    r:48, ry:27, density:.80,  halo:.15, tone:'silver', note:'elong.', band:true}
+];
+// Plausible plate/catalogue numbers in the attested "series letter + running number" form
+// (research §1/§12: the format is confirmed, this exact plate is not, so it is not offered
+// in-game as a citation to a real historical negative).
+const CATNOS=['N 0084','N 0091','N 0097','N 0103','N 0108','N 0114','N 0121'];
+
+/* ================= offscreen static layer ================= */
+const off=document.createElement('canvas'); off.width=W; off.height=H; const og=off.getContext('2d');
+
+function paintGround(g){
+  // A wash from clear emulsion to its own faint blue-sensitive cast — near-white, not tinted
+  // paper, the one ground in the ladder that is transparent (research §3).
+  const grd=g.createLinearGradient(0,0,W,H);
+  grd.addColorStop(0,TOKENS.ground); grd.addColorStop(.55,TOKENS.groundCool); grd.addColorStop(1,TOKENS.ground);
+  g.fillStyle=grd; g.fillRect(0,0,W,H);
+  g.fillStyle=TOKENS.glass; g.fillRect(0,0,W,H); g.globalAlpha=1;
+  // glass margin band, a touch paler than the emulsion field it surrounds
+  g.save(); g.beginPath(); g.rect(0,0,W,H); g.rect(EX0,EY0,FW,FH); g.fill('evenodd'); g.restore();
+  // chemical fog grain over the whole plate — the base density every emulsion carries even unexposed
+  for(let i=0;i<9000;i++){
+    const x=rng()*W,y=rng()*H,s=.5+rng()*.6;
+    g.fillStyle=rng()<.5?'rgba(20,18,16,.05)':'rgba(255,255,255,.05)';
+    g.fillRect(x,y,s,s);
+  }
+  // dust on the emulsion: small pale voids where a mote blocked the exposure
+  for(let i=0;i<46;i++){
+    const x=EX0+rng()*FW,y=EY0+rng()*FH,r=.8+rng()*1.6;
+    g.beginPath(); g.fillStyle='rgba(232,228,218,.9)'; g.arc(x,y,r,0,7); g.fill();
+  }
+  // two scratches: emulsion scraped off the glass along a stray path, ridge shadow either side
+  for(const s of [{x:940,y:120,len:260,ang:.5},{x:210,y:610,len:180,ang:-.3}]){
+    const p1=[s.x,s.y], p2=[s.x+Math.cos(s.ang)*s.len,s.y+Math.sin(s.ang)*s.len];
+    hairline(g,[p1,p2],{weight:2.4,color:TOKENS.glass,alpha:.95});
+    hairline(g,[p1,p2],{weight:.7,color:TOKENS.reseau,alpha:.35});
+  }
+}
+
+function paintReseau(g){
+  // The réseau: 27h × 27v lines at 5mm on the real plate — simplified in count here for
+  // legibility at this scale, ruled straight through the whole field per research §2/§9.
+  g.save();
+  const nx=15,ny=9;
+  for(let i=1;i<nx;i++){const x=EX0+FW*i/nx; hairline(g,[[x,EY0],[x,EY1]],{weight:.6,alpha:.14});}
+  for(let j=1;j<ny;j++){const y=EY0+FH*j/ny; hairline(g,[[EX0,y],[EX1,y]],{weight:.6,alpha:.14});}
+  g.restore();
+}
+
+function tickLabel(g,text,x,y,size,align){
+  g.save(); g.fillStyle=TOKENS.reseau; g.globalAlpha=.75; g.font=`${size}px ${FACE_GROTESQUE}`;
+  g.textAlign=align||'center'; g.textBaseline='middle'; g.fillText(text,x,y); g.restore();
+}
+
+function paintFrame(g){
+  // The plate's own physical edge — a plain rectangular border, not a projection's horizon.
+  hairline(g,[[OM,OM],[W-OM,OM],[W-OM,H-OM],[OM,H-OM],[OM,OM]],{weight:1.6,color:TOKENS.inkBlack,alpha:.55});
+  hairline(g,[[OM+6,OM+6],[W-OM-6,OM+6],[W-OM-6,H-OM-6],[OM+6,H-OM-6],[OM+6,OM+6]],{weight:.8,color:TOKENS.reseau,alpha:.5});
+  hairline(g,[[EX0,EY0],[EX1,EY0],[EX1,EY1],[EX0,EY1],[EX0,EY0]],{weight:1,color:TOKENS.reseau,alpha:.55});
+  // RA-hour ticks, top and bottom; declination ticks, both sides — "survive nearly unchanged" (§9)
+  for(let i=0;i<=12;i++){
+    const x=EX0+FW*i/12;
+    hairline(g,[[x,EY0-6],[x,EY0]],{weight:.8,alpha:.5}); hairline(g,[[x,EY1],[x,EY1+6]],{weight:.8,alpha:.5});
+    if(i<12) tickLabel(g,i+'h',x+FW/24,OM+6+13,9);
+  }
+  for(let j=0;j<=8;j++){
+    const y=EY0+FH*j/8, deg=90-j*22.5;
+    hairline(g,[[EX0-6,y],[EX0,y]],{weight:.8,alpha:.5}); hairline(g,[[EX1,y],[EX1+6,y]],{weight:.8,alpha:.5});
+    if(j<8) tickLabel(g,(deg>0?'+':'')+Math.round(deg)+'°',OM+16,y+FH/16,9,'left');
+  }
+  // fiducial crosses stand in for the wind-heads no photographic plate carries (§9)
+  for(const [cx,cy] of [[EX0,EY0],[EX1,EY0],[EX0,EY1],[EX1,EY1]]){
+    hairline(g,[[cx-9,cy],[cx+9,cy]],{weight:1,alpha:.6}); hairline(g,[[cx,cy-9],[cx,cy+9]],{weight:1,alpha:.6});
+  }
+  tickLabel(g,'N',EX0+FW/2,EY0-16,10);
+  // a printed sensitometric step-wedge stands in for the magnitude key: six calibration
+  // swatches of rising density, the era's real tool for reading silver back into brightness.
+  const wx=EX1-150,wy=EY1-24;
+  tickLabel(g,'DENSITY WEDGE',wx+70,wy-14,9);
+  for(let i=0;i<6;i++){
+    const x=wx+i*24;
+    g.fillStyle=TOKENS.reseau; g.globalAlpha=.15+i*.14; g.fillRect(x,wy,20,14); g.globalAlpha=1;
+    hairline(g,[[x,wy],[x+20,wy],[x+20,wy+14],[x,wy+14],[x,wy]],{weight:.5,alpha:.4});
+    tickLabel(g,String(6-i),x+10,wy+24,8);
+  }
+}
+
+function paintBody(g,fam,cx,cy){
+  const rx=fam.r,ry=fam.ry;
+  if(fam.bloom){ // volcanic verges on halation at its own edge without crossing into the danger
+    grainDisc(g,cx,cy,rx*1.6,ry*1.6,.14,{color:TOKENS.silverMid,alpha:.5});
+    grainDisc(g,cx,cy,rx*1.25,ry*1.25,.3,{color:TOKENS.silverMid,alpha:.6});
+  } else if(fam.halo>.06){
+    grainDisc(g,cx,cy,rx*1.35,ry*1.35,fam.halo,{color:TOKENS.silverMid,alpha:.55});
+  }
+  const col=fam.tone==='sepia'?TOKENS.sepia:TOKENS.silverDense;
+  grainDisc(g,cx,cy,rx,ry,fam.density,{color:col});
+  if(fam.dbl){ // crater: a faint uneven double-density edge, as if two exposures were misregistered
+    grainDisc(g,cx+3,cy+2,rx*1.06,ry*1.06,.22,{color:col,alpha:.6});
+  }
+  if(fam.band){ // storm: soft banding inside the smear rather than a clean oval
+    for(let b=-1;b<=1;b+=2) grainDisc(g,cx+b*rx*.35,cy,rx*.5,ry*.55,.28,{color:TOKENS.ground,alpha:.5});
+  }
+}
+
+function bodyCaption(g,cx,cy,r,catno,note){
+  // the grease-pencil circling mark: the closest this era comes to a keyline (research §8/§9 —
+  // nothing is drawn to depict what a body *is*; a person circled it afterward)
+  inkCircle(g,cx,cy,r+10,{weight:1.4,alpha:.85,wobble:2.2});
+  g.save(); g.fillStyle=TOKENS.inkRed; g.font=`10px ${FACE_TYPE}`; g.textAlign='center';
+  g.fillText(catno,cx,cy+r+26);
+  g.font=`italic 9px ${FACE_GROTESQUE}`; g.globalAlpha=.75;
+  g.fillText('('+note+')',cx,cy+r+38);
+  g.restore();
+}
+
+function paintHazard(g,kind,cx,cy){
+  g.save();
+  if(kind==='void'){ // attractor — emulsion void: silver lifted clean off the glass
+    g.beginPath(); const n=16;
+    for(let i=0;i<=n;i++){const a=i/n*Math.PI*2,r=46+Math.sin(a*3+1)*9+(rng()-.5)*4;
+      const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.86; i===0?g.moveTo(x,y):g.lineTo(x,y);}
+    g.closePath(); g.fillStyle=TOKENS.glass; g.fill();
+    g.strokeStyle=TOKENS.reseau; g.globalAlpha=.5; g.lineWidth=1.2; g.stroke();
+    tickLabel(g,'EMULSION VOID',cx,cy+66,9);
+  } else if(kind==='halation'){ // repulsor — the bloom past an overexposed star's own disc
+    grainDisc(g,cx,cy,58,58,.1,{color:TOKENS.silverMid,alpha:.4});
+    grainDisc(g,cx,cy,38,38,.22,{color:TOKENS.silverMid,alpha:.6});
+    grainDisc(g,cx,cy,17,17,1,{color:TOKENS.silverDense});
+    hairlineCircle(g,cx,cy,17,{weight:1,color:TOKENS.inkRed,alpha:.7,dash:[2,3]});
+    tickLabel(g,'HALATION',cx,cy+70,9);
+  } else if(kind==='drift'){ // crosswind — tracking drift: every star trailed one steady direction
+    for(let i=0;i<26;i++){
+      const dx=(rng()-.5)*FW*.24, dy=(rng()-.5)*90, len=10+rng()*22;
+      grainDisc(g,cx+dx,cy+dy,1.6,1.6,.5+rng()*.4,{color:TOKENS.silverDense,alpha:.7});
+      hairline(g,[[cx+dx,cy+dy],[cx+dx+len,cy+dy+len*.22]],{weight:1,alpha:.55});
+    }
+    tickLabel(g,'TRACKING DRIFT',cx,cy+58,9);
+  } else if(kind==='nebula'){ // obscurer — dark nebula: stars simply absent, a soft uneven edge
+    g.globalCompositeOperation='destination-out';
+    for(let i=0;i<10;i++){
+      const r=60-i*4; g.beginPath();
+      g.arc(cx+(rng()-.5)*10,cy+(rng()-.5)*10,r,0,7);
+      g.fillStyle=`rgba(0,0,0,${.06+ (10-i)*.008})`; g.fill();
+    }
+    g.globalCompositeOperation='source-over';
+    inkStroke(g,[[cx+30,cy+34],[cx+52,cy+40]],{weight:1,color:TOKENS.inkBlack,alpha:.7});
+    g.fillStyle=TOKENS.inkBlack; g.font=`italic 10px ${FACE_HAND}`; g.fillText('B 33',cx+54,cy+43);
+    tickLabel(g,'DARK NEBULA',cx,cy-58,9);
+  }
+  g.restore();
+}
+
+function paintFigure(g){
+  // "The Needle": three stars joined by a single pencilled line, per the era brief — figures
+  // proper are gone (research §2); what remains is bookkeeping, a route and a catalogue number.
+  const pts=[[402,236],[452,268],[500,232]];
+  inkStroke(g,pts,{weight:1.1,color:TOKENS.inkBlack,alpha:.6});
+  const nos=['B 6301','B 6302','B 6303'];
+  pts.forEach(([x,y],i)=>{
+    grainDisc(g,x,y,3.4,3.4,1,{color:TOKENS.silverDense});
+    hairlineCircle(g,x,y,7,{weight:.7,alpha:.4});
+    g.fillStyle=TOKENS.inkBlack; g.font=`8px ${FACE_TYPE}`; g.textAlign='left';
+    g.fillText(nos[i],x+9,y-6);
+  });
+  roundHand(g,'the needle',356,300,15,{alpha:.85});
+}
+
+function paintPickup(g,cx,cy,label,glyph){
+  hairlineCircle(g,cx,cy,13,{weight:.9,alpha:.55,dash:[1.5,2.5]});
+  grainDisc(g,cx,cy,4,4,.85,{color:TOKENS.silverDense});
+  g.save(); g.fillStyle=TOKENS.inkRed; g.font=`8px ${FACE_TYPE}`; g.textAlign='center';
+  g.fillText(label,cx,cy+26); g.restore();
+}
+
+const PLAYER={cx:606,cy:392,r:34,ang:0,speed:.55,ring:78,next:[760,430]};
+
+function paintOrbitFurniture(g){
+  // orbit ring: a scribed guide circle, not a hand annotation — mechanical, like the réseau
+  hairlineCircle(g,PLAYER.cx,PLAYER.cy,PLAYER.ring,{weight:1,alpha:.5});
+  // next-orbit aim guide: a faint dotted hairline toward the next field
+  hairline(g,[[PLAYER.cx+PLAYER.ring,PLAYER.cy],[PLAYER.next[0],PLAYER.next[1]]],{weight:.8,alpha:.35,dash:[1,4]});
+  hairlineCircle(g,PLAYER.next[0],PLAYER.next[1],20,{weight:.7,alpha:.3,dash:[1,3]});
+}
+
+function paintHUDStatic(g){
+  // title block — a typed plate-jacket label, top-left, per the shipped layout position
+  hairline(g,[[92,86],[92,142],[300,142],[300,86],[92,86]],{weight:1,color:TOKENS.inkBlack,alpha:.35});
+  g.save(); g.fillStyle=TOKENS.inkBlack; g.textAlign='left'; g.font=`22px ${FACE_LABEL}`;
+  g.fillText('ORBIT',104,118);
+  g.font=`10px ${FACE_TYPE}`; g.globalAlpha=.7; g.fillText('PHOTOGRAPHIC SKY SURVEY',104,134);
+  g.restore();
+  // score / exposure block, top-centre
+  g.save(); g.textAlign='center'; g.fillStyle=TOKENS.inkBlack;
+  g.font=`bold 30px ${FACE_TYPE}`; g.fillText('N-0143',640,120);
+  g.font=`10px ${FACE_TYPE}`; g.globalAlpha=.75; g.fillText('CATALOGUED',640,134);
+  g.font=`10px ${FACE_TYPE}`; g.globalAlpha=.9; g.fillText('EXPOSURE 1h 47m',640,150);
+  g.globalAlpha=.75; g.fillText('GUIDING ×1.0',640,163);
+  g.restore();
+  // limiting magnitude reached, top-right — the era's "best"
+  g.save(); g.textAlign='right'; g.fillStyle=TOKENS.inkBlack;
+  g.font=`10px ${FACE_TYPE}`; g.globalAlpha=.75; g.fillText('LIM. MAG REACHED',1188,102);
+  g.font=`bold 24px ${FACE_TYPE}`; g.globalAlpha=1; g.fillText('14.2',1188,128);
+  g.restore();
+  // chapter/sheet label, bottom-centre
+  g.save(); g.textAlign='center'; g.fillStyle=TOKENS.reseau; g.font=`11px ${FACE_GROTESQUE}`; g.globalAlpha=.8;
+  g.fillText('FIELD I  ·  THE QUIET',640,748);
+  g.restore();
+}
+
+function buildStatic(){
+  const g=og; g.clearRect(0,0,W,H);
+  paintGround(g); paintReseau(g); paintFrame(g);
+  paintFigure(g);
+  paintHazard(g,'nebula',236,258);
+  paintHazard(g,'void',706,238);
+  paintHazard(g,'halation',968,282);
+  paintHazard(g,'drift',928,470);
+  const pk=[[300,436,'GUIDE STAR'],[500,452,'SCUTUM'],[770,552,'REPULSA'],[1040,470,'INKWELL']];
+  pk.forEach(([x,y,l])=>paintPickup(g,x,y,l));
+  FAMILIES.forEach((fam,i)=>{
+    const cx=EX0+56+ i*((FW-112)/6), cy=662;
+    paintBody(g,fam,cx,cy); bodyCaption(g,cx,cy,fam.r,CATNOS[i],fam.note);
+  });
+  paintOrbitFurniture(g);
+  paintHUDStatic(g);
+}
+buildStatic();
+
+/* ================= dynamic layer: comet, develop-in body, typewriter label, legend ================= */
+const IDBLOCK=['B 20650','Bruce 10-inch','Yerkes 1905 Jul 12'];
+const IDCHARS=IDBLOCK.join(' / ').length;
+const TYPE_PERIOD=6, TYPE_STRIKE=3.4, TYPE_HOLD=1.6; // seconds — strikes out, holds, resets
+const DEV_PERIOD=6, DEV_IN=4.2, DEV_HOLD=1.2;         // develop-in loop for the captured body
+
+function paintCapturedBody(g,t){
+  // the "hold to develop" twist (research §6): the same held-orbit timer that already pays out
+  // ink brings up highlights first, then midtones, then the faint outer wash — a tray print, not
+  // a reveal of a pre-drawn disc.
+  const dt=t%DEV_PERIOD;
+  const cx=PLAYER.cx,cy=PLAYER.cy;
+  if(dt<.15) return; // the plate is still blank latent image
+  const k=Math.min(1,(dt-.15)/DEV_IN);
+  const highlight=Math.min(1,k/.35);
+  const midtone=Math.max(0,Math.min(1,(k-.35)/.45));
+  const wash=Math.max(0,Math.min(1,(k-.7)/.3));
+  const fadeOut = dt>DEV_IN+DEV_HOLD ? 1-Math.min(1,(dt-DEV_IN-DEV_HOLD)/.25) : 1;
+  g.save(); g.globalAlpha=fadeOut;
+  if(wash>0) grainDisc(g,cx,cy,26*(.6+wash*.4),26*(.6+wash*.4),wash*.18,{color:TOKENS.silverMid,alpha:.5});
+  if(midtone>0) grainDisc(g,cx,cy,14+midtone*7,14+midtone*7,.25+midtone*.35,{color:TOKENS.silverMid});
+  if(highlight>0) grainDisc(g,cx,cy,4+highlight*3,4+highlight*3,highlight,{color:TOKENS.silverDense});
+  g.restore();
+}
+
+function paintComet(g,t){
+  PLAYER.ang=t*PLAYER.speed;
+  const a=PLAYER.ang, cx=PLAYER.cx+Math.cos(a)*PLAYER.ring, cy=PLAYER.cy+Math.sin(a)*PLAYER.ring*.92;
+  // a photographic comet trails as a real one does on a guided exposure: a smeared streak, not
+  // a drawn tail — the object moved during the time the shutter stayed open.
+  const trailA=a-.5;
+  const tx=PLAYER.cx+Math.cos(trailA)*PLAYER.ring, ty=PLAYER.cy+Math.sin(trailA)*PLAYER.ring*.92;
+  const grd=g.createLinearGradient(tx,ty,cx,cy);
+  grd.addColorStop(0,'rgba(26,23,20,0)'); grd.addColorStop(1,'rgba(26,23,20,.85)');
+  g.save(); g.strokeStyle=grd; g.lineWidth=3; g.lineCap='round';
+  g.beginPath();
+  const n=14; for(let i=0;i<=n;i++){const tt=i/n, aa=trailA+(a-trailA)*tt;
+    const px=PLAYER.cx+Math.cos(aa)*PLAYER.ring, py=PLAYER.cy+Math.sin(aa)*PLAYER.ring*.92;
+    i===0?g.moveTo(px,py):g.lineTo(px,py);
+  }
+  g.stroke(); g.restore();
+  grainDisc(g,cx,cy,3.2,3.2,1,{color:TOKENS.silverDense});
+}
+
+function paintIDBlock(g,t){
+  const dt=t%TYPE_PERIOD; const full='B 20650  /  Bruce 10-inch  /  Yerkes 1905 Jul 12';
+  const n=full.length; const shown=dt<TYPE_STRIKE ? Math.floor(n*Math.min(1,dt/TYPE_STRIKE)) : (dt<TYPE_STRIKE+TYPE_HOLD? n : 0);
+  const sub=full.slice(0,shown);
+  g.save(); g.fillStyle=TOKENS.inkBlack; g.textAlign='left'; g.font=`11px ${FACE_TYPE}`;
+  g.fillText(sub,92,752);
+  // a struck cursor thump on the freshest character
+  if(shown>0 && shown<n && dt<TYPE_STRIKE){
+    g.globalAlpha=.5; g.fillRect(92+g.measureText(sub).width+1,742,6,12);
+  }
+  g.font=`9px ${FACE_GROTESQUE}`; g.globalAlpha=.6; g.fillText('PLATE IDENTITY',92,766);
+  g.restore();
+}
+
+/* legend: press L to overlay small grey labels naming each element by the game's own term */
+let showLegend=false;
+addEventListener('keydown',e=>{ if(e.key==='l'||e.key==='L') showLegend=!showLegend; });
+function paintLegend(g){
+  g.save(); g.fillStyle='#9aa'; g.font=`10px ${FACE_GROTESQUE}`; g.textAlign='center'; g.globalAlpha=.85;
+  const tag=(x,y,s)=>{g.fillText(s,x,y);};
+  tag(196,106,'title — ORBIT');
+  tag(640,178,'HUD — score / exposure(ink) / guiding(speed)');
+  tag(1188,144,'HUD — best (limiting magnitude)');
+  tag(196,752,'inscriptions — plate identity block');
+  tag(640,764,'chapter/sheet label');
+  tag(236,192,'obscurer — dark nebula (B33)');
+  tag(706,182,'attractor — emulsion void');
+  tag(968,354,'repulsor — halation');
+  tag(928,536,'crosswind — tracking drift');
+  tag(452,196,'constellation figure — THE NEEDLE');
+  FAMILIES.forEach((fam,i)=>{ const cx=EX0+56+i*((FW-112)/6); tag(cx,610,fam.id); });
+  const pk=[[300,436,'slingshot star'],[500,452,'shield'],[770,552,'reflector'],[1040,470,'inkwell']];
+  pk.forEach(([x,y,l])=>tag(x,y-20,l));
+  tag(PLAYER.cx,PLAYER.cy-60,'player — comet on orbit ring');
+  tag(PLAYER.next[0],PLAYER.next[1]-28,'next-orbit aim guide');
+  g.restore();
+}
+
+/* ================= main loop — static layer blitted, dynamic overlay painted live ================= */
+let t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(off,0,0,W,H);
+  paintCapturedBody(ctx,t);
+  paintComet(ctx,t);
+  paintIDBlock(ctx,t);
+  if(showLegend) paintLegend(ctx);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
