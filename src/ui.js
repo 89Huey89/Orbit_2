@@ -291,8 +291,14 @@ function updateUI(dt){
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>.65)showEnd();
 }
 function resize(){
-  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=Math.min(window.devicePixelRatio||1,2);scale=Math.min(W/440,H/780);
+  // Floored at 1.5 even on an ordinary "1x" screen: the engraving's hairline burin strokes run well
+  // under a device pixel wide, and rasterising them with no supersampling turns a crisp incised line
+  // into a soft grey smear. The floor costs at most the same fill rate already paid on any 2x display.
+  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);scale=Math.min(W/440,H/780);
   canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+  // Resizing the canvas resets its context state, so this is set again on every resize: it governs how
+  // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
+  ctx.imageSmoothingQuality='high';
   backdrop=paintBackdrop();if(!grain)grain=grainTexture();
   if(world)world.resize(W/scale,H/scale);
 }
