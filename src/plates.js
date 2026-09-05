@@ -38,6 +38,10 @@ const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
+// Whether the frontispiece's full instruction paragraph has already been shown once: after that
+// first visit only "Tap to begin" prints by default, with a small toggle to read it again.
+let tutorialSeen=!!storage.get('orbit.tutorialSeen.v1','');
+function markTutorialSeen(){if(tutorialSeen)return;tutorialSeen=true;storage.set('orbit.tutorialSeen.v1','1');}
 const DARKNESS_MULT={relaxed:.72,classic:1,hardcore:1.35};
 // The pressure also sets how fast the nib spends its ink, so a gentler plate grants a longer
 // reach on the same charge rather than a different gauge.

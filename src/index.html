@@ -27,7 +27,7 @@
     #game{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden;isolation:isolate}
     #sky{display:block;width:100%;height:100%;outline:none;touch-action:none}
     #sky:focus-visible{outline:1px solid var(--gold);outline-offset:-5px}
-    .hud{position:absolute;z-index:2;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:max(24px,calc(env(safe-area-inset-top) + 12px));display:grid;grid-template-columns:1fr auto 1fr;align-items:start;pointer-events:none;transition:opacity .5s}
+    .hud{position:absolute;z-index:2;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:max(24px,calc(env(safe-area-inset-top) + 12px));display:grid;grid-template-columns:1fr auto 1fr;align-items:start;pointer-events:none;opacity:0;transition:opacity .5s}
     .brand{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:17px;letter-spacing:.24em;line-height:1.2;padding-top:7px}
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
@@ -93,6 +93,9 @@
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
+    /* The running head stays off the frontispiece itself: it is gameplay furniture, and the cartouche
+       already sets ORBIT once, large, without a score to read before the first tap is even made. */
+    #game.playing .hud,#game.over .hud{opacity:1}
     @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
     /* — Frontispiece / colophon: engraved atlas title page for #intro, #end, #pause — */
     .subtitle-latin{margin:0 0 13px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.26em;color:var(--muted);opacity:.9}
@@ -340,8 +343,9 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">FOLLOW THE PULL</p>
     </div>
-    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</p>
+    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction" id="instructions" hidden>Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</p>
       <div class="daily-group">
+        <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
         <button id="daily" class="diff-btn" type="button" aria-pressed="false">DAILY PLATE</button>
         <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
         <span id="daily-date" class="small daily-note"></span>
