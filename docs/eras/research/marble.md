@@ -61,32 +61,25 @@ the conclusion, and this file exists to say why: see §12.
 
 ## 2. The grammar
 
-Three grammars, not one, because the three surviving media never overlap: **stone relief**
-(Farnese), **engraved metal** (Mainz, Kugel, Antikythera), and **painted parchment** (the Aratea).
-The era's core identity — the reason to build it at all — is the first: **modelling by light and
-shadow on an unpainted surface, with no stars.** A figure is a raised contour, cut by point-chisel,
-claw-chisel and drill, its volume read entirely by how the relief catches raking light; there is no
-line as such, only the edge where the cut stone meets its own shadow. The sphere itself carries the
-*only* graphic marks that are not figures: a small number of compass-drawn great circles engraved
-directly into the marble, functioning as the sole coordinate grid. Composition is not a page but a
-sphere — a projection with no edge, no frame, no register bands, and (unlike era I) no attempt to
-flatten the sky into rows at all. Perspective is sculptural foreshortening only; a figure nearer the
-viewer's line of sight is simply carved in higher relief.
+Three grammars, not one, because the surviving media never overlap: **stone relief** (Farnese),
+**engraved metal** (Mainz, Kugel, Antikythera) and **painted parchment** (the Aratea). The era's
+core identity is the first: **modelling by light and shadow on an unpainted surface, with no
+stars.** A figure is a raised contour, cut by point-chisel, claw-chisel and drill, its volume read
+entirely by how the relief catches raking light — no line as such, only the edge where cut stone
+meets its own shadow. The sphere carries the *only* non-figural marks: a small number of compass-
+drawn great circles, the sole coordinate grid. Composition is a sphere, not a page — no edge, no
+frame, no register bands, and (unlike era I) no attempt to flatten the sky into rows. Perspective
+is sculptural foreshortening only.
 
-The engraved-metal grammar (Mainz, Kugel, Antikythera) supplies what marble cannot: **fine
-incised line** on a hard, reflective ground, and — on the Mainz globe at least — the era's only
-attested example of stars actually being marked at all, since the Farnese sphere has none. This is
-the seam the game's grammar should be built across: **pull the figures and the celestial circles
-from the marble, and pull the stars themselves from the bronze.** Nothing in the record shows a
-Greco-Roman globe with figures *and* stars *and* colour on the same object; synthesizing that is
-this era's one necessary invention, done honestly rather than concealed (see §12).
+The engraved-metal grammar supplies what marble cannot: **fine incised line**, and — on the Mainz
+globe — the era's only attested example of stars actually being marked, since the Farnese sphere
+has none. Build the game's grammar across this seam: **figures and celestial circles from the
+marble, stars from the bronze.** No Greco-Roman object shows figures, stars and colour together;
+synthesizing that is this era's one necessary invention, done openly (see §12).
 
-What is emphatically **not** present: no colour on the primary document (the marble is, and
-always was, unpainted stone — see §3 for the separate question of whether ancient sculpture in
-general was painted), no perspective grid, no register bands, no ground/sky distinction, and no
-captions on the Farnese globe itself — it is a wholly silent object. Lettering for this era has to
-be borrowed from Antikythera, from Roman monumental inscriptions, or from the Aratea, never from
-the atlas figure it sits beside.
+Not present: colour on the primary document (unpainted stone, §3), a perspective grid, register
+bands, ground/sky distinction, or captions on the Farnese globe — it is wholly silent. Lettering
+must be borrowed from Antikythera, Roman inscriptions, or the Aratea, never from the atlas itself.
 
 ## 3. Palette
 
@@ -118,65 +111,55 @@ divided — see §12.
 **Two scripts, both left-to-right — a real point of contrast with era II's Arabic and a real
 saving for the reveal engine, which already assumes LTR.**
 
-- **Greek epigraphic capitals** — the squared, serifless-to-lightly-serifed monumental letterform
-  cut directly into stone with a point and a flat chisel, guided by scored guidelines and a
-  compass for curves. No brush underdrawing is attested for Greek lapidary work the way it is for
-  Roman (below); the mason worked from ruled and scored guide lines. This is the hand for anything
-  "spoken" by the sculpture itself, and for the tiny Antikythera inscriptions, cut at a scale (down
-  to 1.2 mm) that argues for a burin or fine point rather than a mallet-driven chisel at all.
-- **Roman square capitals**, the Trajan's Column hand — attested by Fr. Edward Catich's rubbing
-  studies as a two-stage motion worth animating directly: **first painted, then cut.** A
-  flat, chisel-edged brush lays the letterform at roughly a 20–35° angle to the stroke, producing
-  the characteristic 2:1 thick–thin modulation in one continuous pull; the serif is not a separate
-  mark but the residue of the brush lifting off or starting a stroke, a flick rather than a stop.
-  Only after the brush guide is down does the mason cut a V-section groove along it with hammer and
-  chisel, the two sloped walls of the V catching light as a soft-edged dark line rather than a hard
-  black one. **This is the exact two-stage "wet lead, then commit" motion `penLettering()` already
-  performs for era I's outline-then-flood Egyptian hand** — for this era the flood step becomes the
-  V-cut's shadow gradient rather than a flat fill, and the "brush" pass should visibly precede and
-  slightly overshoot the "chisel" pass.
-- **Greek numerals**: alphabetic (the "Milesian" or Ionic system), not positional. The 24 letters
-  of the alphabet plus three obsolete letters revived purely as numeral signs — digamma/stigma
-  (ϛ, 6), qoppa (ϟ, 90) and sampi (ϡ, 900) — cover 1–9, 10–90, 100–900 by ones, tens and hundreds;
-  a following diacritic mark (a keraia, ʹ) flags a letter-string as a number rather than a word.
-  Attested continuously from the 4th century BCE. Distinctive and legible-as-foreign, good for
-  in-world captions the player is not meant to parse at a glance.
-- **Roman numerals** for the HUD, per the brief — and notably **the shipped game already does
-  this**: `chapters`/`numerals=['I','II','III','IV']` in `src/plates.js` are Roman numerals today.
-  This era does not need to introduce Roman numerals, only to own them properly; keep them for
-  chapter/row/rank display and do not try to force a running score into Roman numeral form — a
-  five-figure score in Roman numerals is unreadable and no ancient accounting practice rendered
-  large sums that way (merchants and treasuries used counting boards/an abacus and wrote totals in
-  words or tallies, not sprawling numeral strings). Set the score itself in plain digits, in the
-  era's own face.
+- **Greek epigraphic capitals** — squared, lightly-serifed monumental letterforms cut directly into
+  stone with a point and a flat chisel, guided by scored guidelines and a compass for curves. No
+  brush underdrawing is attested for Greek lapidary work the way it is for Roman (below); the mason
+  worked straight from ruled guide lines. This is the hand for anything "spoken" by the sculpture,
+  and for the tiny Antikythera inscriptions (down to 1.2 mm), which argue for a burin or fine point
+  rather than a mallet-driven chisel at all.
+- **Roman square capitals**, the Trajan's Column hand — per Fr. Edward Catich's rubbing studies, a
+  two-stage motion worth animating directly: **first painted, then cut.** A flat, chisel-edged
+  brush lays the letterform at roughly 20–35° to the stroke, producing a 2:1 thick–thin modulation
+  in one continuous pull; the serif is not a separate mark but the residue of the brush lifting off
+  or starting a stroke. Only then does the mason cut a V-section groove along the painted guide, the
+  two sloped walls catching light as a soft-edged shadow rather than a hard black line. **This is
+  the same two-stage "wet lead, then commit" motion `penLettering()` already performs for era I's
+  outline-then-flood hand** — here the flood step becomes the V-cut's shadow gradient, and the
+  brush pass should visibly precede and slightly overshoot the chisel pass.
+- **Greek numerals**: alphabetic (the "Milesian"/Ionic system), not positional. The 24 letters of
+  the alphabet plus three obsolete letters revived as numeral signs — stigma (ϛ, 6), qoppa (ϟ, 90),
+  sampi (ϡ, 900) — cover 1–999 in ones, tens and hundreds; a trailing keraia mark (ʹ) flags a
+  letter-string as a number. Attested continuously from the 4th century BCE.
+- **Roman numerals** for the HUD, per the brief — and **the shipped game already does this**:
+  `numerals=['I','II','III','IV']` in `src/plates.js`. Keep them for chapter/row/rank display only;
+  a five-figure score in Roman numerals is unreadable and no ancient accounting practice rendered
+  large sums that way (a counting board or abacus, not sprawling numeral strings, did that work).
+  Set the score itself in plain digits, in the era's own face.
 - **Ptolemy's own magnitude system is the direct ancestor of MAGNITUDINES.** He calls brightness
-  **μέγεθος** (*megethos*, literally "size" or "greatness" — the root of the English word
-  "magnitude" itself), rating each star from `α′` (1st, brightest) to `ϛ′` (6th, faintest) using
-  the Greek numeral letters above, not the modern Arabic numerals used today. For anomalous stars
-  he adds **νεφελοειδής** (*nephelo-eidēs*, "cloud-shaped" — the word he uses seven times in the
-  *Almagest*, e.g. for Praesepe and the Perseus Double Cluster, both catalogue objects inherited
-  from Hipparchus). A per-era MAGNITUDINES legend for this plate should read `α′ β′ γ′ δ′ ε′ ϛ′`
-  with `νεφ.` for the nebulous rank, rather than `1–6`.
+  **μέγεθος** (*megethos*, "size/greatness" — the root of the English word "magnitude"), ranking
+  each star `α′` (1st, brightest) to `ϛ′` (6th, faintest) in Greek numeral letters, not Arabic
+  digits. For anomalous stars he adds **νεφελοειδής** (*nephelo-eidēs*, "cloud-shaped," used seven
+  times in the *Almagest*, e.g. for Praesepe and the Perseus Double Cluster, both inherited from
+  Hipparchus). This era's MAGNITUDINES legend should read `α′ β′ γ′ δ′ ε′ ϛ′` with `νεφ.` for the
+  nebulous rank, not `1–6`.
 
 **Typefaces**, all OFL and verified this session:
 
 | Face | Use | Licence | Family/Unicode |
 |---|---|---|---|
-| **Cinzel** | Roman capitals — HUD, chapter titles, the frame's Latin | OFL 1.1, Google Fonts | Latin, explicitly designed on 1st-c. Roman inscriptional proportion |
-| **GFS Didot** | Greek "lapidary" display — high-contrast letterforms echo an engraved/chiselled feel | OFL, Greek Font Society | Greek and Coptic (U+0370–03FF); no polytonic accent set — plain capitals only |
-| **GFS Porson** | Greek body text — full classical/patristic polytonic Greek, needed for any quoted line from Aratus, Hipparchus or Ptolemy | OFL, Greek Font Society | Greek and Coptic + Greek Extended (U+1F00–1FFF) for accents/breathings |
-| **Noto Serif** | Fallback/safety net only, not a primary face | OFL, Google Fonts | broad Latin+Greek coverage, used only to catch a glyph the two GFS faces lack |
+| **Cinzel** | Roman capitals — HUD, chapter titles, frame Latin | OFL 1.1, Google Fonts | Latin, explicitly built on 1st-c. Roman inscriptional proportion |
+| **GFS Didot** | Greek display — high-contrast letterforms echo an engraved feel | OFL, Greek Font Society | Greek and Coptic (U+0370–03FF); plain capitals, no polytonic set |
+| **GFS Porson** | Greek body text — full polytonic Greek for quoted lines | OFL, Greek Font Society | Greek and Coptic + Greek Extended (U+1F00–1FFF) |
+| **Noto Serif** | Fallback only, not primary | OFL, Google Fonts | broad Latin+Greek, catches gaps only |
 
 Trajan itself (the commercial digitisation of the column's hand) is **not** free and must not be
-used or imitated by name; Cinzel is the correct free substitute and is explicitly built for this
-purpose. Neither Greek face needs contextual shaping — Greek, polytonic or not, sets one glyph per
-Unicode codepoint with no joining behaviour, so `textAlongArc` and the `glyphs.mjs`/fontkit
-pipeline work on it exactly as they do on Latin; the only new cost is that a polytonic accent is
-usually its own precomposed codepoint (e.g. `᾿`, `῎`), so the subsetting pass in `npm run fonts`
-must be run against whatever accented forms actually appear in the captions chosen, not assumed
-from the bare alphabet. If quoting only proper names and short mottos (as era II does with Arabic),
-GFS Porson's polytonic set can likely be cut hard — well under 100 glyphs — the same way the Fell
-faces were cut to 110.
+used or imitated by name; Cinzel is the correct free substitute and is built for this purpose.
+Neither Greek face needs contextual shaping — one glyph per codepoint, no joining — so
+`textAlongArc` and the `glyphs.mjs`/fontkit pipeline work on it exactly as on Latin; the only new
+cost is that a polytonic accent is usually its own precomposed codepoint (e.g. `᾿`, `῎`), so
+`npm run fonts` must subset against whatever accented forms actually appear in the chosen captions.
+Quoting only proper names and short mottos (as era II does with Arabic) should cut GFS Porson's
+set to well under 100 glyphs, the same way the Fell faces were cut to 110.
 
 ## 5. Names for the game's things
 
@@ -280,30 +263,26 @@ ladder later adopts option B or C.
 Every family is modelled by relief and drill-work, not colour or line — this is the one grammar
 rule that must hold for all seven, or the plate stops reading as this era.
 
-- **Ocean** — the calmest, most highly worked surface: a broad, unbroken low dome, abrasive-
-  polished to a soft sheen the way flesh is finished on the Farnese figure itself, with no drill
-  texture at all. Difference from a plain sphere is carried entirely by a faint burnished
-  highlight, not by any mark.
-- **Crater** — a rasped, pitted ground: shallow point-chisel stipple across the whole face for fine
-  texture, with a small number of deeper drilled punctures (true running-drill holes, round and
-  shadow-pooling) for the large craters, each catching hard black shadow at one edge under raking
-  light.
+- **Ocean** — the calmest surface: a broad, unbroken low dome, abrasive-polished to a soft sheen
+  the way flesh is finished on the Farnese figure, with no drill texture; a plain sphere reads only
+  by a faint burnished highlight.
+- **Crater** — a rasped, pitted ground: shallow point-chisel stipple for fine texture, a few deeper
+  drilled punctures (true running-drill holes) for large craters, each pooling hard shadow at one
+  edge under raking light.
 - **Ringed** — concentric low-relief bands cut with a flat chisel guided by compass and straight-
-  edge: literally the same technique that cuts the Farnese globe's own celestial circles, reused as
-  the family's defining mark rather than invented fresh.
-- **Ice** — left almost entirely smooth and highly burnished, cold read purely as unworked, mirror-
-  bright stone; a few fine straight comb-lines (the same fine-toothed claw-chisel stroke used for
-  drapery folds) suggest facets without ever breaking the polish.
-- **Dune** — parallel raking strokes from a coarse claw chisel, left deliberately unsmoothed,
-  their ridged texture reading as wind-ripple from a middle distance the way tool-marks read as
-  fabric folds elsewhere on the same statue.
-- **Volcanic** — the roughest family: broken, semi-worked stone left at the rustic finish (the
-  surface a mason leaves before the final smoothing pass), deep undercut drill-work at a few points
-  standing for vents, the contrast between raw and smoothed patches doing the work colour would do
-  elsewhere.
-- **Storm** — the most heavily drilled family, borrowing the deep, close-set undercut channels used
-  for a Roman portrait's curled hair (the Antonine "drill-work" hair convention) to produce a
-  turbulent, light-swallowing texture with no single edge or band.
+  edge: literally the technique that cuts the globe's own celestial circles, reused as the family's
+  defining mark.
+- **Ice** — left almost entirely smooth and burnished, cold read as unworked mirror-bright stone; a
+  few fine comb-lines (the claw-chisel stroke used for drapery folds) suggest facets without
+  breaking the polish.
+- **Dune** — parallel raking strokes from a coarse claw chisel, left deliberately unsmoothed, their
+  ridged texture reading as wind-ripple the way tool-marks read as fabric elsewhere on the statue.
+- **Volcanic** — the roughest family: broken, rustic-finish stone (the surface a mason leaves
+  before final smoothing), deep undercut drill-work standing for vents, raw-vs-smoothed contrast
+  doing the work colour would do elsewhere.
+- **Storm** — the most heavily drilled family, borrowing the deep undercut channels of Roman
+  portrait "drill-work" curled hair to produce a turbulent, light-swallowing texture with no single
+  edge.
 
 ## 9. Chart furniture, frame, HUD
 
@@ -352,75 +331,61 @@ Latin (`Delineavit`, `Ex libris`).
 ## 12. Risks and open questions
 
 - **Answering `OVERVIEW.md`'s deferral directly.** The paragraph that shelved this era gives two
-  reasons: the *Almagest*'s catalogue is textual, and "the constellation tradition it fixes is the
-  one era II and era III both already inherit." The first is true and this file has kept the
-  *Almagest* strictly to §4 and §5 rather than the grammar. The second undersells the case: sharing
-  a constellation *tradition* (which figure is Orion, which is the Swan) is not the same as sharing
-  a *grammar*, and this era's grammar — unpainted stone relief, modelled by drill and chisel-cut
-  shadow, with celestial circles as the only coordinate marks and, on the primary document, no
-  stars at all — has no overlap whatsoever with era II's gold-on-paper flat colour or era III's
-  fine engraved cross-hatched line. It duplicates a neighbour's *content* (the 48 figures) exactly
-  as every era after era I necessarily will, and duplicates no neighbour's *look*. Read against
-  rule 3 rather than rule 2, it clears the bar the other deferred candidates (Babylonian, no image
-  at all; Dunhuang, contemporary with era II) do not.
-- **The three-grammar problem is real and unresolved.** No single surviving object gives this era
-  figures, stars and colour together. Building it means deliberately compositing across the marble
-  (figures, circles, no stars, no colour), the bronze globes (stars, fine line, no colour), and the
-  Aratea (colour, gold, but a wholly different medium seven centuries later). That is a bigger
-  synthesis than eras I or II require, where one document does almost all the work. Spike a single
-  test node early to see whether marble-relief and manuscript-gold genuinely read as one plate, or
-  whether the era needs to split into two selectable variants (a "sculptural" default and a "manu-
-  script" alternate) the way night/paper already split era III.
+  reasons: the *Almagest* is textual, and "the constellation tradition it fixes is the one era II
+  and era III both already inherit." The first is true and this file keeps the *Almagest* strictly
+  to §4/§5, never the grammar. The second undersells the case: sharing a constellation *tradition*
+  (which figure is Orion) is not sharing a *grammar*, and this era's — unpainted stone relief,
+  modelled by drill and chisel-cut shadow, celestial circles as the only coordinate marks, no
+  stars at all on the primary document — overlaps neither era II's gold-on-paper flat colour nor
+  era III's engraved cross-hatched line. It duplicates a neighbour's *content* exactly as every era
+  after era I must, and duplicates no neighbour's *look*. Read against rule 3 rather than rule 2, it
+  clears the bar the other deferred candidates (Babylonian, no image at all; Dunhuang, contemporary
+  with era II) do not.
+- **The three-grammar problem is real and unresolved.** No single object gives this era figures,
+  stars and colour together — building it means compositing marble (figures, circles, no stars, no
+  colour), the bronze globes (stars, fine line, no colour) and the Aratea (colour, gold, a wholly
+  different medium centuries later). Spike a single test node early to see whether marble-relief
+  and manuscript-gold genuinely read as one plate, or whether the era needs two selectable variants
+  the way night/paper already split era III.
 - **Missing stars on the primary document is the sharpest engine mismatch.** Every other era's
-  document at least implies where stars go. The Farnese globe's total absence of stars is not a
-  gap to fill quietly — it should probably be the plate's own visual joke or reveal, e.g. stars
-  appearing only as small drilled points cut *through* the relief at capture, as if the game itself
-  is the missing catalogue.
-- **Kugel globe is under-attested from what this session could verify.** Do not draw from it
-  directly without a further, dedicated source check (a museum or scholarly page giving material,
-  dimensions and date) — everything gathered here is secondhand ("one of the three ancient
-  globes") with no primary description confirmed.
+  document at least implies where stars go; the Farnese globe's total absence of them is not a gap
+  to fill quietly — it should probably be the plate's own reveal, e.g. stars appearing only as
+  small drilled points cut *through* the relief at capture.
+- **Kugel globe is under-attested from what this session could verify** — do not draw from it
+  directly without a further, dedicated source check; everything gathered here is secondhand.
 - **The wind-head lineage to era III (§7, §9) is plausible but not proven** as a direct citation
-  chain; it rests on Vitruvius's description of the Tower of the Winds being known to Renaissance
-  mapmakers, which is well attested in general architectural history but was not traced to a
-  specific era-III source this session.
-- **Greek shaping is cheap, unlike era II's Arabic** — no joining, one glyph per codepoint — but
-  the polytonic accent set is a real, if small, addition to `glyphs.mjs`'s character inventory and
-  should be subset from the *actual* captions chosen, the same discipline `LETTERING.md` already
-  recommends.
+  chain; it rests on Vitruvius's Tower-of-the-Winds description being known to Renaissance
+  mapmakers, well attested generally but not traced to a specific era-III source this session.
+- **Greek shaping is cheap, unlike era II's Arabic** — no joining, one glyph per codepoint — but the
+  polytonic accent set is a real addition to `glyphs.mjs`'s inventory and should be subset from the
+  *actual* captions chosen, the discipline `LETTERING.md` already recommends.
 - **Polychromy caveat, stated precisely so the game doesn't overcorrect:** ancient marble
-  *sculpture in general* — cult statues, architectural relief, funerary monuments — was routinely
-  painted, and the "pure white marble" image is a well-documented post-Renaissance misreading
-  (Winckelmann's influence chief among the causes). But no source found here claims the Farnese
-  Atlas *specifically* carried paint; treat that absence of evidence as real, and treat "how the
-  game shows the marble" as a genuine choice rather than a correction of a known fact: an unpainted
-  stone plate (this file's default, §2–3) is the historically supportable option, and a painted
-  variant is speculative-but-plausible dressing, not a restoration.
+  *sculpture in general* was routinely painted, and "pure white marble" is a well-documented
+  post-Renaissance misreading (Winckelmann chief among the causes). But no source here claims the
+  Farnese Atlas *specifically* carried paint — an unpainted stone plate (this file's default) is
+  the historically supportable option, and a painted variant is speculative dressing, not
+  restoration.
 
 ## 13. Sources
 
 - [Farnese Atlas — Wikipedia](https://en.wikipedia.org/wiki/Farnese_Atlas)
 - [The Farnese Atlas — The Linda Hall Library](https://www.lindahall.org/about/news/scientist-of-the-day/the-farnese-atlas/)
 - [The epoch of the constellations on the Farnese Atlas (JHA, LSU host copy)](https://www.phys.lsu.edu/farnese/JHAFarneseProofs.htm)
-- [Discovery of the lost star catalog of Hipparchus — press text](https://www.phys.lsu.edu/farnese/pressFarnesetextonly.pdf)
 - [Discrepancies between Hipparchus and the Farnese Globe (Dennis Duke)](https://people.sc.fsu.edu/~dduke/farnese4.pdf)
-- [Farnese Atlas — Wikipedia, "Farnese Globe" redirect](https://en.wikipedia.org/wiki/Farnese_Globe)
 - [Historiographic and numerical notes on the Atlante Farnese (academia.edu)](https://www.academia.edu/4681572/Historiographic_and_numerical_notes_on_the_Atlante_Farnese_and_its_celestial_sphere)
-- [Roman celestial globe — Museo Galileo / brunelleschi.imss.fi.it](https://brunelleschi.imss.fi.it/galileopalazzostrozzi/object/RomanCelestialGlobe.html)
+- [Roman celestial globe — Museo Galileo](https://brunelleschi.imss.fi.it/galileopalazzostrozzi/object/RomanCelestialGlobe.html)
 - [Spheres — Galerie Kugel](https://www.galeriekugel.com/en/expositions/spheres/)
-- [A Model of the Cosmos in the ancient Greek Antikythera Mechanism — Nature Scientific Reports](https://www.nature.com/articles/s41598-021-84310-w)
+- [A Model of the Cosmos in the Antikythera Mechanism — Nature Scientific Reports](https://www.nature.com/articles/s41598-021-84310-w)
 - [The Front Dial and Parapegma Inscriptions — Antikythera Mechanism Research Project](http://www.antikythera-mechanism.gr/node/748)
 - [Antikythera Mechanism was an astronomy text — The History Blog](http://www.thehistoryblog.com/archives/42683)
 - [Leiden Aratea — History of Information](https://www.historyofinformation.com/detail.php?id=4364)
 - [Germanicus, Aratea (Leiden, Voss. lat. Q 79) — Wikipedia](https://en.wikipedia.org/wiki/Germanicus,_Aratea_(Leiden,_Universiteitsbibliotheek,_Voss._lat._Q_79))
-- [Aratea, Leiden Ms. Voss. Lat. Q. 79 — Stanford Medieval Collections exhibit](https://exhibits.stanford.edu/medieval/catalog/112-25078)
 - [The Leiden Aratea: Ancient Constellations in a Medieval Manuscript — Getty](https://www.getty.edu/publications/virtuallibrary/0892361425.html)
 - [Star Tales — Ptolemy's Almagest (Ian Ridpath)](http://www.ianridpath.com/startales/almagest.html)
 - [Magnitude systems in old star catalogues (arXiv)](https://arxiv.org/pdf/astro-ph/0309322)
 - [Greek Font Society — Wikipedia](https://en.wikipedia.org/wiki/Greek_Font_Society)
 - [CTAN: the GFS font collection](https://ctan.org/pkg/gfs?lang=en)
 - [Tower of the Winds — Wikipedia](https://en.wikipedia.org/wiki/Tower_of_the_Winds)
-- [Tower of the Winds: the world's oldest "weather station" — Greek News Agenda](https://www.greeknewsagenda.gr/aerides/)
 - [ASTRA PLANETA — Greek gods of the planet-stars — Theoi.com](https://www.theoi.com/Titan/AstraPlaneta.html)
 - [Dendera zodiac — Wikipedia](https://en.wikipedia.org/wiki/Dendera_zodiac)
 - [The Trajan Inscription — codex99](http://www.codex99.com/typography/21.html)
@@ -428,10 +393,8 @@ Latin (`Delineavit`, `Ex libris`).
 - [Cinzel — Google Fonts](https://fonts.google.com/specimen/Cinzel)
 - [Classical White Marble Sculptures Were Actually Painted — My Modern Met](https://mymodernmet.com/classical-greek-polychrome-sculpture/)
 - [Greek Numerals — MathWorld](https://mathworld.wolfram.com/GreekNumerals.html)
-- [Numerals — Nick Nicholas (opoudjis.net)](https://www.opoudjis.net/unicode/numerals.html)
 - [Salary in ancient Rome / Edict of Diocletian — Imperium Romanum](https://imperiumromanum.pl/en/roman-society/salary-in-ancient-rome/)
 - [Milk of Hera — Wikipedia](https://en.wikipedia.org/wiki/Milk_of_Hera)
-- [The Greek myth that gave the Milky Way its name — Greek Reporter](https://greekreporter.com/2026/02/18/greek-myth-milky-way-name/)
 - [Charybdis — Theoi.com](https://www.theoi.com/Pontios/Kharybdis.html)
 - [The currency of ancient Greece: drachmas and obols — The Archaeologist](https://www.thearchaeologist.org/blog/the-currency-of-ancient-greece-drachmas-and-obols)
 - [Hipparchus's Star Catalogues — arXiv](https://arxiv.org/pdf/2410.19228)

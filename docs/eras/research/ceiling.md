@@ -54,19 +54,17 @@ re-verified this session.
   plate rather than being folded into "the diagonal tables."
 - **The Book of Nut** ("The Fundamentals of the Course of the Stars"). Surviving copies: the
   cenotaph of Seti I at the **Osireion, Abydos**, and (abbreviated) the tomb of **Ramesses IV**,
-  both New Kingdom. The sky goddess **Nut** is shown as a naked woman arched over the earth,
-  swallowing the sun at her mouth each evening and giving birth to it again at dawn; the god
-  **Shu** stands or kneels beneath her, physically holding her apart from **Geb**, the earth.
-  Decans and star groups are annotated directly onto her body — the figure *is* the diagram, not
-  a picture next to one.
+  both New Kingdom. The sky goddess **Nut** is a naked woman arched over the earth, swallowing
+  the sun at her mouth each evening and birthing it again at dawn; the god **Shu** kneels beneath
+  her, holding her apart from **Geb**, the earth. Decans and stars are annotated onto her body —
+  the figure *is* the diagram, not a picture beside one.
 - **The Dendera zodiac** (Ptolemaic, c. 50 BCE; Louvre inv. D 38 / E 13482 / CM 464) — a
-  sandstone bas-relief ceiling from the pronaos of the Osiris chapel on the roof of the Temple
-  of Hathor at Dendera. Circular, centred on the pole: an outer ring of the 36 decans, an inner
-  wheel of the (Babylonian-derived, imported) 12 zodiacal signs, the whole disc carried by eight
-  supporting figures — four women and four falcon-headed gods — at 45° intervals. Confirmed as
-  the existing file describes it: much later, already contaminated by Greek/Babylonian
-  zodiacal signs, gorgeous, and **not** the grammar this era should be built from — use it as one
-  accent chapter plate, exactly as the existing file already recommends.
+  sandstone bas-relief from the Osiris chapel roof of the Temple of Hathor at Dendera. Circular,
+  centred on the pole: an outer ring of 36 decans, an inner wheel of the (Babylonian-derived,
+  imported) 12 zodiacal signs, the disc carried by eight figures — four women, four
+  falcon-headed gods — at 45° intervals. Confirmed as the existing file describes it: later,
+  already contaminated by Greek/Babylonian signs, gorgeous, and **not** this era's grammar — one
+  accent chapter plate, as the existing file already recommends.
 
 ## 2. The grammar
 
@@ -78,21 +76,19 @@ columns of text and figures; figures stand in the canonical composite view (fron
 profile head and legs, frontal eye). Bodies are flat coloured discs or upright figures with a
 heavy black keyline, never spheres, never shaded toward a limb.
 
-Two grammars actually coexist in the record, and the existing file only names one of them:
+Two grammars actually coexist in the record, and the existing file only names one:
 
 1. **The figure-register grammar** (Senenmut, Book of Nut): deities and animals stand for
    constellations, drawn at a fixed scale unrelated to the sky's own geometry, captioned in
    hieroglyph columns beside or on them.
-2. **The table grammar** (diagonal star clocks, and — differently — the Ramesside star clocks):
-   no figures at all, or one figure serving only as a coordinate origin; the chart is literally
-   rows and columns. This is the grammar the game's own node lattice already resembles, and it
-   is the strongest available argument that "Egypt" and "a grid of nodes" are not actually in
-   tension — the tension is specifically with *perspective and depth*, not with structure.
+2. **The table grammar** (diagonal star clocks, and differently the Ramesside star clocks): no
+   figures at all, or one figure as a coordinate origin; the chart is literally rows and columns
+   — the grammar the game's own node lattice already resembles, and the strongest argument that
+   "Egypt" and "a grid of nodes" are not in tension. The tension is with *depth*, not structure.
 
-Emphatically not present anywhere in the record: modelling of any kind, foreshortening, a
-horizon line treated as anything but a register boundary, or (outside Dendera, which is late and
-excluded from the grammar) circular/radial composition — the native Egyptian instinct is
-rectangular registers and columns, not a wheel. A wheel is the *imported* solution.
+Emphatically not present anywhere: modelling of any kind, foreshortening, a horizon line treated
+as anything but a register boundary, or (outside Dendera, excluded from the grammar) circular
+composition — the native instinct is rectangular registers and columns. A wheel is imported.
 
 ## 3. Palette
 
@@ -242,65 +238,54 @@ schedule change — the safe default if the dividend is judged ahead of that ope
 
 Following `DANGERS.md`'s existing table (**option A: depiction only, gameplay identical**):
 
-- **Attractor — Apep.** The serpent that ambushes the sun god's bark each night in the
-  underworld; not named until the Middle Kingdom (Coffin Texts), fully developed by the New
-  Kingdom Book of the Dead, where Set spears it nightly and it is never permanently destroyed —
-  a recurring, cyclical threat, which maps unusually well onto a hazard the player survives
-  rather than permanently defeats. Draw coiled flat within a register, as the tradition already
-  does.
-- **Repulsor — the Eye of Ra.** In the Destruction of Mankind episode (Book of the Heavenly
-  Cow), Ra sends his Eye out as **Sekhmet**, who rampages destructively until placated; the same
-  Eye elsewhere is simply the scorching solar disc with radiating uraei. Both readings support a
-  "pushes outward, small lethal core" hazard: the disc itself is survivable at range, dangerous
-  only close in — that is Sekhmet before she is calmed.
-- **Crosswind — Shu.** God of air, mythologically the one physically holding Nut and Geb apart —
-  drawn kneeling or standing with raised arms in the Book of Nut vignette itself, which is a gift
-  for a non-lethal "holds things at a steady distance" hazard: the myth already describes exactly
-  that function.
-- **Obscurer — Nun.** The formless waters that existed before creation, everywhere and nowhere in
-  particular — the natural fit for an inert fog/nebula patch that hides rather than harms.
+- **Attractor — Apep.** Ambushes the sun god's bark nightly in the underworld; not named until
+  the Middle Kingdom (Coffin Texts), fully developed in the New Kingdom Book of the Dead, where
+  Set spears it nightly and it is never permanently destroyed — a recurring threat the player
+  survives rather than defeats. Draw coiled flat within a register.
+- **Repulsor — the Eye of Ra.** In the Destruction of Mankind (Book of the Heavenly Cow), Ra
+  sends his Eye out as **Sekhmet**, who rampages until placated; elsewhere the Eye is simply the
+  scorching solar disc with radiating uraei. Either reading supports "pushes outward, small
+  lethal core": survivable at range, dangerous only close in.
+- **Crosswind — Shu.** God of air, the one physically holding Nut and Geb apart — drawn kneeling
+  with raised arms in the Book of Nut vignette, a gift for a non-lethal "holds things at a
+  steady distance" hazard: the myth already describes that function.
+- **Obscurer — Nun.** The formless waters before creation, everywhere and nowhere — the natural
+  fit for an inert fog patch that hides rather than harms.
 
 ## 8. The seven families, in this era's grammar
 
-- **Ocean:** a flat mid-blue disc (Egyptian blue wash), a single wave-line hatching near the rim
-  standing in for the *mw* (water) sign repeated in miniature — no gradient, no reflection.
-- **Crater:** the ochre disc with small black dot-and-ring marks scattered irregularly across it,
-  the same shorthand tomb painters used for animal hide spots or stone texture — difference
-  carried entirely by mark density, not by any implied light or shadow.
-- **Ringed:** the winged sun-disc silhouette (*bḥdty*) flattened into a circle-with-a-horizontal-
-  band motif — two raised wing-shapes either side read, at this scale, as a ring.
+- **Ocean:** a flat mid-blue disc (Egyptian blue wash), a wave-line hatch near the rim standing
+  in for the *mw* (water) sign in miniature — no gradient, no reflection.
+- **Crater:** the ochre disc with small black dot-and-ring marks scattered irregularly, the same
+  shorthand tomb painters used for hide spots or stone texture — difference carried by mark
+  density, never by implied light.
+- **Ringed:** the winged sun-disc silhouette (*bḥdty*) flattened into a circle with a horizontal
+  band — two raised wing-shapes either side read, at this scale, as a ring.
 - **Ice:** a huntite-white disc with a thin black keyline and nothing else — the plainest family,
-  carrying its difference by being the one pale disc among mostly ochre and blue neighbours.
-- **Dune:** a red-ochre (*dšrt*) disc, unornamented, sometimes with a thin black wave-hatch
-  suggesting drift the way desert sand is occasionally suggested at register edges.
-- **Volcanic:** the same red family recoloured toward Sekhmet's fire — a rubricated red disc with
-  a small hatched "flame" tuft at one edge, echoing the uraeus (rearing cobra) that always marks
-  a dangerous/fiery divine presence in this period's art.
+  its difference simply being the one pale disc among ochre and blue neighbours.
+- **Dune:** a red-ochre (*dšrt*) disc, unornamented, sometimes a thin wave-hatch suggesting
+  drift, as desert sand is occasionally shown at register edges.
+- **Volcanic:** the same red recoloured toward Sekhmet's fire — a rubricated disc with a small
+  hatched "flame" tuft, echoing the uraeus that marks a dangerous divine presence in this period.
 - **Storm:** a hatched, turbulent-edged disc in a darker tone, the hatching irregular rather than
-  the volcanic family's single tuft — the closest this grammar gets to implying motion, which it
-  does only by breaking its own flatness convention slightly, the way wind or chaos (Set's own
-  domain) is occasionally shown as disordered linework where everything else is clean.
+  volcanic's single tuft — the closest this grammar gets to implying motion, by breaking its own
+  flatness slightly, as chaos (Set's domain) is occasionally shown as disordered linework.
 
 ## 9. Chart furniture, frame, HUD
 
 A tomb ceiling has no frame in the atlas sense — its boundary is the room's own architecture, and
-its "furniture" is the register grid itself (vertical column-dividers, horizontal register
-rules) plus hieroglyphic captions running beside every figure and column of text. Two real
-devices are worth stealing directly for the HUD:
+its "furniture" is the register grid itself (column-dividers, register rules) plus hieroglyphic
+captions beside every figure. Two real devices are worth stealing for the HUD:
 
 - The **cartouche** (*shenu*, "that which encircles") — the oval ring around a royal name — is a
-  genuine, recognisable, structurally simple Egyptian UI element already: the natural home for a
-  player's initials/best-score readout, exactly where `Delineavit` puts the engraver's credit in
-  era III.
-- The **civil calendar itself** — season (*Akhet*/*Peret*/*Shemu*), month number, day number —
-  is a real, attested dating formula and a much better fit for the daily plate's date line than
-  a generic "day N" HUD readout: `Tabula diei` becomes something closer to a regnal-year/season/
-  month/day cartouche.
-- Rim captions become **decan-name columns** running beside the main orbit, exactly as decan
-  names run beside the Senenmut ceiling's registers.
-- There is no colophon or printer's mark in the modern sense; the closest equivalent is a scribe
-  naming himself in a tomb's dedication text, which is a weaker fit than era III's imprint line
-  and probably should not be forced into an equivalent.
+  genuine, structurally simple Egyptian UI element: the natural home for a player's
+  initials/best-score readout, exactly where `Delineavit` puts the credit in era III.
+- The **civil calendar** — season (*Akhet*/*Peret*/*Shemu*), month, day — is a real dating
+  formula and a better fit for the daily plate's date line than a generic "day N": `Tabula diei`
+  becomes closer to a regnal-year/season/month/day cartouche.
+- Rim captions become **decan-name columns** beside the main orbit, as on the Senenmut ceiling.
+- There is no colophon in the modern sense; a scribe naming himself in a dedication text is the
+  closest equivalent, and a weaker fit than era III's imprint line — probably not worth forcing.
 
 ## 10. Four chapter plates
 
@@ -338,71 +323,42 @@ file's own caution.)
 ## 12. Risks and open questions
 
 - **The core risk stands as the existing file states it:** a flat, unmodelled, register-based
-  sky is at genuine odds with a game built on depth, motion and speed. Nothing in this research
-  removes that risk; the Ramesside star clock softens it slightly by showing the era does have a
-  native grid grammar, but grid ≠ depth, and the game's bodies, hazards and lensing effects are
-  still going to want to imply volume this era's own documents never do.
+  sky is at genuine odds with a game built on depth, motion and speed. The Ramesside star clock
+  softens it slightly (the era does have a native grid grammar) but grid ≠ depth, and the game's
+  bodies, hazards and lensing effects still want to imply volume this era's documents never do.
 - **Quadrat stacking is a real, unsolved engineering cost**, not a font problem — see §4. Budget
-  it as new layout work, specific to this era, before committing to hieroglyphic captions.
-- **Hieratic is a dead end for the caption pipeline** — confirmed, not just suspected. Don't
-  spike it; the existing file didn't claim otherwise, but it's worth stating outright so nobody
-  tries.
+  it as new layout work before committing to hieroglyphic captions.
+- **Hieratic is a dead end for the caption pipeline** — confirmed, not just suspected.
 - **The currency rule twist (§6) is a "B" not an "A"** in `DANGERS.md`'s taxonomy — it changes
-  the run's economy, not just its depiction, and needs the same sign-off any other economy-
-  changing era proposal would, or it should ship as the no-twist reskin instead.
-- **The northern panel's seasonal quadrant layout is weakly sourced** (§1) — several
-  aggregator pages repeat the same figures but I could not reach a museum or journal page
-  directly (WebFetch was blocked all session). Before an artist keys this ceiling as literally
-  as a chapter plate deserves, someone should get eyes on Wilkinson's facsimile or the Neugebauer
-  & Parker plates directly, not just secondary paraphrase.
-- **Beyond Sah, Sopdet and Meskhetiu, decan-to-modern-constellation identification is
-  genuinely disputed** among Egyptologists — do not invent confident mappings for the other ~33
-  decans; where a family needs a specific decan figure, either pick from the three certain ones
-  or invent a new, clearly-fictional decan in the spirit of the list rather than mis-attribute an
-  uncertain one.
-- **A good number of the game-specific vocabulary items in §5 are extensions of attested general
-  words, or recalled-not-reverified dictionary entries** — flagged individually in the table.
-  None of them are load-bearing for anything except flavour text, so the risk is reputational
-  (a scholar spotting a shaky gloss) rather than architectural.
-- **WebFetch was unavailable for the whole session** — worth flagging to whoever reviews this,
-  since every citation below is a search-snippet paraphrase, not a page this agent actually read
-  end to end.
+  the run's economy, not just its depiction, and needs the same sign-off, or should ship as the
+  no-twist reskin instead.
+- **The northern panel's seasonal quadrant layout is weakly sourced** (§1) — several aggregator
+  pages repeat the same figures but no museum or journal page was reachable this session. Before
+  an artist keys this ceiling literally, get eyes on Wilkinson's facsimile or the Neugebauer &
+  Parker plates directly.
+- **Beyond Sah, Sopdet and Meskhetiu, decan-to-modern-constellation identification is genuinely
+  disputed** among Egyptologists — don't invent confident mappings for the other ~33 decans;
+  pick from the three certain ones, or invent a new, clearly-fictional decan in the list's
+  spirit, rather than mis-attribute an uncertain one.
+- **Several §5 vocabulary items are extensions of attested general words, or
+  recalled-not-reverified dictionary entries** — flagged individually. None are load-bearing
+  beyond flavour text; the risk is reputational, not architectural.
+- **`WebFetch` was unavailable all session** — every citation below is a search-snippet
+  paraphrase, not a page this agent read end to end.
 
 ## 13. Sources
 
-- https://www.metmuseum.org/art/collection/search/544566 — Wilkinson facsimile, dimensions, date
-- https://en.wikipedia.org/wiki/Astronomical_ceiling_of_Senenmut's_Tomb — ceiling layout, panels
-- https://commons.wikimedia.org/wiki/File:Astronomical_Ceiling,_Tomb_of_Senenmut_MET_DT207429.jpg
-- https://www.researchgate.net/figure/The-southern-part-of-the-astronomical-ceiling-in-Senenmuts-tomb-TT-353_fig1_1906335
-- https://journals.sagepub.com/doi/abs/10.1177/002182861404500204 — diagonal star tables overview
-- https://aea.physics.mcmaster.ca/index.php/en/reference/bibliography — Neugebauer & Parker, EAT
-- https://www.scientificamerican.com/article/decoding-the-star-charts-of-ancient-egypt/
-- https://perimeterinstitute.ca/news/can-data-science-help-decode-3100-year-old-ramesside-star-clocks
-- https://en.wikipedia.org/wiki/Ramesside_star_clocks
-- https://www.researchgate.net/figure/Hour-watcher-with-a-star-chart-from-the-tomb-of-Ramesses-VI-12th-century-BC-Meridian_fig5_328303471
-- https://en.wikipedia.org/wiki/Book_of_Nut
-- https://en.wikipedia.org/wiki/Dendera_zodiac
-- https://egypt-museum.com/the-dendera-zodiac/
-- https://en.wikipedia.org/wiki/Egyptian_blue
-- https://www.brooklynmuseum.org/stories/ancient-egyptian-pigment-color-analysis
-- https://en.wikipedia.org/wiki/Egyptian_Hieroglyphs_(Unicode_block)
-- https://en.wikipedia.org/wiki/Egyptian_Hieroglyph_Format_Controls
-- https://fonts.google.com/noto/specimen/Noto+Sans+Egyptian+Hieroglyphs
-- https://notofonts.github.io/egyptian-hieroglyphs/
-- https://en.wikipedia.org/wiki/Hieratic
-- https://www.ucl.ac.uk/museums-static/digitalegypt/writing/hieratic.html
-- https://en.wikipedia.org/wiki/Egyptian_numerals
-- https://en.wikipedia.org/wiki/Deben_(unit)
-- https://www.worldhistory.org/article/1089/the-first-labor-strike-in-history/
-- https://en.wikipedia.org/wiki/Deir_el-Medina_strikes
-- https://libcom.org/article/records-strike-egypt-under-ramses-iii-c1157bce
-- https://ancientegyptonline.co.uk/apep/
-- https://ancientegyptonline.co.uk/nun/
-- https://egyptmythology.com/before-the-sun-the-primordial-waters-of-nun/
-- https://en.wikipedia.org/wiki/Ikhemu-sek
-- https://en.wiktionary.org/wiki/sb%EA%9C%A3 — *sba*, star
-- https://en.wikipedia.org/wiki/Sky_(hieroglyph) — *pt*, sky
-- https://ase.exopla.net/index.php/Reret — Reret/Isis-Djamet identification
-- https://isiopolis.com/2025/08/03/goddess-isis-the-mooring-post-of-flint/
-- https://www.ucl.ac.uk/museums-static/digitalegypt/art/artgrids.html — 18-square grid canon
-- https://www.memphis.edu/egypt/exhibit/palette.php — scribal palette, reed brush
+- Senenmut ceiling, Wilkinson facsimile, dimensions: https://www.metmuseum.org/art/collection/search/544566 , https://en.wikipedia.org/wiki/Astronomical_ceiling_of_Senenmut's_Tomb , https://commons.wikimedia.org/wiki/File:Astronomical_Ceiling,_Tomb_of_Senenmut_MET_DT207429.jpg , https://www.researchgate.net/figure/The-southern-part-of-the-astronomical-ceiling-in-Senenmuts-tomb-TT-353_fig1_1906335
+- Diagonal star tables, Neugebauer & Parker: https://journals.sagepub.com/doi/abs/10.1177/002182861404500204 , https://aea.physics.mcmaster.ca/index.php/en/reference/bibliography , https://www.scientificamerican.com/article/decoding-the-star-charts-of-ancient-egypt/
+- Ramesside star clocks: https://perimeterinstitute.ca/news/can-data-science-help-decode-3100-year-old-ramesside-star-clocks , https://en.wikipedia.org/wiki/Ramesside_star_clocks , https://www.researchgate.net/figure/Hour-watcher-with-a-star-chart-from-the-tomb-of-Ramesses-VI-12th-century-BC-Meridian_fig5_328303471
+- Book of Nut: https://en.wikipedia.org/wiki/Book_of_Nut
+- Dendera zodiac: https://en.wikipedia.org/wiki/Dendera_zodiac , https://egypt-museum.com/the-dendera-zodiac/
+- Pigments: https://en.wikipedia.org/wiki/Egyptian_blue , https://www.brooklynmuseum.org/stories/ancient-egyptian-pigment-color-analysis
+- Unicode/fonts: https://en.wikipedia.org/wiki/Egyptian_Hieroglyphs_(Unicode_block) , https://en.wikipedia.org/wiki/Egyptian_Hieroglyph_Format_Controls , https://fonts.google.com/noto/specimen/Noto+Sans+Egyptian+Hieroglyphs , https://notofonts.github.io/egyptian-hieroglyphs/
+- Hieratic: https://en.wikipedia.org/wiki/Hieratic , https://www.ucl.ac.uk/museums-static/digitalegypt/writing/hieratic.html
+- Numerals, deben: https://en.wikipedia.org/wiki/Egyptian_numerals , https://en.wikipedia.org/wiki/Deben_(unit)
+- Deir el-Medina strike: https://www.worldhistory.org/article/1089/the-first-labor-strike-in-history/ , https://en.wikipedia.org/wiki/Deir_el-Medina_strikes , https://libcom.org/article/records-strike-egypt-under-ramses-iii-c1157bce
+- Apep, Nun: https://ancientegyptonline.co.uk/apep/ , https://ancientegyptonline.co.uk/nun/ , https://egyptmythology.com/before-the-sun-the-primordial-waters-of-nun/
+- Ikhemu-sek, sba, pt: https://en.wikipedia.org/wiki/Ikhemu-sek , https://en.wiktionary.org/wiki/sb%EA%9C%A3 , https://en.wikipedia.org/wiki/Sky_(hieroglyph)
+- Reret/Isis-Djamet, mooring post: https://ase.exopla.net/index.php/Reret , https://isiopolis.com/2025/08/03/goddess-isis-the-mooring-post-of-flint/
+- Grid canon, scribal palette: https://www.ucl.ac.uk/museums-static/digitalegypt/art/artgrids.html , https://www.memphis.edu/egypt/exhibit/palette.php

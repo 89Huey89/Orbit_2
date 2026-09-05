@@ -1,9 +1,9 @@
 # Research — IV · The Globe (Islamic Golden Age, 964 CE, to Ulugh Beg, 1437)
 
 Deepens and corrects `docs/eras/02-globe.md`, which is short and broadly right; the correction
-below is specific, and the rest adds what it never had (palette hex, font data, a shaping method,
-a names table, currency, sound). Sources actually checked this session are in §13; a claim resting
-on general art-historical knowledge rather than a session fetch is flagged at the point it matters.
+below is specific, and the rest adds what it never had (palette hex, font data, shaping, names,
+currency, sound). Sources checked this session are in §13; a claim resting on general knowledge
+rather than a session fetch is flagged where it matters.
 
 **Correction, because it changes the lead artefact:** 02-globe.md doesn't name or date Marsh 144,
 so it isn't wrong — but the research brief that spawned this file did, and the claim doesn't hold.
@@ -94,9 +94,9 @@ atmospheric depth, or a painted night sky — the "sky" is always the page or th
 | Sized cream manuscript paper (Samarkand-paper ground) | `#EFE1C4` | the ground — page, not sky |
 | Engraved brass (globe/astrolabe ground, unpainted) | `#8A6E3E` | the ground for instrument-grammar plates |
 
-Gold is the accent, lamp-black ink is the "ink" in every sense (drawing medium and the game's
-currency-name candidate), and the cream paper — not indigo, not black — is the ground: this era
-draws on a lit page, and per 02-globe.md's own correct observation, does not paint the sky at all.
+Gold is the accent, lamp-black ink is the "ink" in every sense (medium and currency-name
+candidate), and the cream paper — not indigo, not black — is the ground: this era draws on a lit
+page and, per 02-globe.md's own correct observation, never paints the sky.
 
 ## 4. Lettering and how people wrote
 
@@ -168,36 +168,30 @@ set above, so use that, but the distinction matters for a Samarkand-specific pas
 
 ## 5. Names for the game's things
 
-| Game term | Word | Transliteration | Gloss | Status |
+| Game term | Word | Translit. | Gloss | Status |
 |---|---|---|---|---|
-| orbit / the title | فلك | *falak* | "celestial sphere," a turning, revolving thing — root meaning "to turn" | attested |
-| orbit (alt., an ecliptic path specifically) | مدار | *madār* | "circuit," the track a body runs | attested |
-| capture | قبض | *qabḍ* | grasping, seizing | attested (general usage; not a period gameplay term, naturally) |
+| orbit / title | فلك | *falak* | celestial sphere; root "to turn" | attested |
+| orbit (ecliptic path) | مدار | *madār* | circuit, the track a body runs | attested |
+| capture | قبض | *qabḍ* | grasping, seizing | attested (general usage) |
 | release | إطلاق | *iṭlāq* | setting loose, launching | attested |
-| ink (currency) | حبر | *ḥibr* | ink, specifically the lamp-black writing ink | attested |
-| ink (alt., the reservoir/stock of it) | مداد | *midād* | ink-stock, what a *ḥibr* is drawn from | attested |
-| score / tally | حساب | *ḥisāb* | reckoning, calculation — the word behind *zīj* tables' whole method | attested |
-| chapter | باب | *bāb* | "door" — the standard word for a book's chapter/section, incl. in al-Nadīm's *Fihrist* | attested |
+| ink (currency) | حبر | *ḥibr* | lamp-black writing ink | attested |
+| ink (reservoir) | مداد | *midād* | ink-stock a *ḥibr* is drawn from | attested |
+| score / tally | حساب | *ḥisāb* | reckoning — the method behind *zīj* tables | attested |
+| chapter | باب | *bāb* | "door," standard word for a book's section, incl. in al-Nadīm's *Fihrist* | attested |
 | sheet | ورقة | *waraqa* | a leaf/sheet of paper | attested |
-| the run | دورة | *dawra* | a circuit, a cycle — used for an orbital revolution | constructed (attested word, applied here by extension) |
-| personal best | أفضل | *afḍal* | "best, most excellent" — superlative | attested (word only; "personal best" as a phrase is constructed) |
+| the run | دورة | *dawra* | a circuit/cycle, used for an orbital revolution | constructed (word attested, applied by extension) |
+| personal best | أفضل | *afḍal* | "best, most excellent" | attested word; phrase constructed |
 | daily plate | ورقة اليوم | *waraqat al-yawm* | "the sheet of the day" | constructed |
-| catalogue | فهرست | *fihrist* | index/catalogue — the word Ibn al-Nadīm's own 10th-century book of that name fixed for exactly this sense | attested |
-| attractor (danger, general sense) | جاذب | *jādhib* | "that which pulls/attracts" | attested (see §7 for the era's own depicted name, which is more specific and better) |
-| repulsor (danger, general sense) | دافع | *dāfiʿ* | "that which pushes away" | attested |
+| catalogue | فهرست | *fihrist* | index/catalogue — al-Nadīm's own 10th-c. book fixed this sense | attested |
+| attractor (general) | جاذب | *jādhib* | that which pulls (see §7 for the era's sharper depicted name) | attested |
+| repulsor (general) | دافع | *dāfiʿ* | that which pushes away | attested |
 | crosswind | ريح | *rīḥ* | wind | attested |
-| nebula / obscurer | سحابة | *saḥāba*, or specifically **الشيء السحابي** *al-shayʾ al-saḥābī* ("the little cloud") | cloud; the second form is al-Ṣūfī's own words for the Andromeda smear | attested — al-Ṣūfī's actual phrase |
-| ocean world | بحر | *baḥr* | sea | constructed application |
-| crater world | حفرة | *ḥufra* | pit, hollow | constructed application |
-| ringed world | ذو حلقة | *dhū ḥalqa* | "possessor of a ring" | constructed application |
-| ice world | جليد | *jalīd* | ice | constructed application |
-| dune world | كثيب | *kathīb* | sand dune | constructed application (Qurʾānic word, well attested in general) |
-| volcanic world | جبل ناري | *jabal nārī* | "fire-mountain" | constructed — classical Arabic has no dedicated volcano-word; the compound is the honest option |
-| storm world | عاصفة | *ʿāṣifa* | storm, tempest | constructed application |
+| nebula / obscurer | الشيء السحابي | *al-shayʾ al-saḥābī* | "the little cloud" — al-Ṣūfī's own words for the Andromeda smear | attested |
+| ocean / crater / ringed / ice / dune / volcanic / storm worlds | بحر / حفرة / ذو حلقة / جليد / كثيب / جبل ناري / عاصفة | *baḥr / ḥufra / dhū ḥalqa / jalīd / kathīb / jabal nārī / ʿāṣifa* | sea / pit / "ring-possessor" / ice / dune / "fire-mountain" / storm | constructed applications (words attested in general use; classical Arabic has no dedicated volcano-word, hence the compound) |
 
-Attested words are strongly preferred per the brief and used everywhere one exists; only the four
-pickups, the run, the daily plate and the seven family names are genuinely constructed, and each
-is flagged as such rather than dressed up as period vocabulary.
+Attested words are used everywhere one exists, per the brief; only the pickups, the run, the daily
+plate and the seven family names are genuinely constructed, and are flagged as such rather than
+dressed up as period vocabulary.
 
 ## 6. Currency and one rule
 
@@ -254,22 +248,19 @@ Two legitimate renderings depending which grammar (§2) the plate leans on; desc
 artist can pick, or alternate by chapter.
 
 **Manuscript mode (gilt roundels, flat colour):** a disc of flat, unmodulated colour with a fine
-dark contour and a burnished gold rim; interior carries pattern rather than shading, and pattern
-*density* — how tightly the interior motif crowds toward one edge — is the only depth cue this
-grammar allows itself. *Ocean* = a plain lapis disc, unornamented, calmest of the seven. *Crater*
-= the disc broken by small dark contour circles scattered per the ordinary Islamic geometric-
-tessellation logic, not as impact geology. *Ringed* = one or two concentric gold bands set inside
-the rim, the plainest and most emblematic reading. *Ice* = pale ground, fine silver (not gold)
-contour hatching. *Dune* = repeating chevron/wave interlace, warm ochre. *Volcanic* = vermilion
-ground, the pattern crowded hard to one edge, rubrication-red. *Storm* = the densest interlace of
-the seven, indigo-on-lapis, verging on illegible the way a real storm-band ornament does.
+dark contour and a burnished gold rim; interior carries pattern, not shading — pattern *density*,
+how tightly the motif crowds toward one edge, is the only depth cue this grammar allows itself.
+*Ocean* = plain lapis disc, unornamented. *Crater* = disc broken by small dark contour circles per
+ordinary Islamic geometric-tessellation logic, not impact geology. *Ringed* = one or two concentric
+gold bands inside the rim, the plainest reading. *Ice* = pale ground, fine silver contour hatching.
+*Dune* = repeating chevron/wave interlace, warm ochre. *Volcanic* = vermilion ground, pattern
+crowded hard to one edge. *Storm* = the densest interlace of the seven, indigo-on-lapis, verging
+on illegible the way a real storm-band ornament does.
 
 **Instrument mode (engraved brass, inlaid points):** no colour at all. Each family is a fine
-incised contour circle on brass, and the difference between families is carried entirely by **the
-density and pattern of engraved hatch-lines inside the circle** plus, where a family calls for a
-ring, a second incised circle set inside the first rather than a gold band. This is the harder,
-more abstract of the two modes but the more historically defensible one for anything explicitly
-staged as a globe or astrolabe chapter-plate (§10).
+incised contour circle, differentiated entirely by **density/pattern of engraved hatch-lines**
+inside it, plus a second incised circle in place of a gold ring where a family calls for one. The
+harder, more abstract mode, but the more defensible one for a globe or astrolabe chapter-plate.
 
 ## 9. Chart furniture, frame, HUD
 
@@ -289,57 +280,46 @@ limb; a colophon-style end-of-run line (scribe/place/date → player/plate/seed)
 1. **Orion, *al-Jabbār* ("the Giant"), in both views** — sky and mirrored globe view side by side
    or cross-faded, pulled from the Doha 1125 copy in preference to Marsh 144.
 2. **The 1085 Valencia globe seen close** — engraved brass, incised figures, punched star-points,
-   no colour at all; the clearest possible demonstration of instrument-mode grammar.
-3. **An astrolabe's rete** — the openwork star-map itself, its bird's-head pointers each labelled
-   with a star's name, read against its graduated limb.
+   no colour; the clearest demonstration of instrument-mode grammar.
+3. **An astrolabe's rete** — the openwork star-map, its bird's-head pointers each labelled with a
+   star's name, read against its graduated limb.
 4. **The Samarkand observatory's Fakhrī sextant** — the trench-cut double-walled arc, 40 m radius,
-   built into the hillside itself rather than a portable instrument; the era's observational
-   high-water mark and its literal architecture.
+   built into the hillside itself; the era's observational high-water mark as literal architecture.
 
 ## 11. Sound
 
-- The **qalam's nib** scratching a joined run onto sized paper — drier and finer-grained than a
-  quill, no ink-blot pop at stroke-ends because the reed doesn't load the way a quill does.
-- A **dip into the inkwell** between runs — a small, wet, contained sound, not continuous flow.
-- **Gold leaf being burnished** — a soft, dry, insistent rubbing/polishing sound, rhythmic,
-  distinct from a wet brush stroke.
-- A **brass globe or astrolabe struck or tapped** — a dull, warm metal ring, quickly damped (solid
-  cast brass rings far less than sheet metal).
-- **Vellum/heavy paper leaves turning** — a stiffer, thicker sound than era III's laid paper, with
-  a faint mineral-grain rasp from the sizing.
-- A **dragon/serpent hiss-and-coil** cue for the attractor's approach, distinct from era III's
-  liquid vortex-pull sound — dry rather than wet.
+- The **qalam's nib** scratching a joined run onto sized paper — drier, finer-grained than a
+  quill, no ink-blot pop at stroke-end (a reed doesn't load like a quill).
+- A **dip into the inkwell** between runs — small, wet, contained, not continuous flow.
+- **Gold leaf being burnished** — a soft, dry, rhythmic rubbing sound, distinct from a wet stroke.
+- A **brass globe or astrolabe tapped** — a dull, warm metal ring, quickly damped (solid cast
+  brass rings far less than sheet metal).
+- **Heavy sized paper leaves turning** — stiffer than era III's laid paper, a faint mineral rasp.
+- A **dragon/serpent hiss-and-coil** for the attractor's approach — dry, not era III's liquid pull.
 
 ## 12. Risks and open questions
 
-- **Arabic shaping is real, scoped work**, per LETTERING.md's own flag — but this session confirms
-  it is *tractable* work with a known tool (fontkit's own `ArabicShaper`), not a research gap.
-  Spike it early: extract and pre-shape one full caption string through `font.layout()` before any
-  other era-II asset is built, and confirm the resulting glyph outlines actually stroke on cleanly
-  through the existing `penLettering`/`writeText` machinery.
-- **Manuscript dating is contested, and this file's own confidence should be held loosely.** Marsh
-  144's redating is real (multiple independent mentions found this session) but this session did
-  not reach the primary codicological paper making the case, only secondary summaries — the exact
-  redated range (given here as "end of the 12th century") should be pinned to a named source before
-  it goes in any player-facing copy.
-- **Two grammars, one era.** §2 and §8 both had to describe a manuscript mode and an instrument
-  mode because the record genuinely doesn't converge on one look the way, say, era III's engraving
-  tradition does. The era needs an explicit decision — one grammar per whole era, or per chapter —
-  before art begins; building both halfway is the likely failure mode.
-- **The obscurer has a name but no drawing tradition** (§7) — flagged already in DANGERS.md, and
-  confirmed here: nothing found this session shows a period image of "the little cloud" as
-  anything other than a few plotted dots near Andromeda's mouth. The game will have to invent this
-  one depiction while keeping everything else attested.
-- **The Mughal seamless-globe material (§1) postdates the era's stated 1437 endpoint by up to two
-  centuries.** It's included because it is by far the best-documented "inlaid-point brass globe"
-  source, but using it uncritically would mean quietly importing 17th-century Lahore into a
-  10th–15th-century era; either bound the era's globes to the 1085 Valencia piece alone, or extend
-  the era's own stated date range, but don't do neither.
-- **Font choice for thuluth remains open** — Aref Ruqaa is *ruqʿah*, not thuluth, and Reem Kufi is
-  a modern geometric revival rather than a period monumental kufic; if the era wants a genuinely
-  thuluth-flavoured heading face distinct from its naskh body face, none of the five faces
-  researched here quite delivers it, and a further font search is needed before the "three faces
-  as a plate token" pattern (per LETTERING.md) can be filled in for this era.
+- **Arabic shaping is real, scoped work** (LETTERING.md's own flag) but this session confirms it
+  is *tractable* with a known tool (fontkit's `ArabicShaper`), not a research gap. Spike it early:
+  pre-shape one full caption through `font.layout()` before any other era-II asset is built, and
+  confirm the resulting outlines stroke cleanly through existing `penLettering`/`writeText`.
+- **Manuscript dating is contested; hold this file's confidence loosely.** Marsh 144's redating is
+  real (multiple independent mentions this session) but this session reached only secondary
+  summaries, not the primary codicological paper — pin the exact redated range to a named source
+  before it goes in player-facing copy.
+- **Two grammars, one era.** §2/§8 describe both a manuscript mode and an instrument mode because
+  the record doesn't converge on one look the way era III's engraving tradition does. Decide one
+  grammar per era (or per chapter) before art begins; building both halfway is the failure mode.
+- **The obscurer has a name but no drawing tradition** (§7, also flagged in DANGERS.md): nothing
+  found this session shows a period image of "the little cloud" beyond a few plotted dots near
+  Andromeda's mouth — the depiction must be invented while the name stays attested.
+- **The Mughal seamless-globe material (§1) postdates the era's 1437 endpoint by up to two
+  centuries.** Included as by far the best-documented "inlaid-point brass globe" source, but using
+  it uncritically imports 17th-century Lahore into a 10th–15th-century era — either bound the
+  era's globes to the 1085 Valencia piece alone, or extend the stated date range; don't do neither.
+- **A genuine thuluth display face is still missing** — Aref Ruqaa is *ruqʿah*, Reem Kufi a modern
+  geometric kufic revival; a further font search is needed to fill LETTERING.md's "three faces as
+  a plate token" pattern for this era.
 
 ## 13. Sources
 

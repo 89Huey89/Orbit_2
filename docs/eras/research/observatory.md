@@ -1,11 +1,9 @@
 # Research — VII · The Observatory (1990– )
 
-Deepens `docs/eras/05-observatory.md`, which is correct in its bones and wrong or thin in six
-places noted inline below. That file already describes shipped code (`PLATE_STYLES.modern`,
-`paintModernBackdrop()`, `renderedSpecimen()`) — this document does not repeat that inventory,
-only adds to and corrects the historical/visual claims around it. Numbering follows the ladder in
-`OVERVIEW.md`, where this era is row V/VII depending on which list is read; the file itself calls
-it "V" and that is kept here.
+Deepens `docs/eras/05-observatory.md`, which is correct in its bones and thin or wrong in several
+places noted inline below. That file already inventories the shipped code (`PLATE_STYLES.modern`,
+`paintModernBackdrop()`, `renderedSpecimen()`); this document does not repeat that inventory, only
+corrects and adds to the claims around it. The existing file numbers itself "V"; that is kept here.
 
 ## 1. The documents
 
@@ -119,32 +117,23 @@ V): snap the clip to whole-glyph boundaries... swap `penNib()` for a block curso
 that a chapter's numerals should *update* rather than be written, "like an instrument readout." Both
 of those match the FITS-card reveal precisely and need no new design, only the implementation.
 
-Typefaces (all Google Fonts, all SIL Open Font License 1.1, so all embeddable under the project's
-no-external-resources rule the same way the Fell faces are):
+Typefaces (all Google Fonts, all SIL Open Font License 1.1, so all embeddable the way the Fell
+faces already are):
 
-- **IBM Plex Mono** — the FITS-card face. Monospaced, four weights times italics, part of the wider
-  IBM Plex family (Sans/Serif/Mono/Sans Condensed, eight weights, roman and true italic, released
-  under OFL). Glyph coverage is broad (Latin, Cyrillic, Greek and more across the family; exact
-  per-style count not confirmed this session) — cut it the same way `fonts.mjs` already cuts the
-  Fell faces, to the literal ASCII the atlas's FITS cards and catalogue numbers use, which is a
-  small subset.
-- **JetBrains Mono** — an alternative monospace, designed by Philipp Nurullin and Konstantin
-  Bulenkov at JetBrains, OFL, also on Google Fonts; more condensed, ligature-aware, a reasonable
-  second choice if Plex Mono reads too soft for the HUD's tabular score.
-- **Space Grotesk** — the margin/small-caps face, a proportional grotesque cut from Colophon
-  Foundry's fixed-width Space Mono by Florian Karsten (2018), OFL v1.1, on Google Fonts. Reads as
-  "instrument label" rather than "body text," which is exactly the job the existing small-caps
-  margin captions need.
-- **Inter** — a candidate body/UI face if the HUD wants something warmer than Plex Sans; designed
-  by Rasmus Andersson (2017) specifically for on-screen legibility at small sizes, OFL, ubiquitous
-  on Google Fonts.
-- **B612** — genuinely worth naming even though it will likely lose to Plex Mono: designed for
-  Airbus aircraft cockpit displays, released open-source by Airbus in 2017 into the Eclipse
-  Foundation's PolarSys project. Confirmed dual/triple-licensed (Eclipse Public License v2.0 +
-  Eclipse Distribution License v1.0 + SIL Open Font License v1.1), also mirrored on Google Fonts as
-  both B612 and a B612 Mono variant. Its whole reason to exist is legibility under exactly the
-  conditions this HUD wants — small, high-contrast, glanced-at-speed — and it is the one typeface
-  on this list actually drawn for an instrument panel rather than adapted to one.
+- **IBM Plex Mono** — the FITS-card face. Monospaced, four weights × italics, part of the wider
+  IBM Plex family (Sans/Serif/Mono/Sans Condensed, eight weights, OFL). Cut it the way `fonts.mjs`
+  already cuts the Fell faces, to the literal ASCII a FITS card and a catalogue number actually use.
+- **JetBrains Mono** — alternate monospace, Philipp Nurullin and Konstantin Bulenkov at JetBrains,
+  OFL, on Google Fonts; more condensed and ligature-aware, a fallback if Plex Mono reads too soft.
+- **Space Grotesk** — the margin/small-caps face: a proportional grotesque cut from Colophon
+  Foundry's fixed-width Space Mono by Florian Karsten (2018), OFL v1.1. Reads as "instrument label,"
+  which is the existing small-caps margin captions' job exactly.
+- **Inter** — a candidate body/UI face, warmer than Plex Sans; Rasmus Andersson, 2017, built for
+  on-screen legibility at small sizes, OFL.
+- **B612** — worth naming even if it loses to Plex Mono: designed for Airbus cockpit displays,
+  open-sourced in 2017 into the Eclipse Foundation's PolarSys project (EPL v2.0 + EDL v1.0 + OFL
+  v1.1, confirmed, also on Google Fonts as B612 and B612 Mono). The one face on this list actually
+  drawn for a glanced-at-speed instrument panel rather than adapted to one.
 
 No shaping is needed: FITS cards, catalogue designations and Latin-script instrument labels are all
 one-glyph-per-character, same as the shipped Fell faces. Numerals should be lining, tabular figures
@@ -190,36 +179,31 @@ a coincidence worth manufacturing — it already exists, and §6 below is built 
 **The currency: telescope time, denominated in orbits.** This is real and specific, not a loose
 metaphor. HST orbits Earth every 96 minutes; time on the telescope is proposed for and awarded in
 whole and fractional *orbits*, not hours — confirmed across multiple Cycle Calls for Proposals: a
-typical cycle offers roughly 3,000–3,500 orbits total to the entire world astronomical community
-(Cycle 15: ~3,000 anticipated, up to 1,000 of them reserved for Large/Treasury programs; Cycle 27:
-up to 3,400, split 1,700/700/1,000 across Small/Medium/Large-and-Treasury categories; one summary
-figure puts a typical cycle at "3,500 orbits (3,100 hours)"). A scientist submits a Phase I proposal
-requesting a number of orbits; a Time Allocation Committee (TAC) of working astronomers ranks every
-proposal in the cycle and only the ones it approves get scheduled — this is the mechanism, not an
-approximation of one. And an orbit is not 96 minutes of usable sky time: most targets are occulted
-by the Earth for part of each 96-minute lap (up to about 44 minutes for a target in HST's orbital
-plane), so a "used" orbit typically buys on the order of 50 minutes of actual exposure once guide-
-star acquisition and other fixed overhead are subtracted — only targets inside the ~24°
-Continuous Viewing Zone around the orbital poles get the full 96 minutes.
+typical cycle offers roughly 3,000–3,500 orbits total to the whole world community (Cycle 15:
+~3,000 anticipated, up to 1,000 reserved for Large/Treasury programs; Cycle 27: up to 3,400, split
+1,700/700/1,000 across Small/Medium/Large-and-Treasury; one summary figure gives a typical cycle as
+"3,500 orbits (3,100 hours)"). A scientist submits a Phase I proposal requesting a number of orbits;
+a Time Allocation Committee (TAC) of working astronomers ranks every proposal and only the ones it
+approves get scheduled — the mechanism, not an approximation of one. And an orbit is not 96 minutes
+of usable sky time: most targets are Earth-occulted for part of each lap (up to ~44 minutes for a
+target in HST's orbital plane), so a "used" orbit typically buys on the order of 50 minutes of
+actual exposure once guide-star acquisition is subtracted — only targets inside the ~24° Continuous
+Viewing Zone around the orbital poles get the full 96 minutes.
 
 **That overhead is the twist.** Every real HST exposure pays a fixed tax off the top of its orbit
-before a single photon is collected — the minutes spent occulted by the Earth, the minutes spent
-re-acquiring guide stars — regardless of how long or short the actual exposure inside it is. Ink
-today is spent purely by distance flown (`inkCost(distance)=distance/INK_REACH`); the one rule this
-era adds is a **flat acquisition cost charged at the start of every transfer, before the distance
-cost**, representing the guide-star lock a real exposure cannot skip. A short hop pays proportionally
-more for it than a long one — exactly the real inefficiency that makes short HST exposures
-expensive in practice — which nudges the existing tangent-seeking, long-transfer play the game
-already rewards (perfect captures, skip bonuses) rather than fighting it. Concretely: something like
-a flat 4–6% ink cost added to every `inkCost()` call, independent of `distance`, tuned so it barely
-registers on a full-chart transfer but meaningfully taxes a nervous short dab between neighbouring
-nodes.
+before a single photon is collected, regardless of how long the exposure inside it is. Ink today is
+spent purely by distance flown (`inkCost(distance)=distance/INK_REACH`); the one rule this era adds
+is a **flat acquisition cost charged at the start of every transfer, before the distance cost**,
+representing the guide-star lock a real exposure cannot skip. A short hop pays proportionally more
+for it than a long one — the real inefficiency that makes short HST exposures expensive — which
+nudges the game's existing long-transfer play (perfect captures, skip bonuses) rather than fighting
+it. Concretely: a flat 4–6% ink cost added to every `inkCost()` call, independent of distance, tuned
+to barely register on a full-chart transfer but meaningfully tax a nervous short dab.
 
-That is a genuine gameplay change to `simulation.js`, not a re-skin, and it is worth being honest
-about what that means: it is squarely the same category of decision `DANGERS.md` raises for
-`HAZARD_KINDS` — a rule that differs by era stops being cosmetic, and the daily plate, comparable
-scores and the ledger all assume one shared rule set. This should be built under whichever of
-`DANGERS.md`'s options A/B/C the project actually adopts, not decided unilaterally here.
+This is a genuine `simulation.js` change, not a re-skin, and belongs to the same open question
+`DANGERS.md` raises for `HAZARD_KINDS` — a rule that differs by era stops being cosmetic, and the
+daily plate, comparable scores and the ledger all assume one shared rule set. Build it under
+whichever of `DANGERS.md`'s options A/B/C the project adopts, not unilaterally here.
 
 **The no-twist reading:** rename the currency only. Ink becomes "exposure" or "orbit fraction," full
 charge reads `1 ORBIT` instead of a percentage bar, the dry-nib death message becomes something like
@@ -229,77 +213,64 @@ HUD, and is available immediately regardless of how the hazard-rule question abo
 
 ## 7. Dangers
 
-- **Attractor — the black hole.** `DANGERS.md` already places it here and the existing era file is
-  right that this is where it belongs. Draw it as the EHT images actually look: a black disc (the
-  shadow), ringed by a thin, deformed bright arc that is visibly brighter on one side than the
-  other (the ~10:1 asymmetry the M87\* paper reports), in the warm amber-on-black palette of §3 —
-  not a rainbow accretion disc, not a flat ring. The asymmetry is free characterisation: it can lean
-  toward whichever side the vortex's spin/pull direction already implies.
-- **Repulsor — the coronal mass ejection, drawn as its own coronagraph.** The brief's instinct is
-  exactly right and attested: a real CME image is not "a sun with a flare," it is a **LASCO
-  occulting-disc image** — a flat, near-black disc physically blocking the photosphere (with a thin
-  white ring inked onto the disc marking where the Sun's true edge actually is, a real and specific
-  convention worth reproducing literally), the pale gold corona visible only outside it, and the
-  CME itself a bright three-part structure breaking outward through that corona (a bright leading
-  front, a darker cavity, a bright trailing core, per LASCO's own handbook). Drawing MACULA as this
-  disc rather than as a sunspot turns the repulsor's own hitbox into the occulter it is haloed by —
-  the hazard's "core" is already visually the blocked-out disc.
+- **Attractor — the black hole.** `DANGERS.md` already places it here, correctly. Draw it as the
+  EHT images actually look: a black disc (the shadow) ringed by a thin, deformed bright arc visibly
+  brighter on one side (the ~10:1 asymmetry M87\*'s paper reports), in the amber-on-black palette of
+  §3 — not a rainbow accretion disc. The asymmetry is free characterisation, free to lean toward
+  whichever side the vortex's own pull direction implies.
+- **Repulsor — the CME, drawn as its own coronagraph.** A real CME image is not "a sun with a
+  flare," it is a **LASCO occulting-disc image**: a flat, near-black disc physically blocking the
+  photosphere (a thin white ring inked on it marks the Sun's true edge, a real and specific
+  convention worth reproducing literally), pale gold corona visible only outside it, and the CME a
+  bright three-part structure breaking through — leading front, dark cavity, bright trailing core,
+  per LASCO's handbook. Drawing MACULA as this disc turns the hazard's own hitbox into the occulter
+  haloing it.
 - **Crosswind — the solar wind, as a field rather than a figure.** Per `DANGERS.md`'s own framing.
-  The concrete real-world form is the Parker spiral / heliospheric current sheet, popularly and
-  accurately described (NASA's own phrase) as shaped like "a ballerina's skirt" — the sheet warping
-  into wavy pleats because the Sun's magnetic axis is tilted from its rotation axis. For a 2D chart,
-  the useful piece of that is the **spiral streamline**, not the 3D skirt: thin curved arcs bending
-  outward from a source point, in the pale gold/white of the corona, with faint density-coloured
-  specks drifting along them — closer to how space-weather forecast visualisations (e.g. the
-  WSA-ENLIL model) render the wind than to a literal photograph, since the wind itself is invisible
+  The real form is the Parker spiral / heliospheric current sheet, accurately described (NASA's own
+  phrase) as shaped like "a ballerina's skirt," warped because the Sun's magnetic axis tilts from
+  its rotation axis. For a 2D chart the usable piece is the **spiral streamline**: thin curved arcs
+  bending outward from a source, pale gold/white, with faint density-coloured specks drifting along
+  them — closer to a space-weather model (WSA-ENLIL) than a photograph, since the wind is invisible
   and every real image of it is already a model or a proxy.
-- **Obscurer — the dust lane, already shipped.** `paintModernBackdrop()`'s dust lanes cut into the
-  galactic band are already this danger's correct depiction; the only addition worth making is a
-  catalogue-style caption on the largest one, in the spirit of the Lynds Dark Nebula (LDN) catalogue
-  — a real, attested naming convention for exactly this kind of feature, and the modern-era
-  equivalent of era IV's Barnard numbers.
+- **Obscurer — the dust lane, already shipped.** `paintModernBackdrop()`'s dust lanes are already
+  this danger's correct depiction; the only addition worth making is a catalogue-style caption on
+  the largest one, in the spirit of the Lynds Dark Nebula (LDN) catalogue — attested, and the
+  modern-era equivalent of era IV's Barnard numbers.
 
 ## 8. The seven families
 
-- **Ocean** — a deep blue-white marbled sphere with soft cloud swirl and a pale haze at the limb, in
-  the vein of Cassini/Europa-Clipper-era icy-moon and ocean-world imagery: smooth gradients, no hard
-  edges, brightest at the sub-solar point and softening evenly toward the terminator.
+- **Ocean** — deep blue-white marbled sphere, soft cloud swirl, pale limb haze, in the vein of
+  Cassini/Europa-Clipper-era ocean-world imagery: smooth gradients, no hard edges.
 - **Crater** — high-contrast, low-sun-angle imaging of an airless body (Lunar Reconnaissance
-  Orbiter, MESSENGER, New Horizons' Pluto): raking light throws every crater's far wall into deep
-  shadow while its near rim catches full sun, so the terminator carries far more visible texture
-  than the sub-solar face does.
-- **Ringed** — soft banded gold-tan in natural Cassini-Saturn colour, a thin, sharply defined ring
-  system casting a crisp shadow band across the globe — the ring's own shadow is the single most
-  legible cue that this is a lit sphere and not a flat disc.
-- **Ice** — flat, nearly featureless pastel cyan-blue in the manner of Voyager 2's Uranus/Neptune,
-  or JWST's 2022 near-infrared Neptune image, which additionally showed the planet's rings and
-  small moons directly (a striking, era-appropriate reference if the "ringed ice giant" case is ever
-  drawn). Minimal banding, a soft uniform limb glow rather than a sharp rim.
-- **Dune** — ochre-red dust in the vein of Mars orbital imagery (Mars Global Surveyor/HiRISE):
-  visible darker dune fields as a texture over a lighter base, and a thin, hazy, dust-scattered limb
-  rather than a crisp one.
-- **Volcanic** — sulphur yellow-orange-black patchwork after Io (Galileo/New Horizons), active
-  plumes as bright, hard-edged silhouettes breaking the limb, and no ice or cloud anywhere on it.
+  Orbiter, MESSENGER, New Horizons' Pluto): raking light throws crater far-walls into deep shadow
+  while near rims catch full sun, so the terminator carries more texture than the sub-solar face.
+- **Ringed** — soft banded gold-tan in natural Cassini-Saturn colour, a thin sharp ring system
+  casting a crisp shadow band across the globe — that shadow is the clearest cue this is a sphere.
+- **Ice** — flat, nearly featureless pastel cyan-blue after Voyager 2's Uranus/Neptune, or JWST's
+  2022 near-infrared Neptune image (which additionally showed its rings and moons directly).
+  Minimal banding, a soft uniform limb glow rather than a sharp rim.
+- **Dune** — ochre-red dust after Mars orbital imagery (Mars Global Surveyor/HiRISE): darker dune
+  fields as texture over a lighter base, a thin hazy dust-scattered limb.
+- **Volcanic** — sulphur yellow-orange-black patchwork after Io (Galileo/New Horizons), plumes as
+  bright hard-edged silhouettes breaking the limb, no ice or cloud anywhere on it.
 - **Storm** — Jupiter in JWST's 2022 NIRCam infrared imagery: bright bands, a luminous Great Red
-  Spot (infrared makes high cloud tops bright rather than red), and glowing aurorae at the poles —
-  a striking, attested, and genuinely different look from the ringed family's Saturn reference,
-  which existing prose risks conflating since both are "banded giants."
+  Spot (infrared makes high cloud tops bright, not red), glowing polar aurorae — attested and
+  genuinely distinct from the ringed family's Saturn reference, which existing prose risks
+  conflating since both are "banded giants."
 
 ## 9. Chart furniture, frame, HUD
 
 Nothing at all survives from the engraved frame in the era's own documents — no cartouche, no wind-
-heads, no double rule drawn by hand. In their place, exactly what §2 describes: a scale bar in
-arcseconds, a two-arrow N/E compass (not a four-point rose), a filter/wavelength label, an epoch,
-a colour bar where the image is false colour, and a credit line. The existing file already reaches
-this conclusion in prose; concretely, the FITS-card block from §4 is the natural home for the HUD's
-score, ink/orbit and difficulty readouts — a small stack of monospace `KEYWORD = value / comment`
-lines down one margin, typewriter-revealed, with only the values changing over a run (`EXPTIME`
-counting up, `OBJECT` naming the current constellation, `FILTER` naming the plate's danger state).
-`MAGNITUDINES`, the star-magnitude legend, becomes the colour bar; the compass rose collapses from
-four Latin wind names to two plain arrows; the plate-mark and RA/Dec tick frame the existing file
-already describes as surviving genuinely does survive, because a modern astronomical image is
-routinely gridded in celestial coordinates too — it is one of the only pieces of era III's chrome
-this era does not have to replace.
+heads, no hand-drawn double rule. In their place, exactly what §2 describes: a scale bar in
+arcseconds, a two-arrow N/E compass (not a four-point rose), a filter/wavelength label, an epoch, a
+colour bar where the image is false colour, and a credit line. Concretely, the FITS-card block from
+§4 is the natural home for the HUD's score, ink/orbit and difficulty readouts — a small stack of
+monospace `KEYWORD = value / comment` lines down one margin, typewriter-revealed, with only the
+values changing over a run (`EXPTIME` counting up, `OBJECT` naming the constellation, `FILTER`
+naming the plate's danger state). `MAGNITUDINES` becomes the colour bar; the four-name wind rose
+collapses to two plain arrows. The RA/Dec tick frame the existing file describes as surviving
+genuinely does — a modern image is routinely gridded in celestial coordinates too, one of the only
+pieces of era III's chrome this era does not have to replace.
 
 ## 10. Four chapter plates
 
@@ -335,29 +306,24 @@ this era does not have to replace.
 ## 12. Risks and open questions
 
 - **The acquisition-tax currency rule is a simulation change, not a cosmetic one.** §6 says this
-  plainly: it belongs to the same open question `DANGERS.md` raises for `HAZARD_KINDS`, and should
-  not be built ahead of that decision. The "no-twist, rename only" reading is safe today; the tax is
-  not.
+  plainly — the same open question `DANGERS.md` raises for `HAZARD_KINDS`. Do not build it ahead of
+  that decision; the "rename only" reading is safe today, the tax is not.
 - **The shipped modern plate draws only four-armed (Hubble-style) diffraction spikes.** The existing
-  era file's claim that JWST's six-spike signature belongs to this era is correct as history but not
-  yet true of the code — `paintModernBackdrop()`'s bright-star spikes are a single four-armed
-  routine. If the era ever wants to read as "JWST-grade" rather than "Hubble-grade" in places, that
-  needs a second spike routine, not a retint of the existing one.
+  file's JWST-six-spike claim is correct as history but not yet true of the code —
+  `paintModernBackdrop()`'s bright-star spikes are one four-armed routine. Reading as "JWST-grade"
+  anywhere needs a second spike routine, not a retint.
 - **Five of the seven SDO/AIA hex values in §3 are unverified this session** — 171 Å and 304 Å are
-  directly confirmed against SDO's own gallery captions; 193/211/335/131/94 follow the same
-  published colour table by reputation but their precise hex was not independently recovered here
-  (the search budget for this session was exhausted mid-research). Check `sunpy`'s
-  `color_tables.py` directly before locking a final palette.
-- **The EHT colormap's exact hex and name are unverified** — the amber-on-black description is
-  faithful to every released image but no source naming the specific colour ramp was confirmed this
-  session.
-- **The FITS-card HUD is a real typographic and layout undertaking**, not a small one — it replaces
-  the compass rose, the magnitude key and arguably the whole margin, and needs a spike of its own to
-  see whether monospace instrument text reads at the game's normal play distance/size before
-  committing.
-- **This era shares its danger rows with every other era by the ladder's own rule** (`OVERVIEW.md`
-  rule 3) — the repulsor-as-coronagraph idea in §7 is a *depiction*, and must stay one unless and
-  until `DANGERS.md`'s option B or C is adopted.
+  confirmed against SDO's gallery captions; 193/211/335/131/94 follow the same published table by
+  reputation but were not independently re-verified (search budget was exhausted mid-research).
+  Check `sunpy`'s `color_tables.py` before locking a final palette.
+- **The EHT colormap's exact hex and name are unverified** — amber-on-black is faithful to every
+  released image but no source naming the specific ramp was confirmed this session.
+- **The FITS-card HUD is a real typographic undertaking**, not a small one — it replaces the compass
+  rose, the magnitude key and arguably the whole margin; needs a spike to see whether monospace
+  instrument text reads at normal play size before committing.
+- **This era shares its danger rows with every other era** (`OVERVIEW.md` rule 3) — the
+  repulsor-as-coronagraph idea in §7 is a *depiction* and must stay one unless `DANGERS.md`'s option
+  B or C is adopted.
 
 ## 13. Sources
 
@@ -372,7 +338,6 @@ this era does not have to replace.
 - https://fits.gsfc.nasa.gov/users_guide/users_guide/node22.html
 - https://cdn.diffractionlimited.com/help/maximdl/FITS_File_Header_Definitions.htm
 - https://arxiv.org/abs/1906.11238
-- https://aasnova.org/2019/04/10/first-images-of-a-black-hole-from-the-event-horizon-telescope/
 - https://ui.adsabs.harvard.edu/abs/2022ApJ...930L..12E/abstract
 - https://cosmoquest.org/x/dailyspace/2022/05/13/event-horizon-telescope-releases-first-image-of-sgr-a/
 - https://lasco-www.nrl.navy.mil/handbook/hndbk_3.html
@@ -384,17 +349,10 @@ this era does not have to replace.
 - https://esahubble.org/copyright/
 - https://www.nasaspaceflight.com/2022/07/webb-first-images/
 - https://svs.gsfc.nasa.gov/31271
-- https://fonts.google.com/specimen/IBM%2BPlex%2BMono
-- https://fonts.google.com/specimen/IBM%2BPlex%2BSans
-- https://github.com/IBM/plex
+- https://fonts.google.com/specimen/IBM%2BPlex%2BMono, https://github.com/IBM/plex
 - https://www.jetbrains.com/lp/mono/
-- https://fonts.google.com/specimen/Space%2BGrotesk
-- https://github.com/floriankarsten/space-grotesk
-- https://fonts.google.com/specimen/B612
-- https://imjustcreative.com/b612-open-source-font-family/2019/01/25
-- https://github.com/polarsys/b612
-- https://www.gemini.edu/observing/phase-i/too
-- https://www.eso.org/sci/observing/policies/too_policy.html
-- https://jwst-docs.stsci.edu/methods-and-roadmaps/jwst-target-of-opportunity-observations
+- https://fonts.google.com/specimen/Space%2BGrotesk, https://github.com/floriankarsten/space-grotesk
+- https://fonts.google.com/specimen/B612, https://github.com/polarsys/b612
+- https://www.gemini.edu/observing/phase-i/too, https://www.eso.org/sci/observing/policies/too_policy.html
 - https://beltoforion.de/en/astrophotography/stacking.php
 - https://www.celestron.com/blogs/knowledgebase/the-ultimate-guide-to-calibration-frames-for-astrophotography

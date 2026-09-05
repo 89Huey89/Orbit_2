@@ -63,34 +63,31 @@ flagged inline as **(correction)**. Anything I could not independently confirm i
 
 ## 2. The grammar
 
-**The negative is the primary document, and the era reads it two ways.** On the glass itself, a
-star is a growing knot of *black metallic silver* on an otherwise clear or faintly grey pane —
-the more light gathered, the denser and larger the silver deposit, so brightness becomes literal
-opacity. When such a plate is *printed* — as Barnard's atlas prints it — the convention (at least
-in that atlas) is to reproduce the negative uninverted: dark stars on a pale ground, exactly as
-the glass shows it held to a lamp. This is the one era in the ladder that draws the sky in the
-opposite tonal sense from every other: ink is not put where light was, ink (silver) is exactly
-where light *fell*.
+**The negative is the primary document.** On the glass itself, a star is a growing knot of *black
+metallic silver* on an otherwise clear or faintly grey pane — the more light gathered, the denser
+and larger the deposit, so brightness becomes literal opacity. When such a plate is *printed* —
+as Barnard's atlas prints it — the convention (at least there) is to reproduce the negative
+uninverted: dark stars on a pale ground, exactly as the glass shows it held to a lamp. This is the
+one era in the ladder that draws the sky in the opposite tonal sense from every other: ink is not
+put where light was, silver is exactly where light *fell*.
 
 Composition is not a **projection** in the sense of the engraved planispheres — it is a **grid of
-rectangular fields**, tiled edge to edge across the sky the way survey plates tile it (the Carte
-du Ciel's 2°×2° panes, Palomar's 6°×6° panes, Franklin-Adams's 15° sections), each field its own
-small negative with its own réseau or fiducial marks. There is no single circular horizon or
-celestial sphere drawn whole; there is a *catalogue of rectangles*, each one a claim about one
-patch of the actual, present sky at one exposed hour, not a synthesis of the whole heaven the way
-every earlier era in the ladder is.
+rectangular fields**, tiled edge to edge the way survey plates tile the sky (the Carte du Ciel's
+2°×2° panes, Palomar's 6°×6° panes, Franklin-Adams's 15° sections), each field its own small
+negative with its own réseau or fiducial marks. There is no single circular horizon or celestial
+sphere drawn whole; there is a *catalogue of rectangles*, each a claim about one patch of the
+actual, present sky at one exposed hour, not a synthesis of the whole heaven the way every earlier
+era in the ladder is.
 
-Figures are entirely gone. What replaces them, in descending order of how much of the frame they
-occupy: **the réseau grid** (Carte du Ciel only — a machine-ruled coordinate lattice printed
-through the whole field); **catalogue numbers and fiducial crosses** in the margin; **the plate's
-own identity** — series letter, running number, date, exposure length, often stamped or written
-directly into a margin left un-exposed for the purpose; **emulsion defects** — scratches, dust,
-crazing at the edges, the odd airplane or satellite trail on the latest plates; and **ink marks
-laid on afterward by a human hand**, circling one star among thousands. Absolutely nothing is
-drawn to depict what a body *is* — every mark on the plate is either physics (light falling on
-silver) or bookkeeping (what a person wrote about that physics afterward). That is the whole
-grammar in one sentence, and it is the strongest possible contrast to every era below it in the
-ladder, all of which draw *from imagination or inherited tradition* onto a blank field.
+Figures are entirely gone. What replaces them, descending by how much frame they occupy: **the
+réseau grid** (Carte du Ciel only); **catalogue numbers and fiducial crosses** in the margin;
+**the plate's own identity** — series letter, running number, date, exposure length, stamped or
+written into an un-exposed margin; **emulsion defects** — scratches, dust, edge crazing, the odd
+airplane or satellite trail on the latest plates; and **ink marks laid on afterward by hand**,
+circling one star among thousands. Nothing is drawn to depict what a body *is* — every mark is
+either physics (light falling on silver) or bookkeeping (what a person wrote about that physics
+afterward). That is the whole grammar, and the strongest possible contrast to every era below it
+in the ladder, all of which draw *from imagination or inherited tradition* onto a blank field.
 
 ## 3. Palette
 
@@ -144,28 +141,24 @@ all in wide use 1900–1950). Two verified, freely embeddable faces on Google Fo
     "Pica") — both standard office-machine pitches of the era, a nice coincidence for the name.
 
 **(c) The printed grotesque — charts, catalogues, margin type.** Akzidenz-Grotesk (1896, the
-model grotesque of the whole period) is **not** free. The correct, verified free equivalent
-tuned to this exact decade: **Libre Franklin**, licensed **SIL Open Font License 1.1**, by
-Impallari Type, an open revival and full-weight expansion (Thin→Black) of **Morris Fuller
-Benton's Franklin Gothic**, drawn for American Type Founders starting **1902** and issued in five
-weights 1904–1913 — a design contemporary with the Carte du Ciel and Franklin-Adams charts to
-within a decade, and (coincidentally, not because of the name) genuinely of the era rather than a
-later interpolation. Use it for réseau-grid labels, catalogue-number margins, and any printed
-(as opposed to handwritten or typed) chart furniture.
+model grotesque of the period) is **not** free. Verified free equivalent tuned to this exact
+decade: **Libre Franklin**, **SIL OFL 1.1**, by Impallari Type — an open revival and full-weight
+expansion (Thin→Black) of **Morris Fuller Benton's Franklin Gothic**, drawn for ATF starting
+**1902** and issued in five weights 1904–1913, contemporary with the Carte du Ciel and
+Franklin-Adams charts within a decade. Use for réseau-grid labels, catalogue margins, and any
+printed (not handwritten or typed) chart furniture.
 
 **(d) The engraved/lithographed BD hand.** The Bonner Durchmusterung's charts are lithographed,
-not photographic, in a period engraved-numeral style close to what era III already renders —
-no distinct free-font recommendation is needed beyond reusing era III's existing numeral
-treatment at smaller size, since the BD is folded in as an *idea* (grid of numbered dots) rather
-than a separate visual hand per `OVERVIEW.md`.
+in a period engraved-numeral style close to what era III already renders — no distinct free-font
+recommendation needed beyond reusing era III's numeral treatment at smaller size, since the BD is
+folded in as an *idea* (grid of numbered dots) rather than a separate visual hand.
 
-**Numerals and shaping.** All Latin numerals, no shaping needed (Latin text places one glyph per
-character, same as era III). The HUD's numbers should be set in the typed face (Courier Prime),
-not the printed grotesque — this is the one era where the *score itself* plausibly reads as a
-typed log entry rather than an engraved numeral, which pairs with `LETTERING.md`'s own suggestion
-for era V ("the numerals should not be written at all, they should *update*") — era IV's version
-of that idea is milder: the numerals are typed, not stroked, but they still resolve instantly
-rather than ticking like an instrument.
+**Numerals and shaping.** All Latin numerals, no shaping needed (one glyph per character, same as
+era III). The HUD's numbers should be set in the typed face (Courier Prime), not the grotesque —
+this is the one era where the *score itself* plausibly reads as a typed log entry rather than an
+engraved numeral, pairing with `LETTERING.md`'s era-V suggestion ("the numerals should not be
+written, they should *update*"); era IV's version is milder — typed, not stroked, but still
+resolving instantly rather than ticking like an instrument.
 
 ## 5. Names for the game's things
 
@@ -227,32 +220,28 @@ darkness-pursuit mechanic maps this cleanly onto an attested period constraint b
 Per `DANGERS.md`'s option A (dangers are depiction only; the three rows and the nebula are
 unchanged in field/reach/lethality — only drawn and named differently):
 
-- **Attractor — Emulsion void.** A patch where the silver has lifted clean off the glass:
-  drawn as a ragged-edged pale island inside the dense field, stars simply absent inside its
-  border rather than distorted, with the border itself slightly raised/glossy where the emulsion
-  has curled. Confirmed as a real, named plate-flaw category in the DASCH defect literature
-  (alongside scratches and dust); a void reads correctly as *lethal to its edge* because inside
-  it there is, literally, no image at all — nothing can be recovered from a blank patch of glass.
-- **Repulsor — Halation.** The bloom that spreads past an overexposed star's own disc as light
-  scatters back off the glass support into the emulsion; confirmed physical phenomenon, with a
-  confirmed period fix (staining the back of the plate to absorb the backscatter, an approach
-  attributed to "Mr. Russell" in early photographic literature). Drawn as a soft, roughly
-  concentric halo well outside the star's true disc, brightest nearest the star and fading — the
-  *outer* halo is decorative fog (matches `MACULA`'s wide, mostly-safe reach), the star's own
-  overexposed core is the small lethal centre.
+- **Attractor — Emulsion void.** A patch where the silver has lifted clean off the glass: a
+  ragged-edged pale island in the dense field, stars simply absent inside its border, the border
+  itself slightly raised/glossy where the emulsion curled. Confirmed as a real, named plate-flaw
+  category (DASCH defect literature, alongside scratches and dust); reads correctly as *lethal to
+  its edge* since inside it there is, literally, no image at all.
+- **Repulsor — Halation.** The bloom spreading past an overexposed star's own disc as light
+  scatters back off the glass support into the emulsion; confirmed phenomenon, with a confirmed
+  period fix (staining the plate's back to absorb the backscatter, attributed to "Mr. Russell" in
+  early photographic literature). A soft, roughly concentric halo outside the star's true disc,
+  brightest nearest the star and fading — the outer halo decorative (matches `MACULA`'s wide,
+  mostly-safe reach), the overexposed core the small lethal centre.
 - **Crosswind — Tracking drift / guiding error.** Every star near it smeared one steady direction,
-  as an unsteady guide correction trails a whole field during a long exposure; confirmed as the
-  named failure mode of manual guiding. Drawn as short, parallel comet-like trails all pointing
-  one way, density fading with distance from the drift's centre — visually this is the single
-  easiest of the four to render as a *field effect* rather than an object, which matches
-  `VENTUS`'s existing behaviour (a force, not a body) unusually well.
-- **Obscurer — Dark nebula.** Confirmed real and well-documented: Barnard's and Max Wolf's
-  independent photographic proof (1900s) that some "holes" in the star field are not gaps between
-  distant stars but nearby, cold, opaque dust clouds blocking the light of everything behind them
-  — the discovery that gives this era its own Barnard numbers (B33, the Horsehead, etc). Drawn as
-  a genuinely star-free patch with a soft, uneven edge (not a hard silhouette — real dark nebulae
-  fade into the field rather than cutting a clean shape), optionally carrying a small hand-
-  written Barnard-number flag the way an actual annotated plate would.
+  as an unsteady guide correction trails a field during a long exposure; confirmed as the named
+  failure mode of manual guiding. Short, parallel comet-like trails all pointing one way, density
+  fading with distance — the single easiest of the four to render as a *field effect* rather than
+  an object, matching `VENTUS`'s existing behaviour (a force, not a body) unusually well.
+- **Obscurer — Dark nebula.** Confirmed and well-documented: Barnard's and Max Wolf's independent
+  photographic proof (1900s) that some "holes" in the star field are nearby, cold, opaque dust
+  clouds, not gaps between distant stars — the discovery that gives this era its Barnard numbers
+  (B33, the Horsehead). A genuinely star-free patch with a soft, uneven edge, not a hard
+  silhouette (real dark nebulae fade into the field), optionally carrying a small hand-written
+  Barnard-number flag.
 
 ## 8. The seven families
 
@@ -281,16 +270,12 @@ plate shows**, not by drawn surface detail:
   oval — the closest this grammar gets to internal structure, and even that reads as a guiding
   wobble as much as a feature.
 
-**No diffraction spikes anywhere in this era**, confirmed: diffraction spikes are produced by a
-reflector's spider-vane secondary-mirror support, an obstruction a refracting lens (the Bruce
-telescopes, the astrographs, the early Schmidt-corrector-plus-mirror Palomar instrument being the
-era's one partial exception worth flagging) simply does not have in the optical path the way a
-Newtonian reflector does. **(correction/confirmation of `04-plate.md`:** the existing claim that
-spikes belong to a later era is correct for the refractors this era's key documents were shot on;
-note for future accuracy that the Palomar 48-inch *is* a Schmidt — catadioptric, not a pure
-refractor — so if the game ever draws a specifically Palomar-attributed body, the "no spikes" rule
-should be scoped to the refractor-shot documents (Carte du Ciel, Barnard, Franklin-Adams) rather
-than asserted for the whole era without qualification.)
+**No diffraction spikes anywhere in this era**, confirmed: spikes come from a reflector's
+spider-vane secondary-mirror support, an obstruction a refracting lens (the Bruce telescopes, the
+astrographs) simply does not have in the optical path. **(confirms `04-plate.md`** for the
+refractors this era's key documents were shot on; note the Palomar 48-inch *is* a Schmidt —
+catadioptric, not a pure refractor — so a Palomar-attributed body should scope "no spikes" to the
+refractor-shot documents (Carte du Ciel, Barnard, Franklin-Adams) rather than the whole era.)
 
 ## 9. Chart furniture, frame, HUD
 
@@ -342,37 +327,29 @@ growing plate/catalogue number, best as the survey's own "limiting magnitude rea
 
 ## 12. Risks and open questions
 
-- **The negative/positive convention needs a single decision and should be stated, not left
-  ambiguous.** Barnard's atlas prints as dark-stars-on-pale-ground; the raw glass, held to light,
-  reads the same way; but a great many modern reproductions of these plates (including most web
-  scans of Carte du Ciel and POSS material) are inverted to the familiar bright-stars-on-black for
-  legibility. The era doc should pick one and say so, because it is the one grammar choice this
-  era's whole identity leans on.
-- **The exact Harvard hand (Spencerian/copperplate vs. plain period cursive) is unverified** in
-  this pass — worth a targeted follow-up against Project PHaEDRA's own transcription notes or the
-  Wolbach Library's published plate-jacket facsimiles before committing to a specific letterform
-  model for `writeText()`'s ink-on-glass mode.
-- **The plate number "B 20650" named in the brief could not be confirmed as a real, specific
-  Harvard plate** — the *format* is solidly attested (letter series + running number, `b` series
-  alone numbering into the tens of thousands), so using an invented number in that format is
-  defensible, but it should not be presented in-game as a citation to one particular historical
-  plate unless it is separately verified.
-- **The "35,700 plates Barnard inspected" figure in the existing `04-plate.md` could not be
-  reconfirmed here** and should either be sourced properly or dropped in favour of the confirmed
-  ~700-copy print run.
-- **The Palomar 48-inch is a Schmidt, not a pure refractor** — the "no diffraction spikes" rule
-  this era leans on for its "least legible as objects" identity is correctly attested for the
-  Carte du Ciel/Barnard/Franklin-Adams refractors, but should not be extended uncritically to
-  every document this era might eventually draw from.
-- **This era's palette is the one plate in the whole ladder with a genuinely near-white ground**
-  rather than a tinted one — worth spiking against the existing duotone machinery before assuming
-  it drops in for free the way `04-plate.md` currently claims; a near-transparent emulsion ground
-  may behave differently from every other plate's tinted base under the same colour-transform
-  pipeline.
-- **BD's non-photographic nature is easy to lose track of** once its ideas are folded into this
-  era per `OVERVIEW.md` — any lettering or reveal treatment that leans on BD specifically should
-  stay clearly separate from the photographic ink/typewriter hands, since it is a lithographed,
-  hand-plotted document from three decades before the Carte du Ciel.
+- **The negative/positive convention needs a single decision, stated not left ambiguous.**
+  Barnard's atlas prints dark-stars-on-pale-ground, matching the raw glass held to light; but most
+  modern reproductions of Carte du Ciel and POSS material are inverted to the familiar
+  bright-stars-on-black for legibility. Pick one and say so — this era's whole identity leans on it.
+- **The exact Harvard hand (Spencerian/copperplate vs. plain period cursive) is unverified** —
+  worth a follow-up against Project PHaEDRA's transcription notes or Wolbach Library plate-jacket
+  facsimiles before committing a letterform model to `writeText()`'s ink-on-glass mode.
+- **"B 20650" could not be confirmed as a real, specific Harvard plate.** The format is solidly
+  attested (letter series + running number), so an invented number in that format is defensible,
+  but it should not be presented in-game as a citation to one particular historical plate.
+- **The "35,700 plates Barnard inspected" figure in `04-plate.md` could not be reconfirmed** and
+  should be sourced properly or dropped in favour of the confirmed ~700-copy print run.
+- **The Palomar 48-inch is a Schmidt, not a pure refractor** — "no diffraction spikes" is correctly
+  attested for the Carte du Ciel/Barnard/Franklin-Adams refractors but should not be extended
+  uncritically to every document this era might eventually draw from.
+- **This era's palette has a genuinely near-white ground**, not a tinted one — worth spiking
+  against the existing duotone machinery before assuming it drops in for free as `04-plate.md`
+  currently claims; a near-transparent emulsion ground may behave differently under the same
+  colour-transform pipeline than every other plate's tinted base.
+- **BD's non-photographic nature is easy to lose track of** once folded into this era per
+  `OVERVIEW.md` — any lettering/reveal work leaning on BD should stay clearly separate from the
+  photographic ink/typewriter hands, since it is lithographed and hand-plotted, three decades
+  before the Carte du Ciel.
 
 ## 13. Sources
 
