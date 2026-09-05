@@ -13,21 +13,20 @@ any single artefact does.
 ## 1. The documents
 
 - **Lascaux, the Hall of the Bulls** (Salle des Taureaux/Rotunda), Dordogne. In situ, closed
-  since 1963; broadly Magdalenian/late Solutrean, commonly cited c. 17,000–15,000 BCE (debated;
-  treat any single year as approximate). Roughly 18–20 m long, 5.5–7.5 m wide, 4–5 m high, about
-  130 figures including four monumental black aurochs, one over 5 m long — the largest animal
-  figure known from Palaeolithic art. The room this era's grammar is pulled from: no frame, no
-  ground line, animals scaled to the rock's own relief. One bull carries six dots over its
-  shoulder; Rappenglück (building on a 1992 proposal by Luz Antequera Congregado) reads this as
-  the Pleiades over a Taurus the bull anticipates. **Contested** — see §12.
+  since 1963; broadly Magdalenian/late Solutrean, commonly cited c. 17,000–15,000 BCE (debated).
+  Roughly 20 m long, 4–7.5 m wide/high, about 130 figures including four monumental black
+  aurochs, one over 5 m — the largest animal figure known from Palaeolithic art, and the room
+  this era's grammar is pulled from: no frame, no ground line, animals scaled to the rock's own
+  relief. One bull carries six dots over its shoulder; Rappenglück (building on a 1992 proposal
+  by Luz Antequera Congregado) reads this as the Pleiades over a Taurus the bull anticipates.
+  **Contested** — see §12.
 - **Lascaux, the Shaft Scene** (Scène du Puits), same site, down a genuine vertical drop: a
   disembowelled bison, a bird-headed man fallen backward, a bird on a staff, a departing woolly
   rhinoceros. Rappenglück reads the three as Deneb, Vega and Altair — the Summer Triangle.
-  **Contested**, and weaker than the Pleiades reading: critics (Bahn; Hayden & Villeneuve 2011,
-  *Cambridge Archaeological Journal* 21(3)) note dot-clusters of every size recur throughout
-  Lascaux, no independent source confirms sky-reading, and "the Summer Triangle" is a Near
-  Eastern/Greek construction retrojected onto Ice Age marks — the era's best lesson in how not to
-  assert a claim.
+  **Contested**, and weaker: critics (Bahn; Hayden & Villeneuve 2011, *Cambridge Archaeological
+  Journal* 21(3)) note dot-clusters of every size recur throughout Lascaux, no independent source
+  confirms sky-reading, and "the Summer Triangle" is a Near Eastern/Greek construction
+  retrojected onto Ice Age marks — the era's best lesson in how not to assert a claim.
 - **Chauvet Cave**, Ardèche (in situ, closed; a full-scale replica, the Caverne du Pont-d'Arc, is
   open). Aurignacian, roughly 36,000 years old. The Panel of Hand Dots and Panel of Hand
   Stencils, per the French Ministry of Culture's own excavation site: three red ochre hand
@@ -39,28 +38,25 @@ any single artefact does.
   37,290 years for a hand stencil beneath it — among the oldest securely dated cave art in
   Europe, the era's non-figurative opening move before any animal is painted at all.
 - **The Abri Blanchard plaque**, Sergeac, Dordogne. Aurignacian, c. 34,000–32,000 BCE. A bone
-  plaquette with a serpentine sequence of engraved pits — 69 marks, 24 changes of technique,
-  plus 81 marginal marks. Marshack (1972) read the changes as tracking the moon's illumination
-  across a run of lunar months; the current, more cautious reading (after methodological
-  critiques of Marshack's broader method, notably by Francesco d'Errico) treats the marks as
-  sequential tallies of *observed* lunar events, not a forward calendar — either way, the
-  clearest evidence someone was counting the moon.
+  plaquette with a serpentine sequence of engraved pits — 69 marks, 24 changes of technique, plus
+  81 marginal marks. Marshack (1972) read the changes as tracking the moon's illumination across
+  lunar months; the current, more cautious reading (after critiques of Marshack's broader method,
+  notably by Francesco d'Errico) treats the marks as sequential tallies of *observed* lunar
+  events, not a forward calendar — either way, the clearest evidence someone was counting the moon.
 - **The tally bones — Ishango and Lebombo.** **Ishango** (Semliki River, DR Congo): a baboon
-  fibula ~10 cm long, roughly 20,000 years old, notched in three distinct columns rather than
-  one running tally, inviting a relational reading without proving it; Marshack's lunar-calendar
-  reading is contested on the same grounds as Blanchard, and a "prehistoric calculator" reading
-  is argued by some, rejected by others as pattern-seeking after the fact. **Lebombo** (Border
-  Cave, Eswatini): a baboon fibula with 29 clear notches, among the oldest deliberately marked
-  objects known, commonly cited 37,000–43,000 years old (older end from recent redating; treat
-  as unverified) — a 29-notch count invites a lunar-month reading, but the function, like
-  Ishango's, is inferred, not inscribed.
+  fibula ~10 cm long, ~20,000 years old, notched in three distinct columns rather than one
+  running tally, inviting (not proving) a relational reading; Marshack's lunar-calendar reading
+  is contested on the same grounds as Blanchard. **Lebombo** (Border Cave, Eswatini): a baboon
+  fibula with 29 clear notches, among the oldest deliberately marked objects known, commonly
+  cited 37,000–43,000 years old (treat as unverified) — inviting a lunar-month reading, but the
+  function, like Ishango's, is inferred, not inscribed.
 - **Newgrange and Knowth**, Boyne Valley, Ireland. Neolithic passage tombs, built c. 3200 BCE —
   this era's closing edge, its strongest bridge from cave to open sky. Kerbstones (97 at
   Newgrange) carry pecked spirals, lozenges and concentric circles — the entrance triple spiral
-  is the single most recognisable image to survive the era, and its roofbox is genuinely,
-  uncontroversially aligned to winter-solstice sunrise. Knowth's case is weaker: Philip Stooke
-  proposes an eastern-passage engraving as the earliest known map of the Moon's maria, and others
-  read its spirals as calendrical — both **minority positions**, not consensus.
+  is the era's single most recognisable image, and its roofbox is genuinely, uncontroversially
+  aligned to winter-solstice sunrise. Knowth's case is weaker: Philip Stooke proposes an
+  eastern-passage engraving as the earliest known map of the Moon's maria, and others read its
+  spirals as calendrical — both **minority positions**.
 
 (Göbekli Tepe, Şanlıurfa, from c. 9600 BCE, and Nabta Playa's Calendar Circle, Egypt, c. 4800 BCE,
 recur in the leads too, and are treated in §6/§7/§12 instead — their sky-reading claims are the
@@ -187,26 +183,24 @@ or a spiral is not recovered), that is called out plainly rather than implied.
 ## 6. Currency and one rule
 
 **The currency is ochre**, and pigment generally — this needs no renaming, only naming correctly.
-It was mined (a worked haematite mine at Bomvu Ridge/Lion Cave, Lebombo Mountains, near where the
-tally bone was found, is commonly cited as one of the oldest known mines, on the order of
-40,000+ years — treat as approximate), ground, and mixed with a binder — water, fat, plant sap,
-saliva or blood have all been proposed and are not always distinguishable archaeologically.
-Sourcing, grinding and carrying pigment often kilometres, deep into total darkness by a light
-source itself burning down as you worked, is already almost exactly the shape of the ink
-resource: scarce, physically carried, spent by the act of making a mark, replenished only by
-more labour.
+It was mined (a worked haematite mine at Bomvu Ridge/Lion Cave, Lebombo Mountains, is commonly
+cited as one of the oldest known mines, on the order of 40,000+ years — treat as approximate),
+ground, and mixed with a binder — water, fat, plant sap, saliva or blood have all been proposed
+and are not always distinguishable archaeologically. Sourcing, grinding and carrying pigment
+often kilometres, deep into total darkness by a light source itself burning down as you worked,
+is already almost exactly the shape of the ink resource: scarce, physically carried, spent by
+the act of making a mark, replenished only by more labour.
 
 **"No twist" reading:** rename ink to ochre, keep every number and mechanic exactly as shipped —
-legitimate on its own, and exactly what era II and IV are expected to do too.
+legitimate on its own, and what era II and IV are expected to do too.
 
 **The one twist**, kept small and render-side, in the spirit of DANGERS.md's option A: **the
-torch breathes.** Nothing about `HAZARD_KINDS`, ink cost, or scoring changes. What changes is the
-aiming guide's own reach — a render-side quantity the guide already computes fresh each frame,
-not a simulation constant — which contracts as ink drains (the torch guttering) and pulses
-outward for a second on every capture (the flame catching again, as a real relit torch does). The
-player flies exactly the same physics on every plate; only how far ahead the dark lets them *see*
-changes, driven by the same number that already drives the ink gauge. Cosmetic by the
-architecture's own definition — no new hazard, no new field, no new ledger stat.
+torch breathes.** Nothing about `HAZARD_KINDS`, ink cost, or scoring changes — only the aiming
+guide's own reach, a render-side quantity the guide already computes fresh each frame, which
+contracts as ink drains and pulses outward for a second on every capture (a torch relighting).
+The player flies identical physics on every plate; only how far ahead the dark lets them *see*
+changes, driven by the same number that drives the ink gauge. Cosmetic by the architecture's own
+definition — no new hazard, no new field, no new ledger stat.
 
 ## 7. Dangers
 
@@ -310,33 +304,29 @@ has to a signature, is proposed as the mark for a personal best or completed run
   settled history the game is merely stylising.
 - **Two attested grammars exist for this era and should not be blended.** The Franco-Cantabrian
   painted cave (Lascaux, Chauvet, El Castillo) is this document's primary grammar, matching how
-  era I leans on one Egyptian ceiling rather than every Egyptian source at once. Australian
-  Aboriginal dark-constellation astronomy — the Emu in the Sky, formed from the Coalsack and
-  other dark nebulae, correlated with a real pecked emu engraving at Elvina Track, Ku-ring-gai
-  Chase, NSW — is extraordinary, genuinely attested, and *still living*, and answers the brief's
-  "dark constellation" lead better than anything European does. It is deliberately **not** folded
-  into the grammar above: it is a different continent's culture, and, more importantly, living
-  Indigenous knowledge rather than an extinct practice recovered by excavation — a distinction a
-  commercial game should treat with real caution before using as a hazard skin. If a future pass
-  wants it specifically, that should be a deliberate decision, probably with consultation, not
-  inherited by default from this write-up.
+  era I leans on one Egyptian ceiling rather than every source at once. Australian Aboriginal
+  dark-constellation astronomy — the Emu in the Sky, formed from the Coalsack, correlated with a
+  real pecked emu engraving at Elvina Track, Ku-ring-gai Chase, NSW — is extraordinary, genuinely
+  attested, and *still living*, and answers the "dark constellation" lead better than anything
+  European does. Deliberately **not** folded in: it is a different continent's culture, and,
+  more importantly, living Indigenous knowledge rather than an extinct practice recovered by
+  excavation — a distinction a commercial game should treat with caution before using as a hazard
+  skin. If a future pass wants it, that should be a deliberate decision, with consultation, not
+  inherited by default here.
 - **Rule 1 is tested hardest by the "torch breathes" twist** in §6: confirm in a spike it never
-  needs to read simulation state beyond what the guide already reads, or it becomes a B/C-shaped
-  change per DANGERS.md.
+  needs simulation state beyond what the guide already reads, or it becomes a B/C-shaped change.
 - **The tally/dot-field HUD (§9) is a genuine legibility risk.** Spike one screen of it — score,
-  flow and a skip bonus firing within a few seconds, as a real run produces — before committing.
-  A hybrid fallback (tallies for lore captions, a plain numeral face for safety-critical HUD
-  numbers) is the honest retreat if the spike fails.
-- **No frame at all (§9) is the era's strongest and riskiest idea at once.** It removes chrome
+  flow and a skip bonus firing within a few seconds — before committing; a hybrid fallback
+  (tallies for lore, a plain numeral face for safety-critical HUD numbers) is the honest retreat.
+- **No frame at all (§9) is the era's strongest and riskiest idea at once**, removing chrome
   every other era relies on to judge the chart's edge. Build one chapter plate as a spike first,
-  exactly as `01-ceiling.md` recommends for its own smaller version of this problem.
-- **Dates throughout are approximate and, in several cases, actively debated** (Lascaux's own
-  dating has shifted across publications); treat any range given as the claim, not a settled year.
+  as `01-ceiling.md` recommends for its own smaller version of this problem.
+- **Dates throughout are approximate and, in several cases, actively debated**; treat any range
+  given as the claim, not a settled year.
 - **Bush Barrow's gold lozenge, named as a lead, does not belong to this era** — an Early Bronze
-  Age grave good, c. 1950 BCE, near Stonehenge, past this era's c. 3,000 BCE close and inside era
-  1's (The Disc, Nebra, c. 1600 BCE) territory instead. Cup-and-ring marks have the same problem
-  in miniature (the motif class runs c. 3800–1500 BCE); only its earliest phase sits inside this
-  era's window. Recommend dropping Bush Barrow from this era's reference list.
+  Age grave good, c. 1950 BCE, past this era's c. 3,000 BCE close and inside era 1's (The Disc,
+  Nebra, c. 1600 BCE) territory instead. Cup-and-ring marks have the same problem in miniature
+  (the motif class runs c. 3800–1500 BCE). Recommend dropping Bush Barrow from this era's list.
 
 ## 13. Sources
 

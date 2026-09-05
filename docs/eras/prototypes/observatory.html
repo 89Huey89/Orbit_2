@@ -1,0 +1,653 @@
+<!doctype html>
+<!--
+  Orbit — era VII prototype: THE OBSERVATORY (1990–today).
+  Built from docs/eras/research/observatory.md; every named mark below cites a section of it.
+  Not shipped code — a standalone sheet for judging the era before any porting into src/.
+
+  Fonts (Google Fonts, both SIL Open Font License 1.1 — embeddable the way the game's Fell
+  faces already are; research.md §4 names both explicitly):
+    - IBM Plex Mono (IBM, 2017) — the FITS-card face. Latin, Latin-1 Supplement, Latin
+      Extended-A subset requested below (ASCII plus the punctuation a card and a catalogue
+      number actually set: = / − ″ ° ×).
+    - Space Grotesk (Florian Karsten, 2018, cut from Colophon Foundry's Space Mono) — the
+      margin/small-caps face, "instrument label" register per research.md §4.
+  If the network is unavailable the stylesheet link simply fails; the font-family fallback
+  stacks below land on the platform's own monospace/grotesque rather than Times New Roman, so
+  the sheet still reads as an instrument, only in a house face instead of the named one.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Orbit — The Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
+  #stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  canvas{display:block;image-rendering:auto;}
+  #hint{position:fixed;left:8px;bottom:6px;color:#5a6a78;font:11px monospace;opacity:.6;pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="hint">L — legend</div>
+<script>
+'use strict';
+/* ---------- seeded randomness: the sheet must paint the same way every load ---------- */
+function mulberry32(seed){
+  let a=seed>>>0;
+  return function(){
+    a|=0;a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+const SEED=0xC0DE07;
+
+/* ---------- tokens: the plate's palette and faces, named exactly as definePlate would ---------- */
+const TOKENS={
+  ground:'#04060b',                       // sensor black, research.md §3 — already shipped in backdrop.js
+  airglow:'rgba(24,38,60,.5)',
+  ink:'#eef4fb', inkDim:'rgba(233,242,250,.6)', inkFaint:'rgba(233,242,250,.32)',
+  cyan:'#8fd6e8', gold:'#f5c542', amber:'#ff8c3c',
+  sii:'#e8482f', ha:'#39c46a', oiii:'#3aa0e8',                    // research.md §3, the Hubble-palette assignment
+  attractor:'#ff8c3c', repulsor:'#f0e4c8', repulsorCore:'#050403', wind:'#e7d9a8', dust:'#0a0c14',
+  keyline:'rgba(233,242,250,.4)',
+  legend:'rgba(150,190,210,.85)',
+  mono:'"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace',
+  sc:'"Space Grotesk",ui-sans-serif,system-ui,sans-serif'
+};
+// Body palettes: the exact hex the shipped `modern` plate token already registers
+// (src/planets.js PLATES.modern) — reused rather than re-invented, per this era's own rule
+// that a rendered world keeps its true colour instead of a plate tint.
+const BODY={
+  ocean:   {light:'#a8d4ee',body:'#2f6494',dark:'#08182c',rgb:'116,178,226',air:1,   spec:true},
+  crater:  {light:'#e0dacb',body:'#8c8779',dark:'#211f1b',rgb:'196,190,178',air:0,   spec:false},
+  ringed:  {light:'#f2debb',body:'#c6a670',dark:'#3a2c17',rgb:'230,204,158',air:.88, spec:false,ring:true},
+  ice:     {light:'#eef7fc',body:'#9dc3d6',dark:'#1e3644',rgb:'196,226,242',air:.72, spec:true},
+  dune:    {light:'#eeb488',body:'#ac6539',dark:'#341a0d',rgb:'218,142,94', air:.4,  spec:false},
+  volcanic:{light:'#d0774a',body:'#4c3b33',dark:'#140c09',rgb:'214,100,52', air:.22, spec:false},
+  storm:   {light:'#f0dfc8',body:'#bf9e80',dark:'#3c2c20',rgb:'226,198,168',air:1,   spec:false}
+};
+// Names for the game's things, research.md §5 — attested where the table marks it so.
+const FAMILY_NAME={ocean:'OCEAN WORLD',crater:'ROCKY WORLD',ringed:'GAS GIANT',ice:'ICE GIANT',
+  dune:'DESERT WORLD',volcanic:'LAVA WORLD',storm:'STORM-BAND GIANT'};
+const FAMILY_ORDER=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+
+/* ---------- canvas / DPR / fit-to-window, keeping the 1280x800 aspect ---------- */
+const BASE_W=1280,BASE_H=800;
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let DPR=1;
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  const scale=Math.min(window.innerWidth/BASE_W,window.innerHeight/BASE_H);
+  canvas.style.width=Math.round(BASE_W*scale)+'px';
+  canvas.style.height=Math.round(BASE_H*scale)+'px';
+  canvas.width=Math.round(BASE_W*DPR);
+  canvas.height=Math.round(BASE_H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  staticLayer=null; // force a rebuild at the new pixel density
+}
+window.addEventListener('resize',resize);
+
+function makeLayer(){
+  const c=document.createElement('canvas');
+  c.width=Math.round(BASE_W*DPR);c.height=Math.round(BASE_H*DPR);
+  const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);
+  return {c,g};
+}
+
+/* ==========================================================================================
+   THE ERA'S STROKE PRIMITIVES — every mark on this sheet is cut by one of these three, never
+   a raw ctx.stroke()/ctx.fillRect(), exactly as the engraving era routes every line through
+   burinArc/burinSegment. A FITS-era sheet has no hand in it at all (research.md §4: "a machine
+   wrote it"), so the primitives are deliberately inert — no wobble, no taper, no lifted tool.
+   ========================================================================================== */
+// hairline() — the instrument's straight or dashed rule: scale-bar ticks, the compass arrows,
+// a body's keyline, a ring's outline, the colour-bar frame, a pointer line.
+function hairline(g,x1,y1,x2,y2,{color=TOKENS.inkDim,width=1,dash=null,alpha=1}={}){
+  g.save();g.globalAlpha=alpha;g.strokeStyle=color;g.lineWidth=width;g.lineCap='butt';
+  if(dash)g.setLineDash(dash);
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
+  g.restore();
+}
+// hairArc() — an arc built from short hairline chords, for orbit rings, the black hole's
+// photon ring and every other curve on the sheet; nothing here is a single smooth ctx.arc().
+function hairArc(g,cx,cy,r,a0,a1,opts={},steps=null){
+  const n=steps||Math.max(6,Math.ceil(Math.abs(a1-a0)/0.09));
+  let px=cx+Math.cos(a0)*r,py=cy+Math.sin(a0)*r;
+  for(let i=1;i<=n;i++){
+    const a=a0+(a1-a0)*i/n,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
+    hairline(g,px,py,x,y,opts);px=x;py=y;
+  }
+}
+// punchDot() — the sensor's photosite: every star, every grain of read noise, every fleck of
+// surface texture on a body is one square well of light, never a round painterly daub.
+function punchDot(g,x,y,r,color,alpha=1){
+  g.save();g.globalAlpha=alpha;g.fillStyle=color;g.fillRect(x-r,y-r,r*2,r*2);g.restore();
+}
+// plotterSegment() — a line an instrument is actively drawing rather than one already cut: the
+// dash offset advances with t, so the flight trail, the aim guide and the pointer line all read
+// as telemetry being plotted live instead of ink already dry.
+function plotterSegment(g,x1,y1,x2,y2,t,{color=TOKENS.cyan,width=1.2,period=14,alpha=.8}={}){
+  g.save();g.globalAlpha=alpha;g.strokeStyle=color;g.lineWidth=width;
+  g.setLineDash([3,4]);g.lineDashOffset=-t*period;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.restore();
+}
+
+/* ---------- text: the FITS card and the small-caps margin label ---------- */
+function monoFont(px,weight=400,italic=false){return `${italic?'italic ':''}${weight} ${px}px ${TOKENS.mono}`;}
+function scFont(px,weight=500){return `${weight} ${px}px ${TOKENS.sc}`;}
+function label(g,text,x,y,{font=scFont(10),color=TOKENS.inkDim,align='left',tracking=1.4,alpha=1}={}){
+  g.save();g.globalAlpha=alpha;g.font=font;g.fillStyle=color;g.textBaseline='alphabetic';
+  if(tracking<=0||text.length<2){g.textAlign=align;g.fillText(text,x,y);g.restore();return;}
+  // Letter-spacing by hand: canvas has no tracking property, and this era's captions are set wide.
+  const widths=[...text].map(ch=>g.measureText(ch).width);
+  const total=widths.reduce((a,b)=>a+b,0)+tracking*(text.length-1);
+  let cx=align==='right'?x-total:align==='center'?x-total/2:x;
+  g.textAlign='left';
+  for(let i=0;i<text.length;i++){g.fillText(text[i],cx,y);cx+=widths[i]+tracking;}
+  g.restore();
+}
+// A right-padded FITS card: an 8-char keyword, ' = ', the value, and an optional ' / comment' —
+// research.md §4's fixed-width convention, set literally rather than paraphrased.
+function fitsCard(kw,val,comment){
+  const k=(kw+'        ').slice(0,8);
+  return comment?`${k}= ${val} / ${comment}`:`${k}= ${val}`;
+}
+
+/* ==========================================================================================
+   THE GROUND — a sensor, not a sheet: airglow, a false-colour narrowband patch, a dust lane,
+   a graded star field with bloom and diffraction spikes, read noise. Cached once; this whole
+   layer never changes frame to frame.
+   ========================================================================================== */
+function paintGround(g,rng){
+  const far=Math.max(BASE_W,BASE_H);
+  g.fillStyle=TOKENS.ground;g.fillRect(0,0,BASE_W,BASE_H);
+  const glow=g.createRadialGradient(BASE_W*.52,BASE_H*.42,0,BASE_W*.5,BASE_H*.5,far*.8);
+  glow.addColorStop(0,TOKENS.airglow);glow.addColorStop(.55,'rgba(12,20,34,.3)');glow.addColorStop(1,'rgba(3,5,10,0)');
+  g.fillStyle=glow;g.fillRect(0,0,BASE_W,BASE_H);
+  // The narrowband patch, in the amber-teal a real SII/Hα/OIII composite reads as (§3: SII and
+  // Hα both register across most of a real nebula, so a pure-primary mix would be wrong).
+  const nebX=980,nebY=140;
+  for(let i=0;i<14;i++){
+    const ox=nebX+(rng()-.5)*190,oy=nebY+(rng()-.5)*130,rr=40+rng()*70;
+    const mix=rng();const c=mix<.4?TOKENS.sii:mix<.75?TOKENS.ha:TOKENS.oiii;
+    const rgb=c===TOKENS.sii?'232,72,47':c===TOKENS.ha?'57,196,106':'58,160,232';
+    const glowN=g.createRadialGradient(ox,oy,0,ox,oy,rr);
+    glowN.addColorStop(0,`rgba(${rgb},${.05+rng()*.06})`);glowN.addColorStop(.6,`rgba(${rgb},${.02+rng()*.02})`);glowN.addColorStop(1,`rgba(${rgb},0)`);
+    g.fillStyle=glowN;g.fillRect(ox-rr,oy-rr,rr*2,rr*2);
+  }
+  // Pillars: dark silhouette columns rising out of the same patch, the dust the light hasn't
+  // eaten through yet (1995/2014 Hubble grammar, §1).
+  g.save();g.globalAlpha=.5;
+  for(let i=0;i<3;i++){
+    const bx=nebX-70+i*55,bw=20+rng()*10;
+    g.fillStyle='rgba(6,5,8,.6)';
+    g.beginPath();g.moveTo(bx-bw/2,nebY+90);g.lineTo(bx-bw*.2,nebY-40-rng()*20);g.lineTo(bx+bw*.15,nebY-40-rng()*20);g.lineTo(bx+bw/2,nebY+90);g.closePath();g.fill();
+  }
+  g.restore();
+  // One deliberate dust lane in the foreground, dark enough to caption (obscurer, §7/§8: "the
+  // modern-era equivalent of era IV's Barnard numbers" — an LDN-style number).
+  const laneX=260,laneY=470;
+  g.save();g.translate(laneX,laneY);g.rotate(-.3);
+  const lane=g.createRadialGradient(0,0,0,0,0,1);
+  lane.addColorStop(0,'rgba(4,5,10,.6)');lane.addColorStop(.6,'rgba(4,5,10,.28)');lane.addColorStop(1,'rgba(4,5,10,0)');
+  g.scale(150,34);g.fillStyle=lane;g.fillRect(-1,-1,2,2);
+  g.restore();
+  window.__laneCaptionAt={x:laneX+40,y:laneY+56};
+  // The field. Most of it unresolved single photosites, thicker through a faint galactic band.
+  g.save();g.translate(BASE_W*.5,BASE_H*.52);g.rotate(-.5);
+  for(let i=0;i<2600;i++){
+    const x=(rng()-.5)*far*2,y=(rng()+rng()+rng()-1.5)*BASE_H*.55;
+    punchDot(g,x,y,.5+rng()*.4,rng()<.3?'rgba(196,214,244,1)':'rgba(232,238,246,1)',.06+rng()*.3);
+  }
+  g.restore();
+  for(let i=0;i<420;i++)punchDot(g,rng()*BASE_W,rng()*BASE_H,.6,'rgba(226,236,248,1)',.05+rng()*.28);
+  // Bright stars: bloom, and the instrument's own signature — four vanes on most, six (a
+  // hexagonal-segment mirror's mark, research.md §12's noted gap) on the very brightest few.
+  for(let i=0;i<70;i++){
+    const x=rng()*BASE_W,y=rng()*BASE_H*.72,mag=rng(),r=.7+mag*mag*2.4;
+    const tone=mag>.86?'255,224,190':mag>.6?'246,246,242':'202,222,255';
+    const halo=g.createRadialGradient(x,y,0,x,y,r*7);
+    halo.addColorStop(0,`rgba(${tone},${.2+mag*.32})`);halo.addColorStop(.32,`rgba(${tone},${.05+mag*.1})`);halo.addColorStop(1,`rgba(${tone},0)`);
+    g.fillStyle=halo;g.fillRect(x-r*7,y-r*7,r*14,r*14);
+    punchDot(g,x,y,r*.62,'#fff',.55+mag*.45);
+    if(mag>.9){
+      const reach=r*10;
+      for(let s=0;s<6;s++){const a=s*Math.PI/3;hairline(g,x-Math.cos(a)*reach,y-Math.sin(a)*reach,x+Math.cos(a)*reach,y+Math.sin(a)*reach,{color:`rgba(${tone},.16)`,width:.5});}
+    }else if(mag>.72){
+      const reach=r*(5+mag*6);
+      hairline(g,x-reach,y,x+reach,y,{color:`rgba(${tone},.16)`,width:.55});
+      hairline(g,x,y-reach,x,y+reach,{color:`rgba(${tone},.16)`,width:.55});
+    }
+  }
+  // Read noise: a fine, near-invisible speckle over the whole frame, the sensor's own grain.
+  for(let i=0;i<900;i++)punchDot(g,rng()*BASE_W,rng()*BASE_H,.5,'rgba(255,255,255,1)',rng()*.04);
+  const vign=g.createRadialGradient(BASE_W*.5,BASE_H*.46,Math.min(BASE_W,BASE_H)*.26,BASE_W*.5,BASE_H*.5,far*.72);
+  vign.addColorStop(0,'rgba(2,4,9,0)');vign.addColorStop(1,'rgba(1,2,6,.66)');
+  g.fillStyle=vign;g.fillRect(0,0,BASE_W,BASE_H);
+}
+
+/* ==========================================================================================
+   BODIES — lit spheres. albedo() paints the turning surface; lightBody() lays the terminator,
+   limb darkening, rim and specular over it — the split research.md's §"how the seven families
+   are depicted" describes as back/surface/front/weather, collapsed here to two passes since
+   nothing on this static sheet actually turns.
+   ========================================================================================== */
+function albedo(g,r,family,rng){
+  const pal=BODY[family];
+  g.save();g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+  g.fillStyle=pal.body;g.fillRect(-r,-r,r*2,r*2);
+  if(family==='ocean'){
+    for(let i=0;i<5;i++){const x=(rng()-.5)*r*1.6,y=(rng()-.5)*r*1.6,rr=r*(.14+rng()*.26);
+      const c=g.createRadialGradient(x,y,0,x,y,rr);c.addColorStop(0,'rgba(120,140,90,.55)');c.addColorStop(1,'rgba(120,140,90,0)');
+      g.fillStyle=c;g.fillRect(x-rr,y-rr,rr*2,rr*2);}
+    for(let i=0;i<50;i++)punchDot(g,(rng()-.5)*r*2,(rng()-.5)*r*2,.5+rng(),'rgba(255,255,255,1)',rng()*.12);
+  }else if(family==='crater'){
+    for(let i=0;i<24;i++){const a=rng()*Math.PI*2,d=Math.sqrt(rng())*r*.95,x=Math.cos(a)*d,y=Math.sin(a)*d,rr=r*(.03+rng()*.1);
+      g.fillStyle=`rgba(30,28,24,${.14+rng()*.18})`;g.beginPath();g.arc(x,y,rr,0,Math.PI*2);g.fill();
+      hairline(g,x-rr*.7,y-rr*.7,x+rr*.7,y+rr*.7,{color:'rgba(220,214,200,.18)',width:.4});}
+  }else if(family==='ringed'||family==='storm'){
+    const bands=family==='storm'?11:7;
+    for(let i=0;i<bands;i++){const y=-r+i*r*2/bands,h=r*2/bands;
+      g.fillStyle=i%2?`rgba(${pal.rgb},.22)`:`rgba(${pal.rgb},.06)`;g.fillRect(-r,y,r*2,h);}
+    if(family==='storm'){ // the Great Red Spot, bright in infrared rather than red — research.md §8
+      const sx=-r*.15,sy=r*.1;const spot=g.createRadialGradient(sx,sy,0,sx,sy,r*.32);
+      spot.addColorStop(0,'rgba(255,244,220,.55)');spot.addColorStop(1,'rgba(255,244,220,0)');
+      g.fillStyle=spot;g.fillRect(sx-r*.32,sy-r*.32,r*.64,r*.64);
+    }
+  }else if(family==='ice'){
+    for(let i=0;i<10;i++){const a=rng()*Math.PI*2,d=(rng()-.5)*r*1.1;
+      hairline(g,Math.cos(a)*r,Math.sin(a)*r+d,-Math.cos(a)*r,-Math.sin(a)*r+d,{color:`rgba(${pal.rgb},.14)`,width:.4});}
+  }else if(family==='dune'){
+    for(let i=0;i<9;i++){const y=-r+i*r*2/9;g.fillStyle=`rgba(60,28,14,${.1+rng()*.1})`;g.fillRect(-r,y,r*2,r*2/9*.5);}
+    hairline(g,-r*.7,r*.1,r*.75,-r*.05,{color:'rgba(50,22,10,.4)',width:r*.05});
+  }else if(family==='volcanic'){
+    for(let i=0;i<7;i++){const x=(rng()-.5)*r*1.4,y=(rng()-.5)*r*1.4,rr=r*(.06+rng()*.13);
+      const c=g.createRadialGradient(x,y,0,x,y,rr);c.addColorStop(0,'rgba(255,196,120,.7)');c.addColorStop(.5,'rgba(226,96,36,.4)');c.addColorStop(1,'rgba(226,96,36,0)');
+      g.fillStyle=c;g.fillRect(x-rr,y-rr,rr*2,rr*2);}
+  }
+  g.restore();
+}
+function lightBody(g,r,family,rng){
+  const pal=BODY[family],lx=-r*.42,ly=-r*.46;
+  g.save();g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.clip();
+  const day=g.createRadialGradient(lx,ly,r*.05,lx,ly,r*2.1);
+  day.addColorStop(0,'rgba(255,252,244,.32)');day.addColorStop(.2,'rgba(255,250,238,.08)');
+  day.addColorStop(.36,'rgba(0,0,0,0)');day.addColorStop(.6,'rgba(2,4,10,.32)');
+  day.addColorStop(.85,'rgba(1,3,8,.76)');day.addColorStop(1,'rgba(0,1,5,.92)');
+  g.fillStyle=day;g.fillRect(-r,-r,r*2,r*2);
+  const limb=g.createRadialGradient(0,0,r*.6,0,0,r);
+  limb.addColorStop(0,'rgba(0,0,0,0)');limb.addColorStop(1,`rgba(2,4,9,${.28+pal.air*.16})`);
+  g.fillStyle=limb;g.fillRect(-r,-r,r*2,r*2);
+  const rim=g.createLinearGradient(lx*2.2,ly*2.2,-lx*2.2,-ly*2.2);
+  rim.addColorStop(0,`rgba(${pal.rgb},${.5+pal.air*.4})`);rim.addColorStop(.42,`rgba(${pal.rgb},.08)`);rim.addColorStop(.75,`rgba(${pal.rgb},0)`);
+  hairArc(g,0,0,r-.6,0,Math.PI*2,{color:rim,width:1.6});
+  if(pal.spec){
+    const spec=g.createRadialGradient(lx*1.05,ly*1.05,0,lx*1.05,ly*1.05,r*.4);
+    spec.addColorStop(0,'rgba(255,255,255,.45)');spec.addColorStop(.5,'rgba(255,255,255,.08)');spec.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=spec;g.fillRect(-r,-r,r*2,r*2);
+  }
+  if(pal.ring){ // the ring's own shadow on the globe — the clearest cue this is a sphere (§8)
+    const shadow=g.createLinearGradient(0,-r*.42,0,r*.42);
+    shadow.addColorStop(0,'rgba(0,0,0,0)');shadow.addColorStop(.45,'rgba(0,0,0,.4)');shadow.addColorStop(.55,'rgba(0,0,0,.4)');shadow.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=shadow;g.fillRect(-r,-r*.42,r*2,r*.84);
+  }
+  g.restore();
+  if(pal.air>.05){
+    const halo=g.createRadialGradient(0,0,r*.94,0,0,r*(1.1+pal.air*.24));
+    halo.addColorStop(0,`rgba(${pal.rgb},${.28*pal.air})`);halo.addColorStop(.35,`rgba(${pal.rgb},${.12*pal.air})`);halo.addColorStop(1,`rgba(${pal.rgb},0)`);
+    g.fillStyle=halo;g.beginPath();g.arc(0,0,r*(1.1+pal.air*.24),0,Math.PI*2);g.fill();
+  }
+}
+function paintRingBack(g,r){ // the far half of the ring, behind the globe, drawn before it
+  g.save();g.rotate(-.22);
+  for(let i=0;i<5;i++){const rr=r*(1.35+i*.14);
+    hairArc(g,0,0,rr,Math.PI*1.06,Math.PI*1.94,{color:`rgba(${BODY.ringed.rgb},.22)`,width:1});}
+  g.restore();
+}
+function paintRingFront(g,r){
+  g.save();g.rotate(-.22);
+  for(let i=0;i<7;i++){const rr=r*(1.32+i*.115);
+    hairArc(g,0,0,rr,-.34,.34,{color:`rgba(${BODY.ringed.rgb},.46)`,width:1.1});}
+  g.restore();
+}
+// One rendered specimen, keylined and captioned, at (cx,cy) with drawn radius r.
+function paintBody(g,cx,cy,r,family,rng,caption){
+  g.save();g.translate(cx,cy);
+  if(family==='ringed')paintRingBack(g,r);
+  albedo(g,r,family,rng);
+  lightBody(g,r,family,rng);
+  if(family==='ringed')paintRingFront(g,r);
+  hairArc(g,0,0,r+3,0,Math.PI*2,{color:TOKENS.keyline,width:.8}); // the keyline: an orbit ring cut tight to the specimen
+  g.restore();
+  if(caption){
+    label(g,caption.toUpperCase(),cx,cy+r+22,{font:scFont(10.5),color:TOKENS.inkDim,align:'center',tracking:1.2});
+    label(g,`CAT ${(rng()*9000+1000|0)}·${['A','B','C','D'][rng()*4|0]}`,cx,cy+r+35,{font:monoFont(9),color:TOKENS.inkFaint,align:'center',tracking:.6});
+  }
+}
+
+/* ==========================================================================================
+   DANGERS — the four rows re-depicted in the observatory's own hand (research.md §7).
+   ========================================================================================== */
+// Attractor: the black hole, EHT-drawn. A black shadow disc is itself the legible kill edge
+// (HAZARD_KINDS.vortex has core:1 — the whole drawn radius is lethal), ringed by a thin
+// asymmetric bright photon ring, brighter to the south per the M87* paper's ~10:1 ratio.
+function paintAttractor(g,cx,cy,r,rng){
+  g.save();g.translate(cx,cy);
+  for(let i=0;i<3;i++){ // the lensed accretion disc: broad, faint bands outside the shadow
+    const rr=r*(1.35+i*.3);
+    hairArc(g,0,0,rr,0,Math.PI*2,{color:`rgba(255,140,60,${.05-i*.012})`,width:2.4});
+  }
+  g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fillStyle='#000';g.fill();
+  const steps=64;
+  for(let i=0;i<steps;i++){
+    const a0=i/steps*Math.PI*2,a1=(i+1)/steps*Math.PI*2;
+    const bright=.18+.82*Math.max(0,Math.sin((a0+Math.PI*.5))); // brightest toward the south
+    hairline(g,Math.cos(a0)*(r+2),Math.sin(a0)*(r+2),Math.cos(a1)*(r+2),Math.sin(a1)*(r+2),{color:`rgba(255,150,64,${.15+bright*.75})`,width:2.2+bright*1.6});
+  }
+  g.restore();
+  label(g,'BLACK HOLE',cx,cy+r+26,{font:scFont(10.5),color:TOKENS.inkDim,align:'center',tracking:1.4});
+  label(g,'EHT · M87*-CLASS RING',cx,cy+r+38,{font:monoFont(9),color:TOKENS.inkFaint,align:'center',tracking:.6});
+}
+// Repulsor: not "a sun with a flare" but the LASCO occulting-disc image itself — a flat black
+// disc, a thin white ring inked on it marking the true photospheric edge (a real, specific
+// convention, §7), pale gold corona outside, and the CME's three-part structure breaking free.
+function paintRepulsor(g,cx,cy,r,rng){
+  g.save();g.translate(cx,cy);
+  const corona=g.createRadialGradient(0,0,r*.62,0,0,r*1.9);
+  corona.addColorStop(0,'rgba(240,228,200,.28)');corona.addColorStop(.5,'rgba(201,168,106,.14)');corona.addColorStop(1,'rgba(201,168,106,0)');
+  g.fillStyle=corona;g.beginPath();g.arc(0,0,r*1.9,0,Math.PI*2);g.fill();
+  // CME: leading bright front, dark cavity, bright trailing core — LASCO's handbook structure.
+  g.save();g.rotate(-.9);
+  for(const [rr,a0,a1,color,alpha] of [[r*1.75,-.5,.5,'240,228,200',.5],[r*1.45,-.4,.4,'8,6,5',.9],[r*1.15,-.3,.3,'255,236,190',.7]]){
+    hairArc(g,0,0,rr,a0,a1,{color:`rgba(${color},${alpha})`,width:5});
+  }
+  g.restore();
+  g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fillStyle=TOKENS.repulsorCore;g.fill();
+  hairArc(g,0,0,r*.6,0,Math.PI*2,{color:'#f0ece0',width:1.4}); // the true photospheric edge — the lethal core (HAZARD_KINDS.flare core:.6)
+  g.restore();
+  label(g,'CORONAL MASS EJECTION',cx,cy+r*1.9+16,{font:scFont(10.5),color:TOKENS.inkDim,align:'center',tracking:1.2});
+  label(g,'SOHO/LASCO C2-STYLE OCCULTER',cx,cy+r*1.9+28,{font:monoFont(9),color:TOKENS.inkFaint,align:'center',tracking:.5});
+}
+// Crosswind: the solar wind as a field, not a figure — a Parker spiral of streamlines bending
+// outward from a source, per §7's "usable piece" reading of the heliospheric current sheet.
+function paintCrosswind(g,ox,oy,rng){
+  g.save();g.translate(ox,oy);
+  for(let s=0;s<4;s++){
+    const a0=-.5+s*.34;
+    g.save();
+    let px=0,py=0;
+    for(let i=0;i<=40;i++){
+      const t=i/40,rr=t*230,a=a0+t*t*2.6;
+      const x=Math.cos(a)*rr,y=Math.sin(a)*rr*.6;
+      if(i)hairline(g,px,py,x,y,{color:`rgba(231,217,168,${.22-t*.16})`,width:1});
+      px=x;py=y;
+    }
+    g.restore();
+  }
+  for(let i=0;i<26;i++){
+    const t=rng(),a=-.5+rng()*1.2,rr=t*220;
+    punchDot(g,Math.cos(a+t*t*2.6)*rr,Math.sin(a+t*t*2.6)*rr*.6,.9,'rgba(231,217,168,1)',.2+rng()*.3);
+  }
+  g.restore();
+  label(g,'SOLAR WIND',ox+40,oy+150,{font:scFont(10.5),color:TOKENS.inkDim,align:'left',tracking:1.4});
+  label(g,'PARKER SPIRAL, VECTOR FIELD',ox+40,oy+162,{font:monoFont(9),color:TOKENS.inkFaint,align:'left',tracking:.5});
+}
+function paintObscurerCaption(g){
+  const at=window.__laneCaptionAt||{x:300,y:530};
+  hairline(g,at.x-40,at.y-10,at.x,at.y,{color:TOKENS.inkFaint,width:.6,dash:[1,3]});
+  label(g,'DUST LANE',at.x+4,at.y,{font:scFont(10.5),color:TOKENS.inkDim,tracking:1.2});
+  label(g,'CF. LDN 214',at.x+4,at.y+12,{font:monoFont(9),color:TOKENS.inkFaint,tracking:.5});
+}
+
+/* ==========================================================================================
+   THE CONSTELLATION — a catalogue overlay, not a mythological figure (research.md §2: "no line
+   between them" in a real modern sky image). Three stars, each carrying a designation, and a
+   single dashed pointer line naming the field rather than joining the stars into a shape.
+   ========================================================================================== */
+const FIGURE={name:'THE LYRE',cat:'FIELD 7',stars:[
+  {x:1000,y:150,id:'GAIA DR3 6042118395027744000'},
+  {x:1068,y:196,id:'HIP 91262'},
+  {x:1128,y:140,id:'HD 172167'}
+]};
+function paintFigure(g){
+  for(const s of FIGURE.stars){
+    const glow=g.createRadialGradient(s.x,s.y,0,s.x,s.y,10);
+    glow.addColorStop(0,'rgba(255,255,255,.5)');glow.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=glow;g.fillRect(s.x-10,s.y-10,20,20);
+    punchDot(g,s.x,s.y,1.1,'#fff',.9);
+    label(g,s.id,s.x+8,s.y-6,{font:monoFont(8.5),color:TOKENS.inkFaint,tracking:.3});
+  }
+  const lx=FIGURE.stars[0].x-70,ly=FIGURE.stars[0].y-30;
+  hairline(g,lx+58,ly+22,FIGURE.stars[0].x-4,FIGURE.stars[0].y-4,{color:TOKENS.cyan,width:.8,dash:[2,3],alpha:.7});
+  label(g,FIGURE.name,lx,ly,{font:scFont(13),color:TOKENS.ink,tracking:1.6});
+  label(g,'OBJECT = '+FIGURE.cat,lx,ly+13,{font:monoFont(9.5),color:TOKENS.inkFaint,tracking:.5});
+}
+
+/* ==========================================================================================
+   THE PLAYER — the observatory's own target reticle riding the orbit, with a plotted (not
+   inked) trailing track and a faint next-orbit aim guide, per the brief's "pick per research":
+   a reticle reads as the instrument's own acquisition marker, closer to this era's grammar
+   than a drawn comet.
+   ========================================================================================== */
+const RING={cx:560,cy:430,r:92};
+function paintOrbitRing(g){
+  hairArc(g,RING.cx,RING.cy,RING.r,0,Math.PI*2,{color:TOKENS.inkFaint,width:1});
+  for(let i=0;i<24;i++){ // arcsecond-tick styled rim graduations, in place of the engraved rim's hatch
+    const a=i/24*Math.PI*2;
+    hairline(g,RING.cx+Math.cos(a)*(RING.r-3),RING.cy+Math.sin(a)*(RING.r-3),RING.cx+Math.cos(a)*(RING.r+3),RING.cy+Math.sin(a)*(RING.r+3),{color:TOKENS.inkFaint,width:.6});
+  }
+}
+function paintProbe(g,t){
+  const a=t*.5;
+  const px=RING.cx+Math.cos(a)*RING.r,py=RING.cy+Math.sin(a)*RING.r;
+  // trailing telemetry track, one lap behind
+  let prevx=null,prevy=null;
+  for(let i=40;i>=1;i--){
+    const aa=a-i*.045,x=RING.cx+Math.cos(aa)*RING.r,y=RING.cy+Math.sin(aa)*RING.r;
+    if(prevx!==null)plotterSegment(g,prevx,prevy,x,y,t,{color:TOKENS.cyan,width:1,period:10,alpha:.06+.5*(1-i/40)});
+    prevx=x;prevy=y;
+  }
+  // the faint next-orbit aim guide, a short lead into where the release would carry it
+  const aimA=a+.9;
+  plotterSegment(g,px,py,RING.cx+Math.cos(aimA)*RING.r*1.5,RING.cy+Math.sin(aimA)*RING.r*1.5,t,{color:TOKENS.inkFaint,width:.8,period:8,alpha:.35});
+  // the reticle itself: corner brackets around a crosshair, an acquisition marker not a drawing
+  g.save();g.translate(px,py);g.rotate(a+Math.PI/2);
+  const s=9;
+  hairline(g,-s,-s,-s*.4,-s,{color:TOKENS.ink,width:1.3});hairline(g,-s,-s,-s,-s*.4,{color:TOKENS.ink,width:1.3});
+  hairline(g,s,-s,s*.4,-s,{color:TOKENS.ink,width:1.3});hairline(g,s,-s,s,-s*.4,{color:TOKENS.ink,width:1.3});
+  hairline(g,-s,s,-s*.4,s,{color:TOKENS.ink,width:1.3});hairline(g,-s,s,-s,s*.4,{color:TOKENS.ink,width:1.3});
+  hairline(g,s,s,s*.4,s,{color:TOKENS.ink,width:1.3});hairline(g,s,s,s,s*.4,{color:TOKENS.ink,width:1.3});
+  hairline(g,-4,0,4,0,{color:TOKENS.cyan,width:1});hairline(g,0,-4,0,4,{color:TOKENS.cyan,width:1});
+  g.restore();
+  return {x:px,y:py};
+}
+
+/* ==========================================================================================
+   PICKUPS — small, captioned. Research.md §5 does not name these directly; captions below are
+   a constructed extension of its telescope-ops vocabulary (guide-star lock, safe mode, slew,
+   reserve tank), flagged here rather than presented as attested.
+   ========================================================================================== */
+const PICKUPS=[
+  {x:330,y:230,color:TOKENS.gold, name:'GUIDE LOCK'},
+  {x:900,y:470,color:'#8fd0ff', name:'SAFE MODE'},
+  {x:1080,y:470,color:'#c8a8f2', name:'SLEW GUARD'},
+  {x:700,y:180,color:'#e8b06a', name:'RESERVE'}
+];
+function paintPickups(g,rng){
+  for(const p of PICKUPS){
+    g.save();g.translate(p.x,p.y);
+    const glow=g.createRadialGradient(0,0,0,0,0,14);
+    glow.addColorStop(0,p.color+'');glow.addColorStop(1,'rgba(0,0,0,0)');
+    g.globalAlpha=.5;g.fillStyle=glow;g.fillRect(-14,-14,28,28);g.globalAlpha=1;
+    punchDot(g,0,0,4,p.color,1);
+    hairArc(g,0,0,7,0,Math.PI*2,{color:TOKENS.keyline,width:.7});
+    g.restore();
+    label(g,p.name,p.x,p.y+18,{font:monoFont(8.5),color:TOKENS.inkFaint,align:'center',tracking:.6});
+  }
+}
+
+/* ==========================================================================================
+   INSTRUMENT MARGIN — the era's chart furniture, entirely replacing the engraved frame per
+   research.md §9: scale bar, N/E arrows, filter set, epoch, colour bar, credit line.
+   ========================================================================================== */
+function paintMargin(g){
+  // faint RA/Dec tick frame — the one piece of era III's chrome this era keeps (§9)
+  g.save();g.globalAlpha=.22;
+  for(let i=0;i<=32;i++){const x=i/32*BASE_W;hairline(g,x,0,x,i%4===0?7:4,{color:TOKENS.inkFaint,width:.6});hairline(g,x,BASE_H,x,BASE_H-(i%4===0?7:4),{color:TOKENS.inkFaint,width:.6});}
+  for(let i=0;i<=20;i++){const y=i/20*BASE_H;hairline(g,0,y,i%4===0?7:4,y,{color:TOKENS.inkFaint,width:.6});hairline(g,BASE_W,y,BASE_W-(i%4===0?7:4),y,{color:TOKENS.inkFaint,width:.6});}
+  g.restore();
+  const fy=782;
+  // scale bar, in arcseconds
+  hairline(g,40,fy,140,fy,{color:TOKENS.inkDim,width:1});
+  hairline(g,40,fy-4,40,fy+4,{color:TOKENS.inkDim,width:1});hairline(g,140,fy-4,140,fy+4,{color:TOKENS.inkDim,width:1});
+  label(g,'10″',90,fy-8,{font:monoFont(9.5),color:TOKENS.inkDim,align:'center',tracking:.5});
+  // N/E orientation, two arrows only (§2: "not four points")
+  const cx=200,cy=fy-10;
+  hairline(g,cx,cy+18,cx,cy-6,{color:TOKENS.inkDim,width:1});hairline(g,cx,cy-6,cx-3,cy-1,{color:TOKENS.inkDim,width:1});hairline(g,cx,cy-6,cx+3,cy-1,{color:TOKENS.inkDim,width:1});
+  label(g,'N',cx,cy-10,{font:monoFont(9),color:TOKENS.inkDim,align:'center',tracking:0});
+  hairline(g,cx,cy+18,cx-24,cy+18,{color:TOKENS.inkDim,width:1});hairline(g,cx-24,cy+18,cx-21,cy+15,{color:TOKENS.inkDim,width:1});hairline(g,cx-24,cy+18,cx-21,cy+21,{color:TOKENS.inkDim,width:1});
+  label(g,'E',cx-30,cy+21,{font:monoFont(9),color:TOKENS.inkDim,align:'center',tracking:0});
+  // colour bar — MAGNITUDINES's replacement (§9): the SII/Hα/OIII channel mapping
+  const bx=290,bw=54,bh=8;
+  const chans=[['SII',TOKENS.sii],['Hα',TOKENS.ha],['OIII',TOKENS.oiii]];
+  chans.forEach(([nm,col],i)=>{
+    g.fillStyle=col;g.fillRect(bx+i*bw,fy-bh,bw-2,bh);
+    label(g,nm,bx+i*bw+(bw-2)/2,fy+11,{font:monoFont(8.5),color:TOKENS.inkDim,align:'center',tracking:.4});
+  });
+  // filter set + epoch
+  label(g,'FILTER F656N/F502N/F673N',470,fy-2,{font:monoFont(9.5),color:TOKENS.inkDim,tracking:.4});
+  label(g,'EQUINOX 2000.0 · DATE-OBS 2026-09-05',470,fy+11,{font:monoFont(9.5),color:TOKENS.inkFaint,tracking:.4});
+  // credit line — the press-image format research.md §2 gives, in the game's own fictional voice
+  label(g,'ORBIT CHART SURVEY · IMAGE PROCESSING: A. DELINEAVIT',1240,fy-2,{font:monoFont(9),color:TOKENS.inkFaint,align:'right',tracking:.3});
+  label(g,'VISIT 01 · TAB VII · THE OBSERVATORY',1240,fy+11,{font:monoFont(9),color:TOKENS.inkFaint,align:'right',tracking:.3});
+}
+
+/* ==========================================================================================
+   HUD — the FITS header, typeset verbatim (research.md §4), laid over the layout positions the
+   shipped game already uses: title top-left, score/currency top-centre, best top-right,
+   inscriptions bottom-left.
+   ========================================================================================== */
+const FITS_CARDS=[
+  fitsCard('SIMPLE','T','conforms to FITS standard'),
+  fitsCard('BITPIX','16'),
+  fitsCard('NAXIS1','1280'),
+  fitsCard('NAXIS2','800'),
+  fitsCard('OBJECT','ORBIT / '+FIGURE.name),
+  fitsCard('DATE-OBS','2026-09-05T00:00:00'),
+  fitsCard('EXPTIME','0.0','seconds, counts up in-run'),
+  fitsCard('FILTER','Hα'),
+  fitsCard('TELESCOP','ORBIT-2.4M'),
+  fitsCard('INSTRUME','WFC-ARCADE'),
+  fitsCard('RA','10 45 08.9'),
+  fitsCard('DEC','-59 41 04'),
+  fitsCard('EQUINOX','2000.0')
+];
+let scoreVal=0,scoreTarget=118,bestVal=612,runStart=0;
+function paintHUDStatic(g){ // the parts of the HUD that do not tick or type
+  label(g,'ORBIT',34,46,{font:scFont(26,600),color:TOKENS.ink,tracking:5});
+  hairline(g,34,54,118,54,{color:TOKENS.gold,width:1.4});
+  label(g,'VISIT 01',34,68,{font:monoFont(9.5),color:TOKENS.inkFaint,tracking:1});
+  label(g,'RECORD INTEGRATION',1246,40,{font:scFont(10),color:TOKENS.inkFaint,align:'right',tracking:1.6});
+  label(g,String(bestVal),1246,64,{font:monoFont(22,500),color:TOKENS.ink,align:'right',tracking:0});
+  label(g,'ACQUISITION LOCK · +39',34,712,{font:monoFont(11),color:TOKENS.inkDim,tracking:.4});
+  label(g,FIGURE.name+' · 2 / 3',34,728,{font:monoFont(11),color:TOKENS.cyan,tracking:.4});
+}
+function paintHUDLive(g,t){
+  // score: an instrument readout, numerals update rather than being written (§4/LETTERING.md)
+  const p=Math.min(1,t/1.4),eased=1-Math.pow(1-p,3);
+  let shown=Math.round(scoreTarget*eased);
+  if(p>=1)shown=scoreTarget+(Math.sin(t*3)>.985?1:0); // a small instrument jitter once settled
+  label(g,String(shown),640,58,{font:monoFont(38,500),color:TOKENS.ink,align:'center',tracking:0});
+  label(g,'S/N',640,72,{font:scFont(10),color:TOKENS.gold,align:'center',tracking:2});
+  const used=(t*.18).toFixed(1);
+  label(g,`ORBITS ALLOCATED 12 · USED ${Math.min(4,+used).toFixed(1)}`,640,88,{font:monoFont(10.5),color:TOKENS.inkDim,align:'center',tracking:.5});
+  hairline(g,590,96,690,96,{color:TOKENS.gold,width:1.2});
+  // the FITS card block, revealed as a teletype loop
+  const cycle=6.0,period=cycle,tt=t%period;
+  const perCard=0.16,cursorBlink=Math.floor(t*2)%2===0;
+  g.save();g.font=monoFont(11);
+  let cy=112;
+  for(let i=0;i<FITS_CARDS.length;i++){
+    const startAt=i*perCard,text=FITS_CARDS[i].replace('0.0',(Math.min(t%period,999)).toFixed(1));
+    const chars=Math.max(0,Math.min(text.length,Math.floor((tt-startAt)/0.014)));
+    if(chars<=0){cy+=15.5;continue;}
+    const shownText=text.slice(0,chars);
+    g.fillStyle=TOKENS.inkDim;g.textAlign='left';g.fillText(shownText,34,cy);
+    if(chars<text.length&&chars>0&&cursorBlink){
+      const w=g.measureText(shownText).width;
+      g.fillStyle=TOKENS.cyan;g.fillRect(34+w+1,cy-9,6,11);
+    }
+    cy+=15.5;
+  }
+  g.restore();
+}
+
+/* ==========================================================================================
+   LEGEND — press L to overlay small grey labels naming each element by the game's own term.
+   ========================================================================================== */
+let showLegend=false;
+const LEGEND_MARKS=[
+  {x:34,y:30,t:'HUD: title'},{x:640,y:96,t:'HUD: score/currency'},{x:1246,y:30,t:'HUD: personal best'},
+  {x:34,y:700,t:'HUD: inscriptions'},{x:34,y:104,t:'HUD: FITS header (reveal)'},
+  {x:170,y:238,t:'attractor (vortex/VORAGO)'},{x:1120,y:250,t:'repulsor (flare/MACULA)'},
+  {x:220,y:260,t:'crosswind (wind/VENTUS)'},{x:225,y:530,t:'obscurer (nebula)'},
+  {x:1000,y:100,t:'constellation figure'},{x:560,y:330,t:'player (comet → probe)'},
+  {x:900,y:440,t:'pickup: shield'},{x:1080,y:440,t:'pickup: reflector'},{x:330,y:200,t:'pickup: sling'},{x:700,y:150,t:'pickup: inkwell'},
+  {x:90,y:600,t:'body: ocean'},{x:250,y:600,t:'body: crater'},{x:410,y:600,t:'body: ringed'},
+  {x:570,y:600,t:'body: ice'},{x:730,y:600,t:'body: dune'},{x:890,y:600,t:'body: volcanic'},{x:1050,y:600,t:'body: storm'}
+];
+function paintLegend(g){
+  g.save();g.font=monoFont(10);g.textAlign='left';
+  for(const m of LEGEND_MARKS){
+    g.fillStyle='rgba(0,0,0,.55)';g.fillRect(m.x-3,m.y-11,g.measureText(m.t).width+6,14);
+    g.fillStyle=TOKENS.legend;g.fillText(m.t,m.x,m.y);
+    g.fillStyle=TOKENS.legend;g.fillRect(m.x-6,m.y-2,3,3);
+  }
+  g.restore();
+}
+
+/* ---------- assembly: bake the static layer once, animate the rest live ---------- */
+let staticLayer=null;
+function buildStatic(){
+  const {c,g}=makeLayer();
+  const rng=mulberry32(SEED);
+  paintGround(g,rng);
+  paintOrbitRing(g);
+  paintAttractor(g,170,300,50,mulberry32(SEED^1));
+  paintRepulsor(g,1120,300,42,mulberry32(SEED^2));
+  paintCrosswind(g,360,60,mulberry32(SEED^3));
+  paintObscurerCaption(g);
+  paintFigure(g);
+  paintPickups(g,mulberry32(SEED^4));
+  const bx0=100,gap=(1240-100)/6;
+  FAMILY_ORDER.forEach((fam,i)=>paintBody(g,bx0+gap*i,600,46,fam,mulberry32(SEED^(10+i)),FAMILY_NAME[fam]));
+  paintMargin(g);
+  paintHUDStatic(g);
+  staticLayer=c;
+}
+
+let legendKeyLatch=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+
+let t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  if(!staticLayer)buildStatic();
+  ctx.clearRect(0,0,BASE_W,BASE_H);
+  ctx.drawImage(staticLayer,0,0,BASE_W,BASE_H);
+  paintProbe(ctx,t);
+  paintHUDLive(ctx,t);
+  if(showLegend)paintLegend(ctx);
+  requestAnimationFrame(frame);
+}
+resize();
+if(document.fonts&&document.fonts.ready){document.fonts.ready.then(()=>{staticLayer=null;requestAnimationFrame(frame);});}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
