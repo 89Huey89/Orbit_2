@@ -617,10 +617,11 @@ function drawNode(n,aim){
   const pen=revealNode(n),struck=used?revealRetire(n):0;
   if(pen.t<=0)return;
   const gold=n.type==='gold',drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
+  const reflector=n.type==='reflector',inkwell=n.type==='inkwell';
   // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
   // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
   // plate's ordinary ink, reading as the plain, unmarked choice between the two.
-  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:ink.marks.node;
+  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
@@ -678,7 +679,7 @@ function drawNode(n,aim){
   // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
   // player is not holding, so it can never cross the release marks, the perfect window, or the fading
   // ring, which are drawn on the current orbit alone.
-  if(!active&&!sling&&!gold&&!shield&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
+  if(!active&&!sling&&!gold&&!shield&&!reflector&&!inkwell&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
     ctx.font=`${size}px 'IM Fell English SC','IM Fell English',Georgia,serif`;
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
@@ -707,7 +708,7 @@ function drawNode(n,aim){
   }
   if(!used&&!captionsHeld()){
     ctx.font=`${Math.max(9,10*scale)}px 'IM Fell English',Georgia,serif`;ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
-    const mark=gold?'+15':shield?'SHIELD':String(Math.floor(n.row)+1).padStart(2,'0');
+    const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either

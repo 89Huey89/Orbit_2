@@ -280,13 +280,13 @@ function planetWeather(family,core,seed){
 // its caption is even legible.
 const DIFFICULTY_FAMILY = {relaxed:'ocean', classic:'ringed', hardcore:'volcanic'};
 function glyph(seed,type,row,runSeed,difficultyChoice){
-  const family=type==='gold'?'gold':type==='shield'?'shield':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed),key=seed+':'+type+':'+family;
+  const family=type==='gold'?'gold':type==='shield'?'shield':type==='reflector'?'reflector':type==='inkwell'?'inkwell':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed),key=seed+':'+type+':'+family;
   if(glyphs.has(key))return glyphs.get(key);
   const paper=onPaper();
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
-  if(family!=='gold'&&family!=='shield')paintSurvey(g,core,family,tilt);
+  if(family!=='gold'&&family!=='shield'&&family!=='reflector'&&family!=='inkwell')paintSurvey(g,core,family,tilt);
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
   g=surface.ink;
   // Paper: the body colour is a dilute wash on the sheet, not a printed flat, so the engraving above it

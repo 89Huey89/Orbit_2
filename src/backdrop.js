@@ -200,7 +200,9 @@ definePlate('planets',{
     volcanic:{light:'#b5a184',body:'#82735f',dark:'#302d29',rgb:'184,159,122',size:25,spin:.011},
     storm:   {light:'#c9c3b4',body:'#9c9b91',dark:'#3e3d3c',rgb:'191,188,173',size:29,spin:.013},
     gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006},
-    shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006}
+    shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006},
+    reflector:{light:'#dcc9e8',body:'#9c7fae',dark:'#3a2c42',rgb:'196,172,224',size:15,spin:.006},
+    inkwell: {light:'#e0c9a0',body:'#a67c4a',dark:'#3c2c18',rgb:'196,152,100',size:15,spin:.006}
   },
   paper:{
     ocean:   {light:'#e2dcc4',body:'#aebd9f',dark:'#465648',rgb:'62,104,84',   size:26,spin:.012}, // verdigris
@@ -211,7 +213,9 @@ definePlate('planets',{
     volcanic:{light:'#d8ab7c',body:'#ab7346',dark:'#4a2818',rgb:'166,58,40',  size:25,spin:.011}, // rubrication
     storm:   {light:'#dad4bc',body:'#a3a894',dark:'#3f454a',rgb:'52,84,120',  size:29,spin:.013}, // indigo
     gold:    {light:'#ead495',body:'#c39e55',dark:'#4a3a1c',rgb:'190,132,46', size:14,spin:.006}, // bright ochre
-    shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}  // dull Prussian
+    shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}, // dull Prussian
+    reflector:{light:'#d9cfe0',body:'#a390ac',dark:'#3c2c40',rgb:'92,58,120', size:15,spin:.006}, // deep plum
+    inkwell: {light:'#d8c4a0',body:'#8a6440',dark:'#301f10',rgb:'107,74,44', size:15,spin:.006}  // dark umber
   }
 });
 // The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived
