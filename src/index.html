@@ -32,11 +32,11 @@
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
     .small{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    #score{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
+    #score{display:block;font-family:'IM Fell English',Georgia,serif;font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
     #flow{height:23px;margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.18em;transition:opacity .3s}
     #pace{margin-top:6px;font-size:12px;letter-spacing:.09em;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
     .best-block{text-align:right;padding-top:7px}
-    #best{display:block;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
+    #best{display:block;font-family:'IM Fell English',Georgia,serif;font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
     .screen{position:absolute;inset:0;z-index:3;pointer-events:none;text-align:center;transition:opacity .45s,transform .6s}
     .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
     .title-group{position:absolute;top:19%;left:20px;right:20px}
@@ -47,7 +47,7 @@
     .title-rule::after{transform:rotate(180deg)}
     .title-rule span{width:4px;height:4px;border:1px solid var(--gold);transform:rotate(45deg)}
     .start-copy{position:absolute;bottom:max(15%,95px);left:24px;right:24px}
-    .action-copy{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
+    .action-copy{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
     .instruction{font-family:'IM Fell English',Georgia,serif;color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
     .footer{position:absolute;bottom:max(17px,calc(env(safe-area-inset-bottom) + 7px));left:max(15px,env(safe-area-inset-left));right:max(15px,env(safe-area-inset-right));z-index:6;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
     .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;cursor:pointer;opacity:.6;transition:opacity .2s;display:grid;place-items:center}
@@ -70,8 +70,8 @@
     .colophon::before{inset:0;border-width:1.5px}
     .colophon::after{inset:5px;opacity:.6}
     #end .eyebrow{margin:0 0 15px;font-size:10px}
-    #end h2{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
-    #end-score{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+    #end h2{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
+    #end-score{font-family:'IM Fell English',Georgia,serif;font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
     #record{color:var(--gold);height:23px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
     .end-stats{display:flex;gap:28px;justify-content:center;margin:25px 0 37px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-width:220px}
     .stat{position:relative;display:flex;flex-direction:column;gap:7px;padding:0 22px;font-size:19px;font-variant-numeric:tabular-nums}
@@ -89,7 +89,7 @@
     #shield{color:var(--shield)}
     #reflector{color:var(--reflector)}
     #pause{background:rgba(var(--veil),.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
-    #pause strong{font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
+    #pause strong{font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:.04em}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -100,7 +100,7 @@
     .cartouche-frame{position:absolute;top:-.22em;left:-.55em;right:-.55em;bottom:-.3em;width:calc(100% + 1.1em);height:calc(100% + .52em);z-index:-1;color:var(--gold);opacity:.55;pointer-events:none}
     .compass-star{position:absolute;left:50%;bottom:0;width:16px;height:16px;transform:translate(-50%,55%);color:var(--gold);opacity:.85;pointer-events:none}
     .title-group .eyebrow{margin:18px 0 0}
-    .printer-line{margin:20px 0 0;font-style:italic;font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
+    .printer-line{margin:20px 0 0;font-style:italic;font-family:'IM Fell English',Georgia,serif;font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
@@ -209,7 +209,7 @@
     .cat-blank{flex:0 0 74px;height:1px;background:var(--line)}
     .cat-cond{font-style:italic;font-size:11px;line-height:1.5;text-align:right;color:var(--muted);opacity:.72}
     .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
+    .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:'IM Fell English',Georgia,serif;font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
     .cat-initials input:focus-visible{outline:none;border-color:var(--gold)}
     #catalogue-close{flex:0 0 auto;margin:11px auto 0}
     #game.playing #catalogue-open{display:none}
@@ -219,7 +219,7 @@
     .exlibris{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:98px;height:58px;margin:13px auto 0;border:1px solid var(--line);border-radius:50%;color:var(--gold);opacity:.85}
     .exlibris::before{content:'';position:absolute;inset:3px;border:1px solid var(--line);border-radius:50%;opacity:.7}
     .exlibris-line{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.24em}
-    #exlibris-initials{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:16px;letter-spacing:.2em;line-height:1.1}
+    #exlibris-initials{font-family:'IM Fell English',Georgia,serif;font-size:16px;letter-spacing:.2em;line-height:1.1}
     .exlibris.hidden{display:none}
     @media(max-height:530px) and (orientation:landscape){
       #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
@@ -250,7 +250,7 @@
     .eph-head,.eph-cell{border-width:0 1px 1px 0;border-style:solid;border-color:var(--line)}
     .eph-head{padding:5px 1px;font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
     .eph-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;margin:0;padding:5px 2px;background:none;border-radius:0;font:inherit;color:inherit;text-align:center}
-    .eph-num{font-family:'IM Fell English','IM Fell DW Pica',Georgia,serif;font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
+    .eph-num{font-family:'IM Fell English',Georgia,serif;font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
     .eph-best{font-family:'IM Fell English SC','IM Fell English',Georgia,serif;font-size:8px;letter-spacing:.09em;color:var(--muted);font-variant-numeric:tabular-nums}
     .eph-rule{width:15px;height:1px;background:var(--line)}
     .eph-blank .eph-num{opacity:.34}
