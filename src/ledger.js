@@ -100,7 +100,7 @@ const UNLOCKS=[
   {id:'proof',kind:'plate',name:'Proof before letters',latin:'Ante litteras',test:l=>l.allFourInOneRun,
     describe:()=>'Trace four constellations in one run'},
   {id:'azzurra',kind:'plate',name:'Blue prepared paper',latin:'Carta azzurra',stat:'grazes',threshold:25,
-    describe:()=>'Graze 25 black holes'},
+    describe:()=>'Graze 25 vortices'},
   {id:'sepia',kind:'plate',name:'Sepia plate',latin:'Tabula sepiæ',stat:'constellations',threshold:12,
     describe:()=>'Trace 12 constellations in all'},
   {id:'comet',kind:'mark',name:'Comet',latin:'Cometa',stat:'runs',threshold:25,
@@ -164,7 +164,7 @@ const UNLOCKS=[
   {id:'summa',kind:'medal',name:'The chart’s top speed',latin:'Velocitas Summa',test:l=>(l.observations.maxSpeed||0)>0,
     describe:()=>'Reach the chart’s top speed'},
   {id:'periculum',kind:'medal',name:'A graze at full speed',latin:'Periculum',test:l=>(l.observations.graze||0)>0,
-    describe:()=>'Graze a black hole at full speed'},
+    describe:()=>'Graze a vortex at full speed'},
   {id:'pura',kind:'medal',name:'A perfect constellation',latin:'Linea Pura',test:l=>(l.observations.pureChart||0)>0,
     describe:()=>'Trace a constellation in perfect transfers alone'},
   {id:'altitudo',kind:'medal',name:'The fortieth row',latin:'Altitudo',test:l=>(l.observations.fortyRows||0)>0,
@@ -174,7 +174,7 @@ const UNLOCKS=[
   {id:'rectus',kind:'medal',name:'A right angle of arrival',latin:'Angulus Rectus',test:l=>(l.observations.rightAngle||0)>0,
     describe:()=>'Land a transfer within a degree and a half of square'},
   {id:'evasio',kind:'medal',name:'Twenty-five narrow escapes',latin:'Evasio',stat:'rescues',threshold:25,
-    describe:()=>'Survive 25 black holes or edges on a spent charge'},
+    describe:()=>'Survive 25 vortices or edges on a spent charge'},
   {id:'myrias',kind:'medal',name:'Ten thousand orbits',latin:'Myrias',stat:'captures',threshold:10000,
     describe:()=>'Capture 10,000 orbits in all'}
 ];

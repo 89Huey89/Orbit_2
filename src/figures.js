@@ -749,9 +749,19 @@ function drawNode(n,aim){
   }
   ctx.restore();
 }
+// How far the innermost band of a vortex's field is wound about its eye, in radians. The bands
+// between it and the rim take a share of this by the square of how deep they lie, so the sheet is
+// only just off true where the field begins and fully caught by the time it reaches the dark.
+// Both numbers here are bounded by the same artefact rather than by taste: the bands are discrete,
+// so where two of them meet, the sheet is displaced by the difference in their turn times the
+// radius they meet at, and past about this much winding that seam shows as a step in any orbit ring
+// crossing the field. A square profile spreads the difference evenly over the bands where a cube
+// piles it into the few nearest the eye, and 0.62 radians is what those sixteen bands will carry
+// without the step being visible on a ring drawn through them.
+const SWIRL_TURN=0.62;
 function drawGravitationalLenses(){
   for(const h of world.hazards){
-    if(h.kind&&h.kind!=='hole')continue;
+    if(h.kind&&h.kind!=='vortex')continue;
     const x=sx(h.x),y=sy(h.y),outer=gravityRadius(h)*scale,inner=(h.r+1)*scale,diameter=outer*2;
     if(x+outer<0||x-outer>W||y+outer<0||y-outer>H)continue;
     if(!lensPatch)lensPatch=makeCanvas(640,640);
@@ -761,20 +771,27 @@ function drawGravitationalLenses(){
     const sw=sourceRight-sourceX,sh=sourceBottom-sourceY;if(sw<=0||sh<=0)continue;
     g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,640,640);
     g.drawImage(canvas,sourceX,sourceY,sw,sh,(sourceX/DPR-left)/diameter*640,(sourceY/DPR-top)/diameter*640,sw/(DPR*diameter)*640,sh/(DPR*diameter)*640);
-    // Resample the actual atlas and starlight in clipped annuli. The warp
-    // reaches zero at the edge; foreground targets and the player stay sharp.
-    const twist=reducedMotion?0:Math.sin(world.time*.32+(h.phase||0))*.024;
+    // Resample the actual atlas and starlight in clipped annuli. What the bands carry is a whirl
+    // rather than the outward stretch a lens would give: each annulus is turned further about the
+    // dark eye than the one outside it, so the sheet itself appears wound into the vortex, and the
+    // winding reaches zero at the field's edge, where the chart stands square again. Foreground
+    // targets and the player are drawn above this and stay sharp.
+    const drift=reducedMotion?0:Math.sin(world.time*.32+(h.phase||0))*.05;
     ctx.save();ctx.translate(x,y);
     // Each band costs a clip (the one genuinely expensive Canvas2D call here) plus a rotate, scale
-    // and drawImage, every frame this hole is on screen. The magnification only ever spans 1x-1.7x
-    // across the whole radius, so a coarser band count is not visible; scale it down for a small or
-    // distant hole, where it matters least, and cap it well under the old fixed 24 everywhere else.
+    // and drawImage, every frame this vortex is on screen. The whirl spans about six tenths of a
+    // radian across the whole radius, which is as much as this many bands will carry without seaming,
+    // so a coarser count is not merely invisible but the thing that sets the winding; scale it down
+    // for a small or distant vortex, where it matters least, and cap it under the old fixed 24.
     const bands=Math.max(10,Math.min(16,Math.round(outer/6)));
     for(let band=0;band<bands;band++){
       const a=band/bands,b=(band+1)/bands,ro=lerp(outer,inner,a),ri=lerp(outer,inner,b);
-      const weight=((a+b)/2)**2,magnify=1+.7*weight;
+      // Slack water at the rim, the turns tightening as they near the eye — but only as the square
+      // of the depth, since a steeper profile piles the whole difference into the innermost bands,
+      // where it shows as a seam rather than as a current.
+      const mid=(a+b)/2,weight=mid*mid,whirl=SWIRL_TURN*weight;
       ctx.save();ctx.beginPath();ctx.arc(0,0,ro+.2,0,TAU);ctx.arc(0,0,ri,TAU,0,true);ctx.closePath();ctx.clip();
-      ctx.rotate(twist*weight);ctx.scale(magnify,magnify);ctx.drawImage(lensPatch,-outer,-outer,diameter,diameter);ctx.restore();
+      ctx.rotate(whirl+drift*weight);ctx.scale(1+.34*weight,1+.34*weight);ctx.drawImage(lensPatch,-outer,-outer,diameter,diameter);ctx.restore();
     }
     ctx.restore();
   }
@@ -783,9 +800,11 @@ function drawGravitationalLenses(){
 definePlate('field',{
   night:{flareCore:'244,222,168',flareRim:'226,178,112',flareRay:'223,166,109',flareEdge:'205,159,122',
     flareUmbra:'6,9,15',flarePenumbra:'214,163,110',fieldRing:'205,159,122',
+    windLine:'196,206,214',windHead:'214,222,228',windShade:'150,166,180',
     fog:'202,214,220',fogEdge:'139,156,168'},
   paper:{flareCore:'176,118,38',flareRim:'150,100,32',flareRay:'160,84,52',flareEdge:'150,100,32',
     flareUmbra:'26,18,12',flarePenumbra:'140,86,44',fieldRing:'166,58,40',
+    windLine:'70,54,38',windHead:'46,34,24',windShade:'96,78,56',
     fog:'116,94,66',fogEdge:'58,42,28'}
 });
 // A sunspot in the Galileo manner: a dark umbra, a penumbra of fine radial strokes, and a broken
@@ -854,6 +873,88 @@ function drawFlare(h){
   }
   const sprite=flareSprite(h.seed,r,core);
   ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
+  ctx.restore();
+}
+// A wind-head, as every chart of the century puffs one from its margin: a cheek-blown profile set at
+// the upwind edge of its own field, breathing a band clean across it. The head is the one hazard mark
+// that has a direction, so it is cut blowing along +x and turned to h.dir where it is drawn — and its
+// own bearing goes into the key, because the hatch inside it is laid in turned back by that same
+// angle so the strokes still run down and to the right on the sheet. A gust keeps its bearing for
+// life, so that is one sprite per wind-head and not one per angle it might have had. Nothing about
+// the head or the pricked bounds of the stream moves, so those are baked; only the breath is cut
+// live, so it can drift down the wind with the plate's own time.
+const windSprites=new Map();
+function windSprite(seed,radius,reach,dir){
+  const rBucket=Math.round(radius),reachBucket=Math.round(reach);
+  const key=seed+':'+rBucket+':'+reachBucket+':'+dir.toFixed(2)+':'+plateName+':'+DPR.toFixed(2)+':'+scale.toFixed(3);
+  const cached=windSprites.get(key);if(cached)return cached;
+  const size=Math.max(4,Math.ceil(reachBucket*2+8));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);g.lineCap='round';
+  const p=ink.field,rng=seeded((seed>>>0)||1),head=rBucket*.62,hx=-reachBucket+head*1.25;
+  // The bounds of the stream, pricked rather than ruled, opening from the mouth and closing again at
+  // the field's edge: this is the wind's reach told the way the flare tells its own, and it is a leaf
+  // rather than a ring because what it bounds blows one way instead of standing round a centre.
+  g.setLineDash([1.7*scale,4.4*scale]);
+  g.strokeStyle=`rgba(${p.windLine},.28)`;g.lineWidth=.75*scale;
+  for(const side of [-1,1]){
+    g.beginPath();g.moveTo(hx+head*.9,side*head*.3);
+    g.quadraticCurveTo(0,side*rBucket*1.5,reachBucket,side*head*.35);g.stroke();
+  }
+  g.setLineDash([]);
+  // The head in profile, facing the way it blows: skull, a cheek puffed round with the breath in it,
+  // pursed lips, and the loose curls the engravers always gave these creatures.
+  burinArc(g,hx,0,head,0,TAU,p.windHead,.6,.9*scale,seed+3,{segments:22,skips:2});
+  burinArc(g,hx+head*.34,0,head*.72,-1.15,1.15,p.windHead,.5,.8*scale,seed+7,{segments:14,skips:1});
+  for(let i=0;i<9;i++){
+    const a=Math.PI*.45+i/9*Math.PI*1.1;
+    burinSpiral(g,hx+Math.cos(a)*head*.96,Math.sin(a)*head*.96,head*.3,head*.06,a-1.1,a+2.1,p.windHead,.34,.6*scale,seed+i*13,{segments:7,skips:0});
+  }
+  // The shaded side is the one the light does not reach. The head is the one mark on the plate that
+  // is turned to point somewhere, so its hatch is laid in turned back by the same angle: on the
+  // sheet the strokes still run down and to the right, with the light still coming from the left,
+  // exactly as every other body here is hatched, whichever way this one happens to be blowing.
+  g.save();g.translate(hx,0);g.rotate(-dir);
+  for(let i=0;i<12;i++){
+    const t=i/11,ry=(t-.5)*1.7*head,run=Math.sqrt(Math.max(0,head*head-ry*ry));
+    g.strokeStyle=`rgba(${p.windShade},${.1+rng()*.16})`;g.lineWidth=.5*scale;
+    g.beginPath();g.moveTo(-run*.95,ry);g.lineTo(-run*.2,ry+head*.16);g.stroke();
+  }
+  g.restore();
+  g.strokeStyle=`rgba(${p.windHead},.6)`;g.lineWidth=.9*scale;
+  g.beginPath();g.arc(hx+head*1.02,0,head*.17,0,TAU);g.stroke();
+  const sprite={canvas:c,size,head,hx};
+  windSprites.set(key,sprite);
+  if(windSprites.size>16)windSprites.delete(windSprites.keys().next().value);
+  return sprite;
+}
+function drawWind(h){
+  const x=sx(h.x),y=sy(h.y),r=h.r*scale,reach=gravityRadius(h)*scale;
+  if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
+  const p=ink.field,rng=seeded(h.seed);
+  ctx.save();ctx.translate(x,y);ctx.rotate(h.dir||0);
+  const sprite=windSprite(h.seed,r,reach,h.dir||0);
+  ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
+  // The breath: long tapering strokes leaving the lips and running the length of the field, each
+  // waved a little and each drifting downwind, so the gust is read as moving even though what it
+  // does to a flight is perfectly steady. Reduced motion holds them still, as it holds the flare's
+  // rays and the vortex's twist.
+  const start=sprite.hx+sprite.head*1.2,span=reach-start;
+  ctx.lineCap='round';
+  for(let i=0;i<7;i++){
+    const lane=(i/6-.5),spread=r*1.15,wobble=1.5+rng()*1.6,phase=rng()*TAU;
+    const travel=reducedMotion?0:world.time*.55+(h.phase||0);
+    ctx.strokeStyle=`rgba(${p.windLine},${.13+rng()*.2})`;ctx.lineWidth=(i%2?.5:.8)*scale;
+    ctx.beginPath();
+    for(let j=0;j<=14;j++){
+      const t=j/14,px=start+span*t;
+      // The lane opens toward the middle of the stream and closes again at the edge, and the wave
+      // travels along it rather than standing on it, so the breath streams instead of rippling.
+      const py=lane*spread*(.45+Math.sin(t*Math.PI)*.85)+Math.sin(t*wobble*TAU+phase-travel)*r*.09;
+      if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
 }
 // A nebula patch: a faint stippled haze, no more. There is no hatch and no fill; a sparse stipple
@@ -940,12 +1041,23 @@ function hazardHatchGeometry(seed,radius){
   if(hazardHatchCache.size>32)hazardHatchCache.delete(hazardHatchCache.keys().next().value);
   return entries;
 }
-// The accretion rings' shape depends only on h.seed, the plate and the viewport scale; their alpha
-// is scaled uniformly by (1+pull*.5), and pull is 0 whenever the player is orbiting — the
-// overwhelming majority of play, since it only turns nonzero during a brief free flight close
-// enough to a hole to feel its pull. That common (pull===0) case is baked once and blitted; the
-// rare pulled case falls back to the exact original live drawing rather than approximate it, so
-// the pulled look never changes.
+// The whirl a vortex is engraved with, drawn where a black hole's tilted accretion rings used to
+// be: three arms wound into the eye, each doubled by a fainter one set behind it, so what the plate
+// shows is water turning rather than a disc seen edge-on. They are cut round rather than flattened,
+// since a whirlpool is charted from above.
+function vortexWhirl(g,radius,alpha,seed){
+  for(let i=0;i<3;i++){
+    const a=i/3*TAU;
+    burinSpiral(g,0,0,radius*1.88,radius*1.03,a,a+TAU*.72,ink.marks.hazardAccretion,.26*alpha,.85*scale,seed+i*29,{segments:24,skips:2});
+    burinSpiral(g,0,0,radius*1.52,radius*1.08,a+.46,a+.46+TAU*.55,ink.marks.hazardAccretion,.13*alpha,.45*scale,seed+i*37,{segments:18,skips:3});
+  }
+}
+// The whirl's shape depends only on h.seed, the plate and the viewport scale; its alpha is scaled
+// uniformly by (1+pull*.5), and pull is 0 whenever the player is orbiting — the overwhelming
+// majority of play, since it only turns nonzero during a brief free flight close enough to a vortex
+// to feel its draw. That common (pull===0) case is baked once and blitted; the rare pulled case
+// falls back to the same drawing done live rather than approximate it, so the pulled look and the
+// still one are the same marks.
 const hazardAccretionSprites=new Map();
 function hazardAccretionSprite(seed,radius){
   const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+plateName+':'+DPR.toFixed(2)+':'+scale.toFixed(3);
@@ -953,10 +1065,7 @@ function hazardAccretionSprite(seed,radius){
   const outer=rBucket*1.91+Math.max(10,rBucket*.15),size=Math.max(4,Math.ceil(outer*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.translate(size/2,size/2);g.rotate(-.35);
-  for(let i=0;i<4;i++){
-    const rr=rBucket*(1.64+i*.09);
-    burinArc(g,0,0,rr,0,TAU,ink.marks.hazardAccretion,.23-i*.04,(i===0?.9:.45)*scale,seed+i*29,{segments:20,skips:2,flatten:(.47+i*.028)/(1.64+i*.09)});
-  }
+  vortexWhirl(g,rBucket,1,seed);
   const sprite={canvas:c,size};
   hazardAccretionSprites.set(key,sprite);
   if(hazardAccretionSprites.size>24)hazardAccretionSprites.delete(hazardAccretionSprites.keys().next().value);
@@ -965,6 +1074,7 @@ function hazardAccretionSprite(seed,radius){
 function drawHazard(h){
   if(h.kind==='nebula')return drawNebula(h);
   if(h.kind==='flare')return drawFlare(h);
+  if(h.kind==='wind')return drawWind(h);
   const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(y<-r*3||y>H+r*3)return;
   ctx.save();ctx.translate(x,y);const pulse=reducedMotion?1:.95+.05*Math.sin(world.time*1.2+(h.phase||0)),paper=onPaper();
   const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
@@ -974,12 +1084,7 @@ function drawHazard(h){
     const halo=ctx.createRadialGradient(0,0,r*.7,0,0,r*3.4);halo.addColorStop(0,`rgba(${ink.marks.hazardHalo0},${(.25+pull*.12)*pulse})`);halo.addColorStop(.5,`rgba(${ink.marks.hazardHaloMid},.07)`);halo.addColorStop(1,`rgba(${ink.marks.hazardHaloEdge},0)`);ctx.fillStyle=halo;ctx.fillRect(-r*3.4,-r*3.4,r*6.8,r*6.8);
   }
   if(pull>0){
-    ctx.save();ctx.rotate(-.35);
-    for(let i=0;i<4;i++){
-      const rr=r*(1.64+i*.09);
-      burinArc(ctx,0,0,rr,0,TAU,ink.marks.hazardAccretion,(.23-i*.04)*(1+pull*.5),(i===0?.9:.45)*scale,h.seed+i*29,{segments:20,skips:2,flatten:(.47+i*.028)/(1.64+i*.09)});
-    }
-    ctx.restore();
+    ctx.save();ctx.rotate(-.35);vortexWhirl(ctx,r,1+pull*.5,h.seed);ctx.restore();
   }else{
     const ring=hazardAccretionSprite(h.seed,r);
     ctx.drawImage(ring.canvas,-ring.size/2,-ring.size/2,ring.size,ring.size);

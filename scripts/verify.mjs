@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import {bundle} from './bundle.mjs';
 const {html,script}=await bundle();
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
-const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN};',sandbox);
-const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
+const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN};',sandbox);
+const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
 const step=1/120;
 
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
@@ -39,7 +39,7 @@ for(const speed of [150,240,360])for(const offset of [45,60,85,130]){
 const slowClose=flyby(60,150),fastClose=flyby(60,360),farPass=flyby(130,150),mirror=flyby(-60,150);
 assert(slowClose.turn>.25&&slowClose.turn<.5,'A close pass at opening speed should visibly turn the flight');
 assert(fastClose.turn>.025&&fastClose.turn<.08&&fastClose.turn<slowClose.turn,'Faster flybys get less time to bend');
-assert(Math.abs(farPass.turn)<1e-10);assert(Math.abs(mirror.turn+slowClose.turn)<1e-10,'The field is symmetric around the black hole');
+assert(Math.abs(farPass.turn)<1e-10);assert(Math.abs(mirror.turn+slowClose.turn)<1e-10,'The field is symmetric around the vortex');
 
 // Sunspot flares use the same field radius and the same steering, with the sign
 // reversed: they push the flight outward, preserve its speed, and end just as cleanly.
@@ -62,16 +62,18 @@ assert(Math.abs(flareMirror.turn+flareSlow.turn)<1e-10,'The flare field is symme
 assert(slowClose.turn>0&&flareSlow.turn<0,'A hole and a flare of the same size turn a flight opposite ways');
 assert(Math.abs(flareSlow.turn+slowClose.turn)<.16,'Both fields bend a matched flyby by a comparable amount');
 // A head-on approach feels no turning force, so it reaches the lethal core directly:
-// a black hole is lethal to its drawn edge, a flare only inside a core of 0.6 r.
+// a vortex is lethal to its drawn edge, a flare only inside a core of 0.6 r.
 function headOn(kind){
   const h={x:0,y:0,r:24,kind,seed:5,phase:0},p={x:0,y:180,vx:0,vy:-300};let hit=null;
   for(let i=0;i<120*3&&p.y>-180&&!hit;i++)hit=flightStep(p,[],[h],i*step,step,180,4000).hit;
   return {hit,y:p.y};
 }
-const holeHead=headOn('hole'),flareHead=headOn('flare');
-assert.equal(holeHead.hit?.kind,'hole');assert(Math.abs(holeHead.y-27)<3,'A black hole is lethal to its drawn edge');
-assert.equal(flareHead.hit?.kind,'hole');assert(Math.abs(flareHead.y-(24*.6+3))<3,'A flare only kills inside its smaller core');
-assert.equal(hazardCore({r:24}),24);assert.equal(hazardCore({r:24,kind:'hole'}),24);assert.equal(hazardCore({r:24,kind:'flare'}),24*.6);
+const holeHead=headOn('vortex'),flareHead=headOn('flare');
+assert.equal(holeHead.hit?.kind,'hazard');assert(Math.abs(holeHead.y-27)<3,'A vortex is lethal to its drawn edge');
+assert.equal(flareHead.hit?.kind,'hazard');assert(Math.abs(flareHead.y-(24*.6+3))<3,'A flare only kills inside its smaller core');
+assert.equal(hazardCore({r:24}),24);assert.equal(hazardCore({r:24,kind:'vortex'}),24);assert.equal(hazardCore({r:24,kind:'flare'}),24*.6);
+// An unknown kind falls back to the vortex, so a fixture naming none keeps its old behaviour.
+assert.equal(hazardKind({}).latin,'VORAGO');assert.equal(hazardKind({kind:'wind'}).lethal,false);
 
 // The arrival angle reads 90 for a line exactly tangent to the drawn ring, a little off for a smooth
 // entry joined inside or outside it, and far below for a hard turn toward the centre. Only the exact
@@ -114,10 +116,10 @@ for(const [speed,drift,angle] of [[150,false,-.032],[150,true,-.026],[240,false,
   assert(Math.hypot(w.player.x-expected.x,w.player.y-expected.y)<.2,'The curved guide must land where real flight lands');curvedCaptures++;
 }
 assert(maxPreviewSteps<300,'Curved prediction must remain bounded');
-const blockedCurve=curvedFixture(240,false,.32);assert.equal(blockedCurve.w.aim(),null);assert.equal(blockedCurve.w.flightPreview.blocked,'hole');
+const blockedCurve=curvedFixture(240,false,.32);assert.equal(blockedCurve.w.aim(),null);assert.equal(blockedCurve.w.flightPreview.blocked,'hazard');
 const blockedPoint=blockedCurve.w.flightPreview.landing;assert(Math.abs(Math.hypot(blockedPoint.x-70,blockedPoint.y+170)-27)<.02);
 blockedCurve.w.release();for(let i=0;i<120*4&&blockedCurve.w.state==='playing';i++)blockedCurve.w.update(step);
-assert.equal(blockedCurve.w.reason,'CAUGHT BY A BLACK HOLE','A warning guide must agree with the real collision');
+assert.equal(blockedCurve.w.reason,'DRAWN INTO A VORTEX','A warning guide must agree with the real collision');
 
 // The curved guide and real flight must agree through a repulsive field too.
 function flareFixture(angle){
@@ -144,6 +146,51 @@ const flareDeath=flareFixture(.12);flareDeath.w.release();
 flareDeath.w.hazards=[{x:flareDeath.w.player.x+flareDeath.w.player.vx*.05,y:flareDeath.w.player.y+flareDeath.w.player.vy*.05,r:20,kind:'flare',seed:2,phase:0,near:false}];
 for(let i=0;i<15;i++)flareDeath.w.update(step);
 assert.equal(flareDeath.w.reason,'SEARED BY A SUNSPOT FLARE','A flare core reports its own loss');
+
+// The curved guide and real flight must agree through a gust too, and a gust must actually bend a
+// crossing without ever ending one: a wind-head has no lethal core at all.
+function windFixture(angle,dir=Math.PI*.5){
+  const captures=[],w=new OrbitWorld(714,440,860,(type,e)=>{if(type==='capture')captures.push(e);}),origin=w.player.node;
+  origin.x=origin.baseX=-57;const destination=w.makeNode(70,-420,50,2,'still');
+  w.nodes=[origin,destination];w.lastMain=destination;w.row=2;w.ensureAhead=()=>{};
+  w.hazards=[{x:70,y:-170,r:30,kind:'wind',dir,seed:45,phase:.2,near:false}];
+  w.player.angle=angle;w.player.dir=-1;w.player.speed=240;w.positionPlayer();w.start();return {w,destination,captures};
+}
+let windCaptures=0,windBent=0;
+for(let angle=-.02;angle<=.24;angle+=.004){
+  const {w,destination}=windFixture(angle),aim=w.aim(),preview=w.flightPreview;
+  if(!aim||aim.n!==destination||!preview.curved)continue;
+  windBent++;
+  const expected=preview.landing;w.release();
+  for(let i=0;i<120*8&&!w.player.node&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.player.node,destination,'A wind-bent guide must reach the planet it advertises');
+  assert(Math.hypot(w.player.x-expected.x,w.player.y-expected.y)<.2,'The wind guide must land where real flight lands');
+  assert(!w.hazards[0].near,'A gust is never grazed, so it never pays the once-per-hazard bonus');
+  windCaptures++;
+}
+assert(windCaptures>8,'Exercise real flights steered by a wind-head');
+assert(windBent>8,'A gust must actually put the guide onto its curved prediction');
+// Flown across the heart of a gust, the crossing comes out measurably off the line it left on, and
+// the run is never lost to it however square the hit. Flown along one it is untouched: these fields
+// steer without changing speed, so a force lying along the flight has nothing left to turn — which
+// is exactly why a wind-head is laid across its route rather than down it.
+{
+  const w=new OrbitWorld(715,440,860);w.nodes=[];w.ensureAhead=()=>{};w.state='playing';
+  const h={x:0,y:-400,r:30,kind:'wind',dir:0,near:false,seed:1,phase:0};
+  w.hazards=[h];const p=w.player;p.node=null;
+  p.x=0;p.y=-400-gravityRadius(h)-40;p.vx=0;p.vy=240;p.launch={row:0,sweep:1};p.ink=1;
+  const startX=p.x;
+  for(let i=0;i<120*4&&w.state==='playing'&&p.y<-400+gravityRadius(h)+40;i++)w.update(step);
+  assert(w.state==='playing','A wind-head has no lethal core: flying through its centre cannot end a run');
+  assert(Math.abs(p.x-startX)>12,'A crossing flown through a gust is carried off its line: '+(p.x-startX).toFixed(1));
+  assert(Math.abs(Math.hypot(p.vx,p.vy)-240)<1e-6,'A gust steers without touching the speed it steers');
+  const along=new OrbitWorld(716,440,860);along.nodes=[];along.ensureAhead=()=>{};along.state='playing';
+  const g={x:0,y:-400,r:30,kind:'wind',dir:Math.PI/2,near:false,seed:1,phase:0};
+  along.hazards=[g];const q=along.player;q.node=null;
+  q.x=0;q.y=-400-gravityRadius(g)-40;q.vx=0;q.vy=240;q.launch={row:0,sweep:1};q.ink=1;
+  for(let i=0;i<120*4&&along.state==='playing'&&q.y<-400+gravityRadius(g)+40;i++)along.update(step);
+  assert(Math.abs(q.x)<1e-9,'A crossing flown straight down a gust is not turned by it at all');
+}
 
 // A nebula is inert. It only cuts the drawn guide at its near edge.
 function nebulaFixture(withFog){
@@ -453,7 +500,7 @@ for(const boosted of [true,false]){
 const longHazard=distantTransfer();longHazard.w.hazards.push({x:longHazard.w.player.x,y:-1620,r:14,near:false});
 assert.equal(longHazard.w.aim(),null,'A distant hazard must block the guide');longHazard.w.release();
 for(let i=0;i<120*12&&longHazard.w.state==='playing';i++)longHazard.w.update(step);
-assert(longHazard.w.player.flightTime>3.6);assert.equal(longHazard.w.reason,'CAUGHT BY A BLACK HOLE');assert.equal(longHazard.captures.length,0);
+assert(longHazard.w.player.flightTime>3.6);assert.equal(longHazard.w.reason,'DRAWN INTO A VORTEX');assert.equal(longHazard.captures.length,0);
 const outside=new OrbitWorld(12);outside.start();outside.player.angle=-Math.PI/2;outside.player.dir=1;outside.release();
 for(let i=0;i<120*3&&outside.state==='playing';i++)outside.update(step);
 assert.equal(outside.reason,'LEFT THE STAR CHART','A shot leaving the chart still ends the run');
@@ -661,14 +708,29 @@ assert.equal(orderA.catalogueFor(4+CONSTELLATIONS.length),orderA.catalogueFor(4)
   if(w.player.node)assert(Math.abs(w.player.x)<=440/2+16,'and the traveller rides its own orbit in');
 }
 
-// Generation of the two later hazard kinds.
-let flareRows=0,holeRows=0,nebulaCount=0;
+// Generation of the later hazard kinds. The wind-heads are placed on their own cadence, the way a
+// nebula is, so the vortex/flare alternation is read off the lethal hazards alone.
+let flareRows=0,holeRows=0,windRows=0,nebulaCount=0;
 for(let seed=1;seed<=60;seed++){
   const w=new OrbitWorld(seed);while(w.row<60)w.generateRow();
-  const later=w.hazards.filter(h=>h.row>=16);
-  assert(w.hazards.filter(h=>h.row<16).every(h=>h.kind==='hole'),'Flares only appear from the third region');
-  for(let i=1;i<later.length;i++)assert(later[i].kind!==later[i-1].kind,'Flares alternate with black holes');
-  flareRows+=w.hazards.filter(h=>h.kind==='flare').length;holeRows+=w.hazards.filter(h=>h.kind==='hole').length;
+  const lethal=w.hazards.filter(h=>hazardKind(h).lethal),later=lethal.filter(h=>h.row>=16);
+  assert(lethal.filter(h=>h.row<16).every(h=>h.kind==='vortex'),'Flares only appear from the third region');
+  for(let i=1;i<later.length;i++)assert(later[i].kind!==later[i-1].kind,'Flares alternate with vortices');
+  flareRows+=w.hazards.filter(h=>h.kind==='flare').length;holeRows+=w.hazards.filter(h=>h.kind==='vortex').length;
+  const winds=w.hazards.filter(h=>h.kind==='wind');windRows+=winds.length;
+  for(const g of winds){
+    assert(g.row>=20&&g.row%5===3,'Wind-heads start at row 20 and appear at most once every five rows');
+    assert(g.r>=16&&g.r<=34,'A wind-head is 16 to 34 units across its radius');
+    assert(Number.isFinite(g.dir),'A wind-head blows one settled way');
+    assert.equal(hazardKind(g).lethal,false,'A wind-head kills nothing');
+    // It is the whole field that is kept clear, not just the head: a gust over a capture band would
+    // bend the arrival itself, and two fields overlapping would be read at once.
+    const field=gravityRadius(g);
+    for(const q of w.nodes)assert(Math.hypot(g.x-q.baseX,g.y-q.baseY)>=q.cap+q.amp+field-1e-9,'A wind field never covers a capture band or a drift envelope');
+    for(const h of w.hazards)if(h!==g)assert(Math.hypot(g.x-h.x,g.y-h.y)>=gravityRadius(h)+field-1e-9,'Two hazard fields are never read at once');
+    for(const q of w.nebulas)assert(Math.hypot(g.x-q.x,g.y-q.y)>=q.r+field-1e-9,'A wind field never lies under a cloud');
+  }
+  assert.equal(new Set(winds.map(g=>g.row)).size,winds.length,'At most one wind-head per row');
   nebulaCount+=w.nebulas.length;
   for(const g of w.nebulas){
     assert.equal(g.kind,'nebula');assert(g.r>=60&&g.r<=90,'A nebula patch is 60 to 90 units across its radius');
@@ -678,7 +740,8 @@ for(let seed=1;seed<=60;seed++){
   }
   assert.equal(new Set(w.nebulas.map(g=>g.row)).size,w.nebulas.length,'At most one nebula per row');
 }
-assert(flareRows>60&&holeRows>60,'Both hazard kinds must be common past the third region');
+assert(flareRows>60&&holeRows>60,'Both lethal hazard kinds must be common past the third region');
+assert(windRows>=120,'Wind-heads must actually appear: '+windRows);
 assert(nebulaCount>=120,'Nebula patches must actually appear: '+nebulaCount);
 
 // A hazard may sit on one of the ways between two main nodes and shut it, from row 12 and only on
@@ -690,7 +753,9 @@ let hazardsPlaced=0,routesClosed=0;
 for(let seed=1;seed<=120;seed++){
   const w=new OrbitWorld(seed,440,860);
   const rowOf=new Map(),placed=[];
-  while(w.row<70){const before=w.hazards.length;w.generateRow();if(w.hazards.length>before)placed.push(w.hazards.at(-1));}
+  // Only the lethal hazards go through the route-closing placement; a wind-head is put on a route
+  // deliberately and is exempt, since it cannot shut one.
+  while(w.row<70){const before=w.hazards.length;w.generateRow();for(const h of w.hazards.slice(before))if(hazardKind(h).lethal)placed.push(h);}
   for(const n of w.nodes)if(Number.isInteger(n.row)&&n.type!=='gold'&&n.type!=='shield'&&n.routeRole!=='star')rowOf.set(n.row,n);
   for(const h of placed){
     const n=rowOf.get(h.row),prev=rowOf.get(h.row-1);if(!n||!prev)continue;
@@ -745,7 +810,7 @@ assert.equal(respite.darknessGrace,0);const recoveredFloor=respite.floorY;respit
 
 // Explicit hazard contact and disappearing-node deadline.
 const hit=new OrbitWorld(9);hit.start();hit.release();hit.hazards.push({x:hit.player.x+hit.player.vx*.05,y:hit.player.y+hit.player.vy*.05,r:10,near:false});
-for(let i=0;i<15;i++)hit.update(step);assert.equal(hit.state,'dead');assert.equal(hit.reason,'CAUGHT BY A BLACK HOLE');
+for(let i=0;i<15;i++)hit.update(step);assert.equal(hit.state,'dead');assert.equal(hit.reason,'DRAWN INTO A VORTEX');
 const fade=new OrbitWorld(8);fade.start();fade.player.node.type='fading';fade.player.orbitTime=4.49;fade.update(.02);assert.equal(fade.reason,'THE ORBIT FADED');
 
 const LEDGER_KEY='orbit.ledger.v1';
@@ -1175,7 +1240,25 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   assert(/Tap when|sets the pressure/.test(inscribed()),'Restart writes the opening instruction and nothing of the last run: '+inscribed());
   const fresh=context.test.world;
   fresh.hazards=[{x:-fresh.width/2+4,y:fresh.cameraY+4,r:28,seed:23,phase:.3,near:false},{x:fresh.width/2-4,y:fresh.cameraY+fresh.height-4,r:30,seed:24,phase:.6,near:false}];
-  const beforeCopies=lensCopies;context.test.render(step);assert.equal(lensCopies-beforeCopies,2,'Partly clipped black holes must still lens the background');
+  const beforeCopies=lensCopies;context.test.render(step);assert.equal(lensCopies-beforeCopies,2,'Partly clipped vortices must still swirl the background');
+  // Every kind of hazard mark is put on the sheet and drawn, on both plates and with reduced motion
+  // either way, so the stand-in's finite-argument check covers the wind-head's own engraving — its
+  // sprite, its live breath, and the turn that points it — and not only the two older marks.
+  {
+    const wind=(x,y,dir)=>({x,y,r:26,kind:'wind',dir,seed:77,phase:.4,near:false});
+    fresh.hazards=[wind(-40,fresh.cameraY+120,0),wind(30,fresh.cameraY+220,Math.PI*.75),
+      {x:0,y:fresh.cameraY+320,r:24,kind:'flare',seed:78,phase:.1,near:false},
+      {x:-60,y:fresh.cameraY+420,r:26,kind:'vortex',seed:79,phase:.9,near:false}];
+    for(const plate of ['night','paper']){
+      context.test.setPlate(plate);
+      context.test.render(step);context.test.render(step);
+    }
+    // A gust with no bearing recorded must still draw: an absent direction reads as blowing along
+    // the plate rather than as a non-finite rotation.
+    fresh.hazards=[{x:0,y:fresh.cameraY+120,r:26,kind:'wind',seed:80,phase:0,near:false}];
+    context.test.render(step);
+    fresh.hazards=[];context.test.setPlate('night');
+  }
   events['window:blur']();const frozenTime=fresh.time;fresh.update(2);context.test.render(step);assert.equal(fresh.time,frozenTime);
   // The page turn: a sheet leaves the frame entirely, freezes with the run, and lands exactly on the
   // new chapter rather than crawling toward it.
@@ -1453,4 +1536,4 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 }
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,holes:holeRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','black-hole warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rim that turns away a flight falling at it, marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFigures.size},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rim that turns away a flight falling at it, marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
