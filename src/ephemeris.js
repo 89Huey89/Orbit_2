@@ -19,6 +19,30 @@ function roman(value){
 const pad2=n=>String(n).padStart(2,'0');
 const dayKey=(y,m,d)=>y+'-'+pad2(m+1)+'-'+pad2(d);
 const monthOf=date=>({y:Number(date.slice(0,4)),m:Number(date.slice(5,7))-1});
+// A streak read at the stroke of midnight would look broken before the player has had any chance to
+// draw today's plate, so a blank today counts from yesterday instead; a blank yesterday too is a real
+// break, and reads as zero. Longest scans every run the log holds, not only the one still open, since
+// a broken streak still stands as a past record. Calendar maths is left to Date.UTC so a run crossing
+// a month or year end (or February in a leap year) still counts as consecutive.
+function dailyStreak(){
+  const dates=new Set(dailyDates());
+  const shift=(key,by)=>{
+    const [y,m,d]=key.split('-').map(Number);
+    const next=new Date(Date.UTC(y,m-1,d+by));
+    return dayKey(next.getUTCFullYear(),next.getUTCMonth(),next.getUTCDate());
+  };
+  let current=0,probe=utcDay();
+  if(!dates.has(probe))probe=shift(probe,-1);
+  while(dates.has(probe)){current++;probe=shift(probe,-1);}
+  let longest=0;
+  for(const date of dates){
+    if(dates.has(shift(date,-1)))continue;
+    let length=1,cursor=date;
+    while(dates.has(shift(cursor,1))){length++;cursor=shift(cursor,1);}
+    longest=Math.max(longest,length);
+  }
+  return {current,longest:Math.max(longest,current)};
+}
 const monthIndex=month=>month.y*12+month.m;
 // Both ends of the almanac: the month of the earliest plate on record, and the current month. There is
 // nothing to leaf to on either side of those.

@@ -49,6 +49,7 @@ function ledgerStat(name,l=ledger){
   if(name==='runs')return ledgerRuns(l);
   if(name==='topConstellation')return ledgerTopChart(l);
   if(name==='constellations')return ledgerCharts(l);
+  if(name==='rescues')return (Number(l.shieldsSpent)||0)+(Number(l.reflectorsSpent)||0);
   return Number(l[name])||0;
 }
 // ---------- The run's own tally ----------
@@ -171,7 +172,11 @@ const UNLOCKS=[
   {id:'vigilia',kind:'medal',name:'Three minutes aloft',latin:'Vigilia',test:l=>(l.observations.threeMinutes||0)>0,
     describe:()=>'Survive three minutes in one run'},
   {id:'rectus',kind:'medal',name:'A right angle of arrival',latin:'Angulus Rectus',test:l=>(l.observations.rightAngle||0)>0,
-    describe:()=>'Land a transfer within a degree and a half of square'}
+    describe:()=>'Land a transfer within a degree and a half of square'},
+  {id:'evasio',kind:'medal',name:'Twenty-five narrow escapes',latin:'Evasio',stat:'rescues',threshold:25,
+    describe:()=>'Survive 25 black holes or edges on a spent charge'},
+  {id:'myrias',kind:'medal',name:'Ten thousand orbits',latin:'Myrias',stat:'captures',threshold:10000,
+    describe:()=>'Capture 10,000 orbits in all'}
 ];
 const UNLOCK_BY_ID={};for(const entry of UNLOCKS)UNLOCK_BY_ID[entry.id]=entry;
 function unlockMet(entry,l=ledger){
