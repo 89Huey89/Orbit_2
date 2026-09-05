@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="grc" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit — III · The Marble (prototype)</title>
+<!--
+  Orbit — era III prototype, "The Marble" (Greco-Roman, Farnese Atlas, c. 150 CE), per
+  docs/eras/research/marble.md. Faces are local files, fetched once from Google Fonts for this
+  session and never re-fetched over the network (the shipped game would cut them further via
+  `npm run fonts`, per CLAUDE.md):
+    fonts/cinzel.ttf     Cinzel     OFL 1.1  — Latin (Roman square-capital inscriptional hand),
+                                                built on 1st-c. Roman inscriptional proportion.
+                                                Trajan itself is commercial and unusable; Cinzel
+                                                is the free substitute made for this purpose.
+    fonts/gfs-didot.ttf  GFS Didot  OFL 1.1  — Greek+Coptic (U+0370–03FF). Checked this session:
+                                                the file carries lowercase, the numeral keraia
+                                                (U+0374/5) and stigma (U+03DB) too, so one face
+                                                covers both the epigraphic capitals AND Ptolemy's
+                                                lowercase-with-keraia magnitude ranks below — no
+                                                second Greek face was needed after all.
+  document.fonts.ready is awaited before the first paint (boot_fonts(), bottom of file); the
+  hand-cut fallback (fakeInscription) exists only for a genuine load failure, never a network
+  race, since both files ship beside this page.
+
+  THE SYNTHESIS THIS ERA REQUIRES (research §2/§12): no single Greco-Roman object shows figures,
+  stars and colour together. This sheet is built as MARBLE RELIEF throughout — a white/grey
+  ground modelled by raking light, lit edge against shadowed edge, no outline anywhere, exactly
+  as the Farnese globe itself is cut — and the Farnese carries **no stars at all** (attested,
+  not lost — research §1/§2). Every star mark on this sheet — background field, magnitude key,
+  constellation stars, the comet — is therefore the OTHER surviving grammar's contribution: the
+  Mainz bronze globe's drilled-and-inlaid points, gilded here rather than silvered so they read
+  against white stone (gildedPoint(), below). That seam is the era's one deliberate invention,
+  done in the open per research's own instruction, not smuggled in as unremarked colour.
+
+  Other choices made where research offered options, each flagged at its call site too:
+  - Repulsor: Ἡλίου ἅρμα ("Helios' chariot") over the name Φαέθων, since Phaethon/Phaethōn is
+    also the attested Greek name for Jupiter (research §5 caution) — the danger keeps Phaethon's
+    STORY (the falling chariot-wheel motif) without his name colliding with a planet.
+  - Crosswind: Βορέας over Ζέφυρος (both attested, Tower of the Winds) — north wind as default.
+  - Constellation: Λύρα (Lyra), because it is both an attested Farnese-tradition figure AND the
+    game's own "THE LYRE" (GAME-BRIEF §3/CONSTELLATIONS) — a clean rule-2/rule-3 fit, unlike the
+    game's other eleven fictional figure-names, which have no ancient original to draw from.
+  - Wind-head corners: drawn as the Anemoi (Tower of the Winds, Roman Agora, Athens) per research
+    §7/§9 — the tower's status as the DIRECT ancestor of the shipped game's own corner wind-heads
+    is flagged (unverified) there, so treat the visual echo as a plausible lineage, not a proof.
+-->
+<style>
+  @font-face{font-family:'Cinzel';src:url('fonts/cinzel.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:block}
+  @font-face{font-family:'GFS Didot';src:url('fonts/gfs-didot.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block}
+  html,body{margin:0;padding:0;background:#161410;height:100%;overflow:hidden}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  #hint{position:fixed;left:10px;bottom:8px;color:#8a8170;font:11px/1.4 Georgia,serif;opacity:.55;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1280" height="800"></canvas></div>
+<div id="hint">L — legend</div>
+<script>
+'use strict';
+// ---------- seeded randomness: the sheet paints identically every load ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2;
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function lerp(a,b,t){return a+(b-a)*t;}
+// The raking light every relief primitive below reads against — upper-left, warm, per the brief.
+const LIGHT_DIR={x:-0.70,y:-0.68};
+function edgeLight(nx,ny){return nx*LIGHT_DIR.x+ny*LIGHT_DIR.y;}
+
+// ---------- TOKENS: material colour only, never paint (research §3) ----------
+const TOKENS={
+  ground:'#EDE6D6',    // Pentelic/Carrara white, sun-bleached, not printer's white
+  groundHi:'#FBF6EA',  // a raised edge catching the raking light full-on
+  groundDeep:'#DCD2BC',// unlit marble, not yet a cut shadow
+  ink:'#4A463E',       // deep relief shadow pooling in a drill-cut — this era's only true dark
+  patina:'#C9A66B',    // weathered ochre skin excavated marble takes on
+  bronze:'#6B5A3E',    // unpolished cast bronze — the colophon vignette only
+  bronzeHi:'#9C8656',
+  verdigris:'#5B8A72',
+  gold:'#D4AF37',      // gilding — reserved for star points and the comet only, see header
+  chip:'#FFFDF2'       // a fresh chisel strike's bright dust-flash, whiter than the aged ground
+};
+
+// ---------- the era's stroke primitives, replacing the shipped game's burinArc/burinSegment.
+// A cut groove has TWO catching walls (near wall lit, far wall shadowed); a raised silhouette
+// has only ONE lit or shadowed rim per edge, never both — reliefShape below picks the right one
+// per edge from its own outward normal, so a filled figure never gets a drawn outline. ----------
+function chiselSegment(g,x0,y0,x1,y1,weight,seed,opts={}){
+  const rng=mulberry32(seed>>>0||1);
+  const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+  const segs=opts.segments??clamp(Math.round(len/10),2,26),wob=opts.wobble??0.5;
+  const ox=LIGHT_DIR.x*Math.max(0.55,weight*0.5),oy=LIGHT_DIR.y*Math.max(0.55,weight*0.5);
+  function pass(dxo,dyo,rgb,alpha,wmul){
+    g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineCap='round';
+    for(let i=0;i<segs;i++){
+      if(opts.lift&&rng()<opts.lift)continue; // the tool "lifted" — a skipped micro-stroke, as the shipped burin does
+      const t0=i/segs,t1=(i+1)/segs,mid=(t0+t1)/2,w=Math.sin(mid*7+seed)*wob;
+      g.lineWidth=Math.max(0.18,weight*wmul*(0.7+rng()*0.5));
+      g.beginPath();
+      g.moveTo(lerp(x0,x1,t0)+dxo+nx*w*0.4,lerp(y0,y1,t0)+dyo+ny*w*0.4);
+      g.lineTo(lerp(x0,x1,t1)+dxo+nx*w,lerp(y0,y1,t1)+dyo+ny*w);
+      g.stroke();
+    }
+  }
+  if(opts.onlyHi){pass(-ox,-oy,opts.hiRGB||'251,246,234',opts.alpha??0.8,1);return;}
+  if(opts.onlyShadow){pass(ox,oy,opts.shRGB||'74,70,62',opts.alpha??0.8,1);return;}
+  pass(ox*1.15,oy*1.15,opts.shRGB||'74,70,62',opts.alphaSh??0.55,1);
+  pass(-ox*1.15,-oy*1.15,opts.hiRGB||'251,246,234',opts.alphaHi??0.68,1);
+  pass(0,0,opts.midRGB||'167,158,138',opts.alphaMid??0.3,0.6); // the groove's own shadowed floor, faint
+}
+function chiselArc(g,cx,cy,r,from,to,weight,seed,opts={}){
+  const rng=mulberry32(seed>>>0||1),ry=opts.ry??r;
+  const segs=opts.segments??clamp(Math.round(Math.abs(to-from)*r/9),6,60),wob=opts.wobble??0.4;
+  const ox=LIGHT_DIR.x*Math.max(0.55,weight*0.5),oy=LIGHT_DIR.y*Math.max(0.55,weight*0.5);
+  function pass(dxo,dyo,rgb,alpha,wmul){
+    g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineCap='round';
+    for(let i=0;i<segs;i++){
+      if(opts.lift&&rng()<opts.lift)continue;
+      const a0=from+(to-from)*i/segs,a1=from+(to-from)*(i+1)/segs,mid=(a0+a1)/2;
+      const w=Math.sin(mid*5+seed)*wob;
+      g.lineWidth=Math.max(0.18,weight*wmul*(0.75+rng()*0.4));
+      g.beginPath();g.ellipse(cx+dxo,cy+dyo,Math.max(0.3,r+w),Math.max(0.3,ry+w),0,a0,a1);g.stroke();
+    }
+  }
+  if(opts.onlyHi){pass(-ox,-oy,opts.hiRGB||'251,246,234',opts.alpha??0.8,1);return;}
+  if(opts.onlyShadow){pass(ox,oy,opts.shRGB||'74,70,62',opts.alpha??0.8,1);return;}
+  pass(ox*1.15,oy*1.15,opts.shRGB||'74,70,62',opts.alphaSh??0.55,1);
+  pass(-ox*1.15,-oy*1.15,opts.hiRGB||'251,246,234',opts.alphaHi??0.68,1);
+  pass(0,0,opts.midRGB||'167,158,138',opts.alphaMid??0.28,0.6);
+}
+function bezierPts(p0,p1,p2,p3,n){ // used to hand-place the celestial great circles and the lyre's arms precisely
+  const pts=[];
+  for(let i=0;i<=n;i++){const t=i/n,mt=1-t;
+    pts.push([mt*mt*mt*p0[0]+3*mt*mt*t*p1[0]+3*mt*t*t*p2[0]+t*t*t*p3[0],
+               mt*mt*mt*p0[1]+3*mt*mt*t*p1[1]+3*mt*t*t*p2[1]+t*t*t*p3[1]]);}
+  return pts;
+}
+function chiselCurve(g,pts,weight,seed,opts={}){for(let i=0;i<pts.length-1;i++)chiselSegment(g,pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],weight,seed+i*3,{...opts,segments:2});}
+// reliefShape — a filled relief silhouette with no drawn outline: each edge is stroked on
+// whichever single side actually catches the light or falls into shadow, per its own normal.
+// The fill is its own lit-to-shadowed gradient (by bounding box, same recipe as reliefBoss) —
+// a flat single tone would sit at the same value as the ground it's carved from and vanish.
+function reliefShape(g,pts,closed,fill,seed,opts={}){
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  pts.forEach(([x,y])=>{if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;});
+  const bcx=(minX+maxX)/2,bcy=(minY+maxY)/2,rad=Math.max(maxX-minX,maxY-minY)*0.7||1;
+  const grad=g.createRadialGradient(bcx+LIGHT_DIR.x*rad*.5,bcy+LIGHT_DIR.y*rad*.5,rad*.1,bcx,bcy,rad*1.15);
+  grad.addColorStop(0,opts.hi||TOKENS.groundHi);grad.addColorStop(.55,fill||TOKENS.ground);grad.addColorStop(1,opts.dark||TOKENS.groundDeep);
+  g.fillStyle=grad;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));if(closed)g.closePath();g.fill();
+  const n=pts.length-(closed?0:1);
+  for(let i=0;i<n;i++){
+    const a=pts[i],b=pts[(i+1)%pts.length],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+    const lit=edgeLight(-dy/len,dx/len);
+    if(lit>0.12)chiselSegment(g,a[0],a[1],b[0],b[1],(opts.weight||1.1)*Math.min(1,lit+0.3),seed+i*7,{onlyHi:true,wobble:opts.wobble,alpha:opts.alpha});
+    else if(lit<-0.12)chiselSegment(g,a[0],a[1],b[0],b[1],(opts.weight||1.1)*Math.min(1,-lit+0.3),seed+i*7+3,{onlyShadow:true,wobble:opts.wobble,alpha:opts.alpha});
+  }
+}
+// drillPit — the point-chisel/running-drill puncture: a shadow pooled toward the far wall, a
+// bright rim catching the near one. Crater pits, volcanic vents and the whirlpool's spiral all
+// route through this one primitive, per CLAUDE.md's "one painter per concern."
+function drillPit(g,x,y,r,seed,opts={}){
+  g.save();g.globalAlpha=opts.alpha??0.55;g.fillStyle=opts.deep||TOKENS.ink;
+  g.beginPath();g.arc(x-LIGHT_DIR.x*r*0.3,y-LIGHT_DIR.y*r*0.3,r,0,TAU);g.fill();g.restore();
+  chiselArc(g,x,y,r,0,TAU,Math.max(0.25,r*0.3),seed+1,{onlyHi:true,alpha:0.5,segments:9,wobble:0.15});
+}
+// gildedPoint — the drilled-and-gilded star mark, the bronze globe's own contribution (header).
+function gildedPoint(g,x,y,r,seed,opts={}){
+  g.save();g.globalAlpha=0.32;g.fillStyle=TOKENS.ink;
+  g.beginPath();g.arc(x-LIGHT_DIR.x*r*0.25,y-LIGHT_DIR.y*r*0.25,r*1.18,0,TAU);g.fill();g.restore();
+  g.fillStyle=opts.fill||TOKENS.gold;g.beginPath();g.arc(x,y,Math.max(0.25,r),0,TAU);g.fill();
+  g.fillStyle=`rgba(255,253,242,${opts.hiAlpha??0.55})`;
+  g.beginPath();g.arc(x+LIGHT_DIR.x*r*0.32,y+LIGHT_DIR.y*r*0.32,Math.max(0.15,r*0.4),0,TAU);g.fill();
+}
+// reliefBoss — a raised low-relief roundel, lit upper-left / shadowed lower-right: the base
+// every planet, hazard disc and pickup medallion is built on before family marks layer atop it.
+function reliefBoss(g,cx,cy,r,seed,opts={}){
+  const grad=g.createRadialGradient(cx+LIGHT_DIR.x*r*0.5,cy+LIGHT_DIR.y*r*0.5,r*0.08,cx,cy,r*1.05);
+  grad.addColorStop(0,opts.hi||TOKENS.groundHi);grad.addColorStop(0.55,opts.mid||TOKENS.ground);grad.addColorStop(1,opts.dark||TOKENS.groundDeep);
+  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.clip();g.fillStyle=grad;g.fillRect(cx-r,cy-r,r*2,r*2);g.restore();
+  chiselArc(g,cx,cy,r*0.99,0,TAU,Math.max(0.55,r*0.045),seed+1,{segments:22,wobble:0.15,alphaHi:0.5,alphaSh:0.42,alphaMid:0.18});
+}
+function combLines(g,cx,cy,r,count,weight,seed,rough){ // the shared claw-chisel stroke: fine+few for ice, coarse+many for dune
+  const rng=mulberry32(seed);
+  for(let i=0;i<count;i++){
+    const yy=cy+(i/(count-1)-0.5)*r*1.5,half=Math.sqrt(Math.max(0,r*r-(yy-cy)*(yy-cy)))*0.92;
+    if(half<1)continue;
+    chiselSegment(g,cx-half,yy+(rng()-0.5)*r*rough*0.3,cx+half,yy+(rng()-0.5)*r*rough*0.3,weight,seed+i*4,{segments:5,wobble:rough,alphaHi:0.4,alphaSh:0.34});
+  }
+}
+
+// ---------- lettering: V-cut inscription. Roman square capitals were painted THEN cut
+// (research §4, Catich's rubbing studies) — the static face draws only the cut result (a
+// shadow-offset copy, a highlight-offset copy, then the stone-toned face between them, the
+// same "wet lead, then commit" two-pass logic penLettering() already uses); the live brush
+// pass itself only happens in paintReveal(), where it is the animated half of the story. ----
+let latReady=false,grReady=false;
+function faceFor(size,script,weight){return `${weight||400} ${size}px ${script==='gr'?'"GFS Didot"':'Cinzel'},Georgia,serif`;}
+function fakeInscription(g,text,x,y,size,opts={}){ // last-resort hand fallback — an abstract carved word-block, never a wrong Latin face
+  const clean=text.replace(/\s+/g,'').length||1,rng=mulberry32((opts.seed||1)*97+clean);
+  const cw=size*0.62,w=clean*cw;
+  let x0=opts.align==='center'?x-w/2:opts.align==='right'?x-w:x;
+  for(let i=0;i<clean;i++){
+    const lx=x0+i*cw+cw*0.5;
+    chiselSegment(g,lx,y-size*0.32,lx,y+size*0.02,size*0.08,(opts.seed||1)+i*5,{segments:3,wobble:0.3});
+    if(rng()>0.4)chiselSegment(g,lx-cw*0.26,y-size*(0.1+rng()*0.1),lx+cw*0.26,y-size*(0.1+rng()*0.1),size*0.06,(opts.seed||1)+i*5+2,{segments:2,wobble:0.2});
+  }
+}
+function vCutText(g,text,x,y,size,opts={}){
+  const script=opts.script||'la',ready=script==='gr'?grReady:latReady;
+  if(!ready){fakeInscription(g,text,x,y,size,opts);return;}
+  g.save();g.textAlign=opts.align||'left';g.textBaseline=opts.baseline||'alphabetic';g.font=faceFor(size,script,opts.weight);
+  const a=opts.alpha??1,ox=LIGHT_DIR.x*Math.max(0.6,size*0.045),oy=LIGHT_DIR.y*Math.max(0.6,size*0.045);
+  g.fillStyle=`rgba(251,246,234,${0.72*a})`;g.fillText(text,x-ox,y-oy);
+  g.fillStyle=`rgba(74,70,62,${0.58*a})`;g.fillText(text,x+ox,y+oy);
+  g.fillStyle=`rgba(118,110,94,${0.95*a})`;g.fillText(text,x,y); // the cut face itself, between the two catching walls
+  g.restore();
+}
+
+// ---------- the ground: quarried marble, not a flat swatch (ART-CRITIQUE.md #1) ----------
+function paintGround(g,w,h,seed){
+  const rng=mulberry32(seed);
+  g.fillStyle=TOKENS.ground;g.fillRect(0,0,w,h);
+  for(let c=0;c<11;c++){ // large-scale clouding — the crystalline matrix's own uneven density, quarried not printed
+    const x=rng()*w,y=rng()*h,r=90+rng()*220,tone=rng()<.5?'220,208,182':'234,226,204';
+    const gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,`rgba(${tone},${.16+rng()*.1})`);gr.addColorStop(1,`rgba(${tone},0)`);
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  }
+  const wash=g.createLinearGradient(0,0,w,h); // the raking light's own broad wash, warm from the upper-left
+  wash.addColorStop(0,'rgba(251,246,234,.5)');wash.addColorStop(.5,'rgba(237,230,214,.08)');wash.addColorStop(1,'rgba(196,182,150,.34)');
+  g.fillStyle=wash;g.fillRect(0,0,w,h);
+  for(let v=0;v<46;v++){ // veining — the marble's own wandering mineral seams, some faint, a few pronounced fractures
+    let x=rng()*w,y=rng()*h,a=rng()*TAU,bold=rng()<.22;
+    g.strokeStyle=`rgba(${bold?'118,104,78':'150,138,114'},${bold?.14+rng()*.1:.07+rng()*.09})`;
+    g.lineWidth=(bold?1.4:.6)+rng()*1.3;g.beginPath();g.moveTo(x,y);
+    for(let i=0;i<(bold?26:16);i++){a+=(rng()-.5)*.5;x+=Math.cos(a)*(13+rng()*11);y+=Math.sin(a)*(13+rng()*11);g.lineTo(x,y);}
+    g.stroke();
+    if(bold&&rng()<.5){g.strokeStyle=`rgba(210,198,168,.3)`;g.lineWidth=.5;g.beginPath();g.moveTo(x,y);g.stroke();} // a hairline sibling crack beside the bold one
+  }
+  for(let i=0;i<46;i++){ // ochre patina bloom, weathered stone's age
+    const x=rng()*w,y=rng()*h,r=16+rng()*50,gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,'rgba(180,146,90,.07)');gr.addColorStop(1,'rgba(180,146,90,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  }
+  for(let i=0;i<1400;i++){g.fillStyle=`rgba(255,252,240,${.02+rng()*.06})`;g.fillRect(rng()*w,rng()*h,.9,.9);} // crystalline sparkle
+  const vig=g.createRadialGradient(w*.42,h*.4,h*.35,w*.5,h*.5,h*.85); // a quarried slab's own edge-darkening, not a printed page's
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(60,52,38,.16)');
+  g.fillStyle=vig;g.fillRect(0,0,w,h);
+}
+
+// ---------- background stars: sparse, drilled-gilded, the bronze globe's mark scattered on
+// stone. Skipped near any specimen so nothing collides with a caption (avoid list, below). -----
+function paintFieldStars(g,w,h,seed,avoid){
+  const rng=mulberry32(seed);
+  for(let i=0;i<80;i++){
+    const x=rng()*w,y=rng()*h;
+    if(avoid.some(c=>Math.hypot(x-c.x,y-c.y)<c.r))continue;
+    const roll=rng(),r=roll>.97?2.4:roll>.9?1.9:roll>.7?1.4:1;
+    gildedPoint(g,x,y,r,3000+i*3,{hiAlpha:.4});
+  }
+}
+
+// ---------- the frame: per research §9 the Farnese has no border or cartouche — "the frame
+// becomes the circles." The engraved great circles (equator/tropic/ecliptic/colure) are the
+// sphere's only coordinate marks and stand in for the shipped RA-hour/declination ticks. -------
+function paintCelestialCircles(g,w,h,seed){
+  const eq=bezierPts([-40,150],[420,120],[860,190],[1320,150],60);
+  chiselCurve(g,eq,1.2,seed+1,{wobble:.28,alphaHi:.42,alphaSh:.36,alphaMid:.16});
+  vCutText(g,'AEQVATOR',56,138,11,{align:'left',alpha:.6});
+  const trop=bezierPts([-40,64],[420,42],[860,80],[1320,54],48);
+  chiselCurve(g,trop,.9,seed+2,{wobble:.22,alphaHi:.32,alphaSh:.26,alphaMid:.12});
+  const ecl=bezierPts([-40,258],[420,92],[860,320],[1320,112],66);
+  chiselCurve(g,ecl,1,seed+3,{wobble:.32,alphaHi:.36,alphaSh:.3,alphaMid:.14});
+  vCutText(g,'ECLIPTICA',1224,120,11,{align:'right',alpha:.55});
+  const col=bezierPts([310,-40],[266,300],[382,560],[332,840],56);
+  chiselCurve(g,col,.9,seed+4,{wobble:.26,alphaHi:.3,alphaSh:.25,alphaMid:.12});
+  vCutText(g,'COLVRVS',300,800-30,10,{align:'center',alpha:.45});
+}
+// windHead — the Anemoi, per the Tower of the Winds (research §7/§9): a puffed relief profile
+// blowing a gust in one direction. Used small at the four corners (frame furniture) and larger
+// for the crosswind danger specimen — one painter, two scales, per CLAUDE.md's own habit.
+function windHead(g,cx,cy,r,angle,seed,opts={}){
+  // one puffed cheek toward the blow direction only (not two, which read as a pair of eyes),
+  // a drilled mouth at its centre, hair streaming from the leeward side — a face with a
+  // direction, per the Tower of the Winds figures each carved on the face their wind blows from.
+  const fx=Math.cos(angle),fy=Math.sin(angle),perp=angle+Math.PI/2,px=Math.cos(perp),py=Math.sin(perp);
+  reliefBoss(g,cx,cy,r,seed,{});
+  // puckered lips, not a second nested circle (which reads as an iris/pupil) — a small teardrop
+  // bulge at the rim, tapering outward in the blow direction, with the mouth-hole at its tip.
+  const tipR=r*1.32,baseR=r*.9,halfW=r*.22;
+  reliefShape(g,[[cx+fx*tipR,cy+fy*tipR],[cx+fx*baseR+px*halfW,cy+fy*baseR+py*halfW],[cx+fx*baseR*.68,cy+fy*baseR*.68],[cx+fx*baseR-px*halfW,cy+fy*baseR-py*halfW]],true,TOKENS.ground,seed+1,{weight:.9});
+  drillPit(g,cx+fx*tipR*.96,cy+fy*tipR*.96,r*.09,seed+2,{alpha:.55});
+  for(let i=0;i<9;i++){ // hair, combed back opposite the blow direction
+    const a=angle+Math.PI+((i/8)-.5)*1.5,len=r*(.55+(i%3)*.12);
+    chiselCurve(g,bezierPts([cx-fx*r*.5,cy-fy*r*.5],[cx+Math.cos(a)*r*.9,cy+Math.sin(a)*r*.9],[cx+Math.cos(a)*(r*.9+len*.6),cy+Math.sin(a)*(r*.9+len*.6)],[cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len)],10),.9,seed+10+i,{wobble:.3,alphaHi:.42,alphaSh:.36});
+  }
+  const gusts=opts.gusts||6,glen=opts.gustLen||2.1,spread=opts.spread??.62;
+  for(let i=0;i<gusts;i++){ // the gust itself, fanned wide and unmistakably one-directional
+    const a=angle+(i/(gusts-1||1)-.5)*spread,len=r*glen*(.65+.5*((i*7)%5)/5);
+    chiselCurve(g,bezierPts([cx+fx*r*1.55,cy+fy*r*1.55],[cx+Math.cos(a)*r*2,cy+Math.sin(a)*r*2],[cx+Math.cos(a)*(r*2+len*.5),cy+Math.sin(a)*(r*2+len*.5)],[cx+Math.cos(a)*(r*2+len),cy+Math.sin(a)*(r*2+len)],8),1.15-i%3*.2,seed+20+i,{wobble:.45,alphaHi:.42,alphaSh:.36});
+  }
+}
+function paintFrame(g,w,h,seed){
+  paintCelestialCircles(g,w,h,seed);
+  [[54,54,Math.PI*1.25],[w-54,54,Math.PI*1.75],[54,h-54,Math.PI*.75],[w-54,h-54,Math.PI*.25]].forEach(([x,y,a],i)=>{
+    windHead(g,x,y,24,a,seed+100+i,{gusts:4,gustLen:.9});legend(x,y,'corner wind-head (Anemoi, frame furniture)');
+  });
+  chiselSegment(g,50,758,w-50,758,.8,seed+9,{segments:60,wobble:.2,alphaHi:.3,alphaSh:.26}); // footer rule, matching the shipped footer-strip slot
+}
+
+// ---------- the seven families: relief roundels, every difference carried by surface, never
+// colour (research §8 — "the one rule that must hold for all seven"). ----------
+const FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+const FAMILY_GR={ocean:'ΩΚΕΑΝΟΣ',crater:'ΚΡΑΤΗΡ',ringed:'ΣΤΕΦΑΝΗ',ice:'ΚΡΥΣΤΑΛΛΟΣ',dune:'ΘΙΝΕΣ',volcanic:'ΗΦΑΙΣΤΟΥ',storm:'ΘΥΕΛΛΑ'};
+const FAMILY_TR={ocean:'Okeanos',crater:'kratēr',ringed:'stephanē (constr.)',ice:'krystallos',dune:'thines',volcanic:'Hēphaistou (constr.)',storm:'thuella'};
+function paintBody(g,cx,cy,r,family,seed){
+  const rng=mulberry32(seed);
+  const tint={ocean:{},crater:{mid:'#DDD1B8',dark:'#B9AC8C'},ringed:{},ice:{hi:'#FDFAF0',mid:'#F1EBDB',dark:'#D9D1BD'},
+    dune:{hi:'#E7C88F',mid:'#CDAB6A',dark:'#A98B5C'},volcanic:{hi:'#B9AC94',mid:'#8F8471',dark:'#5C5342'},storm:{hi:'#C9C2AE',mid:'#948A76',dark:'#4A463E'}}[family];
+  reliefBoss(g,cx,cy,r,seed,tint);
+  if(family==='ocean'){ // the calmest surface: no drill texture at all, a single burnished highlight
+    g.save();g.globalAlpha=.32;g.fillStyle=TOKENS.groundHi;g.beginPath();g.ellipse(cx+LIGHT_DIR.x*r*.36,cy+LIGHT_DIR.y*r*.36,r*.4,r*.26,.5,0,TAU);g.fill();g.restore();
+  }else if(family==='crater'){ // rasped stipple, a few true running-drill punctures
+    for(let i=0;i<9;i++){const a=rng()*TAU,d=rng()*r*.78;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r*(.045+rng()*.035),seed+20+i);}
+    for(let i=0;i<3;i++){const a=rng()*TAU,d=rng()*r*.5;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r*(.12+rng()*.06),seed+40+i,{alpha:.68});}
+  }else if(family==='ringed'){ // the exact flat-chisel-and-compass technique that cuts the globe's own great circles, reused
+    chiselArc(g,cx,cy,r*.68,0,TAU,r*.065,seed+21,{segments:22,wobble:.1,alphaHi:.5,alphaSh:.44});
+    chiselArc(g,cx,cy,r*.42,0,TAU,r*.045,seed+22,{segments:18,wobble:.1,alphaHi:.46,alphaSh:.4});
+  }else if(family==='ice'){combLines(g,cx,cy,r,6,.6,seed+23,.16);}
+  else if(family==='dune'){combLines(g,cx,cy,r,13,1.05,seed+24,.55);} // shares ice's stroke, left unsmoothed and ridged
+  else if(family==='volcanic'){ // the roughest family: raw-vs-smoothed contrast, deep undercut vents
+    for(let i=0;i<5;i++){const a=rng()*TAU,d=rng()*r*.5;g.save();g.globalAlpha=.22;g.fillStyle=TOKENS.ink;g.beginPath();g.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,r*(.16+rng()*.14),0,TAU);g.fill();g.restore();}
+    for(let i=0;i<6;i++){const a=rng()*TAU,d=rng()*r*.68;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r*(.065+rng()*.06),seed+50+i,{alpha:.72});}
+  }else if(family==='storm'){ // the densest drill-work, borrowing Roman portrait curl technique, no single edge
+    for(let i=0;i<22;i++){const a=rng()*TAU,rr=rng()*r*.72;chiselArc(g,cx+Math.cos(a)*rr*.3,cy+Math.sin(a)*rr*.3,r*(.08+rng()*.09),0,Math.PI*(1+rng()),seed+60+i,{segments:6,wobble:.2,alphaHi:.36,alphaSh:.36});}
+  }
+  chiselArc(g,cx,cy,r*1.01,0,TAU,1,seed+3,{onlyShadow:true,segments:24,wobble:.12,alpha:.48}); // the disc's own contact shadow — no outline anywhere else
+}
+
+// ---------- the four dangers (research §7), depictions only — HAZARD_KINDS itself unchanged ---
+const HAZARDS=['attractor','repulsor','crosswind','obscurer'];
+const HAZ_GR={attractor:'ΧΑΡΥΒΔΙΣ',repulsor:'ΗΛΙΟΥ ΑΡΜΑ',crosswind:'ΒΟΡΕΑΣ',obscurer:'ΓΑΛΑΞΙΑΣ'};
+const HAZ_TR={attractor:'Charybdis · VORAGO',repulsor:"Hēliou harma · MACVLA (Phaethon's fall)",crosswind:'Boreas · VENTVS',obscurer:'galaxias · the Milky Way'};
+function paintHazard(g,cx,cy,r,kind,seed){
+  const rng=mulberry32(seed);
+  if(kind==='attractor'){ // Charybdis — a running-drill spiral tightening to a punched centre
+    const steps=42,turns=2.15;
+    for(let i=0;i<steps;i++){
+      const a0=(turns*TAU)*i/steps,a1=(turns*TAU)*(i+1)/steps;
+      const r0=r*.9*(1-i/(steps+6)),r1=r*.9*(1-(i+1)/(steps+6));
+      chiselSegment(g,cx+Math.cos(a0)*r0,cy+Math.sin(a0)*r0*.92,cx+Math.cos(a1)*r1,cy+Math.sin(a1)*r1*.92,1.5,seed+i,{segments:2,wobble:.15,alphaHi:.46,alphaSh:.5});
+      if(i%6===0)drillPit(g,cx+Math.cos(a0)*r0,cy+Math.sin(a0)*r0*.92,r*.05,seed+200+i);
+    }
+    chiselArc(g,cx,cy,r*.38,0,TAU,1.6,seed+1,{segments:16,wobble:.15,alphaHi:.7,alphaSh:.62}); // the drawn kill radius, legible
+  }else if(kind==='repulsor'){ // Helios' chariot lost — a radiate disc, the wheel tumbling at the rim
+    reliefBoss(g,cx,cy,r*.46,seed+1,{});
+    for(let i=0;i<14;i++){const a=i/14*TAU,len=r*(.5+(i%3)*.15);
+      chiselSegment(g,cx+Math.cos(a)*r*.5,cy+Math.sin(a)*r*.5,cx+Math.cos(a)*(r*.5+len),cy+Math.sin(a)*(r*.5+len),1.05,seed+10+i,{segments:4,wobble:.25,alphaHi:.44,alphaSh:.4});}
+    chiselArc(g,cx,cy,r*.44,0,TAU,1.4,seed+2,{segments:14,wobble:.12,alphaHi:.68,alphaSh:.6}); // lethal core, legible
+    const wx=cx+r*.86,wy=cy+r*.58; // the chariot-wheel, tumbling off the disc's rim, large enough to read as a wheel not a fleck
+    reliefBoss(g,wx,wy,r*.34,seed+3,{});
+    chiselArc(g,wx,wy,r*.2,0,TAU,1,seed+4,{segments:10,wobble:.1,alphaHi:.5,alphaSh:.45});
+    for(let i=0;i<8;i++){const a=i/8*TAU;chiselSegment(g,wx+Math.cos(a)*r*.06,wy+Math.sin(a)*r*.06,wx+Math.cos(a)*r*.32,wy+Math.sin(a)*r*.32,1,seed+30+i,{segments:2,wobble:.15});}
+    for(let i=0;i<4;i++)drillPit(g,wx+r*.4+i*6,wy+r*.26+i*4,1.3-i*.2,seed+40+i,{alpha:.4}); // debris chipping off as it falls away
+  }else if(kind==='crosswind'){windHead(g,cx,cy,r*.62,0,seed+1,{gusts:7,gustLen:1.85});}
+  else{ // obscurer — Hera's spilled milk, γαλαξίας: a soft diffuse band, never a hard edge, never lethal
+    const bandGr=g.createRadialGradient(cx,cy,0,cx,cy,r*1.05);
+    bandGr.addColorStop(0,'rgba(150,138,114,.16)');bandGr.addColorStop(1,'rgba(150,138,114,0)');
+    g.save();g.fillStyle=bandGr;g.beginPath();g.ellipse(cx,cy,r,r*.55,0,0,TAU);g.fill();g.restore();
+    for(let i=0;i<130;i++){const a=rng()*TAU,d=rng()*r;drillPit(g,cx+Math.cos(a)*d,cy+Math.sin(a)*d*.5,.8+rng()*1.2,seed+50+i,{alpha:.16+rng()*.14});}
+  }
+}
+
+// ---------- pickups: four, small, captioned (brief pt.8) ----------
+const PICK={sling:{gr:'ΣΦΕΝΔΟΝΗ',tr:'sphendonē'},shield:{gr:null,tr:'SCVTVM'},reflector:{gr:null,tr:'REPVLSA'},inkwell:{gr:null,tr:'ATRAMENTARIVM'}};
+function paintPickup(g,cx,cy,kind,seed){
+  const r=13;
+  if(kind==='sling'){chiselArc(g,cx,cy,r,.2,TAU-.2,1,seed,{segments:12,wobble:.15});gildedPoint(g,cx,cy,r*.4,seed+1);}
+  else if(kind==='shield'){reliefShape(g,[[0,-r],[r*.85,-r*.2],[r*.6,r*.9],[0,r*.6],[-r*.6,r*.9],[-r*.85,-r*.2]].map(([x,y])=>[cx+x,cy+y]),true,TOKENS.ground,seed,{weight:1});}
+  else if(kind==='reflector'){ // REPVLSA — a convex boss that throws a blow back the way it came, deflection arcs radiating
+    reliefBoss(g,cx,cy,r,seed,{});
+    for(let i=0;i<5;i++){const a=Math.PI+((i/4)-.5)*1.5;chiselArc(g,cx+Math.cos(a)*r*1.3,cy+Math.sin(a)*r*1.3,r*.9,a-.5,a+.5,.8,seed+1+i,{segments:6,wobble:.15,alphaHi:.4,alphaSh:.34});}
+  }else{ // ATRAMENTARIVM — a small carved vessel: narrow neck, round belly, distinct from the shield's angular hexagon
+    const pts=[[-r*.06,-r*.72],[r*.06,-r*.72],[r*.24,-r*.46],[r*.56,r*.12],[r*.38,r*.62],[-r*.38,r*.62],[-r*.56,r*.12],[-r*.24,-r*.46]].map(([x,y])=>[cx+x,cy+y]);
+    reliefShape(g,pts,true,TOKENS.ground,seed,{weight:1});
+    chiselSegment(g,cx-r*.1,cy-r*.72,cx+r*.1,cy-r*.72,1,seed+1,{segments:2}); // the stopper's lip
+  }
+}
+
+// ---------- Λύρα (Lyra) — the constellation figure, a Farnese-manner relief (research §2):
+// one filled, unoutlined silhouette lit from the same upper-left source as everything else, the
+// three stars gilded on top of it, independent of the anatomy beneath — exactly as the shipped
+// game's figures carry their stars. Chosen because it is both attested AND the game's "THE
+// LYRE" (see header); the other eleven catalogue names have no ancient original to draw on. ---
+function figurePoints(){return [[0,-150],[14,-140],[22,-100],[40,-92],[46,-40],[54,10],[40,60],[46,110],[20,120],[8,60],[0,20],[-10,10],[-30,50],[-46,80],[-34,20],[-24,-30],[-34,-70],[-20,-110],[-6,-140]];}
+function paintFigure(g,cx,cy,scale,seed){
+  const pts=figurePoints().map(([x,y])=>[cx+x*scale,cy+y*scale]);
+  reliefShape(g,pts,true,TOKENS.ground,seed,{weight:1.3});
+  reliefBoss(g,cx,cy-150*scale,17*scale,seed+1,{});
+  const lx=cx+50*scale,ly=cy-30*scale; // the lyre at the figure's raised hand
+  reliefBoss(g,lx,ly+22*scale,14*scale,seed+2,{});
+  chiselCurve(g,bezierPts([lx-10*scale,ly+10*scale],[lx-26*scale,ly-30*scale],[lx-20*scale,ly-70*scale],[lx-4*scale,ly-78*scale],16),1,seed+3,{wobble:.2,alphaHi:.4,alphaSh:.36});
+  chiselCurve(g,bezierPts([lx+10*scale,ly+10*scale],[lx+26*scale,ly-30*scale],[lx+20*scale,ly-70*scale],[lx+4*scale,ly-78*scale],16),1,seed+4,{wobble:.2,alphaHi:.4,alphaSh:.36});
+  chiselSegment(g,lx-4*scale,ly-78*scale,lx+4*scale,ly-78*scale,1.1,seed+5,{segments:2});
+  for(let i=-2;i<=2;i++)chiselSegment(g,lx+i*3*scale,ly+10*scale,lx+i*2.4*scale,ly-70*scale,.55,seed+6+i,{segments:6,wobble:.1,alphaHi:.3,alphaSh:.25});
+  return {top:[lx,ly-78*scale],mid:[lx,ly-40*scale],base:[lx,ly+18*scale]};
+}
+
+// ---------- Ptolemy's μέγεθος: six classes α′–ϛ′, plus νεφ. for the nebulous (research §4)
+// — reusing the shipped six-form star system, ready to be read by the main nodes per §6's
+// twist (a 1st-class node pays richer but demands a narrower rimWindow); not wired to scoring
+// here since this sheet has no live simulation, only depicted, per the brief's visual scope. ---
+const MAG_RANKS=['α′','β′','γ′','δ′','ε′','ϛ′'];
+function magnitudeMark(g,x,y,r,cls,seed){
+  if(cls<=1)chiselArc(g,x,y,r*1.85,0,TAU,.75,seed,{segments:16,wobble:.1,alphaHi:.3,alphaSh:.24});
+  const pts=cls<=2?8:cls===3?6:0;
+  if(pts)for(let i=0;i<pts;i++){const a=i/pts*TAU;chiselSegment(g,x+Math.cos(a)*r*.9,y+Math.sin(a)*r*.9,x+Math.cos(a)*r*(1.55+(cls<=1?.55:0)),y+Math.sin(a)*r*(1.55+(cls<=1?.55:0)),.75,seed+i,{segments:2,wobble:.15});}
+  if(cls===4)chiselArc(g,x,y,r*1.28,0,TAU,.65,seed+8,{segments:10,wobble:.1});
+  gildedPoint(g,x,y,Math.max(1,r*(1.12-cls*.08)),seed+9);
+}
+function paintMagnitudeKey(g,x,y){
+  vCutText(g,'ΜΕΓΕΘΟΣ',x,y,14,{script:'gr',align:'left'});
+  for(let i=0;i<6;i++){const yy=y+24+i*27;magnitudeMark(g,x+9,yy,3.6,i+1,900+i*7);vCutText(g,MAG_RANKS[i],x+30,yy+4,14,{script:'gr',align:'left'});}
+  const yy=y+24+6*27;drillPit(g,x+9,yy,2.6,980,{alpha:.2});vCutText(g,'ΝΕΦ.',x+30,yy+4,12,{script:'gr',align:'left',alpha:.85});
+  legend(x+9,yy,'MAGNITUDINES-equivalent (μέγεθος key)');
+}
+function paintColophon(g,cx,cy,r,seed){ // the instrument grammar, reduced to a maker's-mark vignette (research §9's FECIT)
+  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.clip();
+  const gr=g.createRadialGradient(cx+LIGHT_DIR.x*r*.4,cy+LIGHT_DIR.y*r*.4,r*.1,cx,cy,r*1.1);
+  gr.addColorStop(0,TOKENS.bronzeHi);gr.addColorStop(1,TOKENS.bronze);g.fillStyle=gr;g.fillRect(cx-r,cy-r,r*2,r*2);
+  chiselArc(g,cx,cy,r*.6,0,TAU,1,seed,{segments:16,wobble:.15,alphaHi:.4,alphaSh:.35});
+  g.restore();
+  chiselArc(g,cx,cy,r,0,TAU,1.15,seed+1,{segments:20,wobble:.12});
+  vCutText(g,'FECIT',cx,cy+r+16,11,{align:'center',alpha:.75});
+}
+
+// ---------- HUD, top-left/top-centre/top-right/bottom-left/bottom-centre — the shipped
+// layout's own slots (GAME-BRIEF §5/§9), re-lettered in the era's two hands. ----------
+function paintHUDStatic(g){
+  vCutText(g,'ORBITA',64,74,36,{weight:700});
+  chiselSegment(g,64,90,208,90,.8,71,{segments:12,wobble:.2});
+  vCutText(g,'ΑΡΙΣΤΟΝ',1224,50,16,{script:'gr',align:'right',weight:700});
+  vCutText(g,'ariston · best',1224,66,10,{align:'right',alpha:.7});
+  vCutText(g,'ACIES',64,702,14,{weight:700});
+  vCutText(g,'TAB· III · SILENTIVM',640,776,13,{align:'center'});
+}
+function paintHUDDynamic(g,s){
+  vCutText(g,String(s.score),640,66,36,{align:'center',weight:700});
+  vCutText(g,'VELOCITAS ×'+s.speed.toFixed(1),640,86,11,{align:'center',alpha:.78});
+  vCutText(g,'SERIES ×'+s.flow,640,101,11,{align:'center',alpha:.78}); // "flow"/combo — no attested word, a plausible Latin construction (research §5 has none for it)
+  chiselSegment(g,600,109,680,109,.7,72,{segments:10,wobble:.15});
+  vCutText(g,String(s.best),1224,92,22,{align:'right',weight:700});
+  const gx=64,gy=718,gw=170,cut=gw*s.acies; // ACIES — the chisel's own edge, dulling with use (research §6)
+  chiselSegment(g,gx,gy,gx+gw,gy,5,73,{segments:1,alphaHi:.15,alphaSh:.15,alphaMid:.12});
+  g.save();g.beginPath();g.rect(gx,gy-4,cut,8);g.clip();
+  const bl=g.createLinearGradient(gx,0,gx+gw,0);bl.addColorStop(0,TOKENS.groundHi);bl.addColorStop(1,'#DCD2BC');
+  g.fillStyle=bl;g.fillRect(gx,gy-4,gw,8);g.restore();
+  chiselSegment(g,gx,gy,gx+cut,gy,4,74,{segments:Math.round(6+cut/12),wobble:.2,alphaHi:.55,alphaSh:.4});
+}
+
+// ---------- the reveal: a caption chiselled letter by letter — first a quick sinopia BRUSH
+// pass (the mason's painted guide, research §4: "should visibly precede and slightly overshoot
+// the chisel pass"), then the chisel commits with a chip-flash and a puff of stone dust. -------
+function chipFlash(g,x,y,p,seed){
+  if(p<=0||p>=1)return;
+  g.save();g.globalAlpha=(1-p)*.9;g.fillStyle=TOKENS.chip;
+  for(let i=0;i<5;i++){const a=i/5*TAU+seed,r=2+p*7;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r*.4);g.lineTo(x+Math.cos(a+.25)*r*.3,y+Math.sin(a+.25)*r*.3);g.closePath();g.fill();}
+  g.restore();
+}
+function dustPuff(g,x,y,p,seed){
+  if(p<=0)return;const rng=mulberry32(seed*97+1);
+  g.save();g.globalAlpha=Math.max(0,.45*(1-p));g.fillStyle=TOKENS.groundHi;
+  for(let i=0;i<6;i++){const a=rng()*TAU,d=p*10*(.4+rng()*.8);g.beginPath();g.arc(x+Math.cos(a)*d,y+Math.sin(a)*d*.6+p*4,.6+rng()*.8,0,TAU);g.fill();}
+  g.restore();
+}
+function paintReveal(g,word,cx,y,size,cycle){
+  const letters=[...word],n=letters.length,carveFrac=.55,per=carveFrac/n;
+  g.save();g.font=latReady?faceFor(size,'la',700):`700 ${size}px serif`;
+  const widths=letters.map(ch=>latReady?g.measureText(ch).width:size*.6);
+  g.restore();
+  const total=widths.reduce((a,b)=>a+b,0);let lx=cx-total/2;
+  for(let i=0;i<n;i++){
+    const start=i*per,local=clamp((cycle-start)/per,0,1),midX=lx+widths[i]/2;
+    if(local>0){
+      if(local<.45){ // the brush's sinopia guide-stroke, laid at the letter's own diagonal
+        const bt=local/.45;
+        g.save();g.strokeStyle=`rgba(160,84,58,${.55*(1-bt*.3)})`;g.lineWidth=Math.max(1,size*.15*(1-bt*.3));g.lineCap='round';
+        g.beginPath();g.moveTo(lx,y+size*.06);g.lineTo(lx+widths[i]*Math.min(1,bt*1.15),y-size*.6);g.stroke();g.restore();
+      }
+      if(local>=.4){ // the mason commits: the V-cut face, struck in with a chip-flash and settling dust
+        const ct=clamp((local-.4)/.6,0,1);
+        vCutText(g,letters[i],midX,y,size,{align:'center',weight:700,alpha:ct});
+        if(local<.78){chipFlash(g,midX,y-size*.3,(local-.4)/.35,i);dustPuff(g,midX,y-size*.15,(local-.4)/.6,i);}
+      }
+    }
+    lx+=widths[i];
+  }
+}
+
+// ---------- the player: a carved comet-star on its orbit ring — a drilled-and-gilded point
+// with an incised tail groove, the trailing flight path a fading string of the same points. ---
+function paintPlayer(g,cx,cy,r,t,nx,ny){
+  chiselArc(g,cx,cy,r,0,TAU,1,600,{segments:30,wobble:.12,alphaHi:.4,alphaSh:.35}); // the orbit ring
+  chiselArc(g,cx,cy,r,Math.PI*1.15,Math.PI*1.65,1,601,{segments:10,wobble:.1,alphaHi:.3,alphaSh:.25}); // faint next-orbit aim guide
+  g.save();g.setLineDash([3,5]);g.strokeStyle='rgba(74,70,62,.32)';g.lineWidth=1;
+  g.beginPath();g.moveTo(cx+Math.cos(-.3)*r,cy+Math.sin(-.3)*r);g.lineTo(nx,ny);g.stroke();g.restore();
+  const a=t*.9,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+  for(let i=1;i<=7;i++){const ta=a-i*.1,tx=cx+Math.cos(ta)*r,ty=cy+Math.sin(ta)*r;gildedPoint(g,tx,ty,1.6*(1-i/9),700+i,{hiAlpha:.3*(1-i/8)});}
+  const tailA=a-.5;
+  chiselSegment(g,px,py,cx+Math.cos(tailA)*r*.82,cy+Math.sin(tailA)*r*.82,1.3,702,{segments:6,wobble:.2,alphaHi:.4,alphaSh:.35});
+  gildedPoint(g,px,py,4,701);
+}
+
+// ---------- legend overlay (press L) ----------
+const LEGEND=[];
+function legend(x,y,label){LEGEND.push({x,y,label});}
+function drawLegend(g){
+  g.save();g.font='11px Georgia,serif';g.fillStyle='rgba(30,30,26,.85)';g.textAlign='left';
+  LEGEND.forEach(L=>{g.strokeStyle='rgba(30,30,26,.55)';g.lineWidth=1;g.beginPath();g.arc(L.x,L.y,3,0,TAU);g.stroke();g.fillText(L.label,L.x+7,L.y+4);});
+  g.restore();
+}
+
+// ---------- assembly ----------
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const sheet=document.createElement('canvas'),sctx=sheet.getContext('2d');
+const W=1280,H=800;
+let bodyPos=[],hazPos=[],pickPos=[],playerNode=null,nextNode=null,figureCenter={x:640,y:600,scale:.68},legendOn=false,startTime=performance.now();
+
+function layout(){
+  bodyPos=[];hazPos=[];pickPos=[];LEGEND.length=0;
+  const y=210,x0=150,dx=(1130-150)/6;
+  FAMILIES.forEach((f,i)=>bodyPos.push({x:x0+i*dx,y,r:46,f}));
+  playerNode=bodyPos[2];nextNode=bodyPos[3]; // the comet flies the ringed world — Adeptus's own emblematic family (GAME-BRIEF §3)
+  const hy=386,hx0=190,hdx=(1090-190)/3;
+  HAZARDS.forEach((k,i)=>hazPos.push({x:hx0+i*hdx,y:hy,r:40,k}));
+  ['sling','shield','reflector','inkwell'].forEach((k,i)=>pickPos.push({x:70,y:480+i*52,k}));
+}
+function buildSheet(){
+  sheet.width=W;sheet.height=H;
+  paintGround(sctx,W,H,1);
+  const avoid=[...bodyPos.map(b=>({x:b.x,y:b.y+20,r:b.r+46})),...hazPos.map(h=>({x:h.x,y:h.y+20,r:h.r+46})),
+    {x:640,y:80,r:120},{x:1224,y:70,r:90},{x:figureCenter.x,y:figureCenter.y,r:150},{x:1225,y:250,r:90}];
+  paintFieldStars(sctx,W,H,2,avoid);
+  paintFrame(sctx,W,H,3);
+  paintHUDStatic(sctx);
+  bodyPos.forEach((b,i)=>{
+    paintBody(sctx,b.x,b.y,b.r,b.f,300+i*17);
+    vCutText(sctx,FAMILY_GR[b.f],b.x,b.y+b.r+23,13,{script:'gr',align:'center'});
+    vCutText(sctx,FAMILY_TR[b.f],b.x,b.y+b.r+37,9.5,{align:'center',alpha:.72});
+    legend(b.x,b.y,b.f+(i===2?' (player node)':i===3?' (next node)':''));
+  });
+  const hazGame={attractor:'attractor · VORAGO-equivalent',repulsor:'repulsor · MACULA-equivalent',crosswind:'crosswind · VENTUS-equivalent',obscurer:'obscurer / nebula'};
+  hazPos.forEach(h=>{
+    paintHazard(sctx,h.x,h.y,h.r,h.k,500+h.x);
+    vCutText(sctx,HAZ_GR[h.k],h.x,h.y+h.r+23,13,{script:'gr',align:'center'});
+    vCutText(sctx,HAZ_TR[h.k],h.x,h.y+h.r+37,9,{align:'center',alpha:.72});
+    legend(h.x,h.y,hazGame[h.k]);
+  });
+  const pkGame={sling:'pickup: sling star',shield:'pickup: shield (SCUTUM)',reflector:'pickup: reflector (REPULSA)',inkwell:'pickup: inkwell'};
+  pickPos.forEach(p=>{
+    paintPickup(sctx,p.x,p.y,p.k,600+p.y);
+    const lab=PICK[p.k];
+    if(lab.gr)vCutText(sctx,lab.gr,p.x+20,p.y-2,11,{script:'gr',align:'left'});
+    vCutText(sctx,lab.tr,p.x+20,p.y+11,9,{align:'left',alpha:.72});
+    legend(p.x,p.y,pkGame[p.k]);
+  });
+  paintMagnitudeKey(sctx,1198,150);
+  paintColophon(sctx,1204,706,20,900);
+  legend(1204,706,"colophon · maker's-mark equivalent (FECIT)");
+  legend(64,74,'title (ORBIT)');legend(640,66,'HUD: score');legend(1224,50,'HUD: personal best');
+  legend(64,718,'HUD: ACIES (ink/currency-equivalent) gauge');legend(640,776,'HUD: chapter/sheet label');
+  const stars=paintFigure(sctx,figureCenter.x,figureCenter.y,figureCenter.scale,55);
+  [stars.top,stars.mid,stars.base].forEach((p,i)=>gildedPoint(sctx,p[0],p[1],3-i*.3,950+i));
+  vCutText(sctx,'ΛΥΡΑ',figureCenter.x,figureCenter.y+68,19,{script:'gr',align:'center',weight:700});
+  vCutText(sctx,'Lyra · THE LYRE',figureCenter.x,figureCenter.y+84,11,{align:'center',alpha:.72});
+  legend(figureCenter.x,figureCenter.y-70,'constellation figure (Farnese-manner relief)');
+}
+
+function drawFrame(now){
+  const t=(now-startTime)/1000;
+  ctx.clearRect(0,0,W,H);ctx.drawImage(sheet,0,0);
+  paintReveal(ctx,'LYRA',figureCenter.x,figureCenter.y+118,25,(t%6)/6);
+  paintHUDDynamic(ctx,{score:Math.round(74+Math.sin(t*.3)*3),best:112,speed:1+.12*Math.sin(t*.5),flow:2+(Math.sin(t*.4)>0?1:0),acies:.58+.15*Math.sin(t*.6)});
+  paintPlayer(ctx,playerNode.x,playerNode.y,playerNode.r+24,t,nextNode.x,nextNode.y);
+  if(legendOn)drawLegend(ctx);
+  requestAnimationFrame(drawFrame);
+}
+function fitCanvas(){
+  const vw=window.innerWidth,vh=window.innerHeight,scale=Math.min(vw/W,vh/H,1)*.98,dpr=window.devicePixelRatio||1;
+  canvas.style.width=(W*scale)+'px';canvas.style.height=(H*scale)+'px';
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',fitCanvas);
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L'){legendOn=!legendOn;}});
+
+function boot(){layout();buildSheet();fitCanvas();requestAnimationFrame(drawFrame);}
+// Local faces only (fonts/cinzel.ttf, fonts/gfs-didot.ttf) — no network race. document.fonts.ready
+// is awaited so the very first paint already sets in the real hand; document.fonts.check() after
+// that is a genuine pass/fail, not a network-timeout guess, and only that failure ever reaches
+// fakeInscription (see the header comment and vCutText above).
+async function boot_fonts(){
+  try{
+    if(document.fonts&&document.fonts.load){
+      await Promise.all([document.fonts.load('700 36px Cinzel','ORBITA'),document.fonts.load('400 16px Cinzel','acies'),document.fonts.load('400 20px "GFS Didot"','ΛΥΡΑ')]);
+      await document.fonts.ready;
+    }
+  }catch(e){}
+  latReady=!!(document.fonts&&document.fonts.check('700 16px Cinzel'));
+  grReady=!!(document.fonts&&document.fonts.check('400 16px "GFS Didot"'));
+  boot();
+}
+boot_fonts();
+</script>
+</body>
+</html>

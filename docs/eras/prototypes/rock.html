@@ -1,0 +1,650 @@
+<!doctype html>
+<!--
+  Orbit — Era 0, "The Rock": Franco-Cantabrian painted cave, c. 40,000-3,000 BCE, centred on
+  Lascaux's Hall of the Bulls (c. 17,000 BCE), per docs/eras/research/rock.md and docs/eras/01-rock.md.
+
+  The conceit of this sheet is that there is no sheet. The 1280x800 frame is a piece of limestone
+  wall, and everything else on it is either the rock's own relief or pigment lying in that relief.
+  Research §9: this era owns no border, cartouche, colophon, scale or maker's mark, because "a
+  figure's edge is wherever the rock or the torchlight stops." So the frame here is literally the
+  end of the torch's reach — the dark closing in from every edge, which is also the game's own
+  rising darkness. Nothing else surrounds the picture.
+
+  THE LIGHT is the whole design. One torch stands low and to the left, off the bottom edge. The
+  wall is a value-noise height field of six octaves; every pixel of the ground is shaded from that
+  field's own gradient against the direction of the flame, so bulges take the light warm on the
+  flank that faces the torch and go cold-dark on the flank that turns away, hollows fill with
+  shadow, and calcite runs pick up a wet sheen. Rock, flame and sheen are baked into three separate
+  sheets and multiplied together, because pigment has to lie on the ROCK and be lit with it. Per
+  frame only the flame's breath moves: one pre-struck halo, re-blitted at a jittered offset and a
+  breathing strength — the noise is never repainted and the relief is never re-shaded.
+
+  PIGMENT SITS IN THE RELIEF. Every ochre mark is laid down on its own layer and multiplied into
+  the lit rock, so paint darkens stone rather than sitting on it, and each dab's strength is
+  weighted by the wall's local height: it pools and darkens in the hollows and thins to nothing
+  over the bulges. Charcoal breaks the same way, which is why the bull's contour is dry and gapped
+  where the rock is rough. Kaolin white is the one covering pigment, so it is the one thing painted
+  over the light instead of under it, and it is lit by hand from the same torch.
+
+  Three primitives replace the shipped game's burin, exactly as research §4 asks:
+    dab      — a pad or fingertip loaded with wet pigment, pressed; no direction, no leading edge.
+    stencil  — pigment blown around a held hand, leaving a negative; the maker's mark and the title.
+    scratch  — a flint line: fresh pale stone in the groove, a lit lip thrown up on the torch side,
+               a shadow on the far side, skipping where the rock is rough. Pecked hollows (cup
+               marks, the pickups' spirals) are this primitive composed into pits.
+  Nothing on this sheet is drawn any other way.
+
+  Choices where the research offered options: Lascaux's ground `#C7BC9E` is used and Chauvet's
+  paler `#D6D0BF` deliberately not mixed with it (§3). The Hall of the Bulls is the signature
+  panel (§10.1). NO WRITING ANYWHERE — this era has no script (§4), so every caption is the thing's
+  own mark drawn small beneath it, the HUD is burin tallies and density-coded dot fields (§9), and
+  the evaluator's words live only in the L legend, which is out-of-fiction chrome. No typeface is
+  loaded and none is wanted; commercial "petroglyph" display faces are refused outright (§4). The
+  legend overlay sets whatever serif the machine has, and says so by being obviously modern.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Rock — Orbit era prototype</title>
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#050403;overflow:hidden}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;box-shadow:0 0 90px 22px rgba(0,0,0,.85)}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<script>
+'use strict';
+/* ---------- seeded randomness, so the wall is the same wall on every load ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2,R=mulberry32(0x17000BCE);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,ss=t=>t*t*(3-2*t);
+function hexa(h,a){const n=parseInt(h.slice(1),16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+
+/* ---------- TOKENS: real ground pigments (research §3), never a modern paint standing in ---------- */
+const T={
+  redOchre :'#9C3B22',  // haematite — the era's most reserved colour, its nearest thing to gold
+  ochre    :'#C9962E',  // goethite — the softer, commoner yellow
+  ochreDeep:'#A9701F',
+  manganese:'#211F1E',  // MnO2, the cooler blue-black
+  charcoal :'#2C2622',  // warmer, softer-edged; never mixed with manganese on one panel
+  kaolin   :'#EAE1CF',  // white clay, the rarest pigment and the only covering one
+  stone    :'#C7BC9E',  // torchlit limestone, Lascaux — Chauvet's paler tone is not mixed in
+  flame    :'#FFBE72',
+  legend   :'rgba(176,206,222,.92)'
+};
+const W=1280,H=800;
+/* The torch: one flame, held low and to the left, just off the bottom edge of the rock. */
+const TX=302,TY=766,AMB=.085;
+
+/* ---------- canvas: a fixed 1280x800 face of rock, drawn at devicePixelRatio ---------- */
+const cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false});
+let DPR=1;
+function fit(){DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));const s=Math.min(window.innerWidth/W,window.innerHeight/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',fit);fit();
+function layer(){const c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);return{c,g};}
+
+/* ================= THE ROCK ITSELF: a height field, half-resolution, six octaves ================= */
+/* Limestone is not a texture laid over a colour, it is a shape. Everything below — the shading, the
+   way pigment pools, where cracks run, where the light dies — is read off this one field. */
+const NW=642,NH=402;
+function octave(arr,cx,cy,amp,seed){
+  const gw=Math.ceil(NW/cx)+3,gh=Math.ceil(NH/cy)+3,rnd=mulberry32(seed),lat=new Float32Array(gw*gh);
+  for(let i=0;i<lat.length;i++)lat[i]=rnd();
+  for(let y=0;y<NH;y++){const fy=y/cy,iy=fy|0,sy=ss(fy-iy);
+    for(let x=0;x<NW;x++){const fx=x/cx,ix=fx|0,sx=ss(fx-ix),i0=iy*gw+ix;
+      const t=lat[i0]+(lat[i0+1]-lat[i0])*sx,b=lat[i0+gw]+(lat[i0+gw+1]-lat[i0+gw])*sx;
+      arr[y*NW+x]+=amp*(t+(b-t)*sy);}}}
+function build(specs){const a=new Float32Array(NW*NH);let s=0;
+  for(const o of specs){octave(a,o[0],o[1],o[2],o[3]);s+=o[2];}
+  let lo=1e9,hi=-1e9;for(let i=0;i<a.length;i++){if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}
+  const k=1/(hi-lo||1);for(let i=0;i<a.length;i++)a[i]=(a[i]-lo)*k;return a;}
+/* the bulges and hollows the painters worked with, from room-sized swells down to a hand's breadth */
+const HF=build([[152,112,1,101],[76,58,.44,202],[37,31,.185,303],[18,16,.072,404],[9,8,.030,505],[4.5,4,.013,606]]);
+/* calcite: water has run down this wall for a very long time, so its sheen is stretched vertically */
+const CF=build([[70,240,1,707],[26,120,.45,808],[10,44,.2,909]]);
+/* iron staining — broad, slow, the reason a limestone face is never one colour */
+const SF=build([[210,170,1,1010],[88,72,.4,1111]]);
+const GX=new Float32Array(NW*NH),GY=new Float32Array(NW*NH);
+for(let y=1;y<NH-1;y++)for(let x=1;x<NW-1;x++){const i=y*NW+x;GX[i]=(HF[i+1]-HF[i-1])*.5;GY[i]=(HF[i+NW]-HF[i-NW])*.5;}
+
+function samp(F,x,y){const fx=x*.5,fy=y*.5;let ix=fx|0,iy=fy|0;
+  if(ix<0)ix=0;else if(ix>NW-2)ix=NW-2;if(iy<0)iy=0;else if(iy>NH-2)iy=NH-2;
+  const tx=fx-ix,ty=fy-iy,i0=iy*NW+ix,t=F[i0]+(F[i0+1]-F[i0])*tx,b=F[i0+NW]+(F[i0+NW+1]-F[i0+NW])*tx;
+  return t+(b-t)*ty;}
+const hAt=(x,y)=>samp(HF,x,y),calAt=(x,y)=>samp(CF,x,y);
+/* The dark is not a rectangle: its boundary is the rock's own, so the edge is bitten by the wall. */
+function edgeAt(x,y){const n=(calAt(x,y)-.5)*54+(hAt(x,y)-.5)*30;
+  return ss(clamp((Math.min(x,W-x,y*1.15,(H-y)*1.1)+n)/112,0,1));}
+const fall=d=>AMB+.44/(1+2.6*(d/430)*(d/430))+.50/(1+.80*(d/1180)*(d/1180));
+function lightAt(x,y){return fall(Math.hypot(x-TX,y-TY))*edgeAt(x,y);}
+/* the colour a pigment takes when it is lit rather than lain under the light — kaolin only */
+function litRGB(hex,x,y,k){const n=parseInt(hex.slice(1),16),L=lightAt(x,y)*(k||1)*1.5+.07;
+  return 'rgb('+Math.min(255,(n>>16&255)*L|0)+','+Math.min(255,(n>>8&255)*(L*.83)|0)+','+Math.min(255,(n&255)*(L*.62)|0)+')';}
+
+/* ---------- bake the wall once, per pixel, in three parts ----------
+   Rock, light and sheen are kept apart on purpose. Pigment has to go on the ROCK and be lit with
+   it — a wash multiplied into an already-dark wall is a wash nobody can see, which is exactly how
+   a real panel behaves and exactly what makes it useless as a picture. So the albedo is baked
+   bare, the ochre is multiplied into it, and only then does the flame multiply over the pair. */
+function paintGround(){
+  const A=document.createElement('canvas'),LT=document.createElement('canvas'),SP=document.createElement('canvas');
+  for(const c of[A,LT,SP]){c.width=W;c.height=H;}
+  const ag_=A.getContext('2d'),lg=LT.getContext('2d'),sg=SP.getContext('2d');
+  const ai=ag_.createImageData(W,H),li=lg.createImageData(W,H),si=sg.createImageData(W,H),AD=ai.data,LD=li.data,SD=si.data;
+  const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n=Math.imul(n^n>>>13,1274126177);return((n^n>>>16)>>>0)/4294967296;};
+  let p=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++,p+=4){
+    const fx=x*.5,fy=y*.5;let ix=fx|0,iy=fy|0;
+    if(ix>NW-2)ix=NW-2;if(iy>NH-2)iy=NH-2;
+    const tx=fx-ix,ty=fy-iy,i0=iy*NW+ix,i1=i0+1,i2=i0+NW,i3=i2+1,
+      w0=(1-tx)*(1-ty),w1=tx*(1-ty),w2=(1-tx)*ty,w3=tx*ty;
+    const h=HF[i0]*w0+HF[i1]*w1+HF[i2]*w2+HF[i3]*w3,
+          cal=CF[i0]*w0+CF[i1]*w1+CF[i2]*w2+CF[i3]*w3,
+          stn=SF[i0]*w0+SF[i1]*w1+SF[i2]*w2+SF[i3]*w3;
+    let gx=(GX[i0]*w0+GX[i1]*w1+GX[i2]*w2+GX[i3]*w3)*112,
+        gy=(GY[i0]*w0+GY[i1]*w1+GY[i2]*w2+GY[i3]*w3)*112;
+    // grit: two scales of hash roughness perturbing the normal, which is what makes raking light sparkle
+    const r1=hash(x,y),r2=hash(x+7919,y+104729),r3=hash(x>>1,(y>>1)+31337);
+    gx+=(r1-.5)*.30+(r3-.5)*.34;gy+=(r2-.5)*.30+(hash((x>>1)+77,y>>1)-.5)*.34;
+    // the limestone's own colour, unlit: paler on the crests where calcite has run, iron-stained in the lees
+    const cw=cal*cal,gr=(r1-.5)*11;
+    let ar=196+46*cw+26*h-30*stn+gr,ag=185+44*cw+24*h-38*stn+gr,ab=156+46*cw+21*h-44*stn+gr;
+    AD[p]=ar;AD[p+1]=ag;AD[p+2]=ab;AD[p+3]=255;
+    // the flame
+    let dx=TX-x,dy=TY-y;const d=Math.sqrt(dx*dx+dy*dy)+1e-3;dx/=d;dy/=d;
+    const L=fall(d)*ss(clamp((Math.min(x,W-x,y*1.15,(H-y)*1.1)+(cal-.5)*54+(h-.5)*30)/112,0,1));
+    let lam=.60-(gx*dx+gy*dy)*.40;if(lam<0)lam=0;else if(lam>1.6)lam=1.6;
+    const ao=.60+.46*h,                                  // hollows keep less of the light than crests
+          lit=lam*L*ao*1.02,
+          amb=AMB*1.35*ss(clamp((Math.min(x,W-x,y,H-y))/150,0,1))+.018;
+    let lr=(lit+amb*.30)*255,lgc=(lit*.775+amb*.42)*255,lb=(lit*.545+amb*.72)*255;
+    LD[p]=lr>255?255:lr;LD[p+1]=lgc>255?255:lgc;LD[p+2]=lb>255?255:lb;LD[p+3]=255;
+    // wet calcite throws a soft specular back at one flame; nothing else on this wall does
+    let sp=lam-.92;sp=sp>0?sp*sp*cw*cw*L*168:0;if(sp>110)sp=110;
+    SD[p]=sp;SD[p+1]=sp*.88;SD[p+2]=sp*.7;SD[p+3]=255;}
+  ag_.putImageData(ai,0,0);lg.putImageData(li,0,0);sg.putImageData(si,0,0);
+  return{albedo:A,light:LT,sheen:SP};}
+
+/* ================= THE THREE PRIMITIVES ================= */
+/* A dab. A pad or a fingertip carrying wet pigment, pressed to the wall and lifted: no stroke, no
+   direction, no leading edge (research §4). The rock decides how much of it stays — pigment pools
+   and darkens in a hollow and starves over a bulge, which is the single reason these marks read as
+   paint on stone rather than ink on paper. */
+function dab(g,x,y,r,col,a,seed){
+  const rel=FLAT?.5:hAt(x,y),al=clamp(a*(.56+.78*(1-rel)),0,1);if(al<.004)return;
+  const rnd=mulberry32(((seed>>>0)||7)*40503>>>0),gr=g.createRadialGradient(x,y,0,x,y,r);
+  gr.addColorStop(0,hexa(col,al));gr.addColorStop(.5,hexa(col,al*.74));gr.addColorStop(.82,hexa(col,al*.28));gr.addColorStop(1,hexa(col,0));
+  g.save();g.fillStyle=gr;g.beginPath();
+  for(let i=0;i<=10;i++){const t=i/10*TAU,rr=r*(.8+rnd()*.4),px=x+Math.cos(t)*rr,py=y+Math.sin(t)*rr;i?g.lineTo(px,py):g.moveTo(px,py);}
+  g.closePath();g.fill();g.restore();}
+/* A wash is only ever many dabs: the palm was loaded and pressed again and again (Chauvet's Panel
+   of Hand Dots), and a wash made this way keeps the wall's relief showing through it. */
+let FLAT=false;   // set while a sprite is struck, so the pad carries no one place's rock
+function wash(g,x,y,r,col,a,seed,squash){const rnd=mulberry32(((seed>>>0)||3)*2654435761>>>0),sq=squash||1;
+  // small enough to be one press of a fingertip: that is one dab, not a cluster of crumbs
+  if(r<10){dab(g,x,y,r,col,a*.94,seed);
+    for(let i=0;i<4;i++){const t=rnd()*TAU,d=rnd()*r*.45;dab(g,x+Math.cos(t)*d,y+Math.sin(t)*d*sq,r*(.36+rnd()*.4),col,a*.5,seed+i*7);}return;}
+  const n=Math.round(r*r*.14)+16;
+  for(let i=0;i<n;i++){const t=rnd()*TAU,dd=Math.sqrt(rnd()),px=x+Math.cos(t)*dd*r,py=y+Math.sin(t)*dd*r*sq;
+    dab(g,px,py,r*(.16+rnd()*.2),col,a*(.5+.5*(1-dd)),i*7+seed);}}
+/* The same pad, but struck once into a small sprite and kept. Nothing about the mark changes; only
+   the live layers (the reveal, the shrinking ochre, the aim guide) can afford it, and they redraw
+   the same few dozen dabs sixty times a second. The rock still weights each one where it lands. */
+const PADS=new Map();
+function pad(r,col,v){const k=r+col+v;let c=PADS.get(k);if(c)return c;
+  const q=Math.ceil(r*1.5)+3;c=document.createElement('canvas');c.width=c.height=q*2;
+  const g=c.getContext('2d');g.translate(q,q);FLAT=true;wash(g,0,0,r,col,1,v*37+5,1);FLAT=false;PADS.set(k,c);return c;}
+function stamp(g,x,y,r,col,a,seed){const c=pad(Math.round(r),col,(seed>>>0)&7);
+  g.save();g.globalAlpha=clamp(a*(.56+.78*(1-hAt(x,y))),0,1);g.drawImage(c,x-c.width*.5,y-c.height*.5);g.restore();}
+
+/* Kaolin is the one covering pigment, so it is the one thing that lies on top of the light instead
+   of under it, and has to be lit by hand from the same flame. */
+function cover(g,x,y,r,col,a,seed){const rnd=mulberry32(((seed>>>0)||5)*97+11),L=lightAt(x,y);if(L<.05)return;
+  const gr=g.createRadialGradient(x,y,0,x,y,r),cc=litRGB(col,x,y),al=clamp(a*(.4+.9*(1-hAt(x,y)))*clamp(L*1.5,0,1),0,1);
+  gr.addColorStop(0,cc.replace('rgb(','rgba(').replace(')',','+al+')'));
+  gr.addColorStop(1,cc.replace('rgb(','rgba(').replace(')',',0)'));
+  g.save();g.fillStyle=gr;g.beginPath();
+  for(let i=0;i<=9;i++){const t=i/9*TAU,rr=r*(.78+rnd()*.44);i?g.lineTo(x+Math.cos(t)*rr,y+Math.sin(t)*rr):g.moveTo(x+Math.cos(t)*rr,y+Math.sin(t)*rr);}
+  g.closePath();g.fill();g.restore();}
+
+/* A flint line. The tool takes the weathered skin off the rock: the groove shows pale fresh stone,
+   a lip of dust is thrown up on the side the flame stands, and the far wall of the cut holds a
+   shadow. It skips where the rock is rough, and it is invisible where the torch does not reach —
+   an engraved line has no colour of its own to be seen by. Orbit rings, flight paths, the flutings
+   and every tally on the sheet are this mark. */
+function scratch(g,p,o){o=o||{};const w=o.w||1.6,al=o.alpha!=null?o.alpha:1,brk=o.brk!=null?o.brk:.13,rnd=mulberry32((((o.seed>>>0)||3)*2246822519)>>>0);
+  g.save();g.lineCap='round';g.lineJoin='round';
+  for(let i=1;i<p.length;i++){
+    const x0=p[i-1][0],y0=p[i-1][1],x1=p[i][0],y1=p[i][1],mx=(x0+x1)*.5,my=(y0+y1)*.5,L=lightAt(mx,my);
+    if(L<.05)continue;if(rnd()<brk*(.4+hAt(mx,my)))continue;
+    let dx=TX-mx,dy=TY-my;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const off=w*.62;
+    const dk=o.dark?1:0;
+    g.strokeStyle='rgba(20,16,12,'+(al*(.5*L+.12)*(1+dk*.9)).toFixed(3)+')';g.lineWidth=w*(1.2+dk*.5);
+    g.beginPath();g.moveTo(x0-dx*off,y0-dy*off);g.lineTo(x1-dx*off,y1-dy*off);g.stroke();
+    g.strokeStyle='rgba(233,222,197,'+(al*.4*L*(1-dk*.82)).toFixed(3)+')';g.lineWidth=w*.78;
+    g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+    g.strokeStyle='rgba(255,224,172,'+(al*(dk?.3:.52)*L).toFixed(3)+')';g.lineWidth=Math.max(.5,w*(dk?.26:.4));
+    g.beginPath();g.moveTo(x0+dx*off*.95,y0+dy*off*.95);g.lineTo(x1+dx*off*.95,y1+dy*off*.95);g.stroke();}
+  g.restore();}
+/* A pecked hollow — stone struck with stone — is the same primitive turned into a pit: a rim thrown
+   up all round and brightest on the flame's side, the near wall in shadow, the far wall catching the
+   light. Cup marks, cup-and-ring, and the megalithic spirals are all made of these. */
+function peck(g,x,y,r,o){o=o||{};const L=lightAt(x,y);if(L<.05)return;const a=(o.alpha!=null?o.alpha:1)*L;
+  let dx=TX-x,dy=TY-y;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;g.save();
+  let gr=g.createRadialGradient(x+dx*r*.55,y+dy*r*.55,0,x,y,r*1.9);
+  gr.addColorStop(0,'rgba(255,225,174,'+(a*.5).toFixed(3)+')');gr.addColorStop(1,'rgba(255,225,174,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r*1.95,0,TAU);g.fill();
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle='rgba(28,23,18,'+(a*.6+.07).toFixed(3)+')';g.fill();
+  g.beginPath();g.arc(x-dx*r*.36,y-dy*r*.36,r*.58,0,TAU);g.fillStyle='rgba(232,204,158,'+(a*.46).toFixed(3)+')';g.fill();
+  g.restore();}
+function pecked(g,p,r,o){o=o||{};const step=r*1.55;let acc=0;
+  for(let i=1;i<p.length;i++){const dx=p[i][0]-p[i-1][0],dy=p[i][1]-p[i-1][1],len=Math.hypot(dx,dy);
+    for(let s=acc;s<len;s+=step)peck(g,p[i-1][0]+dx*s/len,p[i-1][1]+dy*s/len,r*(.82+((i*7+s)%5)*.06),o);
+    acc=Math.max(0,acc-len)%step;}}
+
+/* A hand held flat to the wall and pigment blown around it (research §4). What is left is the
+   negative: the rock the hand protected. This is the era's nearest thing to a signature, so it is
+   this sheet's maker's mark and its title both — there is no word "Orbit" to set. */
+function handShape(g,cx,cy,s,dir,flip,d){
+  g.save();g.translate(cx,cy);g.rotate(dir);g.scale(flip,1);g.lineCap='round';g.lineJoin='round';
+  g.beginPath();g.ellipse(0,.06*s,.38*s+d,.44*s+d,0,0,TAU);g.fill();
+  g.beginPath();g.ellipse(.02*s,.44*s,.27*s+d,.26*s+d,0,0,TAU);g.fill();
+  for(const[a,len,th]of[[-1.13,1.00,.082],[-1.40,1.14,.086],[-1.68,1.06,.082],[-1.96,.88,.074]]){
+    g.lineWidth=th*2*s+d*2;g.beginPath();g.moveTo(Math.cos(a)*.24*s,Math.sin(a)*.24*s-.02*s);
+    g.lineTo(Math.cos(a)*len*s,Math.sin(a)*len*s);g.stroke();}
+  g.lineWidth=.098*2*s+d*2;g.beginPath();g.moveTo(.22*s,.22*s);g.quadraticCurveTo(.58*s,.16*s,.74*s,-.10*s);g.stroke();
+  g.restore();}
+function stencil(g,cx,cy,s,dir,flip,seed,col){
+  const rnd=mulberry32(((seed>>>0)||9)*69069>>>0);
+  const F=rr=>clamp(2.3-rr/(s*1.05),0,1);              // still full strength a hand's breadth past the fingers
+  for(let i=0;i<6200;i++){const t=rnd()*TAU,rr=Math.sqrt(rnd())*s*2.3;
+    dab(g,cx+Math.cos(t)*rr,cy+Math.sin(t)*rr*1.05,2.4+rnd()*7,col,(.30+rnd()*.34)*F(rr),i*3+seed);}
+  for(let i=0;i<1800;i++){const t=rnd()*TAU,rr=s*(.95+rnd()*.62);   // the mouth aims at the edge of the hand
+    dab(g,cx+Math.cos(t)*rr,cy+Math.sin(t)*rr*1.05,2.2+rnd()*5,col,.34+rnd()*.3,i*5+seed+900);}
+  for(let i=0;i<3200;i++){const t=rnd()*TAU,rr=Math.sqrt(rnd())*s*2.35,x=cx+Math.cos(t)*rr,y=cy+Math.sin(t)*rr*1.05;
+    g.globalAlpha=(.18+rnd()*.3)*F(rr)*(1-hAt(x,y)*.6);g.fillStyle=col;g.fillRect(x,y,1.2+rnd()*1.7,1.2+rnd()*1.7);}
+  g.globalAlpha=1;
+  // the hand comes away and its shape is the one thing on the wall nobody painted
+  g.save();g.globalCompositeOperation='destination-out';
+  for(let k=2;k>=0;k--){g.globalAlpha=k===0?1:.34;g.fillStyle='#000';g.strokeStyle='#000';handShape(g,cx,cy,s,dir,flip,k*1.1);}
+  g.restore();}
+
+/* ================= CRACKS: they follow the rock, because that is what a crack does ================= */
+function crackPath(x,y,steps,seed){const rnd=mulberry32(((seed>>>0)||11)*22695477>>>0),p=[[x,y]];let a=rnd()*TAU;
+  for(let i=0;i<steps;i++){const gx=samp(GX,x,y),gy=samp(GY,x,y);let ta=Math.atan2(gx,-gy);
+    if(Math.cos(ta-a)<0)ta+=Math.PI;
+    a+=Math.sin(ta-a)*.5+(rnd()-.5)*.32;x+=Math.cos(a)*5.2;y+=Math.sin(a)*5.2;
+    if(x<-30||x>W+30||y<-30||y>H+30)break;p.push([x,y]);}
+  return p;}
+function paintCracks(g){
+  for(let i=0;i<12;i++){const p=crackPath(60+R()*1160,50+R()*700,20+R()*34,i*13+7);
+    scratch(g,p,{w:1.1+R()*1.2,alpha:.42,brk:.16,dark:true,seed:i*31+3});
+    for(let k=0;k<2;k++){const j=3+((R()*(p.length-6))|0);
+      scratch(g,crackPath(p[j][0],p[j][1],6+R()*10,i*97+k),{w:.8+R()*.6,alpha:.3,brk:.3,dark:true,seed:i*53+k});}}
+  // one deeper fissure, the kind a painter would have read as a back or a horn
+  scratch(g,crackPath(700,96,70,911),{w:1.9,alpha:.45,brk:.1,dark:true,seed:800});}
+
+/* ================= THE SEVEN FAMILIES (research §8) ================= */
+/* Each body is a disc of rock treated in the era's own vocabulary — pigment where the family is
+   pigment, pecked relief where the family is relief — never a colour swap. Painted in two passes,
+   because that is the real order of work: the wash goes on the rock, then the flint goes through it. */
+const FAM=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+function bodyPig(g,k,x,y,r,seed){const rnd=mulberry32(((seed>>>0)||1)*131+7);
+  if(k==='ocean')  wash(g,x,y,r,T.redOchre,.6,seed,1);                       // El Castillo's red disc
+  if(k==='crater') wash(g,x,y,r,T.ochre,.5,seed+1,1);
+  if(k==='ringed') wash(g,x,y,r*.96,T.ochreDeep,.32,seed+2,1);
+  if(k==='dune')   wash(g,x,y,r,T.ochre,.62,seed+3,1);
+  if(k==='volcanic')wash(g,x,y,r,T.redOchre,.78,seed+4,1);
+  if(k==='storm'){ for(let i=0;i<52;i++){const t=rnd()*TAU,dd=Math.sqrt(rnd())*r*.9,cx=x+Math.cos(t)*dd,cy=y+Math.sin(t)*dd,a=rnd()*TAU,l=r*(.13+rnd()*.16);
+      for(let s=0;s<=5;s++){const q=s/5;dab(g,cx+Math.cos(a+q*1.5)*l*q,cy+Math.sin(a+q*1.5)*l*q,3.2-q*1.3,T.charcoal,.55,i*11+s);}}}
+  if(k==='ice')    return;                                                    // the reserve: pigment withheld
+}
+function bodyCut(g,k,x,y,r,seed){const rnd=mulberry32(((seed>>>0)||1)*7919+3);
+  // the scored contour that stands in for a keyline: the rock's edge, cut, not a ruled ring
+  const ring=[];for(let i=0;i<=72;i++){const t=i/72*TAU;ring.push([x+Math.cos(t)*(r+3.5+Math.sin(t*5+seed)*1.4),y+Math.sin(t)*(r+3.5+Math.cos(t*4+seed)*1.4)]);}
+  scratch(g,ring,{w:1.9,alpha:.62,brk:.24,seed:seed*3+1});
+  if(k==='ocean'){ // an undulating engraved line — the era's serpentiform sign — inside the red disc
+    for(let b=-1;b<=1;b++){const p=[];
+      for(let i=0;i<=44;i++){const t=i/44,px=x-r*.86+t*r*1.72,py=y+b*r*.38+Math.sin(t*8.4+b)*r*.17;
+        if(Math.abs(px-x)<r*.94)p.push([px,py]);}
+      scratch(g,p,{w:2.1,alpha:.95,brk:.1,seed:seed*5+b});}}
+  if(k==='crater'){for(let i=0;i<15;i++){const t=rnd()*TAU,dd=Math.sqrt(rnd())*r*.78;
+    peck(g,x+Math.cos(t)*dd,y+Math.sin(t)*dd,r*(.09+rnd()*.14),{alpha:1});}}
+  if(k==='ringed'){peck(g,x,y,r*.2,{alpha:1});                              // cup, then its rings, taken whole
+    for(let b=1;b<=3;b++){const rr=r*(.2+b*.24),p=[];for(let i=0;i<=54;i++){const t=i/54*TAU;p.push([x+Math.cos(t)*rr,y+Math.sin(t)*rr]);}
+      pecked(g,p,r*.052+b*.3,{alpha:.95});}}
+  if(k==='ice'){ // bare kaolin-washed rock, under-marked on purpose: withheld, not empty
+    wash(g,x,y,r*.9,T.kaolin,0,seed,1);
+    for(let i=0;i<130;i++){const t=rnd()*TAU,dd=Math.pow(rnd(),.4);cover(g,x+Math.cos(t)*dd*r*.96,y+Math.sin(t)*dd*r*.96,3+rnd()*7,T.kaolin,.10+rnd()*.16,i+seed);}
+    for(let i=0;i<52;i++){const t=Math.PI*(.78+rnd()*.85);cover(g,x+Math.cos(t)*r*(.86+rnd()*.13),y+Math.sin(t)*r*(.86+rnd()*.13),2+rnd()*3.4,T.kaolin,.4,i*3+seed);}}
+  if(k==='dune'){for(let b=-4;b<=4;b++){const p=[];                          // fingers raked through wet pigment
+    for(let i=0;i<=30;i++){const t=i/30,px=x-r*.95+t*r*1.9,dy=b*r*.185+Math.sin(t*3.1+b*.7)*r*.07,py=y+dy;
+      if((px-x)*(px-x)/(r*r)+dy*dy/(r*r)<.9)p.push([px,py]);}
+    if(p.length>2)scratch(g,p,{w:3.4,alpha:.85,brk:.08,seed:seed*11+b});}}
+  if(k==='volcanic'){for(let i=0;i<7;i++){const a=rnd()*TAU,p=[[x+Math.cos(a)*r*.1,y+Math.sin(a)*r*.1]];
+    for(let s=1;s<=5;s++){const q=s/5,aa=a+(rnd()-.5)*.7;p.push([x+Math.cos(aa)*r*q*.95,y+Math.sin(aa)*r*q*.95]);}
+    scratch(g,p,{w:2.4,alpha:.95,brk:.06,seed:seed*13+i});}}
+  if(k==='storm')for(let i=0;i<9;i++){const t=rnd()*TAU,dd=Math.sqrt(rnd())*r*.8,a=rnd()*TAU;
+    scratch(g,[[x+Math.cos(t)*dd,y+Math.sin(t)*dd],[x+Math.cos(t)*dd+Math.cos(a)*r*.2,y+Math.sin(t)*dd+Math.sin(a)*r*.2]],{w:1.6,alpha:.7,seed:seed+i});}}
+/* Each body's caption is its own mark again, small, beneath it — this era has no script to name it
+   with, and a pictogram is what §9 asks for in place of one. */
+function bodyMark(g,k,x,y,s){
+  if(k==='ocean'){const p=[];for(let i=0;i<=26;i++){const t=i/26;p.push([x-s+t*s*2,y+Math.sin(t*9)*s*.34]);}scratch(g,p,{w:1.6,alpha:.85,seed:31});}
+  if(k==='crater')peck(g,x,y,s*.42,{alpha:1});
+  if(k==='ringed'){peck(g,x,y,s*.24,{alpha:1});const p=[];for(let i=0;i<=40;i++){const t=i/40*TAU;p.push([x+Math.cos(t)*s*.72,y+Math.sin(t)*s*.72]);}pecked(g,p,s*.13,{alpha:.9});}
+  if(k==='ice')for(let i=0;i<16;i++){const t=i/16*TAU;cover(g,x+Math.cos(t)*s*.7,y+Math.sin(t)*s*.55,2.4,T.kaolin,.55,i);}
+  if(k==='dune')for(let b=-1;b<=1;b++){const p=[];for(let i=0;i<=16;i++){const t=i/16;p.push([x-s+t*s*2,y+b*s*.36+Math.sin(t*2.6)*s*.1]);}scratch(g,p,{w:2.4,alpha:.8,seed:41+b});}
+  if(k==='volcanic')for(let i=0;i<4;i++){const a=-1.8+i*.9;scratch(g,[[x,y-s*.5],[x+Math.cos(a)*s*.8,y-s*.5+Math.sin(a)*s*1.1]],{w:1.8,alpha:.85,seed:51+i});}
+  if(k==='storm')for(let i=0;i<7;i++){const a=(i/7)*TAU,dx=x+Math.cos(a)*s*.5,dy=y+Math.sin(a)*s*.4;
+    scratch(g,[[dx,dy],[dx+Math.cos(a+1.2)*s*.3,dy+Math.sin(a+1.2)*s*.3]],{w:1.5,alpha:.75,seed:61+i});}}
+
+/* ================= THE AUROCHS (research §10.1, the Hall of the Bulls) ================= */
+/* One flowing charcoal contour and a red ochre body, the horns in twisted perspective — the head in
+   profile but both horns swung round toward the viewer, which is the one perspective this era has.
+   The dots over the shoulder are drawn exactly as ambiguous as they really are: the Lascaux bull
+   carries six, and Rappenglück's reading of them as the Pleiades is a CONTESTED minority position
+   (research §12), so the three the game needs are warmed and ringed and the other three are left
+   ordinary. The sheet claims nothing. */
+const BULL={
+  body:[[-1.26,-.08],[-1.22,-.18],[-1.13,-.26],[-1.02,-.31],[-.92,-.33],[-.82,-.24],[-.66,-.36],[-.50,-.56],[-.32,-.67],[-.12,-.62],[.10,-.51],[.34,-.45],
+        [.58,-.45],[.82,-.43],[.95,-.31],[1.00,-.14],[.94,.06],[.80,.26],[.44,.33],[.06,.35],[-.26,.35],[-.46,.33],[-.62,.26],[-.76,.14],[-.88,-.01],[-1.02,.02],[-1.17,-.03]],
+  horns:[[[-.94,-.34],[-1.10,-.44],[-1.25,-.58],[-1.35,-.72],[-1.33,-.86]],
+         [[-.86,-.36],[-.85,-.57],[-.77,-.75],[-.64,-.85],[-.50,-.86]]],
+  legs:[[[-.40,.32],[-.46,.60],[-.41,.84]],[[-.18,.34],[-.14,.60],[-.19,.80]],
+        [[.74,.27],[.67,.57],[.72,.84]],[[.88,.18],[.86,.52],[.81,.77]]],
+  tail:[[.99,-.12],[1.12,.10],[1.06,.34]]};
+/* Catmull-Rom through the contour points: one flowing line is the Hall of the Bulls' whole hand,
+   and a polyline's corners would betray it as a diagram at once. */
+function smooth(p,per,n){const o=[],m=p.length,N=n||9;
+  for(let i=0;i<(per?m:m-1);i++){const a=p[(i-1+m)%m],b=p[i],c=p[(i+1)%m],d=p[(i+2)%m];
+    for(let k=0;k<N;k++){const t=k/N,t2=t*t,t3=t2*t;
+      o.push([.5*((2*b[0])+(-a[0]+c[0])*t+(2*a[0]-5*b[0]+4*c[0]-d[0])*t2+(-a[0]+3*b[0]-3*c[0]+d[0])*t3),
+              .5*((2*b[1])+(-a[1]+c[1])*t+(2*a[1]-5*b[1]+4*c[1]-d[1])*t2+(-a[1]+3*b[1]-3*c[1]+d[1])*t3)]);}}
+  if(per)o.push(o[0]);return o;}
+function bez(p,n){const out=[];for(let i=0;i<=n;i++){const t=i/n;let x=0,y=0,m=p.length-1;
+  for(let k=0;k<=m;k++){let c=1;for(let j=0;j<k;j++)c=c*(m-j)/(j+1);const b=c*Math.pow(t,k)*Math.pow(1-t,m-k);x+=p[k][0]*b;y+=p[k][1]*b;}out.push([x,y]);}return out;}
+function inPoly(x,y,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){
+  if((p[i][1]>y)!==(p[j][1]>y)&&x<(p[j][0]-p[i][0])*(y-p[i][1])/(p[j][1]-p[i][1])+p[i][0])c=!c;}return c;}
+function edgeDist(x,y,p){let m=1e9;for(let i=0;i<p.length;i+=2){const d=(p[i][0]-x)*(p[i][0]-x)+(p[i][1]-y)*(p[i][1]-y);if(d<m)m=d;}return Math.sqrt(m);}
+function xf(p,cx,cy,s){return p.map(q=>[cx+q[0]*s,cy+q[1]*s]);}
+/* A charcoal contour is a drag, not a cut: it lays down where the rock is hollow and lifts clean off
+   the crests, so a confident single line still arrives broken. */
+function charcoal(g,p,w,a,seed,col){const rnd=mulberry32(((seed>>>0)||17)*2246822519>>>0);
+  for(let i=1;i<p.length;i++){const dx=p[i][0]-p[i-1][0],dy=p[i][1]-p[i-1][1],len=Math.hypot(dx,dy),n=Math.max(1,Math.ceil(len/2.1));
+    const nx=-dy/len,ny=dx/len;
+    for(let s=0;s<n;s++){const q=(s+rnd()*.6)/n,j=(rnd()-.5)*w*.55,x=p[i-1][0]+dx*q+nx*j,y=p[i-1][1]+dy*q+ny*j,
+      sw=w*(.72+.3*Math.sin((i+s)*.19+seed)+rnd()*.24);
+      dab(g,x,y,sw,col||T.charcoal,a*(.4+rnd()*.7),i*13+s);}}}
+function paintBull(g,cx,cy,s){
+  const out=xf(smooth(BULL.body,true,10),cx,cy,s);
+  // the fill first — a red ochre body, heaviest at the shoulder where the rock swells to meet it
+  const rnd=mulberry32(4242);
+  for(let i=0;i<7400;i++){const px=cx+lerp(-1.28,1.04,rnd())*s,py=cy+lerp(-.70,.40,rnd())*s;
+    if(!inPoly(px,py,out))continue;
+    const e=clamp(edgeDist(px,py,out)/(s*.14),0,1);
+    dab(g,px,py,s*(.018+rnd()*.03),rnd()<.3?T.ochreDeep:T.redOchre,(.15+rnd()*.19)*(.32+e*.9),i);}
+  // the black mane and heavy forequarter the Lascaux bulls carry: manganese laid over the ochre
+  for(let i=0;i<2600;i++){const t=Math.pow(rnd(),.75),px=cx+lerp(-1.26,-.10,t)*s,py=cy+(-.44+rnd()*.56-t*.02)*s;
+    if(!inPoly(px,py,out))continue;
+    dab(g,px,py,s*(.016+rnd()*.032),T.manganese,(.2+rnd()*.26)*(1-t*.72),i+700);}
+  for(let i=0;i<700;i++){const t=rnd(),px=cx+lerp(.48,1.0,t)*s,py=cy+(-.44+rnd()*.56)*s;   // and the heavy rump
+    if(!inPoly(px,py,out))continue;
+    dab(g,px,py,s*(.015+rnd()*.03),T.manganese,(.13+rnd()*.18)*t,i+1500);}
+  charcoal(g,out,s*.0125,.92,3,T.manganese);
+  charcoal(g,out,s*.006,.55,17,T.manganese);   // the line gone over twice, as the confident ones were
+  // twisted perspective: one horn swept forward over the muzzle, the other back over the withers,
+  // the far one laid in lighter — the body is in profile and the horns are not, which is the only
+  // perspective this era has (research §2).
+  BULL.horns.forEach((h,i)=>charcoal(g,xf(bez(h,30),cx,cy,s),s*(i?.0135:.016),i?.78:1,7+i,T.manganese));
+  for(const l of BULL.legs)charcoal(g,xf(bez(l,18),cx,cy,s),s*.0115,.9,11,T.manganese);
+  charcoal(g,xf(bez(BULL.tail,14),cx,cy,s),s*.009,.85,13,T.manganese);
+  // the eye and the muzzle, the two places the hand slowed down
+  dab(g,cx-1.09*s,cy-.18*s,s*.017,T.manganese,.95,21);
+  charcoal(g,xf([[-1.25,-.11],[-1.20,-.07],[-1.16,-.05]],cx,cy,s),s*.009,.8,23,T.manganese);
+  // the two ears, set behind the horns where the poll turns — the mark that fixes the head as a head
+  for(const e of[[[-.90,-.32],[-.83,-.40],[-.74,-.35]],[[-.88,-.29],[-.79,-.27],[-.71,-.30]]])
+    charcoal(g,xf(bez(e,10),cx,cy,s),s*.008,.8,29,T.manganese);}
+function bullStars(g,cx,cy,s){
+  // six dots over the shoulder — the count on the wall. Three carry the game's constellation.
+  const D=[[-.22,-.78,1],[-.08,-.85,1],[.06,-.77,1],[-.27,-.94,0],[-.05,-.99,0],[.16,-.90,0]];
+  for(let i=0;i<D.length;i++){const x=cx+D[i][0]*s,y=cy+D[i][1]*s;
+    wash(g,x,y,D[i][2]?10:8,D[i][2]?T.redOchre:T.ochreDeep,D[i][2]?1:.62,i*17+5,1);}
+  return D.map(d=>[cx+d[0]*s,cy+d[1]*s,d[2]]);}
+
+/* ================= THE FOUR DANGERS (research §7) ================= */
+function hazard(g,k,x,y,seed,cut){const rnd=mulberry32(((seed>>>0)||2)*40503>>>0);
+  if(k==='vortex'){ // The Shaft, after Lascaux's own Puits: a real drop in the rock, rimmed by a pecked spiral
+    if(cut){
+      const gr=g.createRadialGradient(x,y+4,2,x,y,44);
+      gr.addColorStop(0,'rgba(0,0,0,.98)');gr.addColorStop(.55,'rgba(4,3,3,.9)');gr.addColorStop(1,'rgba(6,5,4,0)');
+      g.fillStyle=gr;g.beginPath();g.ellipse(x,y,42,46,0,0,TAU);g.fill();
+      g.beginPath();g.ellipse(x,y+2,25,28,0,0,TAU);g.fillStyle='#000';g.fill();   // the kill radius: the hole itself
+      const lip=[];for(let i=0;i<=40;i++){const t=Math.PI*.15+i/40*Math.PI*.75;lip.push([x+Math.cos(t)*28,y+2+Math.sin(t)*31]);}
+      scratch(g,lip,{w:3,alpha:.9,brk:.05,seed:seed+1});
+      const sp=[];for(let i=0;i<=150;i++){const t=i/150,a=t*TAU*2.7,rr=30+t*36;sp.push([x+Math.cos(a)*rr,y+Math.sin(a)*rr*1.02]);}
+      pecked(g,sp,2.5,{alpha:.95});}}
+  if(k==='flare'){ // The Flare: the scorch a guttering, over-fed torch leaves on a low ceiling
+    if(!cut)for(let i=0;i<1400;i++){const t=rnd()*TAU,dd=.26+Math.pow(rnd(),.5)*.74;
+      dab(g,x+Math.cos(t)*dd*74,y+Math.sin(t)*dd*66,3.4+rnd()*11,T.manganese,(.3+rnd()*.36)*(1.2-dd),i+seed);}
+    if(cut){g.save();g.globalCompositeOperation='lighter';
+      const gr=g.createRadialGradient(x,y,0,x,y,30);
+      gr.addColorStop(0,'rgba(255,196,120,.85)');gr.addColorStop(.32,'rgba(232,104,38,.42)');gr.addColorStop(1,'rgba(180,60,20,0)');
+      g.fillStyle=gr;g.beginPath();g.arc(x,y,30,0,TAU);g.fill();g.restore();
+      for(let i=0;i<26;i++){const a=rnd()*TAU,r0=13+rnd()*4;                    // the core, still burning
+        scratch(g,[[x+Math.cos(a)*r0,y+Math.sin(a)*r0],[x+Math.cos(a)*(r0+7+rnd()*9),y+Math.sin(a)*(r0+7+rnd()*9)]],{w:1.4,alpha:.55,seed:seed+i});}}}
+  if(k==='wind'){ // The Draught: charcoal dragged sideways, a flame bent by a real cave airflow
+    if(!cut)for(let b=0;b<8;b++){const y0=y-34+b*10;
+      for(let i=0;i<90;i++){const t=i/90,px=x-64+t*128+Math.sin(t*2+b)*7,py=y0+Math.sin(t*3.1+b*.8)*6+t*t*9;
+        dab(g,px,py,9-t*5.4+b*.3,T.charcoal,(.5-t*.36)*(1-Math.abs(b-3.5)*.17),b*71+i);}}}
+  if(k==='nebula'){ // Unlit rock. Nothing is drawn: the wall's own shadow, and the only hazard this
+    if(cut){       // era can depict with total fidelity, because the real thing IS an absence of light.
+      const gr=g.createRadialGradient(x,y,4,x,y,86);
+      gr.addColorStop(0,'rgba(3,3,4,.86)');gr.addColorStop(.6,'rgba(3,3,4,.55)');gr.addColorStop(1,'rgba(3,3,4,0)');
+      g.save();g.fillStyle=gr;g.beginPath();g.ellipse(x,y,88,70,-.2,0,TAU);g.fill();g.restore();}}}
+
+/* ================= THE PLAYER ================= */
+/* The orbit is a dot-ring — a circle of pressed dabs around a body (§5) — and the flown path is a
+   scratched line, because a path already taken is cut and a path not yet taken is only dust. */
+const PLAY={x:470,y:452,r:96};
+function paintOrbit(g,cut){
+  if(!cut){for(let i=0;i<46;i++){const a=i/46*TAU,x=PLAY.x+Math.cos(a)*PLAY.r,y=PLAY.y+Math.sin(a)*PLAY.r*.96;
+    wash(g,x,y,6.2,T.redOchre,1.15,i*5+3,1);}}
+  else{const p=[];for(let i=0;i<=30;i++){const t=i/30;
+      p.push([lerp(196,PLAY.x-PLAY.r*.72,t)+Math.sin(t*2.4)*10,lerp(690,PLAY.y+PLAY.r*.66,t)-Math.sin(t*Math.PI)*46]);}
+    scratch(g,p,{w:2.2,alpha:.85,brk:.1,seed:77});}}
+
+/* ================= HUD — tallies and dot fields, the only notation this era has (§9) ================= */
+/* Small, fast-changing counts are burin tallies, one notch per unit, which is exactly what a tally
+   bone does. Large ones cannot be: nobody notched into the hundreds, so score and best are dot
+   FIELDS whose density carries the magnitude — flagged in the research as a real legibility risk,
+   and kept here in its honest form rather than quietly replaced with numerals. */
+function tally(g,x,y,n,of,h,gap,seed){
+  for(let i=0;i<of;i++){const px=x+i*gap,cut=i<n;
+    scratch(g,[[px+(i%3)*.6,y],[px-1.2+(i%2)*.9,y+h]],{w:cut?2.6:1.3,alpha:cut?1:.32,brk:cut?.03:.3,seed:seed+i});}
+  return x+of*gap;}
+function dotField(g,x,y,w,h,n,seed,col){const rnd=mulberry32(((seed>>>0)||6)*69069>>>0);
+  for(let i=0;i<n;i++){const px=x+rnd()*w,py=y+rnd()*h;wash(g,px,py,5+rnd()*2.4,col||T.redOchre,1.1,i*3+seed,1);}}
+
+/* ================= THE SHEET ================= */
+const LAY=[{k:'ocean',x:172,y:436,r:46},{k:'crater',x:318,y:520,r:44},{k:'ringed',x:PLAY.x,y:PLAY.y,r:47},
+           {k:'ice',x:632,y:548,r:43},{k:'dune',x:790,y:470,r:45},{k:'volcanic',x:944,y:556,r:44},{k:'storm',x:1084,y:486,r:45}];
+const HAZ=[{k:'vortex',x:214,y:640},{k:'flare',x:398,y:674},{k:'wind',x:592,y:700},{k:'nebula',x:1186,y:600}];
+const PICK=[{k:'sling',x:744,y:684},{k:'shield',x:848,y:684},{k:'reflector',x:952,y:684},{k:'inkwell',x:1056,y:684}];
+const HAND={x:182,y:190,s:92};
+const BULLPOS={x:894,y:274,s:194};
+
+function paintPigment(g){
+  // the wall carried marks before this run: a horse, half lost, and older dots under everything (§2)
+  const hp=[[-1.02,-.16],[-.94,-.30],[-.82,-.34],[-.70,-.26],[-.50,-.34],[-.26,-.42],[.02,-.38],[.30,-.32],[.56,-.34],[.78,-.28],[.88,-.14],[.84,.06],
+            [.62,.14],[.26,.20],[-.06,.22],[-.34,.20],[-.54,.14],[-.72,.04],[-.86,.00],[-.98,-.04]];
+  charcoal(g,xf(smooth(hp,true,7),620,318,168),3.6,.30,91,T.ochreDeep);
+  for(const l of[[[-.44,.20],[-.48,.46],[-.44,.62]],[[.60,.14],[.56,.42],[.60,.58]]])
+    charcoal(g,xf(bez(l,14),620,318,168),2.6,.26,93,T.ochreDeep);
+  for(let i=0;i<900;i++){const px=620+lerp(-1.02,.9,R())*168,py=318+lerp(-.42,.22,R())*168;
+    dab(g,px,py,3+R()*5,T.ochreDeep,.06+R()*.07,i+61);}
+  for(let i=0;i<58;i++){const t=i/58*TAU;wash(g,1020+Math.cos(t)*120+R()*30,180+Math.sin(t)*70+R()*20,3.4,T.redOchre,.14,i*3,1);}
+  // background dots: the era's own scatter, no order, no register, faint
+  for(let i=0;i<120;i++){const x=60+R()*1160,y=60+R()*690;
+    let clear=Math.hypot(x-HAND.x,y-HAND.y)>190&&Math.hypot(x-BULLPOS.x,y-BULLPOS.y*1.05)>250;
+    for(const b of LAY)if(Math.hypot(x-b.x,y-b.y)<b.r+34)clear=false;
+    if(clear)wash(g,x,y,3+R()*2.6,R()<.7?T.redOchre:T.ochreDeep,.16+R()*.24,i*7,1);}
+  // Chauvet's Panel of Hand Dots, quoted: a palm-loaded cluster, the era's clearest mark-making
+  for(let i=0;i<34;i++)wash(g,640+R()*118,132+R()*80,7.5,T.redOchre,.62,i*11+1,1);
+
+  stencil(g,HAND.x,HAND.y,HAND.s,-.06,1,5,T.redOchre);   // the title and the maker's mark, one gesture
+  stencil(g,PICK[2].x,PICK[2].y,30,.1,-1,17,T.redOchre); // the reflector: the same hand, turned over
+
+  paintBull(g,BULLPOS.x,BULLPOS.y,BULLPOS.s);
+  for(const b of LAY)bodyPig(g,b.k,b.x,b.y,b.r,b.x|0);
+  for(const h of HAZ)hazard(g,h.k,h.x,h.y,h.x|0,false);
+  paintOrbit(g,false);
+  // HUD: the score's dot field, and the ochre the run has left
+  dotField(g,338,72,162,52,74,31,T.redOchre);
+  dotField(g,1084,62,112,60,30,41,T.redOchre);
+  for(let i=0;i<44;i++)wash(g,338+i*5.4,262+Math.sin(i*.4)*3,12,T.ochreDeep,.16,i*3+9,.6); // the smear's dry stain
+  // the pickups that are pigment rather than relief
+  for(let i=0;i<26;i++)wash(g,PICK[3].x+(R()-.5)*30,PICK[3].y+(R()-.5)*26,7,T.redOchre,.85,i*5,1);
+}
+
+function paintCuts(g){
+  paintCracks(g);
+  for(const b of LAY){bodyCut(g,b.k,b.x,b.y,b.r,b.x|0);bodyMark(g,b.k,b.x,b.y+b.r+30,13);}
+  for(const h of HAZ)hazard(g,h.k,h.x,h.y,h.x|0,true);
+  paintOrbit(g,true);
+  // the bull's three stars, ringed so the game can find them without the sheet claiming anything
+  const st=bullStars(g,BULLPOS.x,BULLPOS.y,BULLPOS.s);
+  for(const s of st)if(s[2]){const p=[];for(let i=0;i<=34;i++){const t=i/34*TAU;p.push([s[0]+Math.cos(t)*16,s[1]+Math.sin(t)*16]);}
+    scratch(g,p,{w:1.9,alpha:.85,brk:.12,seed:s[0]|0});}
+  scratch(g,[[st[0][0],st[0][1]],[st[1][0],st[1][1]],[st[2][0],st[2][1]]],{w:1.7,alpha:.62,brk:.24,seed:99});
+  // the pickups that are relief: the spark-cluster, the triple spiral, the ochre nodule's shadow
+  for(let i=0;i<13;i++){const a=i/13*TAU+.2;
+    scratch(g,[[PICK[0].x+Math.cos(a)*9,PICK[0].y+Math.sin(a)*9],[PICK[0].x+Math.cos(a)*(21+(i%3)*7),PICK[0].y+Math.sin(a)*(21+(i%3)*7)]],{w:2,alpha:1,seed:i+3});}
+  peck(g,PICK[0].x,PICK[0].y,5.5,{alpha:1});
+  for(let s=0;s<3;s++){const p=[];for(let i=0;i<=60;i++){const t=i/60,a=t*TAU*1.15+s*TAU/3,rr=5+t*19;p.push([PICK[1].x+Math.cos(a)*rr,PICK[1].y+Math.sin(a)*rr]);}
+    pecked(g,p,2.3,{alpha:1});}
+  peck(g,PICK[3].x-5,PICK[3].y+7,6.5,{alpha:.8});
+  // the HUD's tallies: pace, then flow, one notch per unit
+  tally(g,336,178,5,7,19,13,201);
+  tally(g,336,212,3,5,19,13,211);
+  // the two counts are bracketed so a cluster reads as one number and not as loose notches
+  scratch(g,[[322,152],[322,232]],{w:2.2,alpha:.8,brk:.1,seed:221});   // one scored rule, not a border
+  scratch(g,[[1068,60],[1068,126]],{w:2,alpha:.7,brk:.14,seed:223});
+  // the chapter: one deep notch for sheet I, cut beside the run's own tally (bottom left, §9)
+  scratch(g,[[96,700],[93,730]],{w:4,alpha:1,brk:0,seed:301});
+  // the footer: the run's notch-rule along the bottom edge, the Lebombo bone laid flat
+  for(let i=0;i<58;i++){const x=124+i*18.4,h=(i%5===4)?22:14;
+    scratch(g,[[x,768-h],[x-1.8,768]],{w:i%5===4?3:2.1,alpha:i<41?1:.34,brk:.06,seed:400+i});}}
+
+/* ---------- the bake ---------- */
+const GND=paintGround(),bake=layer();
+bake.g.drawImage(GND.albedo,0,0,W,H);
+const pig=layer();paintPigment(pig.g);
+bake.g.save();bake.g.globalCompositeOperation='multiply';bake.g.drawImage(pig.c,0,0,W,H);   // pigment into the rock
+bake.g.drawImage(GND.light,0,0,W,H);                                                        // then the flame over both
+bake.g.globalCompositeOperation='lighter';bake.g.drawImage(GND.sheen,0,0,W,H);              // and the calcite's wet glint
+bake.g.restore();
+paintCuts(bake.g);
+
+/* ---------- the flame, per frame: the baked wall re-lit, never repainted ----------
+   The two lights are struck once into small sprites and only ever blitted, because evaluating a
+   full-sheet radial gradient sixty times a second costs more than the whole rest of the frame. */
+function glow(stops){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(128,128,0,128,128,128);for(const st of stops)gr.addColorStop(st[0],st[1]);
+  g.fillStyle=gr;g.fillRect(0,0,256,256);return c;}
+const EMBER=glow([[0,'rgba(255,240,205,1)'],[.14,'rgba(255,168,74,.75)'],[.5,'rgba(224,88,26,.2)'],[1,'rgba(200,70,20,0)']]);
+function blit(g,c,x,y,r,a,op){g.save();g.globalAlpha=a;if(op)g.globalCompositeOperation=op;
+  g.drawImage(c,x-r,y-r,r*2,r*2);g.restore();}
+/* The flame's own halo, struck once at the sheet's exact size so the per-frame blit is a straight
+   1:1 copy: a scaled one costs more than every other thing in the frame put together. The flicker
+   is then only its strength and a pixel or two of travel, which is all a real flame does anyway. */
+const HALO=layer();
+(function(){const g=HALO.g,gr=g.createRadialGradient(TX,TY,50,TX,TY,780);
+  gr.addColorStop(0,'rgba(255,190,116,1)');gr.addColorStop(.17,'rgba(255,172,92,.78)');
+  gr.addColorStop(.5,'rgba(255,146,66,.26)');gr.addColorStop(1,'rgba(255,132,52,0)');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);})();
+function flicker(g,t){
+  const f=Math.sin(t*10.7)*.5+Math.sin(t*6.3+1.3)*.32+Math.sin(t*21.1+.7)*.18;
+  // one blit: when the flame dips the halo weakens, and the dark that was always there leans in
+  g.save();g.globalAlpha=.16+.13*f;g.globalCompositeOperation='lighter';
+  g.drawImage(HALO.c,Math.round(f*8),Math.round(Math.sin(t*8.1+.4)*6),W,H);g.restore();
+  return .9+f*.1;}
+
+/* ---------- the reveal: dabs pressed one per beat, each bleeding into the grain as it dries ---------- */
+const RUN=[];for(let r=0;r<2;r++)for(let c=0;c<10;c++)RUN.push([120+c*17.5,704+r*22]);
+const CYC=6.6,BEAT=CYC*.66/RUN.length;
+function paintReveal(g,t){const ph=t%CYC;
+  g.save();g.globalCompositeOperation='multiply';
+  for(let i=0;i<RUN.length;i++){const age=ph-i*BEAT;if(age<0)continue;
+    const wet=clamp(1-age/.9,0,1);
+    stamp(g,RUN[i][0],RUN[i][1],8,T.redOchre,.72+wet*.28,i*9+1);
+    if(wet>0)stamp(g,RUN[i][0],RUN[i][1],14,T.redOchre,.3*wet,i*17+5);}
+  g.restore();}
+
+/* ---------- the ember on its ring, and the guide the torch's breath allows (research §6) ---------- */
+function paintEmber(g,t,br){
+  const a=-1.9+t*.36,x=PLAY.x+Math.cos(a)*PLAY.r,y=PLAY.y+Math.sin(a)*PLAY.r*.96;
+  // the aim guide: dabs toward the next body, and the reach itself contracts as the ochre drains
+  const nx=LAY[4].x,ny=LAY[4].y,reach=clamp(.34+.5*(1-((t%14)/14)),0,1);
+  g.save();g.globalCompositeOperation='multiply';
+  for(let i=1;i<=16;i++){const q=i/16;if(q>reach)break;
+    const px=lerp(x,nx,q)+Math.sin(q*2.2)*22,py=lerp(y,ny,q)-Math.sin(q*Math.PI)*54;
+    stamp(g,px,py,4,T.ochreDeep,.55*(1-q*.55),i*7);}
+  g.restore();
+  for(let i=11;i>0;i--){const b=a-i*.055,q=1-i/12;
+    blit(g,EMBER,PLAY.x+Math.cos(b)*PLAY.r,PLAY.y+Math.sin(b)*PLAY.r*.96,13*q+4,.45*q*q,'lighter');}
+  blit(g,EMBER,x,y,46*br,.95,'lighter');}
+
+/* ---------- the currency: a smear of ochre that shrinks as it is spent ---------- */
+function paintOchre(g,t){const left=.26+.74*(1-((t%14)/14));
+  g.save();g.globalCompositeOperation='multiply';
+  for(let i=0;i<44;i++){const q=i/44;if(q>left)break;
+    stamp(g,338+i*5.4,262+Math.sin(i*.4)*3,12,T.redOchre,.85*(1-q*.2),i*3+9);}
+  g.restore();
+  scratch(g,[[334,282],[334+44*5.4,282]],{w:1.4,alpha:.5,brk:.26,seed:501});}
+
+/* ---------- the legend (press L): modern words over a sheet that has none ---------- */
+const LEGEND=[
+  [176,320,'ORBIT — the hand stencil is the title and the maker\'s mark (no word exists)'],
+  [426,66,'HUD — score as a density-coded dot field (§9)'],
+  [300,190,'pace'],[300,224,'flow'],
+  [440,290,'ochre — the currency, a smear that shrinks with the distance flown'],
+  [1140,60,'BEST — how deep the torch carried you: the dimmest mark on the wall'],
+  [894,132,'constellation figure: the aurochs, with 3 of its 6 shoulder dots ringed'],
+  [172,392,'ocean'],[318,474,'crater'],[470,340,'ringed — the player\'s body, dot-ring orbit + ember'],
+  [632,486,'ice'],[790,424,'dune'],[944,510,'volcanic'],[1084,440,'storm'],
+  [214,588,'VORAGO — the Shaft'],[398,622,'MACULA — the Flare'],[592,648,'VENTUS — the Draught'],
+  [1186,540,'nebula — unlit rock: nothing is drawn'],
+  [744,634,'sling'],[848,634,'scutum'],[952,634,'repulsa'],[1056,634,'inkwell'],
+  [96,674,'chapter I — the chamber'],[220,752,'reveal: the run tallied, one dab per beat'],
+  [640,790,'footer — the run\'s notch-rule'],
+  [700,116,'dot cluster (Chauvet) — the nearest this era has to a magnitude key: one dab per star'],
+  [640,40,'the frame is the end of the torch\'s reach: this era owns no border at all (§9)']];
+function paintLegend(g){g.save();g.fillStyle='rgba(3,6,10,.6)';g.fillRect(0,0,W,H);
+  for(const[x,y,s]of LEGEND){g.font='10.5px Georgia,"Times New Roman",serif';g.textAlign='center';
+    try{g.letterSpacing='.5px';}catch(e){}
+    const w=g.measureText(s).width,cx=clamp(x,w/2+10,W-w/2-10);
+    g.fillStyle='rgba(0,0,0,.66)';g.fillRect(cx-w/2-5,y-11,w+10,15);
+    g.fillStyle=T.legend;g.fillText(s,cx,y);
+    g.beginPath();g.moveTo(x,y+2);g.lineTo(x,y+9);g.strokeStyle='rgba(150,190,215,.5)';g.lineWidth=1;g.stroke();}
+  g.restore();}
+
+let showLegend=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+const t0=performance.now();
+function frame(now){const t=(now-t0)/1000;
+  ctx.drawImage(bake.c,0,0,W,H);   // the baked wall is opaque, so nothing needs clearing first
+  paintReveal(ctx,t);
+  paintOchre(ctx,t);
+  const br=flicker(ctx,t);
+  paintEmber(ctx,t,br);
+  if(showLegend)paintLegend(ctx);
+  requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

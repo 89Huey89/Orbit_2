@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit — V · The Globe (prototype)</title>
+<!--
+  Fonts: Amiri (naskh, every caption) and Reem Kufi (kufic, the ʿunwān heading and the
+  colophon roundel) — both SIL Open Font License 1.1, by Khaled Hosny; the full local faces
+  in fonts/ (see its README.md), loaded by @font-face exactly as the game would later embed a
+  cut subset. Unicode: Arabic U+0600–06FF plus the presentation forms Amiri's own shaping
+  draws on (Arabic Presentation Forms-A/B, U+FB50–FEFF). The browser's bidi/shaping engine
+  does the joining; this file never hand-shapes a run, it sets ctx.direction='rtl' and calls
+  fillText. document.fonts.ready is awaited before the first paint. Latin transliteration is
+  set in the system serif italic, the small third hand of the era's own bilingual captions.
+-->
+<style>
+  @font-face{font-family:'Amiri';src:url('fonts/amiri.ttf') format('truetype');font-weight:400 700;font-style:normal;font-display:block}
+  @font-face{font-family:'Reem Kufi';src:url('fonts/reem-kufi.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block}
+  html,body{margin:0;padding:0;background:#0b0805;height:100%;overflow:hidden}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;box-shadow:0 24px 70px rgba(0,0,0,.65)}
+  #hint{position:fixed;left:10px;bottom:8px;color:#7d6f52;font:11px/1.4 Georgia,serif;opacity:.5;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1280" height="800"></canvas></div>
+<div id="hint">L — legend</div>
+<script>
+'use strict';
+/* Orbit · era prototype — V · The Globe (Islamic Golden Age, al-Ṣūfī 964 CE — Ulugh Beg 1437)
+
+   Grammar: the MANUSCRIPT PAGE, per docs/eras/05-globe.md and research §2 — an illuminated
+   opening in the manner of the Doha al-Ṣūfī (MS.2.1998.SO, Baghdad, April 1125), preferred
+   over Marsh 144 because that copy's early date no longer holds. Sized cream paper is the
+   ground; the sky is never painted. Every gold element on the sheet is leaf: laid, burnished,
+   cracked, with the red bole showing at its edge. Lapis is ground pigment, never a flat fill.
+   Bodies are gilt roundels whose families are carried by textile geometry, and whose only
+   depth cue is pattern density crowding toward one edge — this grammar allows no shading and
+   no cast shadow. The instrument grammar (engraved brass, incised line, punched points)
+   appears exactly once, small, in the colophon roundel.
+
+   Choices made where the research offered options: raʾs al-tinnīn over al-Ghūl for the
+   attractor; sammūm glossed by al-rīḥ for the crosswind; Mashriqi Eastern Arabic-Indic
+   numerals over the Perso-Arabic variants for the HUD. The four pickups and the comet are
+   outside the research's name table and are built from attested general vocabulary
+   (miqlāʿ, dirʿ, rādd, dawāh, kawkab dhū dhanab) rather than invented. */
+
+const TOKENS={
+  paper:'239,225,196',       // sized cream manuscript paper — the ground is the page, never the sky
+  ink:'36,28,17',            // lamp-black soot ink (ḥibr) — every contour, every letter
+  gold:'212,175,55',         // burnished gold leaf — roundel rims, star discs, the jadwal band
+  goldLit:'241,222,142',     // the burnish, where the agate has taken the leaf brightest
+  goldDeep:'160,120,34',     // the leaf in its own shade, and where cracks show the bole
+  bole:'150,52,34',          // the red clay bed the leaf is laid on — it shows as a fine line at every edge
+  shell:'201,162,39',        // shell gold, painted not leafed — fine lines the leaf cannot take
+  lapis:'27,63,143',         // lapis lazuli (lājvard), costlier than the gold beside it
+  lapisDeep:'16,38,96',
+  vermilion:'227,66,52',     // ground cinnabar — robes, rubrication, heat
+  orpiment:'244,196,48',
+  verdigris:'62,142,126',
+  brass:'138,110,62',        // the instrument grammar's ground, colophon vignette only
+  translit:'92,74,46'
+};
+const TAU=Math.PI*2,W=1280,H=800;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t;
+// mulberry32 — the sheet paints identically every load from one integer seed.
+function mulberry32(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const EASTDIG=['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+const eastern=n=>String(n).replace(/[0-9]/g,d=>EASTDIG[+d]);
+// The whole page is lit from the upper left; every burnish gradient and every crowding of
+// pattern answers to this one vector, so the sheet reads as one object under one light.
+const LIGHT={x:-0.72,y:-0.69};
+
+/* ---------- the qalam, the era's only stroke primitive ----------
+   A reed nib is cut at a shallow diagonal and never lifts within a joined run, so the stroke
+   swells and thins purely by drag angle — no pressure modulation, unlike a quill. Every mark
+   on this sheet is a filled ribbon built from that rule: the half-width at each sample is the
+   nib's projection, and ink pools where the reed sets down. Nothing calls ctx.stroke(). */
+function idx(i,n,closed){return closed?(i+n)%n:clamp(i,0,n-1)}
+function catmull(pts,closed,steps){const n=pts.length,out=[];
+  for(let i=0;i<(closed?n:n-1);i++){const p0=pts[idx(i-1,n,closed)],p1=pts[i],p2=pts[idx(i+1,n,closed)],p3=pts[idx(i+2,n,closed)];
+    for(let s=0;s<steps;s++){const t=s/steps,t2=t*t,t3=t2*t;
+      out.push([.5*(2*p1[0]+(p2[0]-p0[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(3*p1[0]-p0[0]-3*p2[0]+p3[0])*t3),
+                .5*(2*p1[1]+(p2[1]-p0[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(3*p1[1]-p0[1]-3*p2[1]+p3[1])*t3)]);}}
+  if(!closed)out.push(pts[n-1]);return out}
+function qalam(g,pts,o={}){
+  if(pts.length<2)return;
+  const rgb=o.rgb||TOKENS.ink,alpha=o.alpha??1,w=o.w??1.3,nib=o.nib??-0.7,wob=o.wobble??.45,closed=!!o.closed;
+  const rng=mulberry32((o.seed>>>0)||11),ph=rng()*TAU;
+  const P=(o.smooth===false?pts:catmull(pts,closed,o.steps||6));
+  const L=[],R=[],n=P.length;
+  for(let i=0;i<n;i++){
+    const a=P[idx(i-1,n,closed)],b=P[idx(i+1,n,closed)];
+    const ang=Math.atan2(b[1]-a[1],b[0]-a[0]),nx=-Math.sin(ang),ny=Math.cos(ang);
+    const k=(Math.sin(i*.31+ph)+Math.sin(i*.093+ph*2.3))*wob*.35;
+    const taper=o.taper&&!closed?.45+.55*Math.sin(Math.PI*i/(n-1)):1;
+    const hw=Math.max(.16,w*(.28+.72*Math.abs(Math.sin(ang-nib)))*taper)*.5;
+    const x=P[i][0]+nx*k,y=P[i][1]+ny*k;
+    L.push([x+nx*hw,y+ny*hw]);R.push([x-nx*hw,y-ny*hw]);
+  }
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();
+  if(closed){L.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();
+    g.moveTo(R[n-1][0],R[n-1][1]);for(let i=n-2;i>=0;i--)g.lineTo(R[i][0],R[i][1]);g.closePath();}
+  else{L.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));for(let i=n-1;i>=0;i--)g.lineTo(R[i][0],R[i][1]);g.closePath();}
+  g.fill();
+  if(o.pool){g.beginPath();g.arc(P[0][0],P[0][1],w*.62,0,TAU);g.fill();} // the reed sets down wet
+}
+function qline(g,x0,y0,x1,y1,o={}){qalam(g,[[x0,y0],[x1,y1]],Object.assign({smooth:false,wobble:.3},o))}
+function arcPts(cx,cy,r,a0,a1,ry){const R=ry??r,n=Math.max(6,Math.round(Math.abs(a1-a0)*Math.max(r,R)/3.2)),o=[];
+  for(let i=0;i<=n;i++){const a=lerp(a0,a1,i/n);o.push([cx+Math.cos(a)*r,cy+Math.sin(a)*R])}return o}
+function qarc(g,cx,cy,r,a0,a1,o={}){qalam(g,arcPts(cx,cy,r,a0,a1,o.ry),Object.assign({smooth:false},o))}
+function qcircle(g,cx,cy,r,o={}){const p=arcPts(cx,cy,r,0,TAU,o.ry);p.pop();qalam(g,p,Object.assign({smooth:false,closed:true},o))}
+function polyPath(pts,closed=true){const p=new Path2D();pts.forEach((q,i)=>i?p.lineTo(q[0],q[1]):p.moveTo(q[0],q[1]));if(closed)p.closePath();return p}
+function rectPts(x,y,w,h,step=9){const p=[];
+  for(let t=0;t<w;t+=step)p.push([x+t,y]);for(let t=0;t<h;t+=step)p.push([x+w,y+t]);
+  for(let t=w;t>0;t-=step)p.push([x+t,y+h]);for(let t=h;t>0;t-=step)p.push([x,y+t]);return p}
+function bbox(pts){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of pts){a=Math.min(a,p[0]);b=Math.min(b,p[1]);c=Math.max(c,p[0]);d=Math.max(d,p[1])}return[a-2,b-2,c-a+4,d-b+4]}
+
+/* ---------- gold leaf ----------
+   Leaf is laid on a red bole ground, burnished with an agate, and it cracks. All four facts
+   are visible on any manuscript page under a light, so all four are painted here: the bole
+   line where the leaf meets the paper, a burnish gradient running with LIGHT, a fine web of
+   cracks showing the bole through, and a few specular pinpoints where the burnish caught. */
+function gild(g,path,box,seed,o={}){
+  const rng=mulberry32((seed>>>0)||3);
+  g.save();
+  g.lineWidth=o.bole??2.6;g.strokeStyle=`rgba(${TOKENS.bole},${o.boleA??.5})`;g.stroke(path); // bole shows past the leaf's edge
+  g.clip(path);
+  const [bx,by,bw,bh]=box,gr=g.createLinearGradient(bx-LIGHT.x*bw,by-LIGHT.y*bh,bx+bw+LIGHT.x*bw,by+bh+LIGHT.y*bh);
+  gr.addColorStop(0,`rgb(${TOKENS.goldLit})`);gr.addColorStop(.36,`rgb(${TOKENS.gold})`);
+  gr.addColorStop(.72,'rgb(186,146,44)');gr.addColorStop(1,`rgb(${TOKENS.goldDeep})`);
+  g.fillStyle=gr;g.fillRect(bx,by,bw,bh);
+  const blooms=o.blooms??Math.round(6+bw*bh/900);
+  for(let i=0;i<blooms;i++){ // the leaf is laid in overlapping squares; it never burnishes evenly
+    const x=bx+rng()*bw,y=by+rng()*bh,r=(3+rng()*10)*(o.scale??1);
+    const rg=g.createRadialGradient(x,y,0,x,y,r);const lit=rng()<.5;
+    rg.addColorStop(0,lit?'rgba(250,236,175,.30)':'rgba(140,100,26,.24)');rg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=rg;g.fillRect(x-r,y-r,r*2,r*2);
+  }
+  const cracks=o.cracks??Math.max(2,Math.round(bw*bh/1400));
+  for(let i=0;i<cracks;i++){ // cracks in the leaf, the bole showing through
+    let x=bx+rng()*bw,y=by+rng()*bh,a=rng()*TAU;const pts=[[x,y]];
+    for(let s=0;s<3+rng()*4;s++){a+=(rng()-.5)*1.5;x+=Math.cos(a)*(2+rng()*6);y+=Math.sin(a)*(2+rng()*6);pts.push([x,y])}
+    qalam(g,pts,{rgb:'128,66,32',alpha:.30,w:.7,seed:seed+i*7,wobble:.2});
+  }
+  g.restore();
+  if(o.contour!==false){g.save();g.lineWidth=.7;g.strokeStyle=`rgba(${TOKENS.ink},.45)`;g.stroke(path);g.restore()}
+  const sp=o.spec??Math.max(1,Math.round(bw*bh/2600));
+  for(let i=0;i<sp;i++){ // the burnish catching the light
+    const t=rng(),x=bx+bw*(.12+t*.5+rng()*.2),y=by+bh*(.10+rng()*.45);
+    if(!g.isPointInPath(path,x,y))continue;
+    const rg=g.createRadialGradient(x,y,0,x,y,2.6);rg.addColorStop(0,'rgba(255,250,226,.85)');rg.addColorStop(1,'rgba(255,246,210,0)');
+    g.fillStyle=rg;g.beginPath();g.arc(x,y,2.6,0,TAU);g.fill();
+  }
+}
+function gildPoly(g,pts,seed,o={}){gild(g,polyPath(pts,true),bbox(pts),seed,o)}
+function gildDisc(g,cx,cy,r,seed,o={}){const p=new Path2D();p.arc(cx,cy,r,0,TAU);gild(g,p,[cx-r,cy-r,r*2,r*2],seed,o)}
+function gildRing(g,cx,cy,ro,ri,seed,o={}){
+  const p=new Path2D();p.arc(cx,cy,ro,0,TAU);p.moveTo(cx+ri,cy);p.arc(cx,cy,ri,0,TAU,true);
+  gild(g,p,[cx-ro,cy-ro,ro*2,ro*2],seed,Object.assign({contour:false},o));
+  qcircle(g,cx,cy,ro,{rgb:TOKENS.ink,alpha:.5,w:.8,seed:seed+1,wobble:.15});
+  qcircle(g,cx,cy,ri,{rgb:TOKENS.ink,alpha:.45,w:.7,seed:seed+2,wobble:.15});
+}
+
+/* ---------- ground pigments ----------
+   Gouache on sized paper is never flat: the pigment is ground by hand, so it granulates, and
+   it pools a little darker against the contour that dammed it. Lapis carries the coarsest
+   grain of all, with the dark unground inclusions that give real ultramarine its life. */
+function pigment(g,path,box,rgb,seed,o={}){
+  const rng=mulberry32((seed>>>0)||5),[bx,by,bw,bh]=box;
+  g.save();g.clip(path);
+  g.fillStyle=`rgb(${rgb})`;g.fillRect(bx,by,bw,bh);
+  const n=Math.round(bw*bh*(o.grain??.13));
+  for(let i=0;i<n;i++){const v=rng();
+    g.fillStyle=v<.5?`rgba(255,246,220,${.03+rng()*(o.gv??.09)})`:`rgba(0,0,0,${.03+rng()*(o.gv??.08)})`;
+    g.fillRect(bx+rng()*bw,by+rng()*bh,1,1+(rng()<.15?1:0));}
+  if(o.specks)for(let i=0;i<o.specks;i++){g.fillStyle=`rgba(10,16,44,${.2+rng()*.4})`;g.beginPath();g.arc(bx+rng()*bw,by+rng()*bh,.5+rng()*1.1,0,TAU);g.fill()}
+  g.lineWidth=3.5;g.strokeStyle=`rgba(0,0,0,${o.pool??.14})`;g.stroke(path); // the pool against the contour
+  g.restore();
+}
+function pigPoly(g,pts,rgb,seed,o={}){pigment(g,polyPath(pts,true),bbox(pts),rgb,seed,o)}
+function pigDisc(g,cx,cy,r,rgb,seed,o={}){const p=new Path2D();p.arc(cx,cy,r,0,TAU);pigment(g,p,[cx-r,cy-r,r*2,r*2],rgb,seed,o)}
+
+/* ---------- lettering ---------- */
+let amiriReady=false,reemReady=false;
+// If a face is genuinely missing, the sheet still sets its captions as qalam runs — a Latin
+// serif standing in for naskh would read as a bug, where an unlettered reed run reads as ink.
+function qalamRun(g,text,x,y,size,o={}){
+  const n=clamp(Math.round(text.replace(/\s/g,'').length*.6),2,12),rng=mulberry32(n*97+Math.round(size));
+  const wd=n*size*.55,xr=o.align==='center'?x+wd/2:o.align==='left'?x+wd:x,rgb=o.rgb||TOKENS.ink,al=o.alpha??1;
+  const base=[];for(let i=0;i<=n;i++)base.push([xr-wd*i/n,y+Math.sin(i*1.3)*size*.06]);
+  qalam(g,base,{rgb,alpha:al,w:size*.1,seed:n*13,pool:true,smooth:false});
+  for(let i=0;i<n;i++){const px=xr-wd*(i+.5)/n;
+    qalam(g,[[px,y],[px+size*.07,y-size*(.28+rng()*.4)]],{rgb,alpha:al,w:size*.09,seed:n*7+i,smooth:false});
+    if(rng()<.5){g.fillStyle=`rgba(${rgb},${al})`;g.beginPath();g.arc(px,y+size*.28,size*.045,0,TAU);g.fill()}}
+}
+function naskh(g,text,x,y,size,o={}){
+  if(!amiriReady)return qalamRun(g,text,x,y,size,o);
+  g.save();g.direction='rtl';g.textAlign=o.align||'right';g.textBaseline='alphabetic';
+  g.font=`${o.weight||'400'} ${size}px Amiri, serif`;g.fillStyle=`rgba(${o.rgb||TOKENS.ink},${o.alpha??1})`;
+  g.fillText(text,x,y);g.restore();
+}
+function kufi(g,text,x,y,size,o={}){
+  if(!reemReady&&!amiriReady)return qalamRun(g,text,x,y,size,Object.assign({align:'center'},o));
+  g.save();g.direction='rtl';g.textAlign=o.align||'center';g.textBaseline='alphabetic';
+  g.font=`400 ${size}px "Reem Kufi", Amiri, serif`;g.fillStyle=`rgba(${o.rgb||TOKENS.ink},${o.alpha??1})`;
+  if(o.outline){g.lineWidth=o.outline;g.strokeStyle=`rgba(${TOKENS.ink},.7)`;g.strokeText(text,x,y)}
+  g.fillText(text,x,y);g.restore();
+}
+function lat(g,text,x,y,size,o={}){ // the small third hand: transliteration and the game's own terms
+  g.save();g.textAlign=o.align||'right';g.textBaseline='alphabetic';
+  g.font=`italic ${size}px Georgia, serif`;g.fillStyle=`rgba(${o.rgb||TOKENS.translit},${o.alpha??.9})`;
+  g.fillText(text,x,y);g.restore();
+}
+
+/* ---------- the ground: one sheet of sized cream paper ---------- */
+function paintGround(g){
+  const rng=mulberry32(1125); // the Doha copy's year, doubling as the paper's seed
+  g.fillStyle=`rgb(${TOKENS.paper})`;g.fillRect(0,0,W,H);
+  for(let i=0;i<70;i++){ // large-scale mottle: the pulp never sets to one tone
+    const x=rng()*W,y=rng()*H,r=60+rng()*220,warm=rng()<.6;
+    const rg=g.createRadialGradient(x,y,0,x,y,r);
+    rg.addColorStop(0,warm?`rgba(196,162,108,${.09+rng()*.11})`:`rgba(253,247,228,${.09+rng()*.12})`);
+    rg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rg;g.fillRect(x-r,y-r,r*2,r*2);
+  }
+  // fibre: the felt's lay is nearly horizontal. These are the material itself, not marks, so
+  // they are laid as raw quads rather than routed through the qalam.
+  for(let i=0;i<9000;i++){
+    const x=rng()*W,y=rng()*H,l=2+rng()*11,a=(rng()-.5)*.5,dark=rng()<.5;
+    g.fillStyle=dark?`rgba(140,104,56,${.03+rng()*.075})`:`rgba(255,251,235,${.04+rng()*.11})`;
+    g.save();g.translate(x,y);g.rotate(a);g.fillRect(0,0,l,rng()<.2?1.4:.8);g.restore();
+  }
+  for(let x=18;x<W;x+=35.5){ // chain lines, faint and never quite straight
+    const pts=[];for(let y=-4;y<H+8;y+=40)pts.push([x+Math.sin(y*.012+x)*1.1,y]);
+    qalam(g,pts,{rgb:'160,130,86',alpha:.085,w:1.6,wobble:.2,seed:900+x});
+  }
+  for(let i=0;i<64;i++){ // foxing — small iron spots the centuries put there
+    const x=rng()*W,y=rng()*H,r=1.4+rng()*4.5;
+    const rg=g.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,`rgba(142,84,38,${.16+rng()*.20})`);rg.addColorStop(1,'rgba(146,88,42,0)');
+    g.fillStyle=rg;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  }
+  // the burnish: sized paper was rubbed smooth, and the rubbing leaves broad diagonal sheen
+  for(let i=0;i<9;i++){const y=rng()*H,gr=g.createLinearGradient(0,y-70,W*.4,y+70);
+    gr.addColorStop(0,'rgba(255,252,238,0)');gr.addColorStop(.5,`rgba(255,252,238,${.05+rng()*.05})`);gr.addColorStop(1,'rgba(255,252,238,0)');
+    g.fillStyle=gr;g.save();g.translate(W/2,y);g.rotate(-.18);g.fillRect(-W,-46,W*2,92);g.restore();}
+  const vg=g.createRadialGradient(W*.44,H*.42,H*.28,W*.5,H*.5,H*1.02); // the leaf darkens toward its own edge
+  vg.addColorStop(0,'rgba(80,52,20,0)');vg.addColorStop(1,'rgba(70,44,16,.30)');g.fillStyle=vg;g.fillRect(0,0,W,H);
+  for(let e=0;e<4;e++){const eg=g.createLinearGradient(e===0?0:e===2?W:0,e===1?0:e===3?H:0,e===0?26:e===2?W-26:0,e===1?22:e===3?H-22:0);
+    eg.addColorStop(0,'rgba(96,64,26,.26)');eg.addColorStop(1,'rgba(96,64,26,0)');g.fillStyle=eg;g.fillRect(0,0,W,H);}
+}
+// The verso shows through heavy sized paper: ghost lines of the naskh written on the other
+// side of the leaf, reversed and very faint. Nothing says "photograph of a real page" faster.
+function paintShowThrough(g){
+  const rng=mulberry32(447);
+  g.save();g.globalAlpha=.055;
+  for(let r=0;r<26;r++){const y=96+r*24;if(y>720)break;
+    let x=1160-rng()*40;const stop=190+rng()*180;
+    while(x>stop){const wd=14+rng()*46;
+      qalam(g,[[x,y],[x-wd,y+(rng()-.5)*2]],{rgb:'92,66,34',alpha:.9,w:2.2,wobble:.5,seed:r*31+x,smooth:false});
+      x-=wd+5+rng()*6;}}
+  g.restore();
+  // the mistara's blind ruling — pressed, not inked, so it reads only as a change of sheen
+  for(let r=0;r<27;r++){const y=92+r*24;if(y>724)break;
+    qalam(g,[[70,y+.5],[1210,y+.5]],{rgb:'255,250,232',alpha:.07,w:1.1,wobble:.25,seed:r*7,smooth:false});}
+  for(let r=0;r<27;r++){const y=92+r*24;if(y>724)break; // and the prick-marks that set the ruling out
+    g.fillStyle='rgba(120,88,44,.16)';g.beginPath();g.arc(20,y,.9,0,TAU);g.fill();g.beginPath();g.arc(1260,y,.9,0,TAU);g.fill();}
+}
+
+/* ---------- the jadwal: the ruled text frame ----------
+   Red rule, gold band, red rule, with a fine black rule outside and a shell-gold hairline
+   inside — the standard illuminated border, and the era's answer to the shipped sheet's
+   double plate-mark. Gold corner-pieces sit inside its angles. */
+const FR={x:34,y:30,w:1212,h:740};
+function paintFrame(g){
+  const {x,y,w,h}=FR;
+  const rect=(i,o)=>qalam(g,rectPts(x+i,y+i,w-i*2,h-i*2),Object.assign({closed:true,smooth:false,wobble:.25},o));
+  rect(0,{rgb:TOKENS.ink,alpha:.62,w:1.0,seed:2001});
+  rect(4,{rgb:TOKENS.bole,alpha:.72,w:1.5,seed:2002});
+  // The band is an annulus, so its inner rectangle must wind against the outer one — wound
+  // the same way, a nonzero fill would gild the entire page.
+  const band=new Path2D();band.rect(x+7,y+7,w-14,h-14);
+  band.moveTo(x+16,y+16);band.lineTo(x+16,y+h-16);band.lineTo(x+w-16,y+h-16);band.lineTo(x+w-16,y+16);band.closePath();
+  gild(g,band,[x,y,w,h],2003,{cracks:120,blooms:150,spec:26,bole:2.2,contour:false,scale:1.4});
+  rect(7,{rgb:TOKENS.ink,alpha:.35,w:.7,seed:2004});
+  rect(16,{rgb:TOKENS.ink,alpha:.35,w:.7,seed:2005});
+  rect(20,{rgb:TOKENS.bole,alpha:.6,w:1.2,seed:2006});
+  rect(26,{rgb:TOKENS.shell,alpha:.55,w:.8,seed:2007});
+  for(const[cx,cy,sx,sy]of[[x+20,y+20,1,1],[x+w-20,y+20,-1,1],[x+w-20,y+h-20,-1,-1],[x+20,y+h-20,1,-1]])cornerPiece(g,cx,cy,sx,sy);
+}
+// A corner-piece in the kufic/geometric register: a stepped gold ground carrying a lapis
+// palmette, the commonest illuminator's filler for the angle of a jadwal.
+function cornerPiece(g,cx,cy,sx,sy){
+  const S=(px,py)=>[cx+px*sx,cy+py*sy];
+  const shape=[S(0,0),S(46,0),S(46,9),S(20,9),S(20,20),S(9,20),S(9,46),S(0,46)];
+  gildPoly(g,shape,3100+cx+cy,{cracks:9,blooms:11,spec:3,scale:.8});
+  const leaf=[S(11,11),S(30,13),S(34,20),S(24,26),S(13,31),S(10,22)];
+  pigPoly(g,leaf,TOKENS.lapis,3101+cx,{grain:.5,gv:.16,specks:5});
+  qalam(g,leaf,{closed:true,rgb:TOKENS.ink,alpha:.6,w:.9,seed:3102+cx});
+  qalam(g,[S(13,26),S(20,20),S(29,16)],{rgb:TOKENS.shell,alpha:.85,w:1.1,seed:3103+cx});
+  for(let i=0;i<3;i++){const p=S(15+i*7,34+i*2);gildDisc(g,p[0],p[1],2.1,3110+i+cx,{cracks:0,blooms:2,spec:1,bole:1.2})}
+}
+
+/* ---------- the seven families as gilt roundels ----------
+   A burnished gold rim, a fine brown-black contour, and an interior of textile geometry. The
+   only modelling this grammar permits is pattern density: the motif crowds toward the edge
+   away from the light, so the roundel reads as round without a grain of shading. */
+const FAM=['ocean','crater','ringed','ice','dune','volcanic','storm'];
+const FAM_AR={ocean:'بحر',crater:'حفرة',ringed:'ذو حلقة',ice:'جليد',dune:'كثيب',volcanic:'جبل ناري',storm:'عاصفة'};
+const FAM_TR={ocean:'baḥr',crater:'ḥufra',ringed:'dhū ḥalqa',ice:'jalīd',dune:'kathīb',volcanic:'jabal nārī',storm:'ʿāṣifa'};
+// density(x,y) is 0 where the light strikes and 1 in the roundel's far quarter.
+function density(x,y,cx,cy,r){return clamp(.5-((x-cx)*LIGHT.x+(y-cy)*LIGHT.y)/(r*1.7),0,1)}
+function paintBody(g,cx,cy,r,fam,seed){
+  const rng=mulberry32(seed),ri=r*.84;
+  gildRing(g,cx,cy,r,ri,seed+1,{cracks:14,blooms:18,spec:4,scale:.9});
+  const inner=new Path2D();inner.arc(cx,cy,ri,0,TAU);
+  const box=[cx-ri,cy-ri,ri*2,ri*2];
+  const ground={ocean:TOKENS.lapis,crater:'196,168,120',ringed:'228,192,112',ice:'246,244,238',
+    dune:'204,156,78',volcanic:TOKENS.vermilion,storm:TOKENS.lapisDeep}[fam];
+  pigment(g,inner,box,ground,seed+2,{grain:fam==='ocean'||fam==='storm'?.32:.18,gv:.12,specks:(fam==='ocean'||fam==='storm')?16:0,pool:.18});
+  g.save();g.clip(inner);
+  const D=(x,y)=>density(x,y,cx,cy,r);
+  if(fam==='ocean'){ // wave interlace — the fish-scale water convention, nested arc on arc
+    for(let row=-6;row<7;row++)for(let col=-6;col<7;col++){
+      const x=cx+col*15+(row%2?7.5:0),y=cy+row*9.5,d=D(x,y);
+      if(Math.hypot(x-cx,y-cy)>ri+8)continue;
+      qarc(g,x,y+5,7.6,Math.PI*1.02,Math.PI*1.98,{rgb:'228,236,252',alpha:.35+d*.5,w:1.5,seed:seed+row*13+col});
+      qarc(g,x,y+5,4.2,Math.PI*1.06,Math.PI*1.94,{rgb:TOKENS.shell,alpha:.45+d*.45,w:1.2,seed:seed+row*17+col+3});
+    }
+  }else if(fam==='crater'){ // a dotted rosette field, tessellation logic rather than geology
+    for(let row=-4;row<5;row++)for(let col=-4;col<5;col++){
+      const x=cx+col*16+(row%2?8:0),y=cy+row*14,d=D(x,y);
+      qcircle(g,x,y,5+d*1.6,{rgb:'88,62,32',alpha:.45+d*.5,w:1.2,seed:seed+row*7+col});
+      for(let p=0;p<6;p++){const a=p/6*TAU+d;const px=x+Math.cos(a)*(2.1+d),py=y+Math.sin(a)*(2.1+d);
+        g.fillStyle=`rgba(88,62,32,${.3+d*.5})`;g.beginPath();g.arc(px,py,.85,0,TAU);g.fill()}
+      if(d>.45)gildDisc(g,x,y,1.5,seed+row*31+col,{cracks:0,blooms:1,spec:0,bole:1});
+    }
+  }else if(fam==='ringed'){ // concentric gold bands, the plainest reading of the family
+    for(let k=0;k<3;k++){const rr=ri*(.86-k*.24);
+      gildRing(g,cx,cy,rr,rr-3.4-k*.6,seed+40+k,{cracks:5,blooms:7,spec:2,scale:.7});
+      qcircle(g,cx,cy,rr-6.4-k*.6,{rgb:'120,86,36',alpha:.4,w:.7,seed:seed+50+k});}
+    for(let i=0;i<26;i++){const a=i/26*TAU,d=D(cx+Math.cos(a)*ri*.5,cy+Math.sin(a)*ri*.5);
+      qalam(g,[[cx+Math.cos(a)*ri*.34,cy+Math.sin(a)*ri*.34],[cx+Math.cos(a)*ri*.16,cy+Math.sin(a)*ri*.16]],{rgb:'120,86,36',alpha:.25+d*.5,w:1,seed:seed+60+i,smooth:false});}
+  }else if(fam==='ice'){ // a white reserve, its sheen carried by fine hatching alone
+    for(let i=-18;i<19;i++){const off=i*4.2,d=D(cx+off*.7,cy+off*.7);
+      const p=[];for(let t=-1;t<=1;t+=.2){const x=cx+off*.72-t*ri*.78,y=cy+off*.72+t*ri*.78;
+        if(Math.hypot(x-cx,y-cy)<ri)p.push([x,y])}
+      if(p.length>1)qalam(g,p,{rgb:'96,124,168',alpha:.20+d*.62,w:1.25,seed:seed+70+i,smooth:false});}
+    for(let i=0;i<5;i++)qarc(g,cx,cy,ri*(.30+i*.16),Math.PI*.15,Math.PI*.95,{rgb:'120,148,190',alpha:.4,w:1,seed:seed+68+i}); // the limb's own contour hatch
+    for(let i=0;i<7;i++){const a=rng()*TAU,rr=rng()*ri*.8,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+      for(let k=0;k<3;k++){const b=k/3*Math.PI;qalam(g,[[x-Math.cos(b)*5.5,y-Math.sin(b)*5.5],[x+Math.cos(b)*5.5,y+Math.sin(b)*5.5]],{rgb:TOKENS.shell,alpha:.7,w:1.1,seed:seed+80+i*3+k,smooth:false})}}
+  }else if(fam==='dune'){ // a diagonal lattice with a chevron set in each cell
+    for(let i=-9;i<10;i++)for(const s of[1,-1]){
+      const p=[];for(let t=-1;t<=1;t+=.2){const x=cx+(i*10+t*ri*.9*s),y=cy+t*ri*.9;
+        if(Math.hypot(x-cx,y-cy)<ri-1)p.push([x,y])}
+      if(p.length>1)qalam(g,p,{rgb:'118,76,26',alpha:.5,w:1.05,seed:seed+90+i*2+(s>0?0:1),smooth:false});}
+    for(let row=-3;row<4;row++)for(let col=-3;col<4;col++){
+      const x=cx+col*14,y=cy+row*14,d=D(x,y);if(Math.hypot(x-cx,y-cy)>ri-6||d<.3)continue;
+      qalam(g,[[x-5,y+3],[x,y-3],[x+5,y+3]],{rgb:TOKENS.shell,alpha:.4+d*.6,w:1.5,seed:seed+120+row*9+col});}
+  }else if(fam==='volcanic'){ // vermilion ground, black flame-tongues crowded hard to one edge
+    for(let i=0;i<22;i++){const a=Math.PI*.15+i/22*Math.PI*1.7,d=D(cx+Math.cos(a)*ri*.7,cy+Math.sin(a)*ri*.7);
+      const base=[cx+Math.cos(a)*ri*.97,cy+Math.sin(a)*ri*.97],h=(6+d*17);
+      qalam(g,[base,[base[0]-Math.cos(a)*h*.55+Math.sin(a)*h*.3,base[1]-Math.sin(a)*h*.55-Math.cos(a)*h*.3],
+        [base[0]-Math.cos(a)*h,base[1]-Math.sin(a)*h]],{rgb:'32,18,10',alpha:.35+d*.55,w:2.6,taper:true,seed:seed+130+i});}
+    for(let i=0;i<16;i++){const a=rng()*TAU,rr=rng()*ri*.8;gildDisc(g,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,1.3+rng(),seed+150+i,{cracks:0,blooms:1,spec:0,bole:1});}
+  }else{ // storm — the densest interlace of the seven, verging on illegible as it should
+    for(let arm=0;arm<3;arm++){const p=[];
+      for(let t=0;t<7.2;t+=.18){const rr=ri*.06+t*ri*.115,a=t+arm*TAU/3;
+        if(rr>ri-2)break;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr*.98])}
+      qalam(g,p,{rgb:TOKENS.shell,alpha:.75,w:2.1,seed:seed+160+arm,smooth:false});
+      qalam(g,p.map(q=>[q[0]+2.4,q[1]+2.4]),{rgb:'8,20,58',alpha:.5,w:1.5,seed:seed+170+arm,smooth:false});}
+    for(let i=0;i<40;i++){const a=rng()*TAU,rr=rng()*ri*.92,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr,d=D(x,y);
+      if(rng()>d*.9)continue;qarc(g,x,y,3+rng()*3,0,Math.PI*1.5,{rgb:'126,150,214',alpha:.2+d*.35,w:.8,seed:seed+180+i});}
+  }
+  g.restore();
+  qcircle(g,cx,cy,ri,{rgb:TOKENS.ink,alpha:.62,w:1.3,seed:seed+3,wobble:.2}); // the contour that dammed the paint
+}
+
+/* ---------- the four dangers ---------- */
+function paintHazard(g,kind,cx,cy,s,seed){
+  const rng=mulberry32(seed);
+  if(kind==='attractor'){ // raʾs al-tinnīn, the head of the dragon — the ascending lunar node
+    const coil=[];for(let t=0;t<7.6;t+=.09){const rr=4+t*4.4;coil.push([cx+Math.cos(t*1.02-2.5)*rr,cy+6+Math.sin(t*1.02-2.5)*rr*.88])}
+    const N=coil.length-1;
+    for(let i=0;i<N;i+=3){ // the body tapers from the tail's tip to the head, run by run
+      const u=i/N,w=1.6+u*u*11,seg=coil.slice(i,Math.min(coil.length,i+5));
+      qalam(g,seg,{rgb:'14,44,38',alpha:.55,w:w+3.4,seed:seed+i,smooth:false});
+      qalam(g,seg,{rgb:TOKENS.verdigris,alpha:1,w:w,seed:seed+i+1,smooth:false});
+      qalam(g,seg,{rgb:'150,214,192',alpha:.7,w:Math.max(.5,w*.34),seed:seed+i+2,smooth:false});}
+    for(let i=14;i<N-2;i+=4){const q=coil[i],r2=coil[i+2],a2=Math.atan2(r2[1]-q[1],r2[0]-q[0]),u=i/N;
+      qarc(g,q[0],q[1],1.4+u*4.4,a2+Math.PI*.34,a2+Math.PI*1.66,{rgb:'12,42,36',alpha:.5,w:.9,seed:seed+300+i});}
+    const hd=coil[N],pv=coil[N-6],a=Math.atan2(hd[1]-pv[1],hd[0]-pv[0]);
+    const ux=Math.cos(a),uy=Math.sin(a),HP=(f,k)=>[hd[0]+ux*f-uy*k,hd[1]+uy*f+ux*k];
+    gildPoly(g,[HP(-6,-9),HP(9,-10),HP(25,-4),HP(27,1),HP(11,5),HP(-4,7)],seed+20,{cracks:4,blooms:6,spec:2,scale:.7});
+    gildPoly(g,[HP(9,3),HP(25,3),HP(24,10),HP(8,8)],seed+21,{cracks:2,blooms:3,spec:1,scale:.6});
+    qalam(g,[HP(13,3),HP(32,6),HP(24,10)],{rgb:TOKENS.vermilion,alpha:.95,w:2.4,taper:true,seed:seed+22}); // the forked tongue
+    qalam(g,[HP(1,-9),HP(-7,-20),HP(5,-15)],{rgb:'16,50,42',alpha:.95,w:2.8,seed:seed+23}); // the horn
+    const eye=HP(9,-4);g.fillStyle=`rgba(${TOKENS.ink},.92)`;g.beginPath();g.arc(eye[0],eye[1],1.9,0,TAU);g.fill();
+    qcircle(g,eye[0],eye[1],3.4,{rgb:TOKENS.ink,alpha:.6,w:.8,seed:seed+24});
+    // the kill radius, rubricated the way a warning is rubricated: pricked ring and ticks
+    for(let i=0;i<60;i++){const t=i/60*TAU;if(i%4===3)continue;
+      g.fillStyle=`rgba(${TOKENS.bole},.6)`;g.beginPath();g.arc(cx+Math.cos(t)*s,cy+Math.sin(t)*s,1.1,0,TAU);g.fill()}
+    for(let i=0;i<12;i++){const t=i/12*TAU;
+      qalam(g,[[cx+Math.cos(t)*(s+3),cy+Math.sin(t)*(s+3)],[cx+Math.cos(t)*(s+8),cy+Math.sin(t)*(s+8)]],{rgb:TOKENS.bole,alpha:.5,w:1.2,seed:seed+400+i,smooth:false});}
+    qcircle(g,cx,cy,s+8,{rgb:TOKENS.bole,alpha:.3,w:.8,seed:seed+30});
+  }else if(kind==='repulsor'){ // al-Shams' burning: the gilt sun-face throwing its lines
+    for(let i=0;i<24;i++){const a=i/24*TAU,l=(i%2?s*1.02:s*.78);
+      qalam(g,[[cx+Math.cos(a)*20,cy+Math.sin(a)*20],[cx+Math.cos(a)*l,cy+Math.sin(a)*l]],{rgb:i%2?TOKENS.bole:TOKENS.shell,alpha:.85,w:2.4,taper:true,seed:seed+i,smooth:false});}
+    gildDisc(g,cx,cy,19,seed+40,{cracks:7,blooms:10,spec:3});
+    qcircle(g,cx,cy,19,{rgb:TOKENS.ink,alpha:.6,w:1.1,seed:seed+41});
+    for(const dx of[-6,6]){g.fillStyle=`rgba(${TOKENS.ink},.85)`;g.beginPath();g.ellipse(cx+dx,cy-4,2.4,1.7,0,0,TAU);g.fill();
+      qarc(g,cx+dx,cy-8,4,Math.PI*1.15,Math.PI*1.85,{rgb:TOKENS.ink,alpha:.7,w:1,seed:seed+50+dx});}
+    qarc(g,cx,cy+2,7,.35,Math.PI-.35,{rgb:TOKENS.ink,alpha:.75,w:1.2,seed:seed+52});
+    qalam(g,[[cx,cy-2],[cx,cy+3]],{rgb:TOKENS.ink,alpha:.6,w:1,seed:seed+53});
+  }else if(kind==='crosswind'){ // al-sammūm as a wind figure in the margin, cheeks full
+    const hx=cx-s*.86,hy=cy;
+    const face=[[hx-15,hy-17],[hx+5,hy-21],[hx+17,hy-5],[hx+15,hy+12],[hx-3,hy+20],[hx-16,hy+8]];
+    pigPoly(g,face,'226,196,150',seed+60,{grain:.3,gv:.1});
+    qalam(g,face,{closed:true,rgb:TOKENS.ink,alpha:.8,w:1.3,seed:seed+61});
+    const turban=[[hx-18,hy-16],[hx-8,hy-33],[hx+11,hy-32],[hx+19,hy-14],[hx+5,hy-21],[hx-14,hy-17]];
+    pigPoly(g,turban,'236,228,206',seed+62,{grain:.3,gv:.12});
+    qalam(g,turban,{closed:true,rgb:TOKENS.ink,alpha:.75,w:1.2,seed:seed+63});
+    qalam(g,[[hx-17,hy-22],[hx,hy-29],[hx+17,hy-19]],{rgb:TOKENS.bole,alpha:.85,w:2,seed:seed+64});
+    g.fillStyle=`rgba(${TOKENS.ink},.88)`;g.beginPath();g.ellipse(hx+6,hy-6,2.4,1.7,0,0,TAU);g.fill();
+    qalam(g,[[hx+1,hy-11],[hx+7,hy-13],[hx+12,hy-10]],{rgb:TOKENS.ink,alpha:.8,w:1.3,seed:seed+66}); // the brow
+    qalam(g,[[hx-6,hy+4],[hx-11,hy+7],[hx-7,hy+11]],{rgb:'186,140,96',alpha:.7,w:1.6,seed:seed+67}); // the cheek, full of air
+    qcircle(g,hx+11,hy+7,3.6,{rgb:TOKENS.ink,alpha:.85,w:1.5,seed:seed+65}); // the blowing mouth
+    for(let i=0;i<6;i++){const y=hy-14+i*6.5,p=[];
+      for(let t=0;t<=1.001;t+=.08)p.push([hx+18+t*s*1.7,y+Math.sin(t*7+i)*(3+t*9)]);
+      qalam(g,p,{rgb:i%2?TOKENS.shell:'138,104,52',alpha:.9,w:2.4,taper:true,seed:seed+70+i,smooth:false});}
+    for(let i=0;i<20;i++){const x=hx+24+rng()*s*1.5,y=hy-18+rng()*38;
+      g.fillStyle=`rgba(${TOKENS.bole},${.2+rng()*.4})`;g.beginPath();g.arc(x,y,.9,0,TAU);g.fill()}
+  }else{ // al-shayʾ al-saḥābī, "the little cloud" — the name is al-Ṣūfī's, the drawing is not
+    for(let i=0;i<150;i++){const a=rng()*TAU,rr=Math.pow(rng(),.45)*s;
+      const x=cx+Math.cos(a)*rr*1.45,y=cy+Math.sin(a)*rr*.82,R=7+rng()*16;
+      const rg=g.createRadialGradient(x,y,0,x,y,R);
+      rg.addColorStop(0,rng()<.35?`rgba(${TOKENS.lapis},${.03+rng()*.05})`:`rgba(150,132,96,${.03+rng()*.05})`);
+      rg.addColorStop(1,'rgba(27,63,143,0)');g.fillStyle=rg;g.fillRect(x-R,y-R,R*2,R*2);}
+    const out=[];for(let i=0;i<16;i++){const a=i/16*TAU;out.push([cx+Math.cos(a)*s*(1.05+Math.sin(i*2.1)*.16)*1.2,cy+Math.sin(a)*s*(1.02+Math.cos(i*1.7)*.18)*.72])}
+    qalam(g,out,{closed:true,rgb:'96,74,44',alpha:.22,w:.9,seed:seed+80}); // the contour a scribe would still put round it
+    for(let i=0;i<34;i++){const a=rng()*TAU,rr=Math.pow(rng(),.6)*s;
+      gildDisc(g,cx+Math.cos(a)*rr*1.15,cy+Math.sin(a)*rr*.66,.9+rng()*1.5,seed+90+i,{cracks:0,blooms:1,spec:0,bole:.9,boleA:.35});}
+  }
+}
+
+/* ---------- the four pickups ---------- */
+function paintPickup(g,kind,cx,cy,seed){
+  if(kind==='sling'){ // miqlāʿ
+    qalam(g,[[cx-9,cy-11],[cx-3,cy+3],[cx+3,cy+3],[cx+9,cy-11]],{rgb:'110,78,40',alpha:.9,w:1.6,seed:seed});
+    qalam(g,[[cx-3,cy+3],[cx,cy+9],[cx+3,cy+3]],{rgb:'110,78,40',alpha:.9,w:1.4,seed:seed+1});
+    gildDisc(g,cx,cy+9,3.2,seed+2,{cracks:1,blooms:2,spec:1,bole:1.2});
+  }else if(kind==='shield'){ // dirʿ
+    const pts=arcPts(cx,cy,10,0,TAU);pts.pop();
+    pigPoly(g,pts,TOKENS.verdigris,seed+3,{grain:.4,gv:.14});
+    qcircle(g,cx,cy,10,{rgb:TOKENS.ink,alpha:.75,w:1.2,seed:seed+4});
+    for(let i=0;i<8;i++){const a=i/8*TAU;qalam(g,[[cx+Math.cos(a)*3.5,cy+Math.sin(a)*3.5],[cx+Math.cos(a)*9,cy+Math.sin(a)*9]],{rgb:TOKENS.shell,alpha:.8,w:1,seed:seed+5+i,smooth:false})}
+    gildDisc(g,cx,cy,3.6,seed+14,{cracks:1,blooms:2,spec:1,bole:1.2});
+  }else if(kind==='reflector'){ // rādd
+    gildRing(g,cx,cy,10,7.4,seed+20,{cracks:3,blooms:5,spec:2,scale:.6});
+    pigDisc(g,cx,cy,7.2,'214,214,206',seed+21,{grain:.4,gv:.12});
+    qarc(g,cx,cy,5,Math.PI*.9,Math.PI*1.7,{rgb:'255,255,250',alpha:.85,w:1.6,seed:seed+22});
+    qalam(g,[[cx,cy+10],[cx,cy+16]],{rgb:'110,78,40',alpha:.9,w:2.2,seed:seed+23});
+  }else{ // dawāh — the inkwell, and the currency's own vessel
+    const body=[[cx-9,cy+10],[cx-7,cy-3],[cx+7,cy-3],[cx+9,cy+10]];
+    pigPoly(g,body,'92,70,44',seed+30,{grain:.35,gv:.14});
+    qalam(g,body,{closed:true,rgb:TOKENS.ink,alpha:.85,w:1.3,seed:seed+31});
+    gildRing(g,cx,cy-4,9,6.6,seed+32,{cracks:2,blooms:3,spec:1,scale:.5});
+    pigDisc(g,cx,cy-4,6.4,TOKENS.lapisDeep,seed+33,{grain:.5,gv:.2,specks:4});
+  }
+}
+
+/* ---------- al-Jabbār, drawn twice and mirrored ----------
+   Al-Ṣūfī drew every constellation twice, once as seen on the globe from outside and once
+   looking up at the sky, so a reader would not be confused by the reversal. The two figures
+   here face each other across the gutter exactly as those two drawings face each other across
+   a manuscript opening. The hand is the Abbasid one: a confident continuous contour, flat
+   unmodulated colour, textile pattern doing the work shading would do elsewhere. */
+const STARS=[ // catalogued places, in the figure's own coordinates; the named three are the game's trio
+  {x:24,y:-44,m:1,ar:'يد الجوزاء',tr:'yad al-jawzāʾ · Betelgeuse',lead:[52,-56]},
+  {x:0,y:5,m:2,ar:'النطاق',tr:'al-niṭāq · Alnitak',lead:[54,22]},
+  {x:-15,y:92,m:1,ar:'رجل الجوزاء',tr:'rijl al-jawzāʾ · Rigel',lead:[-62,70]},
+  {x:-25,y:-44,m:2},{x:-13,y:3,m:3},{x:13,y:6,m:3},{x:58,y:-101,m:4},{x:-31,y:-8,m:4},
+  {x:26,y:40,m:4},{x:-27,y:42,m:5},{x:15,y:94,m:3},{x:0,y:-58,m:5}];
+function paintFigure(g,ox,oy,s,mir,seed){
+  const P=(x,y)=>[ox+x*s*mir,oy+y*s], M=a=>a.map(p=>P(p[0],p[1]));
+  // the illuminator's pounced red under-drawing, still showing through the paint above it
+  g.save();g.globalAlpha=.2;
+  qalam(g,M([[-27,-46],[-32,6],[-37,60]]),{rgb:TOKENS.bole,alpha:.9,w:1.4,seed:seed+900});
+  qalam(g,M([[27,-46],[32,6],[37,60]]),{rgb:TOKENS.bole,alpha:.9,w:1.4,seed:seed+901});
+  qcircle(g,...P(0,-70),16*s,{rgb:TOKENS.bole,alpha:.8,w:1.2,seed:seed+902});
+  g.restore();
+  // the far arm and its hanging sleeve go down first, behind the robe, as the drawing builds
+  // the cloth in the far hand hangs behind the robe; the arm itself is laid over it later
+  const cloth=M([[-38,4],[-52,26],[-56,58],[-40,54],[-33,24]]);
+  pigPoly(g,cloth,'216,60,48',seed+5,{grain:.22,gv:.1,pool:.16});
+  qalam(g,cloth,{closed:true,rgb:TOKENS.ink,alpha:.9,w:1.7*s,seed:seed+6});
+  for(let i=0;i<3;i++)qalam(g,M([[-36-i*3,16+i*2],[-44-i*3,36],[-42-i*3,52]]),{rgb:'120,30,24',alpha:.5,w:1.1*s,seed:seed+7+i});
+  gildPoly(g,M([[-52,26],[-56,58],[-49,57],[-46,26]]),seed+9,{cracks:2,blooms:3,spec:1,scale:.5}); // the cloth's gold border
+  // trousers and boots, drawn before the robe so the hem laps over them
+  for(const lx of[-13,13]){
+    const leg=M([[lx-9,58],[lx+9,58],[lx+7,88],[lx-7,88]]);
+    pigPoly(g,leg,'238,230,208',seed+10+lx,{grain:.3,gv:.12});
+    qalam(g,leg,{closed:true,rgb:TOKENS.ink,alpha:.85,w:1.4*s,seed:seed+11+lx});
+    for(let i=0;i<3;i++)qalam(g,M([[lx-6+i*5,62],[lx-7+i*5,84]]),{rgb:'150,132,96',alpha:.45,w:.9*s,seed:seed+12+lx+i});
+    const boot=M([[lx-8,86],[lx+9,86],[lx+11,96],[lx-10,96]]);
+    pigPoly(g,boot,'72,52,32',seed+14+lx,{grain:.3,gv:.14});
+    qalam(g,boot,{closed:true,rgb:TOKENS.ink,alpha:.9,w:1.5*s,seed:seed+15+lx});}
+  // the robe: one confident continuous contour, flat vermilion, no modelling anywhere in it
+  const robe=M([[-17,-46],[-23,-22],[-20,2],[-27,30],[-34,62],[0,68],[34,62],[27,30],[20,2],[23,-22],[17,-46],[0,-52]]);
+  pigPoly(g,robe,TOKENS.vermilion,seed+20,{grain:.16,gv:.1,pool:.18});
+  g.save();g.clip(polyPath(robe)); // the textile: a fine lattice in a darker red, dotted orpiment
+  for(let i=-9;i<10;i++)for(const d of[1,-1])qalam(g,[P(i*12-46*d,-58),P(i*12+46*d,72)],{rgb:'124,30,22',alpha:.42,w:.9*s,seed:seed+30+i*2+(d>0?0:1),smooth:false});
+  for(let row=0;row<9;row++)for(let col=-4;col<5;col++){const q=P(col*12+(row%2?6:0),-46+row*14);
+    g.fillStyle=`rgba(${TOKENS.orpiment},.55)`;g.beginPath();g.arc(q[0],q[1],1.5*s,0,TAU);g.fill();}
+  for(let i=0;i<5;i++)qalam(g,M([[-24+i*12,10],[-28+i*13,38],[-32+i*15,66]]),{rgb:'116,28,20',alpha:.42,w:1.5*s,seed:seed+60+i}); // drapery folds, drawn not shaded
+  g.restore();
+  qalam(g,robe,{closed:true,rgb:TOKENS.ink,alpha:.92,w:2.2*s,seed:seed+21});
+  const hem=M([[-34,62],[0,68],[34,62],[32,70],[0,76],[-32,70]]); // the gold hem band (ṭirāz)
+  gildPoly(g,hem,seed+22,{cracks:5,blooms:7,spec:2,scale:.6});
+  const sash=M([[-25,-2],[25,-2],[27,13],[-27,13]]); // sash: orpiment, with a verdigris chevron run
+  pigPoly(g,sash,TOKENS.orpiment,seed+23,{grain:.3,gv:.12});
+  for(let i=-4;i<5;i++)qalam(g,M([[i*6-2.5,11],[i*6,0],[i*6+2.5,11]]),{rgb:TOKENS.verdigris,alpha:.85,w:1.3*s,seed:seed+70+i});
+  qalam(g,sash,{closed:true,rgb:TOKENS.ink,alpha:.85,w:1.5*s,seed:seed+24});
+  qalam(g,M([[24,10],[32,26],[28,44]]),{rgb:TOKENS.orpiment,alpha:.9,w:2.6*s,seed:seed+25}); // the sash's loose end
+  // the far arm, laid over the robe so the figure reads as a body and not a bell
+  const far=M([[-16,-42],[-27,-22],[-34,0]]);
+  qalam(g,far,{rgb:TOKENS.ink,alpha:.9,w:12*s,seed:seed+3});
+  qalam(g,far,{rgb:'206,58,46',alpha:1,w:9*s,seed:seed+4});
+  for(let i=0;i<3;i++)qalam(g,M([[-19-i*4,-36+i*8],[-27-i*4,-18+i*8]]),{rgb:'118,28,20',alpha:.45,w:1.1*s,seed:seed+80+i});
+  const fhand=M([[-38,-3],[-30,-2],[-30,7],[-38,6]]);
+  pigPoly(g,fhand,'232,202,158',seed+2,{grain:.25,gv:.1});
+  qalam(g,fhand,{closed:true,rgb:TOKENS.ink,alpha:.85,w:1.4*s,seed:seed+8});
+  // the near arm, raised, and the sword it carries — al-Jabbār's attribute in this tradition
+  const arm=M([[18,-44],[31,-52],[38,-66]]);
+  qalam(g,arm,{rgb:TOKENS.ink,alpha:.9,w:11*s,seed:seed+26});
+  qalam(g,arm,{rgb:'224,80,64',alpha:1,w:8*s,seed:seed+27});
+  const hand=M([[35,-70],[45,-72],[46,-62],[36,-61]]);
+  pigPoly(g,hand,'232,202,158',seed+28,{grain:.25,gv:.1});
+  qalam(g,hand,{closed:true,rgb:TOKENS.ink,alpha:.85,w:1.3*s,seed:seed+29});
+  qalam(g,M([[33,-60],[36,-76]]),{rgb:'70,48,26',alpha:.95,w:4.2*s,seed:seed+30}); // the grip
+  qalam(g,M([[29,-78],[47,-72]]),{rgb:'88,62,34',alpha:.95,w:3.6*s,seed:seed+31}); // the quillons
+  const blade=M([[35,-80],[42,-82],[56,-98],[65,-116],[58,-116],[46,-100],[38,-84]]); // a slim curved blade, gilt
+  gildPoly(g,blade,seed+32,{cracks:3,blooms:4,spec:2,scale:.5});
+  qalam(g,M([[39,-83],[50,-99],[61,-115]]),{rgb:'120,86,36',alpha:.5,w:.9*s,seed:seed+33});
+  // the head: a full Abbasid face, small flat features, a wound turban with a lapis band
+  const face=M([[-11,-72],[0,-79],[11,-72],[12,-61],[0,-53],[-12,-61]]);
+  pigPoly(g,face,'232,202,158',seed+40,{grain:.25,gv:.1});
+  qalam(g,face,{closed:true,rgb:TOKENS.ink,alpha:.9,w:1.8*s,seed:seed+41});
+  qalam(g,M([[-12,-63],[-15,-56],[-9,-54]]),{rgb:'52,36,22',alpha:.8,w:2.6*s,seed:seed+42}); // the hair at the ear
+  // a wound turban, low and broad, its tail falling behind the shoulder
+  const turban=M([[-16,-71],[-15,-82],[-3,-88],[11,-86],[17,-77],[18,-69],[12,-74],[0,-78],[-11,-74]]);
+  pigPoly(g,turban,'242,236,218',seed+43,{grain:.3,gv:.12});
+  qalam(g,turban,{closed:true,rgb:TOKENS.ink,alpha:.9,w:1.8*s,seed:seed+44});
+  qalam(g,M([[-15,-75],[-2,-83],[17,-73]]),{rgb:TOKENS.lapis,alpha:.9,w:2.4*s,seed:seed+45});
+  qalam(g,M([[-15,-71],[0,-78],[18,-70]]),{rgb:TOKENS.shell,alpha:.9,w:1.2*s,seed:seed+46});
+  qalam(g,M([[-16,-78],[-24,-68],[-21,-56]]),{rgb:'236,230,212',alpha:.95,w:4*s,seed:seed+48});
+  qalam(g,M([[-16,-78],[-24,-68],[-21,-56]]),{rgb:TOKENS.ink,alpha:.5,w:1*s,seed:seed+49});
+  for(const ex of[-5,5]){ // the eye drawn as a lidded almond, the way a Baghdad-school face is drawn
+    qalam(g,M([[ex-3.6,-67],[ex,-69.5],[ex+3.6,-67],[ex,-64.8]]),{closed:true,rgb:TOKENS.ink,alpha:.85,w:1*s,seed:seed+47+ex});
+    const q=P(ex,-67);g.fillStyle=`rgba(${TOKENS.ink},.92)`;g.beginPath();g.arc(q[0],q[1],1.35*s,0,TAU);g.fill();
+    qalam(g,M([[ex-5,-72],[ex,-73.5],[ex+5,-71.5]]),{rgb:'62,44,26',alpha:.8,w:1.3*s,seed:seed+53+ex});}
+  qalam(g,M([[0,-66],[1,-62],[-1,-60]]),{rgb:TOKENS.ink,alpha:.6,w:1.1*s,seed:seed+54}); // the nose
+  qalam(g,M([[-6,-59],[0,-57.5],[6,-59]]),{rgb:TOKENS.ink,alpha:.8,w:1.5*s,seed:seed+50}); // moustache
+  qalam(g,M([[-3.5,-56],[3.5,-56]]),{rgb:'150,58,48',alpha:.8,w:1.1*s,seed:seed+51});
+  qalam(g,M([[-11,-60],[-8,-52],[0,-49],[8,-52],[11,-60]]),{rgb:'52,36,22',alpha:.75,w:2.4*s,seed:seed+52}); // the beard
+  // the stars, laid ON TOP at their catalogued places, wholly independent of the anatomy
+  for(let i=0;i<STARS.length;i++){const st=STARS[i],q=P(st.x,st.y),r=(6.6-st.m*.85)*s;
+    gildDisc(g,q[0],q[1],r,seed+300+i,{cracks:1,blooms:3,spec:1,bole:1.5});
+    qcircle(g,q[0],q[1],r,{rgb:TOKENS.ink,alpha:.7,w:.9,seed:seed+320+i});
+    naskh(g,eastern(st.m),q[0]+(8+r)*mir,q[1]+4,10,{rgb:TOKENS.translit,alpha:.9,align:mir>0?'left':'right'});
+    if(st.ar){const L=P(st.lead[0],st.lead[1]);
+      qalam(g,[[q[0]+r*1.3*mir,q[1]],[L[0]-6*mir,L[1]-3]],{rgb:'120,96,58',alpha:.55,w:.8,seed:seed+340+i,smooth:false});
+      const side=st.lead[0]*mir>0?'left':'right';
+      naskh(g,st.ar,L[0],L[1],12,{align:side});
+      lat(g,st.tr,L[0],L[1]+11,8.5,{align:side});}}
+}
+
+
+/* ---------- the page's furniture ---------- */
+const legendMarks=[];
+function legend(x,y,t){legendMarks.push([x,y,t])}
+function registerRule(g,y,seed){ // the ruled band that closes a register: red, gold, red
+  qline(g,66,y,1214,y,{rgb:TOKENS.bole,alpha:.55,w:1.2,seed:seed});
+  qline(g,66,y+4,1214,y+4,{rgb:TOKENS.shell,alpha:.7,w:1.6,seed:seed+1});
+  qline(g,66,y+8,1214,y+8,{rgb:TOKENS.bole,alpha:.4,w:1,seed:seed+2});
+  for(let i=0;i<5;i++){const x=lerp(120,1160,i/4);gildDisc(g,x,y+4,4.4,seed+10+i,{cracks:1,blooms:3,spec:1,bole:1.4})}
+}
+// A hashiya: the running foliate vine an illuminator sets in the empty stretch of a band.
+function vineBand(g,x0,x1,y,seed){
+  const stem=[];for(let x=x0;x<=x1;x+=6)stem.push([x,y+Math.sin((x-x0)/26)*7]);
+  qalam(g,stem,{rgb:TOKENS.shell,alpha:.8,w:1.6,seed:seed,smooth:false});
+  for(let i=0;i<stem.length;i+=7){const[px,py]=stem[i],up=(i/7)%2?1:-1;
+    const leaf=[[px,py],[px+7,py+9*up],[px+1,py+13*up],[px-6,py+7*up]];
+    pigPoly(g,leaf,TOKENS.verdigris,seed+i,{grain:.4,gv:.15});
+    qalam(g,leaf,{closed:true,rgb:'40,84,74',alpha:.6,w:.8,seed:seed+i+1});
+    gildDisc(g,px+3,py+5*up,2,seed+i+2,{cracks:0,blooms:2,spec:1,bole:1});}
+}
+function paintHUDStatic(g){
+  // the ʿunwān: the title in kufic, reserved on a gold ground with a lapis border
+  const pnl=rectPts(64,60,204,52,8);
+  pigPoly(g,rectPts(60,56,212,60,8),TOKENS.lapis,4001,{grain:.35,gv:.15,specks:18});
+  gildPoly(g,pnl,4002,{cracks:16,blooms:22,spec:5,scale:1.1});
+  qalam(g,pnl,{closed:true,smooth:false,rgb:TOKENS.ink,alpha:.5,w:.9,seed:4003});
+  for(let i=0;i<9;i++){const x=lerp(66,266,i/8);g.fillStyle='rgba(246,238,214,.75)';g.beginPath();g.arc(x,58,1.5,0,TAU);g.fill();
+    g.beginPath();g.arc(x,114,1.5,0,TAU);g.fill()}
+  kufi(g,'فلك',166,100,40,{rgb:'250,244,222',outline:2.2});
+  lat(g,'falak',166,128,12,{align:'center',rgb:TOKENS.translit});
+  legend(166,100,'HUD: title (falak · “orbit”)');
+  // the inkwell and its gauge: the currency, ḥibr, rationed by the well
+  paintPickup(g,'inkwell',80,160,4100);
+  naskh(g,'حبر',268,146,16,{align:'right'});
+  lat(g,'ḥibr · ink',104,146,10,{align:'left'});
+  qalam(g,rectPts(104,152,164,18,6),{closed:true,smooth:false,rgb:'120,90,44',alpha:.55,w:1.1,seed:4101});
+  legend(190,161,'HUD: ink gauge (ḥibr)');
+  // best, in a shamsa roundel at the top right
+  gildRing(g,1176,96,30,25,4200,{cracks:8,blooms:10,spec:3,scale:.8});
+  pigDisc(g,1176,96,24.6,'242,232,206',4201,{grain:.3,gv:.1});
+  for(let i=0;i<12;i++){const a=i/12*TAU;gildDisc(g,1176+Math.cos(a)*27.5,96+Math.sin(a)*27.5,2.2,4210+i,{cracks:0,blooms:1,spec:0,bole:1})}
+  naskh(g,'أفضل',1176,64,17,{align:'center',weight:'700'});
+  lat(g,'afḍal · best',1176,142,10,{align:'center'});
+  legend(1176,96,'HUD: personal best');
+  // the score medallion, top centre, gold on lapis
+  const med=[[554,96],[578,70],[640,64],[702,70],[726,96],[702,122],[640,128],[578,122]];
+  pigPoly(g,med,TOKENS.lapis,4300,{grain:.4,gv:.16,specks:20});
+  qalam(g,med,{closed:true,rgb:TOKENS.shell,alpha:.9,w:2,seed:4301});
+  qalam(g,med.map(p=>[640+(p[0]-640)*.88,96+(p[1]-96)*.84]),{closed:true,rgb:TOKENS.gold,alpha:.55,w:.9,seed:4302});
+  legend(640,96,'HUD: score (ḥisāb) · speed · flow');
+  vineBand(g,300,536,94,4500);vineBand(g,744,1104,94,4600);
+  for(const x of[296,540,740,1108])gildDisc(g,x,94,4,4700+x,{cracks:1,blooms:2,spec:1,bole:1.2});
+}
+function paintHUDLive(g,st){
+  naskh(g,eastern(st.score),640,108,34,{align:'center',weight:'700',rgb:TOKENS.goldLit});
+  lat(g,'SPEED ×'+st.speed.toFixed(1),640,140,10.5,{align:'center'});
+  lat(g,'FLOW ×'+st.flow,640,152,10.5,{align:'center'});
+  naskh(g,eastern(st.best),1176,106,26,{align:'center',weight:'700'});
+  const w=160*clamp(st.ink,0,1);
+  pigPoly(g,rectPts(106,154,Math.max(2,w),14,5),TOKENS.lapisDeep,4400,{grain:.5,gv:.2,specks:6});
+  for(let i=1;i<5;i++)qalam(g,[[106+160*i/5,150],[106+160*i/5,172]],{rgb:'120,90,44',alpha:.5,w:.9,seed:4410+i,smooth:false});
+}
+
+/* ---------- the reveal: the qalam writes the run, then lays the dots ----------
+   The pen never lifts within a joined run and the dots (iʿjām) are only set afterwards, in a
+   second pass. That two-pass rhythm is the era's reveal: a right-to-left clip opening over the
+   skeleton, the reed's own tip leading it, then the dots landing together. */
+function paintReveal(g,ar,tr,xc,y,size,t){
+  const run=clamp(t/.66,0,1),dots=clamp((t-.68)/.24,0,1);
+  g.save();g.direction='rtl';g.font=`700 ${size}px Amiri, serif`;
+  const w=amiriReady?g.measureText(ar).width:ar.length*size*.42;g.restore();
+  const xr=xc+w/2;
+  g.save();g.beginPath();g.rect(xr-w*run-4,y-size*1.3,w*run+8,size*1.8);g.clip();
+  naskh(g,ar,xr,y,size,{weight:'700'});
+  g.restore();
+  if(dots>0){g.save();g.globalAlpha=dots;
+    for(let i=0;i<4;i++){const x=xr-w*(.18+i*.19);
+      g.fillStyle=`rgba(${TOKENS.ink},.95)`;g.beginPath();g.ellipse(x,y+size*.30,size*.05,size*.04,-.6,0,TAU);g.fill()}
+    g.restore();}
+  if(t<.66){const nx=xr-w*run; // the reed's tip, wet, leading the stroke
+    gildDisc(g,nx,y-size*.2,2.6,5001,{cracks:0,blooms:1,spec:1,bole:1});
+    qalam(g,[[nx,y-size*.55],[nx-2,y-size*1.5]],{rgb:'110,80,40',alpha:.5,w:2.4,taper:true,seed:5002});}
+  lat(g,tr,xc,y+size*.72,12,{align:'center'});
+}
+
+/* ---------- the player: a gilt comet-star on a shell-gold orbit ring ---------- */
+function paintPlayer(g,cx,cy,r,t,nx,ny){
+  qcircle(g,cx,cy,r,{rgb:TOKENS.shell,alpha:.85,w:1.9,seed:6001,wobble:.18});
+  qcircle(g,cx,cy,r+3.5,{rgb:TOKENS.bole,alpha:.3,w:.8,seed:6003,wobble:.18});
+  const to=Math.atan2(ny-cy,nx-cx);
+  qarc(g,cx,cy,r,to-.6,to+.6,{rgb:TOKENS.gold,alpha:.95,w:3.2,seed:6002}); // the aim guide brightens toward the next body
+  for(let i=0;i<20;i++){const u=i/20; // the path already flown, pricked in as a track of ink points
+    const px=lerp(cx-168,cx-r*.82,u),py=cy-Math.sin(u*Math.PI)*30;
+    g.fillStyle=`rgba(${TOKENS.bole},${.14+.42*u})`;g.beginPath();g.arc(px,py,1.35,0,TAU);g.fill();}
+  for(let i=0;i<9;i++){const u=i/9,x=lerp(cx+Math.cos(to)*r,nx,u),y=lerp(cy+Math.sin(to)*r,ny,u);
+    g.fillStyle=`rgba(${TOKENS.bole},${.4*(1-u)})`;g.beginPath();g.arc(x,y,1.2,0,TAU);g.fill()}
+  const a=t*.75,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+  for(let i=1;i<=12;i++){const ta=a-i*.075,x=cx+Math.cos(ta)*r,y=cy+Math.sin(ta)*r; // the tail: gold flecks thinning behind
+    g.fillStyle=`rgba(${TOKENS.gold},${.7*(1-i/13)})`;g.beginPath();g.arc(x,y,2.1*(1-i/15),0,TAU);g.fill()}
+  gildDisc(g,px,py,6,6010,{cracks:1,blooms:2,spec:1,bole:1.4});
+  for(let i=0;i<8;i++){const b=i/8*TAU+.4,l=i%2?12:7; // a kawkab dhū dhanab — a star that owns a tail
+    qalam(g,[[px,py],[px+Math.cos(b)*l,py+Math.sin(b)*l]],{rgb:TOKENS.gold,alpha:.95,w:2.1,taper:true,seed:6020+i,smooth:false});}
+  qcircle(g,px,py,6,{rgb:TOKENS.ink,alpha:.55,w:.9,seed:6030});
+}
+
+/* ---------- the sheet ---------- */
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const sheet=document.createElement('canvas');sheet.width=W;sheet.height=H;
+const sctx=sheet.getContext('2d');
+const finish=document.createElement('canvas');finish.width=W;finish.height=H;
+const fctx=finish.getContext('2d');
+const BODY_X=[],BODY_Y=234,BODY_R=51;
+for(let i=0;i<7;i++)BODY_X.push(64+(1216-64)/7*(i+.5));
+const PLAYER={i:2,r:64};
+const CAPY=470,PANY=496,PANH=210,FIGY=602,FIGS=1.05; // the opening's register, set once
+let legendOn=false,startTime=performance.now();
+
+function buildSheet(){
+  const g=sctx;
+  paintGround(g);paintShowThrough(g);paintFrame(g);
+  legend(120,40,'frame: jadwal (ruled border, gold band)');
+  paintHUDStatic(g);
+  // register I — the seven bodies
+  naskh(g,'الأجرام السبعة',1210,164,17,{weight:'700'});
+  lat(g,'al-ajrām al-sabʿa · the seven bodies',1210,178,10.5);
+  for(let i=0;i<7;i++){const fam=FAM[i],x=BODY_X[i];
+    paintBody(g,x,BODY_Y,BODY_R,fam,7000+i*97);
+    naskh(g,FAM_AR[fam],x,304,17,{align:'center'});
+    lat(g,FAM_TR[fam],x,320,11,{align:'center'});
+    legend(x,BODY_Y,fam);}
+  legend(BODY_X[PLAYER.i],BODY_Y-PLAYER.r,'player: comet (kawkab dhū dhanab) on its orbit ring');
+  legend(640,730,'reveal: the qalam lays the run, then the dots (iʿjām)');
+  registerRule(g,340,7500);
+  // register II — the four dangers, and the four pickups beside them
+  naskh(g,'المخاطر الأربعة',1210,374,17,{weight:'700'});
+  lat(g,'al-makhāṭir al-arbaʿa · the four dangers',1210,390,10.5);
+  const HAZ=[['attractor','رأس التنين',"raʾs al-tinnīn",'attractor · VORAGO-equiv.'],
+    ['repulsor','حرق الشمس','ḥarq al-shams','repulsor · MACULA-equiv.'],
+    ['crosswind','السموم','al-sammūm · al-rīḥ','crosswind · VENTUS-equiv.'],
+    ['obscurer','الشيء السحابي',"al-shayʾ al-saḥābī",'obscurer · the little cloud']];
+  for(let i=0;i<4;i++){const x=156+i*190,y=402;
+    g.save();g.translate(x,y);g.scale(1.28,1.28);g.translate(-x,-y); // one scale so every hazard carries the row
+    paintHazard(g,HAZ[i][0],x,y,i===0?40:i===3?32:38,8000+i*131);g.restore();
+    naskh(g,HAZ[i][1],x,CAPY,16,{align:'center'});
+    lat(g,HAZ[i][2],x,CAPY+14,10.5,{align:'center'});
+    legend(x,y,HAZ[i][3]);}
+  naskh(g,'الأدوات الأربعة',1210,404,14,{weight:'700'}); // "the four tools" — a constructed heading
+  const PK=[['sling','المقلاع','miqlāʿ · sling'],['shield','الدرع','dirʿ · shield'],
+    ['reflector','الرادّ','rādd · reflector'],['dawah','الدواة','dawāh · inkwell']];
+  for(let i=0;i<4;i++){const x=856+i*88,y=438;
+    g.save();g.translate(x,y);g.scale(1.3,1.3);g.translate(-x,-y);
+    paintPickup(g,i===3?'inkwell':PK[i][0],x,y,8500+i*29);g.restore();
+    naskh(g,PK[i][1],x,469,14,{align:'center'});
+    lat(g,PK[i][2],x,481,9.5,{align:'center'});
+    legend(x,y+22,'pickup: '+PK[i][2].split(' · ')[1]);}
+  registerRule(g,486,8900);
+  // register III — the opening: al-Jabbār twice, facing across the gutter
+  paintPanel(g,306,PANY,320,PANH,9100);paintPanel(g,654,PANY,320,PANH,9200);
+  paintGutter(g);
+  paintFigure(g,470,FIGY,FIGS,1,9300);
+  paintFigure(g,810,FIGY,FIGS,-1,9400);
+  legend(470,FIGY,'constellation figure · sky view');
+  legend(810,FIGY,'constellation figure · globe view (mirrored)');
+  // the inscription block, bottom left, in the shipped sheet's own slot
+  naskh(g,'ورقة ١ · باب ١',282,540,18,{weight:'700'});
+  lat(g,'waraqa I · bāb I — sheet, chapter',282,556,10.5);
+  naskh(g,'الجوزاء · صورة ٱلجبار',282,588,15);
+  lat(g,'al-jawzāʾ — the figure of the Giant,',282,606,10.5);
+  lat(g,'drawn twice as al-Ṣūfī drew it: once as',282,619,10.5);
+  lat(g,'the globe shows it, once as the sky does.',282,632,10.5);
+  legend(282,556,'inscription block');
+  // the colophon, bottom right, with the era's one glimpse of the instrument grammar
+  brassVignette(g,1114,556,36,9500);
+  kufi(g,'نسخة',1114,618,18);
+  lat(g,'nuskha · the copy',1114,632,10);
+  naskh(g,'كتبه ٱلناسخ ببغداد · سنة ٥١٩',1210,662,13,{alpha:.85});
+  lat(g,'written at Baghdad, 519 AH — player · plate · seed',1210,676,9.5);
+  legend(1114,556,"colophon · maker's mark (brass-globe vignette)");
+  // footer strip, outside the jadwal, as the shipped sheet has it
+  naskh(g,'ورقة اليوم · ١',210,790,14,{align:'center',alpha:.8});
+  lat(g,'waraqat al-yawm — the day’s sheet',380,790,10,{align:'left',alpha:.6});
+  lat(g,'MS. after Doha 2.1998.SO · Baghdad, April 1125',1210,790,10,{align:'right',alpha:.6});
+  buildFinish();
+}
+function paintPanel(g,x,y,w,h,seed){ // an illustration panel: gold hairline, red rule, corner leaves
+  const r=(i)=>rectPts(x+i,y+i,w-i*2,h-i*2,8);
+  qalam(g,r(0),{closed:true,smooth:false,rgb:TOKENS.ink,alpha:.42,w:.9,seed:seed});
+  qalam(g,r(3),{closed:true,smooth:false,rgb:TOKENS.shell,alpha:.8,w:1.9,seed:seed+1});
+  qalam(g,r(7),{closed:true,smooth:false,rgb:TOKENS.bole,alpha:.5,w:.9,seed:seed+2});
+  for(const[cx,cy,sx,sy]of[[x+7,y+7,1,1],[x+w-7,y+7,-1,1],[x+w-7,y+h-7,-1,-1],[x+7,y+h-7,1,-1]]){
+    const p=[[cx,cy],[cx+16*sx,cy+3*sy],[cx+9*sx,cy+9*sy],[cx+3*sx,cy+16*sy]];
+    qalam(g,p,{closed:true,rgb:TOKENS.verdigris,alpha:.7,w:1.2,seed:seed+3+cx});
+    gildDisc(g,cx+7*sx,cy+7*sy,2.4,seed+4+cx,{cracks:0,blooms:2,spec:1,bole:1.1});}
+}
+function paintGutter(g){ // the fold, with the chain of rosettes an opening carries down it
+  for(const x of[630,650])qalam(g,[[x,PANY],[x,PANY+PANH]],{rgb:'132,102,58',alpha:.4,w:1,seed:9600+x,smooth:false});
+  const sh=g.createLinearGradient(630,0,650,0);
+  sh.addColorStop(0,'rgba(78,52,20,.18)');sh.addColorStop(.5,'rgba(78,52,20,.03)');sh.addColorStop(1,'rgba(78,52,20,.18)');
+  g.fillStyle=sh;g.fillRect(630,PANY,20,PANH);
+  for(let i=0;i<7;i++){const y=PANY+18+i*28;gildDisc(g,640,y,5,9700+i,{cracks:1,blooms:3,spec:1,bole:1.4});
+    qcircle(g,640,y,5,{rgb:TOKENS.ink,alpha:.5,w:.7,seed:9720+i});
+    for(let k=0;k<4;k++){const a=k/4*TAU+.78;qalam(g,[[640+Math.cos(a)*6,y+Math.sin(a)*6],[640+Math.cos(a)*9,y+Math.sin(a)*9]],{rgb:TOKENS.bole,alpha:.5,w:1,seed:9740+i*4+k,smooth:false})}}
+}
+// The instrument grammar's single appearance: engraved brass, incised contour, punched star
+// points, no colour — the 1085 Valencia globe glimpsed in the colophon rather than the page.
+function brassVignette(g,cx,cy,r,seed){
+  const rng=mulberry32(seed);
+  pigDisc(g,cx,cy,r,TOKENS.brass,seed,{grain:.4,gv:.16});
+  const sh=sctx.createRadialGradient(cx-r*.4,cy-r*.4,1,cx,cy,r);
+  sh.addColorStop(0,'rgba(255,240,196,.34)');sh.addColorStop(.6,'rgba(120,88,40,0)');sh.addColorStop(1,'rgba(46,30,10,.34)');
+  g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.clip();g.fillStyle=sh;g.fillRect(cx-r,cy-r,r*2,r*2);g.restore();
+  for(const yy of[-r*.55,0,r*.55])qarc(g,cx,cy+yy*.1,r*.96,0,TAU,{ry:Math.abs(r*.96*Math.cos(Math.asin(clamp(yy/r,-1,1)))) ||3,rgb:'54,36,14',alpha:.35,w:.8,seed:seed+1});
+  qcircle(g,cx,cy,r*.96,{rgb:'54,36,14',alpha:.4,w:.8,seed:seed+2,ry:r*.96});
+  qalam(g,[[cx-r*.6,cy-r*.2],[cx-r*.1,cy-r*.45],[cx+r*.4,cy-r*.1],[cx+r*.6,cy+r*.35]],{rgb:'44,28,10',alpha:.45,w:.9,seed:seed+3});
+  for(let i=0;i<22;i++){const a=rng()*TAU,rr=Math.sqrt(rng())*r*.9,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+    g.fillStyle='rgba(250,246,232,.75)';g.beginPath();g.arc(x,y,.7+rng()*1,0,TAU);g.fill();
+    g.fillStyle='rgba(40,26,8,.5)';g.beginPath();g.arc(x+.6,y+.6,.5,0,TAU);g.fill();}
+  gildRing(g,cx,cy,r+5,r+1.5,seed+9,{cracks:5,blooms:6,spec:2,scale:.6});
+}
+// The finish: the cockle of a heavy sheet under a raking light, laid over everything so paper
+// and paint and leaf sit in one photograph rather than in separate layers.
+function buildFinish(){
+  const g=fctx,rng=mulberry32(77);
+  g.clearRect(0,0,W,H);
+  for(let i=0;i<11;i++){const y=rng()*H,gr=g.createLinearGradient(0,y-92,W*.32,y+92);
+    gr.addColorStop(0,'rgba(255,250,232,0)');gr.addColorStop(.40,`rgba(255,251,236,${.055+rng()*.045})`);
+    gr.addColorStop(.60,`rgba(66,40,12,${.035+rng()*.03})`);gr.addColorStop(1,'rgba(66,40,12,0)');
+    g.fillStyle=gr;g.save();g.translate(W/2,y);g.rotate(-.13);g.fillRect(-W,-74,W*2,148);g.restore();}
+  for(let i=0;i<9;i++){ // old damp stains, always heaviest at a leaf's own edge
+    const edge=i%3,x=edge===0?rng()*W:(edge===1?rng()*90:W-rng()*90),y=edge===0?(rng()<.5?rng()*70:H-rng()*70):rng()*H;
+    const R=40+rng()*120,rg=g.createRadialGradient(x,y,R*.15,x,y,R);
+    rg.addColorStop(0,`rgba(132,86,38,${.035+rng()*.045})`);rg.addColorStop(1,'rgba(132,86,38,0)');
+    g.fillStyle=rg;g.fillRect(x-R,y-R,R*2,R*2);}
+  const rk=g.createLinearGradient(0,0,W,H); // the raking light itself
+  rk.addColorStop(0,'rgba(255,250,230,.11)');rk.addColorStop(.5,'rgba(255,250,230,0)');
+  rk.addColorStop(1,'rgba(52,32,10,.07)');g.fillStyle=rk;g.fillRect(0,0,W,H);
+  const vg=g.createRadialGradient(W*.42,H*.4,H*.32,W*.5,H*.5,H*1.05);
+  vg.addColorStop(0,'rgba(60,38,12,0)');vg.addColorStop(1,'rgba(52,32,10,.20)');g.fillStyle=vg;g.fillRect(0,0,W,H);
+}
+
+function drawLegend(g){
+  g.save();g.font='10px Georgia, serif';g.textAlign='left';g.textBaseline='middle';
+  for(const[x,y,t]of legendMarks){
+    g.fillStyle='rgba(30,30,30,.55)';g.beginPath();g.arc(x,y,2,0,TAU);g.fill();
+    const w=g.measureText(t).width;g.fillStyle='rgba(250,248,242,.82)';g.fillRect(x+5,y-7,w+7,14);
+    g.fillStyle='rgba(50,48,44,.95)';g.fillText(t,x+8,y);}
+  g.restore();
+}
+function drawFrame(now){
+  const t=(now-startTime)/1000;
+  ctx.clearRect(0,0,W,H);ctx.drawImage(sheet,0,0);
+  paintHUDLive(ctx,{score:64,best:61,speed:1.1+.08*Math.sin(t*.5),flow:3,ink:.58+.16*Math.sin(t*.55)});
+  paintPlayer(ctx,BODY_X[PLAYER.i],BODY_Y,PLAYER.r,t,BODY_X[PLAYER.i+1],BODY_Y);
+  paintReveal(ctx,'الجبّار','al-Jabbār · Orion, “the Giant”',640,730,28,(t%6)/6);
+  ctx.drawImage(finish,0,0);
+  if(legendOn)drawLegend(ctx);
+  requestAnimationFrame(drawFrame);
+}
+function fitCanvas(){
+  const scale=Math.min(window.innerWidth/W,window.innerHeight/H,1)*.98,dpr=window.devicePixelRatio||1;
+  canvas.style.width=(W*scale)+'px';canvas.style.height=(H*scale)+'px';
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',fitCanvas);
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')legendOn=!legendOn});
+// The faces are local files, so document.fonts.ready is a real signal and not a network race:
+// the very first paint already sets in Amiri's naskh and Reem Kufi's kufic.
+async function boot(){
+  try{
+    if(document.fonts&&document.fonts.load){
+      await Promise.all([document.fonts.load('700 40px Amiri','فلك'),document.fonts.load('400 16px Amiri','بحر'),
+        document.fonts.load('400 20px "Reem Kufi"','نسخة')]);
+      await document.fonts.ready;}
+  }catch(e){}
+  amiriReady=!!(document.fonts&&document.fonts.check('700 16px Amiri'));
+  reemReady=!!(document.fonts&&document.fonts.check('400 16px "Reem Kufi"'));
+  console.log('fonts — Amiri:',amiriReady,'Reem Kufi:',reemReady);
+  buildSheet();fitCanvas();requestAnimationFrame(drawFrame);
+}
+boot();
+</script>
+</body>
+</html>

@@ -6,9 +6,13 @@ game, in the game's own atlas-engraving prose. Read it for *what the game
 does*; this file is the map for working on *the code*.
 
 `docs/` holds work that has not been built yet — currently `docs/eras/`, the
-long-term plan to extend the plate system into a progression through the history
-of the star atlas. Read it before adding a plate; nothing in it describes shipped
-behaviour.
+plan to extend the plate system into a nine-era progression through the history
+of the star atlas, from a Palaeolithic cave wall to a self-replicating probe,
+climbed within a single run. `docs/eras/OVERVIEW.md` is the entry point;
+`docs/eras/research/` holds the sourced research behind each era and
+`docs/eras/prototypes/` one standalone canvas page per era (open in a browser,
+press `L` for a legend) with its faces and screenshots. Read it before adding a
+plate; nothing in it describes shipped behaviour.
 
 ## Commands
 

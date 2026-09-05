@@ -1,0 +1,631 @@
+<!doctype html>
+<!--
+  Orbit — Era I, "The Disc": the European Bronze Age, c. 1600 BCE, pulled from the Nebra sky
+  disc (Landesmuseum für Vorgeschichte, Halle) per docs/eras/research/disc.md.
+
+  The conceit of this sheet is that there is no sheet: the 1280x800 frame is a close crop of the
+  disc's own bronze surface, and the game's chart furniture is the disc's own composition. The
+  two gold horizon arcs run down the left and right margins and carry the ticks (research §9 —
+  the rim and the arcs are the only frame furniture this era owns); the 82° between each arc's
+  endpoints is the attested solstice span seen from the Mittelberg, so the arcs are also the
+  sheet's scale. The solar barge lies along the bottom as the footer strip. The rim's
+  perforations follow the top and bottom edges. The sun/full moon and the crescent sit top left
+  as the title mark, with the Pleiades cluster beside them as the magnitude key, because the
+  disc's own answer to "how bright is a star" is "one punch, always" (§2).
+
+  Choices made where the research offered options: the ground is the disc AS MADE — dark, near
+  black cast bronze (§3, #8C6239 read down toward its shadow), never the museum's verdigris;
+  green shows only inside casting pits and along the rim, where a real patina takes first. The
+  ship's fringing strokes are drawn as oars, the majority reading (§7), and that reading is
+  disputed — the crosswind built on it is the weakest-attested danger here and is flagged as
+  such in §7 and in its painter below. No typeface is loaded: this culture wrote nothing (§4),
+  Linear B was considered and declined, and every number on the sheet is a stack of punched
+  bands in the gold hats' count-by-repetition logic. The only Latin letters are the small modern
+  museum glosses — a find-name or an asterisked reconstruction beside the game's own term —
+  which is what a label under this object honestly says, and they are set small, quiet and in
+  whatever serif the machine has, never as if the Bronze Age had written them.
+
+  Every mark goes through one of four struck primitives in place of the shipped game's burin:
+  chase (a graver's incision with metal thrown up on the lit side), inlayLine / inlayShape
+  (damascening: cut a groove, lay the foil, close the bronze over it — so gold is always proud,
+  shadowed on one edge and lit on the other, with a hairline where foil meets groove), punchStar
+  (one vertical tap seating a foil disc) and peck (a hollow struck into the metal). One raking
+  light, from the upper left, lights all of them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Disc — Orbit era prototype</title>
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#0a0705;overflow:hidden}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;box-shadow:0 0 80px 18px rgba(0,0,0,.75)}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<script>
+'use strict';
+/* ---------- seeded randomness, so the page paints identically on every load ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2,R=mulberry32(0x1600BCE);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
+function hexa(h,a){const n=parseInt(h.slice(1),16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+
+/* ---------- TOKENS: the disc's palette (research §3), read as a lit material rather than as flat swatches ---------- */
+const T={
+  bronzeDeep:'#1d1208',   // the shadow the whole ground is built up from — cast bronze is near black when new
+  bronze:'#4a3117',
+  bronzeLit:'#8C6239',    // research's "fresh cast bronze, unoxidised"
+  burnish:'#B5834D',      // polished rim catching the rake
+  patina:'#4E8074',       // verdigris — only in pits and along the rim, never over the field
+  patinaDeep:'#2E4B44',
+  gold:'#D4AF37',         // hammered gold foil, always damascened into a groove
+  goldHi:'#F2DC9B',       // pale electrum highlight on a lit facet
+  goldLo:'#8a6a19',       // the foil's shaded lower-right edge
+  electrum:'#E7E6D2',     // the ice family's high-silver alloy — cooler, not paler gold
+  electrumLo:'#8f9484',
+  copper:'#B15C36',       // raw unalloyed copper — the volcanic family only
+  copperLo:'#5f2d16',
+  gloss:'rgba(226,203,160,.55)',   // modern museum lettering, deliberately faint
+  glossDim:'rgba(226,203,160,.34)',
+  legend:'rgba(150,205,190,.85)'
+};
+const W=1280,H=800;
+/* Three lettering roles, exactly as the shipped sheet has three: a name role, a label role and an
+   inscription role. They differ by size and tracking only — no era face exists to differ by. */
+function face(px,style){return (style?style+' ':'')+px+'px Georgia,"Iowan Old Style","Times New Roman",serif';}
+function ink(g,x,y,s,o){o=o||{};g.save();g.font=face(o.size||10,o.style||'');g.fillStyle=o.fill||T.gloss;g.textAlign=o.align||'center';g.textBaseline=o.base||'alphabetic';
+  try{g.letterSpacing=(o.track!=null?o.track:1.1)+'px';}catch(e){}
+  g.globalAlpha=o.alpha!=null?o.alpha:1;g.fillText(s,x,y);g.restore();}
+
+/* ---------- canvas: a fixed 1280x800 sheet drawn at devicePixelRatio and scaled to the window ---------- */
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let DPR=1;
+function fit(){DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));const s=Math.min(window.innerWidth/W,window.innerHeight/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',fit);fit();
+function layer(){const c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);return{c,g};}
+
+/* ================= STRUCK PRIMITIVES — nothing on this sheet is drawn any other way ================= */
+function poly(g,p,close){g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)g.lineTo(p[i][0],p[i][1]);if(close)g.closePath();}
+function off(p,dx,dy){const o=new Array(p.length);for(let i=0;i<p.length;i++)o[i]=[p[i][0]+dx,p[i][1]+dy];return o;}
+function bbox(p){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of p){if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return{x0,y0,x1,y1};}
+function arcPts(cx,cy,r,a0,a1,wob,seed){const rnd=mulberry32(seed>>>0||5),n=Math.max(6,Math.round(Math.abs(a1-a0)*r/5));const p=[];
+  for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n,rr=r+(wob?(rnd()-.5)*wob:0);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}return p;}
+function ringPts(cx,cy,r,wob,seed){return arcPts(cx,cy,r,0,TAU,wob,seed);}
+function bandPts(cx,cy,ri,ro,a0,a1,seed){return arcPts(cx,cy,ro,a0,a1,.7,seed).concat(arcPts(cx,cy,ri,a1,a0,.7,seed+1));}
+
+/* A dome or a dent under the single raking light: the one shading gesture the whole sheet uses.
+   sign +1 raises the metal (a boss, lit upper left), sign -1 sinks it (a hammer dent). */
+function dome(g,x,y,r,sign,amt,hi){const d=r*.42;
+  let a=g.createRadialGradient(x-d*sign,y-d*sign,0,x-d*sign,y-d*sign,r);a.addColorStop(0,hexa(hi,amt));a.addColorStop(1,hexa(hi,0));
+  g.fillStyle=a;g.beginPath();g.arc(x-d*sign,y-d*sign,r,0,TAU);g.fill();
+  let b=g.createRadialGradient(x+d*sign,y+d*sign,0,x+d*sign,y+d*sign,r);b.addColorStop(0,'rgba(8,5,2,'+amt+')');b.addColorStop(1,'rgba(8,5,2,0)');
+  g.fillStyle=b;g.beginPath();g.arc(x+d*sign,y+d*sign,r,0,TAU);g.fill();}
+
+/* A chased line: the graver ploughs a dark furrow and throws a lip of bright metal up on the side
+   the light comes from. Keylines, ornament, orbit rings and the figure's joining line are all this. */
+function chase(g,p,o){o=o||{};const w=o.w||1.5;g.save();g.lineJoin='round';g.lineCap=o.cap||'round';g.globalAlpha=o.alpha!=null?o.alpha:1;
+  poly(g,off(p,-.85,-.85),o.close);g.strokeStyle=o.lip||'rgba(206,166,109,.42)';g.lineWidth=w*.85;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=o.dark||'rgba(10,6,2,.72)';g.lineWidth=w;g.stroke();g.restore();}
+
+/* Damascening, as a line: cut the groove, lay the foil strip, close the bronze over its edges.
+   The foil ends up proud of the surface, so it casts a shadow down-right and takes the light up-left,
+   and a hairline of dark groove is always visible along both of its edges. */
+function inlayLine(g,p,w,seed,o){o=o||{};const gold=o.gold||T.gold,hi=o.hi||T.goldHi,lo=o.lo||T.goldLo;
+  g.save();g.lineJoin='round';g.lineCap=o.cap||'round';
+  poly(g,off(p,1.4,1.5),o.close);g.strokeStyle='rgba(6,4,2,.5)';g.lineWidth=w+3.4;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=T.bronzeDeep;g.lineWidth=w+2;g.stroke();
+  poly(g,off(p,.5,.5),o.close);g.strokeStyle=lo;g.lineWidth=w;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=gold;g.lineWidth=w*.82;g.stroke();
+  poly(g,off(p,-.75,-.8),o.close);g.strokeStyle=hi;g.lineWidth=Math.max(.55,w*.26);g.globalAlpha=.8;g.stroke();g.globalAlpha=1;
+  const rnd=mulberry32((seed>>>0||11)*2654435761>>>0),step=Math.max(1,Math.round(p.length/14));
+  for(let i=1;i<p.length-1;i+=step)if(rnd()<.6){const q=p[i];g.globalAlpha=.14+rnd()*.2;g.fillStyle=rnd()<.5?hi:'rgba(18,11,4,.9)';
+    g.beginPath();g.ellipse(q[0],q[1],w*.32,w*.2,rnd()*TAU,0,TAU);g.fill();}
+  g.restore();}
+
+/* Damascening, as an area: the same three strikes for a foil plate rather than a foil strip. */
+function inlayShape(g,p,seed,o){o=o||{};const gold=o.gold||T.gold,hi=o.hi||T.goldHi,lo=o.lo||T.goldLo,bb=bbox(p);
+  g.save();
+  g.save();g.shadowColor='rgba(5,3,1,.85)';g.shadowBlur=5;g.shadowOffsetX=2.4;g.shadowOffsetY=2.6;
+  poly(g,p,true);g.fillStyle='#170e05';g.fill();g.restore();
+  poly(g,p,true);g.strokeStyle=T.bronzeDeep;g.lineWidth=4.2;g.stroke();
+  const lg=g.createLinearGradient(bb.x0,bb.y0,bb.x1,bb.y1);lg.addColorStop(0,hi);lg.addColorStop(.42,gold);lg.addColorStop(1,lo);
+  poly(g,p,true);g.fillStyle=lg;g.fill();
+  g.save();poly(g,p,true);g.clip();
+  const rnd=mulberry32((seed>>>0||3)*40503),ww=bb.x1-bb.x0,hh=bb.y1-bb.y0,n=clamp(Math.round(ww*hh/300),4,90);
+  for(let i=0;i<n;i++)dome(g,bb.x0+rnd()*ww,bb.y0+rnd()*hh,2.2+rnd()*5.5,rnd()<.5?1:-1,.1+rnd()*.13,hi);
+  if(o.paint)o.paint(g,bb,rnd);
+  poly(g,p,true);g.strokeStyle='rgba(34,20,7,.55)';g.lineWidth=2.4;g.stroke();                 // the hairline gap at the groove
+  poly(g,off(p,-1.7,-1.8),true);g.strokeStyle=hi;g.lineWidth=2.1;g.globalAlpha=.5;g.stroke();  // the lit edge of the proud foil
+  poly(g,off(p,1.9,2),true);g.strokeStyle=lo;g.lineWidth=2.6;g.globalAlpha=.55;g.stroke();
+  g.restore();g.restore();}
+
+/* One vertical tap of the punch, seating a small foil disc. Every star on the disc is this mark and
+   only this mark — no size codes brightness (§2); the two sizes here are near stars and far ones. */
+function punchStar(g,x,y,r,seed,o){o=o||{};const gold=o.gold||T.gold,hi=o.hi||T.goldHi,lo=o.lo||T.goldLo;
+  g.save();
+  g.beginPath();g.arc(x+1.1,y+1.3,r*1.12,0,TAU);g.fillStyle='rgba(6,4,2,.55)';g.fill();
+  g.beginPath();g.arc(x,y,r*1.06,0,TAU);g.fillStyle=T.bronzeDeep;g.fill();
+  const gr=g.createRadialGradient(x-r*.4,y-r*.44,r*.04,x,y,r*1.06);gr.addColorStop(0,hi);gr.addColorStop(.48,gold);gr.addColorStop(1,lo);
+  g.beginPath();g.arc(x,y,r*.9,0,TAU);g.fillStyle=gr;g.fill();
+  const rnd=mulberry32((seed>>>0||7)*97+13);
+  for(let i=0;i<3;i++){const a=rnd()*TAU,d=r*.3*rnd();dome(g,x+Math.cos(a)*d,y+Math.sin(a)*d,r*.45,rnd()<.5?1:-1,.2,hi);}
+  g.beginPath();g.arc(x-r*.28,y-r*.32,r*.26,0,TAU);g.fillStyle=hi;g.globalAlpha=.55;g.fill();
+  g.restore();}
+
+/* A hollow pecked or punched into a surface: rim thrown up on the lit side, shadow inside it,
+   and the far wall catching the rake. Casting porosity, crater bodies and cup-marks are all this. */
+function peck(g,x,y,r,o){o=o||{};const lit=o.lit||'rgba(226,186,126,.4)';
+  g.save();
+  g.beginPath();g.arc(x-r*.28,y-r*.3,r*1.16,0,TAU);g.fillStyle=lit;g.globalAlpha=.5;g.fill();g.globalAlpha=1;
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=o.dark||'rgba(11,7,3,.82)';g.fill();
+  g.beginPath();g.arc(x+r*.34,y+r*.36,r*.56,0,TAU);g.fillStyle=lit;g.fill();
+  g.restore();}
+
+/* ================= THE GROUND: cast bronze, hammered, lit once from the upper left ================= */
+function paintGround(g){
+  g.fillStyle='#120b05';g.fillRect(0,0,W,H);
+  // The pour: broad low-frequency variation, because a cast face is never one tone.
+  for(let i=0;i<52;i++){const x=R()*W,y=R()*H,r=90+R()*240,gr=g.createRadialGradient(x,y,0,x,y,r);
+    const c=R()<.6?'#0b0603':'#5d3d1a';gr.addColorStop(0,hexa(c,.55));gr.addColorStop(1,hexa(c,0));
+    g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+  // The hammer: several hundred overlapping facets, mostly dents, a few raised where the metal folded.
+  // A third of them keep the hard bright lip the hammer's edge leaves, which is what makes beaten
+  // metal read as beaten rather than merely mottled.
+  for(let i=0;i<520;i++){const x=R()*W,y=R()*H,r=12+R()*40,s=R()<.7?-1:1;
+    dome(g,x,y,r,s,.1+R()*.14,T.burnish);
+    if(R()<.34){const a0=s<0?Math.PI*.85:Math.PI*1.85;
+      chase(g,arcPts(x,y,r*.86,a0,a0+Math.PI*.8,r*.06,i),{w:1.3,alpha:.16+R()*.14,lip:'rgba(228,186,124,.6)',dark:'rgba(6,3,1,.5)'});}}
+  for(let i=0;i<760;i++){const x=R()*W,y=R()*H,r=3.5+R()*9;dome(g,x,y,r,R()<.62?-1:1,.06+R()*.09,T.burnish);}
+  // Tool scratches: long, shallow, all running with the burnisher's sweep round the disc's centre.
+  for(let i=0;i<90;i++){const rr=60+R()*720,a0=R()*TAU,sp=.15+R()*.75;
+    chase(g,arcPts(640,400,rr,a0,a0+sp,2.2,i*7+1),{w:.9,alpha:.07+R()*.09,lip:'rgba(226,186,124,.5)',dark:'rgba(8,5,2,.5)'});}
+  // Specular glints: the small hard sparks a polished, uneven metal throws back at one light.
+  for(let i=0;i<170;i++){const x=R()*W,y=R()*H,l=2+R()*9;
+    g.save();g.translate(x,y);g.rotate(-Math.PI/4+(R()-.5)*.7);g.globalAlpha=.06+R()*.16;
+    g.fillStyle='#f0d9a8';g.beginPath();g.ellipse(0,0,l,.6+R()*.7,0,0,TAU);g.fill();g.restore();}
+  // Rotary polishing, faint: the disc was ground and burnished around its own centre.
+  g.save();g.globalCompositeOperation='lighter';
+  for(let i=0;i<200;i++){const rr=40+R()*760,a0=R()*TAU,sp=.08+R()*.5;
+    chase(g,arcPts(640,400,rr,a0,a0+sp,1.6,i*13),{w:.7,alpha:.05+R()*.05,lip:'rgba(190,150,96,.5)',dark:'rgba(140,105,60,.2)'});}
+  g.restore();
+  // Casting porosity, and the green that only ever starts inside a pit or a scratch.
+  const pits=[];
+  for(let i=0;i<520;i++){const x=R()*W,y=R()*H,r=.7+R()*2.6;peck(g,x,y,r,{lit:'rgba(214,172,112,.3)'});if(R()<.34)pits.push([x,y,r]);}
+  for(const[x,y,r]of pits){g.beginPath();g.arc(x,y,r*(1.1+R()*1.5),0,TAU);g.fillStyle=hexa(R()<.5?T.patina:T.patinaDeep,.14+R()*.2);g.fill();}
+  for(let i=0;i<16;i++){const x=R()*W,y=R()*H,r=16+R()*44,gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,hexa(T.patinaDeep,.16));gr.addColorStop(1,hexa(T.patinaDeep,0));g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+  // Fine grain, then the rake itself: bright at the upper left corner, falling away to the lower right.
+  for(let i=0;i<5200;i++){g.globalAlpha=.04+R()*.09;g.fillStyle=R()<.5?'#150c05':'#8a6132';g.fillRect(R()*W,R()*H,1,1);}
+  g.globalAlpha=1;
+  const rake=g.createLinearGradient(0,0,W*.9,H);rake.addColorStop(0,'rgba(255,222,168,.09)');rake.addColorStop(.4,'rgba(255,222,168,.01)');rake.addColorStop(1,'rgba(0,0,0,.5)');
+  g.fillStyle=rake;g.fillRect(0,0,W,H);
+  const vig=g.createRadialGradient(W*.42,H*.4,140,W*.5,H*.5,820);vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.78)');
+  g.fillStyle=vig;g.fillRect(0,0,W,H);}
+
+/* ================= THE FRAME: the rim and its perforations, then the two horizon arcs ================= */
+/* Research §9: the rim's "estimated 35–40" holes are the only frame furniture this era owns, so they
+   stand in for the shipped chart's RA and declination ticks. Spaced here at the disc's own pitch —
+   ~32 cm of circumference divided by 39 holes, scaled to this crop — and given a very slight bow,
+   since we are looking at a small part of a very large circle. */
+function paintRim(g){
+  for(const top of[true,false]){
+    const y0=top?0:H,dir=top?1:-1,bandH=44;
+    const gr=g.createLinearGradient(0,y0,0,y0+dir*bandH);
+    gr.addColorStop(0,hexa(T.burnish,.3));gr.addColorStop(.55,'rgba(120,84,44,.12)');gr.addColorStop(1,'rgba(0,0,0,.28)');
+    g.fillStyle=gr;g.fillRect(0,Math.min(y0,y0+dir*bandH),W,bandH);
+    const bow=(x)=>y0+dir*(21+Math.sin((x/W)*Math.PI)*-7*dir*dir);
+    const edge=[];for(let x=-10;x<=W+10;x+=14)edge.push([x,y0+dir*(bandH-2)+Math.sin(x/W*Math.PI)*dir*5]);
+    chase(g,edge,{w:1.7,alpha:.7});
+    // The rim is where a real patina takes first, so it is the one place green is allowed to gather.
+    for(let i=0;i<70;i++){const x=R()*W,y=Math.min(y0,y0+dir*bandH)+R()*bandH;
+      g.beginPath();g.arc(x,y,1.5+R()*5,0,TAU);g.fillStyle=hexa(R()<.5?T.patina:T.patinaDeep,.05+R()*.14);g.fill();}
+    for(let x=26;x<W;x+=33.6){const y=bow(x);
+      peck(g,x,y,4.6,{lit:'rgba(232,192,132,.5)'});
+      g.beginPath();g.arc(x,y,2.1,0,TAU);g.fillStyle='rgba(0,0,0,.85)';g.fill();  // pierced clean through the plate
+      g.beginPath();g.arc(x+.9,y+1,1.3,0,TAU);g.fillStyle='rgba(150,110,62,.5)';g.fill();}
+  }}
+/* The arcs. Each spans 82° of a circle whose centre sits just off the far side of the sheet, which
+   puts the endpoints at the top and bottom and the belly against the margin — the disc's own shape.
+   Ticks across the band replace the shipped frame's degree ticks; the endpoints are squared and
+   marked, because the angle between them is the measurement the object was made to hold. */
+const ARC={r:526,thick:46,half:41*Math.PI/180,lc:520,rc:W-520,cy:400};
+function paintArcs(g){
+  for(const side of[-1,1]){
+    const cx=side<0?ARC.lc:ARC.rc,base=side<0?Math.PI:0;
+    const a0=base-ARC.half,a1=base+ARC.half,ri=ARC.r-ARC.thick,ro=ARC.r;
+    const band=bandPts(cx,ARC.cy,ri,ro,a0,a1,71+side);
+    inlayShape(g,band,83+side,{});
+    g.save();poly(g,band,true);g.clip();
+    // The graduation is the object's own measurement, not a ruler laid over it: only the five-degree
+    // marks are cut, and they bite a short way in from the outer edge.
+    for(let k=0;k<=16;k++){const a=a0+(a1-a0)*k/16,long=k%4===0;
+      const p=[[cx+Math.cos(a)*(ro-2),ARC.cy+Math.sin(a)*(ro-2)],[cx+Math.cos(a)*(ro-(long?ARC.thick*.5:ARC.thick*.26)),ARC.cy+Math.sin(a)*(ro-(long?ARC.thick*.5:ARC.thick*.26))]];
+      chase(g,p,{w:long?1.8:1.1,alpha:long?.7:.4,lip:'rgba(255,238,190,.45)',dark:'rgba(52,32,6,.75)'});}
+    // A run of small bosses down the belly, the same repeated-mark logic the hats' zones use.
+    for(let k=0;k<=13;k++){const a=a0+(a1-a0)*(k+.5)/14,rr=ri+ARC.thick*.72;
+      dome(g,cx+Math.cos(a)*rr,ARC.cy+Math.sin(a)*rr,5.5,1,.4,T.goldHi);}
+    g.restore();
+    // The endpoints are squared and marked, because the 82° between them is the measurement the
+    // object was made to hold — this is the sheet's scale, and it says so at its two ends.
+    for(const a of[a0,a1]){const xo=cx+Math.cos(a)*ro,yo=ARC.cy+Math.sin(a)*ro,xi=cx+Math.cos(a)*ri,yi=ARC.cy+Math.sin(a)*ri;
+      chase(g,[[xo,yo],[xi,yi]],{w:2.2,alpha:.8,lip:'rgba(255,238,190,.5)'});
+      const n=[[xo+Math.cos(a)*7,yo+Math.sin(a)*7],[xi+Math.cos(a)*7,yi+Math.sin(a)*7]];
+      chase(g,n,{w:1.2,alpha:.45});}
+  }}
+
+/* ================= NUMERALS: stacked punch bands, one zone per decimal place ================= */
+/* Research §4: "the honest equivalent is repeated identical marks, grouped for legibility the way
+   the hats' bands already are, not digits." Most significant zone on top; an empty zone is still
+   struck, so the band exists and carries nothing, which is how a zero can be read at all. */
+function punchNumeral(g,x,y,n,o){o=o||{};const dr=o.dr||3.6,gap=o.gap||4.4,bh=o.bh||(dr*2+7),align=o.align||'left';
+  const digits=String(Math.max(0,Math.round(n))).split('').map(Number);
+  const wide=Math.max.apply(null,digits.map(d=>Math.max(1,d)*(dr*2+gap)+dr*2));
+  digits.forEach((d,i)=>{const mid=y+i*bh+dr,x0=(align==='right'?x-wide:x)+dr;
+    // each zone is struck as a shallow band first, so a count reads as one group and not as loose dots
+    const bed=[[x0-dr*1.6,mid],[x0-dr*1.6+wide-dr*.4,mid]];
+    chase(g,bed,{w:dr*2.6,alpha:.85,cap:'butt',dark:'rgba(5,3,1,.7)',lip:'rgba(206,166,109,.35)'});
+    chase(g,[[x0-dr*1.6,mid+dr*1.35],[x0-dr*1.6+wide-dr*.4,mid+dr*1.35]],{w:1,alpha:.4,cap:'butt'});
+    for(let k=0;k<d;k++)punchStar(g,x0+k*(dr*2+gap),mid,dr,(i*13+k*7+1)|0,o);
+    // an empty zone is still struck: the band exists and carries nothing, which is how a nought reads
+    if(d===0)chase(g,[[x0-dr*.4,mid],[x0+dr*2.4,mid]],{w:2.2,alpha:.75,dark:'rgba(8,5,2,.9)'});});
+  return{w:wide,h:digits.length*bh};}
+
+/* ================= THE SEVEN FAMILIES ================= */
+/* Each is a foil disc let into the bronze and then worked, so the family is carried by the surface
+   the smith gave it (research §8) and not by a colour swap; the two families that do change alloy
+   change it because the research says the alloy is the difference (ice = high-silver electrum,
+   volcanic = raw unalloyed copper). Every one sits in a chased keyline ring with its caption below. */
+const FAMILIES=[
+  {k:'ocean',   gloss:'*mēnô · ocean'},
+  {k:'crater',  gloss:'punched · crater'},
+  {k:'ringed',  gloss:'Goldhut · ringed'},
+  {k:'ice',     gloss:'electrum · ice'},
+  {k:'dune',    gloss:'raked · dune'},
+  {k:'volcanic',gloss:'copper · volcanic'},
+  {k:'storm',   gloss:'spiral · storm'}];
+
+function paintBody(g,kind,cx,cy,r,seed){
+  const rnd=mulberry32((seed>>>0||1)*131+7);
+  // the specimen keyline: a chased ring in the bronze, the era's answer to the engraved keyline
+  chase(g,ringPts(cx,cy,r+11,.9,seed),{w:1.7,close:true,alpha:.85});
+  chase(g,ringPts(cx,cy,r+14.5,.9,seed+1),{w:.9,close:true,alpha:.4});
+  const alloy=kind==='ice'?{gold:'#D6D5BE',hi:'#F3F3E6',lo:'#767c6c'}
+             :kind==='volcanic'?{gold:T.copper,hi:'#E39468',lo:T.copperLo}:{};
+  inlayShape(g,ringPts(cx,cy,r,.8,seed+2),seed,Object.assign({},alloy,{paint:(gg,bb,rr)=>{
+    const hi=alloy.hi||T.goldHi,lo=alloy.lo||T.goldLo;
+    if(kind==='ocean'){ // left smooth and bright: the disc's own moon, unworked, calm against every worked face
+      const sp=gg.createRadialGradient(cx-r*.42,cy-r*.46,r*.05,cx-r*.3,cy-r*.34,r*1.15);
+      sp.addColorStop(0,hexa(T.goldHi,.75));sp.addColorStop(.55,hexa(T.goldHi,.1));sp.addColorStop(1,hexa(T.goldHi,0));
+      gg.fillStyle=sp;gg.fillRect(bb.x0,bb.y0,bb.x1-bb.x0,bb.y1-bb.y0);}
+    if(kind==='crater'){ // the star-punch turned inward on one body: each mark a dimple struck into the foil
+      for(let i=0;i<26;i++){const a=rr()*TAU,d=Math.sqrt(rr())*r*.85;
+        peck(gg,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r*(.04+rr()*.1),{dark:'rgba(34,20,4,.82)',lit:hexa(hi,.6)});}}
+    if(kind==='ringed'){ // the gold hats at body scale: horizontal zones of an identical repeated boss
+      for(let b=0,rad=r*.86;b<3;b++,rad-=r*.3){const count=Math.round(rad*TAU/(r*.46));
+        chase(gg,ringPts(cx,cy,rad,.5,seed+b),{w:1.7,close:true,alpha:.85,lip:hexa(hi,.6),dark:'rgba(52,32,6,.75)'});
+        for(let i=0;i<count;i++){const a=i/count*TAU+b*.35;dome(gg,cx+Math.cos(a)*rad,cy+Math.sin(a)*rad,r*.15,1,.6,hi);}}
+      chase(gg,ringPts(cx,cy,r*.16,.3,seed+9),{w:1.4,close:true,alpha:.6,lip:hexa(hi,.55),dark:'rgba(60,38,8,.6)'});}
+    if(kind==='ice'){ // differs by temperature of colour, not by pattern: near plain, one hard lit limb
+      chase(gg,arcPts(cx,cy,r*.93,Math.PI*1.02,Math.PI*1.62,.6,seed),{w:3.4,alpha:.9,lip:'rgba(255,255,255,.95)',dark:'rgba(120,130,120,.25)'});
+      for(let i=0;i<5;i++){const a=Math.PI*(1.1+rr()*.5);chase(gg,[[cx+Math.cos(a)*r*.8,cy+Math.sin(a)*r*.8],[cx+Math.cos(a)*r*.35,cy+Math.sin(a)*r*.35]],{w:.9,alpha:.35,lip:'rgba(255,255,255,.6)'});}}
+    if(kind==='dune'){ // the ship's short-stroke technique repurposed as texture rather than propulsion
+      for(let i=-7;i<=7;i++){const yy=cy+i*r*.135,hw=Math.sqrt(Math.max(0,r*r-(yy-cy)*(yy-cy)))*.96;
+        chase(gg,[[cx-hw,yy+rr()*1.4],[cx-hw*.2,yy-1+rr()*1.4],[cx+hw*.55,yy+rr()*1.6],[cx+hw,yy-.6]],{w:1.5,alpha:.72,lip:hexa(hi,.6),dark:'rgba(64,40,8,.7)'});}}
+    if(kind==='volcanic'){ // cracks chiselled outward from an off-centre point, the sun-wheel's burst gone hot
+      const ox=cx-r*.22,oy=cy+r*.18;
+      for(let i=0;i<9;i++){const a=rr()*TAU,len=r*(.55+rr()*.45),p=[[ox,oy]];
+        for(let s=1;s<=4;s++){const t=s/4;p.push([ox+Math.cos(a+(rr()-.5)*.5)*len*t,oy+Math.sin(a+(rr()-.5)*.5)*len*t]);}
+        chase(gg,p,{w:1.5+rr(),alpha:.85,lip:'rgba(255,190,140,.5)',dark:'rgba(40,12,4,.85)'});}
+      const glow=gg.createRadialGradient(ox,oy,0,ox,oy,r*.5);glow.addColorStop(0,'rgba(255,150,80,.28)');glow.addColorStop(1,'rgba(255,150,80,0)');
+      gg.fillStyle=glow;gg.fillRect(bb.x0,bb.y0,bb.x1-bb.x0,bb.y1-bb.y0);}
+    if(kind==='storm'){ // the spiral again, but open and loose — told from the attractor by turn-count
+      for(let s=0;s<3;s++){const p=[];for(let i=0;i<=64;i++){const t=i/64,a=t*TAU*1.15+s*TAU/3,rad=r*(.24+t*.6);p.push([cx+Math.cos(a)*rad,cy+Math.sin(a)*rad]);}
+        chase(gg,p,{w:2.1,alpha:.8,lip:hexa(hi,.55),dark:'rgba(58,36,8,.75)'});}}
+    // the limb: every body darkens where it turns away from the rake
+    const lm=gg.createRadialGradient(cx-r*.35,cy-r*.4,r*.2,cx,cy,r*1.06);
+    lm.addColorStop(0,'rgba(0,0,0,0)');lm.addColorStop(.72,'rgba(0,0,0,0)');lm.addColorStop(1,hexa('#0a0603',.55));
+    gg.fillStyle=lm;gg.fillRect(bb.x0-4,bb.y0-4,bb.x1-bb.x0+8,bb.y1-bb.y0+8);
+  }}));
+  // the caption device: a miniature of the body's own working, so the mark names the family
+  familyMark(g,kind,cx,cy+r+29,seed);}
+
+function familyMark(g,kind,x,y,seed){const s=6.2;
+  if(kind==='ocean')punchStar(g,x,y,s*.85,seed);
+  if(kind==='crater'){for(const d of[[-6,-2],[2,-5],[4,3]])peck(g,x+d[0],y+d[1],2.4,{lit:'rgba(226,186,126,.5)'});}
+  if(kind==='ringed'){chase(g,ringPts(x,y,s,.4,seed),{w:1.2,close:true,alpha:.7});chase(g,ringPts(x,y,s*.5,.3,seed+1),{w:1.1,close:true,alpha:.7});}
+  if(kind==='ice'){chase(g,ringPts(x,y,s*.85,.3,seed),{w:1.1,close:true,alpha:.6,lip:'rgba(255,255,255,.7)'});
+    chase(g,arcPts(x,y,s*.85,Math.PI*1.05,Math.PI*1.6,.2,seed),{w:2.2,alpha:.9,lip:'rgba(255,255,255,.9)'});}
+  if(kind==='dune')for(let i=-1;i<2;i++)chase(g,[[x-s,y+i*3.4],[x+s,y+i*3.4-1]],{w:1.4,alpha:.75});
+  if(kind==='volcanic')for(let i=0;i<5;i++){const a=i/5*TAU;chase(g,[[x,y],[x+Math.cos(a)*s,y+Math.sin(a)*s]],{w:1.4,alpha:.8,lip:'rgba(255,190,140,.5)'});}
+  if(kind==='storm'){const p=[];for(let i=0;i<=40;i++){const t=i/40;p.push([x+Math.cos(t*TAU*1.3)*s*t,y+Math.sin(t*TAU*1.3)*s*t]);}chase(g,p,{w:1.4,alpha:.8});}}
+
+/* ================= THE FOUR DANGERS (research §7) ================= */
+/* Each is struck into a hollow first — a shallow recess pecked out of the bronze — so the gold has a
+   dark backing to read against, which is also how the disc's own gold reads at all. */
+function hazardBed(g,cx,cy,r,seed,light){
+  const gr=g.createRadialGradient(cx-r*.3,cy-r*.32,r*.1,cx,cy,r);
+  if(light){gr.addColorStop(0,'rgba(96,66,32,.5)');gr.addColorStop(.7,'rgba(30,19,8,.55)');gr.addColorStop(1,'rgba(20,12,6,.1)');}
+  else{gr.addColorStop(0,'rgba(4,2,1,.86)');gr.addColorStop(.7,'rgba(10,6,3,.7)');gr.addColorStop(1,'rgba(20,12,6,.12)');}
+  g.beginPath();g.arc(cx,cy,r,0,TAU);g.fillStyle=gr;g.fill();
+  chase(g,arcPts(cx,cy,r,Math.PI*.92,Math.PI*1.98,1,seed),{w:3,alpha:.9,lip:'rgba(240,196,130,.85)'});
+  chase(g,ringPts(cx,cy,r,1,seed+1),{w:1.4,close:true,alpha:.6});
+  chase(g,ringPts(cx,cy,r+4.5,1,seed+2),{w:.9,close:true,alpha:.3});}
+
+function paintHazard(g,kind,cx,cy,seed){
+  const r=42;hazardBed(g,cx,cy,r,seed,kind==='nebula');
+  if(kind==='vortex'){ // the spiral: abundantly attested, and already a pulling-inward shape
+    for(let s=0;s<3;s++){const p=[];for(let i=0;i<=90;i++){const t=i/90,a=t*TAU*1.5+s*TAU/3,rad=r*(.96-t*.72);p.push([cx+Math.cos(a)*rad,cy+Math.sin(a)*rad]);}
+      chase(g,p,{w:2.4-s*.4,alpha:.85});}
+    const th=[];for(let i=0;i<=110;i++){const t=i/110,a=t*TAU*2.1,rad=r*(.62-t*.56);th.push([cx+Math.cos(a)*rad,cy+Math.sin(a)*rad]);}
+    inlayLine(g,th,2.4,seed);
+    punchStar(g,cx,cy,3.4,seed+4);
+    // the kill radius is the drawn edge: ticked all the way round so it can be read off the sheet
+    for(let i=0;i<40;i++){const a=i/40*TAU;chase(g,[[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+5),cy+Math.sin(a)*(r+5)]],{w:1,alpha:.55});}}
+  if(kind==='flare'){ // the sun-wheel: gold spokes bursting outward from a bronze disc
+    for(let i=0;i<16;i++){const a=i/16*TAU;
+      inlayLine(g,[[cx+Math.cos(a)*r*.56,cy+Math.sin(a)*r*.56],[cx+Math.cos(a)*r*(i%2?.95:1.12),cy+Math.sin(a)*r*(i%2?.95:1.12)]],2.6,seed+i);}
+    chase(g,ringPts(cx,cy,r*.78,.7,seed),{w:1.6,close:true,alpha:.7});
+    inlayShape(g,ringPts(cx,cy,r*.6,.6,seed+2),seed+3,{});   // the lethal core, 0.6 of the drawn radius
+    chase(g,ringPts(cx,cy,r*.6+5,.5,seed+5),{w:1,close:true,alpha:.55});}
+  if(kind==='wind'){ // a run of short parallel strokes, read as the barge's oars — the majority reading,
+    // and a disputed one (§7, §12): this is the weakest-attested of the four and is captioned as such
+    for(let row=-1;row<2;row++)for(let i=0;i<5;i++){
+      const x=cx-30+i*16+row*6,y=cy+row*20,L=17+(i%3)*4;
+      inlayLine(g,[[x-4,y-L/2],[x+6,y+L/2]],2.4,seed+row*20+i);}
+    chase(g,[[cx-42,cy-31],[cx+42,cy-35]],{w:1.1,alpha:.45});
+    chase(g,[[cx-42,cy+35],[cx+42,cy+31]],{w:1.1,alpha:.45});}
+  if(kind==='nebula'){ // cup-marks: small pecked hollows, thick enough to hide the motif beneath them
+    const rnd=mulberry32(seed*7+3);
+    for(let i=0;i<44;i++){const a=rnd()*TAU,d=Math.sqrt(rnd())*r*.94,x=cx+Math.cos(a)*d,y=cy+Math.sin(a)*d,rr=1.6+rnd()*3.6;
+      peck(g,x,y,rr,{lit:'rgba(206,166,109,.34)'});
+      if(rnd()<.3)chase(g,ringPts(x,y,rr*2.1,.4,i),{w:.8,close:true,alpha:.35});}}}
+
+/* ================= THE FIGURE, THE PLAYER, THE PICKUPS ================= */
+/* The constellation is three punched points joined by a chased line, in the disc's own idiom, with a
+   ship pictograph as its name (§7's ship-grammar, from the Bohuslän panels and the razor corpus).
+   The figure itself is chased faint behind its stars, exactly as the shipped sheet engraves it. */
+/* The ship, in the Bohuslän and razor-corpus grammar (§1, §7): a shallow hull of two lines with the
+   prows turned up and curled, fringed with short strokes — read here as oars, the majority reading —
+   and carrying the sun above it. The barge on the disc, the constellation figure, that figure's name
+   mark and the player's own vehicle are all this one drawing at four sizes, which is what makes them
+   read as one hand rather than four unrelated motifs. */
+function paintShip(g,cx,cy,len,o){o=o||{};
+  const sp=o.spread||Math.PI*.24,r=(len/2)/Math.sin(sp),C=[cx,cy-r],a0=Math.PI/2-sp,a1=Math.PI/2+sp;
+  const d=Math.max(2.6,len*.05),ow=o.w||Math.max(1.4,len*.017),sd=o.seed||9;
+  const OL=o.oarLen!=null?o.oarLen:Math.min(23,len*.12),cr=Math.min(24,len*.07);
+  const line=(rad,seed)=>arcPts(C[0],C[1],rad,a0,a1,o.wob!=null?o.wob:Math.min(1.5,len*.004),seed);
+  const put=(p,w,s)=>o.inlay?inlayLine(g,p,w,s,{}):chase(g,p,{w:w,alpha:o.alpha||.6});
+  put(line(r,sd),ow,sd+1);
+  put(line(r+d,sd+2),ow*.8,sd+3);
+  const n=o.oars||14;
+  for(let i=0;i<=n;i++){const t=i/n,a=a0+(a1-a0)*t,L=OL*(.72+.42*Math.sin(t*Math.PI));
+    put([[C[0]+Math.cos(a)*(r+d),C[1]+Math.sin(a)*(r+d)],[C[0]+Math.cos(a)*(r+d+L),C[1]+Math.sin(a)*(r+d+L)]],ow*.62,sd+20+i);
+    if(o.crew)put([[C[0]+Math.cos(a)*r,C[1]+Math.sin(a)*r],[C[0]+Math.cos(a)*(r-L*.6),C[1]+Math.sin(a)*(r-L*.6)]],ow*.5,sd+60+i);}
+  // the prows: the ends turn up and curl, as they do on every panel and every razor handle
+  for(const e of[a0,a1]){const dir=e<Math.PI/2?1:-1;
+    const ex=C[0]+Math.cos(e)*(r+d/2)-Math.cos(e)*cr*1.15,ey=C[1]+Math.sin(e)*(r+d/2)-Math.sin(e)*cr*1.15,p=[];
+    for(let i=0;i<=26;i++){const t=i/26,ang=(e+Math.PI)+t*TAU*.8*dir,rr=cr*(1-t*.42);p.push([ex+Math.cos(ang)*rr,ey+Math.sin(ang)*rr]);}
+    put(p,ow*.7,sd+90+dir);}
+  if(o.sun){const sx=cx,sy=cy-len*.30;
+    o.inlay?punchStar(g,sx,sy,len*.08,sd+120):chase(g,ringPts(sx,sy,len*.075,.5,sd+121),{w:ow*.8,alpha:o.alpha||.6,close:true});}}
+
+const FIG=[[962,392],[1052,316],[1140,244]];
+function paintFigure(g){
+  // the figure chased faint behind its stars, exactly as the shipped sheet engraves its Hevelius hand
+  g.save();g.globalAlpha=.6;paintShip(g,1046,352,220,{spread:Math.PI*.27,alpha:.8,oars:15,crew:true,sun:true,oarLen:17,seed:21});g.restore();
+  chase(g,[FIG[0],FIG[1],FIG[2]],{w:1.7,alpha:1,lip:'rgba(244,206,146,.8)'});
+  for(let i=0;i<3;i++)punchStar(g,FIG[i][0],FIG[i][1],i===0?7.6:6.4,31+i*5);
+  chase(g,ringPts(FIG[0][0],FIG[0][1],13,.7,44),{w:1,close:true,alpha:.45});
+  // the name mark: the same ship, small and in gold — a pictograph where another era would set a word
+  paintShip(g,1046,452,92,{spread:Math.PI*.29,inlay:true,oars:9,sun:true,oarLen:10,seed:41});
+  ink(g,1046,492,'*skipą · the ship',{size:11,style:'italic',alpha:.95});
+  ink(g,1046,505,'three points struck · +60 and a reprieve',{size:8.8,fill:T.glossDim,track:.7});}
+
+/* The player is the barge itself: gold, on a chased orbit ring round one body, with the flown path
+   behind it as a run of struck marks and the next aim as a fainter dotted line of the same marks. */
+const PLAY={cx:820,cy:282,r:68};
+function paintOrbit(g){
+  chase(g,ringPts(PLAY.cx,PLAY.cy,PLAY.r,1.1,77),{w:2.6,close:true,alpha:1,lip:'rgba(248,214,150,.85)'});
+  chase(g,ringPts(PLAY.cx,PLAY.cy,PLAY.r+5,.9,78),{w:1,close:true,alpha:.45});
+  // the lap already held is seated in foil, the rest of the ring only cut: the orbit fills as it is flown
+  inlayLine(g,arcPts(PLAY.cx,PLAY.cy,PLAY.r,-2.9,-1.6,.9,79),2.4,79);
+  // the flown path: this era has no continuous line to draw, so a trail is a run of taps
+  const trail=[];for(let i=0;i<=24;i++){const t=i/24,x=lerp(330,PLAY.cx-PLAY.r*.72,t),y=lerp(190,PLAY.cy-PLAY.r*.72,t)+Math.sin(t*Math.PI)*-24;trail.push([x,y]);}
+  chase(g,trail,{w:.9,alpha:.35});
+  for(let i=0;i<trail.length;i+=2)punchStar(g,trail[i][0],trail[i][1],1.8+(i/trail.length)*2.2,90+i);
+  // the aim guide for the next transfer, struck lighter because it has not been flown yet
+  const aim=[];for(let i=0;i<=18;i++){const t=i/18;aim.push([lerp(PLAY.cx+PLAY.r*.86,FIG[0][0]-14,t),lerp(PLAY.cy+PLAY.r*.5,FIG[0][1]-10,t)+Math.sin(t*Math.PI)*16]);}
+  g.save();g.globalAlpha=.6;for(let i=1;i<aim.length-3;i+=2)peck(g,aim[i][0],aim[i][1],2.4,{lit:'rgba(238,198,138,.55)'});g.restore();}
+
+function paintBarge(g,x,y,ang){ // the comet: the same ship again, at the size of a vehicle
+  g.save();g.translate(x,y);g.rotate(ang);
+  paintShip(g,0,9,48,{spread:Math.PI*.32,inlay:true,oars:7,sun:true,oarLen:7,seed:55});
+  g.restore();}
+
+const PICKUPS=[
+  {x:944,y:548,g:'punched star · sling'},
+  {x:1078,y:548,g:'lozenge · scutum'},
+  {x:944,y:634,g:'sun-cross · repulsa'},
+  {x:1078,y:634,g:'Ösenring · inkwell'}];
+function paintPickups(g){
+  const [a,b,c,d]=PICKUPS;
+  // the slingshot: one star struck larger and rayed, since it is the star that throws you onward
+  punchStar(g,a.x,a.y,9,111);
+  for(let i=0;i<8;i++){const t=i/8*TAU;inlayLine(g,[[a.x+Math.cos(t)*11,a.y+Math.sin(t)*11],[a.x+Math.cos(t)*(i%2?16:21),a.y+Math.sin(t)*(i%2?16:21)]],1.8,112+i);}
+  // the shield: the Bush Barrow lozenge, nested — incised on the original, so incised here too
+  for(let k=0;k<3;k++){const s=21-k*6.5,p=[[b.x,b.y-s],[b.x+s*.72,b.y],[b.x,b.y+s],[b.x-s*.72,b.y]];
+    k===0?inlayLine(g,p,2.4,120,{close:true}):chase(g,p,{w:1.4,close:true,alpha:.85});}
+  // the reflector: the sun-cross in its ring, the motif that throws the light back out
+  inlayLine(g,ringPts(c.x,c.y,16,.5,130),2.4,130,{close:true});
+  for(let i=0;i<4;i++){const t=i/4*TAU+Math.PI/4;inlayLine(g,[[c.x-Math.cos(t)*15,c.y-Math.sin(t)*15],[c.x+Math.cos(t)*15,c.y+Math.sin(t)*15]],1.9,131+i);}
+  // the inkwell: an Ösenringbarren, the open ring ingot this culture exchanged by heft alone (§6)
+  inlayLine(g,arcPts(d.x,d.y,16,Math.PI*.4,Math.PI*2.6,.6,140),4.6,140,{cap:'round'});
+  for(const e of[Math.PI*.4,Math.PI*2.6]){const px=d.x+Math.cos(e)*16,py=d.y+Math.sin(e)*16;
+    inlayLine(g,arcPts(px,py,4.5,0,TAU,.3,141),2.2,141,{close:true});}
+  for(const p of PICKUPS)ink(g,p.x,p.y+32,p.g,{size:9.2,fill:T.glossDim,track:.6});}
+
+/* ================= THE HUD, IN THE ONLY NOTATION THIS ERA HAS ================= */
+function paintTitleMark(g){
+  // the sun or full moon and the crescent, in the disc's own top-left arrangement: this is the title
+  inlayShape(g,ringPts(252,116,42,.9,201),201,{});
+  g.save();
+  const cr=[];for(let i=0;i<=48;i++){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([322+Math.cos(a)*38,108+Math.sin(a)*38]);}
+  for(let i=48;i>=0;i--){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([336+Math.cos(a)*31,105+Math.sin(a)*31]);}
+  inlayShape(g,cr,202,{});
+  g.restore();
+  ink(g,286,182,'*sunnǭ · *mēnô',{size:12.5,style:'italic',alpha:.95});
+  ink(g,286,196,'the sky disc, seen close',{size:9,fill:T.glossDim,track:1.4});
+  // the magnitude key: the Pleiades, seven marks, every one the same punch — this era's whole answer
+  const cl=[[0,-19],[16,-9],[19,7],[4,17],[-13,13],[-19,-4],[-2,-1]];
+  for(let i=0;i<cl.length;i++)punchStar(g,438+cl[i][0],116+cl[i][1],5.4,210+i);
+  chase(g,ringPts(438,116,29,1,220),{w:1,close:true,alpha:.35});
+  ink(g,438,182,'seven marks, one punch',{size:10.5,style:'italic',alpha:.9});
+  ink(g,438,196,'no size codes brightness',{size:9,fill:T.glossDim,track:1.4});}
+
+function paintHUD(g){
+  // the score, centre top where the shipped sheet puts it: bands, most significant zone on top
+  punchNumeral(g,672,60,618,{dr:4.6,gap:5.2,bh:21,align:'right'});
+  ink(g,684,76,'struck',{size:9.5,fill:T.glossDim,align:'left',track:1.5});
+  ink(g,684,90,'this run',{size:9.5,fill:T.glossDim,align:'left',track:1.5});
+  // pace and flow: the same band logic at label scale, so the whole HUD is one notation
+  ink(g,600,130,'pace',{size:9.5,fill:T.glossDim,align:'right',track:1.2});
+  for(let i=0;i<7;i++)i<5?punchStar(g,614+i*13,126,3.8,230+i):peck(g,614+i*13,126,3.2,{lit:'rgba(206,166,109,.32)'});
+  ink(g,600,152,'flow',{size:9.5,fill:T.glossDim,align:'right',track:1.2});
+  for(let i=0;i<5;i++)i<3?punchStar(g,614+i*13,148,3.8,240+i):peck(g,614+i*13,148,3.2,{lit:'rgba(206,166,109,.32)'});
+  // the currency: gold foil as a strip narrowing as it is spent (§6), never a percentage
+  const x0=556,x1=724,y=182,full=(x)=>15-(x-x0)/(x1-x0)*10;
+  const strip=[];for(let x=x0;x<=x1;x+=6)strip.push([x,y-full(x)/2]);
+  for(let x=x1;x>=x0;x-=6)strip.push([x,y+full(x)/2]);
+  inlayShape(g,strip,250,{});
+  const xs=lerp(x0,x1,.58),spent=[];
+  for(let x=xs;x<=x1+2;x+=6)spent.push([x,y-full(x)/2-1.2]);
+  for(let x=x1+2;x>=xs;x-=6)spent.push([x,y+full(x)/2+1.2]);
+  g.save();poly(g,spent,true);g.fillStyle='rgba(10,6,3,.85)';g.fill();chase(g,spent,{w:1.1,close:true,alpha:.6});g.restore();
+  for(let x=x0+21;x<x1;x+=21)chase(g,[[x,y-10],[x,y+10]],{w:.9,alpha:.4});
+  ink(g,740,186,'*gulþą — the foil narrows with the distance flown',{size:9.5,fill:T.glossDim,track:.8,align:'left'});
+  // best, top right
+  punchNumeral(g,1072,60,74,{dr:4.6,gap:5.2,bh:21,align:'right'});
+  ink(g,1072,118,'best',{size:9.5,fill:T.glossDim,align:'right',track:1.6});}
+
+/* The footer strip is the barge, laid along the bottom of the disc as it lies on the object itself:
+   the last thing added before the disc was disfigured and buried, and the widest mark it carries. */
+function paintFooterBarge(g){
+  paintShip(g,640,744,920,{spread:Math.PI*.042,inlay:true,oars:34,w:5,oarLen:15,seed:300});
+  ink(g,640,712,'the barge carries the sun down out of the field',{size:9.5,fill:T.glossDim,track:1.2});}
+
+/* ================= THE SHEET ================= */
+const BODY_R=44;
+const LAYOUT=[
+  {k:'ocean',x:268,y:282},{k:'crater',x:452,y:282},{k:'ringed',x:636,y:282},{k:'ice',x:820,y:282},
+  {k:'dune',x:268,y:470},{k:'volcanic',x:452,y:470},{k:'storm',x:636,y:470}];
+const HAZ=[
+  {k:'vortex',x:362,y:606,g:'spiral · attractor'},
+  {k:'flare', x:522,y:606,g:'sun-wheel · repulsor'},
+  {k:'wind',  x:682,y:606,g:'oar-strokes · crosswind'},
+  {k:'nebula',x:842,y:606,g:'cup-marks · obscurer'}];
+
+function paintSheet(g){
+  paintGround(g);
+  // the disc's own scattered sky, faint and behind everything: 32 stars, no order, no register
+  const keep=[];
+  for(let i=0;i<34;i++){const x=110+R()*1060,y=70+R()*640;
+    let clear=true;
+    for(const b of LAYOUT)if(Math.hypot(x-b.x,y-b.y)<BODY_R+34)clear=false;
+    for(const h of HAZ)if(Math.hypot(x-h.x,y-h.y)<74)clear=false;
+    if(Math.hypot(x-PLAY.cx,y-PLAY.cy)<PLAY.r+18)clear=false;
+    if(y<210&&x>150&&x<1180)clear=false;
+    if(clear)keep.push([x,y,2+R()*2.4,i]);}
+  g.save();g.globalAlpha=.72;for(const s of keep)punchStar(g,s[0],s[1],s[2],400+s[3]);g.restore();
+  paintArcs(g);
+  paintRim(g);
+  paintTitleMark(g);
+  paintHUD(g);
+  for(let i=0;i<LAYOUT.length;i++){const b=LAYOUT[i];paintBody(g,b.k,b.x,b.y,BODY_R,i*17+3);
+    ink(g,b.x,b.y+BODY_R+50,FAMILIES[i].gloss,{size:10,fill:T.gloss,track:.9});}
+  paintOrbit(g);
+  paintFigure(g);
+  for(let i=0;i<HAZ.length;i++){const h=HAZ[i];paintHazard(g,h.k,h.x,h.y,i*23+5);
+    ink(g,h.x,h.y+62,h.g,{size:10,track:.9});}
+  ink(g,682,680,'this reading is disputed',{size:8.6,fill:T.glossDim,track:.6});
+  paintPickups(g);
+  paintFooterBarge(g);
+  // the inscription block, bottom left, where the shipped sheet keeps its gloss and its chapter
+  ink(g,168,586,'*ajaz — cast bronze',{size:12.5,style:'italic',fill:T.gloss,align:'left'});
+  ink(g,168,602,'sheet i · the quiet',{size:9.5,fill:T.glossDim,align:'left',track:1.2});
+  ink(g,168,618,'rim pierced 39 times',{size:9.5,fill:T.glossDim,align:'left',track:1.2});
+  ink(g,168,642,'struck this run',{size:9.5,fill:T.glossDim,align:'left',track:1.2});}
+
+/* ---------- the reveal: marks arrive one hammer-blow at a time, and each blow flashes and rings ---------- */
+const TALLY=[];for(let r=0;r<2;r++)for(let c=0;c<9;c++)TALLY.push([176+c*13.4,660+r*16]);
+const CYCLE=6.4,BEAT=CYCLE*.62/TALLY.length;
+function paintReveal(g,t){
+  const ph=t%CYCLE;
+  for(let i=0;i<TALLY.length;i++){
+    const born=i*BEAT,age=ph-born;if(age<0)continue;
+    punchStar(g,TALLY[i][0],TALLY[i][1],4.4,500+i);
+    if(age<.42){const f=1-age/.42;
+      g.save();g.globalAlpha=f*.9;
+      g.beginPath();g.arc(TALLY[i][0],TALLY[i][1],4.4*(1+(1-f)*2.6),0,TAU);g.strokeStyle='#fff3d2';g.lineWidth=1.6*f+.4;g.stroke();
+      g.globalAlpha=f*f*.95;g.beginPath();g.arc(TALLY[i][0],TALLY[i][1],4.4*.8,0,TAU);g.fillStyle='#fffaf0';g.fill();
+      g.restore();}}}
+
+/* ---------- the legend (press L): the game's own term against each thing on the sheet ---------- */
+const LEGEND=[
+  [270,222,'ORBIT — the title mark: sun/full moon + crescent'],
+  [470,240,'MAGNITUDINES — the magnitude key'],
+  [640,36,'HUD — score, pace, flow, gold foil (ink)'],
+  [1072,136,'BEST'],
+  [150,352,'frame — horizon arc, the attested 82° span, ticked as the scale'],
+  [1130,352,'frame — horizon arc (mirror)'],
+  [640,20,'rim perforations — this era\'s degree ticks'],
+  [268,238,'body: ocean'],[452,238,'body: crater'],[636,238,'body: ringed'],[820,220,'body: ice'],
+  [268,426,'body: dune'],[452,426,'body: volcanic'],[636,426,'body: storm'],
+  [820,196,'the player: barge on its orbit ring, flown path + aim guide'],
+  [1046,232,'constellation figure, its 3 stars and its name'],
+  [362,552,'VORAGO'],[522,552,'MACULA'],[682,552,'VENTUS'],[842,552,'nebula'],
+  [1011,512,'the four pickups'],
+  [168,568,'inscriptions'],
+  [640,772,'footer — the solar barge'],
+  [232,706,'reveal: the punch, one blow at a time']];
+function paintLegend(g){
+  g.save();
+  g.fillStyle='rgba(4,10,8,.55)';g.fillRect(0,0,W,H);
+  for(const [x,y,s] of LEGEND){
+    g.save();g.font=face(10.5);g.textAlign='center';g.fillStyle=T.legend;
+    try{g.letterSpacing='.6px';}catch(e){}
+    const w=g.measureText(s).width,cx=clamp(x,w/2+10,W-w/2-10);
+    g.fillStyle='rgba(0,0,0,.62)';g.fillRect(cx-w/2-5,y-11,w+10,15);
+    g.fillStyle=T.legend;g.fillText(s,cx,y);g.restore();
+    g.beginPath();g.moveTo(x,y+2);g.lineTo(x,y+9);g.strokeStyle='rgba(150,205,190,.5)';g.lineWidth=1;g.stroke();}
+  g.restore();}
+
+/* ---------- bake the sheet once, then animate only what moves ---------- */
+const baked=layer();paintSheet(baked.g);
+let showLegend=false;
+window.addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L')showLegend=!showLegend;});
+const t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.drawImage(baked.c,0,0,W,H);
+  // the ambient motion: the light itself moves, a slow rake travelling over worked metal
+  const sw=(t*0.055)%1.5-.25;
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  const lg=ctx.createLinearGradient(sw*W-380,sw*H-380,sw*W+380,sw*H+380);
+  lg.addColorStop(0,'rgba(255,224,168,0)');lg.addColorStop(.5,'rgba(255,224,168,.055)');lg.addColorStop(1,'rgba(255,224,168,0)');
+  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
+  // the comet on its ring
+  const a=-2.1+t*0.34;
+  paintBarge(ctx,PLAY.cx+Math.cos(a)*PLAY.r,PLAY.cy+Math.sin(a)*PLAY.r,a+Math.PI/2,1);
+  paintReveal(ctx,t);
+  if(showLegend)paintLegend(ctx);
+  requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
