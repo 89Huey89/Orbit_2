@@ -599,14 +599,15 @@ const HUD_TEXT_HALF=150;
 // without a caption on it, so nothing the pen would letter can show through the title cartouche.
 const captionsHeld=()=>world.state==='ready';
 // Captions ride above their planet, but flip underneath it when the node sits so high that the text would
-// cross the frame's inner rule or run into the DOM score block in the middle of the HUD band. Returns the
-// y offset in node-local coordinates, where 0 is the planet's centre.
+// cross the frame's inner rule or run into the DOM score block in the middle of the HUD band — or when the
+// chapter name is lettered at that same height, as it is over the middle of the three opening targets.
+// Returns the y offset in node-local coordinates, where 0 is the planet's centre.
 function captionOffset(x,y,r,gap){
   const inner=frameBand()*.92+8,guard=Math.abs(x-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner;
-  if(y-r-gap>=guard)return -(r+gap);
+  const band=revealBand(),nearBand=band&&Math.abs(x-W*.5)<W*.45,above=-(r+gap);
+  if(y+above>=guard&&!(nearBand&&y+above>band.top-12&&y+above<band.bottom+12))return above;
   let below=Math.max(r+gap+3,guard+12-y);
-  const band=revealBand();
-  if(band&&Math.abs(x-W*.5)<W*.45&&y+below>band.top&&y+below<band.bottom+12)below=band.bottom+12-y;
+  if(nearBand&&y+below>band.top&&y+below<band.bottom+12)below=band.bottom+12-y;
   return below;
 }
 function drawNode(n,aim){

@@ -434,6 +434,17 @@ $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
+// The full instruction paragraph prints on its own the first time the frontispiece is ever seen;
+// after that it stays off the page unless this toggle calls it back, same as any other standing text.
+function syncInstructions(){
+  const open=!$('instructions').hidden;
+  $('instructions-toggle').textContent=open?'HIDE':'HOW TO PLAY';
+  $('instructions-toggle').setAttribute('aria-expanded',String(open));
+}
+$('instructions-toggle').addEventListener('click',()=>{
+  $('instructions').hidden=!$('instructions').hidden;syncInstructions();
+  if(audio.enabled)audio.brush(1400,.1);
+});
 $('fullscreen').addEventListener('click',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){try{const exit=document.exitFullscreen||document.webkitExitFullscreen;const p=exit.call(document);if(p&&p.catch)p.catch(()=>{});}catch(_){}}
   else enterFullscreen();
@@ -454,4 +465,5 @@ function tick(now){
   }
   requestAnimationFrame(tick);
 }
-syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
+syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
