@@ -28,13 +28,13 @@ corrects and adds to the claims around it. The existing file numbers itself "V";
   (seen closer to face-on, and the plasma orbits too fast to resolve the beaming pattern), dim
   interior. Same family as M87\* — amber ring on black, dark shadow — but visibly less lopsided; a
   chapter plate should show that difference rather than reuse one drawing for both.
-- **SDO/AIA false-colour EUV imagery** (Solar Dynamics Observatory, 2010–) and the **SOHO/LASCO C2/
-  C3 coronagraphs** (1995–) — the Sun's other face this era, an actively imaged, falsely coloured,
-  instrument-annotated object rather than merely a body among the seven families.
-- **Gaia's all-sky maps** (ESA, colour and density maps, first from EDR3 in December 2020, DR3 in
-  2022) — built from parallaxes and photometry of upward of 1.8 billion sources, rendered as a
-  smooth density field rather than discrete stars; the galactic plane reads as a bright band, the
-  Sagittarius dwarf galaxy a faint smear beneath the core.
+- **SDO/AIA false-colour EUV imagery** (2010–) and the **SOHO/LASCO C2/C3 coronagraphs** (1995–) —
+  the Sun's other face this era, an actively imaged, instrument-annotated object, not merely a body
+  among the seven families.
+- **Gaia's all-sky maps** (ESA, colour and density maps, EDR3 December 2020, DR3 2022) — built from
+  parallaxes and photometry of upward of 1.8 billion sources, a smooth density field rather than
+  discrete stars; the galactic plane a bright band, the Sagittarius dwarf galaxy a faint smear
+  beneath the core.
 
 The era's *grammar* is pulled from the Pillars sequence and the EHT images together: the first
 supplies the false-colour-and-says-so discipline and the instrument margin, the second the
@@ -54,11 +54,11 @@ Team (STScI/AURA)"); JWST images read "NASA, ESA, CSA, STScI," often with a name
 credited "Image Processing." Nothing is anonymous — the opposite of an engraver's cartouche in
 every way except that both exist to say who made this and stand behind it.
 
-What is emphatically NOT present: hatching; a horizon or a ground; any mythological figure (the
-constellation figures a Hevelius plate draws are entirely absent from a modern sky image — Gaia and
-Pan-STARRS chart the same stars with no line between them); ornamental borders; hand lettering. The
-one thing every document shares with the engraving it supersedes is *disclosure* — Bayer's plates
-say which edition and printer made them, the way a FITS header says which telescope and filter.
+Emphatically NOT present: hatching; a horizon or ground; any mythological figure (a Hevelius plate's
+figures are entirely absent from a modern sky image — Gaia and Pan-STARRS chart the same stars with
+no line between them); ornamental borders; hand lettering. The one thing every document shares with
+the engraving it supersedes is *disclosure* — Bayer's plates name their edition and printer, the way
+a FITS header names its telescope and filter.
 
 ## 3. Palette
 
@@ -143,8 +143,8 @@ the game's score are typographically the same kind of object: a value in a label
 ## 5. Names for the game's things
 
 This era has no constructed language to translate into — its vocabulary is the literal operational
-language of telescope time, and that is a gift: almost everything below is attested rather than
-invented, because the game's own mechanics were built to mirror how an observing run actually works.
+language of telescope time, and almost everything below is attested rather than invented, because
+the game's mechanics already mirror how an observing run actually works.
 
 | Game term | Era's word | Gloss | Attested? |
 |---|---|---|---|
@@ -289,19 +289,17 @@ pieces of era III's chrome this era does not have to replace.
 
 ## 11. Sound
 
-- **Guide-star lock** — a short, clean two-tone chime, replacing the burin's wet-ink tick, marking
-  an acquisition (capture) the way a real lock-confirmed tone would.
-- **Shutter** — a single dry mechanical click for a released exposure (transfer/release), nothing
-  sustained.
-- **CCD readout** — a brief descending electronic whine or chatter under a capture's score gain, in
-  place of the brush-noise accent; readout is real telescope-operations texture, not invented.
+- **Guide-star lock** — a short, clean two-tone chime replacing the burin's wet-ink tick, marking an
+  acquisition (capture).
+- **Shutter** — a single dry mechanical click on release/transfer, nothing sustained.
+- **CCD readout** — a brief descending electronic whine under a capture's score gain, in place of
+  the brush-noise accent; real telescope-operations texture, not invented.
 - **Slew motor** — a low continuous whir/servo hum while a transfer is in flight, replacing the
   quill-scratch grain the engraving era uses for the same moment.
-- **Warning klaxon / safe-mode alarm** — a harder, more electronic tone than era III's descending
-  death tones for a lethal hazard contact, evoking a spacecraft entering safe mode rather than a
-  ship going down.
-- **Telemetry beep** — a soft, regular background tick under the HUD's FITS-card reveal, underscoring
-  the typewriter cadence described in §4.
+- **Warning klaxon / safe-mode alarm** — harder and more electronic than era III's descending death
+  tones, evoking a spacecraft entering safe mode rather than a ship going down.
+- **Telemetry beep** — a soft regular tick under the HUD's FITS-card reveal, underscoring the
+  typewriter cadence of §4.
 
 ## 12. Risks and open questions
 

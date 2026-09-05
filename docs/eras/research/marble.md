@@ -223,35 +223,26 @@ trade the player reads before committing.
 Per `DANGERS.md`, these are depictions of the three existing rows, not new gameplay, unless the
 ladder later adopts option B or C.
 
-- **Attractor (VORAGO) → Charybdis.** The whirlpool of the *Odyssey*, described by Homer as
-  seething like a cauldron on drawing water in and roaring hideously as it lets go — a description
-  that already reads like a specification for a radial pull field. Drawn as a deep drilled spiral
-  in the relief-carving idiom (the same running-drill technique Roman marble workers used for
-  undercut hair and drapery, applied here to a spiral rather than a curl), or on the metal grammar
-  as concentric engraved rings tightening toward a punched centre.
+- **Attractor (VORAGO) → Charybdis.** The whirlpool of the *Odyssey*, seething like a cauldron
+  drawing water in and roaring hideously letting go — already a specification for a radial pull
+  field. Drawn as a deep drilled spiral (the running-drill technique Roman workers used for
+  undercut hair/drapery, applied to a spiral), or on the metal grammar as engraved rings tightening
+  toward a punched centre.
 - **Repulsor (MACULA) → Phaethon's fall.** Phaethon, son of Helios, lost control of the sun's
-  chariot and was struck from the sky by Zeus's thunderbolt before he could set the world alight —
-  an outward, scorching, once-averted catastrophe that maps directly onto a repulsor's outward
-  push and small lethal core. Drawn as a radiate solar disc with a falling chariot-wheel motif at
-  its rim. **Caution:** *Phaethon* is also the attested Greek name for the planet Jupiter (§5's
-  companion note) — a different mythic referent entirely. The game should pick one sense and gloss
-  it once in the frame, or use the fuller phrase *Hēliou harma* ("the Sun's chariot") for the
-  danger specifically, to keep the two apart.
-- **Crosswind (VENTUS) → the Anemoi.** Individually named winds — Boreas from the north, Zephyros
-  from the west, plus six others — carved as winged, wind-blowing figures on the octagonal Tower of
-  the Winds in the Roman Agora at Athens (built by Andronicus of Cyrrhus, c. 50 BCE, Pentelic
-  marble), each figure on the face its wind blows from. This is very likely the ultimate
-  typological ancestor of every corner wind-head cut into a Renaissance map's frame — Vitruvius
-  describes the tower and its eight winds in *De Architectura* I.6, a text Renaissance
-  cartographers demonstrably knew — but a direct citation chain from this specific tower to era
-  III's specific wind-heads was not independently confirmed this session; treat the lineage as
-  well-established art-historical convention rather than a proven single-source descent, and mark
-  it (unverified in the strict, single-document sense) accordingly.
-- **Obscurer (nebula) → the Milky Way as Hera's milk.** Γαλαξίας (*galaxias*), "the milky one" —
-  the literal root of the modern word "galaxy" — from the myth that the band was spilled when the
-  infant Heracles, nursing at a tricked or startled Hera's breast, was pulled away and her milk
-  arced across the sky. A soft, diffuse, non-lethal band is exactly the obscurer's function already
-  and needs no invention at all — the era's own name is also the modern astronomical name.
+  chariot and was struck down before he could set the world alight — outward, scorching, once-
+  averted. Drawn as a radiate solar disc with a falling chariot-wheel motif at its rim. **Caution:**
+  *Phaethon* is also the attested Greek name for the planet Jupiter (§5) — a different referent;
+  gloss once, or use *Hēliou harma* ("the Sun's chariot") for the danger specifically.
+- **Crosswind (VENTUS) → the Anemoi.** Named winds — Boreas (N), Zephyros (W), six others — carved
+  as winged figures on the octagonal Tower of the Winds, Roman Agora, Athens (Andronicus of
+  Cyrrhus, c. 50 BCE, Pentelic marble), each on the face its wind blows from. Very likely the
+  typological ancestor of every corner wind-head on a Renaissance map (Vitruvius describes the
+  tower in *De Architectura* I.6, which Renaissance cartographers knew), but a direct citation
+  chain to era III's specific wind-heads was not confirmed this session — mark (unverified).
+- **Obscurer (nebula) → the Milky Way as Hera's milk.** Γαλαξίας (*galaxias*, "the milky one," the
+  literal root of "galaxy") — from the myth of Hera's spilled milk nursing the infant Heracles. A
+  soft, diffuse, non-lethal band is exactly the obscurer's function already; the era's own name is
+  also the modern one.
 
 ## 8. The seven families
 

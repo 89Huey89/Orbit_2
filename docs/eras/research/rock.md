@@ -137,47 +137,39 @@ animate differently:
 
 - **Dots**, palm- or fingertip-loaded with wet ochre and pressed to the wall repeatedly (Chauvet's
   Panel of Hand Dots). A dab, not a stroke — no direction, no leading edge.
-- **Hand stencils**, negative: a hand held flat to the wall, pigment blown around it either by
-  mouth directly or through a hollow bone tube, leaving a silhouette. Widely attested across
-  Chauvet, El Castillo and many other sites; some panels carry the same individual's hand
-  returning at different points, identifiable by finger length and proportion, which is the
-  closest thing this era has to a signature.
-- **Positive handprints**, the hand itself dipped in pigment and pressed to the rock — rarer than
-  the stencil, and the direct opposite gesture: contact leaves the mark rather than contact
-  protecting the rock from it.
-- **Engraved tallies**, cut into bone, antler, ivory or soft rock with a flint burin — the
-  Blanchard plaque, Ishango, Lebombo. A single incision per unit counted, sometimes grouped by a
-  change of tool, of pressure, or of sitting rather than by any fixed base; the Lebombo bone's own
-  notches vary slightly in depth and spacing, consistent with having been cut in more than one
-  session rather than to a plan.
+- **Hand stencils**, negative: a hand held flat to the wall, pigment blown around it by mouth or
+  through a hollow bone tube, leaving a silhouette. Widely attested across Chauvet, El Castillo
+  and elsewhere; some panels carry the same individual's hand returning at different points,
+  identifiable by finger proportion — the closest thing this era has to a signature.
+- **Positive handprints**, the hand dipped in pigment and pressed to the rock — rarer than the
+  stencil, and the opposite gesture: contact leaves the mark rather than protecting the rock from it.
+- **Engraved tallies**, cut into bone, antler, ivory or soft rock with a flint burin — Blanchard,
+  Ishango, Lebombo. One incision per unit counted, sometimes grouped by a change of tool,
+  pressure, or sitting rather than any fixed base; Lebombo's own notches vary slightly in depth
+  and spacing, consistent with more than one sitting.
 
 **How this drives the reveal.** `writeText()` and `penLettering()` both assume a script with a
-stroke order to animate. This era has no stroke order to give them, and the honest answer is to
-retire both for chart content and replace them with three simpler primitives, each keyed to one
-of the techniques above: a **dab** (opacity ramps in on contact, no clip, no direction — for the
-dot/tally marks that carry numbers, see §9), a **stencil bloom** (a soft-edged silhouette fades up
-from the outside in, as blown pigment would settle), and a **burin tally** (a single short stroke
-appears per unit, left to right in the order counted, with no ligature between strokes — this is
-the one place a "stroke order" survives, because a tally genuinely has one: each notch was cut
-after the last). None of these needs a single glyph outline from `glyphs.js`, and none needs
-`fontkit` run against a new face.
+stroke order. This era has none to give them, so retire both for chart content and replace them
+with three primitives keyed to the techniques above: a **dab** (opacity ramps in on contact, no
+clip, no direction — for the marks that carry numbers, see §9), a **stencil bloom** (a soft-edged
+silhouette fades up from the outside in, as blown pigment settles), and a **burin tally** (one
+short stroke per unit, left to right in the order counted, no ligature between strokes — the one
+place a real "stroke order" survives, since each notch was genuinely cut after the last). None of
+these needs a glyph outline from `glyphs.js` or `fontkit` run against a new face.
 
 **Numerals.** There were none, in the sense every later era has them — no positional system, no
-zero, nothing resembling Roman or Egyptian numerals. What existed was one-to-one correspondence:
-one notch per unit observed. The design implication for the HUD is direct — see §9.
+zero. What existed was one-to-one correspondence: one notch per unit observed. See §9 for the HUD.
 
-**Fonts: what to embed, and what not to.** Nothing needs embedding for the chart itself, which is
-the whole point. `IM Fell English`/`IM Fell English SC` should stay exactly where they are for any
-meta-chrome the game keeps outside the in-fiction chart (if any survives once the DOM itself is
-drawn in the era's own hand — see §9's open question); no new OFL face is required for era 0
-content. One check the brief specifically asked for, and it is worth stating plainly: **do not use
-any of the commercial "petroglyph" or "cave/primitive" novelty typefaces that exist** (P22's
-Petroglyphs picture font, ParaType's PT Petroglyph, and a long tail of "primitive"-tagged display
-faces on font marketplaces). These exist, they are not OFL, and — more to the point — using one
-would be exactly the fantasy-rune move this document exists to rule out: a font implies a fixed,
-repeatable sign-to-sound alphabet, and this era demonstrably had no such thing. If the mark
-system above ever needs a fourth primitive, draw it from an attested motif (§5's table), not from
-a typeface catalogue.
+**Fonts: what to embed, and what not to.** Nothing needs embedding for the chart itself — the
+whole point. `IM Fell English`/`IM Fell English SC` stay for any meta-chrome outside the
+in-fiction chart, if any survives once the DOM is drawn in the era's own hand (§9's open
+question); no new OFL face is required. One check the brief specifically asked for: **do not use
+any of the commercial "petroglyph"/"primitive" novelty typefaces that exist** (P22's Petroglyphs
+picture font, ParaType's PT Petroglyph, and a tail of "primitive"-tagged display faces on font
+marketplaces). They are not OFL, and — more to the point — using one is exactly the fantasy-rune
+move this document rules out: a font implies a fixed, repeatable sign-to-sound alphabet, and this
+era had no such thing. A fourth reveal primitive, if one is ever needed, should come from an
+attested motif (§5), not a typeface catalogue.
 
 ## 5. Names for the game's things
 
@@ -221,13 +213,12 @@ or a spiral is not recovered), that is called out plainly rather than implied.
 **The currency is ochre**, and pigment generally — this needs no renaming, only naming correctly.
 It was mined (a worked haematite mine at Bomvu Ridge/Lion Cave in the Lebombo Mountains, near
 where the tally bone was found, is commonly cited as one of the oldest known mines, on the order
-of 40,000+ years old — treat the precise figure as approximate pending a fresh check), ground on a
-stone palette, and mixed with a binder — water, animal fat, plant sap, saliva, or blood have all
-been proposed and are not always distinguishable in the archaeological record. Getting pigment
-onto a wall meant sourcing the mineral, grinding it, carrying it — often kilometres, often deep
-into total darkness by a light source that was itself burning down as you worked. That is already
-almost exactly the shape of the ink resource: a substance that is scarce, physically carried, and
-spent by the act of making a mark, replenished only by more of the same labour.
+of 40,000+ years old — treat the figure as approximate), ground on a stone palette, and mixed
+with a binder — water, animal fat, plant sap, saliva or blood have all been proposed and are not
+always distinguishable archaeologically. Getting pigment onto a wall meant sourcing the mineral,
+grinding it, and carrying it — often kilometres, often deep into total darkness by a light source
+itself burning down as you worked. That is already almost exactly the shape of the ink resource:
+scarce, physically carried, spent by the act of making a mark, replenished only by more labour.
 
 **"No twist" reading:** rename ink to ochre, keep every number, every mechanic, every hazard row
 exactly as shipped. This costs nothing and is legitimate on its own — the currency substance
@@ -261,58 +252,53 @@ here is a new hazard, only a new name and a new drawing for an existing one.
 ## 8. The seven families
 
 **Ocean** is an undulating engraved line filled with a thin, dilute manganese wash — no flat
-colour, the wash pooling unevenly the way a real ground pigment does, the body's edge a single
-scored contour rather than a keyline.
+colour, the wash pooling unevenly, the body's edge a single scored contour rather than a keyline.
 
 **Crater** wears its own logic on its face: a rounded, ochre-washed disc pocked with pecked cup
-marks, each catching torchlight on one edge and shadow on the other, the way a real Palaeolithic
-cup mark reads by relief rather than colour.
+marks, each catching torchlight on one edge and shadow on the other, the way a real cup mark
+reads by relief rather than colour.
 
 **Ringed** is a cup-and-ring motif taken whole — a central pecked cup with one to three concentric
-pecked rings around it, the rings themselves the whole depiction of "ringed," needing no separate
-ring-plane drawn in false perspective.
+pecked rings around it, the rings themselves the whole depiction of "ringed," no separate
+ring-plane needed.
 
-**Ice** is bare stone, kaolin-pale, deliberately under-marked — the "reserve" principle turned into
-a body: the least-worked surface in the family, a rim of white chalk stipple at the limb and
+**Ice** is bare stone, kaolin-pale, deliberately under-marked — the "reserve" principle turned
+into a body: the least-worked surface in the family, a rim of white chalk stipple at the limb and
 nothing else, so it reads as withheld rather than empty.
 
-**Dune** is an ochre wash raked by finger-combed flutings, parallel ridged lines dragged through
-wet pigment exactly as the era's "macaroni" marks are dragged through soft clay — texture carrying
-the family, not a drawn dune silhouette.
+**Dune** is an ochre wash raked by finger-combed flutings, ridged lines dragged through wet
+pigment exactly as the era's "macaroni" marks are dragged through soft clay — texture carrying
+the family, not a drawn silhouette.
 
-**Volcanic** is the reddest ochre the palette allows, veined with scored black fissures that follow
-the disc's curve rather than crossing it — the era's most saturated body, matching how red is the
-era's most reserved pigment.
+**Volcanic** is the reddest ochre the palette allows, veined with scored black fissures that
+follow the disc's curve rather than crossing it — the most saturated body, matching how red is
+the era's most reserved pigment.
 
 **Storm** is a dense, directionless cluster of short comma-strokes cut fast with the burin — drawn
-from the same catalogue of unread geometric signs Lascaux itself carries roughly fifty of, so the
-family's "storm" reading is honestly built from a real sign-class whose actual meaning nobody has
-recovered, same honesty this whole document tries to keep.
+from the same catalogue of unread geometric signs Lascaux carries roughly fifty of, so the
+reading is honestly built from a real sign-class whose meaning nobody has recovered.
 
 ## 9. Chart furniture, frame, HUD
 
 Nothing surrounds this era's sky. No border, no cartouche, no colophon, no scale, no maker's mark
 — the rock has no margin, and a figure's edge is wherever the rock or the torchlight stops, not
 wherever a rule was drawn. This is the era's most extreme departure from every other plate on the
-ladder, all of which keep *some* frame, and it should be played as exactly that: the plate-mark
-and double rule dissolve into a soft vignette — a pool of visible warmth against unlit dark at the
-edges, contracting and pulsing per §6's torch rule — and the compass rose, RA-hour ticks and
-declination ticks simply do not exist on this plate. Where a border must exist for playability
-(the chart still has edges the player can fly off), the natural substitute is an irregular rock
-edge or crack rather than a drawn rectangle.
+ladder, and it should be played as exactly that: the plate-mark and double rule dissolve into a
+soft vignette — a pool of visible warmth against unlit dark at the edges, contracting and pulsing
+per §6's torch rule — and the compass rose, RA-hour and declination ticks simply do not exist on
+this plate. Where a border must exist for playability, the natural substitute is an irregular
+rock edge or crack rather than a drawn rectangle.
 
 **HUD numbers become tally marks — the honest and the hard version of that idea.** Small,
 fast-changing counts (flow ×n, orbits skipped, a shield's single charge) fit the era's own
-one-to-one tally logic directly: draw them as a short burin-tally cluster, left to right, one
-stroke per unit, exactly as §4 proposes. Large, slow-changing numbers (score, personal best,
-lifetime captures) do not — nobody tallied into the hundreds by single notches, and a literal
-one-per-unit rendering of a four-digit score would be either illegible or absurdly long. The
-honest move, grounded in what the tally bones actually are, is to let large numbers become **a
-dot-field whose density communicates magnitude rather than exact count** — closer to how the real
-bones read at a glance (roughly this many marks, grouped roughly like this) than to a printed
-digit ever did. This is also the one point in the whole document that should be flagged as a real
-UX risk before it is built: tallies and dot-density are not as instantly legible as Arabic
-numerals, and this game is timed. §12 proposes a spike.
+one-to-one tally logic directly: a short burin-tally cluster, left to right, one stroke per unit
+(§4). Large, slow-changing numbers (score, personal best, lifetime captures) do not — nobody
+tallied into the hundreds by single notches, and a literal one-per-unit four-digit score would be
+illegible or absurdly long. The honest move is to let large numbers become **a dot-field whose
+density communicates magnitude rather than exact count** — closer to how the real bones read at a
+glance than to a printed digit. This is the one point in the whole document to flag as a real UX
+risk before it is built: tallies and dot-density are not as instantly legible as Arabic numerals,
+and this game is timed. §12 proposes a spike.
 
 **Captions become no words at all.** Named-feat medals and constellation names, currently Latin
 strings, have no equivalent script to be set in; the honest substitute is a small pictogram — an

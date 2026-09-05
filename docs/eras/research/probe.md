@@ -17,87 +17,57 @@ contains it, and that is what sections 1–4 below verify.
 
 ## 1. The documents
 
-- **Pioneer plaque** (Pioneer 10, launched 1972; Pioneer 11, 1973). Gold-anodized **6061-T6
-  aluminum**, 6 × 9 in (15.2 × 22.9 cm), 0.05 in thick, bolted to the spacecraft's antenna
-  support struts where it would be shielded from erosion. Designed by Carl Sagan and Frank
-  Drake at NASA's invitation, with three weeks to prepare it; the artwork — the human figures,
-  the plaque's whole composition — was drawn by **Linda Salzman Sagan**, Sagan's wife, an
-  artist, not by Sagan himself. Content, left to right: a schematic of the hydrogen atom's
-  hyperfine (spin-flip) transition, top left, given as the unit of both length (21 cm) and time
-  (1420 MHz) every other measurement on the plate is expressed in; a radial "pulsar map" of 14
-  pulsars (plus a 15th line to the galactic center on some readings) with their periods given in
-  binary as multiples of that hydrogen unit, letting a finder triangulate both the Sun's
-  position and the launch date from pulsar spin-down; a man and a woman drawn to scale against
-  the spacecraft's silhouette, with the woman's height marked in binary (8, in units of the
-  21 cm wavelength ≈ 168 cm); and a diagram of the solar system's planets with the trajectory
-  that carried Pioneer outward past Jupiter. Frank Drake worked out the pulsar-map encoding;
-  the physical artwork was manufactured for NASA rather than hand-cut by Sagan or Drake
-  (accounts describe a commercial engraving process turning Salzman Sagan's line art into the
-  etched plate — the exact process, chemical etch vs. mechanical engraving, is **unverified**
-  in this pass and worth a dedicated check before the game claims one).
-- **Voyager Golden Record and its cover** (Voyager 1 and 2, both launched 1977). The record
-  itself is **gold-plated copper**, 12 in (30.48 cm) diameter, playable at 16⅔ rpm; its
-  aluminum **cover**, 1/16 × 12 in, is gold-anodized like the Pioneer plaque and bolted over the
-  record to block micrometeorite erosion. The cover carries the actual "writing": engraved
-  instructions for how to play it. A diagram in one corner shows the cartridge and stylus
-  correctly seated at the outside edge, the record's rotation rate given as **binary tick marks
-  ringing the diagram** (one full turn = 3.6 seconds, in units of the same hydrogen line used on
-  the Pioneer plaque), and the resulting playback is described as a video signal to be decoded
-  line by line. The cover also carries the same 14-pulsar map used on Pioneer, again by Drake,
-  giving the finder both the launch epoch and the Sun's galactic position, and a diagram of an
-  ultra-pure Uranium-238 source with its decay curve, so the plaque itself functions as a clock
-  a finder can read regardless of when they find it. The whole Voyager message project was led
-  by Sagan; Jon Lomberg was the project's design director and drew or supervised most of its
-  diagrams, including — per NASA's own account — the record cover's engravings; where a claim
-  below distinguishes Lomberg's hand from Salzman Sagan's specifically, treat it as
-  **unverified** until checked against a primary NASA/JPL credit line.
-- **Arecibo message** (transmitted 16 Nov 1974, Arecibo Observatory, at 2380 MHz toward the
-  globular cluster M13). Not a plate — a **radio bitmap**, 1,679 bits, deliberately the product
-  of two primes (23 × 73) so a receiver has exactly one way to lay it out as a rectangle: 73
-  rows of 23 bits. Decoded as an image it shows, top to bottom: the numbers 1–10 in binary; the
-  atomic numbers of hydrogen, carbon, nitrogen, oxygen and phosphorus; the chemical formulas of
-  DNA's nucleotides; a schematic of the DNA double helix with an estimate of its base-pair
-  count; a human figure with its height given in the same binary units and the era's human
-  population; a diagram of the solar system marking Earth as the transmitting world; and a
-  diagram of the Arecibo dish itself with its diameter. This is the ladder's cleanest example of
-  **the sky as a bitmap** — no picture, only a raster of shaded cells that only *becomes* a
-  picture once the receiver knows the rectangle's shape.
-- **LAGEOS plaque** (LAGEOS satellite, launched 1976; a solid brass sphere roughly 60 cm across
-  studded with retroreflectors, used to track continental drift by laser ranging). Conceived by
-  Sagan, drawn by Jon Lomberg, sealed inside the satellite's core. It shows the Earth's
-  continents at three points: 268 million years ago (the supercontinent Pangaea), at launch
-  (1976), and roughly 8.4 million years in the future — chosen because that is close to when
-  the satellite's orbit is expected to decay and return it to Earth. Unlike Pioneer or Voyager,
-  this plaque's addressee is **not an alien but a future human**, and its "clock" is the same
-  phenomenon — plate tectonics — the satellite itself was launched to measure. That distinction
-  (who is the plate for?) is worth carrying into the game's own framing.
-- **Long Now Rosetta Disk** (The Rosetta Project / Long Now Foundation; a flight duplicate flew
-  aboard ESA's Rosetta orbiter, launched 2004, as a durable backup archive rather than a message
-  outward). A 3 in (7.5 cm) nickel disk, **micro-etched and electroformed** — its ~14,000 pages
-  of text sit about 100 nanometers proud of the surface, each page only 400 microns across,
-  readable at 500–650× magnification. It holds parallel text in roughly a thousand human
-  languages. Another object addressed to the future rather than to the stars, and a second
-  precedent (with LAGEOS) for "durability by metal and micro-etching" as a distinct grammar from
-  "durability by broadcast."
-- **Breakthrough Starshot's StarChip** (announced 2016; unflown, an active engineering concept
-  rather than a built artefact — mark everything here **unverified as to final spec**, since the
-  program is still in R&D). A gram-scale, centimeter-sized wafer probe — camera, photon
-  thrusters, power and comms on one chip — pushed by an Earth-based laser array against a
-  sail described in different design iterations as anywhere from a few meters to ~10 m² and
-  under a gram, on the order of a hundred atoms thick, aimed at roughly a fifth of light speed
-  toward Alpha Centauri. No plaque has been designed for it; if this era wants a "message" for
-  its own probe, it is inventing one at the frontier of what has actually been proposed —
-  including the 2017 "Golden Record 2.0"/One Earth Message project (Jon Lomberg again),
-  which proposed *streaming* a crowdsourced message to New Horizons rather than engraving one;
-  its funding and final disposition are **unverified** in this pass.
-- **CCSDS telemetry transfer frame** (Consultative Committee for Space Data Systems; the format
-  nearly every modern deep-space mission's engineering data actually ships in). Not a museum
-  object but the probe era's real "handwriting": a fixed-length frame prefixed by a 32-bit
-  **attached synchronization marker, hex `1ACFFC1D`**, followed by a primary header (spacecraft
-  ID, virtual channel ID, frame counter, data-field status) and a payload, typically closed with
-  an error-control field. This is how a probe writes — not prose, a grammar of fixed fields
-  repeated at a fixed cadence. It is the section-2 grammar's second half, next to the plaque's
-  hand-drawn one.
+- **Pioneer plaque** (Pioneer 10, 1972; Pioneer 11, 1973). Gold-anodized **6061-T6 aluminum**,
+  6 × 9 in (15.2 × 22.9 cm), 0.05 in thick, bolted to the antenna support struts. Designed by
+  Carl Sagan and Frank Drake in three weeks at NASA's invitation; the artwork itself — the
+  human figures, the whole composition — was drawn by **Linda Salzman Sagan**, an artist, not
+  by Sagan. Content, roughly left to right: the hydrogen atom's hyperfine (spin-flip)
+  transition, top left, fixing the unit of length (21 cm) and time (1420 MHz) every other
+  measurement on the plate uses; a radial "pulsar map" of 14 pulsars, periods given in binary
+  as multiples of that hydrogen unit, letting a finder fix both the Sun's position and the
+  launch date from pulsar spin-down (Drake's encoding); a man and a woman to scale against the
+  spacecraft's silhouette, the woman's height marked in binary (8 × 21 cm ≈ 168 cm); and the
+  solar system with Pioneer's outbound trajectory past Jupiter. Whether the plate was
+  chemically etched or mechanically engraved is **unverified** and worth a dedicated check.
+- **Voyager Golden Record and cover** (Voyager 1 and 2, 1977). Record: **gold-plated copper**,
+  12 in (30.48 cm) diameter, 16⅔ rpm. Cover: gold-anodized aluminum, 1/16 × 12 in, bolted over
+  the record against micrometeorites — and this is where the actual "writing" is. Engraved on
+  it: a cartridge-and-stylus diagram showing correct playback position; the rotation rate given
+  as **binary tick marks ringing the diagram** (one turn = 3.6 s, in the same hydrogen unit as
+  Pioneer); the same 14-pulsar map, again Drake's; and an ultra-pure Uranium-238 source with its
+  decay curve, so the cover is also a clock legible at any finding date. Sagan led the project;
+  Jon Lomberg was design director and NASA credits him with most of the diagrams — where a
+  claim below turns on Lomberg vs. Salzman Sagan specifically, treat it as **unverified**.
+- **Arecibo message** (16 Nov 1974, toward globular cluster M13 at 2380 MHz). Not a plate — a
+  **radio bitmap**, 1,679 bits, deliberately 23 × 73 (both prime) so a receiver has exactly one
+  rectangular layout. Decoded: the numbers 1–10 in binary; the atomic numbers of H, C, N, O, P;
+  DNA's nucleotide formulas and a double-helix schematic with a base-pair estimate; a human
+  figure with height and population; the solar system marking Earth; the Arecibo dish itself.
+  The ladder's cleanest example of **the sky as a bitmap** — a raster of cells that only
+  becomes a picture once the receiver knows the rectangle's shape.
+- **LAGEOS plaque** (1976, sealed in a brass sphere used for laser-ranged continental-drift
+  measurement). Conceived by Sagan, drawn by Lomberg. Shows Earth's continents at three points:
+  268 million years ago (Pangaea), at launch, and ~8.4 million years hence — near when the
+  satellite's orbit is expected to decay and return it. Unlike Pioneer or Voyager, its addressee
+  is **a future human, not an alien**, and its clock is the very phenomenon (plate tectonics)
+  the satellite flew to measure — a distinction worth carrying into the game's framing.
+- **Long Now Rosetta Disk** (Rosetta Project/Long Now; a duplicate flew on ESA's 2004 Rosetta
+  orbiter as backup archive, not outbound message). A 3 in (7.5 cm) **micro-etched, electroformed
+  nickel** disk, ~14,000 pages raised ~100 nm off the surface, each page 400 microns across,
+  readable at 500–650× magnification, in roughly a thousand languages. A second precedent (with
+  LAGEOS) for durability-by-metal-etching addressed to the future rather than to the stars.
+- **Breakthrough Starshot's StarChip** (announced 2016, unflown, active R&D — **unverified as
+  to final spec**). A gram-scale, centimeter wafer probe — camera, photon thrusters, power,
+  comms — pushed by an Earth-based laser against a sail variously specced from a few square
+  meters to ~10 m², under a gram, ~100 atoms thick, targeting roughly a fifth of light speed
+  toward Alpha Centauri. No plaque exists for it; the 2017 "Golden Record 2.0"/One Earth Message
+  project (Lomberg again) proposed *streaming* a message to New Horizons instead of engraving
+  one — its funding and final disposition are **unverified**.
+- **CCSDS telemetry transfer frame** — not a museum object but the era's real handwriting: a
+  fixed-length frame prefixed by a 32-bit attached synchronization marker, hex `1ACFFC1D`, then
+  a primary header (spacecraft ID, virtual channel ID, frame counter, data-field status) and a
+  payload, usually closed with an error-control field. Fixed fields at a fixed cadence, not
+  prose — the grammar's other half, next to the plaque's hand-drawn one (§2).
 
 ## 2. The grammar
 
