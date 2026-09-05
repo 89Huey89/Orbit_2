@@ -75,6 +75,37 @@ function burinArc(g,cx,cy,radius,from,to,rgb,alpha,weight,seed,opts={}){
     g.stroke();
   }
 }
+// A spiral cut the way burinArc cuts a ring, and with the same wobbling, swelling, occasionally
+// skipping burin segments: the difference is only that the radius runs from one value to another
+// across the sweep, so the stroke winds inward instead of closing on itself. Each segment is laid
+// as a quadratic through its own midpoint, which keeps a coarse sweep smooth without a second
+// stroke, so a whole turn of a whirlpool costs about what a turn of a ring costs.
+function burinSpiral(g,cx,cy,rFrom,rTo,from,to,rgb,alpha,weight,seed,opts={}){
+  const span=to-from,rng=seeded(seed>>>0||1);
+  const segCount=opts.segments??clamp(Math.round(Math.abs(span)*Math.max((rFrom+rTo)/2,2)/2.6),6,84);
+  const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
+  const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
+  const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=(opts.wobble??.3)*(1+rng());
+  const skipCount=Math.min(opts.skips??Math.round(segCount*.06),segCount-1),skips=new Set();
+  while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
+  g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
+  for(let i=0;i<segCount;i++){
+    if(skips.has(i))continue;
+    const t0=i/segCount,t1=(i+1)/segCount,a0=from+span*t0,a1=from+span*t1,mid=(a0+a1)/2;
+    const wob=Math.sin(wobFreq*mid+wobPhase)*wobAmp;
+    const s=Math.sin(f1*mid+ph1)*.5+Math.sin(f2*mid+ph2)*.3+Math.sin(f3*mid+ph3)*.2;
+    const r0=Math.max(.05,lerp(rFrom,rTo,t0)+wob),r1=Math.max(.05,lerp(rFrom,rTo,t1)+wob);
+    // The control point is pushed out by the half-angle's secant so the curve passes through the
+    // arc rather than cutting the chord, which is what keeps a two-segment turn from reading as a
+    // polygon at the rim, where the segments are longest.
+    const rm=(r0+r1)/2/Math.max(.2,Math.cos((a1-a0)/2));
+    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45));
+    g.beginPath();
+    g.moveTo(cx+Math.cos(a0)*r0,cy+Math.sin(a0)*r0);
+    g.quadraticCurveTo(cx+Math.cos(mid)*rm,cy+Math.sin(mid)*rm,cx+Math.cos(a1)*r1,cy+Math.sin(a1)*r1);
+    g.stroke();
+  }
+}
 function burinSegment(g,x1,y1,x2,y2,rgb,alpha,weight,seed,opts={}){
   const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,rng=seeded(seed>>>0||1);
   const ph=rng()*TAU,f=2+Math.floor(rng()*2),ph2=rng()*TAU,f2=5+Math.floor(rng()*3);

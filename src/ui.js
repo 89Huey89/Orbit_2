@@ -66,7 +66,7 @@ function event(type,e){
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.shield+' ARMED · SURVIVES ONE BLACK HOLE',{x:e.x,y:e.y});
+    say(POWERUP_LABELS.shield+' ARMED · SURVIVES ONE VORTEX',{x:e.x,y:e.y});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
@@ -153,7 +153,7 @@ function showEnd(){
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
-  $('end-tip').textContent=world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='CAUGHT BY A BLACK HOLE'?'Close flybys bend your path. Follow the curved guide and leave room for the dark center.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
+  $('end-tip').textContent=world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='DRAWN INTO A VORTEX'?'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
   $('announcement').textContent='Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
 // ---------- The catalogue: the ledger's own leaf ----------
@@ -213,7 +213,7 @@ function catalogueRecord(){
     ['Best flow',commas(ledger.bestFlow)+'×'],
     ['Deepest chapter reached',chapterLabel(ledger.deepestChapter)],
     ['Deepest chapter at '+DIFFICULTY_LABELS.hardcore+' pressure',chapterLabel(ledger.deepestHardcoreChapter)],
-    ['Black holes grazed',commas(ledger.grazes)],
+    ['Vortices grazed',commas(ledger.grazes)],
     [POWERUP_LABELS.shield+' spent',commas(ledger.shieldsSpent)],
     [POWERUP_LABELS.reflector+' spent',commas(ledger.reflectorsSpent)],
     ['Slingshots left at top speed',commas(ledger.maxSpeedSlings)],
@@ -315,11 +315,11 @@ function inked(id,text){
   const el=$(id);if(el.textContent===text)return;
   el.textContent=text;el.classList.remove('inked');void el.offsetWidth;el.classList.add('inked');
 }
-// Whichever black hole is nearest the traveller, for the instruction that is about one.
+// Whichever vortex is nearest the traveller, for the instruction that is about one.
 function nearestHazard(){
   let best=null,bestD=Infinity;
   for(const h of world.hazards){
-    if(h.kind&&h.kind!=='hole')continue;
+    if(h.kind&&h.kind!=='vortex')continue;
     const d=Math.hypot(h.x-world.player.x,h.y-world.player.y);
     if(d<bestD){bestD=d;best=h;}
   }
@@ -351,7 +351,7 @@ function updateUI(dt){
     if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent='Plate '+numerals[chapter]+'. '+chapters[chapter]+'.';}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
-  // the orbit being held, or the black hole that is bending the flight. Each is kept on the sheet while
+  // the orbit being held, or the vortex that is bending the flight. Each is kept on the sheet while
   // its condition holds, and left as ink for the chart to carry away as soon as it stops.
   if(world.state==='playing'&&world.difficultyPending){
     inscribeHeld('instruction','Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
@@ -362,7 +362,7 @@ function updateUI(dt){
   }else if(world.state==='playing'&&world.captures<2){
     inscribeHeld('instruction','Tap when the pricked line skims the next orbit’s rim.',{node:world.player.node});
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
-    inscribeHeld('instruction','Black holes bend your flight. Follow the curve; give the dark center room.',{node:nearestHazard()});
+    inscribeHeld('instruction','Vortices bend your flight. Follow the curve; give the dark eye room.',{node:nearestHazard()});
   }
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>.65)showEnd();
 }
