@@ -326,45 +326,62 @@ function ceilingStarBorder(g,x,y0,y1,gap){
   for(let y=y0+gap*.5,i=0;y<y1;y+=gap,i++)
     ceilingStar(g,x,y,4.4,i%3?CEILING_PALETTE.yellow:CEILING_PALETTE.red,1,(y|0)+i);
 }
-// One of the twelve lunar-month circles: twenty-four segments for the hours, every other one flooded
-// blue, a hub and a red centre. Painted rather than ruled, so the ring wanders as a hand's does.
-function ceilingMonthCircle(g,cx,cy,r,alpha=.72){
+// One of the twelve lunar-month circles. TT353 sets these large, separated and individually named;
+// a rigid 3x4 block of one radius and one 24-spoke division reads as twelve copies of one wagon
+// wheel instead of twelve months. seed picks the division count, the flood colour, which wedges
+// take it, the hub's size and whether a second inner rim is drawn, so a wheel at position 5 is a
+// visibly different object from a wheel at position 11 — still one wall hand, twelve months of it.
+const CEILING_MONTH_FLOOD=[CEILING_PALETTE.blue,CEILING_PALETTE.blue,CEILING_PALETTE.yellow,CEILING_PALETTE.blue,CEILING_PALETTE.red,CEILING_PALETTE.blue,CEILING_PALETTE.blue];
+const CEILING_MONTH_DIV=[24,18,24,12,20,24,16,24,18,24,12,24];
+function ceilingMonthCircle(g,cx,cy,r,alpha=.72,seed=0){
+  const div=CEILING_MONTH_DIV[((seed%12)+12)%12],rot=ceilingHash(seed,7)*TAU/div,
+    every=1+(ceilingHash(seed,29)>.62?1:0),flood=CEILING_MONTH_FLOOD[seed%CEILING_MONTH_FLOOD.length],
+    hub=.24+ceilingHash(seed,13)*.13,rim2=ceilingHash(seed,19)>.66;
   g.save();g.globalAlpha=alpha;
-  for(let i=0;i<24;i+=2){
-    const a=i/24*TAU-Math.PI/2,b=(i+1)/24*TAU-Math.PI/2,p=[[cx+Math.cos(a)*r*.34,cy+Math.sin(a)*r*.34]];
+  for(let i=0;i<div;i+=every){
+    const a=i/div*TAU-Math.PI/2+rot,b=(i+1)/div*TAU-Math.PI/2+rot,p=[[cx+Math.cos(a)*r*hub,cy+Math.sin(a)*r*hub]];
     for(let k=0;k<=5;k++){const t=lerp(a,b,k/5);p.push([cx+Math.cos(t)*r*.95,cy+Math.sin(t)*r*.95]);}
-    p.push([cx+Math.cos(b)*r*.34,cy+Math.sin(b)*r*.34]);
-    g.globalAlpha=alpha*.62;g.fillStyle=CEILING_PALETTE.blue;g.beginPath();p.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fill();
+    p.push([cx+Math.cos(b)*r*hub,cy+Math.sin(b)*r*hub]);
+    g.globalAlpha=alpha*.62;g.fillStyle=flood;g.beginPath();p.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fill();
   }
   g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=.75;
-  g.beginPath();g.arc(cx,cy,r,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,r*.3,0,TAU);g.stroke();
-  for(let i=0;i<24;i++){
-    const a=i/24*TAU-Math.PI/2;
-    g.beginPath();g.moveTo(cx+Math.cos(a)*r*.32,cy+Math.sin(a)*r*.32);g.lineTo(cx+Math.cos(a)*r*.95,cy+Math.sin(a)*r*.95);g.stroke();
+  g.beginPath();g.arc(cx,cy,r,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,r*hub*.86,0,TAU);g.stroke();
+  if(rim2){g.globalAlpha=alpha*.7;g.beginPath();g.arc(cx,cy,r*.72,0,TAU);g.stroke();g.globalAlpha=alpha;}
+  for(let i=0;i<div;i++){
+    const a=i/div*TAU-Math.PI/2+rot;
+    g.beginPath();g.moveTo(cx+Math.cos(a)*r*hub*.9,cy+Math.sin(a)*r*hub*.9);g.lineTo(cx+Math.cos(a)*r*.95,cy+Math.sin(a)*r*.95);g.stroke();
   }
-  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*.17,0,TAU);g.fill();g.restore();
+  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*hub*.55,0,TAU);g.fill();g.restore();
 }
 // Meskhetiu, the Foreleg — the seven stars a later century calls the Plough, drawn on this ceiling as
 // the bull they belong to. The seven are set on the animal itself as star signs, which is how the
 // northern panel identifies it: the figure is the constellation, not a label beside one.
 const CEILING_MESKHETIU=[[-1.1,-1.06],[-.68,-1.2],[-.24,-1.26],[.2,-1.16],[.58,-1.02],[.92,-1.2],[1.2,-1.08]];
-function ceilingPaintBull(g,x,y,s,alpha=.5){
+// Drawn large now (see ceilingBuildWall's call), so a leg can no longer be a bare brush stroke with a
+// cap on the end — at thumbnail size that read as a stick with a duck-foot, and at signature size it
+// would read as nothing at all. Each leg is instead a tapered wedge in the body's own red, closed by
+// a small dark hoof, the same two-part construction — flat fill, then a black-line part — the barrel
+// and head already use, so enlarging the figure exposes a drawing rather than a diagram of one.
+function ceilingPaintBull(g,x,y,s,alpha=1){
   g.save();g.globalAlpha=alpha;
-  // the barrel of the body, low and long, on four legs that end in hooves
-  ceilingPolygon(g,[[x-s*1.15,y-s*.22],[x+s*.72,y-s*.3],[x+s*.86,y-s*.02],[x+s*.78,y+s*.3],[x-s*1.02,y+s*.32],[x-s*1.24,y+s*.04]],CEILING_PALETTE.red,1,17,1.3);
-  for(const dx of [-.86,-.42,.24,.62]){
-    ceilingBrush(g,[[x+dx*s,y+s*.26],[x+dx*s-s*.04,y+s*.92]],CEILING_PALETTE.carbon,1.4,.85,dx*100+19);
-    ceilingBrush(g,[[x+dx*s-s*.1,y+s*.92],[x+dx*s+s*.08,y+s*.92]],CEILING_PALETTE.carbon,1.9,.8,dx*100+23);
+  const lw=Math.max(1,s*.055);
+  for(const dx of [-.92,-.48,.22,.62]){
+    const topW=s*.165,botW=s*.075,ly0=y+s*.22,ly1=y+s*.88;
+    ceilingPolygon(g,[[x+dx*s-topW,ly0],[x+dx*s+topW*.68,ly0],[x+dx*s+botW,ly1],[x+dx*s-botW*1.15,ly1]],CEILING_PALETTE.red,1,dx*100+19,lw*1.1);
+    ceilingPolygon(g,[[x+dx*s-botW*1.35,ly1],[x+dx*s+botW*1.15,ly1],[x+dx*s+botW*.55,ly1+s*.1],[x+dx*s-botW*.95,ly1+s*.1]],CEILING_PALETTE.carbon,1,dx*100+23,lw);
   }
-  // the neck and the head, set forward and up, with the horns above and the ear behind them
-  ceilingPolygon(g,[[x+s*.72,y-s*.24],[x+s*1.04,y-s*.5],[x+s*1.2,y-s*.42],[x+s*.92,y-s*.02],[x+s*.76,y+s*.06]],CEILING_PALETTE.red,1,23,1.2);
-  ceilingPolygon(g,[[x+s*1.0,y-s*.52],[x+s*1.46,y-s*.62],[x+s*1.54,y-s*.4],[x+s*1.12,y-s*.3]],CEILING_PALETTE.red,1,29,1.2);
-  ceilingBrush(g,ceilingArcPoints(x+s*1.14,y-s*.72,s*.3,Math.PI*.95,Math.PI*.1,10),CEILING_PALETTE.carbon,1.3,.85,31);
-  ceilingBrush(g,ceilingArcPoints(x+s*1.26,y-s*.68,s*.26,Math.PI*.9,Math.PI*.05,10),CEILING_PALETTE.carbon,1.2,.72,33);
-  ceilingBrush(g,[[x+s*1.02,y-s*.5],[x+s*.86,y-s*.74]],CEILING_PALETTE.carbon,1.2,.8,37);
+  // the barrel of the body, low and long, painted over the tops of the legs it stands on
+  ceilingPolygon(g,[[x-s*1.15,y-s*.22],[x+s*.72,y-s*.3],[x+s*.86,y-s*.02],[x+s*.78,y+s*.3],[x-s*1.02,y+s*.32],[x-s*1.24,y+s*.04]],CEILING_PALETTE.red,1,17,lw*1.6);
+  // the neck and the head, set forward and up, with the ear behind the horns and the horns above it
+  ceilingPolygon(g,[[x+s*.72,y-s*.24],[x+s*1.04,y-s*.5],[x+s*1.2,y-s*.42],[x+s*.92,y-s*.02],[x+s*.76,y+s*.06]],CEILING_PALETTE.red,1,23,lw*1.4);
+  ceilingPolygon(g,[[x+s*.86,y-s*.48],[x+s*.98,y-s*.66],[x+s*1.06,y-s*.5]],CEILING_PALETTE.red,1,101,lw);
+  ceilingPolygon(g,[[x+s*1.0,y-s*.52],[x+s*1.46,y-s*.62],[x+s*1.54,y-s*.4],[x+s*1.12,y-s*.3]],CEILING_PALETTE.red,1,29,lw*1.3);
+  ceilingBrush(g,ceilingArcPoints(x+s*1.14,y-s*.72,s*.3,Math.PI*.95,Math.PI*.1,10),CEILING_PALETTE.carbon,lw*1.3,.85,31);
+  ceilingBrush(g,ceilingArcPoints(x+s*1.26,y-s*.68,s*.26,Math.PI*.9,Math.PI*.05,10),CEILING_PALETTE.carbon,lw*1.2,.72,33);
+  ceilingBrush(g,[[x+s*1.02,y-s*.5],[x+s*.86,y-s*.74]],CEILING_PALETTE.carbon,lw*1.2,.8,37);
   g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*1.3,y-s*.48,s*.06,0,TAU);g.fill();
   // the tail, and the seven stars above the back that are the reason the animal is drawn at all
-  ceilingBrush(g,[[x-s*1.18,y-s*.1],[x-s*1.52,y+s*.34],[x-s*1.4,y+s*.6]],CEILING_PALETTE.carbon,1.2,.7,41);
+  ceilingBrush(g,[[x-s*1.18,y-s*.1],[x-s*1.52,y+s*.34],[x-s*1.4,y+s*.6]],CEILING_PALETTE.carbon,lw*1.2,.7,41);
   for(let i=0;i<CEILING_MESKHETIU.length;i++)
     ceilingStar(g,x+CEILING_MESKHETIU[i][0]*s,y+CEILING_MESKHETIU[i][1]*s,s*.19,CEILING_PALETTE.yellow,1,i*13+5);
   g.restore();
@@ -372,24 +389,34 @@ function ceilingPaintBull(g,x,y,s,alpha=.5){
 // Reret, the hippopotamus, standing upright with the crocodile along her back and one hand on the
 // mooring post — the northern panel's other guardian, and the figure this sheet used to cut to a bare
 // post for want of room.
-function ceilingPaintHippo(g,x,y,s,alpha=.46){
+// Reret used to be cut to a bare post for want of room; drawn at signature size now (see
+// ceilingBuildWall's call), her standing legs get the same wedge-and-hoof construction as the bull's
+// instead of two brush lines, the arm to the post is a wedge rather than a bare stroke, and one flat
+// contour line marks where the belly meets the chest — a line, not a shade, so the barrel reads as a
+// standing body and not the sack the two thumbnail polygons alone came out as.
+function ceilingPaintHippo(g,x,y,s,alpha=1){
   g.save();g.globalAlpha=alpha;
-  ceilingPolygon(g,[[x-s*.5,y+s*1.15],[x+s*.44,y+s*1.15],[x+s*.56,y+s*.2],[x+s*.4,y-s*.62],[x-s*.24,y-s*.78],[x-s*.56,y-s*.2],[x-s*.6,y+s*.6]],CEILING_PALETTE.blue,1,53,1.4);
-  ceilingPolygon(g,[[x-s*.3,y-s*.76],[x+s*.36,y-s*.66],[x+s*.5,y-s*1.02],[x+s*.22,y-s*1.24],[x-s*.26,y-s*1.16]],CEILING_PALETTE.blue,1,57,1.4);
-  ceilingPolygon(g,[[x+s*.2,y-s*1.2],[x+s*.62,y-s*1.28],[x+s*.66,y-s*1.06],[x+s*.4,y-s*1.02]],CEILING_PALETTE.blue,1,61,1.2);
-  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*.3,y-s*1.1,s*.06,0,TAU);g.fill();
+  const lw=Math.max(1,s*.06);
   for(const dx of [-.34,.2]){
-    ceilingBrush(g,[[x+dx*s,y+s*1.1],[x+dx*s,y+s*1.48]],CEILING_PALETTE.carbon,1.5,.82,dx*91+41);
-    ceilingBrush(g,[[x+dx*s-s*.12,y+s*1.48],[x+dx*s+s*.1,y+s*1.48]],CEILING_PALETTE.carbon,1.9,.78,dx*91+47);
+    const topW=s*.15,botW=s*.09,ly0=y+s*.98,ly1=y+s*1.4;
+    ceilingPolygon(g,[[x+dx*s-topW,ly0],[x+dx*s+topW,ly0],[x+dx*s+botW,ly1],[x+dx*s-botW,ly1]],CEILING_PALETTE.blue,1,dx*91+41,lw);
+    ceilingPolygon(g,[[x+dx*s-botW*1.3,ly1],[x+dx*s+botW*1.3,ly1],[x+dx*s+botW*.7,ly1+s*.1],[x+dx*s-botW*.7,ly1+s*.1]],CEILING_PALETTE.carbon,1,dx*91+47,lw*.85);
   }
+  ceilingPolygon(g,[[x-s*.5,y+s*1.02],[x+s*.44,y+s*1.02],[x+s*.56,y+s*.2],[x+s*.4,y-s*.62],[x-s*.24,y-s*.78],[x-s*.56,y-s*.2],[x-s*.6,y+s*.6]],CEILING_PALETTE.blue,1,53,lw*1.6);
+  ceilingBrush(g,[[x-s*.42,y+s*.02],[x-s*.1,y+s*.24],[x+s*.3,y+s*.1]],CEILING_PALETTE.carbon,lw*.7,.42,97);
+  ceilingPolygon(g,[[x-s*.3,y-s*.76],[x+s*.36,y-s*.66],[x+s*.5,y-s*1.02],[x+s*.22,y-s*1.24],[x-s*.26,y-s*1.16]],CEILING_PALETTE.blue,1,57,lw*1.4);
+  ceilingPolygon(g,[[x+s*.2,y-s*1.2],[x+s*.62,y-s*1.28],[x+s*.66,y-s*1.06],[x+s*.4,y-s*1.02]],CEILING_PALETTE.blue,1,61,lw*1.2);
+  ceilingPolygon(g,[[x-s*.2,y-s*1.14],[x-s*.06,y-s*1.3],[x+s*.08,y-s*1.16]],CEILING_PALETTE.blue,1,103,lw);
+  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*.3,y-s*1.1,s*.06,0,TAU);g.fill();
+  ceilingBrush(g,[[x+s*.5,y-s*.98],[x+s*.66,y-s*1.0]],CEILING_PALETTE.carbon,lw*.6,.55,107);
   // The crocodile she carries, laid down the length of her back.
-  ceilingPolygon(g,[[x-s*.44,y-s*.52],[x-s*.28,y-s*.94],[x-s*.02,y-s*1.14],[x-s*.06,y-s*1.26],[x-s*.36,y-s*1.06],[x-s*.6,y-s*.6],[x-s*.66,y+s*.3],[x-s*.5,y+s*.66],[x-s*.66,y+s*.7],[x-s*.82,y+s*.28],[x-s*.74,y-s*.58]],CEILING_PALETTE.green,1,67,1.3);
+  ceilingPolygon(g,[[x-s*.44,y-s*.52],[x-s*.28,y-s*.94],[x-s*.02,y-s*1.14],[x-s*.06,y-s*1.26],[x-s*.36,y-s*1.06],[x-s*.6,y-s*.6],[x-s*.66,y+s*.3],[x-s*.5,y+s*.66],[x-s*.66,y+s*.7],[x-s*.82,y+s*.28],[x-s*.74,y-s*.58]],CEILING_PALETTE.green,1,67,lw*1.3);
   for(let i=0;i<6;i++){const t=i/5,cx=lerp(x-s*.72,x-s*.2,t),cy=lerp(y+s*.2,y-s*1.0,t);
-    ceilingBrush(g,[[cx-s*.05,cy],[cx+s*.09,cy-s*.05]],CEILING_PALETTE.carbon,1.1,.6,71+i);}
-  // The mooring post, the sign she holds and the thing this figure is most often reduced to.
-  ceilingBrush(g,[[x+s*.86,y+s*1.15],[x+s*.86,y-s*1.05]],CEILING_PALETTE.carbon,2.1,.85,79);
-  ceilingBrush(g,[[x+s*.72,y-s*1.05],[x+s*1.0,y-s*1.05]],CEILING_PALETTE.carbon,1.8,.8,83);
-  ceilingBrush(g,[[x+s*.56,y+s*.14],[x+s*.84,y+s*.06]],CEILING_PALETTE.carbon,1.4,.8,89);
+    ceilingBrush(g,[[cx-s*.05,cy],[cx+s*.09,cy-s*.05]],CEILING_PALETTE.carbon,lw*.5,.6,71+i);}
+  // The arm reaching to the mooring post, a wedge instead of a bare line, and the post she holds.
+  ceilingPolygon(g,[[x+s*.5,y+s*.2],[x+s*.86,y+s*.1],[x+s*.84,y+s*.02],[x+s*.5,y+s*.1]],CEILING_PALETTE.blue,1,89,lw*.9);
+  ceilingBrush(g,[[x+s*.86,y+s*1.15],[x+s*.86,y-s*1.05]],CEILING_PALETTE.carbon,lw*1.4,.85,79);
+  ceilingBrush(g,[[x+s*.72,y-s*1.05],[x+s*1.0,y-s*1.05]],CEILING_PALETTE.carbon,lw*1.2,.8,83);
   g.restore();
 }
 function ceilingBuildWall(){
@@ -420,28 +447,57 @@ function ceilingBuildWall(){
   // a visible seam. Checked by eye at 390px and 1400px, stepping world.cameraY across three tile heights.
   const gap=Math.max(20,Math.min(28,H/22)),rows=Math.max(14,Math.round(H*1.6/gap)),R=rows*gap;
   const unitTarget=Math.max(20,Math.min(32,W/36)),gridUnit=R/Math.max(3,Math.round(R/unitTarget));
+  const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,wide=W>=700;
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(R*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
   g.fillStyle=CEILING_PALETTE.plaster;g.fillRect(0,0,W,R);
-  // The wall's texture is material, not pictorial modelling: broad lime patches, worn pits and hairline
-  // cracks. The patches and the cracks are drawn a second time, shifted by ±R, whenever they land within
-  // their own reach of an edge, so the texture wraps rather than ending at one edge of the tile and
-  // starting over, unrelated, at the other.
-  const rng=seeded(14731458),patches=Math.round(180*R/H),cracks=Math.round(20*R/H);
+  // The wall's texture is material, not pictorial modelling. It used to be 180-odd broad, soft-alpha
+  // ellipses per view-height, which is exactly enough overlap to blend into a haze — plaster read as
+  // grey cloud under the drawing rather than as a surface. Far fewer patches now, each an irregular
+  // hard-edged chip at a real, flat alpha instead of a faint blur, plus a crack network below that
+  // actually follows the ruled canon grid the way a real fracture in a plastered, ruled wall would.
+  // Patches and cracks are drawn a second time, shifted by ±R, whenever they land within their own
+  // reach of an edge, so the texture wraps rather than ending at one edge of the tile and starting
+  // over, unrelated, at the other.
+  const rng=seeded(14731458),patches=Math.round(46*R/H),cracks=Math.round(26*R/H);
   for(let i=0;i<patches;i++){
-    const x=rng()*W,y=rng()*R,rx=8+rng()*70,ry=2+rng()*16,rot=(rng()-.5)*.3;
-    g.fillStyle=rng()>.48?'rgba(238,228,205,.08)':'rgba(102,78,49,.045)';
-    const draw=yy=>{g.beginPath();g.ellipse(x,yy,rx,ry,rot,0,TAU);g.fill();};
-    draw(y);if(y<ry+2)draw(y+R);if(y>R-ry-2)draw(y-R);
+    const x=rng()*W,y=rng()*R,r=10+rng()*46,sides=5+Math.floor(rng()*3),rot=rng()*TAU,loss=rng()>.5,
+      fill=loss?'rgba(157,137,102,.17)':'rgba(238,228,205,.22)';
+    const draw=yy=>{
+      g.beginPath();
+      for(let k=0;k<sides;k++){const a=rot+k/sides*TAU,rr=r*(.72+ceilingHash(i,k)*.5),px=x+Math.cos(a)*rr,py=yy+Math.sin(a)*rr*.42;k?g.lineTo(px,py):g.moveTo(px,py);}
+      g.closePath();g.fillStyle=fill;g.fill();
+      if(loss){g.strokeStyle='rgba(157,137,102,.32)';g.lineWidth=.6;g.stroke();}
+    };
+    draw(y);if(y<r*.5+2)draw(y+R);if(y>R-r*.5-2)draw(y-R);
   }
   for(let i=0;i<Math.min(Math.round(1400*R/H),Math.floor(W*R/420));i++){
     const x=rng()*W,y=rng()*R,a=.05+rng()*.08;g.fillStyle=rng()>.55?`rgba(250,243,222,${a})`:`rgba(73,54,34,${a})`;g.fillRect(x,y,.6+rng()*.8,.6+rng()*.8);
   }
+  // A crack runs through the same ruled surface the painter snapped, so the grid is what sets its
+  // scale and its general bearing — but a fracture is not a drawn line, and one that steps cleanly
+  // from intersection to intersection closes rectangles and reads as an anriss in pencil rather than
+  // as a break in lime. So each crack keeps one horizontal sense and one vertical sense for its whole
+  // length, which is what stops it doubling back into a box, and every vertex is thrown off the
+  // intersection it belongs to by a share of a unit, with a wandering midpoint inside each leg.
+  // Plaster fails downward under its own weight, so the vertical sense is always down.
+  const gcols=Math.max(1,Math.round((x1-x0)/gridUnit)),grows=Math.round(R/gridUnit);
   for(let i=0;i<cracks;i++){
-    let x=rng()*W,y=rng()*R;const pts=[[x,y]];for(let j=0;j<3+Math.floor(rng()*4);j++){x+=(rng()-.5)*24;y+=4+rng()*17;pts.push([x,y]);}
-    ceilingBrush(g,pts,CEILING_PALETTE.loss,.45,.17,100+i);
-    if(pts.at(-1)[1]>R)ceilingBrush(g,pts.map(p=>[p[0],p[1]-R]),CEILING_PALETTE.loss,.45,.17,100+i);
+    let gxk=Math.floor(rng()*gcols),gyk=Math.floor(rng()*grows);
+    const sway=rng()<.5?-1:1,off=()=>(rng()-.5)*gridUnit*.5;
+    const at=(kx,ky)=>[x0+kx*gridUnit+off(),ky*gridUnit+off()];
+    let p0=at(gxk,gyk);const pts=[p0],legs=3+Math.floor(rng()*4);
+    for(let j=0;j<legs;j++){
+      if(rng()<.5)gxk=clamp(gxk+sway,0,gcols);else gyk=gyk+1;
+      const p1=at(gxk,gyk);
+      pts.push([lerp(p0[0],p1[0],.5)+off()*.7,lerp(p0[1],p1[1],.5)+off()*.7],p1);p0=p1;
+    }
+    // The break is widest where it started and closes to nothing, so it is laid in two passes rather
+    // than as one even line: the whole run thin, and the first third of it again a shade heavier.
+    const draw=q=>{ceilingBrush(g,q,CEILING_PALETTE.loss,.55,.3,100+i);ceilingBrush(g,q.slice(0,Math.max(2,Math.ceil(q.length/3))),CEILING_PALETTE.loss,.95,.26,300+i);};
+    draw(pts);
+    if(pts.some(p=>p[1]>R-2))draw(pts.map(p=>[p[0],p[1]-R]));
+    if(pts.some(p=>p[1]<2))draw(pts.map(p=>[p[0],p[1]+R]));
   }
-  const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,wide=W>=700;
   // The grid's own unit already divides R exactly; stopping one pixel short of R keeps the loop from
   // drawing the seam's line twice (once here, once as the next copy's y=0 line).
   ceilingSettingGrid(g,inset,0,W-inset,R-1,gridUnit);
@@ -454,27 +510,38 @@ function ceilingBuildWall(){
   // passes with the rest of the tile instead of pinning the way the foot rule does.
   const divide=R*.52,band=Math.max(7,Math.min(11,H*.014));
   ceilingBlockRule(g,x0+4,x1-4,divide-band*.5,band,.5);
-  // The upper field carries the two circumpolar figures and their names; the lower one the month
-  // circles and the decan columns. The middle of the tile is left to the route on purpose — a wall
-  // this dense would bury the flight if the density ran edge to edge.
-  const cell=wide?15:12;
-  if(wide){
-    const top=R*.09;
-    ceilingPaintBull(g,W-inset-152,divide-70,20,.5);
-    ceilingWordColumn(g,'foreleg',W-inset-58,divide-118,cell,CEILING_PALETTE.carbon,.5);
-    ceilingPaintHippo(g,W-inset-262,divide-84,19,.46);
-    ceilingWordColumn(g,'star',W-inset-300,divide-120,cell,CEILING_PALETTE.carbon,.44);
-    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[i],inset+40+i*26,top,cell,CEILING_PALETTE.carbon,.42);
-    const r=Math.min(18,H*.024),mx=inset+46,my=divide+band+38;
-    for(let i=0;i<12;i++)ceilingMonthCircle(g,mx+(i%3)*r*2.4,my+Math.floor(i/3)*r*2.4,r,.42);
-    for(let i=0;i<5;i++)ceilingWordColumn(g,CEILING_COLUMNS[3+i],W-inset-44-i*26,divide+band+32,cell,CEILING_PALETTE.carbon,.42);
-    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[8+i],inset+40+i*26,R*.92-cell*3,cell,CEILING_PALETTE.carbon,.36);
-  }else{
-    const r=Math.max(9,Math.min(13,W*.027)),top=R*.07,span=Math.max(r*2.5,(R*.86-top)/5);
-    for(let i=0;i<5;i++){const y=top+i*span;ceilingMonthCircle(g,inset+22,y,r,.34);ceilingMonthCircle(g,W-inset-22,y,r,.34);}
-    ceilingPaintBull(g,W*.5+38,divide-46,13,.4);
-    ceilingWordColumn(g,'foreleg',inset+30,divide+band+26,cell,CEILING_PALETTE.carbon,.4);
-    ceilingWordColumn(g,'hour',W-inset-30,divide+band+26,cell,CEILING_PALETTE.carbon,.4);
+  // This comment used to say the tile's middle is left to the route "on purpose," written when the
+  // wall was one static screen and the screen's middle and the tile's middle were the same place. On
+  // a tile that passes with the climb they are not: the play channel is the centre COLUMN of the
+  // screen at every height the camera can sit at, not one band of the tile. So none of the furniture
+  // below is shelved around the fixed divide any more — the month circles, the decan columns and the
+  // two circumpolar figures are all walked down the tile's whole span, kept to the margins throughout,
+  // so there is no height of the climb where the plaster is the only thing on screen. Two lanes keep
+  // the margin from turning to noise: columns hug the star border, circles sit a little further in,
+  // and each figure keeps a clear stretch on its own side so nothing is ever set on top of the animal
+  // that already anchors that reach of the tile.
+  const cell=wide?15:12,colIn=wide?30:16,circIn=wide?64:30,bullIn=wide?120:40,hippoIn=wide?108:38,
+    figClear=wide?90:46,loY=R*.07,hiY=wide?R*.94:R*.93,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
+  // Meskhetiu and Reret, full size and at full strength — they used to be thumbnails at s=20/19 and
+  // 46-50% alpha, a red box with stick legs and a blue sack; see ceilingPaintBull/ceilingPaintHippo for
+  // the construction that lets them survive being drawn this large. One to a margin and a good third
+  // of the tile apart, instead of huddled together at the old fixed divide.
+  ceilingPaintBull(g,W-inset-bullIn,bullY,wide?34:15,1);
+  ceilingWordColumn(g,'foreleg',W-inset-(wide?36:14),bullY-(wide?76:56),cell,CEILING_PALETTE.carbon,.6);
+  ceilingPaintHippo(g,inset+hippoIn,hippoY,wide?30:13,1);
+  ceilingWordColumn(g,'star',inset+(wide?30:14),hippoY-(wide?100:52),cell,CEILING_PALETTE.carbon,.55);
+  const clash=(y,side)=>(side&&Math.abs(y-bullY)<figClear)||(!side&&Math.abs(y-hippoY)<figClear);
+  const nCol=CEILING_COLUMNS.length;
+  for(let i=0;i<nCol;i++){
+    const y=loY+span*i/(nCol-1),side=i&1;
+    if(clash(y,side))continue;
+    ceilingWordColumn(g,CEILING_COLUMNS[i],side?W-inset-colIn:inset+colIn,y,cell,CEILING_PALETTE.carbon,.3+ceilingHash(i,3)*.14);
+  }
+  for(let i=0;i<12;i++){
+    const y=loY+span*(i+.5)/12,side=1-(i&1),
+      r=(wide?Math.min(19,H*.024):Math.max(9,Math.min(13,W*.027)))*(.76+ceilingHash(i,11)*.4);
+    if(clash(y,side))continue;
+    ceilingMonthCircle(g,side?W-inset-circIn-r:inset+circIn+r,y,r,.46+ceilingHash(i,17)*.16,i);
   }
   ceilingWall=c;ceilingWallKey=key;return c;
 }
