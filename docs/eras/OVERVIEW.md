@@ -1,166 +1,197 @@
 # The ascent through time
 
-Orbit is a star atlas. The history of the star atlas *is* the history of astronomy, which means
-the game already owns the subject a progression through time would be about: it does not have to
-invent a fiction to justify changing its look, only to admit which century each sheet was pulled
-in. This document sets out the ladder of eras, the rules that keep them one game rather than nine,
-the decisions taken, and the order to build them in.
+Orbit is a star atlas, and the history of the star atlas *is* the history of astronomy, which
+means the game already owns the subject a progression through time would be about: it does not
+have to invent a fiction to justify changing its look, only to admit which century a body was
+last drawn in. What that history now says, taken in full, is that a node was never a picture
+waiting to be skinned — it is a phenomenon, and orbiting it is the act that turns it into
+knowledge, in the hand of whichever century is currently held. The player is not the tool that
+century puts around them, not the burin, the brush, the pointer, the quill, the lens, the hull or
+the replicator; the player is the small constant point of curiosity those tools carry at their
+working end, and across eight eras the tool is replaced eight times while that point never is.
+This document sets out the ladder those eras stand on, the decisions that make it one game rather
+than eight, the five rules every era answers to, and the order to build them in.
 
-The game today sits in exactly one of these eras — the sixth — and is unaware of it.
+The game today ships almost entirely inside what is now era VI, the Lens — the six catalogue
+plates, the Latin captions, the lettered hands — and era II, the Ceiling, already has a working
+renderer, `src/ceiling.js`, whose player-drawing alone is stale. Nothing else on the ladder exists
+in code. Nothing in this document describes shipped behaviour except where it says so.
 
-## The three decisions that shape everything
+## The decisions that shape everything
 
-**The run is the progression, gated on score.** Every run opens on a cave wall and climbs
-forward through the centuries. Era boundaries sit at total-score thresholds, not at rows and not
-at anything the player chooses, so the era is a pure function of the score: two runs that reached
-the same figure have passed through the same eras in the same order and met the same rules,
-whoever flew them. This is the shape [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) was converging on
-when the ladder was first written down, and it has now been chosen. What it costs, and how the
-engraving keeps its place, is set out in [PROGRESSION.md](PROGRESSION.md).
+**Nodes are phenomena first, knowledge second, and orbiting is what changes that.** Every body a
+run meets now carries three states rather than one picture: a *phenomenon*, legible only as a
+position, a capture-region size, and whatever a body's class demands for gameplay planning
+(drifter, fader, sling, a dangerous neighbour); an *observation*, in which the era's own recording
+process runs, visibly, on the body while the orbit is held; and an *understood* object, the body
+as that century could actually know it. The clock this runs on is `player.orbitSweep`, the radians
+already swept since capture and already tracked by `src/simulation.js` — the right clock because
+ninety degrees is ninety degrees on every ring the game will ever draw, independent of a body's
+size or speed, which a time-based reveal could never promise. Nothing that a trajectory depends on
+is ever staged or withheld; only identity is. This is the flip side of the boundary behind the
+player, which no longer erases a universe — it erases a *representation* of one, in the material
+of whatever era drew it, which is why the player can never go back and why the game does not
+pretend to simulate a persistent solar system. See [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)
+for the states and [THE-FRONTIER.md](THE-FRONTIER.md) for the boundary that follows them.
 
-**One currency per era, one rule per century, all in a table.** Ink is era VI's word for a
-resource every century rationed under its own name — ochre, gold foil, a grain ration, the
-chisel's edge, gold and lapis, exposure, telescope time, mass. The names are free. A few eras add
-one rule beside the name, and the last era changes the rule: the probe does not spend ink, it
-harvests the bodies it orbits and replicates. Because the era is a function of the score, every
-player meets every rule at the same point, and the score still means one thing. The table, the
-rules and the probe's harvest are in [ECONOMY.md](ECONOMY.md).
+**The era is reached by observing, not by scoring.** The old plan gated eras on total score; that
+gate is retired because it rewarded a number instead of the mechanic the whole plan is now built
+on. Each era instead carries its own observation ledger: every capture contributes a share of a
+threshold, weighted so a completed observation counts roughly three times a bare one, and once the
+ledger passes it the era is *armed*. The next main node the run has already dealt — never a new
+spawn, never a second call to the seed — is then *designated* the transition object and drawn as
+one; it is captured exactly like any other body. This is deliberate to the point of being the
+single most load-bearing engineering decision in the plan: because nothing is inserted into the
+chart and `this.random()` is never called again mid-run, the two invariants `verify.mjs` already
+holds the game to — one seed deals one chart, and how a run is flown cannot change the chart it is
+dealt — survive the whole progression system by construction. The ten-step transition itself, and
+what the ledger's constants are provisionally set to, are in [PROGRESSION.md](PROGRESSION.md).
 
-**A sheet shows of a body only what its century could know.** The climb is epistemic as well
-as aesthetic. Before the telescope a body is a point in a brightness class and the Moon is the
-one body with a face; the telescope ties each of the seven families to one named body and one
-dated observation, and misreads two of them for decades; only the observatory and the probe
-draw the families as what they are. The vertical of the sheet is space and the stack of sheets
-is time: the Earth is the bottom edge of every sheet, and at a page turn the observer returns to
-it while the traveller flies on, inheriting the route the earlier century recorded. The horizon
-is one render-side table with two readings per body, and it is what rule 3 below now says.
-[KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
+**The run is two nested structures: a finite civilizational climb opening onto an infinite one.**
+Human history is finite, and the ladder respects that literally — reaching era VIII, the Probe,
+ends the historical progression permanently. No ninth era, no invented future century, no further
+transition of any kind. From that point the run does not stop; it escalates on machinery the game
+already has, the same row-driven scaling that already governs darkness speed, chart growth and
+hazard density, turned up rather than replaced: larger transfer gaps, stranger configurations,
+higher speeds, more exotic fields. This is where high-score play actually lives, and it is the
+run's real length. [PROGRESSION.md](PROGRESSION.md) covers what has to give for it, which is
+smaller than it sounds.
 
 ## The rule that makes this affordable
 
-**An era is a plate. A chapter is a scene inside the run.** These are two axes and they stay two:
+**An era is a plate. A chapter is a scene inside the run.** These stay two axes and they never
+merge. The **era** is the art direction *and* the economy row: global, cached, armed by the
+observation ledger, entered at the next capture through the ten-step transition. Eight exist on
+the ladder now, two of them shipped in part. The **chapter** is the simulation's own row-based
+escalation — which hazards a row may carry, which constellation is dealt next — and it never
+learns anything about the era, so one seed still deals one chart on every sheet regardless of
+which century is holding it.
 
-- The **era** is the art direction *and* the economy row: global, cached, entered at a score
-  threshold, announced with a page turn. Nine exist on the ladder, one of them shipped.
-- The **chapter** is the simulation's own row-based escalation — which hazards a row may carry,
-  which constellation is drawn next. It never learns about the era, so one seed still deals one
-  chart on every sheet.
-
-The tempting reading, eras as chapters gated on rows, was resisted in the first version of this
-plan and is still resisted: rows and score decouple, so two runs at one score could have seen
-different centuries. The score gate is what keeps the ladder honest.
+The payoff is what happens once the ladder runs out. After era VIII there is no era IX to reach,
+so the era axis simply stops moving — it is pinned, permanently, at the Probe — and the chapter
+axis is the only one left standing. Endless mode therefore costs nothing new to invent: it is the
+chapter escalation the game already runs, with its one hard ceiling,
+`chapter = Math.min(3, Math.floor(world.progress/8))`, lifted past the point era VIII used to be
+the end of the story. That is the entire engineering bill for a run that never has to stop.
 
 ## The ladder
 
-| | Era | When | The document it is pulled from | Currency | Rule |
+| | Era | When | Controlling document | Currency | Knowledge gain |
 |---|---|---|---|---|---|
-| **I** | [The Rock](01-rock.md) | c. 17,000 BCE | Lascaux, the Hall of the Bulls | ochre | the torch |
-| **II** | [The Disc](02-disc.md) | c. 1600 BCE | the Nebra sky disc | gold foil | the arcs |
-| **III** | [The Ceiling](03-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | reed/paint charge in the preview; *khar* proposed later | — |
-| **IV** | [The Marble](04-marble.md) | c. 150 CE | the Farnese Atlas; Ptolemy's *megethos* | *acies*, the edge | — |
-| **V** | [The Globe](05-globe.md) | 964 CE | al-Ṣūfī, *Kitāb ṣuwar al-kawākib al-thābita* | gold and lapis | — |
-| **VI** | [The Engraving](06-engraving.md) | 1600–1801 | Bayer, Cellarius, Hevelius, Flamsteed, Bode | ink | shipped |
-| **VII** | [The Plate](07-plate.md) | 1887–1958 | the Carte du Ciel; Barnard; Harvard's plates | exposure | hold to develop |
-| **VIII** | [The Observatory](08-observatory.md) | 1990– | the Pillars; the EHT ring; the FITS header | telescope time, in orbits | the allocation |
-| **IX** | [The Probe](09-probe.md) | the far future | the Pioneer plaque; a CCSDS telemetry frame | mass | harvest and replicate |
+| **I** | [The Rock](01-rock.md) | c. 40,000–3,000 BCE | Lascaux, the Hall of the Bulls | ochre | phenomenon → memory |
+| **II** | [The Ceiling](02-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | pigment | phenomenon → named, ordered element |
+| **III** | The Scroll | c. 649–684 CE | the Dunhuang star chart, BL Or.8210/S.3326 | ink, the brush | individual light → catalogued relationship |
+| **IV** | [The Astrolabe](04-astrolabe.md) | 964–1437 CE | al-Ṣūfī's catalogue, read through the instrument | the measured line | visible object → measurable object |
+| **V** | [The Engraving](05-engraving.md) | c. 1540–1610 | Bayer's *Uranometria*; the atlas page | ink, the quill | observation → recorded knowledge |
+| **VI** | [The Lens](06-lens.md) | 1610–1990 | Galileo → the Carte du Ciel → the rendered sphere | exposure | light → world |
+| **VII** | The Flyby | 1965– | Mariner 4, Voyager, the mission mosaic | propellant | world → place |
+| **VIII** | [The Probe](08-probe.md) | the far future | the von Neumann probe | mass | place → autonomously explored world |
 
-Era VI is the game as it ships. Everything already in the catalogue — the night and paper plates,
-Cellarius, Verdigris, Foxed, Proof, Carta azzurra, Sepia, the Hevelius/Bayer/Bode figure hands,
-the Fell types, the Latin captions — belongs to it and needs no further work. The ladder extends
-outward from a middle that is already finished: five centuries of hand-made skies before it, and
-three of instruments after, ending with an instrument that draws no picture at all.
+Era VI carries three registers rather than one sheet — the resolving telescope, the photographic
+plate, the rendered measurement — because all three are one epistemology, resolving a point at a
+distance into a world, and its climax is the shipped `PLATE_STYLES.modern` renderer. Era V inherits
+the pre-telescopic half of what used to be drawn under the old sixth era: the hand-drawn atlas
+page, lettered but not yet resolved into anything the eye alone could not have composed. Neither
+file is finished under this plan; both carry real shipped fragments.
 
-The two ends rhyme. The first era is marks struck into rock because nothing else would last; the
-last is a probe that still carries an engraved metal plate for the same reason. Both are burin
-work, and the game's own pen lettering is the thread between them.
+The two ends still rhyme, but not the way they used to. The first era marks a rock because nothing
+else in its century would last long enough to be found; the last sends out a machine built to
+outlive the civilization that made it. Both are the same gesture — commit the sky to a medium that
+survives its author — aimed in opposite directions across the whole span of the ladder.
 
-Each era's own file carries its documents, grammar, palette, lettering, names, currency, dangers,
-its bodies — what its century could know of them — its signature sheet, its prototype and its risks. Beneath each sits a longer
-research file in [research/](research/) and a standalone art prototype in
-[prototypes/](prototypes/); [PROTOTYPES.md](PROTOTYPES.md) records how each prototype fared
-against the shipped standard and which painter reached it.
+Each era's own file carries its documents, grammar, palette, lettering, currency, dangers, its
+bodies — what its century could know of them — and its signature sheet. Beneath each sits a longer
+research file in [research/](research/); beneath most of them, though not yet the two newest, a
+standalone art prototype in [prototypes/](prototypes/). [PROTOTYPES.md](PROTOTYPES.md) records how
+each existing prototype fared against the shipped standard and which painter reached it.
+[ERA-AUDIT.md](ERA-AUDIT.md) carries the missing contract for every era — universe model,
+controlled-object ontology, body horizon, feared sky, evidence boundary — and
+[CANDIDATES.md](CANDIDATES.md) holds the traditions that were considered for the spine and did not
+make it onto this ladder.
 
-[ERA-AUDIT.md](ERA-AUDIT.md) adds the missing contract: universe model, controlled-object
-ontology, body horizon, feared sky and evidence boundary for every era, plus the priority cases
-for Babylonian, Chinese, Flyby and Maya expansions.
-
-## The four rules every era answers to
+## The five rules every era answers to
 
 An era that breaks any of these is a different game, not another plate.
 
-1. **The simulation learns about the era in exactly two places, both tables.** `simulation.js`
-   stays DOM-free. The era reaches it only as one row of `ECONOMY` (the currency's numbers) and as
-   the score-threshold table that names the era; hazards, spawn rules, rows and chapters never
-   consult it. Depicting a hazard differently per era is free and render-side
-   ([DANGERS.md](DANGERS.md)); changing a hazard's rule per era stays off the table until an era
-   has shipped under depiction alone.
-2. **Every era speaks in its own hand.** The Latin captions are era VI's voice. The rock has no
-   words and says so with dots and tallies; the disc counts with punches; the ceiling letters in
-   hieroglyph columns; the marble cuts Roman capitals and Ptolemy's Greek; the globe writes naskh
-   right to left; the plate types and inks by hand on the glass; the observatory prints a FITS
-   header; the probe engraves a single-stroke line and logs telemetry. An era that borrows
-   another's lettering has not been built yet. [LETTERING.md](LETTERING.md).
-3. **Every era keeps the same orbit and hazard rows, and shows of a body only what its century
-   could know.** Rings, rims, capture bands, release ticks, hazard fields and the flood are the
-   vocabulary the player reads, and they are identical on every sheet, so the chart is read the
-   same way on any sheet; the attractor, the repulsor, the crosswind and the obscurer are the
-   vocabulary of its dangers and change only in depiction. The seven families — ocean, crater,
-   ringed, ice, dune, volcanic, storm — are not part of that vocabulary. They are a discovery of
-   era VI, tied there to named bodies and dated, misread where the century misread them, and
-   literally true only from era VIII. Before the telescope a body is a point in a brightness
-   class, and the Moon is the one body with a face. Every body has two readings in every era,
-   at a glance and under a held orbit, from one render-side table. In era IX the families gain a
-   third, the material each yields, without losing the others.
+1. **The simulation stays DOM-free and era-light.** `src/simulation.js` learns about the era in
+   exactly three places: the economy row, the observation ledger, and the one node designation a
+   transition needs. Hazard rules, spawn rules and row escalation never consult it, because the
+   moment any of them did, two runs at the same row could stop meaning the same thing depending on
+   which era happened to be showing — and the game would owe two explanations for every number
+   instead of one.
+2. **Every era speaks in its own hand, and never borrows another's lettering.** The rock has no
+   words and says so with dots and tallies; the ceiling letters in hieroglyph columns; the scroll
+   writes in brush-drawn Chinese characters keyed to its three schools of stars; the astrolabe
+   engraves Arabic star names into brass; the atlas page sets Bayer's Latin captions by hand; the
+   lens prints a mission label or a FITS header depending on its register; the flyby logs telemetry
+   in a mission's own typeface; the probe engraves a single stroke and reports in a data frame. An
+   era that reaches for another era's type has not actually been built yet, whatever else it does
+   correctly. [LETTERING.md](LETTERING.md).
+3. **Every era keeps the same orbit and hazard vocabulary, and reveals a body only as far as its
+   century could know it.** Rings, rims, capture bands, release ticks, hazard fields and the
+   frontier's shoreline read identically on every sheet, because that vocabulary is how a
+   trajectory is judged and judging a trajectory can never depend on which century is showing. What
+   changes, and only this, is what a body looks like once it is orbited — driven by the swept arc,
+   never by a clock, and never withholding anything the player needs to fly.
    [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
-4. **No dependencies, no external resources.** The build fails if the bundled page references
-   anything over the network. Every era's faces are embedded, cut to what the atlas sets, and
-   loaded with the era rather than up front; every era's art is generated.
+4. **No dependencies, no external resources.** The build fails outright if the bundled page
+   references anything over the network. Every era's faces are embedded and cut to what its atlas
+   actually sets; every era's art is generated, not fetched.
+5. **The Observer Core is constant.** Whatever else an era changes about the tool surrounding it —
+   its silhouette, its material, its motion — the point at that tool's working end does not change:
+   not its shape, its size, or its behaviour, across all eight eras. It is one of exactly two things
+   a transition carries across the boundary uncut; the transition object is the other.
+   [OBSERVER-CORE.md](OBSERVER-CORE.md).
 
 ## Build order
 
-Build the spine first, then outward from era VI, then the ends.
+Build the spine before any new sheet, then outward from the eras nearest to what already exists,
+then the eras that ask for the most invention.
 
-1. **The multi-era spine, with no new art.** Key every cache by era as well as chapter; add the
-   `ECONOMY` and threshold tables; arm the boundary on the score and turn the page at the next
-   capture; add `deepestEra` to the ledger; give the daily its era; add "open on" to the catalogue.
-   Lay the render-side `KNOWLEDGE` table and the node's brightness class beside the era table,
-   so the first two eras built are built with two readings per body from the start.
-   [ARCHITECTURE.md](ARCHITECTURE.md) itemises it. Prove it with two eras live in one run before
-   any sheet is drawn.
-2. **VIII, The Observatory** — already partly built. Finish it: the instrument margin, the FITS
-   HUD, the black hole, telescope time and the allocation.
-3. **VII, The Plate** — the cheapest full era: a negative, a grid, a blur and a set of annotations
-   over machinery that exists.
-4. **Generalise.** With three bases standing, replace the `onPaper()` boolean with a style id. Do
-   this after three eras, not before.
-5. **V, IV, III** — the Globe (spike the shaping first), the Marble, the Ceiling (spike the
-   quadrats first). Three eras of hand-made skies, each one figure hand and one face.
-6. **II and I** — the Disc and the Rock, the two with no script, whose reveals are a punch and a
-   dab and whose frames are a rim and a torch's reach.
-7. **IX, The Probe** — last, because its rule needs the spine and its plaque hand needs a new
-   stroke path, and because the ladder should end on the thing it was built toward.
+1. **The spine, with no new art.** Retarget `src/reveal.js` from `world.time` to `orbitSweep`,
+   generalising the Ceiling's existing four-stage reveal rather than inventing a new one. Add the
+   observation ledger and the era-arming threshold; add the transition designation exactly as
+   described above, calling `this.random()` nowhere new. Extend `scripts/verify.mjs`'s
+   destructuring list for every simulation-side name this introduces, per `CLAUDE.md`'s contract.
+   Prove two eras live in one run before a single new sheet is drawn.
+2. **Generalise the Observer Core.** `src/effects.js`'s `OBSERVER_MARKS` already draws every
+   cosmetic mark in one local frame ending at a shared `markHead()` — that head is the core,
+   already built. The work is to key the surrounding tool to the era rather than to player choice,
+   add the missing tool geometries, and stop `markHead()` varying at all.
+3. **VI, the Lens** — nearest to finished: assemble its three registers around the renderer that
+   already ships, and let the Observatory's instrument margin and FITS discipline become its third
+   register rather than a ninth era.
+4. **II, the Ceiling** — a renderer already exists; only `ceilingDrawPlayer()` needs replacing, the
+   night barque stepping aside for a reed brush carrying the core at its wet tip.
+5. **V, the Engraving, and VII, the Flyby** — the Engraving keeps the pre-telescopic atlas half the
+   old plan already lettered; the Flyby is wholly new construction, the one era built from a fresh
+   research file with no prior sheet to inherit from.
+6. **IV, the Astrolabe, then III, the Scroll, then I, the Rock** — three eras of one figure hand
+   and one face each, in decreasing order of how much of their geometry already has a spike to
+   build from.
+7. **VIII, the Probe** — last, because its harvest-and-replicate economy and the endless-mode
+   chapter-cap lift both need the spine standing first, and because the ladder should close on the
+   era it was built toward.
 
-## What each era costs
+## What an era costs, honestly
 
-Roughly the size of the paper plate, plus one signature sheet — a substantial but ordinary piece of
-work, done once per era and never a rewrite. The spine is the one piece of genuinely new
-engineering and is paid once. The itemised list is in [ARCHITECTURE.md](ARCHITECTURE.md).
+Roughly the size of one signature sheet, one reveal implementation keyed to the swept arc, and one
+tool geometry for the Observer Core to sit inside — substantial, ordinary work, done once per era
+and never revisited as a rewrite. The spine is the only piece of genuinely new engineering in the
+whole plan and it is paid exactly once; [ARCHITECTURE.md](ARCHITECTURE.md) itemises it against the
+code as it stands. [ECONOMY.md](ECONOMY.md) is smaller than the old plan's version of it: one
+traversal rule now covers all eight currencies, so what remains to write per era is a name, a
+number and a depiction, not a rule of its own.
 
 ## Eras considered and not taken
 
-- **Babylonian, c. 700 BCE (MUL.APIN; the Nineveh planisphere K.8538).** The planisphere is a real
-  circular sky on clay and cuneiform has an OFL face, so the earlier objection — that the record is
-  only text — was too strong. It sits out because the ladder already has two eras between the Rock
-  and the Ceiling's neighbours, and because the Disc holds the same millennium with a more singular
-  object. The strongest candidate for a tenth era.
-- **Chinese, c. 700 CE (the Dunhuang star chart).** The oldest complete star atlas of any
-  civilisation, and it fails no rule. It is contemporary with era V and the ladder wants one era
-  per grammar, not two per millennium. Second candidate.
-- **19th-century lithographic (the *Bonner Durchmusterung*).** Folded into era VII, as before.
-- **The Flyby, 1965–1989 (Mariner, Voyager; JPL's image mosaics; the Golden Record).** Not on
-  the first ladder at all, and the knowledge horizon exposes why it matters: these are the years
-  the seven families became a typology rather than facts about single bodies — Mariner 4's
-  cratered Mars, the rings of Uranus, Io's volcanoes, Europa's ice, Neptune's dark spot — and they
-  fall exactly in the gap between era VII's close and era VIII's opening, from which era IX's own
-  plaque is pulled. Either era VIII opens earlier or this is the tenth era; open question I in
-  [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).
+The Disc (the Nebra sky disc, Bronze Age Europe) and the Marble (the Farnese Atlas, Graeco-Roman)
+held slots on the old nine-era ladder and do not hold one on this one — the brief's roster has room
+for one prehistoric era, not two, and no Graeco-Roman era at all. Both are retired to
+[CANDIDATES.md](CANDIDATES.md) with their research and their prototypes intact, alongside the
+Babylonian planisphere and the Dresden Maya codex as the strongest candidates for a ninth or tenth
+era should the ladder ever grow past eight again. The Disc's punch-and-foil grammar was also
+proposed and refused as a costume for era I's transition object: a culture may not appear as
+decoration inside another culture's sheet, and the Bronze Age is not Palaeolithic vocabulary. The
+mechanical prototype that pairing produced, `prototypes/turn-rock-disc.html`, survives as a study
+of the page turn itself, not of that costume.
