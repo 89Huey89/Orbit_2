@@ -1184,11 +1184,24 @@ function ceilingNodeIcon(n,r,stage){
 // where a month wheel is baked into the tile once.
 // The count still follows the circumference rather than a fixed number, so a small wheel is not a
 // crowded copy of a large one; the rim itself is untouched, since that circle is the orbit.
-function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade){
-  const spoked=ceilingHash(seed,401)<.28,
-    inner=spoked?.34+ceilingHash(seed,403)*.12:.6+ceilingHash(seed,405)*.16,
-    outer=spoked?.97+ceilingHash(seed,407)*.02:.87+ceilingHash(seed,409)*.09,
-    ticks=clamp(Math.round(r*(spoked?.46:.62)),11,34);
+// The three opening wheels are the one place on the sheet where circles stand side by side meaning
+// different things, and a course is chosen before there is a caption under it worth reading. So these
+// three do not take their construction from a seed: each course keeps its own, the same on every
+// plate — the quiet night a sparse band held out near the rim, the full night a deep one, the hard
+// night the month wheel's spokes struck the whole way through. The wheel thickens as the night gets
+// harder, which is how this wall grades anything: by construction and scale, never by rendering one
+// of them up. TT353's own twelve month wheels are uniform and stay uniform where they are drawn; what
+// licenses a difference here is gameplay legibility, the same licence the sheet's motion runs on.
+const CEILING_COURSE_WHEELS={
+  relaxed:{spoked:false,inner:.74,outer:.93,pitch:.28,most:20},
+  classic:{spoked:false,inner:.52,outer:.95,pitch:.46,most:28},
+  hardcore:{spoked:true,inner:.34,outer:.98,pitch:.7,most:40}};
+function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade,course){
+  const set=CEILING_COURSE_WHEELS[course],
+    spoked=set?set.spoked:ceilingHash(seed,401)<.28,
+    inner=set?set.inner:spoked?.34+ceilingHash(seed,403)*.12:.6+ceilingHash(seed,405)*.16,
+    outer=set?set.outer:spoked?.97+ceilingHash(seed,407)*.02:.87+ceilingHash(seed,409)*.09,
+    ticks=set?clamp(Math.round(r*set.pitch),10,set.most):clamp(Math.round(r*(spoked?.46:.62)),11,34);
   g.strokeStyle=`rgba(36,29,22,${alpha})`;
   for(let i=0;i<ticks;i++){
     const a=start+i/ticks*TAU,i0=inner*(.97+ceilingHash(seed+i*5,413)*.06),o1=outer*(.97+ceilingHash(seed+i*7,417)*.05);
@@ -1220,7 +1233,7 @@ function ceilingDrawNode(n,aim){
     if(correct<1&&r>3){const a=start+TAU*correct,hx=Math.cos(a)*r,hy=Math.sin(a)*r,ta=a+Math.PI/2;
       ceilingWet(ctx,hx,hy,scale,.65*fade,CEILING_PALETTE.carbon);ceilingReed(ctx,hx,hy,ta,.8*fade,CEILING_PALETTE.carbon);}
   }
-  if(finish>0)ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade);
+  if(finish>0)ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade,n.difficultyChoice);
   // Defect (e): a dashed circle is the engraved atlas's mark, carried over unexamined. The wall's own
   // way to rule a boundary is a doubled line — the same hair-off-register repeat ceilingSign's closing
   // stroke already wears where the brush reloaded — so the target ring (where the flight will land)
