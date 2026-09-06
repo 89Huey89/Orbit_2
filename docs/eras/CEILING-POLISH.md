@@ -294,5 +294,20 @@ sheet had been drifting on plausible readings.
   to wall, and they carry **stars among their signs** — they are a star table, which is what a decan
   column is for, and the ruling runs on far below the signs. Ours are a handful of short sign
   columns with no stars in them at all.
+- **A dark-ground plate is wanted, and it needs its own document.** Noted, not built. The reference
+  offered for it is the astronomical ceiling of **Seti I (KV17)**
+  ([Wikimedia Commons, `StarsSeti1.jpg`](https://commons.wikimedia.org/wiki/File:StarsSeti1.jpg) —
+  licence not verified from here, the egress policy blocks the host). Its scheme is the inverse of
+  this sheet's: a deep blue ground, figures in pale cream, outline and detail dots in red, a plain
+  ochre band beneath, and a register of signs in gold under that. Sampled off the image supplied:
+  ground `#35416F`, figures `#EDE1C4`, detail `#B98C7A`, band `#E4D19B`.
+
+  The thing to hold on to is that **KV17 is a different document, not more of this one.** It is
+  Nineteenth Dynasty, roughly 1290 BCE — about a hundred and seventy years after TT353 — a different
+  tomb and a different reign, and its blue ground is exactly the reading `03-ceiling.md` rejects for
+  *this* sheet. This file already records one instance of a blue star band being inferred from
+  another Theban ceiling and nearly composited in. So if a dark mode is built it is a **second plate
+  pulled from a second document and named as such**, the way the atlas carries a night plate and a
+  paper plate — never a night version of the TT353 sheet.
 - **A frontispiece in the concept-art register** is agreed but only begun: the block border,
   ornament and plaster panel are in, the four hour-plates are not.
