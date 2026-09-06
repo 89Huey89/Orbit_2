@@ -666,22 +666,55 @@ function ceilingPaintHippo(g,x,y,s,alpha=1){
   }
   g.restore();
 }
-// A striding figure, in profile, one hand's plain wedge of a body and a solid disc balanced on the
-// head — the bottom register's own device, and the purest form of the density this wall works by:
-// one flat unit repeated, not eight different ones. The disc is the register's whole colour; the body
-// is left unfilled (flooded in the plaster tone, not a flat ink block) so the wall's line still does
-// the work, per docs/eras/03-ceiling.md's "Palette" hierarchy note. Small and cheap on purpose — it
-// stands in a margin lane, never full-width, and there is no ambition here beyond one legible silhouette.
-function ceilingPaintStriding(g,x,y,s,alpha=1,seed=1){
-  g.save();g.globalAlpha=alpha;
-  const ink=CEILING_PALETTE.carbon,P=(px,py)=>[x+px*s,y+py*s];
-  const body=[P(-.07,-.6),P(.09,-.6),P(.14,-.18),P(.1,.1),P(.32,.6),P(.2,.64),P(.04,.2),P(-.02,.22),P(-.16,.62),P(-.3,.66),P(-.14,.08),P(-.18,-.2)];
-  ceilingPolygon(g,body,CEILING_PALETTE.plaster,1,seed,Math.max(.6,s*.13));
-  g.globalAlpha=alpha;g.strokeStyle=ink;g.lineWidth=Math.max(.5,s*.08);
-  g.beginPath();g.arc(x,y-.72*s,s*.16,0,TAU);g.stroke();
-  g.fillStyle=CEILING_PALETTE.red;g.lineWidth=Math.max(.5,s*.06);
-  g.beginPath();g.arc(x,y-1.0*s,s*.24,0,TAU);g.fill();g.stroke();
-  g.restore();
+// A line of signs is TT353's own habit for the register divider — not a spelled column laid on its
+// side, but marks from the traced bank set loose along a ruled line with real whitespace between
+// them, the way src/signs-tt353.js's own header describes the crop this bank came from. Two ruled
+// hairlines carry it top and bottom, the same canon the rest of the wall is snapped to. Never mixed
+// with a CEILING_WORD column: this is a line of marks, and their order spells nothing.
+function ceilingSignLine(g,x0,x1,y,h,count,alpha,seed){
+  ceilingBrush(g,[[x0,y-h*.5],[x1,y-h*.5]],CEILING_PALETTE.carbon,.55,.5*alpha,seed+1);
+  ceilingBrush(g,[[x0,y+h*.5],[x1,y+h*.5]],CEILING_PALETTE.carbon,.55,.5*alpha,seed+2);
+  const bank=ceilingSignBank();if(!bank||!bank.length)return;
+  const span=x1-x0,cell=span/count;
+  for(let i=0;i<count;i++){
+    const cx=x0+cell*(i+.5)+(ceilingHash(seed+i,3)-.5)*cell*.16,
+      m=bank[(seed*7+i*13)%bank.length],mh=h*(.62+ceilingHash(seed+i,7)*.3);
+    ceilingTracedMark(g,m,cx,y+h*.42,mh,CEILING_PALETTE.carbon,alpha*(.65+ceilingHash(seed+i,11)*.3));
+  }
+}
+// The foot register, rebuilt as one horizontal band running the tile's own width instead of two short
+// vertical files stood in the margins (procession.png shows the real thing: roughly sixteen striding
+// figures the width of the panel, standing on ruled red lines, Reret's own row breaking them near the
+// middle). The bank's one traced 'figure' mark stands in for every instance — varied a hair figure to
+// figure off its own seed, per the brief, so the row reads as repetition and not a stamp, the same
+// discipline ceilingBorderStar already keeps for a band of stars — and each carries the short caption
+// of signs patterns.caption records above the head. The red disc survives every figure regardless: on
+// the facsimile it is almost the only colour on the whole sheet, and that is the point of it.
+// This band runs the tile's full width by construction, so it crosses the play channel; weight is
+// eased toward the centre column there — a figure thins and dims as it nears mid-screen, its caption
+// drops out first — so nothing here bids against an hour-circle or the aim guide for the eye.
+function ceilingProcession(g,x0,x1,y,fig,capCell,count,alpha){
+  const bank=typeof SIGNS_TT353!=='undefined'?SIGNS_TT353.marks:null,
+    figMark=bank&&bank.find(m=>m.kind==='figure'),signs=bank?bank.filter(m=>m.kind==='sign'):null;
+  if(!figMark)return;
+  const span=x1-x0,mid=(x0+x1)*.5,chW=Math.max(50,span*.14),skip=Math.floor(count/2);
+  ceilingBrush(g,[[x0,y+fig*.1],[x1,y+fig*.1]],CEILING_PALETTE.red,.6,.42*alpha,8001);
+  ceilingBrush(g,[[x0,y-fig*1.02],[x1,y-fig*1.02]],CEILING_PALETTE.red,.55,.3*alpha,8003);
+  for(let i=0;i<count;i++){
+    if(i===skip)continue; // the row breaks near the middle, the way the facsimile's own does
+    const t=count>1?i/(count-1):.5,x=x0+span*t,seed=i*97+11,
+      near=clamp(1-Math.abs(x-mid)/chW,0,1),ease=lerp(1,.3,near),
+      fh=fig*(.9+ceilingHash(seed,3)*.18),fa=alpha*ease;
+    ceilingTracedMark(g,figMark,x,y,fh,CEILING_PALETTE.carbon,fa*.82);
+    g.save();g.globalAlpha=alpha*lerp(1,.45,near);g.fillStyle=CEILING_PALETTE.red;
+    g.beginPath();g.arc(x,y-fh*1.02,fh*.24,0,TAU);g.fill();g.restore();
+    if(capCell>0&&signs&&signs.length&&near<.7){
+      for(let c=0;c<4;c++){
+        const m=signs[(seed+c*17)%signs.length],cx=x+(c-1.5)*capCell,cy=y-fh*1.7;
+        ceilingTracedMark(g,m,cx,cy,capCell*.92,CEILING_PALETTE.carbon,fa*.68);
+      }
+    }
+  }
 }
 // The four watches used to be one wall keyed on size alone, so every hour of the night was the same
 // tile with a different word in the running head. ceilingBakeWall paints one watch's register; the
@@ -778,19 +811,31 @@ function ceilingBakeWall(watch){
   const starW=inset*1.15,starL=6+starW*.5,starRx=W-6-starW*.5;
   ceilingStarBand(g,starL,0,R,gap,starW);
   ceilingStarBand(g,starRx,0,R,gap,starW);
-  // TT353 is organised as two fields divided by a band; here the band is the block border it would
-  // have been painted as. It belongs to the register it divides, not to the room's architecture, so it
-  // passes with the rest of the tile instead of pinning the way the foot rule does.
-  const divide=R*.52,band=Math.max(7,Math.min(11,H*.014));
-  // The facsimile's own divide between its two registers is thicker than one block rule: a star band,
-  // several full-width lines of running text, and another star band. The text is out of scope — no
-  // sourced content for it yet — but the two star bands that sandwich it are cheap, so they stand in
-  // for the layered rule the facsimile actually draws instead of leaving it a single flat line. Two
-  // rows, not three: the sheet's own divide runs a shallower band than its outer border does.
-  const divStep=Math.max(14,Math.min(20,W/30)),divW=Math.max(9,band*.95);
-  ceilingStarBandH(g,x0+4,x1-4,divide-band*.5-divW*.72,divStep,divW,2);
-  ceilingBlockRule(g,x0+4,x1-4,divide-band*.5,band,.5);
-  ceilingStarBandH(g,x0+4,x1-4,divide+band*.5+divW*.72,divStep,divW,2);
+  // TT353 is organised as two fields divided by a band, and the band is a layered one: a star band,
+  // then several full-width ruled lines of signs, then another star band (divider.png) — not the
+  // single flat block rule this used to stand in with. The counts are read off SIGNS_TT353's own
+  // patterns.divider rather than invented: starRows/starRowsBelow size the two star bands exactly as
+  // they did before the correction, and signLines/signsPerLineApprox now give the layer between them
+  // real content — full-width lines of the bank's own traced marks (ceilingSignLine), never
+  // CEILING_WORD's spelled quadrats, per that file's own claim boundary. It belongs to the register it
+  // divides, not to the room's architecture, so it passes with the rest of the tile instead of pinning
+  // the way the foot rule does.
+  const divide=R*.52,
+    DIV=(typeof SIGNS_TT353!=='undefined'&&SIGNS_TT353.patterns&&SIGNS_TT353.patterns.divider)||
+      {starRows:2,signLines:2,signsPerLineApprox:20,starRowsBelow:2};
+  const divStep=Math.max(14,Math.min(20,W/30)),divBandW=Math.max(9,H*.012),
+    signRowH=Math.max(8,Math.min(13,H*.014)),signGap=1.6,
+    signsH=DIV.signLines*signRowH+Math.max(0,DIV.signLines-1)*signGap,clearance=divBandW*.72,
+    // A line this small still wants real whitespace between its signs — a per-sign width no narrower
+    // than a decan column's own cell — so a narrow layout gets fewer signs per line rather than the
+    // approx count crushed into a lane that cannot honestly hold it.
+    minSignCell=wide?26:19,perLine=Math.max(6,Math.min(DIV.signsPerLineApprox,Math.floor((x1-x0-8)/minSignCell)));
+  ceilingStarBandH(g,x0+4,x1-4,divide-signsH*.5-clearance-divBandW*.5,divStep,divBandW,DIV.starRows);
+  for(let li=0;li<DIV.signLines;li++){
+    const ly=divide-signsH*.5+signRowH*(li+.5)+li*signGap;
+    ceilingSignLine(g,x0+4,x1-4,ly,signRowH,perLine,.5,7000+li*97);
+  }
+  ceilingStarBandH(g,x0+4,x1-4,divide+signsH*.5+clearance+divBandW*.5,divStep,divBandW,DIV.starRowsBelow);
   // This comment used to say the tile's middle is left to the route "on purpose," written when the
   // wall was one static screen and the screen's middle and the tile's middle were the same place. On
   // a tile that passes with the climb they are not: the play channel is the centre COLUMN of the
@@ -800,9 +845,14 @@ function ceilingBakeWall(watch){
   // so there is no height of the climb where the plaster is the only thing on screen. Two lanes keep
   // the margin from turning to noise: columns hug the star border, circles sit a little further in,
   // and each figure keeps a clear stretch on its own side so nothing is ever set on top of the animal
-  // that already anchors that reach of the tile.
+  // that already anchors that reach of the tile. The foot register claims a strip of its own below all
+  // of it — reserved out of footY rather than shared with the margin furniture above, the same way the
+  // divider claims its own reach of the tile rather than competing with whatever is passing behind it.
   const cell=wide?15:12,circIn=wide?64:30,bullIn=wide?120:40,hippoIn=wide?108:38,
-    figClear=wide?90:46,loY=R*.07,hiY=wide?R*.94:R*.93,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
+    figClear=wide?90:46,loY=R*.07,footY=wide?R*.94:R*.93,
+    procFig=wide?11:7,procCap=wide?procFig*.42:0,procCount=wide?15:8,
+    procStripH=procFig*2.3+procCap*1.5+10,procY=footY-procFig*.15,
+    hiY=footY-procStripH,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
   // P2 · a register per watch. TT353 is one authored sheet and the circumpolar pair, the decan columns
   // and the twelve month circles are not separate chapters of it (docs/eras/03-ceiling.md, "The
   // signature sheet") — but which of that one sheet's furniture the flight is currently passing is
@@ -860,18 +910,14 @@ function ceilingBakeWall(watch){
     if(lOk){ceilingMonthRules(g,lx,y,r*1.4,r*1.7,.32);ceilingMonthCircle(g,lx,y,r,.85,i*2);ceilingMonthBox(g,lx,y,r,CEILING_MONTH_NAMES[i*2],.7);}
     if(rOk){ceilingMonthRules(g,rx,y,r*1.4,r*1.7,.32);ceilingMonthCircle(g,rx,y,r,.85,i*2+1);ceilingMonthBox(g,rx,y,r,CEILING_MONTH_NAMES[i*2+1],.7);}
   }
-  // The striding register: TT353's bottom band is a march of near-identical figures each bearing a
-  // solid disc, the sheet's purest instance of density-by-repetition and almost its only colour. It
-  // borrows the circle lane in whichever watch is not using it for the months, so it costs no new lane
-  // and never has to fight the wheels for the same margin.
-  if(!furn.months){
-    const stripN=5;
-    for(let i=0;i<stripN;i++){
-      const y=loY+span*i/(stripN-1);
-      if(!clash(y,1))ceilingPaintStriding(g,W-inset-circIn,y,wide?7:5,.8,i*13+3);
-      if(!clash(y,0))ceilingPaintStriding(g,inset+circIn,y,wide?7:5,.8,i*17+7);
-    }
-  }
+  // The foot register: TT353's bottom band is a march of near-identical striding figures each bearing
+  // a solid disc, the sheet's purest instance of density-by-repetition and almost its only colour —
+  // drawn horizontally, full width, in the strip reserved above rather than as two short vertical
+  // files stood in the margins the way this used to place it. It runs every watch, since the foot
+  // register is part of TT353's one authored sheet rather than a chapter of it, in a lane clear of the
+  // bull, the hippo, the wheels and the decan field, which all keep to loY..hiY now instead of sharing
+  // the tile's whole span with a striding file the way the old five-a-side arrangement made them.
+  ceilingProcession(g,starL,starRx,procY,procFig,procCap,procCount,.82);
   return c;
 }
 // P2's cache and changeover. A register change is detected here — the watch ceilingWatch() names has
