@@ -177,6 +177,18 @@ function ceilingWet(g,x,y,size,alpha=1,rgb){
   g.globalAlpha=.28*alpha;g.beginPath();g.ellipse(x,y,size*1.75,size*1.45,0,0,TAU);g.fill();
   g.restore();
 }
+// The modern label's own hand: cut, not brushed. 03-ceiling.md's Latin gloss "declares itself
+// modern," so it does not borrow the wall's wet reed — no red setting-out, no reloaded doubling.
+// It is tooled instead: a dark stroke into a groove's shadow side, a pale one into its light, the
+// two offset by a hair seeded from the string itself rather than from where it lands, so a caption
+// wears the same edge whether it is standing still, fading or riding a floater up the margin.
+function ceilingChisel(g,text,x,y){
+  let h=7;for(let i=0;i<text.length;i++)h=(h*131+text.charCodeAt(i))|0;
+  const jx=(ceilingHash(h,1)-.5)*.7*scale,jy=(ceilingHash(1,h)-.5)*.5*scale,tone=g.fillStyle,alpha=g.globalAlpha;
+  g.fillStyle=CEILING_PALETTE.duatDeep;g.globalAlpha=alpha*.6;g.fillText(text,x+.75*scale+jx,y+.65*scale+jy);
+  g.fillStyle=CEILING_PALETTE.lime;g.globalAlpha=alpha*.4;g.fillText(text,x-.6*scale-jx,y-.5*scale-jy);
+  g.fillStyle=tone;g.globalAlpha=alpha;g.fillText(text,x,y);
+}
 function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
   if(!points.length||stage<=0)return;
   const s1=clamp(stage*4,0,1),s2=clamp((stage-.25)*4,0,1),s3=clamp((stage-.5)*4,0,1),s4=clamp((stage-.75)*4,0,1);
@@ -1257,7 +1269,7 @@ function ceilingDrawNode(n,aim){
   ceilingNodeIcon(n,r,t);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
-    ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(CEILING_COURSES[n.difficultyChoice],0,r+15*scale);
+    ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ceilingChisel(ctx,CEILING_COURSES[n.difficultyChoice],0,r+15*scale);
   }
   ctx.restore();
 }
@@ -1504,7 +1516,7 @@ function ceilingFloaterMark(f,alpha){
     left=sx(f.x)<W*.5,nx=left?margin+hand*2.2:W-margin-hand*2.2,
     ny=clamp(sy(f.y)-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
   ctx.save();ctx.globalAlpha=alpha;ctx.font=plateFace(size,'sc');ctx.fillStyle=CEILING_PALETTE.red;
-  ctx.textAlign=left?'left':'right';ctx.fillText(f.text,nx,ny);
+  ctx.textAlign=left?'left':'right';ceilingChisel(ctx,f.text,nx,ny);
   ceilingPointer(nx+(left?-hand*1.8:hand*1.8),ny-hand*.5,left?1:-1,hand,alpha*.85);
   ctx.restore();
 }
@@ -1633,7 +1645,7 @@ function ceilingDrawRunningHead(dt){
   const pad=size*.55;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.globalAlpha=.95;
   ctx.fillRect(left-pad,y-size*1.5,width+figures+size*.75+pad*2,size*1.85);
   ctx.globalAlpha=.72;ceilingNumber(ctx,index+1,left,y-size*.78,size*1.05,CEILING_PALETTE.carbon);
-  ctx.fillStyle=CEILING_PALETTE.carbon;ctx.fillText(label,left+figures+size*.75,y);ctx.restore();
+  ctx.fillStyle=CEILING_PALETTE.carbon;ceilingChisel(ctx,label,left+figures+size*.75,y);ctx.restore();
 }
 // P3 · the flat lime chapter card is retired outright rather than softened. It used to fill
 // W*.18..W*.82 with opaque lime and cover the very hour-circles the player was aiming at every time a
@@ -1662,7 +1674,7 @@ function ceilingDrawChangeover(dt){
   // passes, which ceilingWordRow already runs — standing in for the atlas's turned sheet.
   ceilingWordRow(ctx,'hour',W*.5,cy-9,46,CEILING_PALETTE.red,1,clamp(age/(CEILING_CHANGE_DUR*.75),0,1));
   ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=plateFace(11,'sc');
-  if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ctx.fillText(label,W*.5,cy+30);
+  if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ceilingChisel(ctx,label,W*.5,cy+30);
   ctx.restore();
 }
 function renderCeiling(dt,aim){
