@@ -60,11 +60,16 @@ const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
 const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
 let ceilingWall=null,ceilingWallKey='';
+// The room's own architecture — the kheker frieze and the foot's block rule — is cached separately
+// from the tall passing strip below, because it never moves: see ceilingDrawRegisterGrid(). Each is
+// only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
+// are otherwise pinned exactly the way this file always pinned the whole wall.
+let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='';
 // The barque's last known heading, held between frames so a passing moment of near-zero horizontal
 // speed (the tip of a climb or dive) does not flicker the mirror back and forth.
 let ceilingFacing=1;
 
-function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';}
+function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
 // Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
@@ -389,40 +394,72 @@ function ceilingPaintHippo(g,x,y,s,alpha=.46){
 }
 function ceilingBuildWall(){
   const key=W+'x'+H+'x'+DPR;if(ceilingWall&&ceilingWallKey===key)return ceilingWall;
-  const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
-  g.fillStyle=CEILING_PALETTE.plaster;g.fillRect(0,0,W,H);
-  // The wall's texture is material, not pictorial modelling: broad lime patches, worn pits and hairline cracks.
-  const rng=seeded(14731458);
-  for(let i=0;i<180;i++){
-    const x=rng()*W,y=rng()*H,rx=8+rng()*70,ry=2+rng()*16;
-    g.fillStyle=rng()>.48?'rgba(238,228,205,.08)':'rgba(102,78,49,.045)';g.beginPath();g.ellipse(x,y,rx,ry,(rng()-.5)*.3,0,TAU);g.fill();
+  // P1 · carry the wall with the climb. The wall used to be one canvas the size of the screen, blitted
+  // at 0,0 forever, so forty rows of climbing never moved a single kheker or a single month circle.
+  // It is baked here as one repeating TILE instead: the room's own architecture — the kheker frieze
+  // crowning it and the foot's block rule closing it (docs/eras/03-ceiling.md, "Frame and furniture" —
+  // a tomb ceiling's boundary is its architecture, not a page border) — is cached apart from this and
+  // pinned to the viewport by ceilingDrawRegisterGrid(). Everything else drawn below is furniture, and
+  // furniture passes: the plaster itself, the painter's snapped canon grid, both star bands, the
+  // register-dividing rule, the twelve month circles, the decan columns, Meskhetiu and Reret. This tile
+  // is drawn once and blitted at an offset tracking world.cameraY*scale in renderCeiling() — the exact
+  // rate sy() gives every node and hazard, so the room passes at one rate with no depth in it, the way
+  // the era file's "flat, one wall, one rate" reading of the vertical asks for.
+  //
+  // The tile stands about 1.6 view-heights tall: taller than one glance, as asked, but still a plain
+  // multiple of it rather than an unbounded strip, so the memory this costs over the old screen-sized
+  // bake is a fixed ~1.6x of one screen (the frieze/foot pair cached in ceilingDrawRegisterGrid() adds
+  // only a few pixels' worth of height each, not a second full-screen sheet), not a cost that grows
+  // with how long a run gets.
+  //
+  // Every rhythm that has to survive the join between one copy of the tile and the next — the star
+  // band's gap, the canon grid's unit — is forced to an exact divisor of the tile height before it is
+  // drawn with, so the spacing never jumps at the seam. The plaster texture and the crack network are
+  // not periodic, so they are drawn wrapped instead: once at their own position, and again shifted by a
+  // tile height whenever they fall near an edge, the ordinary way to make a baked canvas repeat without
+  // a visible seam. Checked by eye at 390px and 1400px, stepping world.cameraY across three tile heights.
+  const gap=Math.max(20,Math.min(28,H/22)),rows=Math.max(14,Math.round(H*1.6/gap)),R=rows*gap;
+  const unitTarget=Math.max(20,Math.min(32,W/36)),gridUnit=R/Math.max(3,Math.round(R/unitTarget));
+  const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(R*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
+  g.fillStyle=CEILING_PALETTE.plaster;g.fillRect(0,0,W,R);
+  // The wall's texture is material, not pictorial modelling: broad lime patches, worn pits and hairline
+  // cracks. The patches and the cracks are drawn a second time, shifted by ±R, whenever they land within
+  // their own reach of an edge, so the texture wraps rather than ending at one edge of the tile and
+  // starting over, unrelated, at the other.
+  const rng=seeded(14731458),patches=Math.round(180*R/H),cracks=Math.round(20*R/H);
+  for(let i=0;i<patches;i++){
+    const x=rng()*W,y=rng()*R,rx=8+rng()*70,ry=2+rng()*16,rot=(rng()-.5)*.3;
+    g.fillStyle=rng()>.48?'rgba(238,228,205,.08)':'rgba(102,78,49,.045)';
+    const draw=yy=>{g.beginPath();g.ellipse(x,yy,rx,ry,rot,0,TAU);g.fill();};
+    draw(y);if(y<ry+2)draw(y+R);if(y>R-ry-2)draw(y-R);
   }
-  for(let i=0;i<Math.min(1400,Math.floor(W*H/420));i++){
-    const x=rng()*W,y=rng()*H,a=.05+rng()*.08;g.fillStyle=rng()>.55?`rgba(250,243,222,${a})`:`rgba(73,54,34,${a})`;g.fillRect(x,y,.6+rng()*.8,.6+rng()*.8);
+  for(let i=0;i<Math.min(Math.round(1400*R/H),Math.floor(W*R/420));i++){
+    const x=rng()*W,y=rng()*R,a=.05+rng()*.08;g.fillStyle=rng()>.55?`rgba(250,243,222,${a})`:`rgba(73,54,34,${a})`;g.fillRect(x,y,.6+rng()*.8,.6+rng()*.8);
   }
-  for(let i=0;i<20;i++){
-    let x=rng()*W,y=rng()*H;const pts=[[x,y]];for(let j=0;j<3+Math.floor(rng()*4);j++){x+=(rng()-.5)*24;y+=4+rng()*17;pts.push([x,y]);}
+  for(let i=0;i<cracks;i++){
+    let x=rng()*W,y=rng()*R;const pts=[[x,y]];for(let j=0;j<3+Math.floor(rng()*4);j++){x+=(rng()-.5)*24;y+=4+rng()*17;pts.push([x,y]);}
     ceilingBrush(g,pts,CEILING_PALETTE.loss,.45,.17,100+i);
+    if(pts.at(-1)[1]>R)ceilingBrush(g,pts.map(p=>[p[0],p[1]-R]),CEILING_PALETTE.loss,.45,.17,100+i);
   }
   const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,wide=W>=700;
-  ceilingSettingGrid(g,inset,inset,W-inset,H-inset,Math.max(20,Math.min(32,W/36)));
-  g.strokeStyle='rgba(36,29,22,.56)';g.lineWidth=1.1;g.strokeRect(inset,inset,W-inset*2,H-inset*2);
-  // The room is crowned at the top and closed at the foot; the star band runs down both edges.
-  const frieze=Math.max(13,Math.min(20,H*.026));
-  ceilingKheker(g,x0,x1,inset+3,frieze);
-  ceilingBlockRule(g,x0,x1,H-inset-frieze*.45-8,Math.max(4.5,frieze*.4),.72);
-  ceilingStarBorder(g,inset+9,inset+frieze+14,H-inset-frieze-14,Math.max(20,Math.min(28,H/22)));
-  ceilingStarBorder(g,W-inset-9,inset+frieze+14,H-inset-frieze-14,Math.max(20,Math.min(28,H/22)));
+  // The grid's own unit already divides R exactly; stopping one pixel short of R keeps the loop from
+  // drawing the seam's line twice (once here, once as the next copy's y=0 line).
+  ceilingSettingGrid(g,inset,0,W-inset,R-1,gridUnit);
+  // The side star bands used to run only between the frieze and the foot rule; now they are furniture
+  // like everything else here, so they run the tile's whole height on a gap that already divides it.
+  ceilingStarBorder(g,inset+9,0,R,gap);
+  ceilingStarBorder(g,W-inset-9,0,R,gap);
   // TT353 is organised as two fields divided by a band; here the band is the block border it would
-  // have been painted as, rather than the plain rule this sheet drew before.
-  const divide=H*.52,band=Math.max(7,Math.min(11,H*.014));
+  // have been painted as. It belongs to the register it divides, not to the room's architecture, so it
+  // passes with the rest of the tile instead of pinning the way the foot rule does.
+  const divide=R*.52,band=Math.max(7,Math.min(11,H*.014));
   ceilingBlockRule(g,x0+4,x1-4,divide-band*.5,band,.5);
   // The upper field carries the two circumpolar figures and their names; the lower one the month
-  // circles and the decan columns. The middle of the sheet is left to the route on purpose — a wall
+  // circles and the decan columns. The middle of the tile is left to the route on purpose — a wall
   // this dense would bury the flight if the density ran edge to edge.
   const cell=wide?15:12;
   if(wide){
-    const top=hudBand()+30;
+    const top=R*.09;
     ceilingPaintBull(g,W-inset-152,divide-70,20,.5);
     ceilingWordColumn(g,'foreleg',W-inset-58,divide-118,cell,CEILING_PALETTE.carbon,.5);
     ceilingPaintHippo(g,W-inset-262,divide-84,19,.46);
@@ -431,9 +468,9 @@ function ceilingBuildWall(){
     const r=Math.min(18,H*.024),mx=inset+46,my=divide+band+38;
     for(let i=0;i<12;i++)ceilingMonthCircle(g,mx+(i%3)*r*2.4,my+Math.floor(i/3)*r*2.4,r,.42);
     for(let i=0;i<5;i++)ceilingWordColumn(g,CEILING_COLUMNS[3+i],W-inset-44-i*26,divide+band+32,cell,CEILING_PALETTE.carbon,.42);
-    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[8+i],inset+40+i*26,H-inset-frieze-30-cell*3,cell,CEILING_PALETTE.carbon,.36);
+    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[8+i],inset+40+i*26,R*.92-cell*3,cell,CEILING_PALETTE.carbon,.36);
   }else{
-    const r=Math.max(9,Math.min(13,W*.027)),top=hudBand()+24,span=Math.max(r*2.5,(H-top-footerBand()-18)/5);
+    const r=Math.max(9,Math.min(13,W*.027)),top=R*.07,span=Math.max(r*2.5,(R*.86-top)/5);
     for(let i=0;i<5;i++){const y=top+i*span;ceilingMonthCircle(g,inset+22,y,r,.34);ceilingMonthCircle(g,W-inset-22,y,r,.34);}
     ceilingPaintBull(g,W*.5+38,divide-46,13,.4);
     ceilingWordColumn(g,'foreleg',inset+30,divide+band+26,cell,CEILING_PALETTE.carbon,.4);
@@ -441,11 +478,32 @@ function ceilingBuildWall(){
   }
   ceilingWall=c;ceilingWallKey=key;return c;
 }
+// The room's only furniture that does not pass: the kheker frieze crowning it and the block rule
+// closing it at the foot (see ceilingBuildWall() above for the reasoning). This used to be the 9%-alpha
+// hairline register grid, an abstraction standing in for a register the wall never actually drew and
+// which read, in practice, as invisible; now the wall draws real registers and passes them for real, so
+// that abstraction is retired rather than left running beside it, and this is the sheet's one remaining
+// screen-pinned layer — cached the same way the tile above is, so the cost is one drawImage a frame.
 function ceilingDrawRegisterGrid(){
-  const step=207*scale,start=Math.floor((world.cameraY-80)/207)*207;
-  ctx.save();ctx.strokeStyle='rgba(36,29,22,.09)';ctx.lineWidth=.55;
-  for(let wy=start;wy<world.cameraY+world.height+207;wy+=207){const y=sy(wy);ctx.beginPath();ctx.moveTo(22,y);ctx.lineTo(W-22,y);ctx.stroke();}
-  ctx.restore();
+  const key=W+'x'+H+'x'+DPR;
+  if(!ceilingFrameTop||ceilingFrameKey!==key){
+    const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,frieze=Math.max(13,Math.min(20,H*.026));
+    // Each band is baked at just its own height rather than a screen-sized sheet — the frieze band
+    // never needs more than the reed bundle plus its closing line, and the foot rule is a few pixels
+    // thick, so this pair costs almost nothing beside the tall tile above.
+    const topH=Math.ceil(inset+frieze+8),botY=H-inset-frieze*.45-8-4,botH=Math.ceil(H-botY);
+    const top=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(topH*DPR))),tg=top.getContext('2d');tg.scale(DPR,DPR);
+    ceilingKheker(tg,x0,x1,inset+3,frieze);
+    const bot=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(botH*DPR))),bg=bot.getContext('2d');bg.scale(DPR,DPR);
+    // Drawn near-opaque rather than the .5 a register-dividing rule wears inside the passing tile: this
+    // one is the room's real edge, so it has to close over whatever furniture is sliding behind it, not
+    // share a static sheet with it at a register's own translucency. Its y is measured from botY, the
+    // top of this small canvas, not from the screen the rule actually sits near the foot of.
+    ceilingBlockRule(bg,x0,x1,H-inset-frieze*.45-8-botY,Math.max(4.5,frieze*.4),.94);
+    ceilingFrameTop=top;ceilingFrameBot={c:bot,y:botY};ceilingFrameKey=key;
+  }
+  ctx.drawImage(ceilingFrameTop,0,0,W,ceilingFrameTop.height/DPR);
+  ctx.drawImage(ceilingFrameBot.c,0,ceilingFrameBot.y,W,ceilingFrameBot.c.height/DPR);
 }
 function ceilingDrawRoute(){
   if(inkPath.length<2)return;
@@ -689,7 +747,16 @@ function ceilingDrawRunningHead(dt){
   }
 }
 function renderCeiling(dt,aim){
-  reveal.prime();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.drawImage(ceilingBuildWall(),0,0,W,H);
+  reveal.prime();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+  const tile=ceilingBuildWall(),tileH=tile.height/DPR;
+  // One wall, one rate: the tile is carried at exactly -world.cameraY*scale, the same factor sy()
+  // applies to every node and hazard on this sheet, so the room passes at the same speed as everything
+  // flying over it — no parallax, because a slower or faster layer would be a depth cue, and the era
+  // file rules those out flat. phase is where in the tile's own cycle the camera currently sits; the
+  // loop draws just enough copies, starting one tile above that phase, to cover the screen regardless
+  // of where the phase falls.
+  const phase=(((-world.cameraY*scale)%tileH)+tileH)%tileH;
+  for(let y=phase-tileH;y<H;y+=tileH)ctx.drawImage(tile,0,y,W,tileH);
   ceilingDrawRegisterGrid();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
