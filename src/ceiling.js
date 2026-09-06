@@ -53,6 +53,9 @@ const CEILING_WORD={
 const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white','red','shu','sekhmet','set','eye','shield'];
 const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 let ceilingWall=null,ceilingWallKey='';
+// The barque's last known heading, held between frames so a passing moment of near-zero horizontal
+// speed (the tip of a climb or dive) does not flicker the mirror back and forth.
+let ceilingFacing=1;
 
 function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
@@ -527,25 +530,41 @@ function ceilingDrawAim(aim){
   ctx.restore();
 }
 function ceilingDrawApep(h,t){
-  const r=h.r*scale,field=gravityRadius(h)*scale;
+  const r=h.r*scale,field=gravityRadius(h)*scale,time=reducedMotion?0:world.time;
+  // A serpent is already drawn as a wave, so turning the coil and running a travelling undulation
+  // along it adds no depth and no modelling — it is the figure doing what the figure depicts. The
+  // pull is the atlas's own term: as the barque is taken the coil visibly winds tighter around it,
+  // which is the one place a still image here was costing the player information.
+  const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
   ctx.save();ctx.translate(sx(h.x),sy(h.y));
-  ctx.strokeStyle='rgba(157,55,36,.2)';ctx.lineWidth=.7;for(const k of [.48,.72,1]){ctx.beginPath();ctx.ellipse(0,0,field*k,field*k*.62,0,0,TAU);ctx.stroke();}
-  const points=[];for(let i=0;i<=52;i++){const u=i/52,a=u*TAU*1.7+(h.phase||0),rr=r*(.12+.78*u);points.push([Math.cos(a)*rr,Math.sin(a)*rr*.62]);}
+  const pulse=reducedMotion?1:.94+.06*Math.sin(time*1.1+(h.phase||0));
+  ctx.strokeStyle='rgba(157,55,36,.2)';ctx.lineWidth=.7;for(const k of [.48,.72,1]){const kk=k*pulse*(1-pull*.08);ctx.beginPath();ctx.ellipse(0,0,field*kk,field*kk*.62,0,0,TAU);ctx.stroke();}
+  const turn=time*.5+(h.phase||0),wind=1.7+pull*1.1;
+  const points=[];for(let i=0;i<=52;i++){const u=i/52,a=u*TAU*wind+turn,wave=reducedMotion?0:Math.sin(u*TAU*3-time*2.4+(h.phase||0))*r*.05,rr=r*(.12+.78*u)+wave;points.push([Math.cos(a)*rr,Math.sin(a)*rr*.62]);}
   ceilingBrush(ctx,points,CEILING_PALETTE.carbon,Math.max(3,r*.24),.92*t,h.seed);
   ceilingBrush(ctx,points,CEILING_PALETTE.redDark,Math.max(1.5,r*.14),.92*t,h.seed+7);
   const p=points.at(-1),q=points.at(-3),a=Math.atan2(p[1]-q[1],p[0]-q[0]);ctx.save();ctx.translate(p[0],p[1]);ctx.rotate(a);
   ceilingPolygon(ctx,[[0,-r*.12],[r*.32,0],[0,r*.12]],CEILING_PALETTE.red,t,h.seed+13,1);ctx.restore();ctx.restore();
 }
 function ceilingDrawEye(h,t){
-  const r=h.r*scale,field=gravityRadius(h)*scale;ctx.save();ctx.translate(sx(h.x),sy(h.y));
-  for(let i=0;i<12;i++){const a=i/12*TAU+(h.phase||0)*.08,from=r*.68,to=field*.78;ceilingBrush(ctx,[[Math.cos(a)*from,Math.sin(a)*from],[Math.cos(a+.08)*to,Math.sin(a+.08)*to]],CEILING_PALETTE.red,.9,.38*t,h.seed+i);}
+  const r=h.r*scale,field=gravityRadius(h)*scale,time=reducedMotion?0:world.time;ctx.save();ctx.translate(sx(h.x),sy(h.y));
+  // "Radiating" is the whole content of this figure, so the rays are where the motion has to live:
+  // they lengthen and shorten on a slow breath, and flare outward as the traveller closes in — the
+  // Eye's own reading of the atlas's pull term.
+  const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
+  const breath=reducedMotion?1:.82+.18*Math.sin(time*1.3+(h.phase||0));
+  for(let i=0;i<12;i++){const a=i/12*TAU+(h.phase||0)*.08,from=r*.68,to=(field*.6+field*.3*breath)*(1+pull*.5);ceilingBrush(ctx,[[Math.cos(a)*from,Math.sin(a)*from],[Math.cos(a+.08)*to,Math.sin(a+.08)*to]],CEILING_PALETTE.red,.9+pull*.5,(.32+.14*breath+pull*.3)*t,h.seed+i);}
   ctx.globalAlpha=t;ctx.fillStyle=CEILING_PALETTE.yellow;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,r*.68,0,TAU);ctx.fill();ctx.stroke();
-  ctx.fillStyle=CEILING_PALETTE.redDark;ctx.beginPath();ctx.arc(0,0,r*.33,0,TAU);ctx.fill();
+  ctx.fillStyle=CEILING_PALETTE.redDark;ctx.beginPath();ctx.arc(0,0,r*(.33+pull*.05),0,TAU);ctx.fill();
   ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-r*.35,0);ctx.quadraticCurveTo(0,-r*.25,r*.35,0);ctx.quadraticCurveTo(0,r*.24,-r*.35,0);ctx.stroke();ctx.restore();
 }
 function ceilingDrawShu(h,t){
-  const r=h.r*scale,field=gravityRadius(h)*scale,dir=Number.isFinite(h.dir)?h.dir:0;ctx.save();ctx.translate(sx(h.x),sy(h.y));
-  ctx.save();ctx.rotate(dir);for(const side of [-.55,0,.55]){const y=side*r*.68;ceilingBrush(ctx,[[-field*.8,y],[field*.8,y]],CEILING_PALETTE.blue,.9,.3*t,h.seed+side*20);for(let x=-field*.55;x<field*.7;x+=field*.36)ceilingBrush(ctx,[[x,y-2],[x+6*scale,y],[x,y+2]],CEILING_PALETTE.blue,.7,.28*t,h.seed+x);}ctx.restore();
+  const r=h.r*scale,field=gravityRadius(h)*scale,dir=Number.isFinite(h.dir)?h.dir:0,time=reducedMotion?0:world.time;ctx.save();ctx.translate(sx(h.x),sy(h.y));
+  // Shu himself holds still — holding sky and earth apart is the whole point of him — and only the
+  // air he holds drifts, along the same local +x the gust actually pushes (see flightStep's
+  // Math.cos(h.dir)/Math.sin(h.dir) gust), so the crosswind's direction is read, not inferred.
+  const step=field*.36,drift=reducedMotion?0:(time*34*scale)%step;
+  ctx.save();ctx.rotate(dir);for(const side of [-.55,0,.55]){const y=side*r*.68;ceilingBrush(ctx,[[-field*.8,y],[field*.8,y]],CEILING_PALETTE.blue,.9,.3*t,h.seed+side*20);for(let x=-field*.55-(reducedMotion?0:step)+drift;x<field*.7;x+=step)ceilingBrush(ctx,[[x,y-2],[x+6*scale,y],[x,y+2]],CEILING_PALETTE.blue,.7,.28*t,h.seed+x);}ctx.restore();
   // Upright Shu is the sign; the blue currents carry the mechanical direction separately.
   ceilingPolygon(ctx,[[-r*.16,r*.34],[r*.16,r*.34],[r*.2,r*.62],[-r*.2,r*.62]],CEILING_PALETTE.white,t,h.seed,1.1);
   ceilingPolygon(ctx,[[-r*.12,-r*.08],[r*.12,-r*.08],[r*.16,r*.35],[-r*.16,r*.35]],CEILING_PALETTE.red,t,h.seed+3,1.1);
@@ -559,8 +578,11 @@ function ceilingDrawHazard(h){
 }
 function ceilingDrawNun(g){
   const x=sx(g.x),y=sy(g.y),r=g.r*scale;if(y+r<-30||y-r>H+30)return;const t=reveal.progress(g,HAZARD_REVEAL,true);
+  // Formless water held perfectly still is the one thing Nun is not, so the hatch drifts sideways
+  // as a travelling wave instead of sitting as a fixed zigzag.
+  const time=reducedMotion?0:world.time;
   ctx.save();ctx.globalAlpha=.78*t;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.clip();ctx.fillStyle='rgba(221,207,173,.82)';ctx.fillRect(x-r,y-r,r*2,r*2);
-  for(let i=-5;i<=5;i++){const yy=y+i*r*.16,pts=[];for(let px=x-r*1.1,k=0;px<=x+r*1.15;px+=r*.12,k++)pts.push([px,yy+(k%2?-r*.045:r*.045)]);ceilingBrush(ctx,pts,CEILING_PALETTE.blue,Math.max(.8,r*.055),.62,g.seed+i);}
+  for(let i=-5;i<=5;i++){const yy=y+i*r*.16,pts=[];for(let px=x-r*1.1,k=0;px<=x+r*1.15;px+=r*.12,k++)pts.push([px,yy+Math.sin((px-x)/(r*.24)*Math.PI+i*.7+(g.phase||0)+time*1.4)*r*.045]);ceilingBrush(ctx,pts,CEILING_PALETTE.blue,Math.max(.8,r*.055),.62,g.seed+i);}
   ctx.restore();ctx.save();ctx.globalAlpha=.32*t;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.stroke();ctx.restore();
 }
 function ceilingDrawPlayer(){
