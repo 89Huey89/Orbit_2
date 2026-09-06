@@ -200,11 +200,54 @@ function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
     }else ceilingBrush(g,closed,CEILING_PALETTE.carbon,width,.92*s4,seed+67);
   }
 }
-// N14, the star sign, sets one point downward and two arms up — the orientation the wall uses, and
-// the quickest way to tell an Egyptian star from the one a modern chart prints.
-function ceilingStar(g,cx,cy,r,fill=CEILING_PALETTE.yellow,stage=1,seed=1){
-  const p=[];for(let i=0;i<10;i++){const a=Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
+// N14, the star sign. Two things about it belong to the wall rather than to a modern chart, and this
+// used to have only the first: it sets one point downward and two arms up, and its arms are lens
+// shaped — two curved edges meeting at a point at the hub and again at the tip, the shape a loaded
+// brush leaves when it is dragged off to a point — not the straight-sided lobes of a pentagram.
+// ceilingBorderStar already carried that correction for the band unit; the sign the whole route is
+// drawn around had stayed the pentagram the comment here claimed the wall does not print.
+// Everything that varies varies off the mark's own seed and nothing off the clock: each arm's length,
+// the depth of the valley between one arm and the next, how much belly each of the ten edges carries,
+// and a wobble of the whole sign about the one-point-down orientation — a wobble, where a band star
+// takes a free rotation, because at figure scale the orientation is the sign's own grammar while a
+// band is a texture. The unit-radius outline is cached against the seed: a node redraws every frame
+// and its shape is a property of the node, not of the frame.
+const CEILING_STAR_OUTLINES=new Map();
+function ceilingStarOutline(seed){
+  let pts=CEILING_STAR_OUTLINES.get(seed);if(pts)return pts;
+  const rot=Math.PI/2+(ceilingHash(seed,211)-.5)*.34,tips=[],valleys=[];
+  for(let i=0;i<5;i++){
+    const a=rot+i*TAU/5+(ceilingHash(seed+i*7,227)-.5)*.26,len=.82+ceilingHash(seed+i*3,229)*.34;
+    tips.push([Math.cos(a)*len,Math.sin(a)*len]);
+    const av=rot+(i+.5)*TAU/5+(ceilingHash(seed+i*5,233)-.5)*.22,w=.25+ceilingHash(seed+i*11,239)*.11;
+    valleys.push([Math.cos(av)*w,Math.sin(av)*w]);
+  }
+  pts=[];
+  // Every edge is a quadratic whose control point is its own midpoint pushed straight out from the
+  // centre, so the belly bulges away from the hub however uneven the two ends it runs between are.
+  const edge=(a,b,bow)=>{
+    const mx=(a[0]+b[0])*.5*(1+bow),my=(a[1]+b[1])*.5*(1+bow);
+    for(let s=1;s<=4;s++){const t=s/4,u=1-t;pts.push([u*u*a[0]+2*u*t*mx+t*t*b[0],u*u*a[1]+2*u*t*my+t*t*b[1]]);}
+  };
+  for(let i=0;i<5;i++){
+    edge(valleys[(i+4)%5],tips[i],.17+ceilingHash(seed+i*17,241)*.14);
+    edge(tips[i],valleys[i],.17+ceilingHash(seed+i*19,251)*.14);
+  }
+  if(CEILING_STAR_OUTLINES.size>400)CEILING_STAR_OUTLINES.clear();
+  CEILING_STAR_OUTLINES.set(seed,pts);return pts;
+}
+function ceilingStar(g,cx,cy,r,fill=CEILING_PALETTE.yellow,stage=1,seed=1,hub=true){
+  const u=ceilingStarOutline(seed),p=new Array(u.length);
+  for(let i=0;i<u.length;i++)p[i]=[cx+u[i][0]*r,cy+u[i][1]*r];
   ceilingPolygon(g,p,fill,stage,seed,Math.max(.8,r*.12));
+  // The ringed hub the facsimile sets where five arm bases meet, there to cover what would otherwise
+  // be a knot of coincident line-ends — so it is laid last, after the closing black line, and only
+  // where the sign is drawn big enough for the ring to be a ring rather than a blot.
+  if(hub&&stage>.78&&r>9){
+    const hr=r*.17;g.save();g.globalAlpha=clamp((stage-.78)/.22,0,1)*.85;
+    g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.5,hr*.34);g.beginPath();g.arc(cx,cy,hr,0,TAU);g.stroke();
+    g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(cx,cy,Math.max(.5,hr*.32),0,TAU);g.fill();g.restore();
+  }
 }
 // ---------- The wall's second hand: signs, quadrats, words, numbers ----------
 // A sign is painted, not typed. The face supplies the shape and the four passes supply the hand: a
@@ -1081,10 +1124,20 @@ function ceilingDrawDecanCharts(){
   }
   ctx.restore();
 }
+// The ordinary bodies draw from the wall's own range of star colours, and yellow is deliberately not
+// in it. Yellow ochre is the sheet's small local accent (docs/eras/research/ceiling.md, §3: "small
+// local fill and star sign; do not infer generic gold from it") and this plate spends the whole of it
+// on the two bodies that have to be told apart at a glance — the gold body and the slingshot. An
+// ordinary star reaching into the same pot was costing the sheet twice: half the field wore the
+// accent colour, and a gold body was then indistinguishable from any ordinary star beside it.
+// White is huntite, the pigment the wall paints star discs in; it is kept to one pot in five and
+// otherwise spent on the disc a star is set on, since a white sign on plaster is a pale mark and a
+// field of them would be a route the player has to hunt for.
+const CEILING_BODY_FILLS=[CEILING_PALETTE.carbon,CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.redDark,CEILING_PALETTE.carbon];
 function ceilingNodeIcon(n,r,stage){
   const seed=n.seed||n.id+1;
   if(n.type==='gold'||n.type==='sling'){
-    ceilingStar(ctx,0,0,r*(n.type==='sling'?.27:.22),CEILING_PALETTE.yellow,stage,seed);return;
+    ceilingStar(ctx,0,0,r*(n.type==='sling'?.3:.25),CEILING_PALETTE.yellow,stage,seed);return;
   }
   if(n.type==='shield'){
     ceilingPolygon(ctx,[[-r*.2,-r*.23],[r*.2,-r*.23],[r*.2,r*.06],[0,r*.28],[-r*.2,r*.06]],CEILING_PALETTE.blue,stage,seed,1.2);return;
@@ -1096,11 +1149,71 @@ function ceilingNodeIcon(n,r,stage){
     ceilingPolygon(ctx,[[-r*.27,-r*.12],[r*.27,-r*.12],[r*.24,r*.14],[-r*.24,r*.14]],CEILING_PALETTE.yellow,stage,seed,1.1);
     if(stage>.72){ctx.fillStyle=CEILING_PALETTE.carbon;ctx.beginPath();ctx.arc(-r*.1,0,r*.06,0,TAU);ctx.fill();ctx.fillStyle=CEILING_PALETTE.red;ctx.beginPath();ctx.arc(r*.1,0,r*.06,0,TAU);ctx.fill();}return;
   }
-  // Ordinary bodies alternate between the star sign and a moving-star disc in a small barque.
-  if((Math.floor(n.row)+seed)%3===0){
-    ceilingPolygon(ctx,[[-r*.28,r*.14],[r*.28,r*.14],[r*.39,r*.04],[r*.24,r*.1],[-r*.24,r*.1],[-r*.39,r*.04]],CEILING_PALETTE.yellow,stage,seed,1.1);
-    if(stage>.5){ctx.save();ctx.globalAlpha=clamp((stage-.5)*2,0,1);ctx.fillStyle=(seed&1)?CEILING_PALETTE.red:CEILING_PALETTE.yellow;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-r*.05,r*.14,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}
-  }else ceilingStar(ctx,0,0,r*.22,(seed&1)?CEILING_PALETTE.red:CEILING_PALETTE.yellow,stage,seed);
+  // A star table is a table of entries, not one stamp repeated down a column. The wall keeps three
+  // kinds of ordinary body and this sheet keeps all three: the plain decan star sign; a star set on a
+  // huntite disc, the way the brighter named stars are painted; and a moving star — one of the
+  // ikhemu-wretju, the planets that never rest — carried past in its barque. Which kind a body is,
+  // how big its sign is drawn and which pot it was flooded from all come off the node's own seed, so
+  // a plate still paints identically every load while no two bodies on it are the same mark.
+  const kind=ceilingHash(seed,307),size=r*(.2+ceilingHash(seed,311)*.11),
+    fill=CEILING_BODY_FILLS[Math.floor(ceilingHash(seed,313)*CEILING_BODY_FILLS.length)%CEILING_BODY_FILLS.length];
+  if(kind<.2){
+    const w=r*(.26+ceilingHash(seed,317)*.08);
+    ceilingPolygon(ctx,[[-w,r*.14],[w,r*.14],[w*1.4,r*.04],[w*.86,r*.1],[-w*.86,r*.1],[-w*1.4,r*.04]],CEILING_PALETTE.white,stage,seed,1.1);
+    if(stage>.5){ctx.save();ctx.globalAlpha=clamp((stage-.5)*2,0,1);ctx.fillStyle=(seed&1)?CEILING_PALETTE.red:CEILING_PALETTE.carbon;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-r*.05,r*.14,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}
+  }else if(kind<.4){
+    const disc=size*1.34;
+    if(stage>.3){
+      ctx.save();ctx.globalAlpha=clamp((stage-.3)/.3,0,1);ctx.fillStyle=CEILING_PALETTE.white;ctx.beginPath();ctx.arc(0,0,disc,0,TAU);ctx.fill();
+      ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=Math.max(.5,disc*.09);ctx.stroke();ctx.restore();
+    }
+    ceilingStar(ctx,0,0,size*.86,fill===CEILING_PALETTE.white?CEILING_PALETTE.carbon:fill,stage,seed,false);
+  }else ceilingStar(ctx,0,0,size,fill,stage,seed);
+}
+// The wheel a body is drawn on. It was the last thing on the sheet still ruled by a machine: one
+// construction, twenty-four divisions in one fixed band, every one of them a perfectly even line, and
+// every wheel in the field with a division at exactly three o'clock. Four things fix that, and none of
+// them is invented — each is something this file already does somewhere else on the wall.
+// The construction is not one but two, both of them TT353's own: a band of short divisions held off
+// the centre by its own inner rule, and the month wheel's long spokes struck from the middle out to
+// the rim (ceilingMonthCircle). Where the band begins and ends is the wheel's own, not a constant.
+// The divisions are struck from the angle the setting-out started at, so a wheel's first mark sits
+// where its pen actually went down. And their weight and finish vary division to division — some
+// heavier where the reed was freshly loaded — exactly the licence ceilingMonthCircle's spokes take,
+// written out inline rather than run through ceilingBrush because this is laid per node per frame
+// where a month wheel is baked into the tile once.
+// The count still follows the circumference rather than a fixed number, so a small wheel is not a
+// crowded copy of a large one; the rim itself is untouched, since that circle is the orbit.
+// The three opening wheels are the one place on the sheet where circles stand side by side meaning
+// different things, and a course is chosen before there is a caption under it worth reading. So these
+// three do not take their construction from a seed: each course keeps its own, the same on every
+// plate — the quiet night a sparse band held out near the rim, the full night a deep one, the hard
+// night the month wheel's spokes struck the whole way through. The wheel thickens as the night gets
+// harder, which is how this wall grades anything: by construction and scale, never by rendering one
+// of them up. TT353's own twelve month wheels are uniform and stay uniform where they are drawn; what
+// licenses a difference here is gameplay legibility, the same licence the sheet's motion runs on.
+const CEILING_COURSE_WHEELS={
+  relaxed:{spoked:false,inner:.74,outer:.93,pitch:.28,most:20},
+  classic:{spoked:false,inner:.52,outer:.95,pitch:.46,most:28},
+  hardcore:{spoked:true,inner:.34,outer:.98,pitch:.7,most:40}};
+function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade,course){
+  const set=CEILING_COURSE_WHEELS[course],
+    spoked=set?set.spoked:ceilingHash(seed,401)<.28,
+    inner=set?set.inner:spoked?.34+ceilingHash(seed,403)*.12:.6+ceilingHash(seed,405)*.16,
+    outer=set?set.outer:spoked?.97+ceilingHash(seed,407)*.02:.87+ceilingHash(seed,409)*.09,
+    ticks=set?clamp(Math.round(r*set.pitch),10,set.most):clamp(Math.round(r*(spoked?.46:.62)),11,34);
+  g.strokeStyle=`rgba(36,29,22,${alpha})`;
+  for(let i=0;i<ticks;i++){
+    const a=start+i/ticks*TAU,i0=inner*(.97+ceilingHash(seed+i*5,413)*.06),o1=outer*(.97+ceilingHash(seed+i*7,417)*.05);
+    g.globalAlpha=fade*clamp(.6+ceilingHash(seed+i*3,411)*.55,0,1);
+    g.lineWidth=lw*(.68+ceilingHash(seed+i*11,419)*.74);
+    g.beginPath();g.moveTo(Math.cos(a)*r*i0,Math.sin(a)*r*i0);g.lineTo(Math.cos(a)*r*o1,Math.sin(a)*r*o1);g.stroke();
+  }
+  g.globalAlpha=fade;g.lineWidth=lw;
+  // A band closes on its own inner rule; a spoked wheel has none — its divisions run to the middle and
+  // the star sign's own ringed hub is what they converge on, which is the month wheel's hub circle
+  // arriving by another route.
+  if(!spoked){g.beginPath();g.arc(0,0,r*(inner-.02),0,TAU);g.stroke();}
 }
 function ceilingDrawNode(n,aim){
   const x=sx(n.x),y=sy(n.y),r=n.r*scale,cap=(n.cap||n.r)*scale;if(y+cap<-30||y-cap>H+30)return;
@@ -1120,11 +1233,7 @@ function ceilingDrawNode(n,aim){
     if(correct<1&&r>3){const a=start+TAU*correct,hx=Math.cos(a)*r,hy=Math.sin(a)*r,ta=a+Math.PI/2;
       ceilingWet(ctx,hx,hy,scale,.65*fade,CEILING_PALETTE.carbon);ceilingReed(ctx,hx,hy,ta,.8*fade,CEILING_PALETTE.carbon);}
   }
-  if(finish>0){
-    ctx.strokeStyle=`rgba(36,29,22,${retired?.16:active?.68:.38})`;ctx.lineWidth=active?1.45:1;
-    for(let i=0;i<24;i++){const a=i/24*TAU;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.72,Math.sin(a)*r*.72);ctx.lineTo(Math.cos(a)*r*.94,Math.sin(a)*r*.94);ctx.stroke();}
-    ctx.beginPath();ctx.arc(0,0,r*.7,0,TAU);ctx.stroke();
-  }
+  if(finish>0)ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade,n.difficultyChoice);
   // Defect (e): a dashed circle is the engraved atlas's mark, carried over unexamined. The wall's own
   // way to rule a boundary is a doubled line — the same hair-off-register repeat ceilingSign's closing
   // stroke already wears where the brush reloaded — so the target ring (where the flight will land)
