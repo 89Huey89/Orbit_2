@@ -507,7 +507,9 @@ function ceilingDrawNode(n,aim){
   ceilingNodeIcon(n,r,t);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
-    const labels={relaxed:'TIRO',classic:'ADEPTUS',hardcore:'MAGISTER'};ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(labels[n.difficultyChoice],0,r+15*scale);
+    // The sheet's own words for the three grades of a night's course, not the paper atlas's Latin
+    // (see src/ui.js's "COURSE SET" and CEILING_OBSERVATIONS for the register this matches).
+    const labels={relaxed:'EASY COURSE',classic:'FULL COURSE',hardcore:'HARD COURSE'};ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(labels[n.difficultyChoice],0,r+15*scale);
   }
   ctx.restore();
 }
@@ -586,13 +588,23 @@ function ceilingDrawNun(g){
   ctx.restore();ctx.save();ctx.globalAlpha=.32*t;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.stroke();ctx.restore();
 }
 function ceilingDrawPlayer(){
-  if(world.state==='dead')return;const p=world.player,x=sx(p.x),y=sy(p.y),angle=Math.atan2(p.vy,p.vx),s=Math.max(.72,scale);
-  ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(s,s);
-  // A single flat night barque: no exhaust, glow, modelled hull or banking.
+  if(world.state==='dead')return;const p=world.player,x=sx(p.x),y=sy(p.y),s=Math.max(.72,scale),speed=Math.hypot(p.vx,p.vy);
+  if(Math.abs(p.vx)>1)ceilingFacing=p.vx<0?-1:1;
+  // A single flat night barque, level and mirrored to face travel rather than rotated onto it: an
+  // orbit's tangent swings through every angle, and a hull turned to match it stood on its stern for
+  // half of every circle. No banking, and — the same discipline — never upside down either. A small
+  // heel toward horizontal, capped well short of vertical, is the only nod the hull gives to climbing
+  // or diving; the water and the flown route still carry the actual heading.
+  const heel=clamp(Math.atan2(p.vy,Math.abs(p.vx)||1e-3),-.3,.3);
+  ctx.save();ctx.translate(x,y);ctx.rotate(heel);ctx.scale(ceilingFacing*s,s);
   const hull=[[-20,3],[20,3],[27,-5],[16,-1],[-16,-1],[-27,-5]];ceilingPolygon(ctx,hull,CEILING_PALETTE.yellow,1,913,1.5);
   ceilingBrush(ctx,[[-10,-1],[-10,-12]],CEILING_PALETTE.carbon,1.3,.9,919);
-  ctx.fillStyle=CEILING_PALETTE.red;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(4,-10,6,0,TAU);ctx.fill();ctx.stroke();
-  ceilingBrush(ctx,[[4,-16],[7,-20]],CEILING_PALETTE.carbon,1,.85,923);
+  // The one moving part: the solar disc the barque exists to carry, crossing the deck on its own slow
+  // travel and quickening with the boost exactly as the quill's vane flexes with speed
+  // (OBSERVER_MARKS.quill, src/effects.js) — flat, no glow, no modelling, held still under reducedMotion.
+  const boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),dx=4+(reducedMotion?0:Math.sin(world.time*(1.2+boost*1.8))*11);
+  ctx.fillStyle=CEILING_PALETTE.red;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(dx,-10,6,0,TAU);ctx.fill();ctx.stroke();
+  ceilingBrush(ctx,[[dx,-16],[dx+3,-20]],CEILING_PALETTE.carbon,1,.85,923);
   if(p.shielded){ctx.strokeStyle='rgba(40,89,135,.72)';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,0,17,0,TAU);ctx.stroke();}
   if(p.reflectorArmed){ctx.strokeStyle='rgba(157,55,36,.72)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(0,0,21,0,TAU);ctx.stroke();ctx.setLineDash([]);}
   ctx.restore();
@@ -605,12 +617,28 @@ function ceilingDrawEffects(dt){
   }
   for(let i=rings.length-1;i>=0;i--){
     const q=rings[i];if(world.state!=='paused')q.age+=dt;if(q.age>q.life){rings.splice(i,1);continue;}const t=q.age/q.life,x=sx(q.node?q.node.x:q.x),y=sy(q.node?q.node.y:q.y);
-    if(q.kind==='blot'||q.kind==='splat'){ctx.fillStyle=`rgba(157,55,36,${(1-t)*.42})`;ctx.beginPath();ctx.ellipse(x,y,(q.size||6)*scale,(q.size||6)*scale*.68,0,0,TAU);ctx.fill();continue;}
+    if(q.kind==='blot'){
+      // A blot is pigment pooling where the brush lifted off the wall: one flat, slightly flattened
+      // disc, settling rather than flying.
+      ctx.fillStyle=`rgba(157,55,36,${(1-t)*(q.alpha||.42)})`;ctx.beginPath();ctx.ellipse(x,y,(q.size||6)*scale,(q.size||6)*scale*.68,0,0,TAU);ctx.fill();continue;
+    }
+    if(q.kind==='splat'){
+      // A splat is a graze: pigment thrown off the brush, not pooled — a scatter of short flecks
+      // flung clear of the point rather than one round mark. `dir`, when the event supplies it, aims
+      // the scatter (the side the barque left by); with none the flecks fly full circle.
+      const alpha=(1-t)*(q.alpha||.42),sd=q.seed||1,base=q.dir?(q.dir<0?Math.PI:0):0,cone=q.dir?1.9:TAU;
+      ctx.strokeStyle=`rgba(157,55,36,${alpha})`;ctx.lineCap='round';
+      for(let i=0;i<6;i++){
+        const a=base+(ceilingHash(sd,i)-.5)*cone,len=((q.size||6)*.5+ceilingHash(i,sd)*(q.size||6)*.6)*scale;
+        ctx.lineWidth=Math.max(.8,(q.size||6)*.11*scale);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);ctx.stroke();
+      }
+      continue;
+    }
     const r=(q.start+(reducedMotion?0:t*q.distance))*scale;ctx.strokeStyle=`rgba(${q.perfect?'40,89,135':'157,55,36'},${(1-t)*(q.alpha||.5)})`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();
   }
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}const a=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
-    ctx.save();ctx.globalAlpha=a;ctx.fillStyle=CEILING_PALETTE.red;ctx.font=plateFace(Math.max(10,12*scale));ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-f.age*18*scale);ctx.restore();
+    ctx.save();ctx.globalAlpha=a;ctx.fillStyle=CEILING_PALETTE.red;ctx.font=plateFace(Math.max(10,12*scale));ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-(reducedMotion?0:f.age*18*scale));ctx.restore();
   }
 }
 function ceilingDrawDark(dt){
@@ -633,6 +661,13 @@ function ceilingDrawRunningHead(dt){
   const size=Math.max(10,11*scale),label=CEILING_HOURS[index];
   ctx.save();ctx.textAlign='left';ctx.font=plateFace(size,'sc');
   const width=ctx.measureText(label).width,figures=ceilingNumWidth(index+1,size*1.05),left=W*.5-(width+figures+size*.75)/2;
+  // By mid-run the risen darkness sits directly behind this line — dark brown ink on the atlas's own
+  // dark-brown floor, unreadable. The atlas answers with a soft paper gradient under its running head
+  // (runningHeadGradient(), src/frame.js); a painted wall carries no such glow, so this is a flat patch
+  // of the wall's own plaster laid fresh under the label instead — a repair the palette already
+  // accounts for (Plaster loss/wear-and-repairs), not an added UI device, and cheaper than a gradient.
+  const pad=size*.55;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.globalAlpha=.95;
+  ctx.fillRect(left-pad,y-size*1.5,width+figures+size*.75+pad*2,size*1.85);
   ctx.globalAlpha=.72;ceilingNumber(ctx,index+1,left,y-size*.78,size*1.05,CEILING_PALETTE.carbon);
   ctx.fillStyle=CEILING_PALETTE.carbon;ctx.fillText(label,left+figures+size*.75,y);ctx.restore();
   if(chapterReveal.age<2.35&&world.state==='playing'){
