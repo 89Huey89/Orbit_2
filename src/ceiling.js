@@ -740,12 +740,23 @@ function ceilingBuildWall(){
 function ceilingDrawRegisterGrid(){
   const key=W+'x'+H+'x'+DPR;
   if(!ceilingFrameTop||ceilingFrameKey!==key){
-    const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,frieze=Math.max(13,Math.min(20,H*.026));
+    // Same formula ceilingBakeWall reads for its own inset, so the frame's x0/x1 and the passing
+    // tile's stay lined up.
+    const inset=Math.max(15,Math.min(24,W*.05)),x0=inset+10,x1=W-inset-10,frieze=Math.max(13,Math.min(20,H*.026));
     // Each band is baked at just its own height rather than a screen-sized sheet — the frieze band
     // never needs more than the reed bundle plus its closing line, and the foot rule is a few pixels
     // thick, so this pair costs almost nothing beside the tall tile above.
     const topH=Math.ceil(inset+frieze+8),botY=H-inset-frieze*.45-8-4,botH=Math.ceil(H-botY);
+    // The frame's own top and bottom star bands and corner roundels: correction 1 frames the room on
+    // all four sides, and the top/bottom edges are screen-pinned architecture exactly like the frieze
+    // and the foot rule below, not furniture that passes with the climb — so they belong here, in the
+    // gutter each canvas already carries above the frieze and below the foot rule, rather than in the
+    // tile. No extra canvas height: that gutter was empty before.
+    const gapH=Math.max(16,Math.min(24,W/28)),bandT=Math.min(inset-3,20),rr=Math.max(4,inset*.42);
     const top=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(topH*DPR))),tg=top.getContext('2d');tg.scale(DPR,DPR);
+    const bandYt=inset*.5+1;
+    ceilingStarBandH(tg,6,W-6,bandYt,gapH,bandT);
+    ceilingRoundel(tg,6+rr,bandYt,rr);ceilingRoundel(tg,W-6-rr,bandYt,rr);
     ceilingKheker(tg,x0,x1,inset+3,frieze);
     const bot=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(botH*DPR))),bg=bot.getContext('2d');bg.scale(DPR,DPR);
     // Drawn near-opaque rather than the .5 a register-dividing rule wears inside the passing tile: this
@@ -753,6 +764,9 @@ function ceilingDrawRegisterGrid(){
     // share a static sheet with it at a register's own translucency. Its y is measured from botY, the
     // top of this small canvas, not from the screen the rule actually sits near the foot of.
     ceilingBlockRule(bg,x0,x1,H-inset-frieze*.45-8-botY,Math.max(4.5,frieze*.4),.94);
+    const bandYb=botH-bandT*.5-2;
+    ceilingStarBandH(bg,6,W-6,bandYb,gapH,bandT);
+    ceilingRoundel(bg,6+rr,bandYb,rr);ceilingRoundel(bg,W-6-rr,bandYb,rr);
     ceilingFrameTop=top;ceilingFrameBot={c:bot,y:botY};ceilingFrameKey=key;
   }
   ctx.drawImage(ceilingFrameTop,0,0,W,ceilingFrameTop.height/DPR);
