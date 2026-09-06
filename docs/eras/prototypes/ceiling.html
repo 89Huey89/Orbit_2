@@ -618,9 +618,20 @@ function paintSopdet(x,y,s,st){
     star(x+2*s,y-155*s,10.5*s,T.orpiment);
     reedPath([[x+2*s,y-146*s],[x+2*s,y-141*s]],{w:2*s,col:T.carbon,a:.8});}
 }
-// The player: Ra's night-bark, msktt, which research names as the run's own analogue.
+// The player: Ra's night-bark, msktt, which research names as the run's own analogue. It rides the
+// heading it is given rather than sitting level under it — a is the tangent's own angle, already
+// carried in from the call site's +Math.PI/2 — but never hangs upside down: past vertical the hull
+// takes the far half-turn and mirrors across its own long axis instead, so the shrine's post and
+// the disc it carries stay above the deck. barqueFacing latches with a dead band the same way the
+// shipped plate's ceilingFacing does, and barqueAngle eases toward the resulting target the short
+// way round the circle, so a flip at the latch is a quick turn rather than a pop.
+let barqueFacing=1,barqueAngle=null;
 function barque(x,y,a){
-  ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(1.35,1.35);
+  const nx=Math.cos(a);if(Math.abs(nx)>.05)barqueFacing=nx<0?-1:1;
+  const target=barqueFacing<0?a+Math.PI:a;
+  if(barqueAngle===null)barqueAngle=target;
+  else{let d=(target-barqueAngle+Math.PI)%(Math.PI*2);if(d<0)d+=Math.PI*2;d-=Math.PI;barqueAngle+=d*.2;}
+  ctx.save();ctx.translate(x,y);ctx.rotate(barqueAngle);ctx.scale(barqueFacing*1.35,1.35);
   shape([[-15,3],[15,3],[20,-5],[13,-1],[-13,-1],[-20,-5]],T.orpiment,4,{ow:2,wash:false});
   reedPath([[-9,-1],[-9,-10]],{w:1.6,col:T.carbon,a:.85});   // the shrine's post
   shape(discPts(3,-9,6,12,.3),T.orpiment,4,{ow:1.7,wash:false});

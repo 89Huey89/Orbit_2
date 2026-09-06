@@ -109,12 +109,13 @@ the route is a sequence of brush dabs; each chapter is a `wnwt`, an hour/watch.
 
 The player is a **flat night barque**, chosen because a carrier moving through an ordered night is
 the era's most coherent equivalent of the comet in the base game. Its hull is a single profile,
-with one solar disc and one upright sign: no banking, foreshortening, exhaust, bloom or metallic
-highlight. This barque is a marked borrow from the wider funerary corpus — visually checked against
-Greenfield Papyrus frame 85, roughly five centuries later — and not presented as an object copied
-from TT353. In the eventual chronology, the invariant is not “the same spaceship in costume” but
-**the era's mediator between observer and sky**: mark, carrier, measuring instrument, recorded
-object, autonomous observer.
+with one solar disc and one upright sign: it rides its own heading rather than banking onto it,
+mirrored rather than inverted so it never sits upside down, and otherwise plain — no
+foreshortening, exhaust, bloom or metallic highlight. This barque is a marked borrow from the
+wider funerary corpus — visually checked against Greenfield Papyrus frame 85, roughly five
+centuries later — and not presented as an object copied from TT353. In the eventual chronology,
+the invariant is not “the same spaceship in costume” but **the era's mediator between observer and
+sky**: mark, carrier, measuring instrument, recorded object, autonomous observer.
 
 ## Names
 
