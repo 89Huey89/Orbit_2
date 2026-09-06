@@ -427,84 +427,70 @@ function ceilingMonthBox(g,cx,cy,r,word,alpha){
 // northern panel identifies it: the figure is the constellation, not a label beside one. They keep the
 // dipper's own shape above the back, a handle of three and a bowl of four, so the sky is legible on
 // the animal that carries it.
-const CEILING_MESKHETIU=[[-1.18,-1.0],[-.82,-1.14],[-.46,-1.22],[-.1,-1.24],[.3,-1.32],[.68,-1.18],[.24,-.94]];
-// The bull is one continuous silhouette — rump, back, withers, neck, chest, dewlap, near legs and
-// belly are a single polygon built from arc segments, so the belly line runs into the leg and the
-// haunch swells out of the back the way a painted animal's does — with the far pair of legs laid under
-// it first and the head, horns and ear set over it. Flat colour, then the closing black contour, is
-// all the modelling there is; every detail after that is a line, never a shade.
+// ---------- The two circumpolar figures, traced from the facsimile ----------
+// These were drawn by hand until now, and both were wrong in kind rather than merely coarse: the
+// hippopotamus was a sack and the bull a modelled quadruped with a rump, a tail and seven stars laid
+// out as the Dipper. The facsimile shows neither. Both are now taken from src/figures-tt353.js,
+// which scripts/figures.mjs traces off Wilkinson's facsimile of TT353 — the document 03-ceiling.md
+// makes the test of every decision on this sheet — so what is drawn here is what the wall carries.
+//
+// What is sourced and what is this plate's own is worth keeping apart, in the habit of the Names
+// table. Sourced: every contour, the count of Meskhetiu's stars (three, not the Dipper's seven), and
+// the fact that his legs, stars and disc are painted a measurably redder ochre than his body, which
+// the facsimile leaves as ink contour and does not flood. This plate's own: the pale lime flood
+// under both bodies, which the facsimile has no colour for and which is here so that a figure drawn
+// at thirteen pixels on the narrow layout still reads as a shape; and the green of Reret's
+// crocodile, which is the palette's local animal fill rather than anything this sheet records.
+// Each figure is scaled by its own silhouette rather than by a shared number, because the two have
+// nothing like the same proportion: the bull is a long low shape a little over two units wide and one
+// tall, Reret an upright one barely half a unit across. Sizing both off one factor made her a third of
+// his weight on the sheet, which is not what the facsimile shows.
+const CEILING_FIG_UNIT={meskhetiu:1.15,reret:2.6};
+// A traced contour comes off a pixel mask, so it arrives with the mask's own staircase on it, and at
+// the size the bull is drawn that staircase reads as a crude hand rather than a painted line. One
+// Chaikin pass cuts every corner at the quarter points, which is enough to put a brush's roundness
+// back without softening the drawing into mush. It runs at bake time, not per frame.
+function ceilingSmooth(p){
+  const n=p.length,out=new Array(n*2);
+  for(let i=0;i<n;i++){
+    const a=p[i],b=p[(i+1)%n];
+    out[i*2]=[a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25];
+    out[i*2+1]=[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75];
+  }
+  return out;
+}
+// One traced part, laid in the figure's own unit box: y down, one unit the silhouette's height,
+// origin at its foot and horizontal centre, so every part shares one transform and stays registered.
+function ceilingTracedPart(g,pts,x,y,u,fill,seed,width){
+  if(!pts||pts.length<3)return;
+  const p=new Array(pts.length);
+  for(let i=0;i<pts.length;i++)p[i]=[x+pts[i][0]*u,y+pts[i][1]*u];
+  const q=ceilingSmooth(p);
+  if(fill)ceilingPolygon(g,q,fill,1,seed,width);
+  else ceilingBrush(g,q.concat([q[0]]),CEILING_PALETTE.carbon,width,.92,seed);
+}
 function ceilingPaintBull(g,x,y,s,alpha=1){
+  const F=typeof FIGURES_TT353!=='undefined'&&FIGURES_TT353.meskhetiu;if(!F)return;
+  const u=s*CEILING_FIG_UNIT.meskhetiu,lw=Math.max(1,u*.022);
   g.save();g.globalAlpha=alpha;
-  const lw=Math.max(1,s*.05),red=CEILING_PALETTE.red,ink=CEILING_PALETTE.carbon,
-    P=(px,py)=>[x+px*s,y+py*s],A=(cx,cy,r,a0,a1,n=8)=>ceilingArcPoints(x+cx*s,y+cy*s,r*s,a0,a1,n),
-    hoof=(l,r,seed)=>ceilingPolygon(g,[P(l,.9),P(r,.9),P(r+.02,1.0),P(l-.02,1.0)],ink,1,seed,lw*.9);
-  // the far legs, set between the near pair so the animal stands square, their tops lost under the body
-  ceilingPolygon(g,[P(.34,.2),P(.62,.2),P(.62,.45),P(.58,.65),P(.56,.82),P(.58,.93),P(.4,.93),P(.4,.82),P(.38,.65),P(.36,.45)],red,1,11,lw*1.1);hoof(.4,.58,13);
-  ceilingPolygon(g,[P(-.76,.2),P(-.36,.2),P(-.4,.5),P(-.44,.66),P(-.46,.82),P(-.44,.93),P(-.62,.93),P(-.64,.82),P(-.68,.66),P(-.72,.5)],red,1,15,lw*1.1);hoof(-.62,-.44,17);
-  const body=A(-.92,.06,.34,Math.PI,Math.PI*1.5,7).concat(
-    [P(-.7,-.27),P(-.42,-.25),P(-.14,-.26),P(.12,-.3),P(.32,-.36),P(.5,-.36),P(.7,-.44),P(.86,-.56),P(1.0,-.62),P(1.06,-.46),P(1.06,-.3)],
-    A(.8,.02,.3,-Math.PI*.3,Math.PI*.45,6),
-    [P(.8,.36),P(.78,.55),P(.76,.75),P(.78,.92),P(.6,.93),P(.58,.75),P(.56,.55),P(.54,.36),P(.44,.37),P(.2,.43),P(-.1,.45),P(-.4,.42),P(-.56,.38),P(-.58,.52),P(-.62,.66),P(-.66,.8),P(-.64,.92),P(-.82,.93),P(-.84,.8),P(-.88,.66),P(-.94,.55)],
-    A(-.92,.06,.34,Math.PI*.62,Math.PI,5));
-  ceilingPolygon(g,body,red,1,17,lw*1.5);hoof(.58,.8,19);hoof(-.84,-.62,21);
-  // the tail hangs from the rump and ends in a tuft; shoulder and stifle are each one contour line
-  ceilingBrush(g,[P(-1.24,-.02),P(-1.36,.16),P(-1.44,.4),P(-1.42,.6)],ink,lw*1.1,.85,41);
-  ceilingPolygon(g,[P(-1.44,.56),P(-1.34,.68),P(-1.4,.82),P(-1.52,.72)],ink,1,43,lw*.8);
-  ceilingBrush(g,A(.56,.02,.24,Math.PI*.55,Math.PI*1.35,7),ink,lw*.7,.42,45);
-  ceilingBrush(g,A(-.6,.22,.22,Math.PI*1.55,Math.PI*.35,7),ink,lw*.7,.38,47);
-  ceilingBrush(g,[P(1.0,-.28),P(.98,-.02),P(.9,.2)],ink,lw*.7,.4,49);
-  // the head, then the ear behind the poll and the lyre horns rising over it, the far horn behind the near
-  ceilingPolygon(g,[P(.88,-.6),P(.98,-.72),P(1.12,-.76),P(1.26,-.7),P(1.38,-.6)].concat(A(1.42,-.42,.14,-Math.PI*.5,Math.PI*.4,6),[P(1.34,-.24),P(1.18,-.26),P(1.06,-.32),P(.98,-.42)]),red,1,23,lw*1.3);
-  ceilingPolygon(g,[P(1.0,-.7),P(.8,-.84),P(.9,-.64)],red,1,55,lw*.9);
-  const horn=(cx,cy,R,w,a1,seed)=>ceilingPolygon(g,A(cx,cy,R,Math.PI,a1,8).concat(A(cx,cy,R-w,a1,Math.PI,8)),CEILING_PALETTE.white,1,seed,lw*.85);
-  horn(1.28,-.74,.3,.07,Math.PI*1.68,51);horn(1.42,-.76,.36,.08,Math.PI*1.74,53);
-  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x+s*1.24,y-s*.56,s*.045,0,TAU);g.fill();
-  ceilingBrush(g,A(1.24,-.55,.08,Math.PI*1.15,Math.PI*1.85,5),ink,lw*.7,.8,57);
-  g.beginPath();g.arc(x+s*1.5,y-s*.44,s*.03,0,TAU);g.fill();
-  ceilingBrush(g,[P(1.52,-.33),P(1.4,-.31)],ink,lw*.7,.75,59);
-  for(let i=0;i<CEILING_MESKHETIU.length;i++)
-    ceilingStar(g,x+CEILING_MESKHETIU[i][0]*s,y+CEILING_MESKHETIU[i][1]*s,s*.19,CEILING_PALETTE.yellow,1,i*13+5);
+  // The tether first, so the body's closing line runs over where it meets the flank.
+  ceilingTracedPart(g,F.chain&&F.chain.links,x,y,u,null,311,Math.max(.8,lw*.8));
+  ceilingTracedPart(g,F.chain&&F.chain.disc,x,y,u,CEILING_PALETTE.red,317,lw);
+  ceilingTracedPart(g,F.silhouette,x,y,u,CEILING_PALETTE.lime,17,lw*1.15);
+  for(let i=0;i<F.legs.length;i++)ceilingTracedPart(g,F.legs[i],x,y,u,CEILING_PALETTE.red,23+i*7,lw);
+  for(let i=0;i<F.stars.length;i++)ceilingTracedPart(g,F.stars[i],x,y,u,CEILING_PALETTE.red,41+i*11,lw*.9);
   g.restore();
 }
-// Reret, the hippopotamus, standing upright with the crocodile along her back and one hand on the
-// mooring post — the northern panel's other guardian, and the figure this sheet used to cut to a bare
-// post for want of room. She is built the way the bull is: the post and the far leg first, then torso
-// and near leg as one continuous outline, belly swelling forward from a hanging breast, the crocodile
-// laid over her back with its snout tucked behind her head, the head last with its blunt muzzle, round
-// ear and heavy jaw, and the arm reaching across to close its hand round the post.
 function ceilingPaintHippo(g,x,y,s,alpha=1){
+  const F=typeof FIGURES_TT353!=='undefined'&&FIGURES_TT353.reret;if(!F)return;
+  const u=s*CEILING_FIG_UNIT.reret,lw=Math.max(1,u*.02);
   g.save();g.globalAlpha=alpha;
-  const lw=Math.max(1,s*.055),blue=CEILING_PALETTE.blue,ink=CEILING_PALETTE.carbon,
-    P=(px,py)=>[x+px*s,y+py*s],A=(cx,cy,r,a0,a1,n=8)=>ceilingArcPoints(x+cx*s,y+cy*s,r*s,a0,a1,n);
-  ceilingPolygon(g,[P(.8,-1.04),P(.92,-1.04),P(.93,1.18),P(.79,1.18)],CEILING_PALETTE.yellow,1,79,lw*.9);
-  ceilingPolygon(g,[P(.7,-1.18),P(1.02,-1.18),P(1.02,-1.04),P(.7,-1.04)],CEILING_PALETTE.yellow,1,83,lw*.9);
-  ceilingPolygon(g,[P(-.4,.78),P(-.14,.82),P(-.18,1.0),P(-.2,1.2),P(-.2,1.36),P(-.12,1.4),P(-.14,1.48),P(-.52,1.48),P(-.48,1.38),P(-.46,1.2),P(-.44,1.0)],blue,1,41,lw*1.1);
-  const torso=[P(-.14,-.78),P(-.36,-.66),P(-.5,-.42),P(-.54,-.2),P(-.56,.1),P(-.52,.45),P(-.44,.72),P(-.38,.88),P(-.2,.92),P(-.06,.9),P(.02,1.0),P(0,1.2),P(-.02,1.38),P(-.04,1.48),P(.44,1.48),P(.46,1.4),P(.36,1.34),P(.36,1.2),P(.38,1.0),P(.36,.84)]
-    .concat(A(.06,.28,.56,Math.PI*.34,-Math.PI*.31,10),[P(.4,-.42),P(.44,-.54),P(.34,-.64),P(.14,-.72)]);
-  ceilingPolygon(g,torso,blue,1,53,lw*1.5);
-  // the crease where belly meets chest, the hanging breast, and the toes of each foot — lines only
-  ceilingBrush(g,A(.02,.3,.42,Math.PI*.2,-Math.PI*.18,7),ink,lw*.7,.42,97);
-  ceilingBrush(g,A(.36,-.46,.1,-Math.PI*.5,Math.PI*.5,6),ink,lw*.7,.55,99);
-  for(const fx of [-.26,-.36,.24,.14])ceilingBrush(g,[P(fx,1.4),P(fx-.02,1.48)],ink,lw*.6,.6,101+fx*50);
-  // The crocodile she carries, laid down the length of her back, snout up, scutes along its spine.
-  ceilingPolygon(g,[P(-.3,-1.12),P(-.44,-1.06),P(-.5,-.86),P(-.6,-.6),P(-.7,-.3),P(-.76,.05),P(-.76,.4),P(-.7,.66),P(-.6,.86),P(-.5,.7),P(-.5,.44),P(-.52,.1),P(-.5,-.2),P(-.44,-.5),P(-.36,-.78),P(-.28,-.98)],CEILING_PALETTE.green,1,67,lw*1.2);
-  ceilingPolygon(g,[P(-.58,-.54),P(-.74,-.44),P(-.72,-.3),P(-.62,-.38)],CEILING_PALETTE.green,1,69,lw*.8);
-  ceilingPolygon(g,[P(-.74,.28),P(-.9,.4),P(-.86,.54),P(-.76,.44)],CEILING_PALETTE.green,1,71,lw*.8);
-  for(let i=0;i<8;i++){const t=(i+.5)/8,px=lerp(-.46,-.72,t)-(t>.55?.03*(t-.55)/.45:0),py=lerp(-1.0,.6,t);
-    ceilingBrush(g,[P(px+.04,py+.03),P(px-.06,py-.02),P(px+.02,py-.07)],ink,lw*.55,.65,73+i);}
-  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x-s*.4,y-s*1.0,s*.03,0,TAU);g.fill();
-  // The head: blunt muzzle, small round ear, heavy jaw, the eye set high and the nostril on the lip.
-  ceilingPolygon(g,A(-.08,-1.32,.085,0,TAU,8),blue,1,103,lw*.8);
-  ceilingPolygon(g,[P(-.12,-.76),P(-.28,-.96),P(-.3,-1.14),P(-.18,-1.26),P(0,-1.3),P(.16,-1.28),P(.3,-1.22),P(.46,-1.22),P(.6,-1.2),P(.7,-1.14),P(.74,-1.02),P(.73,-.9),P(.66,-.8),P(.5,-.76),P(.3,-.78),P(.14,-.76)],blue,1,57,lw*1.3);
-  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x+s*.34,y-s*1.12,s*.045,0,TAU);g.fill();
-  ceilingBrush(g,A(.34,-1.11,.08,Math.PI*1.15,Math.PI*1.85,5),ink,lw*.65,.8,105);
-  g.beginPath();g.arc(x+s*.66,y-s*1.08,s*.03,0,TAU);g.fill();
-  ceilingBrush(g,[P(.72,-.92),P(.48,-.88)],ink,lw*.7,.75,107);
-  ceilingBrush(g,A(.4,-.96,.18,Math.PI*.3,Math.PI*.85,6),ink,lw*.6,.4,109);
-  // The arm reaching to the mooring post, upper arm and forearm one wedge, and the hand closed round it.
-  ceilingPolygon(g,[P(.3,-.6),P(.44,-.64),P(.68,-.38),P(.88,-.14),P(.94,0),P(.88,.1),P(.78,.06),P(.6,-.16),P(.36,-.44)],blue,1,89,lw*.95);
-  ceilingPolygon(g,[P(.76,-.1),P(.98,-.1),P(.98,.12),P(.76,.12)],blue,1,91,lw*.9);
-  ceilingBrush(g,[P(.8,.0),P(.96,.0)],ink,lw*.55,.5,93);
+  ceilingTracedPart(g,F.silhouette,x,y,u,CEILING_PALETTE.lime,53,lw*1.15);
+  // The crocodile lies over her back, so it is laid after her and closes its own line on top of hers.
+  if(F.crocodile){
+    ceilingTracedPart(g,F.crocodile.silhouette,x,y,u,CEILING_PALETTE.green,67,lw);
+    ceilingTracedPart(g,F.crocodile.ridge,x,y,u,null,71,Math.max(.7,lw*.7));
+  }
   g.restore();
 }
 // A striding figure, in profile, one hand's plain wedge of a body and a solid disc balanced on the
