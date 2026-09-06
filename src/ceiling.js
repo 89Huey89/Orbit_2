@@ -1170,6 +1170,38 @@ function ceilingNodeIcon(n,r,stage){
     ceilingStar(ctx,0,0,size*.86,fill===CEILING_PALETTE.white?CEILING_PALETTE.carbon:fill,stage,seed,false);
   }else ceilingStar(ctx,0,0,size,fill,stage,seed);
 }
+// The wheel a body is drawn on. It was the last thing on the sheet still ruled by a machine: one
+// construction, twenty-four divisions in one fixed band, every one of them a perfectly even line, and
+// every wheel in the field with a division at exactly three o'clock. Four things fix that, and none of
+// them is invented — each is something this file already does somewhere else on the wall.
+// The construction is not one but two, both of them TT353's own: a band of short divisions held off
+// the centre by its own inner rule, and the month wheel's long spokes struck from the middle out to
+// the rim (ceilingMonthCircle). Where the band begins and ends is the wheel's own, not a constant.
+// The divisions are struck from the angle the setting-out started at, so a wheel's first mark sits
+// where its pen actually went down. And their weight and finish vary division to division — some
+// heavier where the reed was freshly loaded — exactly the licence ceilingMonthCircle's spokes take,
+// written out inline rather than run through ceilingBrush because this is laid per node per frame
+// where a month wheel is baked into the tile once.
+// The count still follows the circumference rather than a fixed number, so a small wheel is not a
+// crowded copy of a large one; the rim itself is untouched, since that circle is the orbit.
+function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade){
+  const spoked=ceilingHash(seed,401)<.28,
+    inner=spoked?.34+ceilingHash(seed,403)*.12:.6+ceilingHash(seed,405)*.16,
+    outer=spoked?.97+ceilingHash(seed,407)*.02:.87+ceilingHash(seed,409)*.09,
+    ticks=clamp(Math.round(r*(spoked?.46:.62)),11,34);
+  g.strokeStyle=`rgba(36,29,22,${alpha})`;
+  for(let i=0;i<ticks;i++){
+    const a=start+i/ticks*TAU,i0=inner*(.97+ceilingHash(seed+i*5,413)*.06),o1=outer*(.97+ceilingHash(seed+i*7,417)*.05);
+    g.globalAlpha=fade*clamp(.6+ceilingHash(seed+i*3,411)*.55,0,1);
+    g.lineWidth=lw*(.68+ceilingHash(seed+i*11,419)*.74);
+    g.beginPath();g.moveTo(Math.cos(a)*r*i0,Math.sin(a)*r*i0);g.lineTo(Math.cos(a)*r*o1,Math.sin(a)*r*o1);g.stroke();
+  }
+  g.globalAlpha=fade;g.lineWidth=lw;
+  // A band closes on its own inner rule; a spoked wheel has none — its divisions run to the middle and
+  // the star sign's own ringed hub is what they converge on, which is the month wheel's hub circle
+  // arriving by another route.
+  if(!spoked){g.beginPath();g.arc(0,0,r*(inner-.02),0,TAU);g.stroke();}
+}
 function ceilingDrawNode(n,aim){
   const x=sx(n.x),y=sy(n.y),r=n.r*scale,cap=(n.cap||n.r)*scale;if(y+cap<-30||y-cap>H+30)return;
   const t=reveal.progress(n,NODE_REVEAL,y>0&&y<H),fade=n.type==='fading'&&world.player.node===n?clamp(1-world.player.orbitTime/4.5,.08,1):1;
@@ -1188,16 +1220,7 @@ function ceilingDrawNode(n,aim){
     if(correct<1&&r>3){const a=start+TAU*correct,hx=Math.cos(a)*r,hy=Math.sin(a)*r,ta=a+Math.PI/2;
       ceilingWet(ctx,hx,hy,scale,.65*fade,CEILING_PALETTE.carbon);ceilingReed(ctx,hx,hy,ta,.8*fade,CEILING_PALETTE.carbon);}
   }
-  if(finish>0){
-    ctx.strokeStyle=`rgba(36,29,22,${retired?.16:active?.68:.38})`;ctx.lineWidth=active?1.45:1;
-    // A wheel divided by hand keeps its marks about a fixed distance apart whatever its size; a fixed
-    // count instead made every ring on the sheet a scaled copy of every other, which is most of what
-    // read as sameness across a field of bodies. The count follows the circumference, clamped so the
-    // smallest ring still reads as divided and the largest does not close up into a solid band.
-    const ticks=clamp(Math.round(r*.62),12,34);
-    for(let i=0;i<ticks;i++){const a=i/ticks*TAU;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.72,Math.sin(a)*r*.72);ctx.lineTo(Math.cos(a)*r*.94,Math.sin(a)*r*.94);ctx.stroke();}
-    ctx.beginPath();ctx.arc(0,0,r*.7,0,TAU);ctx.stroke();
-  }
+  if(finish>0)ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade);
   // Defect (e): a dashed circle is the engraved atlas's mark, carried over unexamined. The wall's own
   // way to rule a boundary is a doubled line — the same hair-off-register repeat ceilingSign's closing
   // stroke already wears where the brush reloaded — so the target ring (where the flight will land)
