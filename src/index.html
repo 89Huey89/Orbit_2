@@ -24,7 +24,7 @@
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
     .ceiling-only{display:none!important}
-    #game[data-plate-id="ceiling"]{--face-text:Georgia,'Times New Roman',serif;--face-sc:Georgia,'Times New Roman',serif;--face-body:Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173}
+    #game[data-plate-id="ceiling"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173}
     #game[data-plate-id="ceiling"] .atlas-only{display:none!important}
     #game[data-plate-id="ceiling"] .ceiling-only{display:revert!important}
     #game[data-plate-id="ceiling"] .footer{color:#5f4b34}
@@ -122,9 +122,23 @@
     #game[data-plate-id="ceiling"] #end{background:rgba(221,207,173,.48)}
     #game[data-plate-id="ceiling"] #pause{background:rgba(221,207,173,.82)}
     #game[data-plate-id="ceiling"] .colophon{background:rgba(221,207,173,.97)}
-    #game[data-plate-id="ceiling"] h1,#game[data-plate-id="ceiling"] #score{font-family:Georgia,'Times New Roman',serif;text-shadow:none}
+    #game[data-plate-id="ceiling"] h1,#game[data-plate-id="ceiling"] #score{font-family:'Zilla Slab',Georgia,serif;text-shadow:none}
+    /* The cartouche, shenu — "that which encircles": a loop of doubled rope tied off at one end, and
+       the one piece of this room's furniture that is already the shape of a readout. A figure inside
+       it is held apart from the wall around it, which is what the ring was for. */
+    #game[data-plate-id="ceiling"] #score,#game[data-plate-id="ceiling"] #best{position:relative;display:inline-block;border:1.4px solid #241d16;border-radius:999px;background:rgba(238,228,205,.3)}
+    #game[data-plate-id="ceiling"] #score{padding:1px 22px 5px}
+    #game[data-plate-id="ceiling"] #best{padding:0 13px 2px}
+    #game[data-plate-id="ceiling"] #score::after,#game[data-plate-id="ceiling"] #best::after{content:'';position:absolute;right:-4px;top:24%;height:52%;border-right:1.4px solid #241d16}
+    /* The reed, charged and drying: the reservoir keeps its length but takes the shape of a brush
+       laid on its side, so what drains along it reads as paint rather than as a bar. */
+    #game[data-plate-id="ceiling"] #ink{height:7px;width:62px;clip-path:polygon(0 20%,64% 4%,90% 32%,100% 50%,90% 68%,64% 96%,0 80%)}
+    /* The first pass survives on the wall wherever the flood fell short of it, so the signs on the
+       frontispiece carry their own red setting-out a hair off register, as the painted ones do. */
+    .ceiling-glyphs{position:relative;z-index:0}
+    .ceiling-glyphs::before{content:attr(data-ghost);position:absolute;inset:0;z-index:-1;transform:translate(2.5px,-2px);color:#9d3724;opacity:.4}
     #game[data-plate-id="ceiling"] .ceiling-title{top:12%}
-    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(46px,11.5vw,82px);letter-spacing:.075em;text-indent:.075em;line-height:1.05}
+    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.1em;text-indent:.1em;line-height:1.06}
     .ceiling-glyphs{margin:0 0 5px;color:#241d16;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.08em}
     #game[data-plate-id="ceiling"] .title-rule::before,#game[data-plate-id="ceiling"] .title-rule::after{background:#9d3724}
     #game[data-plate-id="ceiling"] .era-entry{border-color:rgba(157,55,36,.55);color:#7a3022}
@@ -373,7 +387,7 @@
       <p class="eyebrow">FOLLOW THE PULL</p>
     </div>
     <div class="title-group ceiling-title ceiling-only">
-      <p class="ceiling-glyphs" aria-hidden="true">&#x13171;&#x13216;&#x13171;&#x133CF;</p>
+      <p class="ceiling-glyphs" aria-hidden="true" data-ghost="&#x13171;&#x13216;&#x13171;&#x133CF;">&#x13171;&#x13216;&#x13171;&#x133CF;</p>
       <p class="subtitle-latin">WNWT · THE HOURS OF THE NIGHT</p>
       <h1>THE CEILING</h1>
       <div class="title-rule"><span></span></div>

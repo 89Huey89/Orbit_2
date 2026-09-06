@@ -340,12 +340,27 @@ definePlate('base',{
 // string at every place text is drawn. `text` is the roman, `sc` the small caps, `body` the stack the
 // stylesheet's running copy uses; each keeps its own fallbacks so a face that fails to load still
 // lands on something with the right proportions.
+const HIERO_FACE="'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif";
 const FELL_FACES={
   text:"'IM Fell English',Georgia,serif",
   sc:"'IM Fell English SC','IM Fell English',Georgia,serif",
-  body:"'IM Fell English',Georgia,'Times New Roman',serif"
+  body:"'IM Fell English',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:{text:"Georgia,'Times New Roman',serif",sc:"Georgia,'Times New Roman',serif",body:"Georgia,'Times New Roman',serif"}});
+// The Ceiling letters in two hands at once, and neither of them is the atlas's. Its Latin is an
+// openly modern curatorial layer, so it is set in a slab serif — the class the trade named
+// "Egyptian" in the 1810s after the revival Napoleon's expedition set off, and the type an
+// excavation plate has been captioned in ever since. It declares itself modern, where the Fell
+// types would have claimed the wrong century and a screen serif claimed no century at all. Its
+// second hand is the wall's own, and `hiero` is where every plate names the sign face, so a
+// caption in signs asks for a face like any other rather than writing one out at the canvas.
+const CEILING_FACES={
+  text:"'Zilla Slab',Georgia,serif",
+  sc:"'Zilla Slab',Georgia,serif",
+  body:"'Zilla Slab',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;

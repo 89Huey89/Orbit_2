@@ -78,13 +78,22 @@ leaf do not become generic UI gold; the built sheet uses a muted yellow ochre in
 ## Lettering and the hand
 
 The historical image layer uses locally bundled **Noto Sans Egyptian Hieroglyphs** (OFL 1.1),
-registered in the build as `Noto Egyptian Hieroglyphs`. Signs sit in vertical columns and are
-treated as image-bearing labels, not generated pseudo-Egyptian prose. Authentic quadrat stacking
-still requires authored layout; a browser font alone cannot make a readable inscription.
+registered in the build as `Noto Egyptian Hieroglyphs` and named by the plate as a face token,
+`hiero`, like any other. The face supplies the shape and the renderer supplies the hand: every sign
+is painted in the wall's four passes — red setting-out laid off register, thin black correction,
+flat flood, black closing line, with the pigment doubled a hair off register where the brush
+reloaded — so no two signs are identical and none of them reads as type. Signs are **stacked in
+quadrats**, one, two or three to a square, which is what makes a column read as writing rather than
+as a list of pictures; the columns beside the route spell only words the checked vocabulary can
+spell in full.
 
-The English words are an openly modern curatorial layer in Georgia, kept out of the historical
-columns. They do not masquerade as a translated tomb inscription. The score remains an Arabic
-number for instant play readability; `wnwt` and the running hour label carry the era identity.
+The English words are an openly modern curatorial layer, and they say so in their own type: a
+**slab serif** (Zilla Slab, OFL 1.1), the class the trade named "Egyptian" in the 1810s after the
+revival Napoleon's expedition set off, and the type an excavation plate has been captioned in ever
+since. A neutral screen serif claimed no century at all and read as the absence of a decision. The
+Latin is kept out of the historical columns and does not masquerade as a translated tomb
+inscription. The score remains an Arabic number for instant play readability, held in a cartouche;
+a count the sheet itself makes — the hour — is written in Egyptian numerals, stroke by stroke.
 
 The reveal turns a documented workshop logic into four legible gameplay phases: red setting-out,
 black correction, flat colour, black closure. This is a **plausible reconstruction used as an
@@ -172,7 +181,7 @@ The earlier seven-family reading — the *mw* wave-hatch, dot-and-ring, the wing
 
 ## Frame and furniture
 
-A tomb ceiling has no frame in the atlas sense — its boundary is the room's own architecture, and its furniture is the register grid itself plus hieroglyphic captions beside every figure. The **cartouche** (*shenu*, "that which encircles"), the oval ring around a royal name, is a genuine, structurally simple element and the natural home for a player's initials or best-score readout. The civil calendar — season (*Akhet*/*Peret*/*Shemu*), month, day — is a real dating formula and a better fit for the daily plate's date line than a generic "day N." Rim captions become decan-name columns beside the main orbit, as on the Senenmut ceiling itself. There is no colophon in the modern sense; a scribe's dedication text is the closest equivalent and a weaker fit than era VI's imprint line — probably not worth forcing.
+A tomb ceiling has no frame in the atlas sense — its boundary is the room's own architecture, and its furniture is the register grid itself plus hieroglyphic captions beside every figure. The **cartouche** (*shenu*, "that which encircles"), the oval ring around a royal name, is a genuine, structurally simple element and the natural home for a player's initials or best-score readout; the running score and best are now set inside one. The civil calendar — season (*Akhet*/*Peret*/*Shemu*), month, day — is a real dating formula and a better fit for the daily plate's date line than a generic "day N." Rim captions become decan-name columns beside the main orbit, as on the Senenmut ceiling itself. There is no colophon in the modern sense; a scribe's dedication text is the closest equivalent and a weaker fit than era VI's imprint line — probably not worth forcing.
 
 ## The signature sheet
 
@@ -192,15 +201,20 @@ A grinding pigment-grind (orbit-hold), a single wet dab (capture), a dry brush-f
 That prototype remains a useful drawing study but is superseded as colour authority: any dark-blue
 night reading and Nut association did not survive comparison with the Met facsimile and the AEA
 record. The playable implementation is `src/ceiling.js`, entered temporarily from the main menu.
-It owns its plaster cache, register grid, month circles, glyph columns, node/body painter, player,
-four hazard painters, route, reveal, darkness and chapter labels while reusing the unchanged
-simulation. Entry uses a non-persistent plate application and return restores the prior atlas.
+It owns its plaster cache, the painter's snapped red canon grid, the kheker frieze and polychrome
+block borders, the star bands, twelve painted month circles, Meskhetiu with its seven stars and
+Reret with her crocodile and mooring post, quadrat-stacked decan columns, Egyptian numerals,
+node/body painter, player, four hazard painters, route, reveal, darkness and chapter labels while
+reusing the unchanged simulation. Entry uses a non-persistent plate application and return restores
+the prior atlas; because the wall is baked into one cached canvas, entry also waits on both of the
+era's faces before painting it, or the sign columns would stay blank for the whole visit.
 
 ## Risk
 
 A flat, register-based sky is at genuine odds with a game built on depth and speed; the solution is
-to translate vertical motion into time/order, never to add modelling. Quadrat stacking is real
-layout work and remains unbuilt. Beyond securely documented labels, decan-to-modern-constellation
+to translate vertical motion into time/order, never to add modelling. Quadrat stacking is now built,
+but only for the words the checked vocabulary spells; the density it buys has to stay at the margins
+of the sheet, because a wall painted edge to edge would bury the flight. Beyond securely documented labels, decan-to-modern-constellation
 identifications must not be invented. Several words in the Names table remain recalled rather than
 re-verified and should not enter final hieroglyphic prose. The Met facsimile and the AEA record have
 now been inspected directly; Greenfield frames 85 and 87 remain later comparators. The special

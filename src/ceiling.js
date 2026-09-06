@@ -5,6 +5,9 @@
    Historical boundary:
    - TT353 supplies the light lime-plaster ground, fine black drawing, red setting-out, two-register
      organisation, decan columns, five-point star signs and twelve 24-part month circles.
+   - The kheker frieze and the polychrome block border are the standing furniture of a painted
+     Egyptian wall rather than a motif borrowed from one object; the snapped red grid under
+     everything is the painter's own eighteen-square canon, left where the flood never covered it.
    - The solar night barque, Apep, the Eye of Ra, Shu and Nun belong to the wider Egyptian funerary
      repertoire. Their use as player and force diagrams is an explicit gameplay translation, not a
      claim that those figures occur together on TT353. In particular, TT353 has no Nut arch.
@@ -17,13 +20,49 @@ const CEILING_PALETTE={
   red:'#9d3724',redDark:'#67271d',yellow:'#c4932e',blue:'#285987',green:'#526f59',white:'#eee5d1',
   gloss:'#5f4b34',duat:'#38271e',duatDeep:'#211914'
 };
-const CEILING_HIERO="'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif";
-const CEILING_G={a:0x1313f,w:0x13171,n:0x13216,r:0x1308b,t:0x133cf,s:0x132f4,h:0x13254,
-  eye:0x13079,sun:0x131f3,feather:0x13184,star:0x131f4};
+// The checked sign vocabulary: Gardiner's uniliterals, four logograms and the five ready-made groups,
+// every codepoint carried over from the research file rather than looked up again here. A word this
+// table cannot spell is not written on the wall at all — the sheet would rather be quiet than invent
+// an inscription.
+const CEILING_G={a:0x1313f,i:0x131cb,w:0x13171,b:0x130c0,p:0x132aa,f:0x13191,m:0x13153,n:0x13216,
+  r:0x1308b,h:0x13254,H:0x1339b,x:0x1340d,s:0x132f4,g:0x133bc,t:0x133cf,
+  eye:0x13079,sun:0x131f3,setAnimal:0x130e9,feather:0x13184,star:0x131f4};
+const CEILING_RG={mw:[0x13217],hd:[0x13321,0x133cf],dsrt:[0x132aa,0x133cf],ikm:[0x133bc,0x13153]};
+// A word is a column of quadrats; a quadrat is one, two or three signs sharing one square, and a
+// quadrat headed by 'h' sets its pair side by side instead of stacked. This is the layout the wall
+// actually uses, and setting one sign per line — which is what this sheet did before — is not
+// writing but a list of pictures.
+const CEILING_WORD={
+  hour:{q:[[CEILING_G.w,CEILING_G.n],[CEILING_G.w,CEILING_G.t]],tr:'wnwt',gl:'hour'},
+  foreleg:{q:[[CEILING_G.m,CEILING_G.s],[CEILING_G.x,CEILING_G.t],[CEILING_G.i,CEILING_G.w]],tr:'msḫtjw',gl:'the Foreleg'},
+  sah:{q:[[CEILING_G.s],[CEILING_G.a,CEILING_G.H]],tr:'Sꜣḥ',gl:'Sah · Orion'},
+  apep:{q:[[CEILING_G.a],['h',CEILING_G.p,CEILING_G.p]],tr:'ꜥꜣpp',gl:'Apep'},
+  eye:{q:[[CEILING_G.eye],[CEILING_G.sun]],tr:'jrt Rꜥ',gl:'the Eye of Ra'},
+  shu:{q:[[CEILING_G.feather]],tr:'Šw',gl:'Shu'},
+  nun:{q:[[CEILING_G.n],[CEILING_G.w,CEILING_G.n]],tr:'Nwn',gl:'Nun'},
+  sekhmet:{q:[[CEILING_G.s,CEILING_G.x],[CEILING_G.m,CEILING_G.t]],tr:'sḫmt',gl:'Sekhmet'},
+  set:{q:[[CEILING_G.setAnimal]],tr:'stẖ',gl:'Set'},
+  water:{q:[CEILING_RG.mw],tr:'mw',gl:'water'},
+  white:{q:[CEILING_RG.hd],tr:'ḥḏ',gl:'white'},
+  red:{q:[CEILING_RG.dsrt],tr:'dšrt',gl:'the red land'},
+  shield:{q:[CEILING_RG.ikm],tr:'ikm',gl:'shield'},
+  star:{q:[[CEILING_G.star]],tr:'sbꜣ',gl:'star'}
+};
+// The columns beside the route are decan-name columns on the wall itself. These are the words the
+// vocabulary above can spell in full; the order is fixed so the sheet paints identically every load.
+const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white','red','shu','sekhmet','set','eye','shield'];
 const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 let ceilingWall=null,ceilingWallKey='';
 
 function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';}
+// The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
+// at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
+// Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
+function ceilingFaceReady(){
+  if(!document.fonts||!document.fonts.load)return;
+  Promise.all([document.fonts.load('16px "Noto Egyptian Hieroglyphs"',String.fromCodePoint(CEILING_G.w)),
+    document.fonts.load('16px "Zilla Slab"','ORBIT')]).then(()=>{invalidateCeilingArt();if(world)render(0);}).catch(()=>{});
+}
 function ceilingHash(a,b=0){
   let h=Math.imul(((a*1009+b*9176)|0)^0x9e3779b9,2654435761);h^=h>>>15;h=Math.imul(h,2246822519);h^=h>>>13;
   return(h>>>0)/4294967296;
@@ -56,40 +95,207 @@ function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
   }
   if(s4>0)ceilingBrush(g,points.concat([points[0]]),CEILING_PALETTE.carbon,width,.92*s4,seed+67);
 }
+// N14, the star sign, sets one point downward and two arms up — the orientation the wall uses, and
+// the quickest way to tell an Egyptian star from the one a modern chart prints.
 function ceilingStar(g,cx,cy,r,fill=CEILING_PALETTE.yellow,stage=1,seed=1){
-  const p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.4:r;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
+  const p=[];for(let i=0;i<10;i++){const a=Math.PI/2+i*Math.PI/5,rr=i%2?r*.42:r;p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
   ceilingPolygon(g,p,fill,stage,seed,Math.max(.8,r*.12));
 }
-function ceilingMonthCircle(g,cx,cy,r,alpha=.72){
-  g.save();g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=.65;
-  g.beginPath();g.arc(cx,cy,r,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,r*.28,0,TAU);g.stroke();
-  for(let i=0;i<24;i++){
-    const a=i/24*TAU-Math.PI/2;
-    g.beginPath();g.moveTo(cx+Math.cos(a)*r*.31,cy+Math.sin(a)*r*.31);g.lineTo(cx+Math.cos(a)*r*.94,cy+Math.sin(a)*r*.94);g.stroke();
+// ---------- The wall's second hand: signs, quadrats, words, numbers ----------
+// A sign is painted, not typed. The face supplies the shape and the four passes supply the hand: a
+// red setting-out laid off register, a thin black correction, the flat flood, and the black line
+// that closes it last. What that buys is the thing a font cannot give — an edge that was made by
+// something wet, and no two signs identical.
+function ceilingSign(g,cp,x,y,size,col=CEILING_PALETTE.carbon,stage=1,seed=1){
+  if(stage<=0||!cp)return;
+  const s1=clamp(stage*4,0,1),s2=clamp((stage-.25)*4,0,1),s3=clamp((stage-.5)*4,0,1),s4=clamp((stage-.75)*4,0,1);
+  const ch=String.fromCodePoint(cp),jx=(ceilingHash(seed,cp)-.5)*size*.06,jy=(ceilingHash(cp,seed)-.5)*size*.05;
+  g.save();g.font=plateFace(size,'hiero');g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
+  if(s1>0){g.globalAlpha=(.16+.36*(1-s4))*s1;g.fillStyle=CEILING_PALETTE.red;g.fillText(ch,x+jx+size*.07,y+jy-size*.06);}
+  if(s2>0){g.globalAlpha=.3*s2;g.fillStyle=CEILING_PALETTE.carbon;g.fillText(ch,x+jx*.4,y+jy*.4);}
+  if(s3>0){g.globalAlpha=s3;g.fillStyle=col;g.fillText(ch,x,y);}
+  if(s4>0){
+    g.globalAlpha=.8*s4;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.45,size*.03);g.strokeText(ch,x,y);
+    // Where the brush reloaded it laid the pigment on twice; the doubling is a hair off register.
+    g.globalAlpha=.16*s4;g.fillStyle=col;g.fillText(ch,x+.55,y-.45);
   }
-  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*.16,0,TAU);g.fill();g.restore();
-}
-function ceilingGlyphColumn(g,x,y,size,count,seed,alpha=.36){
-  const signs=[CEILING_G.n,CEILING_G.w,CEILING_G.t,CEILING_G.a,CEILING_G.r,CEILING_G.s,CEILING_G.h,CEILING_G.eye,CEILING_G.sun];
-  g.save();g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.font=size+'px '+CEILING_HIERO;g.textAlign='center';g.textBaseline='middle';
-  g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=.45;g.beginPath();g.moveTo(x-size*.68,y-size*.55);g.lineTo(x-size*.68,y+(count-.35)*size);g.stroke();
-  for(let i=0;i<count;i++)g.fillText(String.fromCodePoint(signs[Math.floor(ceilingHash(seed,i)*signs.length)]),x,y+i*size);
   g.restore();
 }
-function ceilingPaintBull(g,x,y,s,alpha=.22){
-  g.save();g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.red;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=1;
-  g.beginPath();g.ellipse(x,y,s*1.05,s*.42,0,0,TAU);g.fill();g.stroke();
-  g.beginPath();g.moveTo(x+s*.86,y-s*.18);g.lineTo(x+s*1.35,y-s*.42);g.lineTo(x+s*1.5,y-s*.18);g.lineTo(x+s*1.33,y+s*.04);g.closePath();g.fill();g.stroke();
-  for(const dx of [-.68,-.25,.38,.72])ceilingBrush(g,[[x+dx*s,y+s*.24],[x+dx*s,y+s*.93]],CEILING_PALETTE.carbon,1,.85,dx*100+19);
-  ceilingBrush(g,[[x+s*1.43,y-s*.35],[x+s*1.62,y-s*.65]],CEILING_PALETTE.carbon,1,.8,31);
-  ceilingBrush(g,[[x+s*1.43,y-s*.35],[x+s*1.72,y-s*.25]],CEILING_PALETTE.carbon,1,.8,37);g.restore();
+// One, two or three signs sharing one square. Stacking is what makes a column read as writing, and
+// it is the layout note this sheet carried as "not achieved" for as long as it set one sign a line.
+function ceilingQuadrat(g,q,x,y,cell,col,stage=1,seed=1){
+  if(!q||!q.length)return;
+  if(q[0]==='h'){ceilingSign(g,q[1],x-cell*.24,y,cell*.5,col,stage,seed);ceilingSign(g,q[2],x+cell*.24,y,cell*.5,col,stage,seed+3);return;}
+  if(q.length===1){ceilingSign(g,q[0],x,y,cell*.88,col,stage,seed);return;}
+  if(q.length===2){ceilingSign(g,q[0],x,y-cell*.24,cell*.5,col,stage,seed);ceilingSign(g,q[1],x,y+cell*.25,cell*.5,col,stage,seed+3);return;}
+  ceilingSign(g,q[0],x,y-cell*.29,cell*.4,col,stage,seed);
+  ceilingSign(g,q[1],x-cell*.21,y+cell*.21,cell*.42,col,stage,seed+3);
+  ceilingSign(g,q[2],x+cell*.21,y+cell*.21,cell*.42,col,stage,seed+7);
 }
-function ceilingPaintHippo(g,x,y,s,alpha=.2){
-  g.save();g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.blue;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=1;
-  g.beginPath();g.ellipse(x,y,s*1.05,s*.52,0,0,TAU);g.fill();g.stroke();
-  g.beginPath();g.ellipse(x+s*.92,y-s*.05,s*.44,s*.34,0,0,TAU);g.fill();g.stroke();
-  for(const dx of [-.62,-.18,.42,.72])ceilingBrush(g,[[x+dx*s,y+s*.3],[x+dx*s,y+s*.9]],CEILING_PALETTE.carbon,1,.85,dx*91+41);
-  ceilingBrush(g,[[x+s*1.18,y-s*.22],[x+s*1.75,y-s*1.5]],CEILING_PALETTE.carbon,1.2,.85,53);g.restore();
+// A caption is a column of quadrats between two ruled lines, which is the ceiling's own habit.
+function ceilingWordColumn(g,word,x,topY,cell,col,alpha=1,stage=1){
+  const w=CEILING_WORD[word];if(!w||!w.q.length)return 0;
+  const depth=w.q.length*cell;
+  g.save();g.globalAlpha=alpha;
+  ceilingBrush(g,[[x-cell*.6,topY-cell*.55],[x-cell*.6,topY+depth-cell*.4]],CEILING_PALETTE.carbon,.75,.62,x|0);
+  ceilingBrush(g,[[x+cell*.6,topY-cell*.55],[x+cell*.6,topY+depth-cell*.4]],CEILING_PALETTE.carbon,.75,.4,(x|0)+7);
+  for(let i=0;i<w.q.length;i++)ceilingQuadrat(g,w.q[i],x,topY+i*cell,cell,col,stage,(x|0)+i*31);
+  g.restore();return depth;
+}
+// The same word set across instead of down, for the places a column has no height to stand in.
+function ceilingWordRow(g,word,cx,y,cell,col,alpha=1,stage=1){
+  const w=CEILING_WORD[word];if(!w||!w.q.length)return 0;
+  const span=w.q.length*cell,left=cx-span/2+cell/2;
+  g.save();g.globalAlpha=alpha;
+  for(let i=0;i<w.q.length;i++)ceilingQuadrat(g,w.q[i],left+i*cell,y,cell,col,stage,(cx|0)+i*37);
+  g.restore();return span;
+}
+// Egyptian numerals: stroke, heel-bone, coil of rope, lotus. Base ten, additive, no zero, and signs
+// of one value stacked in a block of up to three rows, which is why a small count reads at a glance.
+// The score stays an Arabic figure — it has to be read at speed — but a count the sheet itself makes,
+// like the hour, is written the way the wall would have written it.
+function ceilingNumSign(g,kind,cx,cy,w,h,col){
+  const width=Math.max(1.1,h*.13);
+  if(kind===1)ceilingBrush(g,[[cx,cy-h*.42],[cx+h*.02,cy+h*.42]],col,width,.9,cx+cy);
+  else if(kind===10){
+    const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.4,cy+h*.32+Math.sin(a)*h*.6]);}
+    ceilingBrush(g,p,col,width,.9,cx*3+cy);
+  }else if(kind===100){
+    const r=Math.min(w,h)*.44,p=[];for(let i=0;i<=26;i++){const t=i/26,a=-1.1+t*8.2,rr=r*(.34+.66*t);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
+    ceilingBrush(g,p,col,Math.max(1,h*.1),.9,cx*5+cy);
+  }else{
+    ceilingBrush(g,[[cx-w*.05,cy+h*.44],[cx,cy+h*.02]],col,width,.9,cx*7+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.16,cy-h*.14],[cx-w*.3,cy-h*.3],[cx-w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*11+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.03,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*13+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*17+cy);
+  }
+}
+const CEILING_NW={1:.2,10:.34,100:.36,1000:.44};
+const ceilingNumRows=c=>c<=3?1:c<=6?2:3;
+function ceilingNumWidth(n,h){
+  let w=0;for(const k of [1000,100,10,1]){const c=Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
+  return Math.max(0,w-h*.1);
+}
+function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false){
+  const total=ceilingNumWidth(n,h);let left=center?x-total/2:x;
+  for(const k of [1000,100,10,1]){
+    const c=Math.floor(n/k)%10;if(!c)continue;
+    const rows=ceilingNumRows(c),per=Math.ceil(c/rows),sw=h*CEILING_NW[k],rh=h/rows;
+    for(let i=0;i<c;i++)ceilingNumSign(g,k,left+sw*(i%per+.5),y+rh*(Math.floor(i/per)+.5),sw*.92,rh*.92,col);
+    left+=per*sw+h*.1;
+  }
+  return total;
+}
+// ---------- The wall's standing furniture ----------
+// The kheker frieze: a bundle of reeds bound at the neck and let splay at the head, repeated along
+// the top of a painted wall. It is the one piece of Egyptian architecture that is only ever
+// decoration, and it is what tells the eye at a glance that the surface it crowns is a painted room.
+function ceilingKheker(g,x0,x1,y,h){
+  const cols=[CEILING_PALETTE.red,CEILING_PALETTE.blue,CEILING_PALETTE.yellow],step=Math.max(19,Math.min(30,(x1-x0)/24));
+  for(let x=x0,i=0;x<=x1-step*.55;x+=step,i++){
+    const b=x+step*.5,c=cols[i%3],u=h/16;
+    ceilingPolygon(g,[[b-u*1.9,y+h],[b-u*1.9,y+h*.52],[b-u*2.7,y+h*.44],[b-u*1.1,y+h*.36],[b+u*1.1,y+h*.36],[b+u*2.7,y+h*.44],[b+u*1.9,y+h*.52],[b+u*1.9,y+h]],CEILING_PALETTE.white,1,i*17+3,1);
+    for(let k=-2;k<=2;k++)ceilingBrush(g,[[b+k*u*.85,y+h*.36],[b+k*u*2.5,y+h*.02]],k%2?c:CEILING_PALETTE.carbon,Math.max(1,u*.7),.85,i*29+k*5);
+    ceilingBrush(g,[[b-u*2.9,y+h*.51],[b+u*2.9,y+h*.51]],c,Math.max(1,u*.8),.9,i*31);
+    ceilingBrush(g,[[b-u*2.9,y+h*.64],[b+u*2.9,y+h*.64]],CEILING_PALETTE.carbon,Math.max(.55,u*.45),.62,i*37);
+  }
+  ceilingBrush(g,[[x0,y+h+1],[x1,y+h+1]],CEILING_PALETTE.carbon,1.2,.68,91);
+}
+// The polychrome block border, which is how one register is divided from the next: a black rule, a
+// run of flat coloured blocks in a fixed cycle, and a black rule to close it.
+function ceilingBlockRule(g,x0,x1,y,h,alpha=.8){
+  const cols=[CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.blue,CEILING_PALETTE.white,
+    CEILING_PALETTE.yellow,CEILING_PALETTE.white,CEILING_PALETTE.green,CEILING_PALETTE.white];
+  ceilingBrush(g,[[x0,y],[x1,y]],CEILING_PALETTE.carbon,1.3,.78*alpha/.8,201);
+  g.save();
+  const block=Math.max(7,h*.9);
+  for(let x=x0,i=0;x<x1;x+=block,i++){
+    g.globalAlpha=alpha*(.88+ceilingHash(i,y)*.12);g.fillStyle=cols[i%8];g.fillRect(x,y+1.4,Math.max(0,Math.min(block,x1-x)-.9),h);
+  }
+  g.restore();
+  ceilingBrush(g,[[x0,y+h+2.4],[x1,y+h+2.4]],CEILING_PALETTE.carbon,1.3,.78*alpha/.8,202);
+}
+// The painter snapped a grid in red before any figure was set out, and the flood never quite covered
+// it. It is the only orthogonal thing on the sheet that was not drawn by a brush.
+function ceilingSettingGrid(g,x0,y0,x1,y1,unit){
+  g.save();g.strokeStyle='rgba(157,55,36,.085)';g.lineWidth=.5;g.beginPath();
+  for(let x=x0;x<=x1;x+=unit){g.moveTo(x,y0);g.lineTo(x,y1);}
+  for(let y=y0;y<=y1;y+=unit){g.moveTo(x0,y);g.lineTo(x1,y);}
+  g.stroke();g.restore();
+}
+// The side borders are the star-strewn band the room's own edge carries: painted star signs between
+// two rules, alternately yellow and red where the pigment has held.
+function ceilingStarBorder(g,x,y0,y1,gap){
+  ceilingBrush(g,[[x-6,y0],[x-6,y1]],CEILING_PALETTE.carbon,.7,.4,x|0);
+  ceilingBrush(g,[[x+6,y0],[x+6,y1]],CEILING_PALETTE.carbon,.7,.4,(x|0)+3);
+  for(let y=y0+gap*.5,i=0;y<y1;y+=gap,i++)
+    ceilingStar(g,x,y,4.4,i%3?CEILING_PALETTE.yellow:CEILING_PALETTE.red,1,(y|0)+i);
+}
+// One of the twelve lunar-month circles: twenty-four segments for the hours, every other one flooded
+// blue, a hub and a red centre. Painted rather than ruled, so the ring wanders as a hand's does.
+function ceilingMonthCircle(g,cx,cy,r,alpha=.72){
+  g.save();g.globalAlpha=alpha;
+  for(let i=0;i<24;i+=2){
+    const a=i/24*TAU-Math.PI/2,b=(i+1)/24*TAU-Math.PI/2,p=[[cx+Math.cos(a)*r*.34,cy+Math.sin(a)*r*.34]];
+    for(let k=0;k<=5;k++){const t=lerp(a,b,k/5);p.push([cx+Math.cos(t)*r*.95,cy+Math.sin(t)*r*.95]);}
+    p.push([cx+Math.cos(b)*r*.34,cy+Math.sin(b)*r*.34]);
+    g.globalAlpha=alpha*.62;g.fillStyle=CEILING_PALETTE.blue;g.beginPath();p.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fill();
+  }
+  g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=.75;
+  g.beginPath();g.arc(cx,cy,r,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,r*.3,0,TAU);g.stroke();
+  for(let i=0;i<24;i++){
+    const a=i/24*TAU-Math.PI/2;
+    g.beginPath();g.moveTo(cx+Math.cos(a)*r*.32,cy+Math.sin(a)*r*.32);g.lineTo(cx+Math.cos(a)*r*.95,cy+Math.sin(a)*r*.95);g.stroke();
+  }
+  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*.17,0,TAU);g.fill();g.restore();
+}
+// Meskhetiu, the Foreleg — the seven stars a later century calls the Plough, drawn on this ceiling as
+// the bull they belong to. The seven are set on the animal itself as star signs, which is how the
+// northern panel identifies it: the figure is the constellation, not a label beside one.
+const CEILING_MESKHETIU=[[-1.1,-1.06],[-.68,-1.2],[-.24,-1.26],[.2,-1.16],[.58,-1.02],[.92,-1.2],[1.2,-1.08]];
+function ceilingPaintBull(g,x,y,s,alpha=.5){
+  g.save();g.globalAlpha=alpha;
+  // the barrel of the body, low and long, on four legs that end in hooves
+  ceilingPolygon(g,[[x-s*1.15,y-s*.22],[x+s*.72,y-s*.3],[x+s*.86,y-s*.02],[x+s*.78,y+s*.3],[x-s*1.02,y+s*.32],[x-s*1.24,y+s*.04]],CEILING_PALETTE.red,1,17,1.3);
+  for(const dx of [-.86,-.42,.24,.62]){
+    ceilingBrush(g,[[x+dx*s,y+s*.26],[x+dx*s-s*.04,y+s*.92]],CEILING_PALETTE.carbon,1.4,.85,dx*100+19);
+    ceilingBrush(g,[[x+dx*s-s*.1,y+s*.92],[x+dx*s+s*.08,y+s*.92]],CEILING_PALETTE.carbon,1.9,.8,dx*100+23);
+  }
+  // the neck and the head, set forward and up, with the horns above and the ear behind them
+  ceilingPolygon(g,[[x+s*.72,y-s*.24],[x+s*1.04,y-s*.5],[x+s*1.2,y-s*.42],[x+s*.92,y-s*.02],[x+s*.76,y+s*.06]],CEILING_PALETTE.red,1,23,1.2);
+  ceilingPolygon(g,[[x+s*1.0,y-s*.52],[x+s*1.46,y-s*.62],[x+s*1.54,y-s*.4],[x+s*1.12,y-s*.3]],CEILING_PALETTE.red,1,29,1.2);
+  ceilingBrush(g,ceilingArcPoints(x+s*1.14,y-s*.72,s*.3,Math.PI*.95,Math.PI*.1,10),CEILING_PALETTE.carbon,1.3,.85,31);
+  ceilingBrush(g,ceilingArcPoints(x+s*1.26,y-s*.68,s*.26,Math.PI*.9,Math.PI*.05,10),CEILING_PALETTE.carbon,1.2,.72,33);
+  ceilingBrush(g,[[x+s*1.02,y-s*.5],[x+s*.86,y-s*.74]],CEILING_PALETTE.carbon,1.2,.8,37);
+  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*1.3,y-s*.48,s*.06,0,TAU);g.fill();
+  // the tail, and the seven stars above the back that are the reason the animal is drawn at all
+  ceilingBrush(g,[[x-s*1.18,y-s*.1],[x-s*1.52,y+s*.34],[x-s*1.4,y+s*.6]],CEILING_PALETTE.carbon,1.2,.7,41);
+  for(let i=0;i<CEILING_MESKHETIU.length;i++)
+    ceilingStar(g,x+CEILING_MESKHETIU[i][0]*s,y+CEILING_MESKHETIU[i][1]*s,s*.19,CEILING_PALETTE.yellow,1,i*13+5);
+  g.restore();
+}
+// Reret, the hippopotamus, standing upright with the crocodile along her back and one hand on the
+// mooring post — the northern panel's other guardian, and the figure this sheet used to cut to a bare
+// post for want of room.
+function ceilingPaintHippo(g,x,y,s,alpha=.46){
+  g.save();g.globalAlpha=alpha;
+  ceilingPolygon(g,[[x-s*.5,y+s*1.15],[x+s*.44,y+s*1.15],[x+s*.56,y+s*.2],[x+s*.4,y-s*.62],[x-s*.24,y-s*.78],[x-s*.56,y-s*.2],[x-s*.6,y+s*.6]],CEILING_PALETTE.blue,1,53,1.4);
+  ceilingPolygon(g,[[x-s*.3,y-s*.76],[x+s*.36,y-s*.66],[x+s*.5,y-s*1.02],[x+s*.22,y-s*1.24],[x-s*.26,y-s*1.16]],CEILING_PALETTE.blue,1,57,1.4);
+  ceilingPolygon(g,[[x+s*.2,y-s*1.2],[x+s*.62,y-s*1.28],[x+s*.66,y-s*1.06],[x+s*.4,y-s*1.02]],CEILING_PALETTE.blue,1,61,1.2);
+  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*.3,y-s*1.1,s*.06,0,TAU);g.fill();
+  for(const dx of [-.34,.2]){
+    ceilingBrush(g,[[x+dx*s,y+s*1.1],[x+dx*s,y+s*1.48]],CEILING_PALETTE.carbon,1.5,.82,dx*91+41);
+    ceilingBrush(g,[[x+dx*s-s*.12,y+s*1.48],[x+dx*s+s*.1,y+s*1.48]],CEILING_PALETTE.carbon,1.9,.78,dx*91+47);
+  }
+  // The crocodile she carries, laid down the length of her back.
+  ceilingPolygon(g,[[x-s*.44,y-s*.52],[x-s*.28,y-s*.94],[x-s*.02,y-s*1.14],[x-s*.06,y-s*1.26],[x-s*.36,y-s*1.06],[x-s*.6,y-s*.6],[x-s*.66,y+s*.3],[x-s*.5,y+s*.66],[x-s*.66,y+s*.7],[x-s*.82,y+s*.28],[x-s*.74,y-s*.58]],CEILING_PALETTE.green,1,67,1.3);
+  for(let i=0;i<6;i++){const t=i/5,cx=lerp(x-s*.72,x-s*.2,t),cy=lerp(y+s*.2,y-s*1.0,t);
+    ceilingBrush(g,[[cx-s*.05,cy],[cx+s*.09,cy-s*.05]],CEILING_PALETTE.carbon,1.1,.6,71+i);}
+  // The mooring post, the sign she holds and the thing this figure is most often reduced to.
+  ceilingBrush(g,[[x+s*.86,y+s*1.15],[x+s*.86,y-s*1.05]],CEILING_PALETTE.carbon,2.1,.85,79);
+  ceilingBrush(g,[[x+s*.72,y-s*1.05],[x+s*1.0,y-s*1.05]],CEILING_PALETTE.carbon,1.8,.8,83);
+  ceilingBrush(g,[[x+s*.56,y+s*.14],[x+s*.84,y+s*.06]],CEILING_PALETTE.carbon,1.4,.8,89);
+  g.restore();
 }
 function ceilingBuildWall(){
   const key=W+'x'+H+'x'+DPR;if(ceilingWall&&ceilingWallKey===key)return ceilingWall;
@@ -108,36 +314,43 @@ function ceilingBuildWall(){
     let x=rng()*W,y=rng()*H;const pts=[[x,y]];for(let j=0;j<3+Math.floor(rng()*4);j++){x+=(rng()-.5)*24;y+=4+rng()*17;pts.push([x,y]);}
     ceilingBrush(g,pts,CEILING_PALETTE.loss,.45,.17,100+i);
   }
-  const inset=Math.max(10,Math.min(17,W*.03));
+  const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,wide=W>=700;
+  ceilingSettingGrid(g,inset,inset,W-inset,H-inset,Math.max(20,Math.min(32,W/36)));
   g.strokeStyle='rgba(36,29,22,.56)';g.lineWidth=1.1;g.strokeRect(inset,inset,W-inset*2,H-inset*2);
-  g.strokeStyle='rgba(157,55,36,.36)';g.lineWidth=.7;g.strokeRect(inset+4,inset+4,W-inset*2-8,H-inset*2-8);
-  // Five-point star signs make the architectural border of the original ceiling.
-  const gap=Math.max(19,Math.min(27,W/18));
-  for(let x=inset+gap;x<W-inset-gap*.3;x+=gap){ceilingStar(g,x,inset+7,2.5,CEILING_PALETTE.carbon,1,Math.round(x));ceilingStar(g,x,H-inset-7,2.5,CEILING_PALETTE.carbon,1,Math.round(x)+5);}
-  for(let y=inset+gap;y<H-inset-gap*.3;y+=gap){ceilingStar(g,inset+7,y,2.5,CEILING_PALETTE.carbon,1,Math.round(y)+11);ceilingStar(g,W-inset-7,y,2.5,CEILING_PALETTE.carbon,1,Math.round(y)+17);}
-  // TT353 is organised as two fields separated by a broad band of inscriptions.
-  const divide=H*.50,band=Math.max(18,Math.min(27,H*.035));
-  g.fillStyle='rgba(238,228,205,.38)';g.fillRect(inset+9,divide-band*.5,W-inset*2-18,band);
-  for(let k=-2;k<=2;k++)ceilingBrush(g,[[inset+10,divide+k*band*.18],[W-inset-10,divide+k*band*.18]],k===0?CEILING_PALETTE.red:CEILING_PALETTE.carbon,k===0?.7:.55,k===0?.26:.24,211+k);
-  // The twelve month circles stay grouped when there is room; on a narrow sheet they flank the route.
-  if(W>=700){
-    const r=Math.min(19,H*.025),x0=inset+42,y0=divide+band+34;
-    for(let i=0;i<12;i++)ceilingMonthCircle(g,x0+(i%3)*r*2.35,y0+Math.floor(i/3)*r*2.35,r,.38);
-    for(let i=0;i<5;i++)ceilingGlyphColumn(g,W-inset-32-i*24,divide+band+27,16,Math.max(5,Math.floor((H-divide-band-60)/17)),300+i,.27);
-    ceilingPaintHippo(g,W-inset-175,divide-band-28,19,.18);ceilingPaintBull(g,W-inset-92,divide-band-30,17,.18);
+  // The room is crowned at the top and closed at the foot; the star band runs down both edges.
+  const frieze=Math.max(13,Math.min(20,H*.026));
+  ceilingKheker(g,x0,x1,inset+3,frieze);
+  ceilingBlockRule(g,x0,x1,H-inset-frieze*.45-8,Math.max(4.5,frieze*.4),.72);
+  ceilingStarBorder(g,inset+9,inset+frieze+14,H-inset-frieze-14,Math.max(20,Math.min(28,H/22)));
+  ceilingStarBorder(g,W-inset-9,inset+frieze+14,H-inset-frieze-14,Math.max(20,Math.min(28,H/22)));
+  // TT353 is organised as two fields divided by a band; here the band is the block border it would
+  // have been painted as, rather than the plain rule this sheet drew before.
+  const divide=H*.52,band=Math.max(7,Math.min(11,H*.014));
+  ceilingBlockRule(g,x0+4,x1-4,divide-band*.5,band,.5);
+  // The upper field carries the two circumpolar figures and their names; the lower one the month
+  // circles and the decan columns. The middle of the sheet is left to the route on purpose — a wall
+  // this dense would bury the flight if the density ran edge to edge.
+  const cell=wide?15:12;
+  if(wide){
+    const top=hudBand()+30;
+    ceilingPaintBull(g,W-inset-152,divide-70,20,.5);
+    ceilingWordColumn(g,'foreleg',W-inset-58,divide-118,cell,CEILING_PALETTE.carbon,.5);
+    ceilingPaintHippo(g,W-inset-262,divide-84,19,.46);
+    ceilingWordColumn(g,'star',W-inset-300,divide-120,cell,CEILING_PALETTE.carbon,.44);
+    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[i],inset+40+i*26,top,cell,CEILING_PALETTE.carbon,.42);
+    const r=Math.min(18,H*.024),mx=inset+46,my=divide+band+38;
+    for(let i=0;i<12;i++)ceilingMonthCircle(g,mx+(i%3)*r*2.4,my+Math.floor(i/3)*r*2.4,r,.42);
+    for(let i=0;i<5;i++)ceilingWordColumn(g,CEILING_COLUMNS[3+i],W-inset-44-i*26,divide+band+32,cell,CEILING_PALETTE.carbon,.42);
+    for(let i=0;i<3;i++)ceilingWordColumn(g,CEILING_COLUMNS[8+i],inset+40+i*26,H-inset-frieze-30-cell*3,cell,CEILING_PALETTE.carbon,.36);
   }else{
-    const r=Math.max(9,Math.min(13,W*.027)),top=hudBand()+22,span=Math.max(r*2.35,(H-top-footerBand()-18)/6);
-    for(let i=0;i<6;i++){const y=top+i*span;ceilingMonthCircle(g,inset+20,y,r,.27);ceilingMonthCircle(g,W-inset-20,y,r,.27);}
-  }
-  // Vertical decan-name columns: real sign forms, treated as uncited fragments rather than invented prose.
-  const columns=W>=700?4:2,sz=W>=700?15:12;
-  for(let i=0;i<columns;i++){
-    const side=i%2?-1:1,x=side>0?inset+48+Math.floor(i/2)*22:W-inset-48-Math.floor(i/2)*22;
-    ceilingGlyphColumn(g,x,hudBand()+22,sz,Math.max(5,Math.floor((divide-hudBand()-52)/sz)),430+i,.2);
+    const r=Math.max(9,Math.min(13,W*.027)),top=hudBand()+24,span=Math.max(r*2.5,(H-top-footerBand()-18)/5);
+    for(let i=0;i<5;i++){const y=top+i*span;ceilingMonthCircle(g,inset+22,y,r,.34);ceilingMonthCircle(g,W-inset-22,y,r,.34);}
+    ceilingPaintBull(g,W*.5+38,divide-46,13,.4);
+    ceilingWordColumn(g,'foreleg',inset+30,divide+band+26,cell,CEILING_PALETTE.carbon,.4);
+    ceilingWordColumn(g,'hour',W-inset-30,divide+band+26,cell,CEILING_PALETTE.carbon,.4);
   }
   ceilingWall=c;ceilingWallKey=key;return c;
 }
-
 function ceilingDrawRegisterGrid(){
   const step=207*scale,start=Math.floor((world.cameraY-80)/207)*207;
   ctx.save();ctx.strokeStyle='rgba(36,29,22,.09)';ctx.lineWidth=.55;
@@ -159,7 +372,7 @@ function ceilingDrawDecanCharts(){
     ctx.strokeStyle=`rgba(${chart.completed?'40,89,135':'36,29,22'},${alpha})`;ctx.beginPath();
     chart.stars.forEach((n,i)=>{const x=sx(n.x),y=sy(n.y);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();
     const anchor=chart.stars[0],x=sx(anchor.x),y=sy(anchor.y)-anchor.r*scale-10;
-    if(y>-20&&y<H+20){ctx.globalAlpha=alpha+.14;ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=Math.max(11,13*scale)+'px '+CEILING_HIERO;ctx.textAlign='center';ctx.fillText(String.fromCodePoint(CEILING_G.star,CEILING_G.n,CEILING_G.t),x,y);ctx.globalAlpha=1;}
+    if(y>-20&&y<H+20)ceilingWordRow(ctx,'star',x,y-2,Math.max(11,13*scale),CEILING_PALETTE.carbon,alpha+.2,t);
   }
   ctx.restore();
 }
@@ -201,7 +414,7 @@ function ceilingDrawNode(n,aim){
   ceilingNodeIcon(n,r,t);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
-    const labels={relaxed:'TIRO',classic:'ADEPTUS',hardcore:'MAGISTER'};ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=Math.max(8,9.5*scale)+'px Georgia,serif';ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(labels[n.difficultyChoice],0,r+15*scale);
+    const labels={relaxed:'TIRO',classic:'ADEPTUS',hardcore:'MAGISTER'};ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(labels[n.difficultyChoice],0,r+15*scale);
   }
   ctx.restore();
 }
@@ -285,7 +498,7 @@ function ceilingDrawEffects(dt){
   }
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}const a=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
-    ctx.save();ctx.globalAlpha=a;ctx.fillStyle=CEILING_PALETTE.red;ctx.font=Math.max(10,12*scale)+'px Georgia,serif';ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-f.age*18*scale);ctx.restore();
+    ctx.save();ctx.globalAlpha=a;ctx.fillStyle=CEILING_PALETTE.red;ctx.font=plateFace(Math.max(10,12*scale));ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-f.age*18*scale);ctx.restore();
   }
 }
 function ceilingDrawDark(dt){
@@ -302,12 +515,25 @@ function ceilingDrawDark(dt){
 }
 function ceilingDrawRunningHead(dt){
   const index=clamp(Math.floor(world.progress/8),0,3),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
-  ctx.save();ctx.textAlign='center';ctx.fillStyle=CEILING_PALETTE.carbon;ctx.globalAlpha=.72;ctx.font=Math.max(10,11*scale)+'px Georgia,serif';ctx.fillText('HOUR '+numerals[index]+'  ·  '+CEILING_HOURS[index],W*.5,y);ctx.restore();
+  // The hour is a count the wall itself makes, so it is written in strokes, largest first, and the
+  // Latin beside it stays what it is: a modern gloss, set in the era's slab and not pretending to
+  // be a reading of the line it glosses. Roman numerals belonged to a century three sheets later.
+  const size=Math.max(10,11*scale),label=CEILING_HOURS[index];
+  ctx.save();ctx.textAlign='left';ctx.font=plateFace(size,'sc');
+  const width=ctx.measureText(label).width,figures=ceilingNumWidth(index+1,size*1.05),left=W*.5-(width+figures+size*.75)/2;
+  ctx.globalAlpha=.72;ceilingNumber(ctx,index+1,left,y-size*.78,size*1.05,CEILING_PALETTE.carbon);
+  ctx.fillStyle=CEILING_PALETTE.carbon;ctx.fillText(label,left+figures+size*.75,y);ctx.restore();
   if(chapterReveal.age<2.35&&world.state==='playing'){
-    if(world.state!=='paused')chapterReveal.age+=dt;const a=Math.sin(clamp(chapterReveal.age/2.35,0,1)*Math.PI),cy=H*.5;
-    ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.fillStyle='rgba(221,207,173,.9)';ctx.fillRect(W*.18,cy-34,W*.64,68);
-    ctx.fillStyle=CEILING_PALETTE.red;ctx.font='24px '+CEILING_HIERO;ctx.fillText(String.fromCodePoint(CEILING_G.w,CEILING_G.n,CEILING_G.w,CEILING_G.t),W*.5,cy-5);
-    ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font='11px Georgia,serif';ctx.fillText('HOUR '+numerals[index]+' · '+CEILING_HOURS[index],W*.5,cy+20);ctx.restore();
+    if(world.state!=='paused')chapterReveal.age+=dt;
+    const age=chapterReveal.age,a=Math.sin(clamp(age/2.35,0,1)*Math.PI),cy=H*.5;
+    ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.fillStyle=CEILING_PALETTE.lime;ctx.fillRect(W*.18,cy-46,W*.64,94);
+    ceilingBlockRule(ctx,W*.18,W*.82,cy-46,5,.62*a);ceilingBlockRule(ctx,W*.18,W*.82,cy+40,5,.62*a);
+    // wnwt, the hour: the word is painted on in the wall's four passes, and the Latin under it is
+    // written in the same order by the plate's own hand, which is what `mode:'wall'` now buys.
+    ceilingWordRow(ctx,'hour',W*.5,cy-9,40,CEILING_PALETTE.red,1,clamp(age/.9,0,1));
+    ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=plateFace(11,'sc');
+    if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ctx.fillText(label,W*.5,cy+30);
+    ctx.restore();
   }
 }
 function renderCeiling(dt,aim){

@@ -41,11 +41,15 @@ seats into its groove, paced by the punch rather than by handwriting speed — c
 VII's develop-in than to any stroke-order hand. HUD numbers are grouped identical marks, not
 digits. Cheap: it's develop-in's alpha ramp retimed to discrete strikes.
 
-**III · Ceiling — the four-step outline-flood-outline.** Hangs off `penLettering()`. The wall's
-real order is sketch (red) → correct (black) → flood (colour) → outline (black), one pass more
-than the shipped stroke-then-flood — swap the ink colours per pass and add the black correction
-pass before the flood and a second outline after it. Nearly free: the shape `penLettering()`
-already has, one extra pass and a palette swap.
+**III · Ceiling — the four-step outline-flood-outline. Built.** Hangs off `penLettering()`. The
+wall's real order is sketch (red) → correct (black) → flood (colour) → outline (black), one pass
+more than the shipped stroke-then-flood. It was nearly free, as predicted: a plate token,
+`reveal.mode`, names the hand — `'pen'` for the atlas, `'wall'` for the Ceiling — and the wall
+branch runs the same contours four times at four staged alphas. The small hand forked with it:
+`writeText()`'s clipped box and riding nib are a pen's, so in wall mode each letter instead fades
+up whole in place, set from the finished string's own measurement so nothing shifts as it dries.
+The Ceiling's Latin outlines come from the same `glyphs.mjs` pipeline as the Fell faces, under the
+key `slab`.
 
 **IV · Marble — brush-then-chisel.** Also `penLettering()`, and also nearly free: Catich's
 two-stage motion (a flat chisel-edged brush paints the letterform, then a V-section groove is cut

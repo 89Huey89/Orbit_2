@@ -7,11 +7,17 @@
 // first time it is asked for and returns 0..1 from then on; it reads `world.time`, so a pause freezes the
 // pen mid-stroke and reduced motion returns 1 immediately. The simulation never learns any of this exists:
 // capture, release and aim are computed from the world alone, whether or not a mark has finished drawing.
+// `mode` names the hand a plate writes in. The engraved atlas writes with a pen: a stroke, then a
+// flood, one letter at a time. A painted wall does not — its own order is sketch in red, correct in
+// black, flood the colour, close the line in black, and that order is what the Ceiling animates,
+// both in the large hand below and in the small one that writes captions.
 definePlate('reveal',{
-  night:{nib:'242,232,205',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
+  night:{mode:'pen',nib:'242,232,205',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
     strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178'},
-  paper:{nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
-    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'}
+  paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
+    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
+  ceiling:{mode:'wall',sketch:'157,55,36',nib:'36,29,22',bead:'36,29,22',dry:'92,75,53',
+    spatter:'157,55,36',strike:'157,55,36',washRim:'36,29,22',blot:'157,55,36',rule:'36,29,22'}
 });
 // How long each kind of mark takes, and how far above the top of the view the cartographer works ahead.
 const REVEAL_MARGIN=-24,REVEAL_CAP=3;
@@ -340,6 +346,24 @@ function revealFrame(layer){
   return t;
 }
 // ---------- Canvas captions, a glyph at a time ----------
+// A brush does not uncover a line of text through a window sliding across it: it puts one sign down
+// whole and wet, and the next goes down beside it. Each letter therefore fades up in place over its
+// own short turn, and every one is set from the finished string's own measurement, so the caption
+// that arrives is the caption that stays — the marks land in order, nothing shifts when the last
+// one dries, and there is no nib, because a reed has none.
+function wallText(context,text,x,y,progress){
+  const align=context.textAlign||'left',width=context.measureText(text).width;
+  const left=align==='center'?x-width/2:align==='right'?x-width:x;
+  const base=context.globalAlpha,span=1/text.length;
+  context.save();context.textAlign='left';
+  for(let i=0;i<text.length;i++){
+    const wet=clamp((progress-i*span)/(span*.8),0,1);
+    if(wet<=0)break;
+    context.globalAlpha=base*wet;
+    context.fillText(text[i],left+context.measureText(text.slice(0,i)).width,y+(1-wet)*.8);
+  }
+  context.restore();context.globalAlpha=base;
+}
 // One clip rectangle uncovers the caption glyph by glyph with a nib mark at its edge; a finished caption is
 // printed with a single fillText, exactly as before.
 function writeText(context,text,x,y,progress,options){
@@ -349,6 +373,7 @@ function writeText(context,text,x,y,progress,options){
   if(plainPlate()&&!(options&&options.plain))return;
   if(progress>=1||reducedMotion){context.fillText(text,x,y);return;}
   if(progress<=0||!text)return;
+  if(ink.reveal.mode==='wall'){wallText(context,text,x,y,progress);return;}
   const shownGlyphs=Math.max(1,Math.ceil(progress*text.length));
   if(shownGlyphs>=text.length){context.fillText(text,x,y);return;}
   const size=(options&&options.size)||12,align=context.textAlign||'left';
@@ -408,13 +433,31 @@ function penLettering(text,x,y,size,face,age,align){
   const unit=size/FELL_GLYPHS.unitsPerEm;
   let width=0;for(let i=0;i<text.length;i++)width+=fellAdvance(face,text[i])*unit;
   let pen=align==='center'?x-width/2:align==='right'?x-width:x;
-  const style=ctx.fillStyle,base=ctx.globalAlpha;
+  const style=ctx.fillStyle,base=ctx.globalAlpha,wall=ink.reveal.mode==='wall';
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
   for(let i=0;i<text.length;i++){
     const char=text[i],advance=fellAdvance(face,char)*unit,start=i*LETTER_STAGGER;
     const stroke=clamp((age-start)/LETTER_STROKE,0,1),flood=clamp((age-start-LETTER_STROKE*.55)/LETTER_FLOOD,0,1);
     const outline=stroke>0?fellGlyph(face,char):null;
-    if(outline&&outline.contours.length){
+    if(outline&&wall){
+      // The wall's own order, letter by letter: the draftsman's red setting-out laid off register,
+      // the senior hand's thin black correction over it, the flat flood, and the black line that
+      // closes the letter last. The red is never quite covered — on the wall it survives wherever
+      // the later paint has fallen away — so it is left as a whisper under the finished letter.
+      const turn=clamp((age-start)/(LETTER_STROKE+LETTER_FLOOD),0,1);
+      const s1=clamp(turn*4,0,1),s2=clamp((turn-.25)*4,0,1),s3=clamp((turn-.5)*4,0,1),s4=clamp((turn-.75)*4,0,1);
+      const trace=(dx,dy)=>{
+        ctx.beginPath();
+        for(const points of outline.contours){
+          for(let p=0;p<points.length;p+=2){const px=pen+points[p]*unit+dx,py=y-points[p+1]*unit+dy;if(p===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+          ctx.closePath();
+        }
+      };
+      if(s1>0){ctx.globalAlpha=base*(.15+.4*(1-s4))*s1;ctx.fillStyle=`rgb(${ink.reveal.sketch})`;trace(size*.045,-size*.035);ctx.fill();}
+      if(s2>0){ctx.globalAlpha=base*.32*s2;ctx.strokeStyle=style;ctx.lineWidth=Math.max(.5,size*.025);trace(0,0);ctx.stroke();}
+      if(s3>0){ctx.globalAlpha=base*s3;ctx.fillStyle=style;trace(0,0);ctx.fill();}
+      if(s4>0){ctx.globalAlpha=base*.85*s4;ctx.strokeStyle=style;ctx.lineWidth=Math.max(.6,size*.045);trace(0,0);ctx.stroke();}
+    }else if(outline&&outline.contours.length){
       // The counters flood with ink behind the contour that made them.
       if(flood>0){
         ctx.globalAlpha=base*flood;ctx.fillStyle=style;ctx.beginPath();

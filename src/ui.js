@@ -153,7 +153,7 @@ function enterCeiling(){
   if(world&&world.state==='playing')return;
   ceilingReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
-  applyPlate('ceiling');invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncCeilingChrome();render(0);
+  applyPlate('ceiling');invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncCeilingChrome();render(0);ceilingFaceReady();
 }
 function leaveCeiling(){
   if(!ceilingPlate())return;
