@@ -261,6 +261,59 @@ function ceilingWordRow(g,word,cx,y,cell,col,alpha=1,stage=1){
   for(let i=0;i<w.q.length;i++)ceilingQuadrat(g,w.q[i],left+i*cell,y,cell,col,stage,(cx|0)+i*37);
   g.restore();return span;
 }
+// The decan field: on the facsimile a decan column is a star table, not a caption — narrow columns
+// ruled on both sides, packed wall to wall, dozens deep, most of them carrying only a short run of
+// quadrats and a star before the ruling simply keeps going, empty, for the rest of the column's
+// length. This draws one side's whole share of that field as nSub adjoining columns spanning the
+// margin's full height: the dividing rules are drawn once each, nSub+1 lines rather than 2*nSub, since
+// neighbours share an edge on a real ruled sheet; a third or so of the columns are left as ruling only
+// (at most a stray star or two, since even a wall's emptiest column is rarely perfectly bare); and the
+// rest are walked down with the checked fourteen-word list, a border star — the frame band's own unit,
+// reused rather than invented twice — marking where each run of signs gives out, well short of the
+// column's own foot. avoidY/figClear keep this generic content, never the ruling, clear of whichever
+// circumpolar figure is out this watch on the same side: the animal's own caption is drawn by the
+// caller right there, and a real canon grid would still run behind a painted figure, not stop at it.
+function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figClear,alpha){
+  const subW=(xFar-xNear)/nSub,pad=cell*.5;
+  for(let k=0;k<=nSub;k++){
+    const x=xNear+k*subW,al=alpha*(.85+ceilingHash(rot+k,side*97)*.35);
+    ceilingBrush(g,[[x,loY-pad],[x,hiY+pad]],CEILING_PALETTE.carbon,.65,al,rot*11+k*13+side*503+7);
+  }
+  // A side that happened to roll every one of its columns blank would read as an empty lane rather
+  // than a quiet one, so at least the outermost column — nearest the star border, and the one the
+  // facsimile itself never leaves bare — always carries content.
+  const blank=new Array(nSub);let anyContent=false;
+  for(let k=0;k<nSub;k++){blank[k]=ceilingHash(rot*29+k*41+side*757,3)<.24;if(!blank[k])anyContent=true;}
+  if(!anyContent)blank[0]=false;
+  let cursor=0;
+  for(let k=0;k<nSub;k++){
+    // The sign has to fit inside its own share of the lane, between its own two rules, so its size is
+    // read off subW — the column's actual pitch once nSub is known — rather than off the fixed outer
+    // cell that sized the single old column; a fixed size stopped noticing when four columns replaced
+    // one and started running signs into their neighbours.
+    const cx=xNear+(k+.5)*subW,jitter=.86+ceilingHash(rot+k*3,side+9)*.3,ccell=Math.max(6,subW*.84*jitter),
+      seed=rot*29+k*41+side*757,starAlpha=Math.min(.8,alpha+.32);
+    if(blank[k]){
+      const stars=ceilingHash(seed,5)<.6?1:2;
+      for(let s=0;s<stars;s++){
+        const y=loY+ccell*1.5+(hiY-loY)*(.2+ceilingHash(seed+s,11)*.55);
+        if(avoidY==null||Math.abs(y-avoidY)>=figClear)ceilingBorderStar(g,cx,y,Math.max(2,ccell*.24),starAlpha,seed+s*17);
+      }
+      continue;
+    }
+    let y=loY+ccell*.7;const limitY=loY+(hiY-loY)*(.4+ceilingHash(seed,23)*.26),kAlpha=alpha*(.8+ceilingHash(seed,61)*.4);
+    while(y<limitY-ccell*.3){
+      if(avoidY!=null&&Math.abs(y-avoidY)<figClear){y+=ccell*1.6;continue;}
+      const word=CEILING_COLUMNS[(cursor+rot+side*7)%CEILING_COLUMNS.length],w=CEILING_WORD[word];cursor++;
+      if(w){
+        g.save();g.globalAlpha=kAlpha;
+        for(let i=0;i<w.q.length&&y<limitY;i++,y+=ccell)ceilingQuadrat(g,w.q[i],cx,y,ccell,CEILING_PALETTE.carbon,1,seed+i*7+cursor*3);
+        g.restore();
+      }
+      if(y<limitY-ccell*.4){ceilingBorderStar(g,cx,y,Math.max(2.2,ccell*.28),starAlpha,seed+cursor*13);y+=ccell*1.15;}
+    }
+  }
+}
 // Egyptian numerals: stroke, heel-bone, coil of rope, lotus. Base ten, additive, no zero, and signs
 // of one value stacked in a block of up to three rows, which is why a small count reads at a glance.
 // The score stays an Arabic figure — it has to be read at speed — but a count the sheet itself makes,
@@ -620,7 +673,7 @@ function ceilingBakeWall(watch){
   // the margin from turning to noise: columns hug the star border, circles sit a little further in,
   // and each figure keeps a clear stretch on its own side so nothing is ever set on top of the animal
   // that already anchors that reach of the tile.
-  const cell=wide?15:12,colIn=wide?30:16,circIn=wide?64:30,bullIn=wide?120:40,hippoIn=wide?108:38,
+  const cell=wide?15:12,circIn=wide?64:30,bullIn=wide?120:40,hippoIn=wide?108:38,
     figClear=wide?90:46,loY=R*.07,hiY=wide?R*.94:R*.93,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
   // P2 · a register per watch. TT353 is one authored sheet and the circumpolar pair, the decan columns
   // and the twelve month circles are not separate chapters of it (docs/eras/03-ceiling.md, "The
@@ -633,11 +686,9 @@ function ceilingBakeWall(watch){
   // neither is on screen for the entire run the way both used to be; the months come forward at the
   // watch that has no animal in it at all, so the margins are not always the same two shapes; and the
   // last watch, before dawn, is the one place everything the room owns is out together, since the night
-  // is closing and there is nothing left for the wall to hold back. The decan columns advance through
-  // CEILING_COLUMNS by a quarter of the list each watch (rot below) rather than always starting at
-  // 'hour', so a full night's climb reads all fourteen names by its end instead of the same three or
-  // four every time — the fourteen-word list this sheet is checked against, not a shorter one invented
-  // to fit a single watch's share of the margin.
+  // is closing and there is nothing left for the wall to hold back. rot walks the decan field's own
+  // word cursor a quarter of the fourteen-word list forward each watch, so a full night's climb reads
+  // most of the checked vocabulary by its end rather than the same handful every time.
   const CEILING_FURNITURE=[{bull:1,hippo:0,months:0},{bull:0,hippo:1,months:0},{bull:0,hippo:0,months:1},{bull:1,hippo:1,months:1}];
   const furn=CEILING_FURNITURE[watch],rot=watch*4;
   if(furn.bull){
@@ -652,12 +703,21 @@ function ceilingBakeWall(watch){
   // painted this watch — a watch with neither animal in it (the months' own turn) gives every column
   // slot back to the columns instead of leaving two dead gaps where the animals used to stand.
   const clash=(y,side)=>(side&&furn.bull&&Math.abs(y-bullY)<figClear)||(!side&&furn.hippo&&Math.abs(y-hippoY)<figClear);
-  const nCol=CEILING_COLUMNS.length;
-  for(let i=0;i<nCol;i++){
-    const y=loY+span*i/(nCol-1),side=i&1;
-    if(clash(y,side))continue;
-    ceilingWordColumn(g,CEILING_COLUMNS[(i+rot)%nCol],side?W-inset-colIn:inset+colIn,y,cell,CEILING_PALETTE.carbon,.3+ceilingHash(i,3)*.14);
-  }
+  // The decan field itself: one lane per side, run from just past the star border to just short of the
+  // circle/wheel lane those bands already claim, so the field never eats into furniture that is spoken
+  // for. desiredSub grows watch by watch, the same escalation the animals and the wheels follow, so the
+  // last watch's margin is not just "everything the room owns" for its figures but its densest field of
+  // columns too; minSub is the narrowest a column can go before a quadrat stops reading as one. Where
+  // the lane is too tight to honour desiredSub at all — the whole of the narrow layout, most watches —
+  // it quietly settles for as many as actually fit, down to one, rather than crowd the margin further
+  // than 390px has room for.
+  const laneGap=4,xL0=starL+starW*.5+laneGap,xL1=inset+circIn-laneGap,
+    xR0=W-inset-circIn+laneGap,xR1=starRx-starW*.5-laneGap,
+    minSub=10,desiredSub=[2,2,3,4][watch],
+    nSubL=Math.max(1,Math.min(desiredSub,Math.floor((xL1-xL0)/minSub))),
+    nSubR=Math.max(1,Math.min(desiredSub,Math.floor((xR1-xR0)/minSub)));
+  ceilingDecanField(g,xL0,xL1,loY,hiY,0,nSubL,cell,rot,furn.hippo?hippoY:null,figClear,.36);
+  ceilingDecanField(g,xR0,xR1,loY,hiY,1,nSubR,cell,rot,furn.bull?bullY:null,figClear,.36);
   // Twelve identical wheels in two ruled rows is the facsimile's own layout; a vertically scrolling
   // margin has no width to lay six across, so the sheet's "row" becomes a left/right pair sharing one
   // height instead — six pairs down the tile's span, each pair generously spaced from the next, which
