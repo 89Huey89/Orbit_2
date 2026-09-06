@@ -207,7 +207,10 @@ Reret with her crocodile and mooring post, quadrat-stacked decan columns, Egypti
 node/body painter, player, four hazard painters, route, reveal, darkness and chapter labels while
 reusing the unchanged simulation. Entry uses a non-persistent plate application and return restores
 the prior atlas; because the wall is baked into one cached canvas, entry also waits on both of the
-era's faces before painting it, or the sign columns would stay blank for the whole visit.
+era's faces before painting it, or the sign columns would stay blank for the whole visit. What that
+sheet still owes the atlas beside it — a visible brush, a wall that passes with the climb, dangers
+that are not still lifes, and the era's own five sounds — is audited and put in build order in
+[CEILING-POLISH.md](CEILING-POLISH.md).
 
 ## Risk
 
