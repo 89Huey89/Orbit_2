@@ -139,7 +139,7 @@ function event(type,e){
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
-    audio.tone(440,.3,0,.15);say((ceilingPlate()?'COURSE SET · ':'PRESSURE SET · ')+DIFFICULTY_LABELS[e.value]);
+    audio.tone(440,.3,0,.15);say(ceilingPlate()?'COURSE SET · '+CEILING_COURSES[e.value]:'PRESSURE SET · '+DIFFICULTY_LABELS[e.value]);
   }
 }
 function newWorld(){

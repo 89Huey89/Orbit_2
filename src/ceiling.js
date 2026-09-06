@@ -52,6 +52,13 @@ const CEILING_WORD={
 // vocabulary above can spell in full; the order is fixed so the sheet paints identically every load.
 const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white','red','shu','sekhmet','set','eye','shield'];
 const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
+// The wall's own names for the three courses the opening circles offer, standing in for the atlas's
+// TIRO, ADEPTUS and MAGISTER (src/simulation.js's DIFFICULTY_LABELS). They are captions on a night's
+// voyage rather than grades of a practitioner, because that is the register everything else on this
+// sheet speaks in, and they are read both by the circles themselves and by src/ui.js's announcement,
+// so the two can never drift apart. They are kept short on purpose: the outer two are set under the
+// circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
+const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
 let ceilingWall=null,ceilingWallKey='';
 // The barque's last known heading, held between frames so a passing moment of near-zero horizontal
 // speed (the tip of a climb or dive) does not flicker the mirror back and forth.
@@ -507,9 +514,7 @@ function ceilingDrawNode(n,aim){
   ceilingNodeIcon(n,r,t);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
-    // The sheet's own words for the three grades of a night's course, not the paper atlas's Latin
-    // (see src/ui.js's "COURSE SET" and CEILING_OBSERVATIONS for the register this matches).
-    const labels={relaxed:'EASY COURSE',classic:'FULL COURSE',hardcore:'HARD COURSE'};ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(labels[n.difficultyChoice],0,r+15*scale);
+    ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ctx.fillText(CEILING_COURSES[n.difficultyChoice],0,r+15*scale);
   }
   ctx.restore();
 }
