@@ -336,87 +336,114 @@ const CEILING_MONTH_DIV=[24,18,24,12,20,24,16,24,18,24,12,24];
 function ceilingMonthCircle(g,cx,cy,r,alpha=.72,seed=0){
   const div=CEILING_MONTH_DIV[((seed%12)+12)%12],rot=ceilingHash(seed,7)*TAU/div,
     every=1+(ceilingHash(seed,29)>.62?1:0),flood=CEILING_MONTH_FLOOD[seed%CEILING_MONTH_FLOOD.length],
-    hub=.24+ceilingHash(seed,13)*.13,rim2=ceilingHash(seed,19)>.66;
-  g.save();g.globalAlpha=alpha;
-  for(let i=0;i<div;i+=every){
-    const a=i/div*TAU-Math.PI/2+rot,b=(i+1)/div*TAU-Math.PI/2+rot,p=[[cx+Math.cos(a)*r*hub,cy+Math.sin(a)*r*hub]];
-    for(let k=0;k<=5;k++){const t=lerp(a,b,k/5);p.push([cx+Math.cos(t)*r*.95,cy+Math.sin(t)*r*.95]);}
-    p.push([cx+Math.cos(b)*r*hub,cy+Math.sin(b)*r*hub]);
+    hub=.24+ceilingHash(seed,13)*.13,rim2=ceilingHash(seed,19)>.66,ink=CEILING_PALETTE.carbon;
+  // A ring, not a wheel: the divisions live in an outer band only, between the rim and an inner ring,
+  // and the field inside that ring is left as bare plaster around the month's red hub — the way the
+  // circles on the real ceiling carry their sectors around the edge and their name in the middle.
+  const R=r*.95,Ri=r*(.52+hub*.4),first=Math.floor(ceilingHash(seed,41)*every);
+  g.save();
+  for(let i=first;i<div;i+=every){
+    const a=i/div*TAU-Math.PI/2+rot,b=(i+1)/div*TAU-Math.PI/2+rot,
+      p=ceilingArcPoints(cx,cy,R,a,b,6).concat(ceilingArcPoints(cx,cy,Ri,b,a,6));
     g.globalAlpha=alpha*.62;g.fillStyle=flood;g.beginPath();p.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fill();
   }
-  g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=.75;
-  g.beginPath();g.arc(cx,cy,r,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,r*hub*.86,0,TAU);g.stroke();
-  if(rim2){g.globalAlpha=alpha*.7;g.beginPath();g.arc(cx,cy,r*.72,0,TAU);g.stroke();g.globalAlpha=alpha;}
+  g.globalAlpha=alpha;
+  ceilingBrush(g,ceilingArcPoints(cx,cy,r,rot,rot+TAU,56),ink,Math.max(.8,r*.022),alpha*.95,seed*7+1);
+  ceilingBrush(g,ceilingArcPoints(cx,cy,Ri,rot+.4,rot+.4+TAU,44),ink,Math.max(.7,r*.016),alpha*.9,seed*7+2);
+  if(rim2)ceilingBrush(g,ceilingArcPoints(cx,cy,lerp(Ri,R,.5),rot+1,rot+1+TAU,44),ink,Math.max(.55,r*.012),alpha*.6,seed*7+3);
   for(let i=0;i<div;i++){
     const a=i/div*TAU-Math.PI/2+rot;
-    g.beginPath();g.moveTo(cx+Math.cos(a)*r*hub*.9,cy+Math.sin(a)*r*hub*.9);g.lineTo(cx+Math.cos(a)*r*.95,cy+Math.sin(a)*r*.95);g.stroke();
+    ceilingBrush(g,[[cx+Math.cos(a)*Ri,cy+Math.sin(a)*Ri],[cx+Math.cos(a)*R,cy+Math.sin(a)*R]],ink,Math.max(.6,r*.014),alpha*.8,seed*7+11+i);
   }
-  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*hub*.55,0,TAU);g.fill();g.restore();
+  // the hub is the month's rubric: a flat red disc, ringed in black, with the tick of its number beside it
+  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*hub*.5,0,TAU);g.fill();
+  ceilingBrush(g,ceilingArcPoints(cx,cy,r*hub*.5,0,TAU,24),ink,Math.max(.6,r*.014),alpha*.85,seed*7+5);
+  for(let k=0,n=1+(seed%3);k<n;k++)ceilingBrush(g,[[cx+r*hub*.72+k*r*.07,cy-r*.1],[cx+r*hub*.72+k*r*.07,cy+r*.1]],ink,Math.max(.6,r*.014),alpha*.8,seed*7+31+k);
+  g.restore();
 }
 // Meskhetiu, the Foreleg — the seven stars a later century calls the Plough, drawn on this ceiling as
 // the bull they belong to. The seven are set on the animal itself as star signs, which is how the
-// northern panel identifies it: the figure is the constellation, not a label beside one.
-const CEILING_MESKHETIU=[[-1.1,-1.06],[-.68,-1.2],[-.24,-1.26],[.2,-1.16],[.58,-1.02],[.92,-1.2],[1.2,-1.08]];
-// Drawn large now (see ceilingBuildWall's call), so a leg can no longer be a bare brush stroke with a
-// cap on the end — at thumbnail size that read as a stick with a duck-foot, and at signature size it
-// would read as nothing at all. Each leg is instead a tapered wedge in the body's own red, closed by
-// a small dark hoof, the same two-part construction — flat fill, then a black-line part — the barrel
-// and head already use, so enlarging the figure exposes a drawing rather than a diagram of one.
+// northern panel identifies it: the figure is the constellation, not a label beside one. They keep the
+// dipper's own shape above the back, a handle of three and a bowl of four, so the sky is legible on
+// the animal that carries it.
+const CEILING_MESKHETIU=[[-1.18,-1.0],[-.82,-1.14],[-.46,-1.22],[-.1,-1.24],[.3,-1.32],[.68,-1.18],[.24,-.94]];
+// The bull is one continuous silhouette — rump, back, withers, neck, chest, dewlap, near legs and
+// belly are a single polygon built from arc segments, so the belly line runs into the leg and the
+// haunch swells out of the back the way a painted animal's does — with the far pair of legs laid under
+// it first and the head, horns and ear set over it. Flat colour, then the closing black contour, is
+// all the modelling there is; every detail after that is a line, never a shade.
 function ceilingPaintBull(g,x,y,s,alpha=1){
   g.save();g.globalAlpha=alpha;
-  const lw=Math.max(1,s*.055);
-  for(const dx of [-.92,-.48,.22,.62]){
-    const topW=s*.165,botW=s*.075,ly0=y+s*.22,ly1=y+s*.88;
-    ceilingPolygon(g,[[x+dx*s-topW,ly0],[x+dx*s+topW*.68,ly0],[x+dx*s+botW,ly1],[x+dx*s-botW*1.15,ly1]],CEILING_PALETTE.red,1,dx*100+19,lw*1.1);
-    ceilingPolygon(g,[[x+dx*s-botW*1.35,ly1],[x+dx*s+botW*1.15,ly1],[x+dx*s+botW*.55,ly1+s*.1],[x+dx*s-botW*.95,ly1+s*.1]],CEILING_PALETTE.carbon,1,dx*100+23,lw);
-  }
-  // the barrel of the body, low and long, painted over the tops of the legs it stands on
-  ceilingPolygon(g,[[x-s*1.15,y-s*.22],[x+s*.72,y-s*.3],[x+s*.86,y-s*.02],[x+s*.78,y+s*.3],[x-s*1.02,y+s*.32],[x-s*1.24,y+s*.04]],CEILING_PALETTE.red,1,17,lw*1.6);
-  // the neck and the head, set forward and up, with the ear behind the horns and the horns above it
-  ceilingPolygon(g,[[x+s*.72,y-s*.24],[x+s*1.04,y-s*.5],[x+s*1.2,y-s*.42],[x+s*.92,y-s*.02],[x+s*.76,y+s*.06]],CEILING_PALETTE.red,1,23,lw*1.4);
-  ceilingPolygon(g,[[x+s*.86,y-s*.48],[x+s*.98,y-s*.66],[x+s*1.06,y-s*.5]],CEILING_PALETTE.red,1,101,lw);
-  ceilingPolygon(g,[[x+s*1.0,y-s*.52],[x+s*1.46,y-s*.62],[x+s*1.54,y-s*.4],[x+s*1.12,y-s*.3]],CEILING_PALETTE.red,1,29,lw*1.3);
-  ceilingBrush(g,ceilingArcPoints(x+s*1.14,y-s*.72,s*.3,Math.PI*.95,Math.PI*.1,10),CEILING_PALETTE.carbon,lw*1.3,.85,31);
-  ceilingBrush(g,ceilingArcPoints(x+s*1.26,y-s*.68,s*.26,Math.PI*.9,Math.PI*.05,10),CEILING_PALETTE.carbon,lw*1.2,.72,33);
-  ceilingBrush(g,[[x+s*1.02,y-s*.5],[x+s*.86,y-s*.74]],CEILING_PALETTE.carbon,lw*1.2,.8,37);
-  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*1.3,y-s*.48,s*.06,0,TAU);g.fill();
-  // the tail, and the seven stars above the back that are the reason the animal is drawn at all
-  ceilingBrush(g,[[x-s*1.18,y-s*.1],[x-s*1.52,y+s*.34],[x-s*1.4,y+s*.6]],CEILING_PALETTE.carbon,lw*1.2,.7,41);
+  const lw=Math.max(1,s*.05),red=CEILING_PALETTE.red,ink=CEILING_PALETTE.carbon,
+    P=(px,py)=>[x+px*s,y+py*s],A=(cx,cy,r,a0,a1,n=8)=>ceilingArcPoints(x+cx*s,y+cy*s,r*s,a0,a1,n),
+    hoof=(l,r,seed)=>ceilingPolygon(g,[P(l,.9),P(r,.9),P(r+.02,1.0),P(l-.02,1.0)],ink,1,seed,lw*.9);
+  // the far legs, set between the near pair so the animal stands square, their tops lost under the body
+  ceilingPolygon(g,[P(.34,.2),P(.62,.2),P(.62,.45),P(.58,.65),P(.56,.82),P(.58,.93),P(.4,.93),P(.4,.82),P(.38,.65),P(.36,.45)],red,1,11,lw*1.1);hoof(.4,.58,13);
+  ceilingPolygon(g,[P(-.76,.2),P(-.36,.2),P(-.4,.5),P(-.44,.66),P(-.46,.82),P(-.44,.93),P(-.62,.93),P(-.64,.82),P(-.68,.66),P(-.72,.5)],red,1,15,lw*1.1);hoof(-.62,-.44,17);
+  const body=A(-.92,.06,.34,Math.PI,Math.PI*1.5,7).concat(
+    [P(-.7,-.27),P(-.42,-.25),P(-.14,-.26),P(.12,-.3),P(.32,-.36),P(.5,-.36),P(.7,-.44),P(.86,-.56),P(1.0,-.62),P(1.06,-.46),P(1.06,-.3)],
+    A(.8,.02,.3,-Math.PI*.3,Math.PI*.45,6),
+    [P(.8,.36),P(.78,.55),P(.76,.75),P(.78,.92),P(.6,.93),P(.58,.75),P(.56,.55),P(.54,.36),P(.44,.37),P(.2,.43),P(-.1,.45),P(-.4,.42),P(-.56,.38),P(-.58,.52),P(-.62,.66),P(-.66,.8),P(-.64,.92),P(-.82,.93),P(-.84,.8),P(-.88,.66),P(-.94,.55)],
+    A(-.92,.06,.34,Math.PI*.62,Math.PI,5));
+  ceilingPolygon(g,body,red,1,17,lw*1.5);hoof(.58,.8,19);hoof(-.84,-.62,21);
+  // the tail hangs from the rump and ends in a tuft; shoulder and stifle are each one contour line
+  ceilingBrush(g,[P(-1.24,-.02),P(-1.36,.16),P(-1.44,.4),P(-1.42,.6)],ink,lw*1.1,.85,41);
+  ceilingPolygon(g,[P(-1.44,.56),P(-1.34,.68),P(-1.4,.82),P(-1.52,.72)],ink,1,43,lw*.8);
+  ceilingBrush(g,A(.56,.02,.24,Math.PI*.55,Math.PI*1.35,7),ink,lw*.7,.42,45);
+  ceilingBrush(g,A(-.6,.22,.22,Math.PI*1.55,Math.PI*.35,7),ink,lw*.7,.38,47);
+  ceilingBrush(g,[P(1.0,-.28),P(.98,-.02),P(.9,.2)],ink,lw*.7,.4,49);
+  // the head, then the ear behind the poll and the lyre horns rising over it, the far horn behind the near
+  ceilingPolygon(g,[P(.88,-.6),P(.98,-.72),P(1.12,-.76),P(1.26,-.7),P(1.38,-.6)].concat(A(1.42,-.42,.14,-Math.PI*.5,Math.PI*.4,6),[P(1.34,-.24),P(1.18,-.26),P(1.06,-.32),P(.98,-.42)]),red,1,23,lw*1.3);
+  ceilingPolygon(g,[P(1.0,-.7),P(.8,-.84),P(.9,-.64)],red,1,55,lw*.9);
+  const horn=(cx,cy,R,w,a1,seed)=>ceilingPolygon(g,A(cx,cy,R,Math.PI,a1,8).concat(A(cx,cy,R-w,a1,Math.PI,8)),CEILING_PALETTE.white,1,seed,lw*.85);
+  horn(1.28,-.74,.3,.07,Math.PI*1.68,51);horn(1.42,-.76,.36,.08,Math.PI*1.74,53);
+  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x+s*1.24,y-s*.56,s*.045,0,TAU);g.fill();
+  ceilingBrush(g,A(1.24,-.55,.08,Math.PI*1.15,Math.PI*1.85,5),ink,lw*.7,.8,57);
+  g.beginPath();g.arc(x+s*1.5,y-s*.44,s*.03,0,TAU);g.fill();
+  ceilingBrush(g,[P(1.52,-.33),P(1.4,-.31)],ink,lw*.7,.75,59);
   for(let i=0;i<CEILING_MESKHETIU.length;i++)
     ceilingStar(g,x+CEILING_MESKHETIU[i][0]*s,y+CEILING_MESKHETIU[i][1]*s,s*.19,CEILING_PALETTE.yellow,1,i*13+5);
   g.restore();
 }
 // Reret, the hippopotamus, standing upright with the crocodile along her back and one hand on the
 // mooring post — the northern panel's other guardian, and the figure this sheet used to cut to a bare
-// post for want of room.
-// Reret used to be cut to a bare post for want of room; drawn at signature size now (see
-// ceilingBuildWall's call), her standing legs get the same wedge-and-hoof construction as the bull's
-// instead of two brush lines, the arm to the post is a wedge rather than a bare stroke, and one flat
-// contour line marks where the belly meets the chest — a line, not a shade, so the barrel reads as a
-// standing body and not the sack the two thumbnail polygons alone came out as.
+// post for want of room. She is built the way the bull is: the post and the far leg first, then torso
+// and near leg as one continuous outline, belly swelling forward from a hanging breast, the crocodile
+// laid over her back with its snout tucked behind her head, the head last with its blunt muzzle, round
+// ear and heavy jaw, and the arm reaching across to close its hand round the post.
 function ceilingPaintHippo(g,x,y,s,alpha=1){
   g.save();g.globalAlpha=alpha;
-  const lw=Math.max(1,s*.06);
-  for(const dx of [-.34,.2]){
-    const topW=s*.15,botW=s*.09,ly0=y+s*.98,ly1=y+s*1.4;
-    ceilingPolygon(g,[[x+dx*s-topW,ly0],[x+dx*s+topW,ly0],[x+dx*s+botW,ly1],[x+dx*s-botW,ly1]],CEILING_PALETTE.blue,1,dx*91+41,lw);
-    ceilingPolygon(g,[[x+dx*s-botW*1.3,ly1],[x+dx*s+botW*1.3,ly1],[x+dx*s+botW*.7,ly1+s*.1],[x+dx*s-botW*.7,ly1+s*.1]],CEILING_PALETTE.carbon,1,dx*91+47,lw*.85);
-  }
-  ceilingPolygon(g,[[x-s*.5,y+s*1.02],[x+s*.44,y+s*1.02],[x+s*.56,y+s*.2],[x+s*.4,y-s*.62],[x-s*.24,y-s*.78],[x-s*.56,y-s*.2],[x-s*.6,y+s*.6]],CEILING_PALETTE.blue,1,53,lw*1.6);
-  ceilingBrush(g,[[x-s*.42,y+s*.02],[x-s*.1,y+s*.24],[x+s*.3,y+s*.1]],CEILING_PALETTE.carbon,lw*.7,.42,97);
-  ceilingPolygon(g,[[x-s*.3,y-s*.76],[x+s*.36,y-s*.66],[x+s*.5,y-s*1.02],[x+s*.22,y-s*1.24],[x-s*.26,y-s*1.16]],CEILING_PALETTE.blue,1,57,lw*1.4);
-  ceilingPolygon(g,[[x+s*.2,y-s*1.2],[x+s*.62,y-s*1.28],[x+s*.66,y-s*1.06],[x+s*.4,y-s*1.02]],CEILING_PALETTE.blue,1,61,lw*1.2);
-  ceilingPolygon(g,[[x-s*.2,y-s*1.14],[x-s*.06,y-s*1.3],[x+s*.08,y-s*1.16]],CEILING_PALETTE.blue,1,103,lw);
-  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.carbon;g.beginPath();g.arc(x+s*.3,y-s*1.1,s*.06,0,TAU);g.fill();
-  ceilingBrush(g,[[x+s*.5,y-s*.98],[x+s*.66,y-s*1.0]],CEILING_PALETTE.carbon,lw*.6,.55,107);
-  // The crocodile she carries, laid down the length of her back.
-  ceilingPolygon(g,[[x-s*.44,y-s*.52],[x-s*.28,y-s*.94],[x-s*.02,y-s*1.14],[x-s*.06,y-s*1.26],[x-s*.36,y-s*1.06],[x-s*.6,y-s*.6],[x-s*.66,y+s*.3],[x-s*.5,y+s*.66],[x-s*.66,y+s*.7],[x-s*.82,y+s*.28],[x-s*.74,y-s*.58]],CEILING_PALETTE.green,1,67,lw*1.3);
-  for(let i=0;i<6;i++){const t=i/5,cx=lerp(x-s*.72,x-s*.2,t),cy=lerp(y+s*.2,y-s*1.0,t);
-    ceilingBrush(g,[[cx-s*.05,cy],[cx+s*.09,cy-s*.05]],CEILING_PALETTE.carbon,lw*.5,.6,71+i);}
-  // The arm reaching to the mooring post, a wedge instead of a bare line, and the post she holds.
-  ceilingPolygon(g,[[x+s*.5,y+s*.2],[x+s*.86,y+s*.1],[x+s*.84,y+s*.02],[x+s*.5,y+s*.1]],CEILING_PALETTE.blue,1,89,lw*.9);
-  ceilingBrush(g,[[x+s*.86,y+s*1.15],[x+s*.86,y-s*1.05]],CEILING_PALETTE.carbon,lw*1.4,.85,79);
-  ceilingBrush(g,[[x+s*.72,y-s*1.05],[x+s*1.0,y-s*1.05]],CEILING_PALETTE.carbon,lw*1.2,.8,83);
+  const lw=Math.max(1,s*.055),blue=CEILING_PALETTE.blue,ink=CEILING_PALETTE.carbon,
+    P=(px,py)=>[x+px*s,y+py*s],A=(cx,cy,r,a0,a1,n=8)=>ceilingArcPoints(x+cx*s,y+cy*s,r*s,a0,a1,n);
+  ceilingPolygon(g,[P(.8,-1.04),P(.92,-1.04),P(.93,1.18),P(.79,1.18)],CEILING_PALETTE.yellow,1,79,lw*.9);
+  ceilingPolygon(g,[P(.7,-1.18),P(1.02,-1.18),P(1.02,-1.04),P(.7,-1.04)],CEILING_PALETTE.yellow,1,83,lw*.9);
+  ceilingPolygon(g,[P(-.4,.78),P(-.14,.82),P(-.18,1.0),P(-.2,1.2),P(-.2,1.36),P(-.12,1.4),P(-.14,1.48),P(-.52,1.48),P(-.48,1.38),P(-.46,1.2),P(-.44,1.0)],blue,1,41,lw*1.1);
+  const torso=[P(-.14,-.78),P(-.36,-.66),P(-.5,-.42),P(-.54,-.2),P(-.56,.1),P(-.52,.45),P(-.44,.72),P(-.38,.88),P(-.2,.92),P(-.06,.9),P(.02,1.0),P(0,1.2),P(-.02,1.38),P(-.04,1.48),P(.44,1.48),P(.46,1.4),P(.36,1.34),P(.36,1.2),P(.38,1.0),P(.36,.84)]
+    .concat(A(.06,.28,.56,Math.PI*.34,-Math.PI*.31,10),[P(.4,-.42),P(.44,-.54),P(.34,-.64),P(.14,-.72)]);
+  ceilingPolygon(g,torso,blue,1,53,lw*1.5);
+  // the crease where belly meets chest, the hanging breast, and the toes of each foot — lines only
+  ceilingBrush(g,A(.02,.3,.42,Math.PI*.2,-Math.PI*.18,7),ink,lw*.7,.42,97);
+  ceilingBrush(g,A(.36,-.46,.1,-Math.PI*.5,Math.PI*.5,6),ink,lw*.7,.55,99);
+  for(const fx of [-.26,-.36,.24,.14])ceilingBrush(g,[P(fx,1.4),P(fx-.02,1.48)],ink,lw*.6,.6,101+fx*50);
+  // The crocodile she carries, laid down the length of her back, snout up, scutes along its spine.
+  ceilingPolygon(g,[P(-.3,-1.12),P(-.44,-1.06),P(-.5,-.86),P(-.6,-.6),P(-.7,-.3),P(-.76,.05),P(-.76,.4),P(-.7,.66),P(-.6,.86),P(-.5,.7),P(-.5,.44),P(-.52,.1),P(-.5,-.2),P(-.44,-.5),P(-.36,-.78),P(-.28,-.98)],CEILING_PALETTE.green,1,67,lw*1.2);
+  ceilingPolygon(g,[P(-.58,-.54),P(-.74,-.44),P(-.72,-.3),P(-.62,-.38)],CEILING_PALETTE.green,1,69,lw*.8);
+  ceilingPolygon(g,[P(-.74,.28),P(-.9,.4),P(-.86,.54),P(-.76,.44)],CEILING_PALETTE.green,1,71,lw*.8);
+  for(let i=0;i<8;i++){const t=(i+.5)/8,px=lerp(-.46,-.72,t)-(t>.55?.03*(t-.55)/.45:0),py=lerp(-1.0,.6,t);
+    ceilingBrush(g,[P(px+.04,py+.03),P(px-.06,py-.02),P(px+.02,py-.07)],ink,lw*.55,.65,73+i);}
+  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x-s*.4,y-s*1.0,s*.03,0,TAU);g.fill();
+  // The head: blunt muzzle, small round ear, heavy jaw, the eye set high and the nostril on the lip.
+  ceilingPolygon(g,A(-.08,-1.32,.085,0,TAU,8),blue,1,103,lw*.8);
+  ceilingPolygon(g,[P(-.12,-.76),P(-.28,-.96),P(-.3,-1.14),P(-.18,-1.26),P(0,-1.3),P(.16,-1.28),P(.3,-1.22),P(.46,-1.22),P(.6,-1.2),P(.7,-1.14),P(.74,-1.02),P(.73,-.9),P(.66,-.8),P(.5,-.76),P(.3,-.78),P(.14,-.76)],blue,1,57,lw*1.3);
+  g.globalAlpha=alpha;g.fillStyle=ink;g.beginPath();g.arc(x+s*.34,y-s*1.12,s*.045,0,TAU);g.fill();
+  ceilingBrush(g,A(.34,-1.11,.08,Math.PI*1.15,Math.PI*1.85,5),ink,lw*.65,.8,105);
+  g.beginPath();g.arc(x+s*.66,y-s*1.08,s*.03,0,TAU);g.fill();
+  ceilingBrush(g,[P(.72,-.92),P(.48,-.88)],ink,lw*.7,.75,107);
+  ceilingBrush(g,A(.4,-.96,.18,Math.PI*.3,Math.PI*.85,6),ink,lw*.6,.4,109);
+  // The arm reaching to the mooring post, upper arm and forearm one wedge, and the hand closed round it.
+  ceilingPolygon(g,[P(.3,-.6),P(.44,-.64),P(.68,-.38),P(.88,-.14),P(.94,0),P(.88,.1),P(.78,.06),P(.6,-.16),P(.36,-.44)],blue,1,89,lw*.95);
+  ceilingPolygon(g,[P(.76,-.1),P(.98,-.1),P(.98,.12),P(.76,.12)],blue,1,91,lw*.9);
+  ceilingBrush(g,[P(.8,.0),P(.96,.0)],ink,lw*.55,.5,93);
   g.restore();
 }
 function ceilingBuildWall(){
