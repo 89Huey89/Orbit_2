@@ -13,6 +13,22 @@ const CEILING_LOSS={
   'LEFT THE STAR CHART':'THE BARQUE LEFT THE REGISTER',
   'THE NIB RAN DRY':'THE REED RAN DRY'
 };
+// The colophon's observation line, recast from the atlas's Latin (TRES PERFECTI, VELOCITAS SUMMA…)
+// into short curatorial captions in the Ceiling's own register — the era's Latin layer is only a
+// modern gloss, and several of the underlying words are themselves recalled rather than re-verified
+// (see docs/eras/03-ceiling.md's Names table), so nothing here is offered as hieroglyphic prose.
+// Keyed on the observation's own key (src/simulation.js's OBSERVATIONS), the same way CEILING_LOSS
+// is keyed on world.reason.
+const CEILING_OBSERVATIONS={
+  perfectThree:'THREE CLEAN TRANSFERS',
+  skipFive:'FIVE HOUR-CIRCLES SKIPPED',
+  maxSpeed:'THE BARQUE AT FULL SPEED',
+  graze:'APEP GRAZED AT FULL SPEED',
+  pureChart:'A DECAN COURSE IN CLEAN TRANSFERS',
+  fortyRows:'THE FORTIETH ROW',
+  threeMinutes:'THREE HOURS OF THE NIGHT',
+  rightAngle:'A RIGHT ANGLE ON THE CANON GRID'
+};
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see
 // src/inscriptions.js. `where` names the subject — a planet or star to follow, or the point on the sheet
 // the thing happened at — and the note is set clear of it and left as ink for the chart to carry away.
@@ -66,10 +82,10 @@ function event(type,e){
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
     say(ceilingPlate()?'DECAN COURSE · COMPLETE +60':e.chart.name+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
-    for(const [i,n] of e.chart.stars.entries()){
+    for(const n of e.chart.stars){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
-      audio.tone([261.63,329.63,392][i],1.1,i*.14,.24);
     }
+    audio.medal();
     $('announcement').textContent=ceilingPlate()?'Decan course complete. Sixty bonus points. Disorder retreats for four seconds.':e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
     recordBest(world.score);
   }else if(type==='shield'){
@@ -100,7 +116,7 @@ function event(type,e){
     say('THE WELL RUNS DRY · FLY RECKLESS FIRST',{x:e.x,y:e.y});
   }else if(type==='observation'){
     tallyMap('observations',e.key);
-    say('OBSERVATION \u00b7 '+e.latin);
+    say('OBSERVATION \u00b7 '+(ceilingPlate()?CEILING_OBSERVATIONS[e.key]||e.name:e.latin));
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
@@ -123,7 +139,7 @@ function event(type,e){
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
-    audio.tone(440,.3,0,.15);say((ceilingPlate()?'COURSE SET · ':'PRESSURE SET · ')+DIFFICULTY_LABELS[e.value]);
+    audio.tone(440,.3,0,.15);say(ceilingPlate()?'COURSE SET · '+CEILING_COURSES[e.value]:'PRESSURE SET · '+DIFFICULTY_LABELS[e.value]);
   }
 }
 function newWorld(){
@@ -181,8 +197,8 @@ function showEnd(){
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
-  $('end-constellations').textContent=charts+' constellation'+(charts===1?'':'s')+' traced';
-  $('end-observations').textContent=world.observations.map(o=>o.latin).join(', ');
+  $('end-constellations').textContent=preview?charts+' decan course'+(charts===1?'':'s')+' traced':charts+' constellation'+(charts===1?'':'s')+' traced';
+  $('end-observations').textContent=preview?world.observations.map(o=>CEILING_OBSERVATIONS[o.key]||o.name).join(', '):world.observations.map(o=>o.latin).join(', ');
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.

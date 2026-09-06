@@ -24,7 +24,7 @@
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
     .ceiling-only{display:none!important}
-    #game[data-plate-id="ceiling"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173}
+    #game[data-plate-id="ceiling"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-plate-id="ceiling"] .atlas-only{display:none!important}
     #game[data-plate-id="ceiling"] .ceiling-only{display:revert!important}
     #game[data-plate-id="ceiling"] .footer{color:#5f4b34}
@@ -121,7 +121,7 @@
     #game[data-plate-id="ceiling"] #intro{background:rgba(221,207,173,.34)}
     #game[data-plate-id="ceiling"] #end{background:rgba(221,207,173,.48)}
     #game[data-plate-id="ceiling"] #pause{background:rgba(221,207,173,.82)}
-    #game[data-plate-id="ceiling"] .colophon{background:rgba(221,207,173,.97)}
+    #game[data-plate-id="ceiling"] .colophon{background:rgba(221,207,173,.97);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16;padding:36px 26px 34px}
     #game[data-plate-id="ceiling"] h1,#game[data-plate-id="ceiling"] #score{font-family:'Zilla Slab',Georgia,serif;text-shadow:none}
     /* The cartouche, shenu — "that which encircles": a loop of doubled rope tied off at one end, and
        the one piece of this room's furniture that is already the shape of a readout. A figure inside
@@ -137,9 +137,9 @@
        frontispiece carry their own red setting-out a hair off register, as the painted ones do. */
     .ceiling-glyphs{position:relative;z-index:0}
     .ceiling-glyphs::before{content:attr(data-ghost);position:absolute;inset:0;z-index:-1;transform:translate(2.5px,-2px);color:#9d3724;opacity:.4}
-    #game[data-plate-id="ceiling"] .ceiling-title{top:12%}
-    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.1em;text-indent:.1em;line-height:1.06}
-    .ceiling-glyphs{margin:0 0 5px;color:#241d16;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.08em}
+    #game[data-plate-id="ceiling"] .ceiling-title{top:12%;max-width:560px;margin:0 auto;padding:16px 22px 14px;background:rgba(238,228,205,.55);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16}
+    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.07em;text-indent:.07em;line-height:1.06}
+    .ceiling-glyphs{margin:0 0 5px;color:#241d16;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.06em}
     #game[data-plate-id="ceiling"] .title-rule::before,#game[data-plate-id="ceiling"] .title-rule::after{background:#9d3724}
     #game[data-plate-id="ceiling"] .era-entry{border-color:rgba(157,55,36,.55);color:#7a3022}
     .ceiling-context{max-width:42em;margin:12px auto 0;color:#5f4b34;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
@@ -147,6 +147,28 @@
     #game[data-plate-id="ceiling"] .brand{font-style:italic;letter-spacing:.16em}
     #game[data-plate-id="ceiling"] .brand::after{background:#9d3724}
     #game[data-plate-id="ceiling"] .score-frame::before{border-color:#9d3724}
+    /* The wall's own device, brought into CSS: a black rule, a run of flat colour blocks in
+       ceilingBlockRule's own cycle, and a black rule to close it, framing the title panel and the
+       colophon exactly as it frames a register on the canvas beside them. */
+    #game[data-plate-id="ceiling"] .ceiling-title::before,#game[data-plate-id="ceiling"] .ceiling-title::after{content:'';position:absolute;left:0;right:0;height:7px;background:var(--blocks);border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;pointer-events:none}
+    #game[data-plate-id="ceiling"] .ceiling-title::before{top:0}
+    #game[data-plate-id="ceiling"] .ceiling-title::after{bottom:0}
+    #game[data-plate-id="ceiling"] .colophon::before,#game[data-plate-id="ceiling"] .colophon::after{content:'';position:absolute;left:0;right:0;top:auto;bottom:auto;height:8px;border:0;border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;background:var(--blocks);opacity:1}
+    #game[data-plate-id="ceiling"] .colophon::before{top:0}
+    #game[data-plate-id="ceiling"] .colophon::after{bottom:0}
+    /* Marginal ornament only, kept off the reading text: kheker reed-bundles crown the title panel as
+       the frieze crowns the wall itself; ankh sit at the corners; papyrus/lotus columns flank both
+       panels at the outer edge, hidden once a phone leaves no margin to flank into. */
+    #game[data-plate-id="ceiling"] .ceiling-frieze{display:flex;justify-content:center;margin:2px 0 6px;color:#241d16;pointer-events:none}
+    #game[data-plate-id="ceiling"] .ceiling-frieze svg{width:min(60vw,220px);height:auto}
+    #game[data-plate-id="ceiling"] .ceiling-corner{position:absolute;width:14px;height:20px;color:#241d16;opacity:.82;pointer-events:none}
+    #game[data-plate-id="ceiling"] .ceiling-corner.cc-tl{top:10px;left:9px}
+    #game[data-plate-id="ceiling"] .ceiling-corner.cc-tr{top:10px;right:9px}
+    #game[data-plate-id="ceiling"] .ceiling-column{position:absolute;top:50%;width:15px;height:72px;transform:translateY(-50%);color:#241d16;opacity:.88;pointer-events:none}
+    #game[data-plate-id="ceiling"] .ceiling-column.left{left:-19px}
+    #game[data-plate-id="ceiling"] .ceiling-column.right{right:-19px}
+    @media(max-width:480px){#game[data-plate-id="ceiling"] .ceiling-column{display:none}}
+    #game[data-plate-id="ceiling"] .eyebrow{letter-spacing:.28em}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
@@ -387,6 +409,11 @@
       <p class="eyebrow">FOLLOW THE PULL</p>
     </div>
     <div class="title-group ceiling-title ceiling-only">
+      <svg class="ceiling-corner cc-tl" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+      <svg class="ceiling-corner cc-tr" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+      <svg class="ceiling-column left" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
+      <svg class="ceiling-column right" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
+      <div class="ceiling-frieze" aria-hidden="true"><svg viewBox="0 0 108 26" focusable="false"><path d="M0 15h108" stroke="#241d16" stroke-width="1.1"/><g fill="none" stroke="#241d16" stroke-width="1.1" stroke-linecap="round"><path d="M13 24V15M18 24V13M23 24V15"/><path d="M13 15 9 6M18 13 18 4M23 15 27 6"/><path d="M49 24V15M54 24V13M59 24V15"/><path d="M49 15 45 6M54 13 54 4M59 15 63 6"/><path d="M85 24V15M90 24V13M95 24V15"/><path d="M85 15 81 6M90 13 90 4M95 15 99 6"/></g><path d="M10 15h16" stroke="#9d3724" stroke-width="1.7"/><path d="M46 15h16" stroke="#285987" stroke-width="1.7"/><path d="M82 15h16" stroke="#c4932e" stroke-width="1.7"/></svg></div>
       <p class="ceiling-glyphs" aria-hidden="true" data-ghost="&#x13171;&#x13216;&#x13171;&#x133CF;">&#x13171;&#x13216;&#x13171;&#x133CF;</p>
       <p class="subtitle-latin">WNWT · THE HOURS OF THE NIGHT</p>
       <h1>THE CEILING</h1>
@@ -407,6 +434,10 @@
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
     <div class="colophon">
+      <svg class="ceiling-corner cc-tl ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+      <svg class="ceiling-corner cc-tr ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+      <svg class="ceiling-column left ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
+      <svg class="ceiling-column right ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
       <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
@@ -511,6 +542,8 @@
 <script src="figures.js"></script>
 <script src="inscriptions.js"></script>
 <script src="effects.js"></script>
+<script src="figures-tt353.js"></script>
+<script src="signs-tt353.js"></script>
 <script src="ceiling.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>

@@ -12,7 +12,11 @@
 // carried it off.
 definePlate('inscription',{
   night:{caps:'222,203,158',note:'196,204,190',leader:'188,180,152',rule:'202,180,137'},
-  paper:{caps:'150,100,32',note:'58,42,28',leader:'96,74,52',rule:'96,74,52'}
+  paper:{caps:'150,100,32',note:'58,42,28',leader:'96,74,52',rule:'96,74,52'},
+  // The wall does not letter in its engraved atlas's ochre: carbon black carries the note and the rule,
+  // as it carries every caption and border the room paints, and red ochre — the one accent the wall's
+  // grammar allows outside black — picks out the caption the way it rubricates a heading.
+  ceiling:{caps:'157,55,36',note:'35,29,22',leader:'92,75,53',rule:'35,29,22'}
 });
 // At most this many are on the sheet at once. Nothing is written twice over, so the cap is only a bound:
 // when it is reached, the note lowest on the sheet — the next the scroll would have carried off — gives
