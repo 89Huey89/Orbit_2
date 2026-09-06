@@ -1,7 +1,7 @@
 /* Orbit · scripts/glyphs.mjs
    Extracts the outlines of the letters the plate lettering actually sets — A–Z, the figures 0–9 (the Roman
-   numerals I, V and X are among the capitals), the middle dot, the solidus and the space — from the two Fell
-   faces embedded as base64 woff2 in assets/fonts.source.css, and writes src/glyphs.js.
+   numerals I, V and X are among the capitals), the middle dot, the solidus and the space — from the faces
+   embedded as base64 woff2 in assets/fonts.source.css, and writes src/glyphs.js.
 
    Every contour is flattened and then simplified to a tolerance of about a tenth of a pixel at the size the
    chapter lettering is set, which is what turns the traced Fell contours from hundreds of commands into a
@@ -14,7 +14,9 @@ import * as fontkit from 'fontkit';
 
 const root=new URL('../',import.meta.url);
 const css=await readFile(new URL('assets/fonts.source.css',root),'utf8');
-const FACES=[['text','IM Fell English','normal'],['sc','IM Fell English SC','normal']];
+// The Fell romans are the atlas's two hands; the slab is the Ceiling's, and it is here for the same
+// reason they are — the wall's lettering is painted on in four passes, and a pass needs an outline.
+const FACES=[['text','IM Fell English','normal'],['sc','IM Fell English SC','normal'],['slab','Zilla Slab','normal']];
 const CHARS=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',' ','·','/'];
 const UNITS=512,TOLERANCE=1.2,FLATNESS=3;
 const ALPHABET='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#';
