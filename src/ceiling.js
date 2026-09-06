@@ -1062,7 +1062,13 @@ function ceilingDrawRoute(){
     const a=inkPath[i-1],b=inkPath[i],ax=sx(a.x),ay=sy(a.y),bx=sx(b.x),by=sy(b.y),len=Math.hypot(bx-ax,by-ay);
     if(len<.1)continue;
     const ux=(bx-ax)/len,uy=(by-ay)/len,t=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
-    const spacing=lerp(4.5,13,t)*scale,weight=lerp(2.3,1.05,t)*scale,reach=lerp(2.1,1,t)*scale,alpha=lerp(.42,.22,t);
+    // Weight and alpha were set against the wall this sheet had when the dabs were first laid, which
+    // was mostly bare plaster. The facsimile passes since (the packed decan columns, the foot
+    // procession, the layered divider, a construction wheel on every node) restored real density to
+    // the wall in these same two inks, and the route was never re-struck to hold its own against it —
+    // it was drawn correctly and read as gone anyway. Raised here, not thinned there: the density is
+    // the facsimile's, the route is the flight's, and only the route's own charge was ever this thin.
+    const spacing=lerp(4.5,13,t)*scale,weight=lerp(2.8,1.4,t)*scale,reach=lerp(2.1,1,t)*scale,alpha=lerp(.62,.36,t);
     for(let d=Math.max(0,spacing-carry);d<len;d+=spacing){
       const f=d/len,x=ax+(bx-ax)*f,y=ay+(by-ay)*f;
       // The setting-out rides a hair under the closing dab, off-register, the way the wall's other
