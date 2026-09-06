@@ -599,13 +599,71 @@ function ceilingDrawRegisterGrid(){
   ctx.drawImage(ceilingFrameTop,0,0,W,ceilingFrameTop.height/DPR);
   ctx.drawImage(ceilingFrameBot.c,0,ceilingFrameBot.y,W,ceilingFrameBot.c.height/DPR);
 }
+// The route is a sequence of brush dabs, not a stroke — 03-ceiling.md says so outright, and the aim
+// guide beside it already draws that way. A slow stretch of the flight is a run of close, loaded
+// touches; a fast one thins to a scatter of light ones, which is the speed reading drawInkPath()
+// gets from three line weights, given here instead through dab spacing and size — the way a loaded
+// brush actually runs dry as the hand hurries. Walked once in screen space so the spacing reads the
+// same at any zoom, and cheap regardless of how long inkPath has grown: one pass, two strokes a dab,
+// nothing sampled that is not already on the path.
 function ceilingDrawRoute(){
   if(inkPath.length<2)return;
-  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.strokeStyle='rgba(157,55,36,.18)';ctx.lineWidth=1.6*scale;ctx.beginPath();ctx.moveTo(sx(inkPath[0].x)+1,sy(inkPath[0].y)-1);
-  for(let i=1;i<inkPath.length;i++)ctx.lineTo(sx(inkPath[i].x)+1,sy(inkPath[i].y)-1);ctx.stroke();
-  ctx.strokeStyle='rgba(36,29,22,.48)';ctx.lineWidth=.8*scale;ctx.beginPath();ctx.moveTo(sx(inkPath[0].x),sy(inkPath[0].y));
-  for(let i=1;i<inkPath.length;i++)ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));ctx.stroke();ctx.restore();
+  ctx.save();ctx.lineCap='round';
+  let carry=0;
+  for(let i=1;i<inkPath.length;i++){
+    const a=inkPath[i-1],b=inkPath[i],ax=sx(a.x),ay=sy(a.y),bx=sx(b.x),by=sy(b.y),len=Math.hypot(bx-ax,by-ay);
+    if(len<.1)continue;
+    const ux=(bx-ax)/len,uy=(by-ay)/len,t=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
+    const spacing=lerp(4.5,13,t)*scale,weight=lerp(2.3,1.05,t)*scale,reach=lerp(2.1,1,t)*scale,alpha=lerp(.42,.22,t);
+    for(let d=Math.max(0,spacing-carry);d<len;d+=spacing){
+      const f=d/len,x=ax+(bx-ax)*f,y=ay+(by-ay)*f;
+      // The setting-out rides a hair under the closing dab, off-register, the way the wall's other
+      // two-pass marks already keep their red under the black.
+      ctx.strokeStyle=`rgba(157,55,36,${alpha*.5})`;ctx.lineWidth=weight*1.1;
+      ctx.beginPath();ctx.moveTo(x+1-ux*reach,y-1-uy*reach);ctx.lineTo(x+1+ux*reach,y-1+uy*reach);ctx.stroke();
+      ctx.strokeStyle=`rgba(36,29,22,${alpha})`;ctx.lineWidth=weight;
+      ctx.beginPath();ctx.moveTo(x-ux*reach,y-uy*reach);ctx.lineTo(x+ux*reach,y+uy*reach);ctx.stroke();
+    }
+    carry=(carry+len)%spacing;
+  }
+  ctx.restore();
+}
+// ---------- The wall's survey: the flight measured at both ends ----------
+// The atlas measures every departure and every landing (drawSurveys(), src/effects.js:146-335); the
+// data is recorded here too — src/ui.js calls recordDeparture/recordLanding regardless of plate — it
+// was simply never drawn. The wall answers in its own instruments rather than borrowing the atlas's
+// geometer's arcs: a cord snapped taut along the departure, and a plumb dropped from the hour-circle
+// at the landing, with the arrival's angle set the way the wall sets every other count it keeps
+// itself — Egyptian numerals, stroke by stroke. Both age on the same clock the atlas's constructions
+// do (surveyProgress, defined once in effects.js and shared here), and both stay part of the wall
+// once drawn on, pruned only when `surveys` itself is pruned. Kept deliberately quiet — thin, low
+// alpha — since these sit on the route running up the sheet's own middle and must not compete with
+// the hour-circles, the aim guide or the barque for the eye.
+function ceilingDrawDepartureCord(s,t){
+  const px=sx(s.x),py=sy(s.y),reach=24*scale,ex=px+s.dx*reach,ey=py+s.dy*reach,seed=((s.cx|0)*7+(s.cy|0)*11+3)|0;
+  const head=ceilingBrush(ctx,[[px,py],[ex,ey]],CEILING_PALETTE.red,Math.max(.55,.85*scale),.24,seed,t);
+  if(head){ceilingWet(ctx,head.x,head.y,.85*scale,.5,CEILING_PALETTE.red);ceilingReed(ctx,head.x,head.y,head.angle,.7,CEILING_PALETTE.red);}
+}
+function ceilingDrawLandingPlumb(s,t){
+  const cx=sx(s.cx),cy=sy(s.cy),drop=Math.max(14,s.r*scale*.85),bx=cx,by=cy+drop*t,seed=((s.cx|0)*13+(s.cy|0)*17+5)|0;
+  // The line: a plumb dropped straight down from the centre of the circle the flight landed on — the
+  // wall's own vertical, in place of the atlas's swept arrival angle.
+  ceilingBrush(ctx,[[cx,cy],[bx,by]],CEILING_PALETTE.carbon,Math.max(.5,.7*scale),.22,seed,t);
+  if(t<1){ceilingWet(ctx,bx,by,.75*scale,.45,CEILING_PALETTE.carbon);return;}
+  ctx.save();ctx.globalAlpha=.3;ctx.fillStyle=CEILING_PALETTE.carbon;ctx.beginPath();
+  ctx.moveTo(bx,by+4.4*scale);ctx.lineTo(bx-2.5*scale,by-2.6*scale);ctx.lineTo(bx+2.5*scale,by-2.6*scale);ctx.closePath();ctx.fill();ctx.restore();
+  const n=Math.max(1,Math.round(s.angle||1)),h=Math.max(6,7*scale);
+  ceilingNumber(ctx,n,bx,by+8*scale,h,CEILING_PALETTE.carbon,true);
+}
+function ceilingDrawSurveys(){
+  if(!surveys.length||!world)return;
+  ctx.save();
+  for(const s of surveys){
+    const y=sy(s.cy);if(y<-160||y>H+160)continue;
+    const t=surveyProgress(s);if(t<=0)continue;
+    if(s.kind==='departure')ceilingDrawDepartureCord(s,t);else ceilingDrawLandingPlumb(s,t);
+  }
+  ctx.restore();
 }
 function ceilingDrawDecanCharts(){
   ctx.save();ctx.lineWidth=.7*scale;
@@ -766,6 +824,90 @@ function ceilingDrawPlayer(){
   if(p.reflectorArmed){ctx.strokeStyle='rgba(157,55,36,.72)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(0,0,21,0,TAU);ctx.stroke();ctx.setLineDash([]);}
   ctx.restore();
 }
+// ---------- The wall's record of a flight: four marks in pigment, and the score as a marginal note ----------
+// Wet red ochre and the tone it dries toward as it soaks into the lime — this sheet's own wet/dry
+// pair, built from CEILING_PALETTE.red and .loss rather than borrowed from the atlas's trailInk(),
+// since a painted wall dries into its own plaster, not into someone else's paper.
+const CEILING_WET=[157,55,36],CEILING_DRY=[157,137,102];
+// A capture is the wall's record of a landing: a loaded dab of red ochre set at the circle, its
+// edge grown out from the node by the same reducedMotion-gated start/distance the plain ring below
+// uses, so it stands complete and still exactly like every other mark under that setting. A perfect
+// landing set true first time and reads as already finished — closed with a black ring and the fan
+// of ticks a perfect atlas transfer wears at its point of contact; an ordinary one is left as pigment
+// only, its edge still the wet red rather than a closing black line, which is the whole of the
+// "cleaner" reading the gameplay asks for.
+function ceilingCaptureMark(q,t,x,y){
+  const radius=(q.start+(reducedMotion?0:t*q.distance))*scale,alpha=(q.alpha||.5)*clamp(1-t*t,0,1),seed=q.seed||1;
+  ctx.save();ctx.translate(x,y);ctx.rotate(q.angle||0);
+  landContour(ctx,0,0,radius,radius*.86,seeded(seed));
+  ctx.fillStyle=`rgba(${CEILING_WET},${alpha*(q.perfect?.92:.78)})`;ctx.fill();
+  if(q.perfect){
+    ctx.strokeStyle=`rgba(36,29,22,${alpha})`;ctx.lineWidth=Math.max(.7,radius*.12);ctx.stroke();
+    for(let i=-2;i<=2;i++){
+      const a=i*.5,c=Math.cos(a),s=Math.sin(a),from=radius*1.05,to=from+3+scale*1.5;
+      ceilingBrush(ctx,[[c*from,s*from],[c*to,s*to]],CEILING_PALETTE.carbon,Math.max(.5,radius*.08),alpha*.75,seed+i*11);
+    }
+  }else{
+    ctx.strokeStyle=`rgba(${CEILING_WET},${alpha*.42})`;ctx.lineWidth=Math.max(.5,radius*.06);ctx.stroke();
+  }
+  ctx.restore();
+}
+// The bead pooled where the brush lifted at a release — grown fast then left to dry, the same two
+// stages the atlas's own drying blot passes through (mixRgb(pen.blotWet,pen.blotDry,dry)), but mixed
+// from this sheet's own pair and given landContour's organic edge instead of the flat ellipse it
+// wore before. `dry` is a colour change, not a motion, so it runs the same under reducedMotion,
+// exactly as it does on the atlas's own version of this mark.
+function ceilingBlotMark(q,t,x,y){
+  const grow=reducedMotion?1:clamp(t*6,.28,1),dry=clamp((t-.15)/.85,0,1),alpha=(q.alpha||.42)*clamp(1-t*t,0,1),
+    size=(q.size||6)*scale*grow,rgb=mixRgb(CEILING_WET,CEILING_DRY,dry);
+  ctx.save();ctx.translate(x,y);
+  landContour(ctx,0,0,size,size*.82,seeded(q.seed||1));
+  ctx.fillStyle=`rgba(${rgb},${alpha*.82})`;ctx.fill();
+  ctx.strokeStyle=`rgba(${rgb},${alpha*.5})`;ctx.lineWidth=Math.max(.4,size*.07);ctx.stroke();
+  ctx.restore();
+}
+// A graze: pigment thrown off the brush, not pooled — a scatter of short flecks flung clear of the
+// point rather than one round mark, same as before, with one addition: a small dab at the origin
+// itself, so the flecks read as having come from somewhere instead of hanging with nothing at their
+// centre. `dir`, when the event supplies it, aims the scatter; with none the flecks fly full circle.
+function ceilingSplatMark(q,t,x,y){
+  const alpha=(q.alpha||.42)*clamp(1-t*t,0,1),sd=q.seed||1,size=(q.size||6)*scale,
+    base=q.dir?(q.dir<0?Math.PI:0):0,cone=q.dir?1.9:TAU;
+  ctx.save();ctx.translate(x,y);
+  landContour(ctx,0,0,size*.4,size*.34,seeded(sd));
+  ctx.fillStyle=`rgba(${CEILING_WET},${alpha*.7})`;ctx.fill();
+  ctx.strokeStyle=`rgba(${CEILING_WET},${alpha})`;ctx.lineCap='round';
+  for(let i=0;i<6;i++){
+    const a=base+(ceilingHash(sd,i)-.5)*cone,len=size*.5+ceilingHash(i,sd)*size*.6;
+    ctx.lineWidth=Math.max(.8,size*.11);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len);ctx.stroke();
+  }
+  ctx.restore();
+}
+// A painted pointing sign — the wall's own equivalent of the atlas's printer's manicule, cut in two
+// brushed strokes instead of an engraved hand: a chevron closing to a point, and a short shaft
+// running back from it. dir is +1 to point right (a note standing in the left margin) or -1 to
+// point left, so the sign always aims back in at the field rather than out past the edge.
+function ceilingPointer(x,y,dir,size,alpha){
+  if(alpha<=0)return;
+  ceilingBrush(ctx,[[x-dir*size,y-size*.6],[x,y],[x-dir*size,y+size*.6]],CEILING_PALETTE.carbon,Math.max(.6,size*.16),alpha,(x|0)*7+(y|0));
+  ceilingBrush(ctx,[[x-dir*size*.1,y],[x-dir*size*1.6,y]],CEILING_PALETTE.carbon,Math.max(.5,size*.11),alpha*.7,(x|0)*3+(y|0)*5);
+}
+// A score is set as a marginal note beside the play field rather than floating up over it: the
+// wall's own reading of the atlas's manicule-and-margin gesture (src/effects.js's floater loop),
+// clamped between hudBand() and footerBand() the same way. It keeps to the wall's small-caps hand
+// and its own red ochre rubric rather than the atlas's Fell italic. The digits themselves stay
+// Arabic — the era file's own rule is that a count read at a run stays Arabic and only a count the
+// wall makes for itself, like the hour, is written in strokes with ceilingNumber(), and a capture's
+// score is exactly a count read at a run — so no Egyptian numerals are used here.
+function ceilingFloaterMark(f,alpha){
+  const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale),
+    left=sx(f.x)<W*.5,nx=left?margin+hand*2.2:W-margin-hand*2.2,
+    ny=clamp(sy(f.y)-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
+  ctx.save();ctx.globalAlpha=alpha;ctx.font=plateFace(size,'sc');ctx.fillStyle=CEILING_PALETTE.red;
+  ctx.textAlign=left?'left':'right';ctx.fillText(f.text,nx,ny);
+  ceilingPointer(nx+(left?-hand*1.8:hand*1.8),ny-hand*.5,left?1:-1,hand,alpha*.85);
+  ctx.restore();
+}
 function ceilingDrawEffects(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];if(world.state!=='paused'){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.5);p.vy*=Math.exp(-dt*1.5);}if(p.life<=0){particles.splice(i,1);continue;}
@@ -774,28 +916,18 @@ function ceilingDrawEffects(dt){
   }
   for(let i=rings.length-1;i>=0;i--){
     const q=rings[i];if(world.state!=='paused')q.age+=dt;if(q.age>q.life){rings.splice(i,1);continue;}const t=q.age/q.life,x=sx(q.node?q.node.x:q.x),y=sy(q.node?q.node.y:q.y);
-    if(q.kind==='blot'){
-      // A blot is pigment pooling where the brush lifted off the wall: one flat, slightly flattened
-      // disc, settling rather than flying.
-      ctx.fillStyle=`rgba(157,55,36,${(1-t)*(q.alpha||.42)})`;ctx.beginPath();ctx.ellipse(x,y,(q.size||6)*scale,(q.size||6)*scale*.68,0,0,TAU);ctx.fill();continue;
-    }
-    if(q.kind==='splat'){
-      // A splat is a graze: pigment thrown off the brush, not pooled — a scatter of short flecks
-      // flung clear of the point rather than one round mark. `dir`, when the event supplies it, aims
-      // the scatter (the side the barque left by); with none the flecks fly full circle.
-      const alpha=(1-t)*(q.alpha||.42),sd=q.seed||1,base=q.dir?(q.dir<0?Math.PI:0):0,cone=q.dir?1.9:TAU;
-      ctx.strokeStyle=`rgba(157,55,36,${alpha})`;ctx.lineCap='round';
-      for(let i=0;i<6;i++){
-        const a=base+(ceilingHash(sd,i)-.5)*cone,len=((q.size||6)*.5+ceilingHash(i,sd)*(q.size||6)*.6)*scale;
-        ctx.lineWidth=Math.max(.8,(q.size||6)*.11*scale);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);ctx.stroke();
-      }
-      continue;
-    }
-    const r=(q.start+(reducedMotion?0:t*q.distance))*scale;ctx.strokeStyle=`rgba(${q.perfect?'40,89,135':'157,55,36'},${(1-t)*(q.alpha||.5)})`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();
+    if(q.kind==='capture'){ceilingCaptureMark(q,t,x,y);continue;}
+    if(q.kind==='blot'){ceilingBlotMark(q,t,x,y);continue;}
+    if(q.kind==='splat'){ceilingSplatMark(q,t,x,y);continue;}
+    // The plain ring — a release, a ricochet, a wormhole's exit — is a brushed circle on a painted
+    // wall, not a compass circle: painted with the sheet's own ceilingBrush over ceilingArcPoints
+    // like everything else here, in place of the raw ctx.arc it used to be drawn with.
+    const r=(q.start+(reducedMotion?0:t*q.distance))*scale;
+    ceilingBrush(ctx,ceilingArcPoints(x,y,r,0,TAU,22),q.perfect?CEILING_PALETTE.blue:CEILING_PALETTE.red,Math.max(.8,1.1*scale),(1-t)*(q.alpha||.5),q.seed||7);
   }
   for(let i=floaters.length-1;i>=0;i--){
-    const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}const a=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
-    ctx.save();ctx.globalAlpha=a;ctx.fillStyle=CEILING_PALETTE.red;ctx.font=plateFace(Math.max(10,12*scale));ctx.textAlign='center';ctx.fillText(f.text,sx(f.x),sy(f.y)-(reducedMotion?0:f.age*18*scale));ctx.restore();
+    const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}
+    ceilingFloaterMark(f,Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1));
   }
 }
 function ceilingDrawDark(dt){
@@ -854,7 +986,12 @@ function renderCeiling(dt,aim){
   ceilingDrawRegisterGrid();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
-  ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);ceilingDrawEffects(dt);drawInscriptions(dt);ceilingDrawPlayer();ceilingDrawDark(dt);ctx.restore();
+  ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);
+  // Same slot the atlas gives drawSurveys(): after the aim guide and the route's own ink, ahead of the
+  // transient effects layer (render(), src/frame.js) — the survey is dried ink beside the route, not a
+  // live effect.
+  ceilingDrawSurveys();
+  ceilingDrawEffects(dt);drawInscriptions(dt);ceilingDrawPlayer();ceilingDrawDark(dt);ctx.restore();
   ceilingDrawRunningHead(dt);
   if(screenFlash>0){ctx.fillStyle=`rgba(157,55,36,${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
 }
