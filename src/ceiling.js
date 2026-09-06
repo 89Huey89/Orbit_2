@@ -70,30 +70,104 @@ function ceilingHash(a,b=0){
 function ceilingArcPoints(cx,cy,r,a0,a1,count=24){
   const out=[];for(let i=0;i<=count;i++){const a=lerp(a0,a1,i/count);out.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return out;
 }
-function ceilingBrush(g,points,color=CEILING_PALETTE.carbon,width=1,alpha=1,seed=1){
-  if(!points||points.length<2||alpha<=0)return;
+function ceilingBrush(g,points,color=CEILING_PALETTE.carbon,width=1,alpha=1,seed=1,progress=1){
+  if(!points||points.length<2||alpha<=0)return null;
   g.save();g.strokeStyle=color;g.globalAlpha=alpha;g.lineCap='round';g.lineJoin='round';g.lineWidth=width;
   g.beginPath();
-  for(let i=0;i<points.length;i++){
-    const p=points[i],j=(ceilingHash(seed+i*13,p[0]+p[1])-.5)*Math.min(.7,width*.24);
-    if(i)g.lineTo(p[0]+j,p[1]-j*.45);else g.moveTo(p[0]+j,p[1]-j*.45);
+  let head=null;
+  if(progress>=1){
+    for(let i=0;i<points.length;i++){
+      const p=points[i],j=(ceilingHash(seed+i*13,p[0]+p[1])-.5)*Math.min(.7,width*.24);
+      if(i)g.lineTo(p[0]+j,p[1]-j*.45);else g.moveTo(p[0]+j,p[1]-j*.45);
+    }
+  }else{
+    // A stroke still travelling is walked to an exact length fraction along its own jittered path, not
+    // the raw polyline, so the brush the caller parks at the head rides the same line the ink does
+    // instead of drifting off it. Only asked for while a mark is mid-reveal, so the ordinary case above
+    // — the whole run of the sheet, every finished mark, every frame — allocates nothing extra.
+    const jx=[],jy=[];let total=0;
+    for(let i=0;i<points.length;i++){
+      const p=points[i],j=(ceilingHash(seed+i*13,p[0]+p[1])-.5)*Math.min(.7,width*.24);
+      jx.push(p[0]+j);jy.push(p[1]-j*.45);
+      if(i)total+=Math.hypot(jx[i]-jx[i-1],jy[i]-jy[i-1]);
+    }
+    const target=total*clamp(progress,0,1);let along=0;g.moveTo(jx[0],jy[0]);
+    for(let i=1;i<jx.length;i++){
+      const seg=Math.hypot(jx[i]-jx[i-1],jy[i]-jy[i-1]),reach=along+seg;
+      if(reach>=target||i===jx.length-1){
+        const f=seg>1e-6?clamp((target-along)/seg,0,1):1,hx=lerp(jx[i-1],jx[i],f),hy=lerp(jy[i-1],jy[i],f);
+        g.lineTo(hx,hy);head={x:hx,y:hy,angle:Math.atan2(jy[i]-jy[i-1],jx[i]-jx[i-1])};break;
+      }
+      g.lineTo(jx[i],jy[i]);along=reach;
+    }
   }
   g.stroke();
   if(width>1.2){
     g.globalAlpha=alpha*.18;g.lineWidth=Math.max(.35,width*.25);g.translate(.65,-.45);g.stroke();
   }
   g.restore();
+  return head;
+}
+// The loaded reed at the leading end of a travelling stroke: broad across the stroke and tapering to
+// the point, on a hairline shaft trailing back the way the atlas's nib does — a brush, not a wedge, so
+// there is no hard point and no ferrule. Coloured for whichever pass it belongs to. The fleck of
+// spatter is seeded from the position so it sits still on the wall instead of boiling, and reduced
+// motion draws none of it, same guard as penNib.
+function ceilingReed(g,x,y,angle,alpha=1,rgb){
+  if(reducedMotion||alpha<=.02)return;
+  const tone=rgb||CEILING_PALETTE.carbon,reach=Math.max(6,7*scale);
+  g.save();g.translate(x,y);g.rotate(angle);g.fillStyle=tone;
+  g.globalAlpha=.92*alpha;g.beginPath();
+  g.moveTo(0,0);g.lineTo(-reach*.6,-reach*.38);g.lineTo(-reach*.98,-reach*.15);g.lineTo(-reach*.98,reach*.15);g.lineTo(-reach*.6,reach*.38);g.closePath();g.fill();
+  g.globalAlpha=.4*alpha;g.strokeStyle=tone;g.lineWidth=.6;
+  g.beginPath();g.moveTo(-reach*.78,0);g.lineTo(-reach*2.1,-reach*.32);g.stroke();
+  g.restore();
+  const grid=(Math.floor(x/7)*73856093^Math.floor(y/7)*19349663)>>>0;
+  if((grid&7)===0){
+    g.save();g.fillStyle=tone;g.globalAlpha=.22*alpha;
+    for(let i=0;i<2;i++){
+      const a=((grid>>>(3+i*5))&31)/32*TAU,d=reach*(.7+((grid>>>(8+i*5))&15)/15);
+      g.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,.8,.8);
+    }
+    g.restore();
+  }
+}
+// The wet edge just behind the tip: a dark, wet core with a wider, fainter bloom drying back toward the
+// pigment's own value around it — the wall's counterpart of penBead, flat like everything else here.
+function ceilingWet(g,x,y,size,alpha=1,rgb){
+  if(reducedMotion||alpha<=.02)return;
+  const tone=rgb||CEILING_PALETTE.carbon;
+  g.save();g.fillStyle=tone;
+  g.globalAlpha=.62*alpha;g.beginPath();g.ellipse(x,y,size*1.15,size*.95,0,0,TAU);g.fill();
+  g.globalAlpha=.28*alpha;g.beginPath();g.ellipse(x,y,size*1.75,size*1.45,0,0,TAU);g.fill();
+  g.restore();
 }
 function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
   if(!points.length||stage<=0)return;
   const s1=clamp(stage*4,0,1),s2=clamp((stage-.25)*4,0,1),s3=clamp((stage-.5)*4,0,1),s4=clamp((stage-.75)*4,0,1);
   const sketch=points.map((p,i)=>[p[0]+(ceilingHash(seed,i)-.5)*2.4+1.2,p[1]+(ceilingHash(i,seed)-.5)*2.2-1]);
-  ceilingBrush(g,sketch.concat([sketch[0]]),CEILING_PALETTE.red,Math.max(.65,width*.72),(.14+.4*(1-s4))*s1,seed);
+  // A fixed sliver of the red setting-out is never fully covered, seeded from the mark's own seed so no
+  // two figures on the wall are finished to quite the same degree — the flood simply never reached that
+  // much of the cord. This is a static property of the finished mark, so it stands under reduced motion
+  // exactly as it does mid-reveal.
+  const survive=.05+ceilingHash(seed+503)*.15;
+  ceilingBrush(g,sketch.concat([sketch[0]]),CEILING_PALETTE.red,Math.max(.65,width*.72),(survive+.4*(1-s4))*s1,seed);
   if(s2>0)ceilingBrush(g,points.concat([points[0]]),CEILING_PALETTE.carbon,Math.max(.55,width*.72),.28*s2,seed+31);
   if(s3>0){
     g.save();g.globalAlpha=s3;g.fillStyle=fill;g.beginPath();points.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fill();g.restore();
   }
-  if(s4>0)ceilingBrush(g,points.concat([points[0]]),CEILING_PALETTE.carbon,width,.92*s4,seed+67);
+  // The closing black line is the mark's last stroke, so it is the one worth seeing laid: while it
+  // travels, only the covered length is drawn and the reed rides its head; once it is finished the line
+  // is exactly what it was before this brush existed. The earlier three passes stay a cross-fade — a
+  // wall this thick with marks would turn to noise if every pass travelled at once, and the closing
+  // line is the one a player's eye is already on, since it is what makes a mark read as done.
+  if(s4>0){
+    const closed=points.concat([points[0]]);
+    if(s4<1){
+      const head=ceilingBrush(g,closed,CEILING_PALETTE.carbon,width,.92,seed+67,s4);
+      if(head){ceilingWet(g,head.x,head.y,Math.max(1,width*.85),.7,CEILING_PALETTE.carbon);ceilingReed(g,head.x,head.y,head.angle,.85,CEILING_PALETTE.carbon);}
+    }else ceilingBrush(g,closed,CEILING_PALETTE.carbon,width,.92*s4,seed+67);
+  }
 }
 // N14, the star sign, sets one point downward and two arms up — the orientation the wall uses, and
 // the quickest way to tell an Egyptian star from the one a modern chart prints.
@@ -110,14 +184,20 @@ function ceilingSign(g,cp,x,y,size,col=CEILING_PALETTE.carbon,stage=1,seed=1){
   if(stage<=0||!cp)return;
   const s1=clamp(stage*4,0,1),s2=clamp((stage-.25)*4,0,1),s3=clamp((stage-.5)*4,0,1),s4=clamp((stage-.75)*4,0,1);
   const ch=String.fromCodePoint(cp),jx=(ceilingHash(seed,cp)-.5)*size*.06,jy=(ceilingHash(cp,seed)-.5)*size*.05;
+  // The same per-mark sliver of red that a painted figure keeps, seeded by the sign and its own glyph
+  // so a column of letters does not all fade to the same resting shade.
+  const survive=.04+ceilingHash(seed+509,cp)*.14;
   g.save();g.font=plateFace(size,'hiero');g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';
-  if(s1>0){g.globalAlpha=(.16+.36*(1-s4))*s1;g.fillStyle=CEILING_PALETTE.red;g.fillText(ch,x+jx+size*.07,y+jy-size*.06);}
+  if(s1>0){g.globalAlpha=(survive+.36*(1-s4))*s1;g.fillStyle=CEILING_PALETTE.red;g.fillText(ch,x+jx+size*.07,y+jy-size*.06);}
   if(s2>0){g.globalAlpha=.3*s2;g.fillStyle=CEILING_PALETTE.carbon;g.fillText(ch,x+jx*.4,y+jy*.4);}
   if(s3>0){g.globalAlpha=s3;g.fillStyle=col;g.fillText(ch,x,y);}
   if(s4>0){
     g.globalAlpha=.8*s4;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.45,size*.03);g.strokeText(ch,x,y);
     // Where the brush reloaded it laid the pigment on twice; the doubling is a hair off register.
     g.globalAlpha=.16*s4;g.fillStyle=col;g.fillText(ch,x+.55,y-.45);
+    // A sign cannot be travelled through a font's own outline, so this is its only concession to the
+    // brush: a wet edge that blooms and dries back over the closing stroke, gone once the letter is done.
+    if(s4<1)ceilingWet(g,x,y,size*.16,.55*Math.sin(clamp(s4,0,1)*Math.PI),CEILING_PALETTE.carbon);
   }
   g.restore();
 }
@@ -403,8 +483,18 @@ function ceilingDrawNode(n,aim){
   const active=world.player.node===n,target=aim&&aim.n===n,retired=n.visited&&!active;
   ctx.save();ctx.translate(x,y);ctx.globalAlpha=fade;
   const red=clamp(t/.25,0,1),correct=clamp((t-.22)/.28,0,1),finish=clamp((t-.68)/.32,0,1),start=n.phase||0;
-  if(red>0){ctx.strokeStyle='rgba(157,55,36,.42)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(1.2,-1,r,start,start+TAU*red);ctx.stroke();}
-  if(correct>0){ctx.strokeStyle=`rgba(36,29,22,${retired?.16:.42})`;ctx.lineWidth=active?1.45:1;ctx.beginPath();ctx.arc(0,0,r,start,start+TAU*correct);ctx.stroke();}
+  if(red>0){
+    ctx.strokeStyle='rgba(157,55,36,.42)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(1.2,-1,r,start,start+TAU*red);ctx.stroke();
+    // The setting-out ring is the wall's first pass, so the reed rides its own leading end — the direct
+    // counterpart of the atlas's penWedgeEnd, parked on whichever ring is currently sweeping.
+    if(red<1&&r>3){const a=start+TAU*red,hx=1.2+Math.cos(a)*r,hy=-1+Math.sin(a)*r,ta=a+Math.PI/2;
+      ceilingWet(ctx,hx,hy,1.2*scale,.7*fade,CEILING_PALETTE.red);ceilingReed(ctx,hx,hy,ta,.85*fade,CEILING_PALETTE.red);}
+  }
+  if(correct>0){
+    ctx.strokeStyle=`rgba(36,29,22,${retired?.16:.42})`;ctx.lineWidth=active?1.45:1;ctx.beginPath();ctx.arc(0,0,r,start,start+TAU*correct);ctx.stroke();
+    if(correct<1&&r>3){const a=start+TAU*correct,hx=Math.cos(a)*r,hy=Math.sin(a)*r,ta=a+Math.PI/2;
+      ceilingWet(ctx,hx,hy,scale,.65*fade,CEILING_PALETTE.carbon);ceilingReed(ctx,hx,hy,ta,.8*fade,CEILING_PALETTE.carbon);}
+  }
   if(finish>0){
     ctx.strokeStyle=`rgba(36,29,22,${retired?.16:active?.68:.38})`;ctx.lineWidth=active?1.45:1;
     for(let i=0;i<24;i++){const a=i/24*TAU;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.72,Math.sin(a)*r*.72);ctx.lineTo(Math.cos(a)*r*.94,Math.sin(a)*r*.94);ctx.stroke();}
