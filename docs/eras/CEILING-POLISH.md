@@ -236,6 +236,22 @@ comparison to make is never "does it look as deep as the atlas."
 
 ---
 
+## The second pass, and where it came from
+
+Everything above was built against the code and against the era file. A second pass then ran against
+photographs of the facsimile itself, supplied one crop at a time, and it is the more instructive
+half: the wall was rebuilt from a document rather than from a reading of one. That pass corrected
+the star's shape and the band's density, undid an invented variation, replaced both circumpolar
+figures with traced contours, packed the decan columns and put stars back inside them, laid the
+procession across the foot as a register, gave the divider its lines of marks, and took the stamp
+out of every repeated unit on the sheet.
+
+Two lessons from it are worth more than the changes. **A plausible reading of a photograph is not a
+source** — three of the corrections below overturned confident readings, two of them written in this
+file's own voice. And **dense and irregular are two properties**: taking the regularity out of the
+star band without checking its density made the sheet worse, not better, because a band of scattered
+stars reads as randomness while the wall's reads as a mat.
+
 ## How the facsimile came to be read
 
 The photographs this section rests on were supplied part-way through the build, after most of it was
@@ -282,18 +298,26 @@ sheet had been drifting on plausible readings.
   dark marks, exactly as the invented drawings were. A traced contour also carries the pixel mask's
   staircase, which one Chaikin pass at bake time softens but does not remove; a finer trace, or a
   second simplified contour kept for small sizes, is the honest fix.
-- **The four watches differ, but weakly.** Each carries a different reach of the same furniture
-  rather than furniture of its own. A player reads "another register", not "another hour".
+- **The four watches differ, but weakly.** Each carries a different reach of the same furniture —
+  more columns, a rotating slice of the vocabulary, a different circumpolar figure — rather than
+  furniture of its own. A player reads "another register", not "another hour".
+- **The procession is structurally right and lighter than the wall's.** On the facsimile the foot
+  register is a substantial band of large figures; ours is thin, and it thins further still where it
+  crosses the play channel, which is the price of running a full-width element across a sheet
+  somebody is flying through. The gap it opens in the middle is abrupt. That trade is deliberate and
+  is the sort of thing only play can settle.
 - **The red canon now runs through the play channel.** It is faithful — it does so on the facsimile
   too — but nobody flies across the facsimile. If it competes with the flight it should be eased in
   the centre column only, and that is a playability decision, not a research one.
-- **Density is still bought by repetition of a few units.** The facsimile's own answer is the one
-  visible in its bottom register and in any wing: many flat units, repeated, bounded by line. The
-  striding register is a first instance; the wall could carry more. The decan columns are the
-  largest instance not yet taken: on the facsimile they are narrow, ruled on both sides, packed wall
-  to wall, and they carry **stars among their signs** — they are a star table, which is what a decan
-  column is for, and the ruling runs on far below the signs. Ours are a handful of short sign
-  columns with no stars in them at all.
+- **The sheet's density now comes from the wall's own marks, and that has a boundary worth keeping
+  in view.** The decan columns are packed and carry stars among their signs; the procession is a
+  horizontal register at the foot; the divider is a star band, ruled lines of marks, a star band.
+  Most of that content is *traced* — reproduced as drawing from the facsimile, asserting nothing
+  about what any sign says — because the checked vocabulary spells fourteen words and a wall this
+  dense would otherwise have needed an invented one. The rule that keeps it honest is small and
+  absolute: a column or a line is either spelled from the checked table or set from the traced bank,
+  **never both**, so a mark can never be read as part of a word. Anything added here later has to
+  keep that separation or the whole bank stops being a facsimile and becomes decoration.
 - **A dark-ground plate is wanted, and it needs its own document.** Noted, not built. The reference
   offered for it is the astronomical ceiling of **Seti I (KV17)**
   ([Wikimedia Commons, `StarsSeti1.jpg`](https://commons.wikimedia.org/wiki/File:StarsSeti1.jpg) —
