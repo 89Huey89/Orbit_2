@@ -3,9 +3,10 @@
 **Europe, 1600–1801.** The era the game is already set in, written down so the ladder has a
 reference point and so the other eight know what they are departing from.
 
-**This era is finished. Nothing in this file is outstanding work.** It is here as the reference
-point: when era V asks "what does a figure hand cost?", the answer is Hevelius, Bayer and Bode,
-all three already cut.
+**This era is finished as a sheet.** Under the knowledge horizon it owns one small piece of new
+work, the dated discoveries in *The bodies* below; everything else here is the reference point:
+when era V asks "what does a figure hand cost?", the answer is Hevelius, Bayer and Bode, all three
+already cut.
 
 ## The documents the game already quotes
 
@@ -45,6 +46,33 @@ the world and Descartes' own account of what the heavens are made of; **MACULA**
 and **VENTUS**, the cheek-blown wind-head — which the frame had already been carrying in its four
 corners for a long time before it was given a rule. That is the standard to hold the others to:
 **find the thing the era already draws, and give it a rule.** See [DANGERS.md](DANGERS.md).
+
+## The bodies
+
+The one era on the ladder where the seven families are *born*, and under the knowledge horizon
+([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) the only work this file still owns. The shipped
+specimens stay as they are. What is added is that each family is tied to the body it was first
+seen on and the year, written once per run as a dated caption on the first capture of that
+family, and that two of them are drawn as the century first misread them until the orbit is held.
+
+| Family | First seen on | At a glance | Under attention | Caption |
+|---|---|---|---|---|
+| crater | the Moon, Galileo, 1610 | the shipped *Sidereus Nuncius* terminator and craters | the same | `1610 · GALILEO` |
+| ringed | Saturn, 1610 and 1659 | **Galileo's handles** — the disc with two lesser discs The Drift's plate already cuts | **Huygens's ring** | `1610 · GALILEO`, then `1659 · HUYGENS` beside it |
+| storm | Jupiter, 1665 | the shipped banded giant with its spot | the same | `1665 · CASSINI` |
+| ice | Mars's caps, 1666 to 1784 | a bare disc with one pale cap | the cap read as **snow**, Herschel | `1784 · HERSCHEL` |
+| ocean | the Moon's *maria*, Riccioli, 1651 | the shipped ocean world | the same | `1651 · MARE` |
+| volcanic | the Moon's "volcanoes", Herschel, 1787 | a disc with a sunspot's dark umbra, the one fire the century drew | Herschel's three volcanoes, an attested mistake | `1787 · HERSCHEL` |
+| dune | not yet a family: Syrtis Major, Huygens, 1659 | a bare disc with one dusky patch | the same | `1659 · SYRTIS` |
+
+The years are checked in [research/knowledge-horizon.md](research/knowledge-horizon.md) and the
+captions are provisional; the volcanic cell is keyed from that file's verdict on Herschel's 1787
+paper, the better hook and a mistake besides. One caveat the research adds: Cassini's "permanent
+spot" of 1665 was followed to 1713 and may not be today's Great Red Spot, whose continuous record
+begins in 1831, so the storm's caption names the observation, not the storm. The captions are set in
+the Fell italic on a leader, exactly as `TRES PERFECTI` is set today, so the era writes its own
+discoveries in the hand it already has. Whether the first cycle of seven after the page turn
+should be dealt in the order of discovery is open question J.
 
 ## What it already owns
 

@@ -81,7 +81,29 @@ does not consult what the player has reached.
 ## The transition between eras
 
 Do not cross-fade two art directions. `pageTurn(mix)` and `drawSheetEdge()` already animate a new
-sheet sliding over the old one with its shadow, cut edge and plate-mark. A change of era is a page
-turn, and a page turn is a hard cut with a flourish — which is the honest metaphor, since these
-really are different sheets from different centuries. The announcement that today names the
-chapter names the era: its numeral, its name, and its year.
+sheet sliding up from below the frame over the old one, with its shadow, cut edge and plate-mark.
+A change of era is a page turn, and a page turn is a hard cut with a flourish — which is the
+honest metaphor, since these really are different sheets from different centuries. The
+announcement that today names the chapter names the era: its numeral, its name, and its year.
+
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) the turn also
+carries a meaning, and three things on it are worth stating because each is nearly free:
+
+- **The sheet rises from the Earth.** The bottom edge of every sheet is the observer's place, so
+  the new sheet coming up from below is a new century looking up from the ground at the same
+  chart. The observer returns to the Earth; the traveller does not. Nothing in the simulation
+  moves, resets or is told.
+- **The route is inherited.** The dried route stays on the chart and its ink is registered per
+  plate, so the plate change re-inks it in the new era's hand of its own accord: the earlier
+  century recorded the way, the new one reads it and flies on. Where an era has no continuous
+  line — the Disc strikes a route as a run of taps — the route is re-struck from the bottom edge
+  upward as the sheet settles.
+- **The held body is the first thing the new century sees.** The page turns at a capture, so the
+  body under the pen is redrawn by the incoming era's own painter on the spot, through the same
+  staged reveal a newly reached body gets. Entering the engraving, a point grows a terminator and
+  craters; that is the moment of 1610, met in orbit.
+
+One turn is the exception and is the ladder's close: era IX's sheet does not rise from the
+bottom edge but forms at the traveller, the first sheet not drawn from the Earth.
+`docs/eras/prototypes/turn-rock-disc.html` mocks the turn from era I to era II with all three
+of the points above.

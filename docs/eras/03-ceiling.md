@@ -1,18 +1,17 @@
 # III · The Ceiling
 
-**Egypt, c. 1479–1458 BCE.** The sky as it was painted on the underside of a tomb, where the point was never to help anyone find a star — and, alongside the tomb ceiling, a real coexisting grammar of grids and tables the game's own node lattice already resembles.
+**Egypt, c. 1473–1458 BCE.** The sky as a painted order of hours, months, decans, moving lights and protective beings. The primary visual document is Senenmut's tomb ceiling TT353; other Egyptian objects may explain a single borrowed motif, but may not silently be composited into that ceiling.
 
 ## The documents
 
-- **Senenmut's astronomical ceiling, tomb TT353, Deir el-Bahri** (XVIII Dynasty, joint reign of
-  Hatshepsut and Thutmose III). The oldest known Egyptian celestial diagram, in two panels: a
-  **northern panel** of twelve month-circles, each divided into twenty-four segments, with the
-  circumpolar *ikhemu-sek* ("the imperishable ones") and the five planets as *ikhemu-wretju*
-  ("the stars that know no rest") sailing in barques; and a **southern panel** carrying the
-  decanal star list, with **Sah** (Orion) striding, **Sopdet** (Sirius/Sothis) seated behind him,
-  a hippopotamus figure holding a mooring post, and **Meskhetiu** (the Bull's Foreleg, our Big
-  Dipper) tied to it — the one certainly identified constellation on the ceiling. A Metropolitan
-  Museum facsimile by Charles K. Wilkinson is published and photographed.
+- **Senenmut's astronomical ceiling, tomb TT353, Deir el-Bahri** (XVIII Dynasty, reign of
+  Thutmose III). This is the era's controlling source: two stacked registers on a **light painted
+  ground**, circumpolar figures and deities, decan names and stars, twelve named lunar-month
+  circles, and four named planets — Jupiter, Saturn, Mercury and Venus; Mars is omitted. The
+  [Ancient Egyptian Astronomy database entry](https://aea.mcmaster.ca/index.php/en/database/ars/ar1-type-menu/tomb-of-senenmut)
+  explicitly records `Nut: No`, so no Nut arch belongs on this sheet. The Metropolitan Museum's
+  [public-domain Wilkinson facsimile](https://www.metmuseum.org/art/collection/search/544566)
+  supplies the image reference and dates the original to c. 1473–1458 BCE.
 - **Diagonal star tables ("star clocks")**, Middle Kingdom coffin lids, predominantly from Asyut
   with single examples from Thebes, Gebelein and Aswan. Decan names against thirty-six ten-day
   weeks, read diagonally — the era's real chart form, a literal table, no figures at all.
@@ -20,37 +19,93 @@
   twelve-column-by-seven-row grid of stars keyed to individual body parts of a seated figure
   ("upon the heart," "the right eye"). The single most useful document for this era's gameplay:
   the closest thing in the whole ladder's record to the game's own tangent/release geometry.
-- **The Book of Nut**, from the Osireion at Abydos and the tomb of Ramesses IV — Nut arched over
-  the earth, swallowing the sun at her mouth each evening and birthing it at dawn, Shu kneeling
-  beneath her holding her apart from Geb, decans annotated onto her body: the figure *is* the
-  diagram.
-- **The Dendera zodiac** (Ptolemaic, c. 50 BCE, Louvre) — much later and already contaminated by
-  imported Babylonian/Greek zodiacal signs, but the best-preserved circular Egyptian sky and the
+- **The Book of Nut**, from the Osireion at Abydos and the tomb of Ramesses IV — a later source
+  for a different diagram type. It may inform research into Egyptian cosmology but is not a
+  licence to add Nut to TT353.
+- **The Dendera zodiac** (Ptolemaic, c. 50 BCE, Louvre) — much later and syncretic, incorporating
+  Babylonian/Greek zodiacal signs, but the best-preserved circular Egyptian sky and the
   one everyone recognises. Use it as a chapter plate, not as the era's grammar.
+
+## Reference board — actual Egyptian drawings
+
+![Charles K. Wilkinson's public-domain facsimile of Senenmut's astronomical ceiling, after TT353](https://images.metmuseum.org/CRDImages/eg/original/48.105.52_EGDP012289.jpg)
+
+The facsimile above is the visual test for every decision on the built sheet: warm plaster is the
+largest colour field; black lines and columns do most of the work; red is an accent; blue and green
+are local fills; the composition is dense, orthogonal and captioned rather than atmospheric.
+
+Two later drawings are deliberately kept beside it, not blended into it:
+
+- [Greenfield Papyrus, frame 85](https://www.britishmuseum.org/collection/object/Y_EA10554-85),
+  c. 950–930 BCE: a black-line solar barque. It licenses the player's flat boat silhouette, not
+  a claim that this boat appears on TT353.
+- [Greenfield Papyrus, frame 87](https://www.britishmuseum.org/collection/object/Y_EA10554-87),
+  c. 950–930 BCE: Nut arched over Geb and supported by Shu, with black hieroglyphic labels. It is
+  useful for the crosswind figure's visual grammar; its Nut arch is specifically excluded from
+  the TT353 background.
+
+The [Met's pigment demonstration](https://www.metmuseum.org/fr/perspectives/paint-like-an-egyptian)
+and the [Australian Museum's account of registers, composite view and snapped grids](https://australian.museum/learn/cultures/international-collection/ancient-egyptian/the-painter-in-ancient-egypt/)
+control material and figure construction. No modern blue star field, faux-papyrus texture,
+cinematic glow, atmospheric perspective or shaded sphere survives comparison with these images.
 
 ## The grammar
 
-Flat. No perspective, no vanishing point, no light source, no gradient, no atmospheric depth — structurally absent from every document above, including the latest and most sophisticated (Dendera). Figures stand in the canonical composite view (frontal torso, profile head and legs, frontal eye); bodies are flat coloured discs or upright figures with a heavy black keyline, never spheres, never shaded toward a limb. Two grammars actually coexist: the **figure-register grammar** (Senenmut's southern panel, the Book of Nut) — deities and animals standing for constellations at a fixed scale, captioned in hieroglyph columns; and the **table grammar** (diagonal star clocks, and differently the Ramesside clocks) — no figures at all, or one figure as a coordinate origin, the chart literally rows and columns. The tension this era poses the game is with *depth*, not structure — a grid of nodes and Egypt are not in tension; modelling, foreshortening, and (outside Dendera) circular composition are.
+Flat. No vanishing point, gradient, cast shadow, atmospheric depth or shaded limb. Figures use the
+canonical composite view; hierarchy comes from scale, separation, overlap and the register, not
+from perspective. Bodies are signs, discs or divine figures, never little rendered planets. Two
+grammars coexist without being mixed indiscriminately: the **figure-register grammar** of TT353,
+and the **table grammar** of star clocks. The game's node lattice fits the latter; the moving
+figures fit the former. Both reject a spatial starfield.
 
 ## Palette
 
 | Pigment | Hex | Role |
 |---|---|---|
-| Egyptian blue | `#1B4D8C`–`#2A6099` | night ground / Nut's flesh; hue shifts with grind fineness |
-| Red ochre | `#A63B23` | outline sketch, flesh of male figures |
-| Yellow ochre | `#C9A227` | flesh of female figures, secondary fill |
-| Orpiment | `#F4C430` | the era's real gold accent — a deliberate, cheaper stand-in for gold leaf |
-| Malachite / green frit | `#145A32` | vegetation, the Nile, occasional deity skin |
-| Carbon black | `#1B1B1B` | final linework, hair, night sky dots |
-| Huntite / gypsum white | `#F1EAD9` | highlights, star discs, garments |
-| Ground: plaster cream | `#E8DCC0` | southern/decan panels, daylight registers |
-| Ground: deep blue | `#0B1830`–`#12244A` | northern panel and any night sky |
+| Lime plaster | `#DDCFAD` / `#EEE4CD` | **dominant field**, wear and repairs |
+| Carbon black | `#241D16` | principal drawing, captions, borders and final line |
+| Red ochre | `#9D3724` | setting-out, corrections, solar discs and sparse rubrication |
+| Yellow ochre | `#C4932E` | sparse flat fills and star signs |
+| Egyptian blue | `#285987` | local divine/animal fill and gameplay guidance only |
+| Green | `#526F59` | rare local fill only |
+| Plaster loss | `#9D8966` | chips, hairline cracks and abraded patches |
 
-Gold leaf itself was reserved for coffins, masks and divine flesh elsewhere, never a painted ceiling — but orpiment is chosen precisely because it reads as gold at a fraction of the cost, and painters used that substitution deliberately. The era's honest "gold" is orpiment, not an absence.
+The hierarchy matters more than the swatches: roughly three quarters light plaster, most of the
+remaining information fine black, then small red/yellow/blue/green islands. Egyptian blue is a
+valuable pigment in the wider palette, but **not this ceiling's background**. Orpiment and gold
+leaf do not become generic UI gold; the built sheet uses a muted yellow ochre instead.
 
 ## Lettering and the hand
 
-Hieroglyphs, set in vertical columns, read into the row by which way the glyphs face rather than a fixed left/right convention. The instrument for tomb-wall work was a reed brush cut from *Juncus maritimus* and chewed at the tip to fray it into a soft brush, worked from a palette carrying two dry ink cakes — black (carbon soot) and red (iron-rich ochre) — rewetted with a damp brush. The confirmed wall sequence is **four** steps, not three: a draftsman **sketches in red**, a senior artist **corrects in black**, painters **flood** flat colour region by region, and a final **black outline** closes every edge and adds fine detail last — that final pass is what reads as "the drawing" to a modern eye. Fonts: **Noto Sans Egyptian Hieroglyphs** (OFL 1.1, © The Noto Project, 1,079 glyphs, U+13000–1342F), embeddable and subsettable through `scripts/glyphs.mjs` like any other face. Pipeline note: real hieroglyphic text packs two to four small glyphs into one full-size sign's square footprint — **quadrat stacking** — and no font or canvas text performs that layout; the format-control codepoints that describe it (U+13430–1345F) render, at best, as their own near-invisible characters. The pipeline has to fake it by hand: group source characters at authoring time and lay each group's glyphs into a shared cell, exactly as `textAlongArc` already places glyphs individually. Hieratic, the real cursive hand, is confirmed not usably encoded in Unicode and is a dead end for any caption face. Numerals are base-10, additive, no place value, no zero, conventionally stacked in tidy blocks — a genuine solution to the game's own small-count legibility problem, recommended for small HUD counters only; Hindu-Arabic digits, set in the hieroglyph caption face, carry the score itself.
+The historical image layer uses locally bundled **Noto Sans Egyptian Hieroglyphs** (OFL 1.1),
+registered in the build as `Noto Egyptian Hieroglyphs`. Signs sit in vertical columns and are
+treated as image-bearing labels, not generated pseudo-Egyptian prose. Authentic quadrat stacking
+still requires authored layout; a browser font alone cannot make a readable inscription.
+
+The English words are an openly modern curatorial layer in Georgia, kept out of the historical
+columns. They do not masquerade as a translated tomb inscription. The score remains an Arabic
+number for instant play readability; `wnwt` and the running hour label carry the era identity.
+
+The reveal turns a documented workshop logic into four legible gameplay phases: red setting-out,
+black correction, flat colour, black closure. This is a **plausible reconstruction used as an
+animation system**, not a claim that every TT353 mark preserves four visible stages.
+
+## Universe model and player object
+
+This universe is not a volume seen through a window. It is a **painted order**: named decans,
+lunar months, imperishable northern lights and wandering lights arranged so time and cosmic order
+can be read. The camera's upward movement therefore means passage through the night watches, not
+literal acceleration away from Earth. Orbit circles are redrawn as twenty-four-part hour circles;
+the route is a sequence of brush dabs; each chapter is a `wnwt`, an hour/watch.
+
+The player is a **flat night barque**, chosen because a carrier moving through an ordered night is
+the era's most coherent equivalent of the comet in the base game. Its hull is a single profile,
+with one solar disc and one upright sign: no banking, foreshortening, exhaust, bloom or metallic
+highlight. This barque is a marked borrow from the wider funerary corpus — visually checked against
+Greenfield Papyrus frame 85, roughly five centuries later — and not presented as an object copied
+from TT353. In the eventual chronology, the invariant is not “the same spaceship in costume” but
+**the era's mediator between observer and sky**: mark, carrier, measuring instrument, recorded
+object, autonomous observer.
 
 ## Names
 
@@ -58,13 +113,10 @@ Attested words are preferred throughout; constructed extensions and merely-recal
 
 | Game term | Egyptian word | Gloss | Status |
 |---|---|---|---|
-| Ocean world | *mw* | water | attested (family-naming constructed) |
-| Crater world | — | pockmarked disc | constructed, no attested source |
-| Ringed world | *bḥdty* | the winged sun-disc of Horus of Edfu | attested motif, applied by analogy |
-| Ice world | *ḥḏ* | white / silver | attested |
-| Dune world | *dšrt* | "the red land," the desert | attested |
-| Volcanic world | Sekhmet (*Sḫmt*) | the fire/plague goddess, an aspect of the Eye of Ra | attested deity, by analogy |
-| Storm world | Set (*Stẖ*) | god of storms, chaos, foreign deserts | attested |
+| A decan star | *sbꜣ* | star | attested |
+| The wanderers | *ikhemu-wretju* | "the stars that know no rest," each a deity in a barque — Jupiter "Horus who bounds the Two Lands", Saturn "Horus, Bull of the Sky", Venus "the crossing star", Mercury *sbg(w)*, of unknown meaning; Mars, "Horus the Red", is absent from this ceiling | attested (research/knowledge-horizon.md §3); Mars's absence attested |
+| The Moon | *jꜥḥ* | the moon | attested |
+| A surface of any kind | — | not drawn: no Egyptian document differentiates a body's face | — |
 | Slingshot | *wp rnpt* | "opener of the year" — Sopdet's heliacal rising, resetting the calendar | attested phrase, applied by analogy |
 | Shield (Scutum) | *ikm* | shield | attested |
 | Reflector (Repulsa) | *ḫsf* | "to repel, turn back" | recalled |
@@ -72,20 +124,28 @@ Attested words are preferred throughout; constructed extensions and merely-recal
 | Orbit | *pḫr* | "to go around, circle" | attested, extended usage |
 | Capture | *jṯi* | "to seize, take possession of" | recalled |
 | Release | *wn* | "to open" | recalled, constructed usage |
-| Currency (ink) | *ḫꜣr* (khar) | a grain-volume measure, ~76.9 L, paid to Deir el-Medina workers | attested unit |
+| Currency (future economy) | *ḫꜣr* (khar) | a grain-volume measure, ~76.9 L, paid to later tomb workers at Deir el-Medina | attested later unit; gameplay translation |
 | Score | *ḥsb* | "to count, reckon" | recalled |
 | Chapter / sheet | *wnwt* | "hour" — the Amduat's own 12-part night structure | attested structure, corrects "register" |
 | Personal best | — | no attested equivalent | constructed |
 | Daily plate | *hrw* | "day" | attested word, constructed application |
-| Title "Orbit" | Nut (*Nwt*) / *pḫr* | the sky goddess arched over everything, or "the circling" | attested, evocative rather than literal |
+| Title / chapter | *wnwt* / *pḫr* | hour/watch / "to go around" | attested words, evocative UI use |
 
 "Register" is a modern Egyptological/art-historical term describing the composition, not an ancient Egyptian word — useful as a design term but not as the era's own vocabulary; *wnwt* ("hour") is the better-attested fit for "chapter."
 
 ## Currency and the rule
 
-Currency is *khar*, the grain ration — the record's real answer is grain, not gold. Deir el-Medina, the walled village of the royal tomb-builders, paid workers a fixed monthly grain ration; the strike of year 29 of Ramesses III, when rations arrived nearly a month late, is recorded on the Turin Strike Papyrus, one of the best-documented labour actions in the ancient world, and anchors the currency directly. Rule (class A): **rename only** — ink becomes *khar*, spent and gained exactly as shipped, with the inkwell pickup standing for the ration itself; no schedule or number changes. Deferred: the research's own twist — a flat *khar* dividend paid every tenth row, independent of how that stretch was flown, echoing the ten-day week the ration was paid against — was graded a "B" economy rule by the research itself, not a free "A," and is held back pending the same sign-off DANGERS.md defers.
+The current special area keeps the base simulation's resource but depicts it plainly as a reed
+brush drying and being rewetted; it does not pretend that TT353 labels a game currency. A future
+economy may use *khar*, the grain ration of later tomb workers at Deir el-Medina, as a marked
+cross-period translation. If retained, it is a rename only; the proposed ten-row dividend remains
+deferred. Gold is specifically rejected as a generic Egyptian currency.
 
 ## Dangers
+
+The named beings below answer the historical brief — danger as people imagined it in the sky —
+but their assignment to four force mechanics is a fictional gameplay translation. The depictions
+obey Egyptian image grammar; the physics do not claim an ancient source.
 
 | Row | Name | Depiction |
 |---|---|---|
@@ -94,9 +154,21 @@ Currency is *khar*, the grain ration — the record's real answer is grain, not 
 | Crosswind | **Shu** | The god of air, physically holding Nut and Geb apart — drawn kneeling with raised arms, a myth that already describes "holds things at a steady distance." |
 | Obscurer | **Nun** | The formless waters before creation, everywhere and nowhere — the natural fit for an inert fog patch that hides rather than harms. |
 
-## The seven families
+## The bodies
 
-**Ocean** is a flat mid-blue Egyptian-blue wash with a wave-line hatch near the rim standing in for the *mw* sign, no gradient, no reflection. **Crater** is the ochre disc with small black dot-and-ring marks scattered irregularly, the same shorthand tomb painters used for hide spots or stone texture. **Ringed** flattens the winged sun-disc silhouette into a circle with a horizontal band, two raised wing-shapes either side reading, at this scale, as a ring. **Ice** is a huntite-white disc with a thin black keyline and nothing else, its difference simply being the one pale disc among ochre and blue neighbours. **Dune** is a red-ochre disc, unornamented, sometimes a thin wave-hatch suggesting drift. **Volcanic** is the same red recoloured toward Sekhmet's fire, a rubricated disc with a small hatched flame tuft echoing the uraeus. **Storm** is a hatched, turbulent-edged disc in a darker tone, the hatching irregular rather than volcanic's single tuft.
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) this era draws no
+planetary family and no surface. An ordinary node is a five-point star sign or plain painted disc;
+a moving light may be carried by a tiny profile barque. The same glyph survives at thumbnail,
+orbit and capture scale. Size, position, caption and carrier distinguish a light — texture,
+terminator, crater, cloud and ring never do.
+
+TT353 names Jupiter, Saturn, Mercury and Venus and omits Mars. The special area therefore treats
+the barque as the **class sign for a wanderer** rather than generating a false one-to-one catalogue
+of five named planets from random gameplay nodes. A future authored signature sheet may show the
+four attested entries and the omission precisely; the procedural field must not invent the missing
+mapping.
+
+The earlier seven-family reading — the *mw* wave-hatch, dot-and-ring, the winged disc flattened to a ring, the pale disc, the red land, Sekhmet's tuft, Set's hatching — was the era's most elegant set of constructed analogies and survives in `prototypes/ceiling.html`, and in the dangers, where the deities still belong.
 
 ## Frame and furniture
 
@@ -104,7 +176,10 @@ A tomb ceiling has no frame in the atlas sense — its boundary is the room's ow
 
 ## The signature sheet
 
-**The southern panel of the Senenmut ceiling** — Sah striding, Sopdet seated behind him with her star, the decan-name columns running beside them (the prototype substitutes Meskhetiu for Sah, since research names it the one certainly identified constellation and its mooring-post story gives the figure something to do). Later enrichment adds the other three from the research: the northern panel (the twelve month-circles), a Ramesside star clock (the twelve-by-seven body-keyed grid), and the Book of Nut (Nut arched across the whole sheet).
+**TT353 as one authored sheet** — the circumpolar group, decan columns, four attested moving
+lights, omitted Mars and twelve lunar-month circles laid out from the facsimile rather than freely
+recomposed. Ramesside star clocks and the Book of Nut belong to separate, explicitly later Egyptian
+studies; they must not become extra “chapters” inside a purported reconstruction of TT353.
 
 ## Sound
 
@@ -114,6 +189,20 @@ A grinding pigment-grind (orbit-hold), a single wet dab (capture), a dry brush-f
 
 `docs/eras/prototypes/ceiling.html` exists and paints the southern-panel scene. Its header comment records: **Noto Sans Egyptian Hieroglyphs** loaded locally (falling back to hand-drawn pictographs, never a system font, if it fails to load); five caption glyphs copied byte-for-byte from the research file, every other caption spelled phonetically from Gardiner's uniliteral alphabet plus four one-sign logograms, each codepoint individually looked up this session; the title set as "Nwt" over "*pḫr*"; Meskhetiu chosen over Sah for the constellation; the currency rendered as the research's own no-twist reading, the every-tenth-row dividend explicitly withheld pending sign-off; dangers drawn per DANGERS.md's option A; and the reveal built on the corrected four-step order (sketch red → correct black → flood colour → outline black). The sheet's own "not achieved" note flags quadrat stacking as unbuilt (every caption sets one sign per line, the sanctioned fallback, not the authentic layout) and Reret the hippopotamus cut to a bare post for space. Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md).
 
+That prototype remains a useful drawing study but is superseded as colour authority: any dark-blue
+night reading and Nut association did not survive comparison with the Met facsimile and the AEA
+record. The playable implementation is `src/ceiling.js`, entered temporarily from the main menu.
+It owns its plaster cache, register grid, month circles, glyph columns, node/body painter, player,
+four hazard painters, route, reveal, darkness and chapter labels while reusing the unchanged
+simulation. Entry uses a non-persistent plate application and return restores the prior atlas.
+
 ## Risk
 
-A flat, unmodelled, register-based sky is at genuine odds with a game built on depth, motion and speed; the Ramesside star clock softens this (the era does have a native grid grammar) but grid does not equal depth, and the game's bodies, hazards and lensing effects still want to imply volume this era's documents never do. Quadrat stacking is real, unbudgeted layout work, not a font problem, and should be spiked before hieroglyphic captions are committed to. The northern panel's seasonal quadrant layout is weakly sourced — no museum or journal page was reachable this session, only search-snippet paraphrases; get eyes on Wilkinson's facsimile or the Neugebauer & Parker plates directly before keying the panel literally. Beyond Sah, Sopdet and Meskhetiu, decan-to-modern-constellation identification is genuinely disputed among Egyptologists — don't invent confident mappings for the other roughly thirty-three. Several Names-table entries (Repulsa, Inkwell, Capture, Release, Score) are recalled rather than re-verified this session. `WebFetch` was unavailable throughout the research pass; every citation traces to a search-snippet paraphrase, not a primary page read end to end.
+A flat, register-based sky is at genuine odds with a game built on depth and speed; the solution is
+to translate vertical motion into time/order, never to add modelling. Quadrat stacking is real
+layout work and remains unbuilt. Beyond securely documented labels, decan-to-modern-constellation
+identifications must not be invented. Several words in the Names table remain recalled rather than
+re-verified and should not enter final hieroglyphic prose. The Met facsimile and the AEA record have
+now been inspected directly; Greenfield frames 85 and 87 remain later comparators. The special
+area's mythology is consistent and clearly bounded, but it is still a designed synthesis rather
+than a reconstruction of one intact ancient room.

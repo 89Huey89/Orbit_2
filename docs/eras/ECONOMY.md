@@ -44,6 +44,15 @@ Class A is depiction only — the shipped numbers, drawn another way — and is 
 under first. Class B is a rule the century adds. Two eras carry one; the score gate is what makes
 them safe.
 
+**The held orbit's clock is read a third way, by every era.** The knowledge horizon
+([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) gives every body two readings, at a glance and
+under attention, and attention is the held orbit: the second reading develops on the same
+`orbitGain` clock the Plate's "hold to develop" already reads, so VII's rule is the whole
+ladder's rule with one thing VII alone keeps, that overholding fogs. Like the harvest it is a
+second read of a gain the table already pays, never a new number, and it consumes no
+`this.random()`. The Marble's deferred class-B rule reads the same brightness class the horizon
+has been drawing on its nodes all along.
+
 ## Why the score gate makes B rules safe
 
 [DANGERS.md](DANGERS.md) set out what breaks the moment an era changes a rule: the daily's

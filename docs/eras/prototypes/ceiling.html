@@ -1,8 +1,14 @@
 <!doctype html>
 <!--
-  Orbit — era prototype III · THE CEILING (Egypt, Senenmut's ceiling TT353, c. 1479 BCE).
+  Orbit — era prototype III · THE CEILING (Egypt, Senenmut's ceiling TT353, c. 1473–1458 BCE).
   Spec: docs/eras/research/ceiling.md (primary); plan: docs/eras/03-ceiling.md.
   Not shipped. See docs/eras/OVERVIEW.md for the ladder this belongs to.
+
+  HISTORICAL ERRATUM (2026): this standalone study's blue night register and Nut title are
+  rejected. Direct inspection of the Met facsimile and AEA record established a light TT353
+  background and Nut: No. Do not port those two choices. src/ceiling.js is the controlling,
+  playable colour/composition implementation; the brush, flat figure and quadrat experiments
+  below remain useful.
 
   SECOND PASS. The first pass got the grammar right (registers, flat discs, hieroglyph
   captions) and the finish wrong: a flat cream ground, flat fills, a red blob for the figure,
@@ -14,7 +20,7 @@
    · every mark goes through reedPath — a rush brush chewed to a frayed tip: fat where it
      touches down, thinning as it lifts, a bead of ink at the lay-in, a dry fleck at the tail;
    · every shape goes through shape(), which paints in the wall's own four passes (research
-     §4's correction to 01-ceiling.md): red sketch, black correction, flood, black outline.
+     §4's correction to 03-ceiling.md): red sketch, black correction, flood, black outline.
      The red sits a few pixels off-register under the black, as the real plaster shows today
      where the top paint has fallen; the flood stops a hair short of the line and here and
      there spills past it;

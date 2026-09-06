@@ -155,9 +155,21 @@ and this era must not repeat era VIII's rendered instrument grammar for the same
 | Crosswind | **ISM FLUX** | Thin monochrome flux-vector arrows, no colour gradient — most at risk of duplicating era VIII's solar wind; the fix is register, not idiom |
 | Obscurer | **EXT** | A shaded attenuation region with a logged magnitude of signal loss, not a rendered nebula |
 
-## The seven families
+## The turn into this era
 
-Each body is shown twice at once — a Hershey-line icon beside a monospace class readout, mass
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) the bottom edge of
+every sheet is the Earth, and every page turn pushes the new sheet up from it: a new century
+looking up from the ground. This era's turn is the one exception and the ladder's close. The
+probe's sheet does not rise from the bottom edge; it forms at the traveller, because this is the
+first sheet not drawn from the Earth, and the observer has finally left with the line. The
+`PHASE` announcement already replaces the page turn's lettering; the sheet's arrival should
+replace its motion.
+
+## The bodies
+
+The three readings of this era are the sensed mass, the readout, and the material — the families
+drawn as what they are, as in era VIII, and read a further time into the harvest. Each body is
+shown twice at once — a Hershey-line icon beside a monospace class readout, mass
 number, mean density and a periapsis/apoapsis pair where relevant, set in DSEG or B612 Mono. Ocean
 (`CLASS-H2O`): a plain circle with one horizontal chord. Crater (`CLASS-REG`): a circle stippled
 with small unfilled rings, no shading. Ringed (`CLASS-RNG`): a circle crossed by one or two thin

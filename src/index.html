@@ -23,6 +23,12 @@
     #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--shield:#5c4832;--reflector:#5c3f5c;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
+    .ceiling-only{display:none!important}
+    #game[data-plate-id="ceiling"]{--face-text:Georgia,'Times New Roman',serif;--face-sc:Georgia,'Times New Roman',serif;--face-body:Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173}
+    #game[data-plate-id="ceiling"] .atlas-only{display:none!important}
+    #game[data-plate-id="ceiling"] .ceiling-only{display:revert!important}
+    #game[data-plate-id="ceiling"] .footer{color:#5f4b34}
+    #game[data-plate-id="ceiling"] #catalogue-open,#game[data-plate-id="ceiling"] #plate{display:none}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
@@ -110,6 +116,23 @@
     .compass-star{position:absolute;left:50%;bottom:0;width:16px;height:16px;transform:translate(-50%,55%);color:var(--gold);opacity:.85;pointer-events:none}
     .title-group .eyebrow{margin:18px 0 0}
     .printer-line{margin:20px 0 0;font-style:italic;font-family:var(--face-text);font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
+    /* Era III keeps the interface as an openly modern gloss over the wall; only actual sign strings use
+       the hieroglyphic face. The image beneath follows TT353's light ground and never becomes a blue sky. */
+    #game[data-plate-id="ceiling"] #intro{background:rgba(221,207,173,.34)}
+    #game[data-plate-id="ceiling"] #end{background:rgba(221,207,173,.48)}
+    #game[data-plate-id="ceiling"] #pause{background:rgba(221,207,173,.82)}
+    #game[data-plate-id="ceiling"] .colophon{background:rgba(221,207,173,.97)}
+    #game[data-plate-id="ceiling"] h1,#game[data-plate-id="ceiling"] #score{font-family:Georgia,'Times New Roman',serif;text-shadow:none}
+    #game[data-plate-id="ceiling"] .ceiling-title{top:12%}
+    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(46px,11.5vw,82px);letter-spacing:.075em;text-indent:.075em;line-height:1.05}
+    .ceiling-glyphs{margin:0 0 5px;color:#241d16;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.08em}
+    #game[data-plate-id="ceiling"] .title-rule::before,#game[data-plate-id="ceiling"] .title-rule::after{background:#9d3724}
+    #game[data-plate-id="ceiling"] .era-entry{border-color:rgba(157,55,36,.55);color:#7a3022}
+    .ceiling-context{max-width:42em;margin:12px auto 0;color:#5f4b34;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
+    #game[data-plate-id="ceiling"] .printer-line{margin-top:11px}
+    #game[data-plate-id="ceiling"] .brand{font-style:italic;letter-spacing:.16em}
+    #game[data-plate-id="ceiling"] .brand::after{background:#9d3724}
+    #game[data-plate-id="ceiling"] .score-frame::before{border-color:#9d3724}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
@@ -315,12 +338,12 @@
 <main id="game" aria-label="Orbit arcade game">
   <canvas id="sky" tabindex="0" role="application" aria-label="Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node. Captures are automatic, but a rim turns away a flight that falls at a planet rather than crossing it; the guide marks such a course before you release. Your nib carries a charge of ink that every flight spends by distance: holding an orbit re-charges it and a slingshot star fills it, and the guide marks a course the ink cannot reach the end of. Nearby vortices and sunspots bend your flight, and a wind-head blows it off the line; follow the curved guide."></canvas>
   <header class="hud" aria-label="Score">
-    <div class="brand">ORBIT</div>
+    <div class="brand" id="brand">ORBIT</div>
     <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="ink" class="small" aria-hidden="true"></div><div id="shield" class="small"></div><div id="reflector" class="small"></div></div>
-    <div class="best-block"><span class="small">Best</span><span id="best">0</span></div>
+    <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">
-    <div class="title-group">
+    <div class="title-group atlas-only">
       <p class="subtitle-latin">Sive de Motu Corporum C&aelig;lestium Tabul&aelig;</p>
       <div class="cartouche">
         <svg class="cartouche-frame" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -349,19 +372,28 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">FOLLOW THE PULL</p>
     </div>
-    <div class="start-copy"><p class="action-copy">Tap to begin</p><p class="instruction" id="instructions" hidden>Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</p>
+    <div class="title-group ceiling-title ceiling-only">
+      <p class="ceiling-glyphs" aria-hidden="true">&#x13171;&#x13216;&#x13171;&#x133CF;</p>
+      <p class="subtitle-latin">WNWT · THE HOURS OF THE NIGHT</p>
+      <h1>THE CEILING</h1>
+      <div class="title-rule"><span></span></div>
+      <p class="eyebrow">TOMB TT353 · DYNASTY XVIII</p>
+    </div>
+    <div class="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span></p><p class="instruction" id="instructions" hidden><span class="atlas-only">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</span><span class="ceiling-only">Tap to release the flat night barque.<br>Skim an hour-circle; hold it to restore the reed.<br>Follow the painted dabs around Apep, the Eye, Shu and Nun.<br>The first landing sets the course.</span></p>
       <div class="daily-group">
         <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
-        <button id="daily" class="diff-btn" type="button" aria-pressed="false">DAILY PLATE</button>
-        <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
-        <span id="daily-date" class="small daily-note"></span>
+        <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
+        <button id="ephemeris-open" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+        <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA III · THE CEILING</button>
+        <span id="daily-date" class="small daily-note atlas-only"></span>
       </div>
-      <p class="printer-line">Impressum &middot; MDCCXXV</p>
+      <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
+      <p class="printer-line"><span class="atlas-only">Impressum &middot; MDCCXXV</span><span class="ceiling-only">Deir el-Bahri · c. 1473–1458 BCE</span></p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
     <div class="colophon">
-      <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2>One more orbit.</h2>
+      <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
       <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
@@ -369,10 +401,10 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><button id="daily-end" class="diff-btn" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note"></span><button id="copy-score" class="diff-btn" type="button">COPY SCORE</button></div>
+      <div class="end-plate-line"><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn ceiling-only" type="button">RETURN TO THE ATLAS</button></div>
     </div>
   </section>
-  <section id="pause" class="screen hidden" aria-label="Paused"><strong>Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
+  <section id="pause" class="screen hidden" aria-label="Paused"><strong id="pause-title">Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
   <section id="catalogue" class="screen hidden" aria-label="Catalogue" aria-hidden="true">
     <div class="catalogue-leaf">
       <div class="catalogue-head">
@@ -411,6 +443,12 @@
       </svg>
     </button>
     <span class="footer-tools">
+    <button id="ceiling-exit" class="utility ceiling-only" aria-label="Return to the atlas" title="Return to the atlas">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 5 3 12l7 7M3 12h17"/>
+        <path d="M10 5 3 12l7 7" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
+      </svg>
+    </button>
     <button id="catalogue-open" class="utility" aria-label="Open the catalogue" aria-expanded="false" title="Catalogue">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 6.4C10.4 4.9 8.2 4.3 5 4.4v13c3.2-.1 5.4.5 7 2 1.6-1.5 3.8-2.1 7-2v-13c-3.2-.1-5.4.5-7 2z"/>
@@ -459,6 +497,7 @@
 <script src="figures.js"></script>
 <script src="inscriptions.js"></script>
 <script src="effects.js"></script>
+<script src="ceiling.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="ui.js"></script>

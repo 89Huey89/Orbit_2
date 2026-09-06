@@ -4,6 +4,15 @@
 // ---------- Presentation, storage, viewport, and the single gameplay input ----------
 // Every ripple, ring and blot carries its own seed so the burin cuts each one differently.
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
+let ceilingReturn=null;
+const CEILING_LOSS={
+  'THE DARK CAUGHT UP':'ORDER FAILED BEFORE DAWN',
+  'THE ORBIT FADED':'THE HOUR-CIRCLE FADED',
+  'DRAWN INTO A VORTEX':'APEP TOOK THE NIGHT BARQUE',
+  'SEARED BY A SUNSPOT FLARE':'THE EYE BURNED THE BARQUE',
+  'LEFT THE STAR CHART':'THE BARQUE LEFT THE REGISTER',
+  'THE NIB RAN DRY':'THE REED RAN DRY'
+};
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see
 // src/inscriptions.js. `where` names the subject — a planet or star to follow, or the point on the sheet
 // the thing happened at — and the note is set clear of it and left as ink for the chart to carry away.
@@ -52,16 +61,16 @@ function event(type,e){
     else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
-    say(e.chart.name+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
+    say((ceilingPlate()?'DECAN COURSE':e.chart.name)+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
-    say(e.chart.name+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
+    say(ceilingPlate()?'DECAN COURSE · COMPLETE +60':e.chart.name+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
     for(const [i,n] of e.chart.stars.entries()){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
       audio.tone([261.63,329.63,392][i],1.1,i*.14,.24);
     }
-    $('announcement').textContent=e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
+    $('announcement').textContent=ceilingPlate()?'Decan course complete. Sixty bonus points. Disorder retreats for four seconds.':e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
     recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
@@ -114,7 +123,7 @@ function event(type,e){
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
-    audio.tone(440,.3,0,.15);say('PRESSURE SET · '+DIFFICULTY_LABELS[e.value]);
+    audio.tone(440,.3,0,.15);say((ceilingPlate()?'COURSE SET · ':'PRESSURE SET · ')+DIFFICULTY_LABELS[e.value]);
   }
 }
 function newWorld(){
@@ -125,21 +134,50 @@ function newWorld(){
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
 }
+function resetToFrontispiece(){
+  game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
+}
+function syncCeilingChrome(){
+  const on=ceilingPlate(),open=$('ceiling-open');
+  if(open)open.textContent=on?'RETURN TO THE ATLAS':'ERA III · THE CEILING';
+  const brand=$('brand');if(brand)brand.textContent=on?'WNWT':'ORBIT';
+  const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=on?'Preview':'Best';
+  const endTitle=$('end-title');if(endTitle)endTitle.textContent=on?'The night begins again.':'One more orbit.';
+  const pauseTitle=$('pause-title');if(pauseTitle)pauseTitle.textContent=on?'The barque rests.':'Suspended.';
+  game.setAttribute('aria-label',on?'The Ceiling, a playable Era III preview':'Orbit arcade game');
+  canvas.setAttribute('aria-label',on?'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.':
+    'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.');
+}
+function enterCeiling(){
+  if(ceilingPlate()){leaveCeiling();return;}
+  if(world&&world.state==='playing')return;
+  ceilingReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
+  dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  applyPlate('ceiling');invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncCeilingChrome();render(0);
+}
+function leaveCeiling(){
+  if(!ceilingPlate())return;
+  const keep=ceilingReturn||{},restore=keep.plate&&keep.plate!=='ceiling'&&PLATES[keep.plate]?keep.plate:'night';
+  difficulty=keep.difficulty&&DARKNESS_MULT[keep.difficulty]?keep.difficulty:difficulty;
+  dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  applyPlate(restore);ceilingReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncCeilingChrome();render(0);
+}
 function setPlaying(){
   // A daily plate is entered in the log the moment its run begins, and only while it is the current
   // day's: that entry is the whole of what opens a past plate to be drawn again.
   noteDailyPlay();
   game.classList.add('playing');game.classList.remove('over');$('intro').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   clearInscriptions();
-  $('announcement').textContent='Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
+  $('announcement').textContent=ceilingPlate()?'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.':
+    'Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.';
   chapterReveal={index:0,age:0};
 }
 function showEnd(){
-  deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
-  $('end-score').textContent=world.score;$('end-reason').textContent=world.reason;
-  $('record').textContent=world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
+  const preview=ceilingPlate();deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
+  $('end-score').textContent=world.score;$('end-reason').textContent=preview?(CEILING_LOSS[world.reason]||world.reason):world.reason;
+  $('record').textContent=preview?'ERA PREVIEW · NOT RECORDED':world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
-  const row=Math.floor(world.progress),newRow=row>bestRow;
+  const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
@@ -148,13 +186,14 @@ function showEnd(){
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
-  const fresh=[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
+  const fresh=preview?[]:[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
   const names=fresh.map(id=>UNLOCK_BY_ID[id]&&UNLOCK_BY_ID[id].name).filter(Boolean);
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
-  $('end-tip').textContent=world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='DRAWN INTO A VORTEX'?'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
-  $('announcement').textContent='Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
+  $('end-tip').textContent=preview?(world.captures===0?'Release when the painted dabs meet the next circle.':world.reason==='DRAWN INTO A VORTEX'?'Apep bends the course before his body can seize the barque. Give the serpent room.':'Skim the circle’s rim; a clean transfer preserves the barque’s pace.'):
+    world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='DRAWN INTO A VORTEX'?'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
+  $('announcement').textContent=preview?'Preview run complete. Score '+world.score+'. Tap to try again or return to the atlas.':'Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
 // ---------- The catalogue: the ledger's own leaf ----------
 // A ruled library-catalogue page over the plate. It lists what the ledger has recorded and, under it,
@@ -327,10 +366,11 @@ function nearestHazard(){
 }
 function updateUI(dt){
   if(lastScore!==world.score){lastScore=world.score;inked('score',String(world.score));inked('best',String(currentBest()));}
-  inked('pace','SPEED ×'+world.speedMultiplier().toFixed(1));
-  inked('flow',world.combo>1&&world.captures>0?'FLOW ×'+world.combo:'');
-  inked('shield',world.player.shielded?POWERUP_LABELS.shield+' ARMED':'');
-  inked('reflector',world.player.reflectorArmed?POWERUP_LABELS.reflector+' ARMED':'');
+  const ceiling=ceilingPlate();
+  inked('pace',(ceiling?'COURSE ×':'SPEED ×')+world.speedMultiplier().toFixed(1));
+  inked('flow',world.combo>1&&world.captures>0?(ceiling?'ORDER ×':'FLOW ×')+world.combo:'');
+  inked('shield',world.player.shielded?(ceiling?'PROTECTION HELD':POWERUP_LABELS.shield+' ARMED'):'');
+  inked('reflector',world.player.reflectorArmed?(ceiling?'RETURN HELD':POWERUP_LABELS.reflector+' ARMED'):'');
   // The nib's reservoir. The rule drains with the ink in hand and takes the copper of a warning
   // once what is left will not carry an ordinary transfer.
   // The reservoir is a CSS gradient on a DOM element laid over the chart. Assigning one makes the
@@ -348,21 +388,21 @@ function updateUI(dt){
   // live region is told once, so the change is still spoken.
   if(chapter!==lastChapter){
     lastChapter=chapter;
-    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent='Plate '+numerals[chapter]+'. '+chapters[chapter]+'.';}
+    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent=ceiling?'Hour '+numerals[chapter]+'. '+CEILING_HOURS[chapter]+'.':'Plate '+numerals[chapter]+'. '+chapters[chapter]+'.';}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
   // the orbit being held, or the vortex that is bending the flight. Each is kept on the sheet while
   // its condition holds, and left as ink for the chart to carry away as soon as it stops.
   if(world.state==='playing'&&world.difficultyPending){
-    inscribeHeld('instruction','Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
+    inscribeHeld('instruction',ceiling?'Choose the first hour-circle — your landing sets the course.':'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',{node:world.player.node});
   }else if(world.state==='playing'&&world.player.node&&world.inkLevel()<=.28){
-    inscribeHeld('instruction','The nib is running dry. Hold this orbit to re-charge it, or find a star.',{node:world.player.node});
+    inscribeHeld('instruction',ceiling?'The reed is dry. Hold this circle, or seek the bright star.':'The nib is running dry. Hold this orbit to re-charge it, or find a star.',{node:world.player.node});
   }else if(world.state==='playing'&&world.player.node?.type==='sling'&&world.player.node.row<=7){
-    inscribeHeld('instruction','One lap builds speed. Tap sooner for less. Perfect landings keep it.',{node:world.player.node});
+    inscribeHeld('instruction',ceiling?'One circuit quickens the barque. A clean landing keeps its course.':'One lap builds speed. Tap sooner for less. Perfect landings keep it.',{node:world.player.node});
   }else if(world.state==='playing'&&world.captures<2){
-    inscribeHeld('instruction','Tap when the pricked line skims the next orbit’s rim.',{node:world.player.node});
+    inscribeHeld('instruction',ceiling?'Release when the painted dabs skim the next circle.':'Tap when the pricked line skims the next orbit’s rim.',{node:world.player.node});
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
-    inscribeHeld('instruction','Vortices bend your flight. Follow the curve; give the dark eye room.',{node:nearestHazard()});
+    inscribeHeld('instruction',ceiling?'Apep bends the course. Follow the dabs; give the serpent room.':'Vortices bend your flight. Follow the curve; give the dark eye room.',{node:nearestHazard()});
   }
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>.65)showEnd();
 }
@@ -409,7 +449,7 @@ document.addEventListener('visibilitychange',()=>{
     pause();
     // A run that is never finished still counts what it did: fold it in now, and keep anything it
     // unlocked for the colophon to name when the run does end.
-    for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+    if(!ceilingPlate())for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
     if(audio.ctx)audio.ctx.suspend().catch(()=>{});
   }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
 });
@@ -438,6 +478,9 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
+$('ceiling-open').addEventListener('click',enterCeiling);
+$('ceiling-exit-end').addEventListener('click',leaveCeiling);
+$('ceiling-exit').addEventListener('click',leaveCeiling);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 // The full instruction paragraph prints on its own the first time the frontispiece is ever seen;
@@ -507,4 +550,4 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
-syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncCeilingChrome();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);

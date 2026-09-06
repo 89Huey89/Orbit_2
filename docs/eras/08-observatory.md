@@ -116,7 +116,16 @@ Depiction only (option A), the black hole staying exactly where the vortex commi
 M87\* and Sgr A\* are the same family but must not share one drawing: M87\*'s ring is thinner and
 more lopsided, Sgr A\*'s thicker and closer to face-on.
 
-## The seven families
+## The bodies
+
+The first era on the ladder whose vocabulary is not appropriated from a period but simply what
+the period's astronomy says: ocean world, rocky-airless world, gas giant, ice giant, desert
+world, lava world, hot Jupiter are the era's own words (Names above), so under the knowledge
+horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) both readings are the rendered body, and
+the held orbit brings up the FITS card and a spectrum rather than a correction. One caveat on the
+date: the families became a *typology* in the flyby years, 1965–89, which fall between era VII's
+close and this era's opening — whether this era opens earlier to own them or a tenth era does is
+open question I.
 
 Ocean deep blue-white marbled, soft cloud swirl, pale limb haze. Crater high-contrast, low-sun-angle
 airless imaging, far crater walls in deep shadow. Ringed soft banded gold-tan, a thin ring casting a

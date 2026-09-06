@@ -403,6 +403,9 @@ function drawRunningHead(){
   ctx.restore();
 }
 function render(dt){
+  if(ceilingPlate()){
+    const aim=world.aim();renderCeiling(dt,aim);updateUI(dt);return;
+  }
   reveal.prime();prewarmGlyph();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
@@ -415,4 +418,3 @@ function render(dt){
   drawLaidPaper();
   updateUI(dt);
 }
-

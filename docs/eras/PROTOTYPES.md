@@ -23,7 +23,7 @@ here are what to budget for when each era is built for real.
 |---|---|---|---|---|
 | I · The Rock | `rock.html` | Sonnet: a flat pale wash, scattered clip-art, no torchlight, no relief — failed | **Opus reached the standard.** A six-octave limestone height field shaded from its own gradient against one torch held low-left; pigment multiplied into the rock and lit with it, so ochre pools in the hollows and starves over the bulges; a hand stencil as title and maker's mark; the Hall of the Bulls aurochs with its six shoulder dots, three ringed for the game; cup-marks and spirals cut as scratches with a lit lip; no writing, no frame, the torch's reach as the only edge. The aurochs' muzzle is the weakest drawing on the sheet, and the best-score tally sits so deep in the failing light it barely reads — the honest cost of one torch, and a UX risk the era file carries. | Opus |
 | II · The Disc | `disc.html` | Sonnet: a brown gradient rectangle with flat gold clip-art discs — failed | **Opus reached the standard.** The sheet is a cast bronze object seen close, the horizon arcs and the barge as its frame, every gold element inlaid with a groove and a lit edge, the families carried by chased Bronze Age ornament. One fidelity note for the port: the small italic captions show reconstructed Proto-Germanic words the research says must never appear as if the culture wrote them; on the built sheet there are no words at all. | Opus |
-| III · The Ceiling | `ceiling.html` | Sonnet: the register composition and the flat discs were right; the plaster, the painted line, the figure and an out-of-era HUD (a green bar, modern digits) were not | **Opus reached the standard.** Plaster with crazing and the painter's snapped red grid, every shape in the four attested passes, Sah and Sopdet in the canon, the month-circle as the magnitude key, the HUD entirely in Egyptian numerals, quadrats grouped by hand. | Opus (Sonnet for layout) |
+| III · The Ceiling | `ceiling.html`; playable extraction in `src/ceiling.js` | Sonnet: the register composition and the flat discs were right; the plaster, the painted line, the figure and an out-of-era HUD (a green bar, modern digits) were not | **The standalone drawing study reached prototype standard; the integrated renderer is now the colour authority.** Direct comparison with TT353 corrected the scene to a dominant light-plaster field, fine black structure, sparse red/mineral accents and no Nut arch. The local hieroglyph face, hour circles, flat barque, body signs and four danger painters are playable from the main menu. | Opus (Sonnet for layout) |
 | IV · The Marble | `marble.html` | Sonnet: marble relief lit from one side, Greek and Roman capitals in the chosen faces, Ptolemy's *megethos* key, the dangers named — creditable | **Acceptable from Sonnet, with a polish pass.** The ground reads more as veined paper than as stone, the relief is shallow, and the Lyra figure is a thin outline. The grammar is right; the depth is not there yet. | Sonnet, then an Opus polish |
 | V · The Globe | `globe.html` | Sonnet: a flat cream rectangle, empty gold-ringed discs, stick figures — failed | **Opus reached the standard.** Sized paper with fibre, chain lines and foxing; a red-and-gold jadwal with corner pieces; leaf with bole line, burnish and cracks; lapis with granulation; seven gilt roundels carried by textile geometry; al-Jabbār drawn twice, facing across the gutter, with gold-disc stars and magnitudes on top; naskh and kufic in the real faces. Shaping is the browser's here; the build pre-shapes with fontkit. | Opus |
 | VI · The Engraving | the game | — | The standard itself. | — |
@@ -44,6 +44,23 @@ here are what to budget for when each era is built for real.
 - **Neither model needed the largest.** No era required a Fable pass; Opus reached every
   hand-made era on its second or third iteration when given the critique above and told what
   the first pass got wrong.
+
+## The prototypes and the knowledge horizon
+
+All nine prototypes were painted before [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md) was
+decided, and the five hand-made ones paint seven families each. Their grounds, dangers, pickups,
+frames and hands are unchanged by the horizon and remain the porting sources; their bodies are
+not. Under the horizon eras I–V want one point painter each — a body in a brightness class, and
+the Moon — and VI and VII want a second reading for the bodies their century misread. The first
+sheet painted under the horizon is `turn-rock-disc.html`, the page turn from era I to era II:
+the Rock's bodies as three sizes of dab and the Moon's face, the Disc's as one punch always, the
+new sheet rising from the bottom edge, the route re-struck from the ground up, the held body the
+first thing the new century sees. Its screenshots are `shots/turn-rock-disc.1.jpg` to `.4.jpg`,
+and its verdict is in the table below.
+
+| Sheet | Prototype | Verdict |
+|---|---|---|
+| I → II, the turn | `turn-rock-disc.html` | **Reads, at prototype standard.** Both grounds are the ones already accepted — the lit limestone relief and the hammered bronze — and the turn itself is the sheet's argument: the disc's pierced rim is the leading edge, the rock goes dark beneath it, the route is re-struck from the floor upward with the punch's flash, and the held body is struck last with its ring chased around it, the barge already on it when the gloss arrives. What reads well: the inheritance of the route (a flint line becoming a run of taps is legible without the legend), the one-punch grammar against the rock's three sizes, the crescent for the Moon. What is weak: the rock's *faint* class reads as a smudge rather than a body, and the Moon's face is small enough to need the legend; the disc's ground is darker than `disc.jpg` under its flood and vignette together, and the horizon arcs dominate the still; and "the bottom edge is the Earth" is carried by the motion and the gloss more than by any frame. The four stills are t = 0.08, 0.40, 0.70 and 0.97. Painted by Fable from the two Opus prototypes; budget an Opus polish for the rock's bodies when the era is built. |
 
 ## What the prototypes are not
 

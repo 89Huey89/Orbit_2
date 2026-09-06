@@ -82,10 +82,10 @@ Attested unless marked constructed.
 
 | Game term | Era's word | Gloss | Status |
 |---|---|---|---|
-| ocean / crater | *baḥr* / *ḥufra* | sea / pit | constructed application |
-| ringed / ice | *dhū ḥalqa* / *jalīd* | "ring-possessor" / ice | constructed / constructed |
-| dune / volcanic | *kathīb* / *jabal nārī* | dune / "fire-mountain" | constructed |
-| storm | *ʿāṣifa* | storm | constructed application |
+| a body, by greatness | *qadr* | magnitude, al-Ṣūfī's re-observed classes | attested |
+| the Moon | *al-qamar* | the moon, a crescent on the page | attested |
+| a wandering star | *kawkab sayyār* | "travelling star", a planet, a point among the fixed | attested |
+| the little cloud | *al-shayʾ al-saḥābī* | al-Ṣūfī's Andromeda, the one thing on his page that is not a point — drawn where the obscurer stands | attested |
 | orbit / title | *falak* | celestial sphere, "to turn" | attested |
 | orbit (path) | *madār* | circuit, the track a body runs | attested |
 | capture / release | *qabḍ* / *iṭlāq* | grasping / setting loose | attested |
@@ -123,15 +123,21 @@ Depiction only, same four rows, this era's name and image over each.
 | Crosswind | *al-Rīḥ* (*sammūm*) | the specific violent hot desert wind, glossed by the general word for wind |
 | Obscurer | *al-shayʾ al-saḥābī* | "the little cloud," al-Ṣūfī's own words for the Andromeda nebula — the name is attested, the drawing convention is invented by necessity |
 
-## The seven families
+## The bodies
 
-Gilt roundels: a disc of flat, unmodulated colour, a fine dark contour, a burnished gold rim;
-interior carries pattern, not shading — density, how tightly the motif crowds toward one edge, is
-the only depth cue allowed. Ocean: a plain lapis disc, unornamented. Crater: broken by small dark
-contour circles, tessellation logic rather than impact geology. Ringed: one or two concentric gold
-bands inside the rim. Ice: pale ground, fine silver hatching. Dune: repeating chevron/wave
-interlace, warm ochre. Volcanic: vermilion ground, pattern crowded hard to one edge. Storm: the
-densest interlace of the seven, indigo-on-lapis, verging on illegible as a real storm-band would.
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) this era draws no
+family. A body is a gold disc sized to its class, as the manuscript sets its stars over the
+figure as gold discs at their catalogued places, with a fine dark contour and a burnished rim and
+nothing inside it; under the held orbit the class appears beside it in naskh, al-Ṣūfī's own
+re-observed *qadr* being the era's whole contribution to what a body is. The wanderers are points
+among the fixed, on a page that never painted a sky. The Moon is the crescent. The one thing in
+this tradition that is not a point is al-Ṣūfī's little cloud, and it is already where the
+obscurer stands.
+
+The earlier seven-family reading — plain lapis, tessellated contours, concentric gold, silver
+hatching, chevron interlace, vermilion crowded to one edge, indigo-on-lapis — survives in
+`prototypes/globe.html` as a vocabulary of attested illumination whose application was
+constructed, and remains the right ornament for the pickups' roundels.
 
 ## Frame and furniture
 

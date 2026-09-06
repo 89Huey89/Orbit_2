@@ -85,6 +85,23 @@ keeps `{date:{best,plays}}` because a day has one era.
 too, and `index.html` gains one `[data-era]` rule per era beside the `[data-plate-id]` ones,
 setting the six colour variables and the three `--face-*` variables.
 
+**8. The knowledge horizon: one table, two readings, one caption, one redraw.** All render-side
+([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)). `KNOWLEDGE[era][family]` names the painter for
+the body at a glance, the painter for the body under attention, and a dated caption or none;
+it lives beside `PLATE_STYLES`, not in the simulation. Each main node carries a **brightness
+class**, derived from its seed the way the background stars' six classes are (`marks.js`,
+`celestial.js`), and it is the only thing eras I–V draw of a body; `planetFamily` keeps
+choosing the family for every era, since the family is what the harvest and the later eras
+read, and the early eras simply do not paint it. The second reading develops on the held
+orbit's ink-gain progress, the clock the Plate's "hold to develop" already reads, and goes
+through `glyph()`'s staged layers so it costs no per-frame work. The **caption** is one
+inscription per family per era per run, written through the inscription system on the first
+capture of that family in that era, and never on an era whose cell is empty. The **redraw at
+the turn** re-stages the held body with the incoming era's painter through the same reveal a
+newly reached body gets, and the dried route re-inks itself because its ink is a plate token.
+The opening triad reads a brightness class on era I and `DIFFICULTY_FAMILY` from era VI.
+Nothing here consumes `this.random()` or reaches `simulation.js`.
+
 **Prove it before drawing.** Register era VIII as a real era beside era VI, key the caches, and
 watch a run turn the page from the engraving to the observatory at a capture with no rebuild and
 no dropped frame. Only then draw a sheet.
@@ -130,7 +147,8 @@ era at once.
 | Token overrides for the fourteen sections | wherever each is registered | data, half a day |
 | DOM chrome | `index.html`, one `[data-era]` rule | trivial |
 | Backdrop painter | `backdrop.js`, one branch | half a day to a day |
-| Body painter | `planets.js`, a third alternative beside the engraved and rendered ones, producing the same layer object | **1–2 days** |
+| Body painter | `planets.js`, a third alternative beside the engraved and rendered ones, producing the same layer object. Under the horizon eras I–V want one **point painter** each (a body in a brightness class, plus the Moon), not seven surfaces; VI and VII want two readings for the bodies their century misread | **half a day (a point painter) to 1–2 days (a family painter)** |
+| `KNOWLEDGE` row and captions | the render-side table; seven cells, up to seven dated captions | half a day |
 | Stroke style | `STROKE_STYLES` row | half a day; a day for a new primitive |
 | Hazard depictions | `figures.js`, four painters | half a day to a day |
 | Figure hand | `figures.js`, one `FIGURE_STYLES`-shaped object | a day |
@@ -150,7 +168,10 @@ and a named stroke primitive precisely so each row above has a porting source.
 weather, embers, core, tilt, family, spin, phase}` — and `drawPlanet()` only blits them.
 `renderedSpecimen()` (`planets.js:499`) already proves an alternative painter can produce the same
 object; an era's bodies are a third such painter, selected by `eraId()` rather than by the
-`modernPlate()` boolean. Nothing downstream changes and nothing is computed per frame.
+`modernPlate()` boolean. Nothing downstream changes and nothing is computed per frame. The
+horizon makes the early eras cheaper still: a body that is a point in a brightness class is one
+painter shared by five eras and re-inked per plate, and the two readings of a later era are two
+of `glyph()`'s existing stages selected by the `KNOWLEDGE` cell rather than a second body.
 
 The signature sheets have no such seam. They are bespoke full-bleed illustrations, and they are
 what makes an era a place rather than a palette. One per era first; the other three later.

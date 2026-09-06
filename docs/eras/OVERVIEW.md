@@ -8,7 +8,7 @@ the decisions taken, and the order to build them in.
 
 The game today sits in exactly one of these eras — the sixth — and is unaware of it.
 
-## The two decisions that shape everything
+## The three decisions that shape everything
 
 **The run is the progression, gated on score.** Every run opens on a cave wall and climbs
 forward through the centuries. Era boundaries sit at total-score thresholds, not at rows and not
@@ -25,6 +25,16 @@ one rule beside the name, and the last era changes the rule: the probe does not 
 harvests the bodies it orbits and replicates. Because the era is a function of the score, every
 player meets every rule at the same point, and the score still means one thing. The table, the
 rules and the probe's harvest are in [ECONOMY.md](ECONOMY.md).
+
+**A sheet shows of a body only what its century could know.** The climb is epistemic as well
+as aesthetic. Before the telescope a body is a point in a brightness class and the Moon is the
+one body with a face; the telescope ties each of the seven families to one named body and one
+dated observation, and misreads two of them for decades; only the observatory and the probe
+draw the families as what they are. The vertical of the sheet is space and the stack of sheets
+is time: the Earth is the bottom edge of every sheet, and at a page turn the observer returns to
+it while the traveller flies on, inheriting the route the earlier century recorded. The horizon
+is one render-side table with two readings per body, and it is what rule 3 below now says.
+[KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
 
 ## The rule that makes this affordable
 
@@ -46,7 +56,7 @@ different centuries. The score gate is what keeps the ladder honest.
 |---|---|---|---|---|---|
 | **I** | [The Rock](01-rock.md) | c. 17,000 BCE | Lascaux, the Hall of the Bulls | ochre | the torch |
 | **II** | [The Disc](02-disc.md) | c. 1600 BCE | the Nebra sky disc | gold foil | the arcs |
-| **III** | [The Ceiling](03-ceiling.md) | c. 1479 BCE | Senenmut's astronomical ceiling, TT353 | the *khar* ration | — |
+| **III** | [The Ceiling](03-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | reed/paint charge in the preview; *khar* proposed later | — |
 | **IV** | [The Marble](04-marble.md) | c. 150 CE | the Farnese Atlas; Ptolemy's *megethos* | *acies*, the edge | — |
 | **V** | [The Globe](05-globe.md) | 964 CE | al-Ṣūfī, *Kitāb ṣuwar al-kawākib al-thābita* | gold and lapis | — |
 | **VI** | [The Engraving](06-engraving.md) | 1600–1801 | Bayer, Cellarius, Hevelius, Flamsteed, Bode | ink | shipped |
@@ -65,10 +75,14 @@ last is a probe that still carries an engraved metal plate for the same reason. 
 work, and the game's own pen lettering is the thread between them.
 
 Each era's own file carries its documents, grammar, palette, lettering, names, currency, dangers,
-the seven families, its signature sheet, its prototype and its risks. Beneath each sits a longer
+its bodies — what its century could know of them — its signature sheet, its prototype and its risks. Beneath each sits a longer
 research file in [research/](research/) and a standalone art prototype in
 [prototypes/](prototypes/); [PROTOTYPES.md](PROTOTYPES.md) records how each prototype fared
 against the shipped standard and which painter reached it.
+
+[ERA-AUDIT.md](ERA-AUDIT.md) adds the missing contract: universe model, controlled-object
+ontology, body horizon, feared sky and evidence boundary for every era, plus the priority cases
+for Babylonian, Chinese, Flyby and Maya expansions.
 
 ## The four rules every era answers to
 
@@ -86,13 +100,18 @@ An era that breaks any of these is a different game, not another plate.
    right to left; the plate types and inks by hand on the glass; the observatory prints a FITS
    header; the probe engraves a single-stroke line and logs telemetry. An era that borrows
    another's lettering has not been built yet. [LETTERING.md](LETTERING.md).
-3. **Every era keeps the same seven families and the same hazard rows.** Ocean, crater, ringed,
-   ice, dune, volcanic, storm are the vocabulary of the game's bodies; the attractor, the repulsor,
-   the crosswind and the obscurer are the vocabulary of its dangers. An era changes how they are
-   *depicted* — a dab of ochre, a chased gold disc, a painted decan, a carved roundel, a gilt
-   roundel, an engraved specimen, an overexposed blur, a lit sphere, a sensed mass with its
-   readouts — and never what they are. The player must read the chart the same way on any sheet.
-   In era IX the families gain a second reading, the material each yields, without losing the first.
+3. **Every era keeps the same orbit and hazard rows, and shows of a body only what its century
+   could know.** Rings, rims, capture bands, release ticks, hazard fields and the flood are the
+   vocabulary the player reads, and they are identical on every sheet, so the chart is read the
+   same way on any sheet; the attractor, the repulsor, the crosswind and the obscurer are the
+   vocabulary of its dangers and change only in depiction. The seven families — ocean, crater,
+   ringed, ice, dune, volcanic, storm — are not part of that vocabulary. They are a discovery of
+   era VI, tied there to named bodies and dated, misread where the century misread them, and
+   literally true only from era VIII. Before the telescope a body is a point in a brightness
+   class, and the Moon is the one body with a face. Every body has two readings in every era,
+   at a glance and under a held orbit, from one render-side table. In era IX the families gain a
+   third, the material each yields, without losing the others.
+   [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
 4. **No dependencies, no external resources.** The build fails if the bundled page references
    anything over the network. Every era's faces are embedded, cut to what the atlas sets, and
    loaded with the era rather than up front; every era's art is generated.
@@ -104,6 +123,8 @@ Build the spine first, then outward from era VI, then the ends.
 1. **The multi-era spine, with no new art.** Key every cache by era as well as chapter; add the
    `ECONOMY` and threshold tables; arm the boundary on the score and turn the page at the next
    capture; add `deepestEra` to the ledger; give the daily its era; add "open on" to the catalogue.
+   Lay the render-side `KNOWLEDGE` table and the node's brightness class beside the era table,
+   so the first two eras built are built with two readings per body from the start.
    [ARCHITECTURE.md](ARCHITECTURE.md) itemises it. Prove it with two eras live in one run before
    any sheet is drawn.
 2. **VIII, The Observatory** — already partly built. Finish it: the instrument margin, the FITS
@@ -136,3 +157,10 @@ engineering and is paid once. The itemised list is in [ARCHITECTURE.md](ARCHITEC
   civilisation, and it fails no rule. It is contemporary with era V and the ladder wants one era
   per grammar, not two per millennium. Second candidate.
 - **19th-century lithographic (the *Bonner Durchmusterung*).** Folded into era VII, as before.
+- **The Flyby, 1965–1989 (Mariner, Voyager; JPL's image mosaics; the Golden Record).** Not on
+  the first ladder at all, and the knowledge horizon exposes why it matters: these are the years
+  the seven families became a typology rather than facts about single bodies — Mariner 4's
+  cratered Mars, the rings of Uranus, Io's volcanoes, Europa's ice, Neptune's dark spot — and they
+  fall exactly in the gap between era VII's close and era VIII's opening, from which era IX's own
+  plaque is pulled. Either era VIII opens earlier or this is the tenth era; open question I in
+  [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md).

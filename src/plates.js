@@ -110,8 +110,11 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-const currentBest=()=>dailyOn?dailyBest:best;
+const currentBest=()=>typeof ceilingPlate==='function'&&ceilingPlate()?0:dailyOn?dailyBest:best;
 function recordBest(score){
+  // The era preview is deliberately a sandbox: its run is playable, but it cannot rewrite the
+  // atlas record while the historical progression and scoring are still being wired.
+  if(typeof ceilingPlate==='function'&&ceilingPlate())return;
   if(dailyOn){
     if(score>dailyBest){
       dailyBest=score;
@@ -124,7 +127,7 @@ function recordBest(score){
 }
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
-function setDifficulty(value){if(dailyOn)return;difficulty=value;storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
+function setDifficulty(value){if(dailyOn)return;difficulty=value;if(!(typeof ceilingPlate==='function'&&ceilingPlate()))storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
 function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
@@ -248,7 +251,12 @@ const PLATE_STYLES={
   // one quarter and left in their own colour, which is what `render:'modern'` asks the painters for and
   // what the per-plate overrides beside the night and paper palettes supply. It is pulled on its own
   // sheet rather than dressed over the night one, so its wash is nothing.
-  modern:{base:'night',wash:0,render:'modern',tint:duotone([4,7,13],[104,124,146],[233,242,250])}
+  modern:{base:'night',wash:0,render:'modern',tint:duotone([4,7,13],[104,124,146],[233,242,250])},
+  // Era III is not a colourway of the printed atlas. It is a temporary, isolated render mode whose
+  // grammar follows the light-ground astronomical ceiling in TT353: lime plaster, fine black drawing,
+  // red setting-out and restrained mineral fills. The identity transform lets the shared plate registry
+  // finish booting; ceiling.js owns every visible mark once render() takes its dedicated branch.
+  ceiling:{base:'paper',wash:0,render:'ceiling',tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -319,9 +327,11 @@ const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);
 // Whether the bodies on this plate are rendered rather than engraved. A plate that answers yes is still
 // pulled from the night plate's tokens and still answers no to onPaper(), so every existing fork stands.
 const modernPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='modern');
+const ceilingPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='ceiling');
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
-  paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'}
+  paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
+  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'}
 });
 // ---------- The hand the plate letters in ----------
 // Every `ctx.font` in the game is built here. The Fell faces are era III's — the engraved atlas the
@@ -335,7 +345,7 @@ const FELL_FACES={
   sc:"'IM Fell English SC','IM Fell English',Georgia,serif",
   body:"'IM Fell English',Georgia,'Times New Roman',serif"
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES});
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:{text:"Georgia,'Times New Roman',serif",sc:"Georgia,'Times New Roman',serif",body:"Georgia,'Times New Roman',serif"}});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;
@@ -345,6 +355,7 @@ function invalidateArt(){
   glowSprites.clear();regionInkCache.clear();
   grain=grainTexture();laidTile=null;laidSheet=null;grainSheetCanvas=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
+  if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();
 }
 function syncPlate(){
   // The stylesheet switches its variables on the base plate; the exact plate is named beside it so a
@@ -353,6 +364,7 @@ function syncPlate(){
   game.setAttribute('data-plate-id',plateName);
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);
   const button=$('plate');if(button){button.setAttribute('aria-label',onPaper()?'Switch to night plate':'Switch to paper plate');button.setAttribute('aria-pressed',String(onPaper()));}
+  if(typeof syncCeilingChrome==='function')syncCeilingChrome();
 }
 // Point `ink` at a plate without touching storage or the cached artwork: used while the modules are
 // still registering their sections, before there is anything cached to rebuild.

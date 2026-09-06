@@ -43,6 +43,14 @@ captures per era before the engraving, with the thresholds tuned to that against
 **9. How many chapter plates per era?** *Settled: one signature sheet each* at first; the
 engraving keeps its four; enrichment later.
 
+**10. Do the seven families exist in every era?** *Proposed and written up, not yet built: no.*
+An era shows of a body only what its century could know; the families are a discovery of era
+VI, dated, misread where the century misread them, and true only from era VIII. Rule 3 is
+rewritten, every era file's bodies section with it, and the mechanism is one render-side table
+with two readings per body, the second developing on the held orbit. What it costs and what it
+leaves open is in [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md); the history is sourced in
+[research/knowledge-horizon.md](research/knowledge-horizon.md).
+
 ## Still open
 
 **A. The thresholds themselves.** The numbers in PROGRESSION.md are provisional. They need the
@@ -74,3 +82,22 @@ era is built.
 **H. Painters.** Which model can paint which era to the shipped standard is recorded per era in
 [PROTOTYPES.md](PROTOTYPES.md); the eras that needed escalation there should be budgeted for it
 when built.
+
+**I. The flyby gap.** The seven families became a typology between 1965 and 1989, the years
+between era VII's close and era VIII's opening. Either era VIII opens at about 1965 and owns the
+flyby years as its first chapter, or the Flyby is the tenth era. Decide before era VIII's
+signature sheet is committed; [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
+
+**J. The order of discovery inside era VI.** Every seven main nodes carry all seven families in
+a run-dependent order, so the dated captions of the engraving will fire out of historical order.
+A chart is a sheet, not a timeline, and the date is on the caption; but the first cycle after
+the page turn could be dealt in the order of discovery for the price of an era-aware
+`planetFamily`. Decide on the built sheet.
+
+**K. The Rock's triad.** Three brightnesses — the Moon, a bright star, a faint star — in place of
+three families. Whether the pressure still reads before its caption does is a question for the
+built sheet, since the Rock has no caption to fall back on.
+
+**L. The horizon's verification debt.** Every date in KNOWLEDGE-HORIZON.md's table is to be read
+against [research/knowledge-horizon.md](research/knowledge-horizon.md), and the cells that file
+marks corrected or unverified must be keyed from it, not from the design file.

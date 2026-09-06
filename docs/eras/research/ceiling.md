@@ -1,29 +1,39 @@
-# Research — II · The Ceiling (Egypt, c. 1479 BCE)
+# Research — III · The Ceiling (Egypt, c. 1473–1458 BCE)
 
-Deepens and corrects `docs/eras/01-ceiling.md`. That file is short and gets the broad shape
+Deepens and corrects `docs/eras/03-ceiling.md`. That file gets the broad shape
 right — flat, register-based, no perspective — but it under-documents its own primary source
 (the Senenmut ceiling's two panels are described in one line each) and it omits the single
 best document for this era's *gameplay*, not just its look: the Ramesside star clock, which is
 a literal grid. Corrections are called out inline as **(correction)**.
 
-A methodological note up front: `WebFetch` was unavailable all session (`EGRESS_BLOCKED` on
-every domain tried — Wikipedia, the Met, the Louvre, Brooklyn Museum, arXiv). Everything below
-comes from `WebSearch` snippets, not full primary pages, and the search budget ran out before
-every lead could be chased twice. Weakly sourced claims are marked (weakly sourced); a few
-standard Middle Egyptian dictionary words are marked **(recalled)** — confident, but not
-re-verified this session.
+## 2026 visual verification — controlling correction
+
+The [Met's public-domain Wilkinson facsimile](https://www.metmuseum.org/art/collection/search/544566)
+and the [Ancient Egyptian Astronomy database record](https://aea.mcmaster.ca/index.php/en/database/ars/ar1-type-menu/tomb-of-senenmut)
+have now been inspected directly. They supersede several early notes below:
+
+- TT353 has a **light painted background**, not a deep-blue northern/night field.
+- It carries Jupiter, Saturn, Mercury and Venus; **Mars is omitted**.
+- The twelve circles name lunar months and each has twenty-four divisions.
+- The database explicitly records **Nut: No**. Nut, Shu/Geb creation scenes and the solar barque
+  images consulted later are comparator material, not elements to composite into TT353.
+- The playable sheet uses dominant warm plaster, fine black structure, red construction/solar
+  accents and only sparse blue, green and yellow fills.
+
+Claims still labelled weak or recalled remain research debt; the controlling implementation brief
+is [03-ceiling.md](../03-ceiling.md).
 
 ## 1. The documents
 
-- **Senenmut's astronomical ceiling, tomb TT353, Deir el-Bahri** (XVIII Dynasty, joint reign of
-  Hatshepsut and Thutmose III, c. 1479–1458 BCE). The oldest known Egyptian celestial diagram,
+- **Senenmut's astronomical ceiling, tomb TT353, Deir el-Bahri** (XVIII Dynasty, reign of
+  Thutmose III, c. 1473–1458 BCE). The earliest surviving Egyptian astronomical diagram,
   found during the Metropolitan Museum's 1925–27 excavation under Herbert Winlock. Two large
   rectangular panels, each itself organised in horizontal registers of columns:
   - **Northern panel:** twelve large circles, each divided into twenty-four segments, labelled
-    with the twelve months of the civil calendar — a literal month/hour grid, not a picture of
+    with the twelve lunar months — a literal month/hour grid, not a picture of
     the pole. Around and beside the circles: the circumpolar constellations (the **ikhemu-sek**,
-    "the imperishable ones") and the five known planets sailing in barques as the
-    **ikhemu-wretju**, "the stars that know no rest." The 12-circles-of-24-segments shape is
+    "the imperishable ones") and four named planets — Jupiter, Saturn, Mercury and Venus — as the
+    **ikhemu-wretju**, "the stars that know no rest." Mars is omitted. The 12-circles-of-24-segments shape is
     solid across sources; the precise quadrant-by-season assignment is (weakly sourced) — no
     primary Egyptological page confirmed it directly.
   - **Southern panel:** the decanal star list, running (per one source) from *tpy-a khnmt* to
@@ -63,7 +73,7 @@ re-verified this session.
   centred on the pole: an outer ring of 36 decans, an inner wheel of the (Babylonian-derived,
   imported) 12 zodiacal signs, the disc carried by eight figures — four women, four
   falcon-headed gods — at 45° intervals. Confirmed as the existing file describes it: later,
-  already contaminated by Greek/Babylonian signs, gorgeous, and **not** this era's grammar — one
+  already syncretic through Greek/Babylonian signs, gorgeous, and **not** this era's grammar — one
   accent chapter plate, as the existing file already recommends.
 
 ## 2. The grammar
@@ -96,23 +106,19 @@ Mineral and earth pigments on plaster, applied as flat washes with no blending:
 
 | Pigment | Composition | Hex (approx.) | Role |
 |---|---|---|---|
-| Egyptian blue | calcium copper silicate, CaCuSi₄O₁₀, cuprorivaite — the first known synthetic pigment | `#1B4D8C`–`#2A6099` | night ground / Nut's flesh; hue shifts paler and greener the finer it is ground, so a coarse-ground "ink" and a fine-ground "wash" are legitimately different blues from the same source |
+| Egyptian blue | calcium copper silicate, CaCuSi₄O₁₀, cuprorivaite — the first known synthetic pigment | `#285987` | sparse local fill and gameplay guidance; **never TT353's ground** |
 | Red ochre | iron oxide (hematite) | `#A63B23` | outline sketch, flesh of male figures, "ink" of the red draft pass |
 | Yellow ochre | iron oxide (limonite) | `#C9A227` | flesh of female figures, secondary fill |
-| Orpiment | arsenic trisulfide, As₂S₃ | `#F4C430` | the era's real **gold accent** — used specifically as a cheaper, brighter stand-in for gold leaf on ceilings where actual gold was not applied; see correction below |
+| Yellow accent | yellow ochre; wider Egyptian palettes also use orpiment | `#C4932E` | small local fill and star sign; do not infer generic gold from it |
 | Malachite / green frit | copper carbonate ore; frit is a synthetic analogue of blue frit | `#145A32` | vegetation, the Nile, occasional deity skin (Osiris) |
-| Carbon black | soot, lamp-black | `#1B1B1B` | final linework, hair, night sky dots |
+| Carbon black | soot, lamp-black | `#241D16` | dominant linework, labels, borders and star signs |
 | Huntite / gypsum white | CaMg₃(CO₃)₄ / CaSO₄ | `#F1EAD9` | highlights, star discs, garments |
-| Ground: plaster cream | raw gypsum plaster | `#E8DCC0` | southern/decan panels, daylight registers |
-| Ground: deep blue | Egyptian blue laid as a field | `#0B1830`–`#12244A` | northern panel and any night sky |
+| Ground: plaster cream | raw gypsum/lime plaster | `#DDCFAD`–`#EEE4CD` | dominant field across the playable TT353 sheet |
 
-**Correction to the existing file:** it states flatly "there is no gold in a painted ceiling —
-reserve gold for era II." That is true of gold *leaf*, which was reserved for coffins, masks and
-divine flesh elsewhere, but it undersells orpiment's actual job: orpiment is chosen precisely
-*because* it reads as gold at a fraction of the cost, and Egyptian painters knew and used that
-substitution deliberately. The era's honest "gold" is orpiment, not an absence — a useful
-distinction for a `definePlate('accent', ...)` token, since "no accent colour at all" and "an
-accent colour that is secretly a cheap gold substitute" read very differently to a player.
+**Controlling correction:** the original palette note overgeneralised the wider Egyptian pigment
+repertoire into this one ceiling. TT353 is read from the facsimile as a warm light field with fine
+black structure and small mineral-colour islands. Orpiment remains relevant to Egyptian painting
+history, but it does not license a generic gold UI or a dark-blue sky here.
 
 ## 4. Lettering and how people wrote
 
@@ -148,7 +154,7 @@ outline (black)**, four steps, and `penLettering()` should model that count.
   work; no font fixes it.
 - **Noto Sans Egyptian Hieroglyphs**: OFL 1.1, © The Noto Project, 1,079 glyphs covering all
   1,078 characters of the Unicode Egyptian Hieroglyphs block, distributed via Google Fonts.
-  Confirmed license and rough glyph count; matches what `01-ceiling.md` already claims.
+  Confirmed license and rough glyph count; matches what `03-ceiling.md` already claims.
 - **Hieratic**, the real cursive administrative hand (ink on papyrus/ostraca, Old Kingdom until
   displaced by Demotic c. 7th century BCE), is **not usably encoded in Unicode** — heavily
   ligatured and, per Unicode's own working documents, "not currently supported in any font."
@@ -283,18 +289,17 @@ captions beside every figure. Two real devices are worth stealing for the HUD:
 - There is no colophon in the modern sense; a scribe naming himself in a dedication text is the
   closest equivalent, and a weaker fit than era III's imprint line — probably not worth forcing.
 
-## 10. Four chapter plates
+## 10. One controlling sheet; later comparators stay separate
 
 1. **The southern panel of the Senenmut ceiling** — Sah striding, Sopdet seated behind him with
    her star, the decan-name columns running beside them.
 2. **The northern panel** — the twelve month-circles of twenty-four segments, the ikhemu-sek
-   circling, the five planet-barques of the ikhemu-wretju sailing past.
-3. **A Ramesside star clock** — the seated hour-watcher figure with its twelve-by-seven star
+   circling, and the four attested moving lights with Mars omitted.
+3. **A Ramesside star clock study** — the seated hour-watcher figure with its twelve-by-seven star
    grid, stars labelled by body part; the literal target grid, and the plate that most directly
-   argues this era can carry the game's own geometry.
-4. **The Book of Nut** — Nut arched across the whole sheet, Shu beneath her holding her apart
-   from Geb, the sun swallowed at her mouth and reborn at her thighs, decans annotated along her
-   body.
+   argues this era can carry the game's own geometry. Label it as later.
+4. **The Book of Nut comparison** — a separately labelled later diagram. It can inform a future
+   Egyptian branch but does not become a TT353 chapter.
 
 (The Dendera zodiac remains available as a fifth/bonus plate — a deliberately later, syncretic
 counterpoint — but per §1 above it should not be one of the core four, matching the existing
@@ -328,10 +333,8 @@ file's own caution.)
 - **The currency rule twist (§6) is a "B" not an "A"** in `DANGERS.md`'s taxonomy — it changes
   the run's economy, not just its depiction, and needs the same sign-off, or should ship as the
   no-twist reskin instead.
-- **The northern panel's seasonal quadrant layout is weakly sourced** (§1) — several aggregator
-  pages repeat the same figures but no museum or journal page was reachable this session. Before
-  an artist keys this ceiling literally, get eyes on Wilkinson's facsimile or the Neugebauer &
-  Parker plates directly.
+- **The facsimile has now been inspected directly.** Exact sign readings and damaged passages still
+  require an Egyptologist or the Neugebauer & Parker plates before authored inscriptions ship.
 - **Beyond Sah, Sopdet and Meskhetiu, decan-to-modern-constellation identification is genuinely
   disputed** among Egyptologists — don't invent confident mappings for the other ~33 decans;
   pick from the three certain ones, or invent a new, clearly-fictional decan in the list's
@@ -339,12 +342,15 @@ file's own caution.)
 - **Several §5 vocabulary items are extensions of attested general words, or
   recalled-not-reverified dictionary entries** — flagged individually. None are load-bearing
   beyond flavour text; the risk is reputational, not architectural.
-- **`WebFetch` was unavailable all session** — every citation below is a search-snippet
-  paraphrase, not a page this agent read end to end.
+- **Source status improved in 2026:** the Met object/facsimile, AEA TT353 record, British Museum
+  Greenfield records, Met pigment page and Australian Museum art-convention page were read
+  directly. Unrelated legacy citations below retain their original verification status.
 
 ## 13. Sources
 
-- Senenmut ceiling, Wilkinson facsimile, dimensions: https://www.metmuseum.org/art/collection/search/544566 , https://en.wikipedia.org/wiki/Astronomical_ceiling_of_Senenmut's_Tomb , https://commons.wikimedia.org/wiki/File:Astronomical_Ceiling,_Tomb_of_Senenmut_MET_DT207429.jpg , https://www.researchgate.net/figure/The-southern-part-of-the-astronomical-ceiling-in-Senenmuts-tomb-TT-353_fig1_1906335
+- Senenmut ceiling database and Wilkinson facsimile: https://aea.mcmaster.ca/index.php/en/database/ars/ar1-type-menu/tomb-of-senenmut , https://www.metmuseum.org/art/collection/search/544566 , https://images.metmuseum.org/CRDImages/eg/original/48.105.52_EGDP012289.jpg
+- Later comparison drawings, Greenfield Papyrus frames 85 and 87: https://www.britishmuseum.org/collection/object/Y_EA10554-85 , https://www.britishmuseum.org/collection/object/Y_EA10554-87
+- Painting method and visual convention: https://www.metmuseum.org/fr/perspectives/paint-like-an-egyptian , https://australian.museum/learn/cultures/international-collection/ancient-egyptian/the-painter-in-ancient-egypt/
 - Diagonal star tables, Neugebauer & Parker: https://journals.sagepub.com/doi/abs/10.1177/002182861404500204 , https://aea.physics.mcmaster.ca/index.php/en/reference/bibliography , https://www.scientificamerican.com/article/decoding-the-star-charts-of-ancient-egypt/
 - Ramesside star clocks: https://perimeterinstitute.ca/news/can-data-science-help-decode-3100-year-old-ramesside-star-clocks , https://en.wikipedia.org/wiki/Ramesside_star_clocks , https://www.researchgate.net/figure/Hour-watcher-with-a-star-chart-from-the-tomb-of-Ramesses-VI-12th-century-BC-Meridian_fig5_328303471
 - Book of Nut: https://en.wikipedia.org/wiki/Book_of_Nut

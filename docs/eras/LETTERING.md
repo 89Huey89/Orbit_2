@@ -86,6 +86,18 @@ odometer suits a machine with no hand to write with.
 
 **Verdict: the reveals are a small, well-seamed job.** Do them per era as each era lands.
 
+### The dated caption
+
+The knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) adds one kind of
+inscription and no new hand: a body's discovery caption, written once per family per era per
+run through the inscription system, in the era's own small hand with its date. The Rock and the
+Disc have none — the Disc's is at most a museum gloss in the modern serif, never as if the
+culture wrote it; the Ceiling's is the deity's name in a hieroglyph column; the Marble's a Greek
+class letter, α′ to ϛ′; the Globe's the class in naskh; the Engraving's the Fell italic with a
+year, `1610 · SIDEREUS NUNCIUS`; the Plate's ink on the glass back, `LOWELL 1895`, and later
+`ANTONIADI 1909` beside the same body; the Observatory's a FITS card; the Probe's a telemetry
+line. Each uses the reveal its era already has above.
+
 ---
 
 ## Typefaces: the pipeline is easy, the payload and the hardcoding are not

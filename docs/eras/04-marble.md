@@ -82,10 +82,11 @@ Attested unless marked constructed; Greek given first, Latin where the game alre
 
 | Game term | Era's word | Gloss | Status |
 |---|---|---|---|
-| ocean / crater | Ὠκεανός / κρατήρ | Titan-river / mixing-bowl | attested |
-| ringed / ice | στεφάνη / κρύσταλλος | circlet-band / ice, rock-crystal | constructed / attested |
-| dune / volcanic | θίς-θῖνες / Ἡφαίστου | sand-ridge / "of Hephaestus" | attested / constructed |
-| storm / slingshot | θύελλα / σφενδόνη | whirlwind / a sling | attested |
+| a body, by greatness | μέγεθος α′–ϛ′ | Ptolemy's six classes, the ancestor of MAGNITUDINES | attested |
+| a reddish body | ὑπόκιρρος | "yellowish", the *Almagest*'s one colour word, given to six stars | attested |
+| the Moon | Σελήνη | the one imperfect body, Plutarch's hollows and heights on its face | attested |
+| a wandering star | πλανήτης | "wanderer", five of them, dimensionless points | attested |
+| slingshot | σφενδόνη | a sling | attested |
 | shield / reflector / inkwell | Scutum / Repulsa / atramentarium | shipped / shipped / ink-pot | unchanged / attested |
 | orbit / capture / release | κύκλος / captura / ἄφεσις | circle / seizing / letting-go | attested/constructed/attested |
 | ink (currency) | *acies* | a cutting edge | constructed, see below |
@@ -100,8 +101,9 @@ metal cut away, nothing added. A depleting chisel-edge, dulling with use and res
 hone it (the existing orbit-hold gain mechanic), is the era's real rationed resource. Class A: no
 simulation change, a rename and a redraw.
 
-*Deferred:* the six-class Ptolemaic *megethos* scale (`α′ β′ γ′ δ′ ε′ ϛ′`) on main nodes — brighter
-pays more but shrinks `rimWindow` — held back as class-B under DECISIONS.md §2.
+The six-class Ptolemaic *megethos* scale (`α′ β′ γ′ δ′ ε′ ϛ′`) is drawn on every main node as
+depiction under the knowledge horizon. *Deferred:* the rule on it — brighter pays more but
+shrinks `rimWindow` — held back as class-B under DECISIONS.md §2.
 
 ## Dangers
 
@@ -114,15 +116,23 @@ Depiction only, same four rows, this era's name and image over each.
 | Crosswind | the Anemoi | winged wind-figures per the Tower of the Winds (Athens, c. 50 BCE), likely but *(unverified)* ancestor of the engraving era's own wind-heads |
 | Obscurer | *galaxias* | the Milky Way as Hera's spilled milk, a soft diffuse band — the ancient name is also the modern one |
 
-## The seven families
+## The bodies
 
-Modelled by relief and drill-work, never colour or line. Ocean: a broad unbroken dome, polished
-smooth, a faint burnished highlight only. Crater: rasped point-chisel stipple, deep drill punctures
-pooling hard shadow. Ringed: concentric bands cut by flat chisel and compass, the technique that
-cuts the globe's own celestial circles. Ice: smooth and burnished, fine comb-line facets; Dune
-shares its claw-chisel stroke but left ridged, unsmoothed. Volcanic: broken rustic-finish stone,
-deep undercut drill-work for vents. Storm: the most heavily drilled family, Roman curled-hair
-channels for a turbulent, light-swallowing texture with no single edge.
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) this era draws no
+family, and it is the first that can tell bodies apart by a system. A body is a point in one of
+Ptolemy's six classes, cut as the Mainz globe cuts its stars — a drilled, gilded point, deeper and
+larger for a greater *megethos* — and the class letter, α′ to ϛ′, is what the held orbit brings
+up beside it, with *ὑπόκιρρος* on the few the *Almagest* calls reddish. The five wanderers are
+points like the rest, since this astronomy could place a planet to the minute and say nothing of
+its face. The Moon is the one imperfect body, the only surface antiquity argued about: Plutarch's
+*De facie* gives it hollows and heights, and the sheet gives it a relief face in the marble, the
+one place the drill goes into a body rather than beside it.
+
+The class is the one the deferred rule above reads, so the day a brighter body narrows the perfect
+window it will narrow on a number the sheet has shown since the era was built. The earlier
+seven-family reading — a polished dome, point-chisel stipple, compass bands, comb facets,
+claw-chisel ridges, rustic finish, drilled curls — survives in `prototypes/marble.html` as a
+vocabulary of attested techniques and is still the right way to cut the dangers.
 
 ## Frame and furniture
 

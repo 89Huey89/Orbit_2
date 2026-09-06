@@ -111,17 +111,28 @@ in this era's own hand:
 | Crosswind | **Tracking drift** | Short parallel comet trails all one way, density fading with distance — a field, not a body |
 | Obscurer | **Dark nebula** (Barnard number, e.g. B33) | Star-free patch, soft uneven edge, optionally a hand-written flag |
 
-## The seven families
+## The bodies
 
 Every body is an overexposed disc with a soft halo and no internal detail — distinguished by
-**size, density, and a bracketed annotation**, never by drawn surface: Ocean a small, dense, round
-knot; Crater a knot with a faint double-density edge standing in for relief; Ringed an elongated
-oval smear, not a resolved ring; Ice smaller and fainter, near the plate's own fog level; Dune
-warm-toned against the sepia base but identical in shape to Ocean; Volcanic the densest, largest
-knot, verging on halation without crossing it; Storm elongated like Ringed but with soft internal
-banding. No diffraction spikes: the refractors this era's key documents were shot on have no
-spider vanes to cause them — a Palomar body (a Schmidt, not a pure refractor) should not inherit
-this claim uncritically.
+**size, density, and a bracketed annotation**, never by drawn surface — and under the knowledge
+horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) that is nearly the whole truth of the era,
+with one exception that is the era's best story. The **dune** world is Mars, and at a glance it
+carries **Lowell's canals**: fine straight lines ruled across the disc in the ink-on-glass hand,
+`LOWELL 1895` written beside it, because the plate era believed them for fifteen years. Under the
+held orbit the canals develop into **Antoniadi's irregular patches** of 1909, the Meudon
+refractor's answer, and a second annotation is written beside the first: the sheet corrects
+itself in ink, as the era's plates were corrected, and never erases the mistake. The other six
+are as before: Ocean a small, dense, round knot; Crater a knot with a faint double-density edge
+standing in for relief; Ringed an elongated oval smear, not a resolved ring; Ice smaller and
+fainter, near the plate's own fog level; Volcanic the densest, largest knot, verging on halation
+without crossing it; Storm elongated like Ringed but with soft internal banding. The photographed
+Moon is a knot like the rest. No diffraction spikes: the refractors this era's key documents were
+shot on have no spider vanes to cause them — a Palomar body (a Schmidt, not a pure refractor)
+should not inherit this claim uncritically.
+
+The families this era photographs it inherits from the engraving; the ones the space age added —
+a cratered Mars, a ringed Uranus, a volcanic Io — fall after its close, in the flyby gap (open
+question I).
 
 ## Frame and furniture
 

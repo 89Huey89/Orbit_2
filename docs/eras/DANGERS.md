@@ -43,8 +43,10 @@ field, the core, the reach and the lethality are identical, so the same seed dea
 every plate and nothing about the daily, the ledger or the record changes.
 
 This costs nothing but drawing, because `drawHazard()` already dispatches on kind on the render side
-and the vortex is its fallback. It is the same shape as the era's bodies: **the seven families never
-change, only how they are depicted.**
+and the vortex is its fallback. It is the same shape as the era's orbit rings: **the rows never
+change, only how they are depicted.** (The bodies are the one place the ladder now shows *less*
+than the shipped game rather than the same thing differently — see the note at the head of the
+next section.)
 
 ### B. Dangers are era rules
 
@@ -80,6 +82,13 @@ still have to answer.
 ---
 
 ## The rows, and what each era calls them
+
+**The knowledge horizon does not reach the dangers.** [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)
+limits what an era may show of a *body* to what its astronomy could know of a surface; a danger
+is not a claim about a surface but a figure for a force, and every era on the ladder had figures
+for pulling, burning, blowing and hiding. Charybdis is not asserted to be an astronomical
+object any more than VORAGO is. So the tables below stand as they are, and the standard they are
+held to is the one already stated: find the thing the era already draws, and give it a rule.
 
 Three rows exist: the **attractor** (draws inward, lethal to the drawn edge), the **repulsor**
 (pushes outward, only its smaller core kills), and the **crosswind** (blows one steady way, cannot

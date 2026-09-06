@@ -48,13 +48,10 @@ No text survives from this culture. Every entry below is either a modern archaeo
 
 | Game term | Era word | Gloss | Status |
 |---|---|---|---|
-| Ocean world | — | a plain, unadorned gold-foil disc, the disc's own moon | unattested; depiction only |
-| Crater world | — | the same gold disc, punch-marked at irregular intervals | unattested; depiction only |
-| Ringed world | *Goldhut*-band | a ringed body reads as a banded cone-hat | modern find-name, by analogy |
-| Ice world | — | high-silver electrum, plain but for one hard highlight edge | unattested; depiction only |
-| Dune world | — | parallel raked lines, the ship's-oar technique repurposed as texture | unattested; depiction only |
-| Volcanic world | — | raw unalloyed copper-red, breaking the gold/bronze palette on purpose | unattested; depiction only |
-| Storm world | — | a loose, open spiral, distinguished from the attractor by turn-count | unattested; depiction only |
+| A star | — | one punched gold disc, the same punch for every star: no size codes brightness | attested, the disc's own grammar |
+| The Moon | — | the gold crescent, or the full disc beside it | attested, the disc's own |
+| The cluster | — | seven punches close together, the disc's Pleiades | attested; the reading widely accepted |
+| A wandering star | — | not drawn: no planet is on the disc and none is attested for this culture | unattested |
 | Slingshot | — | struck, propulsive — grounded in technique, not lexical | unattested |
 | Shield (Scutum) | — | unchanged shipped depiction; no attested source | unattested |
 | Reflector (Repulsa) | — | unchanged shipped depiction; no attested source | unattested |
@@ -83,9 +80,11 @@ Currency is **gold foil**, rationed by heft. The disc's own gold differs measura
 | Crosswind | **The Oar-strokes** (weak attestation) | A run of short parallel gold strokes, echoing the disc's own fringed ship — read by most scholars as oars propelling the barge, but that reading is disputed, and no wind deity survives for this culture the way later eras have one. |
 | Obscurer | **The cup-mark swarm** | A cloud of small dark pecked hollows overtaking part of the chart — a widespread, well-attested Atlantic-European and Scandinavian rock-art feature. |
 
-## The seven families
+## The bodies
 
-**Ocean** is a plain, unadorned gold-foil disc left smooth and bright — the disc's own moon, exactly this. **Crater** is the same gold disc pocked with individual punch-marks at irregular intervals, the disc's own star-punching technique turned inward. **Ringed** is the gold-hat treatment at body scale: horizontal repoussé bands of small repeated circles running around the circumference. **Ice** is worked in high-silver electrum rather than warm gold, left almost plain but for one hard white highlight edge. **Dune** carries parallel raked lines across its face, close and slightly uneven, the ship's-oar technique repurposed as texture. **Volcanic** breaks the gold/bronze palette deliberately, raw unalloyed copper-red, radiating cracked lines chiselled outward from an off-centre point. **Storm** is the spiral again, but loose and open — two or three concentric bands rather than one tight inward coil, distinguished from the attractor by looseness and turn-count.
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) this era draws no family. The disc's own answer to "how bright is a star" is one punch, always, so a body here is one punched gold disc in a chased ring, the same for every body, and both readings are that punch — the one era on the ladder where attention reveals less than the Rock's three sizes did, which is the object's grammar and not a loss. The Moon is the crescent, or the full disc beside it: the two larger foils are a different kind of object, not a brighter star. The constellation is the Pleiades, seven punches close together, the disc's own cluster and the natural figure behind this era's three-star route. No planet is drawn, because none is on the disc and none is attested for this culture; where the sheet needs a caption it is a museum gloss in the modern serif and never a mark this culture struck.
+
+The earlier seven-family reading — the smooth foil, the punch-marked foil, the *Goldhut* bands, electrum, raked lines, copper, the open spiral — survives in `prototypes/disc.html` as a record of attested technique whose application was constructed throughout; the alloys and the ornament remain the era's vocabulary for the pickups and the dangers.
 
 ## Frame and furniture
 
@@ -101,7 +100,7 @@ A single bright punch-tap (capture), tap-then-hush as foil seats fully home (per
 
 ## The prototype
 
-`docs/eras/prototypes/disc.html` exists and paints the disc in its closed state. Its header comment records: the conceit is that there is no sheet — the frame is a close crop of the disc's own bronze surface, the two gold horizon arcs carry the ticks and the scale, the solar barge is the footer, the rim's perforations follow the top and bottom edges, and the sun/moon/crescent sit as the title mark beside the Pleiades cluster as the magnitude key, since the disc's own answer to "how bright is a star" is "one punch, always"; the ground is the disc as made — dark cast bronze read down toward its shadow, never the museum's verdigris, which shows only inside casting pits and along the rim; the ship's fringing strokes are drawn as oars, the majority but disputed reading, flagged as such in the sheet's own painter note; no typeface is loaded, Linear B was considered and declined, every number is a stack of punched bands, and the only Latin letters are small modern museum glosses; every mark routes through one of four struck primitives — chase, inlayLine/inlayShape (damascening), punchStar, peck — under one raking light from the upper left. Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md).
+`docs/eras/prototypes/disc.html` exists and paints the disc in its closed state. Its header comment records: the conceit is that there is no sheet — the frame is a close crop of the disc's own bronze surface, the two gold horizon arcs carry the ticks and the scale, the solar barge is the footer, the rim's perforations follow the top and bottom edges, and the sun/moon/crescent sit as the title mark beside the Pleiades cluster as the magnitude key, since the disc's own answer to "how bright is a star" is "one punch, always"; the ground is the disc as made — dark cast bronze read down toward its shadow, never the museum's verdigris, which shows only inside casting pits and along the rim; the ship's fringing strokes are drawn as oars, the majority but disputed reading, flagged as such in the sheet's own painter note; no typeface is loaded, Linear B was considered and declined, every number is a stack of punched bands, and the only Latin letters are small modern museum glosses; every mark routes through one of four struck primitives — chase, inlayLine/inlayShape (damascening), punchStar, peck — under one raking light from the upper left. Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md). The prototype predates the knowledge horizon and paints seven families; `prototypes/turn-rock-disc.html` paints this sheet as the horizon asks — one punch for every body, the crescent, the Pleiades — arriving from the Rock at a page turn.
 
 ## Risk
 
