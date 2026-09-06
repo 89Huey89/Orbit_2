@@ -5,7 +5,12 @@ and it is the only era besides the engraved atlas that anyone can actually fly. 
 atlas it is plainly the weaker sheet, and the gap is not a matter of taste: the atlas is a
 *performance* — a chart being drawn, measured, turned and annotated while the player flies over
 it — and the Ceiling is a *picture* with a game on top of it. This file records what was measured,
-what causes the gap, and the order the gap should be closed in. Nothing here is built.
+what causes the gap, and the order the gap should be closed in.
+
+**Status: all nine ranks below are built** (branch `claude/ceiling-preview-polish-jhk1g2`). What
+remains is recorded under "What is still open" at the foot of this file. The findings are kept in
+their original form rather than rewritten as a changelog, because the reasoning is what makes the
+build order defensible; each now carries what was actually done.
 
 ## How this was checked
 
@@ -200,17 +205,17 @@ thing telling the player they never left the atlas.
 
 The first four are what closes the gap the player actually feels; the rest is finishing.
 
-| | Proposal | Effort | Risk |
-|---|---|---|---|
-| 1 | **P4** the visible brush and wet edge | small | none — the atlas proves the pattern |
-| 2 | **P1** carry the wall with the climb | medium | needs a taller cache; watch memory on mobile |
-| 3 | **P10/P11** three hazard motions and the pull | small | keep them flat; no glow |
-| 4 | **P14** the era's five sounds | small | none |
-| 5 | **P12/P13** level the barque, one moving part | small | none |
-| 6 | **P7** the snapped cord and the plumb as the survey | medium | must not clutter the play channel |
-| 7 | **P2/P3** a register per watch, retire the lime card | large | the biggest win after P1, and the most work |
-| 8 | **P6/P8/P9** dabs, four capture marks, marginal floaters | medium | none |
-| 9 | **§6** furniture at a legible size; **§8** the seven defects | medium | a-g are mostly one-liners |
+| | Proposal | Effort | Risk | |
+|---|---|---|---|---|
+| 1 | **P4** the visible brush and wet edge | small | none — the atlas proves the pattern | built |
+| 2 | **P1** carry the wall with the climb | medium | needs a taller cache; watch memory on mobile | built |
+| 3 | **P10/P11** three hazard motions and the pull | small | keep them flat; no glow | built |
+| 4 | **P14** the era's five sounds | small | none | built |
+| 5 | **P12/P13** level the barque, one moving part | small | none | built |
+| 6 | **P7** the snapped cord and the plumb as the survey | medium | must not clutter the play channel | built |
+| 7 | **P2/P3** a register per watch, retire the lime card | large | the biggest win after P1, and the most work | built |
+| 8 | **P6/P8/P9** dabs, four capture marks, marginal floaters | medium | none | built |
+| 9 | **§6** furniture at a legible size; **§8** the seven defects | medium | a-g are mostly one-liners | built |
 
 ## What must not be "fixed"
 
@@ -228,3 +233,50 @@ comparison to make is never "does it look as deep as the atlas."
   earns its movement by being a chart under a pen; the Ceiling earns its movement by being a wall
   under a brush, drying, by lamp, through four watches. Anything that cannot be argued from one of
   those two does not go on the sheet.
+
+---
+
+## What the facsimile corrected
+
+Partway through the build a high-resolution photograph of the Wilkinson facsimile of TT353 — the
+document `03-ceiling.md` already named as "the visual test for every decision on the built sheet" —
+was read directly against the built wall for the first time. It overturned three things, and two of
+them were instructions given in this file's own voice. They are recorded here because the pattern
+matters more than the three fixes: a plausible reading of a photograph is not a source, and the
+sheet had been drifting on plausible readings.
+
+- **The star band.** A blue ground carrying yellow stars was inferred from a *different* Theban
+  ceiling and nearly written into this one — exactly the compositing `03-ceiling.md` forbids. TT353's
+  own bands are three staggered rows of five-lobed outlined stars over the red canon, framing every
+  panel on all four sides. The band is now the sheet's main framing device, as it is on the wall.
+- **The twelve month circles.** This file complained that they read as "twelve identical wagon
+  wheels" and had per-wheel variation invented to break them up. On the facsimile they *are* twelve
+  identical wheels: uniform, roughly twenty-four plain spokes, a small hub, no colour. What
+  distinguishes them is a ruled box, a caption line beneath, and the red construction rules through
+  their centres. The invented variation was removed and the real differentiators put in.
+- **Meskhetiu.** Read at low resolution as a detached foreleg — "no legs, no rump, no tail" — and
+  corrected on a closer crop: the animal has four short legs, so it is a bull, drawn far more
+  schematically than the modelled quadruped the sheet had been drawing. Two details are worth
+  carrying: the body is **contoured in ink and not flooded**, while the **legs are painted in red
+  ochre** (sampled, not eyeballed: a red excess of ~50 against the contour's ~29), which is the
+  reverse of what `ceilingPaintBull` does; and the crop carries **three** stars, not the seven of the
+  Big Dipper association. Draw what the sheet shows.
+
+## What is still open
+
+- **The two circumpolar figures are still invented drawings.** Meskhetiu and Reret are the reason
+  this wall reads as Egyptian and they remain the weakest marks on it. The facsimile is now good
+  enough to trace at figure scale, and `scripts/figures.mjs` / `src/figures-tt353.js` exist to carry
+  traced contours through the wall's own four-pass painter — the same pattern `scripts/glyphs.mjs`
+  uses for the Fell faces. Wiring those contours in, in place of the hand-built shapes, is the
+  single largest remaining gain.
+- **The four watches differ, but weakly.** Each carries a different reach of the same furniture
+  rather than furniture of its own. A player reads "another register", not "another hour".
+- **The red canon now runs through the play channel.** It is faithful — it does so on the facsimile
+  too — but nobody flies across the facsimile. If it competes with the flight it should be eased in
+  the centre column only, and that is a playability decision, not a research one.
+- **Density is still bought by repetition of a few units.** The facsimile's own answer is the one
+  visible in its bottom register and in any wing: many flat units, repeated, bounded by line. The
+  striding register is a first instance; the wall could carry more.
+- **A frontispiece in the concept-art register** is agreed but only begun: the block border,
+  ornament and plaster panel are in, the four hour-plates are not.
