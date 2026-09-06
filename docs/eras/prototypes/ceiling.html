@@ -621,8 +621,8 @@ function paintSopdet(x,y,s,st){
 // The player: Ra's night-bark, msktt, which research names as the run's own analogue. It rides the
 // heading it is given rather than sitting level under it — a is the tangent's own angle, already
 // carried in from the call site's +Math.PI/2 — but never hangs upside down: past vertical the hull
-// takes the far half-turn and mirrors across its own long axis instead, so the shrine's post and
-// the disc it carries stay above the deck. barqueFacing latches with a dead band the same way the
+// takes the far half-turn and mirrors across its own long axis instead, so the naos and the disc
+// it carries stay above the deck. barqueFacing latches with a dead band the same way the
 // shipped plate's ceilingFacing does, and barqueAngle eases toward the resulting target the short
 // way round the circle, so a flip at the latch is a quick turn rather than a pop.
 let barqueFacing=1,barqueAngle=null;
@@ -632,10 +632,29 @@ function barque(x,y,a){
   if(barqueAngle===null)barqueAngle=target;
   else{let d=(target-barqueAngle+Math.PI)%(Math.PI*2);if(d<0)d+=Math.PI*2;d-=Math.PI;barqueAngle+=d*.2;}
   ctx.save();ctx.translate(x,y);ctx.rotate(barqueAngle);ctx.scale(barqueFacing*1.35,1.35);
-  shape([[-15,3],[15,3],[20,-5],[13,-1],[-13,-1],[-20,-5]],T.orpiment,4,{ow:2,wash:false});
-  reedPath([[-9,-1],[-9,-10]],{w:1.6,col:T.carbon,a:.85});   // the shrine's post
-  shape(discPts(3,-9,6,12,.3),T.orpiment,4,{ow:1.7,wash:false});
-  reedPath([[3,-15],[6,-19]],{w:1.4,col:T.carbon,a:.8});     // the uraeus on the disc
+  // Rowed and steered, never sailed: the coffin-board barque, in the same local frame the shipped
+  // plate draws in (+x the prow, -y the deck side) and with the same coordinates as ceilingDrawPlayer
+  // in src/ceiling.js — a quartic crescent hull whose ends open into papyrus umbels, a block band
+  // along the sheer, a naos amidships carrying the disc, two steering oars crossed at the stern.
+  const dk=v=>1-9*(v/22)**4,kl=v=>8-15*(v/22)**4,hull=[],
+    end=f=>[[24*f,-10],[26*f,-13.5],[29.5*f,-16.5],[28.5*f,-19.5],[25*f,-19.5],[22.5*f,-16.5],[23*f,-13],[22*f,-10]];
+  for(let i=-22;i<=22;i+=4.4)hull.push([i,kl(i)]);hull.push(...end(1));
+  for(let i=22;i>=-22;i-=4.4)hull.push([i,dk(i)]);hull.push(...end(-1).reverse());
+  shape(hull,T.orpiment,4,{ow:1.8,wash:false});
+  [1,-1].forEach(f=>fillPoly([[25*f,-14.6],[24.4*f,-18.2],[27.4*f,-18]],T.redOchre));            // the umbels' red throats
+  for(let i=0;i<7;i++){const c=-14.4+i*4.8,x0=c-1.7,x1=c+1.7;fillPoly([[x0,dk(x0)+1.2],[x1,dk(x1)+1.2],[x1,dk(x1)+4.4],[x0,dk(x0)+4.4]],i&1?T.blue:T.redOchre);}
+  const rule=[];for(let i=-16.5;i<=16.5;i+=3.3)rule.push([i,dk(i)+4.9]);reedPath(rule,{w:1.2,col:T.carbon,a:.75}); // the band's lower rule
+  shape([[-6,.8],[6,.8],[6,-5.5],[-6,-5.5]],T.huntite,4,{ow:1.4,wash:false});                   // the naos
+  shape([[-7.6,-5.5],[7.6,-5.5],[7.6,-7.6],[-7.6,-7.6]],T.orpiment,4,{ow:1.3,wash:false});     // its cornice
+  fillPoly([[-1.2,-3.4],[-5,-2.2],[-4.4,-1],[-1.2,-2],[1.2,-2],[4.4,-1],[5,-2.2],[1.2,-3.4]],T.blue);
+  fillPoly(discPts(0,-2.4,1.9,12,.2),T.carbon);                                                  // the scarab: a figure, not a sign
+  [1,-1].forEach(f=>{reedPath([[7.2*f,-7.6],[7.4*f,-12.4]],{w:1.4,col:T.carbon,a:.9});reedPath([[6.1*f,-12.6],[8.7*f,-12.6]],{w:1.3,col:T.carbon,a:.9});}); // papyrus columns
+  shape(discPts(0,-11.4,4.6,14,.25),T.redOchre,4,{ow:1.4,wash:false});
+  reedPath([[1.4,-15.4],[2.6,-17.4],[4.2,-17.9],[4.8,-16.6]],{w:1.2,col:T.carbon,a:.85});       // the uraeus on the disc
+  const oar=(x0,y0,x1,y1)=>{const L=Math.hypot(x1-x0,y1-y0),ux=(x1-x0)/L,uy=(y1-y0)/L,nx=-uy,ny=ux;
+    reedPath([[x0,y0],[x1-ux*3,y1-uy*3]],{w:1.5,col:T.carbon,a:.9});
+    shape([[x1-ux*4.5,y1-uy*4.5],[x1-ux*2+nx*1.7,y1-uy*2+ny*1.7],[x1+ux*1.5+nx*1.3,y1+uy*1.5+ny*1.3],[x1+ux*3,y1+uy*3],[x1+ux*1.5-nx*1.3,y1+uy*1.5-ny*1.3],[x1-ux*2-nx*1.7,y1-uy*2-ny*1.7]],T.orpiment,4,{ow:1.2,wash:false});};
+  oar(-9,-9.5,-24,9);oar(-15,-9.5,-18,11);
   ctx.restore();
 }
 
