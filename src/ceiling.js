@@ -51,6 +51,10 @@ const CEILING_WORD={
 // The columns beside the route are decan-name columns on the wall itself. These are the words the
 // vocabulary above can spell in full; the order is fixed so the sheet paints identically every load.
 const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white','red','shu','sekhmet','set','eye','shield'];
+// The twelve month circles are captioned from the same checked vocabulary rather than an invented
+// calendar: twelve of CEILING_WORD's fourteen entries are enough to give every wheel a caption line
+// without a word the table cannot spell, so nothing here is short of the twelve the correction asks for.
+const CEILING_MONTH_NAMES=['star','water','white','red','shu','nun','sekhmet','set','eye','shield','sah','apep'];
 const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // The wall's own names for the three courses the opening circles offer, standing in for the atlas's
 // TIRO, ADEPTUS and MAGISTER (src/simulation.js's DIFFICULTY_LABELS). They are captions on a night's
@@ -325,53 +329,98 @@ function ceilingBlockRule(g,x0,x1,y,h,alpha=.8){
 // The painter snapped a grid in red before any figure was set out, and the flood never quite covered
 // it. It is the only orthogonal thing on the sheet that was not drawn by a brush.
 function ceilingSettingGrid(g,x0,y0,x1,y1,unit){
-  g.save();g.strokeStyle='rgba(157,55,36,.085)';g.lineWidth=.5;g.beginPath();
+  // The facsimile's red canon is one of the most present things on the sheet — everywhere, under
+  // everything — and the .085-alpha hairline this used to run was, in practice, invisible. Brought up
+  // to a plainly-legible ruled surface; it still sits under every painted pass (drawn first in
+  // ceilingBakeWall, before any furniture) so nothing above it competes for the same ink.
+  g.save();g.strokeStyle='rgba(157,55,36,.24)';g.lineWidth=.6;g.beginPath();
   for(let x=x0;x<=x1;x+=unit){g.moveTo(x,y0);g.lineTo(x,y1);}
   for(let y=y0;y<=y1;y+=unit){g.moveTo(x0,y);g.lineTo(x1,y);}
   g.stroke();g.restore();
 }
-// The side borders are the star-strewn band the room's own edge carries: painted star signs between
-// two rules, alternately yellow and red where the pigment has held.
-function ceilingStarBorder(g,x,y0,y1,gap){
-  ceilingBrush(g,[[x-6,y0],[x-6,y1]],CEILING_PALETTE.carbon,.7,.4,x|0);
-  ceilingBrush(g,[[x+6,y0],[x+6,y1]],CEILING_PALETTE.carbon,.7,.4,(x|0)+3);
-  for(let y=y0+gap*.5,i=0;y<y1;y+=gap,i++)
-    ceilingStar(g,x,y,4.4,i%3?CEILING_PALETTE.yellow:CEILING_PALETTE.red,1,(y|0)+i);
+// The border star: five tapering lobes radiating from a small hub, drawn as an open outline rather
+// than N14's flat flood — this is the facsimile's repeating frame unit, not the decan sign, so it
+// never carries a fill for the same reason a woven border pattern never does. A hair of per-star
+// rotation keeps a whole band of them from reading as one stamp repeated.
+function ceilingBorderStar(g,cx,cy,r,alpha,seed){
+  const rot=(ceilingHash(seed,3)-.5)*.34,hub=r*.24;
+  g.save();g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.55,r*.17);g.lineJoin='round';g.lineCap='round';
+  for(let i=0;i<5;i++){
+    const a=rot-Math.PI/2+i*TAU/5,perp=a+Math.PI/2,flare=r*.24,mid=r*.58,
+      tip=[cx+Math.cos(a)*r,cy+Math.sin(a)*r],hp=[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],
+      L=[cx+Math.cos(a)*mid+Math.cos(perp)*flare,cy+Math.sin(a)*mid+Math.sin(perp)*flare],
+      Rr=[cx+Math.cos(a)*mid-Math.cos(perp)*flare,cy+Math.sin(a)*mid-Math.sin(perp)*flare];
+    g.beginPath();g.moveTo(hp[0],hp[1]);g.lineTo(L[0],L[1]);g.lineTo(tip[0],tip[1]);g.lineTo(Rr[0],Rr[1]);g.closePath();g.stroke();
+  }
+  g.beginPath();g.arc(cx,cy,hub*.5,0,TAU);g.stroke();g.restore();
 }
-// One of the twelve lunar-month circles. TT353 sets these large, separated and individually named;
-// a rigid 3x4 block of one radius and one 24-spoke division reads as twelve copies of one wagon
-// wheel instead of twelve months. seed picks the division count, the flood colour, which wedges
-// take it, the hub's size and whether a second inner rim is drawn, so a wheel at position 5 is a
-// visibly different object from a wheel at position 11 — still one wall hand, twelve months of it.
-const CEILING_MONTH_FLOOD=[CEILING_PALETTE.blue,CEILING_PALETTE.blue,CEILING_PALETTE.yellow,CEILING_PALETTE.blue,CEILING_PALETTE.red,CEILING_PALETTE.blue,CEILING_PALETTE.blue];
-const CEILING_MONTH_DIV=[24,18,24,12,20,24,16,24,18,24,12,24];
-function ceilingMonthCircle(g,cx,cy,r,alpha=.72,seed=0){
-  const div=CEILING_MONTH_DIV[((seed%12)+12)%12],rot=ceilingHash(seed,7)*TAU/div,
-    every=1+(ceilingHash(seed,29)>.62?1:0),flood=CEILING_MONTH_FLOOD[seed%CEILING_MONTH_FLOOD.length],
-    hub=.24+ceilingHash(seed,13)*.13,rim2=ceilingHash(seed,19)>.66,ink=CEILING_PALETTE.carbon;
-  // A ring, not a wheel: the divisions live in an outer band only, between the rim and an inner ring,
-  // and the field inside that ring is left as bare plaster around the month's red hub — the way the
-  // circles on the real ceiling carry their sectors around the edge and their name in the middle.
-  const R=r*.95,Ri=r*(.52+hub*.4),first=Math.floor(ceilingHash(seed,41)*every);
-  g.save();
-  for(let i=first;i<div;i+=every){
-    const a=i/div*TAU-Math.PI/2+rot,b=(i+1)/div*TAU-Math.PI/2+rot,
-      p=ceilingArcPoints(cx,cy,R,a,b,6).concat(ceilingArcPoints(cx,cy,Ri,b,a,6));
-    g.globalAlpha=alpha*.62;g.fillStyle=flood;g.beginPath();p.forEach((q,j)=>j?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.closePath();g.fill();
+// The star band, corrected: not a single file of small solid stars but a broad woven band of three
+// staggered rows, the sheet's main framing device and, by sheer repetition of one flat unit, its
+// principal source of density (docs/eras/03-ceiling.md, "The grammar" — hierarchy from scale,
+// separation, overlap and register, never from rendering up a single mark). The middle row sits a
+// half-gap out of phase with its neighbours so the three interlock instead of stacking into a plain
+// square grid. Used for the tile's own two side bands, which pass with the climb like every other
+// margin furniture; ceilingStarBandH below is the same unit run sideways for the frame's fixed top
+// and bottom edges.
+function ceilingStarBand(g,x,y0,y1,gap,width){
+  const cols=[x-width*.3,x,x+width*.3],r=Math.max(3,width*.19);
+  ceilingBrush(g,[[x-width*.5,y0],[x-width*.5,y1]],CEILING_PALETTE.carbon,.7,.4,x|0);
+  ceilingBrush(g,[[x+width*.5,y0],[x+width*.5,y1]],CEILING_PALETTE.carbon,.7,.4,(x|0)+3);
+  for(let c=0;c<3;c++){
+    const stagger=c===1?gap*.5:0;
+    for(let y=y0+gap*.5+stagger,i=0;y<y1;y+=gap,i++)ceilingBorderStar(g,cols[c],y,r,.76,(y|0)*3+i*7+c*101+(x|0));
   }
-  g.globalAlpha=alpha;
-  ceilingBrush(g,ceilingArcPoints(cx,cy,r,rot,rot+TAU,56),ink,Math.max(.8,r*.022),alpha*.95,seed*7+1);
-  ceilingBrush(g,ceilingArcPoints(cx,cy,Ri,rot+.4,rot+.4+TAU,44),ink,Math.max(.7,r*.016),alpha*.9,seed*7+2);
-  if(rim2)ceilingBrush(g,ceilingArcPoints(cx,cy,lerp(Ri,R,.5),rot+1,rot+1+TAU,44),ink,Math.max(.55,r*.012),alpha*.6,seed*7+3);
+}
+function ceilingStarBandH(g,x0,x1,y,gap,width){
+  const rows=[y-width*.3,y,y+width*.3],r=Math.max(3,width*.19);
+  ceilingBrush(g,[[x0,y-width*.5],[x1,y-width*.5]],CEILING_PALETTE.carbon,.7,.4,y|0);
+  ceilingBrush(g,[[x0,y+width*.5],[x1,y+width*.5]],CEILING_PALETTE.carbon,.7,.4,(y|0)+3);
+  for(let rr=0;rr<3;rr++){
+    const stagger=rr===1?gap*.5:0;
+    for(let x=x0+gap*.5+stagger,i=0;x<x1;x+=gap,i++)ceilingBorderStar(g,x,rows[rr],r,.76,(x|0)*3+i*7+rr*101+(y|0));
+  }
+}
+// A plain disc at each corner of the frame, ringed once — small, cheap, and the one thing that turns
+// a set of four independent rules into a closed frame, exactly as the facsimile's own corners do.
+function ceilingRoundel(g,x,y,r){
+  g.save();g.fillStyle=CEILING_PALETTE.warm;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+  g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.7,r*.13);g.stroke();
+  g.beginPath();g.arc(x,y,r*.52,0,TAU);g.stroke();g.restore();
+}
+// One of the twelve lunar-month circles, undone back to what the facsimile actually shows: twelve
+// identical wheels, uniform, roughly two dozen plain thin spokes hub to rim and a small hub circle —
+// no wedge floods, no varying division count or rim. What actually differs wheel to wheel on TT353,
+// and what this used to skip past in favour of inventing colour, is external to the wheel itself: the
+// ruled box, the name beneath it and the red construction lines through its centre, all drawn by the
+// caller below rather than by this function.
+function ceilingMonthCircle(g,cx,cy,r,alpha=.85,seed=0){
+  const div=24,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
+  g.save();g.globalAlpha=alpha;
+  ceilingBrush(g,ceilingArcPoints(cx,cy,r*jit,0,TAU,48),ink,Math.max(.75,r*.02),alpha*.95,seed*7+1);
   for(let i=0;i<div;i++){
-    const a=i/div*TAU-Math.PI/2+rot;
-    ceilingBrush(g,[[cx+Math.cos(a)*Ri,cy+Math.sin(a)*Ri],[cx+Math.cos(a)*R,cy+Math.sin(a)*R]],ink,Math.max(.6,r*.014),alpha*.8,seed*7+11+i);
+    const a=i/div*TAU;
+    ceilingBrush(g,[[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],[cx+Math.cos(a)*r*jit,cy+Math.sin(a)*r*jit]],ink,Math.max(.5,r*.011),alpha*.72,seed*7+11+i);
   }
-  // the hub is the month's rubric: a flat red disc, ringed in black, with the tick of its number beside it
-  g.globalAlpha=alpha;g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,r*hub*.5,0,TAU);g.fill();
-  ceilingBrush(g,ceilingArcPoints(cx,cy,r*hub*.5,0,TAU,24),ink,Math.max(.6,r*.014),alpha*.85,seed*7+5);
-  for(let k=0,n=1+(seed%3);k<n;k++)ceilingBrush(g,[[cx+r*hub*.72+k*r*.07,cy-r*.1],[cx+r*hub*.72+k*r*.07,cy+r*.1]],ink,Math.max(.6,r*.014),alpha*.8,seed*7+31+k);
+  ceilingBrush(g,ceilingArcPoints(cx,cy,hub,0,TAU,20),ink,Math.max(.6,r*.014),alpha*.9,seed*7+2);
   g.restore();
+}
+// The wheel's actual differentiators: a ruled box, a caption line beneath it in the checked vocabulary
+// (or, past the twelfth spellable word, left blank — a ruled box with an empty line rather than an
+// invented sign), and the red construction rules through its own centre that the setting-out grid
+// would have carried anyway. Drawn as three separate small passes rather than folded into
+// ceilingMonthCircle so a clash with the watch's animal can drop the box and rules with the wheel
+// while still leaving the caller free to draw the rules first, under the circle, the way a real
+// canon line sits under the figure it located.
+function ceilingMonthRules(g,cx,cy,reachX,reachY,alpha){
+  ceilingBrush(g,[[cx,cy-reachY],[cx,cy+reachY]],CEILING_PALETTE.red,.6,alpha,(cx|0)*3+1);
+  ceilingBrush(g,[[cx-reachX,cy],[cx+reachX,cy]],CEILING_PALETTE.red,.55,alpha*.85,(cy|0)*5+1);
+}
+function ceilingMonthBox(g,cx,cy,r,word,alpha){
+  const w=CEILING_WORD[word],cell=Math.max(5,r*.5),span=w?w.q.length*cell:0,
+    boxW=Math.max(r*2.3,span+cell*.7),boxH=r*2+cell*1.9,
+    x0=cx-boxW/2,x1=cx+boxW/2,y0=cy-boxH/2,y1=cy+boxH/2;
+  ceilingBrush(g,[[x0,y0],[x1,y0],[x1,y1],[x0,y1],[x0,y0]],CEILING_PALETTE.carbon,.65,alpha*.55,(cx|0)+(cy|0));
+  if(w)ceilingWordRow(g,word,cx,y1-cell*.65,cell,CEILING_PALETTE.carbon,alpha*.9,1);
 }
 // Meskhetiu, the Foreleg — the seven stars a later century calls the Plough, drawn on this ceiling as
 // the bull they belong to. The seven are set on the animal itself as star signs, which is how the
@@ -458,6 +507,23 @@ function ceilingPaintHippo(g,x,y,s,alpha=1){
   ceilingBrush(g,[P(.8,.0),P(.96,.0)],ink,lw*.55,.5,93);
   g.restore();
 }
+// A striding figure, in profile, one hand's plain wedge of a body and a solid disc balanced on the
+// head — the bottom register's own device, and the purest form of the density this wall works by:
+// one flat unit repeated, not eight different ones. The disc is the register's whole colour; the body
+// is left unfilled (flooded in the plaster tone, not a flat ink block) so the wall's line still does
+// the work, per docs/eras/03-ceiling.md's "Palette" hierarchy note. Small and cheap on purpose — it
+// stands in a margin lane, never full-width, and there is no ambition here beyond one legible silhouette.
+function ceilingPaintStriding(g,x,y,s,alpha=1,seed=1){
+  g.save();g.globalAlpha=alpha;
+  const ink=CEILING_PALETTE.carbon,P=(px,py)=>[x+px*s,y+py*s];
+  const body=[P(-.07,-.6),P(.09,-.6),P(.14,-.18),P(.1,.1),P(.32,.6),P(.2,.64),P(.04,.2),P(-.02,.22),P(-.16,.62),P(-.3,.66),P(-.14,.08),P(-.18,-.2)];
+  ceilingPolygon(g,body,CEILING_PALETTE.plaster,1,seed,Math.max(.6,s*.13));
+  g.globalAlpha=alpha;g.strokeStyle=ink;g.lineWidth=Math.max(.5,s*.08);
+  g.beginPath();g.arc(x,y-.72*s,s*.16,0,TAU);g.stroke();
+  g.fillStyle=CEILING_PALETTE.red;g.lineWidth=Math.max(.5,s*.06);
+  g.beginPath();g.arc(x,y-1.0*s,s*.24,0,TAU);g.fill();g.stroke();
+  g.restore();
+}
 // The four watches used to be one wall keyed on size alone, so every hour of the night was the same
 // tile with a different word in the running head. ceilingBakeWall paints one watch's register; the
 // cache and the changeover between registers are ceilingBuildWall()'s job, below it.
@@ -489,7 +555,10 @@ function ceilingBakeWall(watch){
   // a visible seam. Checked by eye at 390px and 1400px, stepping world.cameraY across three tile heights.
   const gap=Math.max(20,Math.min(28,H/22)),rows=Math.max(14,Math.round(H*1.6/gap)),R=rows*gap;
   const unitTarget=Math.max(20,Math.min(32,W/36)),gridUnit=R/Math.max(3,Math.round(R/unitTarget));
-  const inset=Math.max(10,Math.min(17,W*.03)),x0=inset+10,x1=W-inset-10,wide=W>=700;
+  // The gutter grows over the old single-file border's 10-17px: a broad three-row band needs real
+  // width to interlock in, and this is the one number both this bake and ceilingDrawRegisterGrid's
+  // pinned frame read, so the two stay lined up at x0/x1 exactly as before.
+  const inset=Math.max(15,Math.min(24,W*.05)),x0=inset+10,x1=W-inset-10,wide=W>=700;
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(R*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
   g.fillStyle=CEILING_PALETTE.plaster;g.fillRect(0,0,W,R);
   // The wall's texture is material, not pictorial modelling. It used to be 180-odd broad, soft-alpha
@@ -544,9 +613,12 @@ function ceilingBakeWall(watch){
   // drawing the seam's line twice (once here, once as the next copy's y=0 line).
   ceilingSettingGrid(g,inset,0,W-inset,R-1,gridUnit);
   // The side star bands used to run only between the frieze and the foot rule; now they are furniture
-  // like everything else here, so they run the tile's whole height on a gap that already divides it.
-  ceilingStarBorder(g,inset+9,0,R,gap);
-  ceilingStarBorder(g,W-inset-9,0,R,gap);
+  // like everything else here, so they run the tile's whole height on a gap that already divides it —
+  // and, per the correction, as the broad three-row woven band the facsimile actually carries rather
+  // than a single filed line of stars.
+  const starW=inset*1.15,starL=6+starW*.5,starRx=W-6-starW*.5;
+  ceilingStarBand(g,starL,0,R,gap,starW);
+  ceilingStarBand(g,starRx,0,R,gap,starW);
   // TT353 is organised as two fields divided by a band; here the band is the block border it would
   // have been painted as. It belongs to the register it divides, not to the room's architecture, so it
   // passes with the rest of the tile instead of pinning the way the foot rule does.
@@ -600,27 +672,56 @@ function ceilingBakeWall(watch){
     if(clash(y,side))continue;
     ceilingWordColumn(g,CEILING_COLUMNS[(i+rot)%nCol],side?W-inset-colIn:inset+colIn,y,cell,CEILING_PALETTE.carbon,.3+ceilingHash(i,3)*.14);
   }
-  if(furn.months)for(let i=0;i<12;i++){
-    const y=loY+span*(i+.5)/12,side=1-(i&1),
-      r=(wide?Math.min(19,H*.024):Math.max(9,Math.min(13,W*.027)))*(.76+ceilingHash(i,11)*.4);
-    if(clash(y,side))continue;
-    ceilingMonthCircle(g,side?W-inset-circIn-r:inset+circIn+r,y,r,.46+ceilingHash(i,17)*.16,i);
+  // Twelve identical wheels in two ruled rows is the facsimile's own layout; a vertically scrolling
+  // margin has no width to lay six across, so the sheet's "row" becomes a left/right pair sharing one
+  // height instead — six pairs down the tile's span, each pair generously spaced from the next, which
+  // reads as the same "two, not twelve-in-a-block" arrangement the correction asks for even though the
+  // axis it runs on is turned ninety degrees from the wall's own. A shared red rule ties each pair's
+  // centres together the way the canon's horizontal course would.
+  if(furn.months)for(let i=0;i<6;i++){
+    const y=loY+span*(i+.5)/6,jit=.95+ceilingHash(i,71)*.1,
+      r=(wide?Math.min(17,H*.021):Math.max(8,Math.min(11,W*.024)))*jit,
+      lx=inset+circIn+r,rx=W-inset-circIn-r,lOk=!clash(y,0),rOk=!clash(y,1);
+    if(lOk&&rOk)ceilingMonthRules(g,(lx+rx)/2,y,(rx-lx)/2+r*1.4,r*1.7,.32);
+    if(lOk){ceilingMonthRules(g,lx,y,r*1.4,r*1.7,.32);ceilingMonthCircle(g,lx,y,r,.85,i*2);ceilingMonthBox(g,lx,y,r,CEILING_MONTH_NAMES[i*2],.7);}
+    if(rOk){ceilingMonthRules(g,rx,y,r*1.4,r*1.7,.32);ceilingMonthCircle(g,rx,y,r,.85,i*2+1);ceilingMonthBox(g,rx,y,r,CEILING_MONTH_NAMES[i*2+1],.7);}
+  }
+  // The striding register: TT353's bottom band is a march of near-identical figures each bearing a
+  // solid disc, the sheet's purest instance of density-by-repetition and almost its only colour. It
+  // borrows the circle lane in whichever watch is not using it for the months, so it costs no new lane
+  // and never has to fight the wheels for the same margin.
+  if(!furn.months){
+    const stripN=5;
+    for(let i=0;i<stripN;i++){
+      const y=loY+span*i/(stripN-1);
+      if(!clash(y,1))ceilingPaintStriding(g,W-inset-circIn,y,wide?7:5,.8,i*13+3);
+      if(!clash(y,0))ceilingPaintStriding(g,inset+circIn,y,wide?7:5,.8,i*17+7);
+    }
   }
   return c;
 }
 // P2's cache and changeover. A register change is detected here — the watch ceilingWatch() names has
-// moved on from the one the resident tile was baked for — and answered by baking the new tile at once
-// (so it is ready the instant the painted band below finishes) while still returning the outgoing tile
-// for this frame and every frame until then. That is the one window in which two tiles are resident;
-// ceilingChangeover is cleared the moment it closes, whether by the band finishing, by the watch moving
-// on again before it did (a very fast climb skips stragglers rather than stacking a third tile), or at
-// once under reducedMotion, which holds no changeover at all — a still sheet has nothing to cross-fade.
-// A resize is not a register change: invalidateCeilingArt() already clears the cache outright for one,
-// so the two never compete for the same instant.
+// moved on from the one the resident tile was baked for — and answered by baking the new tile once, at
+// the instant the change is first seen, and holding it in ceilingChangeover while the outgoing tile
+// keeps passing below and the painted band above (ceilingDrawChangeover) does the work of being seen.
+// That is the one window in which two tiles are resident; every frame inside it returns the cached
+// outgoing tile with no further baking, and the window is cleared the moment it closes — whether by
+// the band finishing, by the watch moving on again before it did (a very fast climb finishes the one in
+// flight at once rather than stacking a third tile), by a resize (not a register change, so it is
+// finished at once and not cross-faded), or under reducedMotion, which never opens one at all.
 function ceilingBuildWall(){
   const watch=ceilingWatch(),dims=W+'x'+H+'x'+DPR,key=dims+':'+watch;
-  if(ceilingChangeover&&(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||chapterReveal.index!==ceilingChangeover.toWatch)){
-    ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
+  if(ceilingChangeover){
+    if(ceilingChangeover.toKey!==key){
+      // The target no longer matches this frame's watch/size — the climb skipped ahead again, or the
+      // screen resized — so the pending tile is promoted at once rather than left waiting on a target
+      // that has already passed; whatever changed further is picked up fresh below, the same as any
+      // other cache miss.
+      ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
+    }else if(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||chapterReveal.index!==watch){
+      ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
+      return ceilingWall;
+    }else return ceilingWall; // still mid-band: the outgoing tile keeps passing, already baked — no work this frame
   }
   if(ceilingWall&&ceilingWallKey===key)return ceilingWall;
   const tile=ceilingBakeWall(watch);
@@ -1057,13 +1158,16 @@ function ceilingDrawChangeover(dt){
   ctx.save();ctx.textAlign='center';
   // A band of fresh plaster laid across, translucent rather than the old opaque fill, so whatever it
   // covers is dimmed, never hidden — docs/eras/CEILING-POLISH.md P3's own alternative, applied to the
-  // register change itself rather than to a card standing apart from it.
-  ctx.globalAlpha=a*.55;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.fillRect(W*.18,cy-46,W*.64,94);
+  // register change itself rather than to a card standing apart from it. It is set in `lime`, the
+  // palette's own brighter repair tone (docs/eras/03-ceiling.md's palette table: "wear and repairs"),
+  // not the base `plaster` the rest of the wall is mixed from — the same colour, at full opacity, would
+  // be invisible laid over itself.
+  ctx.globalAlpha=a*.6;ctx.fillStyle=CEILING_PALETTE.lime;ctx.fillRect(W*.18,cy-48,W*.64,100);
   ctx.globalAlpha=a;
-  ceilingBlockRule(ctx,W*.18,W*.82,cy-46,5,.62*a);ceilingBlockRule(ctx,W*.18,W*.82,cy+40,5,.62*a);
+  ceilingBlockRule(ctx,W*.18,W*.82,cy-48,5,.62*a);ceilingBlockRule(ctx,W*.18,W*.82,cy+42,5,.62*a);
   // wnwt, the hour: the new register's own name, set out in red and closed in black — the wall's four
   // passes, which ceilingWordRow already runs — standing in for the atlas's turned sheet.
-  ceilingWordRow(ctx,'hour',W*.5,cy-9,40,CEILING_PALETTE.red,1,clamp(age/(CEILING_CHANGE_DUR*.75),0,1));
+  ceilingWordRow(ctx,'hour',W*.5,cy-9,46,CEILING_PALETTE.red,1,clamp(age/(CEILING_CHANGE_DUR*.75),0,1));
   ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=plateFace(11,'sc');
   if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ctx.fillText(label,W*.5,cy+30);
   ctx.restore();
