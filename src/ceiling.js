@@ -273,6 +273,22 @@ function ceilingWordRow(g,word,cx,y,cell,col,alpha=1,stage=1){
 // column's own foot. avoidY/figClear keep this generic content, never the ruling, clear of whichever
 // circumpolar figure is out this watch on the same side: the animal's own caption is drawn by the
 // caller right there, and a real canon grid would still run behind a painted figure, not stop at it.
+// One mark from src/signs-tt353.js, set at a chosen height. The bank's marks are ink-outline traces
+// carrying their own counters, so the shape is filled even-odd — outer flooded, holes cut back out —
+// which is how the wall itself finishes a sign: flat colour closed by its own line, not a hollow
+// drawing. The facsimile records the drawing; the wall was painted.
+function ceilingTracedMark(g,m,x,y,h,col,alpha){
+  if(!m||!m.outer||m.outer.length<3)return;
+  g.save();g.globalAlpha=alpha;g.fillStyle=col;g.beginPath();
+  const run=pts=>{for(let i=0;i<pts.length;i++){const px=x+pts[i][0]*h,py=y+pts[i][1]*h;if(i)g.lineTo(px,py);else g.moveTo(px,py);}g.closePath();};
+  run(m.outer);if(m.counters)for(const c of m.counters)if(c.length>2)run(c);
+  g.fill('evenodd');g.restore();
+}
+// Which marks a traced column may set. The bank's own header is binding here: these are traced marks
+// reproduced as drawing, and their order spells nothing — so a column takes either a word the checked
+// vocabulary can spell in full, or marks from the bank, and never both. Mixing them inside one column
+// would make a mark look like part of the word beside it, which is the one claim this data may not make.
+const ceilingSignBank=()=>typeof SIGNS_TT353!=='undefined'&&SIGNS_TT353.marks?SIGNS_TT353.marks.filter(m=>m.kind==='sign'):null;
 function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figClear,alpha){
   const subW=(xFar-xNear)/nSub,pad=cell*.5;
   for(let k=0;k<=nSub;k++){
@@ -311,6 +327,29 @@ function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figCle
       continue;
     }
     let y=loY+ccell*.7;const limitY=loY+(hiY-loY)*(.4+ceilingHash(seed,23)*.26),kAlpha=alpha*(.8+ceilingHash(seed,61)*.4);
+    // Roughly two columns in five are set from the traced bank instead of from the vocabulary. That is
+    // what buys the density the facsimile has and the checked table cannot: a wall packed with columns
+    // it can spell would need a vocabulary this sheet does not honestly have, and inventing one is the
+    // fault this era's file exists to prevent.
+    const bank=ceilingSignBank(),traced=bank&&bank.length&&ceilingHash(seed*3+11,29)<.4;
+    if(traced){
+      let ty=loY+ccell*.7,n=0;
+      while(ty<limitY-ccell*.3){
+        if(avoidY!=null&&Math.abs(ty-avoidY)<figClear){ty+=ccell*1.6;n++;continue;}
+        const m=bank[(cursor+n*3+rot+side*5)%bank.length],h=ccell*(.62+ceilingHash(seed+n,37)*.3);
+        ceilingTracedMark(g,m,cx+(ceilingHash(seed+n,41)-.5)*ccell*.12,ty,h,CEILING_PALETTE.carbon,kAlpha);
+        ty+=h*1.42;n++;
+      }
+      cursor+=n;
+      // The ruling runs on below the last mark exactly as it does under a spelled column, and the star
+      // run that follows is the column's own count, so a traced column is a decan column like any other.
+      const roll=ceilingHash(seed,53),stars=roll<.5?1:roll<.82?2:3;
+      for(let s2=0;s2<stars;s2++){
+        const sy=limitY+ (hiY-limitY)*(.14+ceilingHash(seed+s2,71)*.6);
+        if(avoidY==null||Math.abs(sy-avoidY)>=figClear)ceilingAsteriskStar(g,cx,sy,Math.max(2,ccell*.3),starAlpha,seed+s2*23);
+      }
+      continue;
+    }
     while(y<limitY-ccell*.3){
       if(avoidY!=null&&Math.abs(y-avoidY)<figClear){y+=ccell*1.6;continue;}
       const word=CEILING_COLUMNS[(cursor+rot+side*7)%CEILING_COLUMNS.length],w=CEILING_WORD[word];cursor++;
