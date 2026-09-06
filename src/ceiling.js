@@ -59,7 +59,16 @@ const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // so the two can never drift apart. They are kept short on purpose: the outer two are set under the
 // circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
 const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
-let ceilingWall=null,ceilingWallKey='';
+let ceilingWall=null,ceilingWallKey='',ceilingWallWatch=-1;
+// P2 · a register per watch. ceilingWall is keyed on the watch as well as the size, so each of the
+// four now bakes its own tile (see ceilingWatch()/ceilingBakeWall() below). ceilingChangeover is the
+// one place this file ever holds a second tile at once: the outgoing register, still passing below,
+// alongside the incoming one baked and waiting while the painted band in ceilingDrawChangeover() is
+// seen doing the work. It is never more than these two, and it is dropped — freeing the outgoing
+// tile — the instant that band finishes, so the peak cost of four watches is twice one tile, briefly,
+// not four times it standing the whole run.
+let ceilingChangeover=null;
+const CEILING_CHANGE_DUR=1.2;
 // The room's own architecture — the kheker frieze and the foot's block rule — is cached separately
 // from the tall passing strip below, because it never moves: see ceilingDrawRegisterGrid(). Each is
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
@@ -68,8 +77,11 @@ let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='';
 // The barque's last known heading, held between frames so a passing moment of near-zero horizontal
 // speed (the tip of a climb or dive) does not flicker the mirror back and forth.
 let ceilingFacing=1;
+// The one expression that names which of the four watches is current, shared by the wall's own bake
+// (which register to paint) and the running head (which word to print) so the two can never drift.
+function ceilingWatch(){return world?clamp(Math.floor(world.progress/8),0,3):0;}
 
-function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
+function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
 // Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
@@ -446,8 +458,10 @@ function ceilingPaintHippo(g,x,y,s,alpha=1){
   ceilingBrush(g,[P(.8,.0),P(.96,.0)],ink,lw*.55,.5,93);
   g.restore();
 }
-function ceilingBuildWall(){
-  const key=W+'x'+H+'x'+DPR;if(ceilingWall&&ceilingWallKey===key)return ceilingWall;
+// The four watches used to be one wall keyed on size alone, so every hour of the night was the same
+// tile with a different word in the running head. ceilingBakeWall paints one watch's register; the
+// cache and the changeover between registers are ceilingBuildWall()'s job, below it.
+function ceilingBakeWall(watch){
   // P1 · carry the wall with the climb. The wall used to be one canvas the size of the screen, blitted
   // at 0,0 forever, so forty rows of climbing never moved a single kheker or a single month circle.
   // It is baked here as one repeating TILE instead: the room's own architecture — the kheker frieze
@@ -463,8 +477,9 @@ function ceilingBuildWall(){
   // The tile stands about 1.6 view-heights tall: taller than one glance, as asked, but still a plain
   // multiple of it rather than an unbounded strip, so the memory this costs over the old screen-sized
   // bake is a fixed ~1.6x of one screen (the frieze/foot pair cached in ceilingDrawRegisterGrid() adds
-  // only a few pixels' worth of height each, not a second full-screen sheet), not a cost that grows
-  // with how long a run gets.
+  // only a few pixels' worth of height each, not a second full-screen sheet). P2 keys this same tile on
+  // the watch as well, so four of them exist over a run, but see ceilingBuildWall() below for why that
+  // never means four resident at once.
   //
   // Every rhythm that has to survive the join between one copy of the tile and the next — the star
   // band's gap, the canon grid's unit — is forced to an exact divisor of the tile height before it is
@@ -549,28 +564,71 @@ function ceilingBuildWall(){
   // that already anchors that reach of the tile.
   const cell=wide?15:12,colIn=wide?30:16,circIn=wide?64:30,bullIn=wide?120:40,hippoIn=wide?108:38,
     figClear=wide?90:46,loY=R*.07,hiY=wide?R*.94:R*.93,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
-  // Meskhetiu and Reret, full size and at full strength — they used to be thumbnails at s=20/19 and
-  // 46-50% alpha, a red box with stick legs and a blue sack; see ceilingPaintBull/ceilingPaintHippo for
-  // the construction that lets them survive being drawn this large. One to a margin and a good third
-  // of the tile apart, instead of huddled together at the old fixed divide.
-  ceilingPaintBull(g,W-inset-bullIn,bullY,wide?34:15,1);
-  ceilingWordColumn(g,'foreleg',W-inset-(wide?36:14),bullY-(wide?76:56),cell,CEILING_PALETTE.carbon,.6);
-  ceilingPaintHippo(g,inset+hippoIn,hippoY,wide?30:13,1);
-  ceilingWordColumn(g,'star',inset+(wide?30:14),hippoY-(wide?100:52),cell,CEILING_PALETTE.carbon,.55);
-  const clash=(y,side)=>(side&&Math.abs(y-bullY)<figClear)||(!side&&Math.abs(y-hippoY)<figClear);
+  // P2 · a register per watch. TT353 is one authored sheet and the circumpolar pair, the decan columns
+  // and the twelve month circles are not separate chapters of it (docs/eras/03-ceiling.md, "The
+  // signature sheet") — but which of that one sheet's furniture the flight is currently passing is
+  // exactly the kind of thing a night's watches divide, the way a real visit to the room would not take
+  // in the whole ceiling in one glance. So each watch is given a different reach of the same wall
+  // rather than a different wall: Meskhetiu leads the first watch alone, since the seven stars of the
+  // Foreleg are the sheet's own signature drawing and earn the room to themselves; Reret takes the
+  // second watch's margin in her turn, so the two guardians are never competing for the eye at once and
+  // neither is on screen for the entire run the way both used to be; the months come forward at the
+  // watch that has no animal in it at all, so the margins are not always the same two shapes; and the
+  // last watch, before dawn, is the one place everything the room owns is out together, since the night
+  // is closing and there is nothing left for the wall to hold back. The decan columns advance through
+  // CEILING_COLUMNS by a quarter of the list each watch (rot below) rather than always starting at
+  // 'hour', so a full night's climb reads all fourteen names by its end instead of the same three or
+  // four every time — the fourteen-word list this sheet is checked against, not a shorter one invented
+  // to fit a single watch's share of the margin.
+  const CEILING_FURNITURE=[{bull:1,hippo:0,months:0},{bull:0,hippo:1,months:0},{bull:0,hippo:0,months:1},{bull:1,hippo:1,months:1}];
+  const furn=CEILING_FURNITURE[watch],rot=watch*4;
+  if(furn.bull){
+    ceilingPaintBull(g,W-inset-bullIn,bullY,wide?34:15,1);
+    ceilingWordColumn(g,'foreleg',W-inset-(wide?36:14),bullY-(wide?76:56),cell,CEILING_PALETTE.carbon,.6);
+  }
+  if(furn.hippo){
+    ceilingPaintHippo(g,inset+hippoIn,hippoY,wide?30:13,1);
+    ceilingWordColumn(g,'star',inset+(wide?30:14),hippoY-(wide?100:52),cell,CEILING_PALETTE.carbon,.55);
+  }
+  // The clash margin only excludes a figure's own reach of the tile when that figure is actually
+  // painted this watch — a watch with neither animal in it (the months' own turn) gives every column
+  // slot back to the columns instead of leaving two dead gaps where the animals used to stand.
+  const clash=(y,side)=>(side&&furn.bull&&Math.abs(y-bullY)<figClear)||(!side&&furn.hippo&&Math.abs(y-hippoY)<figClear);
   const nCol=CEILING_COLUMNS.length;
   for(let i=0;i<nCol;i++){
     const y=loY+span*i/(nCol-1),side=i&1;
     if(clash(y,side))continue;
-    ceilingWordColumn(g,CEILING_COLUMNS[i],side?W-inset-colIn:inset+colIn,y,cell,CEILING_PALETTE.carbon,.3+ceilingHash(i,3)*.14);
+    ceilingWordColumn(g,CEILING_COLUMNS[(i+rot)%nCol],side?W-inset-colIn:inset+colIn,y,cell,CEILING_PALETTE.carbon,.3+ceilingHash(i,3)*.14);
   }
-  for(let i=0;i<12;i++){
+  if(furn.months)for(let i=0;i<12;i++){
     const y=loY+span*(i+.5)/12,side=1-(i&1),
       r=(wide?Math.min(19,H*.024):Math.max(9,Math.min(13,W*.027)))*(.76+ceilingHash(i,11)*.4);
     if(clash(y,side))continue;
     ceilingMonthCircle(g,side?W-inset-circIn-r:inset+circIn+r,y,r,.46+ceilingHash(i,17)*.16,i);
   }
-  ceilingWall=c;ceilingWallKey=key;return c;
+  return c;
+}
+// P2's cache and changeover. A register change is detected here — the watch ceilingWatch() names has
+// moved on from the one the resident tile was baked for — and answered by baking the new tile at once
+// (so it is ready the instant the painted band below finishes) while still returning the outgoing tile
+// for this frame and every frame until then. That is the one window in which two tiles are resident;
+// ceilingChangeover is cleared the moment it closes, whether by the band finishing, by the watch moving
+// on again before it did (a very fast climb skips stragglers rather than stacking a third tile), or at
+// once under reducedMotion, which holds no changeover at all — a still sheet has nothing to cross-fade.
+// A resize is not a register change: invalidateCeilingArt() already clears the cache outright for one,
+// so the two never compete for the same instant.
+function ceilingBuildWall(){
+  const watch=ceilingWatch(),dims=W+'x'+H+'x'+DPR,key=dims+':'+watch;
+  if(ceilingChangeover&&(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||chapterReveal.index!==ceilingChangeover.toWatch)){
+    ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
+  }
+  if(ceilingWall&&ceilingWallKey===key)return ceilingWall;
+  const tile=ceilingBakeWall(watch);
+  if(!reducedMotion&&ceilingWall&&ceilingWallWatch>=0&&ceilingWallWatch!==watch&&ceilingWallKey.split(':')[0]===dims){
+    ceilingChangeover={to:tile,toKey:key,toWatch:watch};
+    return ceilingWall;
+  }
+  ceilingWall=tile;ceilingWallKey=key;ceilingWallWatch=watch;return ceilingWall;
 }
 // The room's only furniture that does not pass: the kheker frieze crowning it and the block rule
 // closing it at the foot (see ceilingBuildWall() above for the reasoning). This used to be the 9%-alpha
@@ -720,7 +778,16 @@ function ceilingDrawNode(n,aim){
     for(let i=0;i<24;i++){const a=i/24*TAU;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.72,Math.sin(a)*r*.72);ctx.lineTo(Math.cos(a)*r*.94,Math.sin(a)*r*.94);ctx.stroke();}
     ctx.beginPath();ctx.arc(0,0,r*.7,0,TAU);ctx.stroke();
   }
-  if(target||active){ctx.strokeStyle=target?'rgba(40,89,135,.72)':'rgba(196,147,46,.64)';ctx.lineWidth=1.2;ctx.setLineDash([3.5*scale,3*scale]);ctx.beginPath();ctx.arc(0,0,cap,0,TAU);ctx.stroke();ctx.setLineDash([]);}
+  // Defect (e): a dashed circle is the engraved atlas's mark, carried over unexamined. The wall's own
+  // way to rule a boundary is a doubled line — the same hair-off-register repeat ceilingSign's closing
+  // stroke already wears where the brush reloaded — so the target ring (where the flight will land)
+  // and the capture band (how close counts while orbiting) keep the true radius on the inner, on-cap
+  // stroke and add only a fainter echo outside it, never inside, so the boundary itself never blurs.
+  if(target||active){
+    const col=target?'40,89,135':'196,147,46';
+    ctx.strokeStyle=`rgba(${col},.74)`;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,cap,0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(${col},.36)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,cap+2.6*scale,0,TAU);ctx.stroke();
+  }
   ceilingNodeIcon(n,r,t);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
@@ -820,8 +887,22 @@ function ceilingDrawPlayer(){
   const boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),dx=4+(reducedMotion?0:Math.sin(world.time*(1.2+boost*1.8))*11);
   ctx.fillStyle=CEILING_PALETTE.red;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(dx,-10,6,0,TAU);ctx.fill();ctx.stroke();
   ceilingBrush(ctx,[[dx,-16],[dx+3,-20]],CEILING_PALETTE.carbon,1,.85,923);
-  if(p.shielded){ctx.strokeStyle='rgba(40,89,135,.72)';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,0,17,0,TAU);ctx.stroke();}
-  if(p.reflectorArmed){ctx.strokeStyle='rgba(157,55,36,.72)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(0,0,21,0,TAU);ctx.stroke();ctx.setLineDash([]);}
+  // Defect (e): the reflector's ring was the atlas's dashed convention; the wall marks the same
+  // boundary two other ways instead, so the two held charges stay tellable apart by shape as well as
+  // by colour and radius. The shield keeps a doubled line, close and smooth, at its own tighter radius
+  // — the era file's "src/effects.js:511-522" precedent for keeping the two apart by radius as well as
+  // colour still holds here. The reflector, wider still, becomes a block border: short painted segments
+  // around the rim, the same rhythm ceilingBlockRule lays along a straight register line, bent around a
+  // circle instead of ruled with a dash — a ring built of blocks reads as broken at a glance without
+  // borrowing the engraved atlas's ruling pen to do it.
+  if(p.shielded){
+    ctx.strokeStyle='rgba(40,89,135,.72)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,17,0,TAU);ctx.stroke();
+    ctx.strokeStyle='rgba(40,89,135,.36)';ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,19.4,0,TAU);ctx.stroke();
+  }
+  if(p.reflectorArmed){
+    const segs=14,gap=.32;ctx.strokeStyle='rgba(157,55,36,.8)';ctx.lineWidth=1.4;ctx.lineCap='butt';
+    for(let i=0;i<segs;i++){const a0=i/segs*TAU,a1=a0+(1-gap)/segs*TAU;ctx.beginPath();ctx.arc(0,0,21,a0,a1);ctx.stroke();}
+  }
   ctx.restore();
 }
 // ---------- The wall's record of a flight: four marks in pigment, and the score as a marginal note ----------
@@ -943,7 +1024,7 @@ function ceilingDrawDark(dt){
   for(let x=-20;x<=W+20;x+=10){const y=fy+12+Math.sin(x/54+world.time*.12)*8;if(x<0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();
 }
 function ceilingDrawRunningHead(dt){
-  const index=clamp(Math.floor(world.progress/8),0,3),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
+  const index=ceilingWatch(),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
   // The hour is a count the wall itself makes, so it is written in strokes, largest first, and the
   // Latin beside it stays what it is: a modern gloss, set in the era's slab and not pretending to
   // be a reading of the line it glosses. Roman numerals belonged to a century three sheets later.
@@ -959,18 +1040,33 @@ function ceilingDrawRunningHead(dt){
   ctx.fillRect(left-pad,y-size*1.5,width+figures+size*.75+pad*2,size*1.85);
   ctx.globalAlpha=.72;ceilingNumber(ctx,index+1,left,y-size*.78,size*1.05,CEILING_PALETTE.carbon);
   ctx.fillStyle=CEILING_PALETTE.carbon;ctx.fillText(label,left+figures+size*.75,y);ctx.restore();
-  if(chapterReveal.age<2.35&&world.state==='playing'){
-    if(world.state!=='paused')chapterReveal.age+=dt;
-    const age=chapterReveal.age,a=Math.sin(clamp(age/2.35,0,1)*Math.PI),cy=H*.5;
-    ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.fillStyle=CEILING_PALETTE.lime;ctx.fillRect(W*.18,cy-46,W*.64,94);
-    ceilingBlockRule(ctx,W*.18,W*.82,cy-46,5,.62*a);ceilingBlockRule(ctx,W*.18,W*.82,cy+40,5,.62*a);
-    // wnwt, the hour: the word is painted on in the wall's four passes, and the Latin under it is
-    // written in the same order by the plate's own hand, which is what `mode:'wall'` now buys.
-    ceilingWordRow(ctx,'hour',W*.5,cy-9,40,CEILING_PALETTE.red,1,clamp(age/.9,0,1));
-    ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=plateFace(11,'sc');
-    if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ctx.fillText(label,W*.5,cy+30);
-    ctx.restore();
-  }
+}
+// P3 · the flat lime chapter card is retired outright rather than softened. It used to fill
+// W*.18..W*.82 with opaque lime and cover the very hour-circles the player was aiming at every time a
+// watch turned — the crudest single element on the sheet (docs/eras/CEILING-POLISH.md, "1 · The wall
+// does not move"). Now that P2 gives every watch its own register, the new furniture arriving under
+// the flight IS the announcement, exactly the preferred outcome that file names; no card is needed to
+// say what the wall is already saying by looking different. What is left of the old card is the brief
+// painted band below marking the moment the register turns, and it is drawn here — before a single
+// node, hazard, the aim guide or the barque — so it sits under the whole flight layer in renderCeiling
+// and can never cost the player sight of a circle, whatever alpha it wears.
+function ceilingDrawChangeover(dt){
+  if(reducedMotion||world.state!=='playing'||chapterReveal.index<=0||chapterReveal.age>=CEILING_CHANGE_DUR)return;
+  chapterReveal.age+=dt;
+  const age=chapterReveal.age,a=Math.sin(clamp(age/CEILING_CHANGE_DUR,0,1)*Math.PI),cy=H*.5,label=CEILING_HOURS[chapterReveal.index];
+  ctx.save();ctx.textAlign='center';
+  // A band of fresh plaster laid across, translucent rather than the old opaque fill, so whatever it
+  // covers is dimmed, never hidden — docs/eras/CEILING-POLISH.md P3's own alternative, applied to the
+  // register change itself rather than to a card standing apart from it.
+  ctx.globalAlpha=a*.55;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.fillRect(W*.18,cy-46,W*.64,94);
+  ctx.globalAlpha=a;
+  ceilingBlockRule(ctx,W*.18,W*.82,cy-46,5,.62*a);ceilingBlockRule(ctx,W*.18,W*.82,cy+40,5,.62*a);
+  // wnwt, the hour: the new register's own name, set out in red and closed in black — the wall's four
+  // passes, which ceilingWordRow already runs — standing in for the atlas's turned sheet.
+  ceilingWordRow(ctx,'hour',W*.5,cy-9,40,CEILING_PALETTE.red,1,clamp(age/(CEILING_CHANGE_DUR*.75),0,1));
+  ctx.fillStyle=CEILING_PALETTE.carbon;ctx.font=plateFace(11,'sc');
+  if(!penLettering(label,W*.5,cy+30,11,'slab',age-.5,'center'))ctx.fillText(label,W*.5,cy+30);
+  ctx.restore();
 }
 function renderCeiling(dt,aim){
   reveal.prime();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
@@ -984,6 +1080,7 @@ function renderCeiling(dt,aim){
   const phase=(((-world.cameraY*scale)%tileH)+tileH)%tileH;
   for(let y=phase-tileH;y<H;y+=tileH)ctx.drawImage(tile,0,y,W,tileH);
   ceilingDrawRegisterGrid();
+  ceilingDrawChangeover(dt);
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
   ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);
