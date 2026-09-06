@@ -276,8 +276,12 @@ function ceilingWordRow(g,word,cx,y,cell,col,alpha=1,stage=1){
 function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figClear,alpha){
   const subW=(xFar-xNear)/nSub,pad=cell*.5;
   for(let k=0;k<=nSub;k++){
-    const x=xNear+k*subW,al=alpha*(.85+ceilingHash(rot+k,side*97)*.35);
-    ceilingBrush(g,[[x,loY-pad],[x,hiY+pad]],CEILING_PALETTE.carbon,.65,al,rot*11+k*13+side*503+7);
+    // A ruled line snapped by eye leans a hair off true rather than running dead straight, so each
+    // rule is walked as three points with the middle one nudged sideways instead of a bare two-point
+    // line — cheap, and it is what stops a wall of them reading as a printed table's gridlines.
+    const x=xNear+k*subW,al=alpha*(.85+ceilingHash(rot+k,side*97)*.35),bow=(ceilingHash(rot+k*5,side*61+3)-.5)*cell*.6,
+      midY=(loY+hiY)*.5;
+    ceilingBrush(g,[[x,loY-pad],[x+bow,midY],[x,hiY+pad]],CEILING_PALETTE.carbon,.65,al,rot*11+k*13+side*503+7);
   }
   // A side that happened to roll every one of its columns blank would read as an empty lane rather
   // than a quiet one, so at least the outermost column — nearest the star border, and the one the
@@ -294,10 +298,15 @@ function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figCle
     const cx=xNear+(k+.5)*subW,jitter=.86+ceilingHash(rot+k*3,side+9)*.3,ccell=Math.max(6,subW*.84*jitter),
       seed=rot*29+k*41+side*757,starAlpha=Math.min(.8,alpha+.32);
     if(blank[k]){
-      const stars=ceilingHash(seed,5)<.6?1:2;
+      // A column's star count is its data, on a real star table, so it is not fixed at one or two:
+      // most columns carry a couple, spread loosely down the lane, but some run a tight cluster of
+      // four or five, close enough together to read as a run rather than a scatter.
+      const roll=ceilingHash(seed,5),stars=roll<.42?1:roll<.7?2:roll<.88?4:5,cluster=stars>2,
+        step=cluster?ccell*.6:(hiY-loY)*.4,y0b=loY+ccell*1.4+(hiY-loY)*(cluster?ceilingHash(seed,13)*.28:.16);
       for(let s=0;s<stars;s++){
-        const y=loY+ccell*1.5+(hiY-loY)*(.2+ceilingHash(seed+s,11)*.55);
-        if(avoidY==null||Math.abs(y-avoidY)>=figClear)ceilingBorderStar(g,cx,y,Math.max(2,ccell*.24),starAlpha,seed+s*17);
+        const y=cluster?y0b+s*step*(.8+ceilingHash(seed+s,19)*.4):loY+ccell*1.5+(hiY-loY)*(.18+ceilingHash(seed+s,11)*.6);
+        if(y>hiY-ccell*.3)break;
+        if(avoidY==null||Math.abs(y-avoidY)>=figClear)ceilingAsteriskStar(g,cx,y,Math.max(2,ccell*.3),starAlpha,seed+s*17);
       }
       continue;
     }
@@ -310,7 +319,7 @@ function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figCle
         for(let i=0;i<w.q.length&&y<limitY;i++,y+=ccell)ceilingQuadrat(g,w.q[i],cx,y,ccell,CEILING_PALETTE.carbon,1,seed+i*7+cursor*3);
         g.restore();
       }
-      if(y<limitY-ccell*.4){ceilingBorderStar(g,cx,y,Math.max(2.2,ccell*.28),starAlpha,seed+cursor*13);y+=ccell*1.15;}
+      if(y<limitY-ccell*.4){ceilingAsteriskStar(g,cx,y,Math.max(2.2,ccell*.32),starAlpha,seed+cursor*13);y+=ccell*1.15;}
     }
   }
 }
@@ -357,11 +366,17 @@ function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false){
 function ceilingKheker(g,x0,x1,y,h){
   const cols=[CEILING_PALETTE.red,CEILING_PALETTE.blue,CEILING_PALETTE.yellow],step=Math.max(19,Math.min(30,(x1-x0)/24));
   for(let x=x0,i=0;x<=x1-step*.55;x+=step,i++){
-    const b=x+step*.5,c=cols[i%3],u=h/16;
-    ceilingPolygon(g,[[b-u*1.9,y+h],[b-u*1.9,y+h*.52],[b-u*2.7,y+h*.44],[b-u*1.1,y+h*.36],[b+u*1.1,y+h*.36],[b+u*2.7,y+h*.44],[b+u*1.9,y+h*.52],[b+u*1.9,y+h]],CEILING_PALETTE.white,1,i*17+3,1);
-    for(let k=-2;k<=2;k++)ceilingBrush(g,[[b+k*u*.85,y+h*.36],[b+k*u*2.5,y+h*.02]],k%2?c:CEILING_PALETTE.carbon,Math.max(1,u*.7),.85,i*29+k*5);
-    ceilingBrush(g,[[b-u*2.9,y+h*.51],[b+u*2.9,y+h*.51]],c,Math.max(1,u*.8),.9,i*31);
-    ceilingBrush(g,[[b-u*2.9,y+h*.64],[b+u*2.9,y+h*.64]],CEILING_PALETTE.carbon,Math.max(.55,u*.45),.62,i*37);
+    // Each bundle gets its own size and a little give in where it sits along the crown — a reed
+    // bundle bound by hand is never quite the same girth as its neighbour, and the row it stands on
+    // is not a ruled line — plus a heavier or lighter pass on the splay, the same reloaded-brush
+    // unevenness ceilingBrush's own thicker stroke already fakes for a single mark, read here across
+    // the whole frieze instead of within one.
+    const jit=.86+ceilingHash(i,7)*.32,b=x+step*.5+(ceilingHash(i,13)-.5)*step*.22,c=cols[i%3],u=h/16*jit,
+      drop=(ceilingHash(i,19)-.5)*h*.06,load=.72+ceilingHash(i,23)*.5;
+    ceilingPolygon(g,[[b-u*1.9,y+h+drop],[b-u*1.9,y+h*.52+drop],[b-u*2.7,y+h*.44+drop],[b-u*1.1,y+h*.36+drop],[b+u*1.1,y+h*.36+drop],[b+u*2.7,y+h*.44+drop],[b+u*1.9,y+h*.52+drop],[b+u*1.9,y+h+drop]],CEILING_PALETTE.white,1,i*17+3,1);
+    for(let k=-2;k<=2;k++)ceilingBrush(g,[[b+k*u*.85,y+h*.36+drop],[b+k*u*2.5,y+h*.02+drop]],k%2?c:CEILING_PALETTE.carbon,Math.max(1,u*.7*load),.7+.18*load,i*29+k*5);
+    ceilingBrush(g,[[b-u*2.9,y+h*.51+drop],[b+u*2.9,y+h*.51+drop]],c,Math.max(1,u*.8),.9,i*31);
+    ceilingBrush(g,[[b-u*2.9,y+h*.64+drop],[b+u*2.9,y+h*.64+drop]],CEILING_PALETTE.carbon,Math.max(.55,u*.45),.62,i*37);
   }
   ceilingBrush(g,[[x0,y+h+1],[x1,y+h+1]],CEILING_PALETTE.carbon,1.2,.68,91);
 }
@@ -373,8 +388,14 @@ function ceilingBlockRule(g,x0,x1,y,h,alpha=.8){
   ceilingBrush(g,[[x0,y],[x1,y]],CEILING_PALETTE.carbon,1.3,.78*alpha/.8,201);
   g.save();
   const block=Math.max(7,h*.9);
-  for(let x=x0,i=0;x<x1;x+=block,i++){
-    g.globalAlpha=alpha*(.88+ceilingHash(i,y)*.12);g.fillStyle=cols[i%8];g.fillRect(x,y+1.4,Math.max(0,Math.min(block,x1-x)-.9),h);
+  // Neither the block's own width nor the colour it takes is a perfect cycle: a pot runs low and the
+  // next block is cut a hair short or long to use it up, and the colour index is nudged off its
+  // strict rotation often enough that the run of eight never quite repeats — kept rare enough that
+  // the sequence still reads as the cycle it is, just not a stamped one.
+  for(let x=x0,i=0;x<x1;i++){
+    const w=Math.min(block*(.78+ceilingHash(i,y)*.5),x1-x),ci=(i+(ceilingHash(i,y+11)<.18?1:0))%8;
+    g.globalAlpha=alpha*(.82+ceilingHash(i,y)*.22);g.fillStyle=cols[ci];g.fillRect(x,y+1.4,Math.max(0,w-.9),h);
+    x+=w;
   }
   g.restore();
   ceilingBrush(g,[[x0,y+h+2.4],[x1,y+h+2.4]],CEILING_PALETTE.carbon,1.3,.78*alpha/.8,202);
@@ -391,21 +412,47 @@ function ceilingSettingGrid(g,x0,y0,x1,y1,unit){
   for(let y=y0;y<=y1;y+=unit){g.moveTo(x0,y);g.lineTo(x1,y);}
   g.stroke();g.restore();
 }
-// The border star: five tapering lobes radiating from a small hub, drawn as an open outline rather
-// than N14's flat flood — this is the facsimile's repeating frame unit, not the decan sign, so it
-// never carries a fill for the same reason a woven border pattern never does. A hair of per-star
-// rotation keeps a whole band of them from reading as one stamp repeated.
+// The border star, redrawn from a figure-scale crop rather than the small reference this first went
+// up from: not five straight-sided kite lobes but five unequal lens-shaped arms — two curved edges
+// meeting at a point at both the hub and the tip, so an arm has a belly, the way a loaded brush
+// dragged to a point does. A small ringed hub with its own centre dot sits over where the five bases
+// converge, hiding what would otherwise be a knot of coincident line-ends. Every arm gets its own
+// length, belly and weight off the star's own seed, the whole star an arbitrary full rotation rather
+// than a token wobble, so no two stars on a band — and no two arms on one star — are quite alike.
 function ceilingBorderStar(g,cx,cy,r,alpha,seed){
-  const rot=(ceilingHash(seed,3)-.5)*.34,hub=r*.24;
-  g.save();g.globalAlpha=alpha;g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.55,r*.17);g.lineJoin='round';g.lineCap='round';
+  // A stroked lens reads as intended at figure scale, but at the size a band actually runs it — a few
+  // pixels — a hollow outline this thin just breaks into a scribble of crossing hairlines. Filled
+  // solid, the same lens silhouette holds at any size: still five bellied arms tapering to a point,
+  // just painted rather than drawn open, and every arm's own curve still shows wherever the star is
+  // big enough to see it (a band at 4x, the corner roundel). Jitter is kept modest on purpose — this
+  // is a band of stars, not a scatter of them, and the facsimile's own arms are close to even.
+  const rr0=r*(.86+ceilingHash(seed,101)*.3),rot=ceilingHash(seed,3)*TAU,hub=rr0*.17;
+  g.save();g.globalAlpha=alpha*(.84+ceilingHash(seed,97)*.3);g.fillStyle=CEILING_PALETTE.carbon;
   for(let i=0;i<5;i++){
-    const a=rot-Math.PI/2+i*TAU/5,perp=a+Math.PI/2,flare=r*.24,mid=r*.58,
-      tip=[cx+Math.cos(a)*r,cy+Math.sin(a)*r],hp=[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],
-      L=[cx+Math.cos(a)*mid+Math.cos(perp)*flare,cy+Math.sin(a)*mid+Math.sin(perp)*flare],
-      Rr=[cx+Math.cos(a)*mid-Math.cos(perp)*flare,cy+Math.sin(a)*mid-Math.sin(perp)*flare];
-    g.beginPath();g.moveTo(hp[0],hp[1]);g.lineTo(L[0],L[1]);g.lineTo(tip[0],tip[1]);g.lineTo(Rr[0],Rr[1]);g.closePath();g.stroke();
+    const a=rot+i*TAU/5+(ceilingHash(seed+i*7,41)-.5)*.32,len=rr0*(.84+ceilingHash(seed+i*3,53)*.3),
+      belly=len*(.15+ceilingHash(seed+i*5,59)*.08),bf=.44+ceilingHash(seed+i*9,61)*.12,perp=a+Math.PI/2,
+      hp=[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],tip=[cx+Math.cos(a)*len,cy+Math.sin(a)*len],
+      bx=cx+Math.cos(a)*len*bf,by=cy+Math.sin(a)*len*bf,
+      c1=[bx+Math.cos(perp)*belly,by+Math.sin(perp)*belly],c2=[bx-Math.cos(perp)*belly,by-Math.sin(perp)*belly];
+    g.beginPath();g.moveTo(hp[0],hp[1]);g.quadraticCurveTo(c1[0],c1[1],tip[0],tip[1]);g.quadraticCurveTo(c2[0],c2[1],hp[0],hp[1]);g.closePath();g.fill();
   }
-  g.beginPath();g.arc(cx,cy,hub*.5,0,TAU);g.stroke();g.restore();
+  g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.45,hub*.4);g.beginPath();g.arc(cx,cy,hub,0,TAU);g.stroke();
+  g.beginPath();g.arc(cx,cy,Math.max(.4,hub*.36),0,TAU);g.fill();
+  g.restore();
+}
+// The column star: a different mark from the border star, not a smaller copy of it — inside a decan
+// column the sky is a table and its unit is a plain five-line asterisk, thin straight strokes crossing
+// at a point with no hub and no belly at all. Kept as its own function rather than a size argument to
+// ceilingBorderStar because the two are different signs on the wall, not one sign at two scales.
+function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
+  const rr0=r*(.82+ceilingHash(seed,103)*.4),rot=ceilingHash(seed,7)*TAU;
+  g.save();g.globalAlpha=alpha*(.72+ceilingHash(seed,131)*.42);g.strokeStyle=CEILING_PALETTE.carbon;g.lineCap='round';
+  for(let i=0;i<5;i++){
+    const a=rot+i*TAU/5+(ceilingHash(seed+i*13,139)-.5)*.5,len=rr0*(.7+ceilingHash(seed+i*7,151)*.6);
+    g.lineWidth=Math.max(.45,rr0*(.11+ceilingHash(seed+i*3,157)*.07));
+    g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*len,cy+Math.sin(a)*len);g.stroke();
+  }
+  g.restore();
 }
 // The star band, corrected: not a single file of small solid stars but a broad woven band of three
 // staggered rows, the sheet's main framing device and, by sheer repetition of one flat unit, its
@@ -415,22 +462,44 @@ function ceilingBorderStar(g,cx,cy,r,alpha,seed){
 // square grid. Used for the tile's own two side bands, which pass with the climb like every other
 // margin furniture; ceilingStarBandH below is the same unit run sideways for the frame's fixed top
 // and bottom edges.
-function ceilingStarBand(g,x,y0,y1,gap,width){
-  const cols=[x-width*.3,x,x+width*.3],r=Math.max(3,width*.19);
-  ceilingBrush(g,[[x-width*.5,y0],[x-width*.5,y1]],CEILING_PALETTE.carbon,.7,.4,x|0);
-  ceilingBrush(g,[[x+width*.5,y0],[x+width*.5,y1]],CEILING_PALETTE.carbon,.7,.4,(x|0)+3);
-  for(let c=0;c<3;c++){
-    const stagger=c===1?gap*.5:0;
-    for(let y=y0+gap*.5+stagger,i=0;y<y1;y+=gap,i++)ceilingBorderStar(g,cols[c],y,r,.76,(y|0)*3+i*7+c*101+(x|0));
+// A hi-res crop settled two things a small reference could not: the arm tips of neighbouring stars
+// actually overlap (density comes from the crowding, not from gaps between clean units), and each
+// row runs between fine RED rules — the canon again, not a black border — with as many rules as rows
+// plus one. rows itself is not fixed at three: the sheet's own top border runs three, the band that
+// divides its two registers runs two, so the caller says how many. Every star gets its own size from
+// ceilingBorderStar's own seed already; on top of that each row drifts off true as a slow wave whose
+// period is a whole number of cycles across the band's own length, so a tiled copy still joins its
+// neighbour exactly, and each star's position wanders a little more besides — opening and closing the
+// pitch instead of holding one constant gap, the same wobble a hand ruling by eye actually makes.
+function ceilingStarBand(g,x,y0,y1,gap,width,rows=3){
+  const cols=[];for(let c=0;c<rows;c++)cols.push(x-width*.5+(c+.5)*width/rows);
+  for(let e=0;e<=rows;e++)ceilingBrush(g,[[x-width*.5+e*width/rows,y0],[x-width*.5+e*width/rows,y1]],CEILING_PALETTE.red,.6,.34,(x|0)+e*13);
+  // The band is dense before it is irregular. On the facsimile a star is wider than the pitch it is
+  // set at, so the arms of neighbours interlock and the band reads as a mat rather than a scatter;
+  // sizing the star off its row's height instead left it half the pitch and the wobble then read as
+  // randomness. The pitch itself is untouchable — it has to divide the tile height — so the star grows
+  // into it instead, past its own row and into the ones beside it, which is what the wall does.
+  const span=y1-y0,cycles=Math.max(2,Math.round(span/230)),r=Math.max(4.2,Math.min(gap*.62,width/rows*1.5));
+  for(let c=0;c<rows;c++){
+    const stagger=c%2?gap*.5:0,drift=width/rows*.16;
+    for(let y=y0+gap*.5+stagger,i=0;y<y1;y+=gap,i++){
+      const wob=Math.sin((y-y0)/span*TAU*cycles+c*2.09)*drift,seed=(y|0)*3+i*7+c*101+(x|0),
+        jx=(ceilingHash(i*7+c*31,(x|0)+11)-.5)*gap*.24,jy=(ceilingHash(c*13+i*5,(x|0)+17)-.5)*gap*.16;
+      ceilingBorderStar(g,cols[c]+wob+jx,y+jy,r,.86,seed);
+    }
   }
 }
-function ceilingStarBandH(g,x0,x1,y,gap,width){
-  const rows=[y-width*.3,y,y+width*.3],r=Math.max(3,width*.19);
-  ceilingBrush(g,[[x0,y-width*.5],[x1,y-width*.5]],CEILING_PALETTE.carbon,.7,.4,y|0);
-  ceilingBrush(g,[[x0,y+width*.5],[x1,y+width*.5]],CEILING_PALETTE.carbon,.7,.4,(y|0)+3);
-  for(let rr=0;rr<3;rr++){
-    const stagger=rr===1?gap*.5:0;
-    for(let x=x0+gap*.5+stagger,i=0;x<x1;x+=gap,i++)ceilingBorderStar(g,x,rows[rr],r,.76,(x|0)*3+i*7+rr*101+(y|0));
+function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
+  const trows=[];for(let c=0;c<rows;c++)trows.push(y-width*.5+(c+.5)*width/rows);
+  for(let e=0;e<=rows;e++)ceilingBrush(g,[[x0,y-width*.5+e*width/rows],[x1,y-width*.5+e*width/rows]],CEILING_PALETTE.red,.6,.34,(y|0)+e*13);
+  const span=x1-x0,cycles=Math.max(2,Math.round(span/230)),r=Math.max(4.2,Math.min(gap*.62,width/rows*1.5));
+  for(let rr=0;rr<rows;rr++){
+    const stagger=rr%2?gap*.5:0,drift=width/rows*.16;
+    for(let x=x0+gap*.5+stagger,i=0;x<x1;x+=gap,i++){
+      const wob=Math.sin((x-x0)/span*TAU*cycles+rr*2.09)*drift,seed=(x|0)*3+i*7+rr*101+(y|0),
+        jy=(ceilingHash(i*7+rr*31,(y|0)+11)-.5)*gap*.24,jx=(ceilingHash(rr*13+i*5,(y|0)+17)-.5)*gap*.16;
+      ceilingBorderStar(g,x+jx,trows[rr]+wob+jy,r,.86,seed);
+    }
   }
 }
 // A plain disc at each corner of the frame, ringed once — small, cheap, and the one thing that turns
@@ -447,12 +516,17 @@ function ceilingRoundel(g,x,y,r){
 // ruled box, the name beneath it and the red construction lines through its centre, all drawn by the
 // caller below rather than by this function.
 function ceilingMonthCircle(g,cx,cy,r,alpha=.85,seed=0){
-  const div=24,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
+  // Thirty spokes, not the twenty-four this first read off a smaller crop: the count is still one
+  // uniform division shared by every wheel — nothing here is invented per-circle — but a closer look
+  // corrects what that fixed count actually is.
+  const div=30,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
   g.save();g.globalAlpha=alpha;
   ceilingBrush(g,ceilingArcPoints(cx,cy,r*jit,0,TAU,48),ink,Math.max(.75,r*.02),alpha*.95,seed*7+1);
   for(let i=0;i<div;i++){
-    const a=i/div*TAU;
-    ceilingBrush(g,[[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],[cx+Math.cos(a)*r*jit,cy+Math.sin(a)*r*jit]],ink,Math.max(.5,r*.011),alpha*.72,seed*7+11+i);
+    // The division stays exact — every spoke at its own i/div — but the brush laying each one is not:
+    // weight and finish vary spoke to spoke, some heavier where the reed was freshly loaded.
+    const a=i/div*TAU,w=Math.max(.5,r*.011)*(.7+ceilingHash(seed*7+i,29)*.7);
+    ceilingBrush(g,[[cx+Math.cos(a)*hub,cy+Math.sin(a)*hub],[cx+Math.cos(a)*r*jit,cy+Math.sin(a)*r*jit]],ink,w,alpha*(.58+ceilingHash(seed*7+i,31)*.34),seed*7+11+i);
   }
   ceilingBrush(g,ceilingArcPoints(cx,cy,hub,0,TAU,20),ink,Math.max(.6,r*.014),alpha*.9,seed*7+2);
   g.restore();
@@ -473,7 +547,14 @@ function ceilingMonthBox(g,cx,cy,r,word,alpha){
     boxW=Math.max(r*2.3,span+cell*.7),boxH=r*2+cell*1.9,
     x0=cx-boxW/2,x1=cx+boxW/2,y0=cy-boxH/2,y1=cy+boxH/2;
   ceilingBrush(g,[[x0,y0],[x1,y0],[x1,y1],[x0,y1],[x0,y0]],CEILING_PALETTE.carbon,.65,alpha*.55,(cx|0)+(cy|0));
-  if(w)ceilingWordRow(g,word,cx,y1-cell*.65,cell,CEILING_PALETTE.carbon,alpha*.9,1);
+  // Corrected: the caption sits above the wheel on the facsimile, held off it by its own red rule —
+  // a construction line, the same as every other one the canon strikes through a circle's centre —
+  // not set beneath it as the box first had it.
+  if(w){
+    const capY=y0+cell*.68;
+    ceilingWordRow(g,word,cx,capY,cell,CEILING_PALETTE.carbon,alpha*.9,1);
+    ceilingBrush(g,[[x0+cell*.25,capY+cell*.5],[x1-cell*.25,capY+cell*.5]],CEILING_PALETTE.red,.55,alpha*.6,(cx|0)*7+(cy|0)+3);
+  }
 }
 // Meskhetiu, the Foreleg — the seven stars a later century calls the Plough, drawn on this ceiling as
 // the bull they belong to. The seven are set on the animal itself as star signs, which is how the
@@ -662,7 +743,15 @@ function ceilingBakeWall(watch){
   // have been painted as. It belongs to the register it divides, not to the room's architecture, so it
   // passes with the rest of the tile instead of pinning the way the foot rule does.
   const divide=R*.52,band=Math.max(7,Math.min(11,H*.014));
+  // The facsimile's own divide between its two registers is thicker than one block rule: a star band,
+  // several full-width lines of running text, and another star band. The text is out of scope — no
+  // sourced content for it yet — but the two star bands that sandwich it are cheap, so they stand in
+  // for the layered rule the facsimile actually draws instead of leaving it a single flat line. Two
+  // rows, not three: the sheet's own divide runs a shallower band than its outer border does.
+  const divStep=Math.max(14,Math.min(20,W/30)),divW=Math.max(9,band*.95);
+  ceilingStarBandH(g,x0+4,x1-4,divide-band*.5-divW*.72,divStep,divW,2);
   ceilingBlockRule(g,x0+4,x1-4,divide-band*.5,band,.5);
+  ceilingStarBandH(g,x0+4,x1-4,divide+band*.5+divW*.72,divStep,divW,2);
   // This comment used to say the tile's middle is left to the route "on purpose," written when the
   // wall was one static screen and the screen's middle and the tile's middle were the same place. On
   // a tile that passes with the climb they are not: the play channel is the centre COLUMN of the
@@ -783,6 +872,18 @@ function ceilingBuildWall(){
 // which read, in practice, as invisible; now the wall draws real registers and passes them for real, so
 // that abstraction is retired rather than left running beside it, and this is the sheet's one remaining
 // screen-pinned layer — cached the same way the tile above is, so the cost is one drawImage a frame.
+// Defect: hudBand() is honoured everywhere else the atlas draws (figures.js's guard, reveal.js's
+// margin) so that nothing is ever set behind the DOM chrome, but the passing wall never observed it —
+// whatever tile row is scrolling by simply shows straight through. A faint star or a column rule
+// under "PREVIEW" is harmless; Reret's own contour passing directly behind the brand's lettering is
+// not, and since every row of the tile crosses screen-top exactly once per tile-height climbed, the
+// collision is not a one-off — it recurs the whole watch. No placement fixes that (a row cannot dodge
+// a screen position it is scrolling through), so this borrows the running head's own answer to the
+// same problem — a flat patch of the wall's own plaster laid fresh under the label — and lays it
+// under the HUD instead: cheap, and it is what actually keeps the reserved band clear.
+function ceilingDrawHudClear(){
+  ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.fillRect(0,0,W,hudBand());ctx.restore();
+}
 function ceilingDrawRegisterGrid(){
   const key=W+'x'+H+'x'+DPR;
   if(!ceilingFrameTop||ceilingFrameKey!==key){
@@ -1243,6 +1344,7 @@ function renderCeiling(dt,aim){
   // of where the phase falls.
   const phase=(((-world.cameraY*scale)%tileH)+tileH)%tileH;
   for(let y=phase-tileH;y<H;y+=tileH)ctx.drawImage(tile,0,y,W,tileH);
+  ceilingDrawHudClear();
   ceilingDrawRegisterGrid();
   ceilingDrawChangeover(dt);
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
