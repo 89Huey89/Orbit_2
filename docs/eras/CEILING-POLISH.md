@@ -236,6 +236,16 @@ comparison to make is never "does it look as deep as the atlas."
 
 ---
 
+## How the facsimile came to be read
+
+The photographs this section rests on were supplied part-way through the build, after most of it was
+already standing. That order is the finding: everything below was caught by looking at the document,
+and none of it by looking at the code. Three separate crops were needed — the whole sheet settled the
+furniture, a figure-scale crop of Reret made tracing possible at all, and only a closer crop of
+Meskhetiu showed the legs that overturned a confident reading of the first. Each closer look
+overturned something the previous one had seemed to settle, which is the argument for going to the
+document early rather than at the end.
+
 ## What the facsimile corrected
 
 Partway through the build a high-resolution photograph of the Wilkinson facsimile of TT353 — the
@@ -264,12 +274,14 @@ sheet had been drifting on plausible readings.
 
 ## What is still open
 
-- **The two circumpolar figures are still invented drawings.** Meskhetiu and Reret are the reason
-  this wall reads as Egyptian and they remain the weakest marks on it. The facsimile is now good
-  enough to trace at figure scale, and `scripts/figures.mjs` / `src/figures-tt353.js` exist to carry
-  traced contours through the wall's own four-pass painter — the same pattern `scripts/glyphs.mjs`
-  uses for the Fell faces. Wiring those contours in, in place of the hand-built shapes, is the
-  single largest remaining gain.
+- **The two circumpolar figures are traced now, but not yet good at thumbnail size.** Meskhetiu and
+  Reret come off the facsimile through `scripts/figures.mjs` into `src/figures-tt353.js` and are
+  drawn by the wall's own painter, so what is on the sheet is what the wall carries — three stars
+  rather than seven, red legs against an ink-contoured body, the crocodile and the tether. What is
+  not solved is legibility: at the `s=13` the narrow layout uses, both are still little more than
+  dark marks, exactly as the invented drawings were. A traced contour also carries the pixel mask's
+  staircase, which one Chaikin pass at bake time softens but does not remove; a finer trace, or a
+  second simplified contour kept for small sizes, is the honest fix.
 - **The four watches differ, but weakly.** Each carries a different reach of the same furniture
   rather than furniture of its own. A player reads "another register", not "another hour".
 - **The red canon now runs through the play channel.** It is faithful — it does so on the facsimile
@@ -277,6 +289,10 @@ sheet had been drifting on plausible readings.
   the centre column only, and that is a playability decision, not a research one.
 - **Density is still bought by repetition of a few units.** The facsimile's own answer is the one
   visible in its bottom register and in any wing: many flat units, repeated, bounded by line. The
-  striding register is a first instance; the wall could carry more.
+  striding register is a first instance; the wall could carry more. The decan columns are the
+  largest instance not yet taken: on the facsimile they are narrow, ruled on both sides, packed wall
+  to wall, and they carry **stars among their signs** — they are a star table, which is what a decan
+  column is for, and the ruling runs on far below the signs. Ours are a handful of short sign
+  columns with no stars in them at all.
 - **A frontispiece in the concept-art register** is agreed but only begun: the block border,
   ornament and plaster panel are in, the four hour-plates are not.
