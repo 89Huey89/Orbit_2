@@ -6,7 +6,7 @@
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
 let ceilingReturn=null;
 const CEILING_LOSS={
-  'THE DARK CAUGHT UP':'ORDER FAILED BEFORE DAWN',
+  'THE DARK CAUGHT UP':'THE WALL BROKE AWAY BENEATH',
   'THE ORBIT FADED':'THE HOUR-CIRCLE FADED',
   'DRAWN INTO A VORTEX':'APEP TOOK THE NIGHT BARQUE',
   'SEARED BY A SUNSPOT FLARE':'THE EYE BURNED THE BARQUE',
@@ -86,7 +86,7 @@ function event(type,e){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
     }
     audio.medal();
-    $('announcement').textContent=ceilingPlate()?'Decan course complete. Sixty bonus points. Disorder retreats for four seconds.':e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
+    $('announcement').textContent=ceilingPlate()?'Decan course complete. Sixty bonus points. The wall holds for four seconds.':e.chart.name+' complete. Sixty bonus points. Darkness retreats for four seconds.';
     recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
@@ -208,7 +208,7 @@ function showEnd(){
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
   $('end-tip').textContent=preview?(world.captures===0?'Release when the painted dabs meet the next circle.':world.reason==='DRAWN INTO A VORTEX'?'Apep bends the course before his body can seize the barque. Give the serpent room.':'Skim the circle’s rim; a clean transfer preserves the barque’s pace.'):
-    world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?'Circle a slingshot star to gain speed. The dark grows faster.':world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='DRAWN INTO A VORTEX'?'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
+    world.captures===0?'Release when the pricked line reaches the next orbit.':world.reason==='THE DARK CAUGHT UP'?(ceilingPlate()?'Circle a slingshot star to gain speed. The wall breaks away faster.':'Circle a slingshot star to gain speed. The dark grows faster.'):world.reason==='THE ORBIT FADED'?'Copper orbits fade. Release before the ring runs out.':world.reason==='DRAWN INTO A VORTEX'?'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.':world.perfects<2?'Skim the orbit’s rim for a perfect transfer.':'Perfect transfers keep your speed. Faster earns more points.';
   $('announcement').textContent=preview?'Preview run complete. Score '+world.score+'. Tap to try again or return to the atlas.':'Run complete. Score '+world.score+'. Best '+best+'. Tap to try again.';
 }
 // ---------- The catalogue: the ledger's own leaf ----------

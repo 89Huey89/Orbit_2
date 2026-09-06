@@ -36,6 +36,11 @@ plastered, snapped out in red, corrected in black, flooded, closed in black, and
 those five are already in the code as a static four-stage function. None of them is ever *seen
 happening* by a hand.
 
+*The darkness's two sine waves are resolved: the boundary is drawn as a faceted stone break now,
+not a waterline, keyed on world-space position and the break's own advance rather than on
+`world.time`, so this no longer counts toward the clock tally above — see `ceilingDrawDark()`,
+`src/ceiling.js`.*
+
 ---
 
 ## 1 · The wall does not move
