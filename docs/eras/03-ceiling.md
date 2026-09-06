@@ -204,7 +204,7 @@ record. The playable implementation is `src/ceiling.js`, entered temporarily fro
 It owns its plaster cache, the painter's snapped red canon grid, the kheker frieze and polychrome
 block borders, the star bands, twelve painted month circles, Meskhetiu with its seven stars and
 Reret with her crocodile and mooring post, quadrat-stacked decan columns, Egyptian numerals,
-node/body painter, player, four hazard painters, route, reveal, darkness and chapter labels while
+node/body painter, player, four hazard painters, route, reveal, the breaking wall and chapter labels while
 reusing the unchanged simulation. Entry uses a non-persistent plate application and return restores
 the prior atlas; because the wall is baked into one cached canvas, entry also waits on both of the
 era's faces before painting it, or the sign columns would stay blank for the whole visit. What that

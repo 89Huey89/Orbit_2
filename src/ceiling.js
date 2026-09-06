@@ -1467,17 +1467,92 @@ function ceilingDrawEffects(dt){
     ceilingFloaterMark(f,Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1));
   }
 }
+// The break beneath the barque. TT353 never floods — a painted wall has no waterline — so what
+// chases the climb is not spilled ink but the wall itself letting go: a faceted fracture eating
+// upward into the plaster, Duat's own near-black behind it, chips and dust falling into the gap
+// it opens. Apep is this era's attractor and already draws his own coil (ceilingDrawHazard); this
+// is the ledge he threatens the barque off of, not a second serpent. The one line this owes the
+// atlas's ink is fy itself — the simulation's exact kill height (src/simulation.js:738) — so every
+// jag, band and crack below is layered relative to fy and never moves the fill's own baseline.
+const CEILING_DEBRIS_RNG=seeded(50221),CEILING_DEBRIS=Array.from({length:30},()=>{
+  const dust=CEILING_DEBRIS_RNG()<.24;
+  return{x:CEILING_DEBRIS_RNG(),phase:CEILING_DEBRIS_RNG(),dust,
+    speed:dust?.1+CEILING_DEBRIS_RNG()*.1:.3+CEILING_DEBRIS_RNG()*.55,
+    size:dust?.7+CEILING_DEBRIS_RNG()*1.1:1.5+CEILING_DEBRIS_RNG()*2.9,
+    drift:(CEILING_DEBRIS_RNG()-.5)*2,hold:CEILING_DEBRIS_RNG(),
+    tone:CEILING_DEBRIS_RNG()<.5?CEILING_PALETTE.loss:CEILING_PALETTE.warm};
+});
+// One faceted vertex per irregular run of world-space x, offset by a hash keyed on that cell and on
+// world.floorY quantised into the break's own "reach" — so the profile re-rolls in blocks as the
+// wall climbs into stone the player has not passed yet, instead of a fixed shape sliding under the
+// camera the way a tide mark would. calm (darknessRelief) flattens the facets while a decan
+// course's four-second respite holds, the collapse visibly stalling rather than just pausing.
+function ceilingFractureEdge(fy,calm){
+  const reach=Math.floor(world.floorY/22),amp=(2.4+5.6*(1-calm))*scale,pts=[];
+  let x=-18*scale;
+  while(x<=W+18*scale){
+    const wx=(x-plateShift.x-W*.5)/scale,cell=Math.round(wx/(16*scale)),
+      jag=(ceilingHash(cell,reach)-.5)*2*amp,step=(10+ceilingHash(cell*3+1,reach*7+11)*15)*scale;
+    pts.push([x,fy+jag]);x+=step;
+  }
+  return pts;
+}
 function ceilingDrawDark(dt){
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));
-  ctx.save();ctx.fillStyle=darknessRelief>.05?'rgba(62,55,40,.84)':'rgba(56,39,30,.9)';ctx.fillRect(0,fy,W,Math.max(0,H-fy));
-  for(let layer=0;layer<5;layer++){
-    ctx.strokeStyle=`rgba(${layer? '36,29,22':'157,55,36'},${.54-layer*.07})`;ctx.lineWidth=layer?1:.9;ctx.beginPath();
-    for(let x=-8;x<=W+8;x+=8){const y=fy+layer*7+Math.sin(x/45+world.time*.16+layer)*3;if(x<0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();
+  const calm=darknessRelief,reach=Math.floor(world.floorY/22),pts=ceilingFractureEdge(fy,calm);
+  ctx.save();
+  // The dark behind the wall is Duat, not fog: a flat near-black fill starting exactly at fy, the
+  // same baseline the old ink used, so the fill itself never disagrees with the kill height.
+  ctx.fillStyle=CEILING_PALETTE.duatDeep;ctx.fillRect(0,fy,W,Math.max(0,H-fy));
+  // A thin band of raw aggregate right under the break, ragged on its own lower edge, so the cut
+  // reads as snapped stone rather than a second shoreline.
+  ctx.fillStyle=CEILING_PALETTE.loss;ctx.globalAlpha=.5+near*.1;ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  for(let i=pts.length-1;i>=0;i--)ctx.lineTo(pts[i][0],pts[i][1]+(7+ceilingHash(i,reach+5)*9)*scale);
+  ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+  // The fresh upper lip, a hairline highlight riding just above the break: a fracture exposes stone
+  // the smoke never darkened, so it is the palette's palest tone and not the wall's own plaster.
+  ceilingBrush(ctx,pts.map(p=>[p[0],p[1]-1.6*scale]),CEILING_PALETTE.lime,Math.max(.6,.9*scale),.55+near*.15,reach+3);
+  ceilingBrush(ctx,pts,CEILING_PALETTE.carbon,Math.max(1,1.6*scale),.85,reach+7);
+  // The tell: short carbon hairlines biting a little way up into stone that is still intact, so the
+  // player reads where the break is headed before it arrives there.
+  for(let i=2;i<pts.length-2;i+=3){
+    if(ceilingHash(i,reach+13)>.62)continue;
+    const[x0,y0]=pts[i],segs=2+(ceilingHash(i,reach+19)<.5?1:0),len=(10+ceilingHash(i,reach+17)*28)*scale/segs,
+      crack=[[x0,y0]];let cx=x0,cy=y0;
+    for(let s=0;s<segs;s++){cx+=(ceilingHash(i+s,reach+23)-.5)*10*scale;cy-=len*(.7+ceilingHash(i+s,reach+29)*.6);crack.push([cx,cy]);}
+    ceilingBrush(ctx,crack,CEILING_PALETTE.carbon,.7,.3,i*7+reach);
   }
-  // Apep's long back repeatedly breaks the boundary, an image of threatened order rather than a space fog.
-  ctx.strokeStyle=`rgba(25,18,14,${.28+near*.22})`;ctx.lineWidth=5*scale;ctx.beginPath();
-  for(let x=-20;x<=W+20;x+=10){const y=fy+12+Math.sin(x/54+world.time*.12)*8;if(x<0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();
+  // A slab or two already tilting loose above the line: held still, because they are anticipation
+  // and not motion, the same discipline the era's grammar holds everything else to.
+  for(let i=4;i<pts.length-4;i+=7){
+    if(ceilingHash(i,reach+31)>.22)continue;
+    const[x0,y0]=pts[i],w=(9+ceilingHash(i,reach+37)*7)*scale,h=(5+ceilingHash(i,reach+41)*4)*scale,
+      tilt=(ceilingHash(i,reach+43)-.5)*.5,lift=(6+ceilingHash(i,reach+47)*10)*scale,
+      cos=Math.cos(tilt),sin=Math.sin(tilt),cx=x0,cy=y0-lift;
+    // Through ceilingPolygon like every other closed mark on this wall, rather than a strokeRect: a
+    // slab about to drop is still a shape the painter would have set out, and a true rectangle with a
+    // machine hairline is the one thing here that would not have come off a reed.
+    ceilingPolygon(ctx,[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([px,py])=>[cx+px*cos-py*sin,cy+px*sin+py*cos]),
+      CEILING_PALETTE.plaster,1,i*11+reach,Math.max(.7,scale));
+  }
+  ctx.restore();
+  if(reducedMotion)return;
+  // Debris reads as falling, dominantly: chips shed by the break tumbling down into Duat behind it.
+  // A slower, sparser lift of pale dust off the break itself is welcome — collapsing stone does
+  // raise dust — but stays the minor voice. calm quiets both together: chips run out of hold and
+  // settle, dust stops lifting, the same stall the fracture's own facets flatten under above.
+  const time=world.time,fall=1-calm*.55;
+  ctx.save();ctx.beginPath();ctx.rect(0,fy-32*scale,W,Math.max(0,H-fy+32*scale));ctx.clip();
+  for(const d of CEILING_DEBRIS){
+    if(d.hold<calm*.85)continue;
+    const f=((time*d.speed*fall+d.phase)%1+1)%1,a=Math.sin(f*Math.PI)*(d.dust?.22:.55)*(1-calm*.4);
+    if(a<=.02)continue;
+    const x=d.x*W+Math.sin(time*.5+d.phase*TAU)*d.drift*4*scale,y=d.dust?fy-f*30*scale:fy+f*110*scale,s=d.size*scale;
+    ctx.globalAlpha=a;ctx.fillStyle=d.dust?CEILING_PALETTE.lime:d.tone;ctx.fillRect(x-s*.5,y-s*.5,s,s);
+  }
+  ctx.restore();
 }
 function ceilingDrawRunningHead(dt){
   const index=ceilingWatch(),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
