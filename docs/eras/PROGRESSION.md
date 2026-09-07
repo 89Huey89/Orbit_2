@@ -1,5 +1,10 @@
 # The run is the progression
 
+> **Superseded in part.** The progression system this file describes — a ladder climbed inside a
+> single run — is not the design being built. [JOURNEY.md](JOURNEY.md) is the controlling document;
+> its "What this overrides" table names exactly which claims below are now stale. What this file
+> says about the eras themselves still stands.
+
 How a single run climbs the ladder, what a held orbit earns, and how the sky is redrawn without a
 new sheet being laid over the old one.
 

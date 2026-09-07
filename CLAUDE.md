@@ -6,9 +6,19 @@ game, in the game's own atlas-engraving prose. Read it for *what the game
 does*; this file is the map for working on *the code*.
 
 `docs/` holds work that has not been built yet — currently `docs/eras/`, the
-plan to extend the plate system into a nine-era progression through the history
+plan to extend the plate system into an eight-era progression through the history
 of the star atlas, from a Palaeolithic cave wall to a self-replicating probe,
-climbed within a single run. `docs/eras/OVERVIEW.md` is the entry point;
+climbed across many runs.
+
+**`docs/eras/JOURNEY.md` is the controlling document and the one to read first.**
+It carries the locked progression design, a verified code map, the landmines, and
+the staged build plan; it names, in its "What this overrides" table, the claims in
+the older files that are now stale — including the assumption, still written
+throughout them, that the ladder is climbed inside a single run. Where it
+disagrees with another file in `docs/eras/`, it is right.
+`docs/eras/MEASUREMENTS.md` holds what the simulation actually measures, so the
+numbers behind the design are not re-derived. `docs/eras/OVERVIEW.md` is the
+older entry point and remains useful for the eras themselves;
 `docs/eras/research/` holds the sourced research behind each era and
 `docs/eras/prototypes/` one standalone canvas page per era (open in a browser,
 press `L` for a legend) with its faces and screenshots. Read it before adding a
@@ -24,6 +34,10 @@ plate; nothing in it describes shipped behaviour.
   `node:assert/strict`).
 - `npm run build` — bundles into `dist/index.html` + `dist/assets/` via
   `scripts/bundle.mjs`.
+- `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
+  levels of hand and reports how deep a run actually gets, what it captures, and what the era
+  progression's observation ledger would stand at by each row. Makes no assertions and is not run by
+  `npm test`. Its first reading is `docs/eras/MEASUREMENTS.md`.
 - `npm run glyphs` — regenerates `src/glyphs.js` from the faces in
   `assets/fonts.source.css` (needs `fontkit`).
 - `npm run fonts` — regenerates `assets/fonts.css`, the same faces cut to the
