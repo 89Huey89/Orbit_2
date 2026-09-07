@@ -658,7 +658,10 @@ function drawNode(n,aim){
     ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   }
   revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed);
-  if(sling&&pen.survey>0){
+  // The star's charge band is planning information, not depiction: the pilot reads the filling arc to
+  // know when the lap is paid for. It therefore rides the pen reaching the page, as it always did, and
+  // not the observation clock, which would hold back the first two fifths of a fill the release depends on.
+  if(sling&&pen.ring>0){
     const charge=active?world.charge():0,band=r*.73;
     for(let i=0;i<18;i++){
       const a=-Math.PI/2+i*TAU/18;

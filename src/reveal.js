@@ -98,20 +98,43 @@ const primeList=[],primeOrder=[];
 // Fraction of a reveal spent inside one stage of it.
 const revealSpan=(t,from,to)=>clamp((t-from)/(to-from),0,1);
 // One shared record, refilled per node per frame: reveal state must not allocate while the chart moves.
-const NODE_PEN={t:1,done:true,age:Infinity,ring:1,keyline:1,hatch:1,wash:1,survey:1};
-// The colourist's order for one planet and its orbit: the ring first (finished at 0.6 s), the keyline cut
-// around the disc, the hatching laid in, the wash bloomed, the survey marks and rings last, the caption
-// after the ring is closed.
+const NODE_PEN={t:1,d:1,done:true,age:Infinity,ring:1,keyline:1,hatch:1,wash:1,survey:1};
+// The crossing from looked-at to known happens on exactly one frame of one orbit, and each age will want
+// to mark it in its own hand. Finding the crossing is the same problem eight times, so it is solved once
+// here and `revealFlourish.fire` is the hook an era replaces; the atlas as shipped does nothing with it.
+const revealFlourish={fire(){}};
+let flourishFor=null,flourishAt=0;
+// A body is watched only while it is the one being orbited. Coming to a different body arms the watch at
+// whatever that body already stands at rather than firing on it, so a crossing is never reported twice
+// and never reported for an observation this orbit did not make.
+function watchCompletion(n,d){
+  if(n!==flourishFor){flourishFor=n;flourishAt=d;return;}
+  if(d>=1&&flourishAt<1)revealFlourish.fire(n);
+  flourishAt=d;
+}
+// Two clocks run over one body and they answer different questions. `t` is the pen reaching the page: the
+// phenomenon is owed to the player the instant the body is on screen, so the ring, the wedge and every
+// caption ride it. `d` is what the orbit has actually observed, as a fraction of SWEEP_FULL, and the
+// drawing of the body itself rides that instead — an un-orbited body is a mass and a position, a
+// documented one is a specimen. `d` is read from the world directly and never through `reveal.progress()`:
+// that throttle exists to stagger marks entering the view, and routing an earned observation through it
+// would blank a body that had been paid for the moment a fourth one scrolled in.
 function revealNode(n){
-  const t=reveal.progress(n,NODE_REVEAL);
-  NODE_PEN.t=t;NODE_PEN.done=t>=1;
-  if(t>=1){NODE_PEN.age=Infinity;NODE_PEN.ring=NODE_PEN.keyline=NODE_PEN.hatch=NODE_PEN.wash=NODE_PEN.survey=1;return NODE_PEN;}
-  NODE_PEN.age=reveal.age(n);
-  NODE_PEN.ring=revealSpan(t,0,.6);
-  NODE_PEN.keyline=revealSpan(t,.06,.44);
-  NODE_PEN.hatch=revealSpan(t,.3,.64);
-  NODE_PEN.wash=revealSpan(t,.38,.84);
-  NODE_PEN.survey=revealSpan(t,.6,.92);
+  const t=reveal.progress(n,NODE_REVEAL),p=world&&world.player,active=!!p&&p.node===n;
+  const observed=active?clamp(p.orbitSweep/SWEEP_FULL,0,1):(n.documented||0);
+  if(active)watchCompletion(n,observed);
+  // The opening choice is the one body drawn in full before it has been observed, and the design already
+  // made that exception: the three pressures are cut as three kinds of world precisely so the choice reads
+  // before its caption is legible. Staging them would withhold the only thing the choice is made on, which
+  // is the same reason every caption is owed to the player whole.
+  const d=n.difficultyChoice?1:observed;
+  NODE_PEN.t=t;NODE_PEN.d=d;NODE_PEN.done=t>=1&&d>=1;
+  NODE_PEN.age=t>=1?Infinity:reveal.age(n);
+  NODE_PEN.ring=t>=1?1:revealSpan(t,0,.6);
+  NODE_PEN.keyline=revealSpan(d,0,.4);
+  NODE_PEN.hatch=revealSpan(d,.28,.62);
+  NODE_PEN.wash=revealSpan(d,.36,.84);
+  NODE_PEN.survey=revealSpan(d,.58,1);
   return NODE_PEN;
 }
 // A caption is written after its ring closes, a glyph every 40 ms.
@@ -177,6 +200,14 @@ function revealPlanet(art,r,time,pen,seed){
   if(!pen||pen.done){drawPlanet(art,r,time);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
+  // (0) Before an orbit has observed anything the body is still only a phenomenon: a flat, dry disc that
+  // says a mass is here and where it is, and nothing whatever about what it is. It arrives with the pen
+  // and starves as the observation fills in behind it, so the drawing displaces the placeholder instead
+  // of being laid over it.
+  if(pen.ring>0&&pen.d<1){
+    ctx.fillStyle=`rgba(${ink.reveal.dry},${.34*pen.ring*(1-pen.d)})`;
+    ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.fill();
+  }
   // (d) The survey arcs and the far half of a ring system are the last marks laid down.
   if(pen.survey>0){ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);ctx.restore();}
   // (c) The wash blooms as an irregular blot from a seeded point off the centre, its wet rim drying lighter
