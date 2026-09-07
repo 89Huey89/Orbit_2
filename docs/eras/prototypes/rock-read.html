@@ -52,6 +52,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Without this a phone lays the page out at 980 CSS pixels and scales the result down, which is
+     how a sheet meant to be held in a hand ends up an unreadable strip. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>The Rock — readability prototype</title>
 <style>
   :root{color-scheme:dark}
@@ -90,13 +93,24 @@ function tangentVX(angle,speed,dir){return -Math.sin(angle)*speed*dir;}
 function tangentVY(angle,speed,dir){return  Math.cos(angle)*speed*dir;}
 
 /* ---------- canvas plumbing (rock.html's own fit(), unchanged) ---------- */
-const W=960,H=600;
+let W=960,H=600,LEAD=372,XR=340;
 const cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false});
 let DPR=1;
-function fit(){DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));const s=Math.min(window.innerWidth/W,window.innerHeight/H);
-  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
-  ctx.setTransform(DPR,0,0,DPR,0,0);}
-window.addEventListener('resize',fit);fit();
+// The sheet is the whole viewport rather than a fixed landscape panel, because this page's whole
+// purpose now is to be held in a hand: a phone upright gets a tall wall to climb rather than a
+// letterboxed strip across the middle of a black page. The wall tile is a fixed size and simply
+// repeats to cover whatever it is given; the torch is baked in view space and so is rebuilt here.
+function fit(){
+  DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  W=Math.max(320,Math.min(1280,Math.round(window.innerWidth)));
+  H=Math.max(400,Math.min(1500,Math.round(window.innerHeight)));
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  LEAD=H*.62;XR=Math.max(80,Math.min(340,W*.5-96));
+  if(TORCH)bakeTorch();
+}
+window.addEventListener('resize',fit);
 
 /* ================= THE WALL: a scrolling limestone face, lit by one torch =================
    The first pass of this page drew the marks on a near-black rectangle, which quietly answered an
@@ -113,7 +127,7 @@ window.addEventListener('resize',fit);fit();
    world space would simply slide off the top of the sheet. It stands low and a little left, as it
    does on the signature sheet, so the corners of the play field die exactly the way the era says
    they must — which is the honest version of the readability test, not a kinder one. */
-const NW=960,NH=900,TILEH=900;   // the field is baked at full resolution: a wall upscaled is a fog
+const NW=960,NH=900,TILEW=960,TILEH=900;   // the field is baked at full resolution: a wall upscaled is a fog
 const ss=t=>t*t*(3-2*t);
 function octave(arr,cx,cy,amp,seed){
   const gw=NW/cx,gh=NH/cy,rnd=mulberry32(seed),lat=new Float32Array(gw*gh);
@@ -163,25 +177,36 @@ bakeWall();
 let TORCH=null;
 function bakeTorch(){
   const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
-  g.fillStyle='rgb(26,22,19)';g.fillRect(0,0,W,H);
-  const tx=W*.40,ty=H*.84;
+  g.fillStyle='rgb(36,31,27)';g.fillRect(0,0,W,H);
+  const tx=W*.44,ty=H*.70;
   g.globalCompositeOperation='lighter';
-  const near=g.createRadialGradient(tx,ty,8,tx,ty,H*.74);
+  const near=g.createRadialGradient(tx,ty,8,tx,ty,H*.86);
   near.addColorStop(0,'rgba(255,241,220,1)');near.addColorStop(.46,'rgba(206,176,140,.58)');near.addColorStop(1,'rgba(0,0,0,0)');
   g.fillStyle=near;g.fillRect(0,0,W,H);
-  const far=g.createRadialGradient(tx,ty,H*.34,tx,ty,H*1.35);
+  const far=g.createRadialGradient(tx,ty,H*.42,tx,ty,H*1.6);
   far.addColorStop(0,'rgba(150,126,100,.42)');far.addColorStop(1,'rgba(0,0,0,0)');
   g.fillStyle=far;g.fillRect(0,0,W,H);
   TORCH=c;
 }
-bakeTorch();
+// The first fit() waits until here, where the torch exists to be baked against the size it finds.
+fit();bakeTorch();
 function paintWall(){
   const off=((scrollY%TILEH)+TILEH)%TILEH;
-  ctx.drawImage(WALL,0,-off);
-  if(TILEH-off<H)ctx.drawImage(WALL,0,TILEH-off);
+  for(let x=0;x<W;x+=TILEW){
+    ctx.drawImage(WALL,x,-off);
+    if(TILEH-off<H)ctx.drawImage(WALL,x,TILEH-off);
+  }
 }
-function torchPass(){
-  ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(TORCH,0,0,W,H);ctx.restore();
+// The flame is applied twice and unequally, which is the one place this sheet departs from rock.html
+// on purpose. There the wall and the pigment in it take the same light, because a still panel has
+// only to look right. Here a mark is also a thing a hand must find in a seventh of a second, so the
+// wall takes the whole fall of the flame and the marks laid on it take under half of it: the reach
+// still ends, the corners still die, but a body at the edge of the light stays a body rather than a
+// rumour. How far that can be pushed before the era stops being lit by one torch is a judgement.
+function torchPass(strength){
+  ctx.save();ctx.globalCompositeOperation='multiply';
+  if(strength!==undefined)ctx.globalAlpha=strength;
+  ctx.drawImage(TORCH,0,0,W,H);ctx.restore();
 }
 /* ================= THE THREE PRIMITIVES (simplified from rock.html) ================= */
 /* A dab: a pad of wet ochre pressed and lifted. No stroke direction, no leading edge — the single
@@ -226,12 +251,19 @@ function peck(g,x,y,r,a){
    and its own boundary falls over time to chase whoever stalls — src/simulation.js's floorY, in
    spirit, with none of its exact constants. Bodies and hazards live in this same world space and are
    drawn at worldY-scrollY, so nothing here is a fixed screen layout: the whole wall moves. */
-const LEAD=H*.62;         // how far down the screen the traveller sits once the camera has settled
-const XR=340;             // how far a body may sit from the centre line
+// LEAD and XR are set by fit() against the viewport it finds, and re-set when the sheet is resized
+// or the phone is turned; they are declared with W and H above.
+/* The capture region is wide relative to the gap between bodies, and that ratio is the whole reason
+   an ordinary release is landable. The shipped chart cuts every transfer to about the same short
+   flight and gives a body a capture radius of roughly a third of it; this page first spaced bodies
+   three to five hundred units apart behind a capture radius of forty, a tenth of the gap, and the
+   result was a window one frame wide — a frame-exact oracle connected on eleven frames out of
+   twelve hundred. That was never a readability finding, it was a geometry mistake, and JOURNEY's own
+   one-frame measurement is about the *perfect* window, not about landing at all. */
 const KINDS=[
-  {kind:'faint', r:14,pad:24,weight:9,value:1},
-  {kind:'bright',r:24,pad:30,weight:5,value:3},
-  {kind:'moon',  r:34,pad:34,weight:2,value:5}
+  {kind:'faint', r:26,pad:26,weight:9,value:1},
+  {kind:'bright',r:38,pad:26,weight:5,value:3},
+  {kind:'moon',  r:50,pad:26,weight:2,value:5}
 ];
 const KWEIGHT=KINDS.reduce((s,k)=>s+k.weight,0);
 let RNG=mulberry32((Date.now()^0x9E3779B9)>>>0); // fresh each load: a memorised layout would test recall, not reading
@@ -243,7 +275,7 @@ function freshWorld(){
   bodies=[];hazards=[];cracks=[];lastX=0;frontierY=0;
   // seed a short run of background wall-scratches, world-space so they scroll like everything else
   for(let i=0;i<26;i++){const y=-RNG()*1800,x=(RNG()*2-1)*XR*1.3,a=RNG()*TAU,len=30+RNG()*70;
-    cracks.push({x0:x,y0:y,x1:x+Math.cos(a)*len,y1:y+Math.sin(a)*len,w:1+RNG()*1.4,a:.16+RNG()*.16});}
+    cracks.push({x0:x,y0:y,x1:x+Math.cos(a)*len,y1:y+Math.sin(a)*len,w:.8+RNG()*1.1,a:.07+RNG()*.09});}
   ensureQueue(0);                     // lay the first stretch of wall before there is a traveller to measure it from
   const first=bodies[0];
   player={
@@ -260,9 +292,9 @@ function freshWorld(){
 function ensureQueue(aheadFrom){
   const from=aheadFrom!==undefined?aheadFrom:player.y;
   while(frontierY>from-2200){
-    frontierY-=300+RNG()*180;
+    frontierY-=170+RNG()*80;
     const k=pickKind();
-    let x=lastX+(RNG()*2-1)*260;x=clamp(x,-XR,XR);lastX=x;
+    let x=lastX+(RNG()*2-1)*180;x=clamp(x,-XR,XR);lastX=x;
     const b={x,y:frontierY,r:k.r,cap:k.r+k.pad,kind:k.kind,value:k.value,visited:false,documented:0,seed:(RNG()*1e8)|0};
     bodies.push(b);
     if(bodies.length>1&&RNG()<.55){
@@ -284,6 +316,15 @@ function target(){for(const b of bodies)if(!b.visited)return b;return null;}
 
 function kill(reason){alive=false;deathReason=reason;deadTimer=1.15;}
 
+/* Where a moving point first touches a circle over one step, as a fraction of the step, or null. The
+   shipped game's own segmentCircle in miniature: a flight fast enough to step past a capture region
+   between two frames has to be caught by the path it flew, not by where it happened to land. */
+function swept(x0,y0,x1,y1,cx,cy,r){
+  const dx=x1-x0,dy=y1-y0,fx=x0-cx,fy=y0-cy,a=dx*dx+dy*dy;
+  if(a<1e-9)return fx*fx+fy*fy<=r*r?0:null;
+  const t=clamp(-(fx*dx+fy*dy)/a,0,1),px=fx+dx*t,py=fy+dy*t;
+  return px*px+py*py<=r*r?t:null;
+}
 /* ================= THE RELEASE GEOMETRY ================= */
 /* Whether a release right now would actually connect is exactly a point-to-ray distance test: the
    flight after release never curves (see the header note on what this page does not port), so the
@@ -311,6 +352,59 @@ function releaseFit(p,t){
   return{proj,perp,warmth,hit:perp<=t.cap&&proj<2200};
 }
 
+/* Where letting go would connect, marked on the ring before it is needed. The shipped game draws
+   precisely this — the run of the orbit a transfer threads the next one from, with the tangent struck
+   brighter inside it — and it is what a player actually aims at: nobody reacts to an instant, they
+   arrive at a mark they can already see. The first pass of this page had only the warming dust-line,
+   which asks a hand to react; measured against the widened geometry the run is eight or nine frames,
+   about a seventh of a second, which is a hand's worth of time rather than a reflex's. Its form here
+   is a row of pressed dabs along the ring with one struck deeper at the middle of each run, and a
+   line that would carry the traveller through a vortex or a flare is not marked at all, so danger is
+   read in the same mark that carries the trajectory. */
+const REL_STEPS=144;
+function releaseMarks(p){
+  if(!p.node)return null;
+  const n=p.node,ok=new Array(REL_STEPS).fill(false);
+  for(const t of bodies){
+    if(t.visited||t===n||t.y>n.y-40)continue;
+    for(let i=0;i<REL_STEPS;i++){
+      if(ok[i])continue;
+      const a=i/REL_STEPS*TAU,rx=n.x+Math.cos(a)*p.rad,ry=n.y+Math.sin(a)*p.rad;
+      const vx=tangentVX(a,1,p.dir),vy=tangentVY(a,1,p.dir);
+      const tx=t.x-rx,ty=t.y-ry,proj=tx*vx+ty*vy;
+      if(proj<=0||proj>1600||Math.abs(tx*vy-ty*vx)>t.cap)continue;
+      let clear=true;
+      for(const h of hazards){const hx=h.x-rx,hy=h.y-ry,pr=hx*vx+hy*vy;
+        if(pr>0&&pr<proj&&Math.abs(hx*vy-hy*vx)<h.reach){clear=false;break;}}
+      if(clear)ok[i]=true;
+    }
+  }
+  // The runs are collected from the first angle that does not connect, so none of them wraps and the
+  // middle of each is simply its own midpoint — the one dab struck deeper, the one to arrive at.
+  const base=ok.indexOf(false);
+  if(base<0)return{ok,mids:[0]};
+  const mids=[];let run=null;
+  for(let k=0;k<REL_STEPS;k++){
+    if(ok[(base+k)%REL_STEPS]){if(run)run.b=k;else run={a:k,b:k};}
+    else if(run){mids.push((base+(run.a+run.b)/2)/REL_STEPS*TAU);run=null;}
+  }
+  if(run)mids.push((base+(run.a+run.b)/2)/REL_STEPS*TAU);
+  return{ok,mids};
+}
+function drawReleaseMarks(p){
+  const marks=releaseMarks(p);if(!marks)return;
+  const n=p.node,cx=sx(n.x),cy=sy(n.y);
+  for(let i=0;i<REL_STEPS;i++){
+    if(!marks.ok[i])continue;
+    const a=i/REL_STEPS*TAU;
+    dab(ctx,cx+Math.cos(a)*p.rad,cy+Math.sin(a)*p.rad,2.1,T.ochre,.5,i*17+3);
+  }
+  for(const a of marks.mids){
+    const mx=cx+Math.cos(a)*p.rad,my=cy+Math.sin(a)*p.rad;
+    dab(ctx,mx,my,6.2,T.kaolin,.82,911);
+    dab(ctx,mx,my,3.1,T.manganese,.7,912);
+  }
+}
 /* ================= UPDATE ================= */
 let last=performance.now();
 function update(now){
@@ -326,13 +420,25 @@ function update(now){
     n.documented=clamp(p.orbitSweep/SWEEP_FULL,0,1);      // live while held — src/reveal.js's own rule
     if(n.y>darkY)kill('dark');                            // judged on the body, not the orbit's own wobble
   }else{
+    const ox=p.x,oy=p.y;
     p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.x<-XR-40){p.x=-XR-40;p.vx=Math.abs(p.vx);}       // an arcade wall, not a claim about real flight —
     if(p.x> XR+40){p.x= XR+40;p.vx=-Math.abs(p.vx);}      // it exists only so a bad tap can't strand the demo
-    for(const h of hazards){if(Math.hypot(p.x-h.x,p.y-h.y)<h.core){kill(h.kind);break;}}
+    for(const h of hazards)if(swept(ox,oy,p.x,p.y,h.x,h.y,h.core)!==null){kill(h.kind);break;}
+    // Every body on the wall can take the traveller, not merely the one being aimed at, and each is
+    // tested against the whole step rather than against where the step happened to end. Both are what
+    // the shipped game does, and together they are most of what makes an ordinary release forgiving:
+    // a tap a little early or a little late still finds something to go round.
     if(alive){
-      const t=target();
-      if(t&&Math.hypot(p.x-t.x,p.y-t.y)<=t.cap){
+      let caught=null,when=2;
+      for(const t of bodies){
+        if(t.visited||t===p.node)continue;
+        const at=swept(ox,oy,p.x,p.y,t.x,t.y,t.cap);
+        if(at!==null&&at<when){when=at;caught=t;}
+      }
+      if(caught){
+        const t=caught;
+        p.x=ox+(p.x-ox)*when;p.y=oy+(p.y-oy)*when;
         const rx=p.x-t.x,ry=p.y-t.y,dist=Math.hypot(rx,ry)||t.r,cross=rx*p.vy-ry*p.vx;
         p.dir=cross>=0?1:-1;p.angle=Math.atan2(ry,rx);p.rad=dist;p.speed=BASE_SPEED;
         p.node=t;p.orbitSweep=0;t.visited=true;t.entryAngle=p.angle;t.entryDir=p.dir;
@@ -388,8 +494,8 @@ function drawBody(b,live){
   // dab; a bright one is a bigger dab with its own struck spark-cluster around it (Chauvet's dot
   // clusters, read here as the era's nearest thing to a magnitude key); the Moon alone gets a face.
   if(b.kind==='moon'){
-    wash(ctx,x,y,b.r,T.kaolin,.5,90,b.seed);
-    for(let i=0;i<5;i++){const rnd=mulberry32(b.seed+i*13);dab(ctx,x+(rnd()*2-1)*b.r*.5,y+(rnd()*2-1)*b.r*.5,3+rnd()*3,T.manganese,.5,b.seed+i);}
+    wash(ctx,x,y,b.r,T.kaolin,.2,70,b.seed);
+    for(let i=0;i<7;i++){const rnd=mulberry32(b.seed+i*13);dab(ctx,x+(rnd()*2-1)*b.r*.55,y+(rnd()*2-1)*b.r*.55,4+rnd()*4,T.manganese,.62,b.seed+i);}
   }else{
     wash(ctx,x,y,b.r*(b.kind==='bright'?.62:.5),b.kind==='bright'?T.redOchre:T.ochre,.8,b.kind==='bright'?46:26,b.seed);
     if(b.kind==='bright')for(let i=0;i<6;i++){const a=i/6*TAU+b.seed;dab(ctx,x+Math.cos(a)*b.r*.85,y+Math.sin(a)*b.r*.85,3.4,T.redOchre,.55,b.seed+i+7);}
@@ -473,13 +579,15 @@ function drawDarkness(){
 
 function render(){
   paintWall();
+  torchPass();
   for(const c of cracks){const y0=sy(c.y0);if(y0<-40||y0>H+40)continue;scratch(ctx,sx(c.x0),y0,sx(c.x1),sy(c.y1),c.w,c.a,false);}
   for(const b of bodies)if(b!==player.node)drawBody(b,false);
   for(const h of hazards)drawHazard(h);
   if(player.node)drawBody(player.node,true);
+  drawReleaseMarks(player);
   drawTrajectory(player);
   drawPlayer(player);
-  torchPass();
+  torchPass(.42);
   drawDarkness();
   if(!alive){ctx.fillStyle='rgba(0,0,0,'+clamp(1-deadTimer/1.15,0,1)*.7+')';ctx.fillRect(0,0,W,H);}
   if(showDiag)drawDiagnostic();
