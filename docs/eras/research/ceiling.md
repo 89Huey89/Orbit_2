@@ -1,6 +1,6 @@
 # Research — III · The Ceiling (Egypt, c. 1473–1458 BCE)
 
-Deepens and corrects `docs/eras/03-ceiling.md`. That file gets the broad shape
+Deepens and corrects `docs/eras/02-ceiling.md`. That file gets the broad shape
 right — flat, register-based, no perspective — but it under-documents its own primary source
 (the Senenmut ceiling's two panels are described in one line each) and it omits the single
 best document for this era's *gameplay*, not just its look: the Ramesside star clock, which is
@@ -21,7 +21,7 @@ have now been inspected directly. They supersede several early notes below:
   accents and only sparse blue, green and yellow fills.
 
 Claims still labelled weak or recalled remain research debt; the controlling implementation brief
-is [03-ceiling.md](../03-ceiling.md).
+is [02-ceiling.md](../02-ceiling.md).
 
 ## 1. The documents
 
@@ -154,7 +154,7 @@ outline (black)**, four steps, and `penLettering()` should model that count.
   work; no font fixes it.
 - **Noto Sans Egyptian Hieroglyphs**: OFL 1.1, © The Noto Project, 1,079 glyphs covering all
   1,078 characters of the Unicode Egyptian Hieroglyphs block, distributed via Google Fonts.
-  Confirmed license and rough glyph count; matches what `03-ceiling.md` already claims.
+  Confirmed license and rough glyph count; matches what `02-ceiling.md` already claims.
 - **Hieratic**, the real cursive administrative hand (ink on papyrus/ostraca, Old Kingdom until
   displaced by Demotic c. 7th century BCE), is **not usably encoded in Unicode** — heavily
   ligatured and, per Unicode's own working documents, "not currently supported in any font."

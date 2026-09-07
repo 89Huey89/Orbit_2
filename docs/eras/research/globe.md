@@ -1,11 +1,18 @@
 # Research — IV · The Globe (Islamic Golden Age, 964 CE, to Ulugh Beg, 1437)
 
-Deepens and corrects `docs/eras/02-globe.md`, which is short and broadly right; the correction
+**Superseded in part by [instruments.md](instruments.md).** That file inverts this one's choice of
+leading grammar — instrument grammar (astrolabe, alidade, engraved brass) becomes the era's primary
+register under the brief, with the manuscript page this file leads with demoted to a background
+register — and supplies the player tool, knowledge-gain statement and three reveal states this file
+predates. This file's documents, script and font pipeline, currency and dangers research (§1, §4,
+§6, §7) are left standing, not superseded; see `instruments.md` §1 for the exact split.
+
+Deepens and corrects `docs/eras/04-astrolabe.md`, which is short and broadly right; the correction
 below is specific, and the rest adds what it never had (palette hex, font data, shaping, names,
 currency, sound). Sources checked this session are in §13; a claim resting on general knowledge
 rather than a session fetch is flagged where it matters.
 
-**Correction, because it changes the lead artefact:** 02-globe.md doesn't name or date Marsh 144,
+**Correction, because it changes the lead artefact:** 04-astrolabe.md doesn't name or date Marsh 144,
 so it isn't wrong — but the research brief that spawned this file did, and the claim doesn't hold.
 **Bodleian MS Marsh 144's colophon states it was copied in 400 AH / 1009 CE, allegedly by
 al-Ṣūfī's own son, and older literature (Ridpath's *Star Tales*, most museum wall text) repeats
@@ -96,7 +103,7 @@ atmospheric depth, or a painted night sky — the "sky" is always the page or th
 
 Gold is the accent, lamp-black ink is the "ink" in every sense (medium and currency-name
 candidate), and the cream paper — not indigo, not black — is the ground: this era draws on a lit
-page and, per 02-globe.md's own correct observation, never paints the sky.
+page and, per 04-astrolabe.md's own correct observation, never paints the sky.
 
 ## 4. Lettering and how people wrote
 
@@ -224,13 +231,13 @@ Per DANGERS.md's option A (depiction only, safe under the current architecture):
 this era's own name and image over each.
 
 - **Attractor — al-Jawzahar / raʾs al-tinnīn ("the head of the dragon").** More specific than
-  02-globe.md's phrasing: Islamic astronomy inherited a Middle Persian concept (*gōzihr*) of an
+  04-astrolabe.md's phrasing: Islamic astronomy inherited a Middle Persian concept (*gōzihr*) of an
   eighth, invisible "planet" causing eclipses, identified with the Moon's two orbital nodes — the
   ascending node *raʾs al-tinnīn*/*raʾs al-jawzahar* ("head of the dragon"), the descending node
   *dhanab al-tinnīn*/*dhanab al-jawzahar* ("tail"). Depict as a coiled dragon whose head is the
   pull. Equally attested alternative: **al-Ghūl** ("the ghoul"), the desert demon behind the star
   Algol's name (*raʾs al-ghūl*, "the demon's head") — use one, not both, to avoid diluting the row.
-- **Repulsor — al-Shams' burning.** As 02-globe.md already has it: the sun figured on an astrolabe
+- **Repulsor — al-Shams' burning.** As 04-astrolabe.md already has it: the sun figured on an astrolabe
   throws heat as radiating lines from a gilt disc — squarely attested iconography, though no named
   "sunspot" concept exists here the way it does for era III's Galileo.
 - **Crosswind — al-Rīḥ, or specifically simoom (*sammūm*/*nār al-samūm*, "fire of the scorching

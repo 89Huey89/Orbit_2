@@ -1,6 +1,6 @@
 # Research — VI · The Plate (1887–1958)
 
-Deepens and corrects [`04-plate.md`](../04-plate.md). Corrections to the existing file are
+Deepens and corrects [`06-lens.md`](../06-lens.md). Corrections to the existing file are
 flagged inline as **(correction)**. Anything I could not independently confirm is flagged
 **(unverified)** rather than dropped, per the research brief.
 
@@ -56,7 +56,7 @@ flagged inline as **(correction)**. Anything I could not independently confirm i
   the exact number as **(unverified)** while the format (`<series letter(s)> <running number>`)
   is attested. Annotations are made **in ink on the back of the glass, not the emulsion side** —
   India ink or coloured inks circling or flagging a star — and roughly 20% of the collection
-  carries historically significant markings of this kind. **(correction to `04-plate.md`:** its
+  carries historically significant markings of this kind. **(correction to `06-lens.md`:** its
   aside that annotation is "handwritten in ink directly on the emulsion" should read *on the
   glass*, specifically the back — writing on the emulsion itself would damage the image.) DASCH
   finished scanning the entire collection in 2024, released as Data Release 7.
@@ -257,7 +257,7 @@ plate shows**, not by drawn surface detail:
   misregistered exposures were stacked — the closest this grammar comes to suggesting relief, and
   it is a printing artefact, not a drawn terminator.
 - **Ringed** — an elongated, oval smear rather than a round knot: a genuine ring would not resolve
-  as a ring on a plate, only as an object stretched along one axis, exactly as `04-plate.md`
+  as a ring on a plate, only as an object stretched along one axis, exactly as `06-lens.md`
   already proposes and this pass confirms is the correct photographic reading.
 - **Ice** — smaller and fainter than ocean, a thinner deposit near the plate's own fog level — the
   family hardest to be sure is even a real object rather than a grain of chemical fog, true to how
@@ -272,7 +272,7 @@ plate shows**, not by drawn surface detail:
 
 **No diffraction spikes anywhere in this era**, confirmed: spikes come from a reflector's
 spider-vane secondary-mirror support, an obstruction a refracting lens (the Bruce telescopes, the
-astrographs) simply does not have in the optical path. **(confirms `04-plate.md`** for the
+astrographs) simply does not have in the optical path. **(confirms `06-lens.md`** for the
 refractors this era's key documents were shot on; note the Palomar 48-inch *is* a Schmidt —
 catadioptric, not a pure refractor — so a Palomar-attributed body should scope "no spikes" to the
 refractor-shot documents (Carte du Ciel, Barnard, Franklin-Adams) rather than the whole era.)
@@ -337,13 +337,13 @@ growing plate/catalogue number, best as the survey's own "limiting magnitude rea
 - **"B 20650" could not be confirmed as a real, specific Harvard plate.** The format is solidly
   attested (letter series + running number), so an invented number in that format is defensible,
   but it should not be presented in-game as a citation to one particular historical plate.
-- **The "35,700 plates Barnard inspected" figure in `04-plate.md` could not be reconfirmed** and
+- **The "35,700 plates Barnard inspected" figure in `06-lens.md` could not be reconfirmed** and
   should be sourced properly or dropped in favour of the confirmed ~700-copy print run.
 - **The Palomar 48-inch is a Schmidt, not a pure refractor** — "no diffraction spikes" is correctly
   attested for the Carte du Ciel/Barnard/Franklin-Adams refractors but should not be extended
   uncritically to every document this era might eventually draw from.
 - **This era's palette has a genuinely near-white ground**, not a tinted one — worth spiking
-  against the existing duotone machinery before assuming it drops in for free as `04-plate.md`
+  against the existing duotone machinery before assuming it drops in for free as `06-lens.md`
   currently claims; a near-transparent emulsion ground may behave differently under the same
   colour-transform pipeline than every other plate's tinted base.
 - **BD's non-photographic nature is easy to lose track of** once folded into this era per
