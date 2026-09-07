@@ -146,14 +146,25 @@ page in a hand.
 the only pure light on the sheet — and so do the Shaft and the closed dot-ring. What the rebuild
 exposed is that the marks and the ground now share a hue: red ochre survives on warm limestone by being
 *regular*, a made pattern against a natural one, rather than by being a different colour, which is a
-real constraint on every mark this era will ever draw. Three things are unresolved and are a
-judgement rather than a measurement: whether the three magnitude tiers separate at speed and in
-peripheral vision or only when looked at, now that the Moon has been brought down from a white cloud
-to a disc with a face; whether the Flare still reads as danger rather than as a
-bright body, now that both sit in the same warm light; and whether a body outside the torch's reach
-being invisible is this era's finest idea or its worst, which is the UX risk [01-rock.md](01-rock.md)
-already carries in its own words. **The verdict on those is the author's to give against the running
-page, and is deliberately not recorded here.**
+real constraint on every mark this era will ever draw.
+
+**The verdict, given against the running page: the spike is finished, and it passes.** The mechanic
+reads and the sheet is legible enough to build on — not because it is beautiful, which it is not and
+was never asked to be, but because a hand can find every one of the seven signals in it while the
+world is moving. What it still owes is not readability but art direction, and that is the next era's
+work rather than this page's: the three magnitude tiers, the Flare against a bright body in the same
+warm light, and whether a body outside the torch's reach being invisible is this era's finest idea or
+its worst — the UX risk [01-rock.md](01-rock.md) already carries in its own words — are all questions
+the built era answers, not the spike.
+
+**One observation to carry forward, unresolved and belonging to nobody yet.** Held against the shipped
+game the prototype renders visibly *softer* — less sharp, less finished, more of a sketch — and at the
+same time it plays a little more fluidly. Neither half of that is understood. It may be the dab
+gradients against the shipped burin's swelling stroke, it may be the whole-frame torch multiply, it may
+be that the page does a fraction of the work per frame that the atlas does. It is not a fault to fix
+here and it is not this stage's question, but it is a real difference between the two renderers and it
+should be understood before the Rock's material is ported, because whichever of the two causes it, one
+of them is something the shipped game is paying for and the other is something it is missing.
 
 ## The prototypes and the three-state reveal
 

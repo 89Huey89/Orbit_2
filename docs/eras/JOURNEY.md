@@ -257,54 +257,67 @@ Re-run with `node scripts/probe.mjs`; `--seeds`, `--patience`, `--rows`, `--seco
 
 ## 4 · Code map — verified
 
-Line numbers checked on this branch. Re-check before editing; they drift.
+Line numbers re-checked after stages 1 and 2 landed. Re-check before editing; they drift, and the
+whole point of this section is that nobody edits against a number they did not measure.
 
 **Simulation** (`src/simulation.js`, all inside the markers)
-- `SWEEP_FULL` does not exist yet. `TAU` `:6`; `BASE_SPEED/MAX_SPEED` `:7`.
-- `OBSERVATIONS` `:159` — the *feats* table. Do not shadow or reuse this name.
-- `HAZARD_KINDS` `:180`. Ink gains `:33–35`.
-- player init, `orbitSweep:0` `:309`.
-- `release()` `:545`; `p.launch={…sweep:p.orbitSweep…}` `:550`.
-- `capture()` `:554`; zeroes `p.orbitSweep` `:572`.
-- `die()` `:626` — never clears `p.node`, so a body held at death keeps reading live.
-- `p.orbitSweep+=turn` `:690`.
-- fading death at 4.5 s of orbit `:702`.
-- prune `:745`, guarded: `if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(…)`.
+- `TAU` `:6`; `BASE_SPEED/MAX_SPEED` `:7`; **`SWEEP_FULL = TAU*2/3` `:12`** — stage 1 landed it.
+- Ink gains `:39`. `OBSERVATIONS` `:164` — the *feats* table. Do not shadow or reuse this name.
+- `HAZARD_KINDS` `:185`. Player init, `orbitSweep:0` `:314`.
+- `release()` `:550`; `p.launch={…sweep:p.orbitSweep…}` `:555`; **`n.documented=clamp(p.orbitSweep/
+  SWEEP_FULL,0,1)` `:559`** — the only write site, one line before `p.node=null`.
+- `capture()` `:563`; zeroes `p.orbitSweep` `:581`.
+- `die()` `:635` — never clears `p.node`, so a body held at death keeps reading the live sweep. Proven
+  by fixture.
+- `p.orbitSweep+=turn` `:699`. Fading death at 4.5 s of orbit `:711`.
+- Prune `:754`, guarded: `if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(…)`.
 
-**Reveal** (`src/reveal.js`)
+**Reveal** (`src/reveal.js`) — rewritten by stage 1; the old single-clock shape is gone.
 - `REVEAL_CAP=3` `:23`; the throttle that returns `0` `:50`.
-- `NODE_PEN` `:101`; `revealNode()` `:105`; `revealLabel()` `:118`; `revealRetire()` `:213`.
-- `revealPlanet()` draws stages in order survey → wash → keyline → hatch.
+- `NODE_PEN` `:101`, now carrying `d` and `taken` beside `t`.
+- `revealFlourish` `:105` — the completion hook, a no-op by default; `watchCompletion()` beneath it.
+- `revealNode()` `:122` — **two clocks**: `t` on `reveal.progress()`, `d` read directly off
+  `p.orbitSweep/SWEEP_FULL` or `n.documented`. `n.difficultyChoice` forces `d=1` (a holding position,
+  not a decision — see §9).
+- `revealLabel()` `:145` — untouched by stage 1 and to stay that way.
+- `sketchDisc()` `:204`; `revealPlanet()` `:217`, which now draws stage (0) — the light point and the
+  laid-in rough disc — before survey → wash → keyline → hatch.
+- `revealRetire()` `:283`.
 
-**Figures** (`src/figures.js`)
+**Figures / marks** (`src/figures.js`, `src/marks.js`)
 - `drawNode()` `:635`; `const pen=revealNode(n)` `:640`; `if(pen.t<=0)return;` `:641`.
+- The slingshot charge band gates on `pen.ring`, not `pen.survey` — it is a readout, not a depiction.
+- `engravedRing(radius,rgb,alpha,weight,seed,sketch)` `marks.js:191` — the `sketch` pass draws an
+  orbit no traveller has taken, and is part of the cache key.
 
 **Plates** (`src/plates.js`)
 - `PLATE_STYLES` `:236` — a plate is `{base, wash, tint}`; a mock era is three lines.
-- `plateName` `:301`; `const ink={}` `:302`; `syncPlate()` `:375`; `applyPlate()` `:386`;
-  `setPlate()` `:392`.
-- single-slot caches `laidTile`/`laidSheet` `:430`; `grain`/`grainSheetCanvas` `:371`.
+- `plateName` `:301`; `applyPlate()` `:386`; `setPlate()` `:392`.
+- Single-slot caches `laidTile`/`laidSheet` `:430`; `grain`/`grainSheetCanvas` `:371`.
 
 **Ledger and unlocks** (`src/ledger.js`) — *the Free Play selection UI already exists here*
-- `LEDGER_KEY='orbit.ledger.v1'`, `COSMETICS_KEY`, `INITIALS_KEY` `:10`.
-- `emptyLedger()` `:11`; `readLedger()` `:22`; `migrateRecords()` `:38`.
-- `UNLOCKS` `:93`; `unlockMet()` `:182`; `unlockedIds()` `:186`; `isUnlocked()` `:192`;
-  `cosmeticItems()` `:218`; `setCosmetic()` refuses a locked id `:246`; locked-plate fallback `:256`.
+- `readLedger()` **`:21`** (this was `:22` in the first draft and was wrong then too);
+  `migrateRecords()` `:38`; `UNLOCKS` `:93`; `unlockMet()` `:182`; `unlockedIds()` `:186`;
+  `isUnlocked()` `:192`; `cosmeticItems()` `:218`; `setCosmetic()` refuses a locked id `:246`.
 - `personalBests` is already a map keyed by difficulty — per-era records fit the same shape.
 
 **Frame / UI / effects / ceiling**
-- `frame.js:406` — `if(ceilingPlate()){` the separate render branch.
-- `ui.js:402` chapter cap; `ui.js:468` the `ledgerCommit()` skip.
+- `frame.js:406` — `if(ceilingPlate()){`, the separate render branch.
+- `ui.js:411` chapter cap; `ui.js` also now carries `rockPath()`/`openRock()` `:186`, the frontispiece
+  door to the Rock spike, and the `#rock-open` listener beside `#ceiling-open`.
 - `effects.js:381` `markHead(boost,charge,inkHeld)`; `:390` `OBSERVER_MARKS`; `:509` the
-  `cosmetic('mark')` lookup; `darknessPlates` keyed by `relief` alone `:526`,`:587`.
-- `ceiling.js:1350` `ceilingDrawPlayer()`; `:1565` `ceilingFractureEdge()`; `:1575`
-  `ceilingDrawDark()`.
+  `cosmetic('mark')` lookup; `darknessPlates` keyed by `relief` alone `:526`.
+- `ceiling.js:90` `ceilingWatch()`; `:1350` `ceilingDrawPlayer()`; `:1565` `ceilingFractureEdge()`;
+  `:1575` `ceilingDrawDark()`.
+
+**Build** (`scripts/build.mjs`) — writes `dist/index.html`, copies `assets/`, and carries
+`docs/eras/prototypes/rock-read.html` to `dist/rock-read.html` under the same no-network check.
 
 **Tests** (`scripts/verify.mjs`)
-- destructuring list `:8–9` — see landmine L1.
+- Destructuring list `:9` — see landmine L1. It now carries `SWEEP_FULL`.
 - `'One seed deals one chart'` `:684`; `'How a run is flown cannot change the chart it is dealt'`
-  `:693`; the skipped-dividend fixture `:392–411`; `'A refused selection leaves the default in
-  place'` `:867`; the `plateIds` loops `:842`,`:1078`.
+  `:693`; the stage-1 fixtures sit beside them and after the `fade` fixture, and in the runtime
+  block's pen section.
 
 ---
 
@@ -346,8 +359,8 @@ Either give every era a complete token set, or clear `ink` before applying.
 `Math.min(4,…+1)`; **and `ceiling.js:90` `ceilingWatch()`**, which the older documents miss entirely.
 Grepping one literal finds one of them.
 
-**L7 · `ceilingPlate()` is read at 24 sites, not 4.** `ui.js` ×13, `audio.js` ×6, `plates.js` ×4,
-`frame.js` ×1 — announcements, end-screen text, the tutorial line, the sistrum, the grind. The older
+**L7 · `ceilingPlate()` is read at 21 sites, not 4.** Counted, not estimated: `ui.js` ×13,
+`audio.js` ×4, `plates.js` ×3, `frame.js` ×1 — announcements, end-screen text, the tutorial line, the sistrum, the grind. The older
 documents name four "bypasses". Entsandboxing the Ceiling means answering all 24.
 
 **L8 · `darknessRelief` names two unrelated things** in one global scope: a render-side smoothed tint
@@ -412,7 +425,7 @@ sequential. Stage 6 fans out. Stage 7 fans out per era.
 > be done by one agent in small, separately revertible commits. Every agent must run `npm test` before
 > committing and must not edit `verify.mjs`'s existing assertions without saying so.
 
-### Stage 1 — the orbit-based reveal · *single-owner, small*
+### Stage 1 — the orbit-based reveal · *single-owner, small* · **BUILT**
 
 Bodies read as phenomena and are represented progressively during orbit. No era plumbing at all.
 
@@ -442,7 +455,7 @@ already-documented node is **not** gated by `REVEAL_CAP`; the flourish fires exa
 crossing and never for a body that does not complete. *Must not break*: `:684`, `:693` — add a fixture
 flying one seed two ways and asserting an identical node array despite differing `documented`.
 
-### Stage 2 — the Prehistory readability prototype · *parallel-safe, art-led*
+### Stage 2 — the Prehistory readability prototype · *parallel-safe, art-led* · **BUILT — and it passes**
 
 The Rock is now the front door: a new player's first run, possibly several, is era I. Its own risk
 section flags an unspiked question and it must be answered before anything expensive is drawn.
@@ -579,3 +592,14 @@ Decisions this file does not make, and which should not be invented by an implem
   transition grows outward from the traveller.
 - **Era VII's black space as a material** — the frontier needs a substance to fail in.
 - **The Rock's triad**, pending stage 2.
+- **The checkpoints are not legible as checkpoints.** Stage 1's spans — `keyline 0→.4`, `hatch
+  .28→.62`, `wash .36→.84`, `survey .58→1` — were flown and *feel* right: the body fills at a pace
+  that matches the orbit. What they do not do is read as four named stages a player could learn and
+  aim at. Whether that matters is the open question. Either the stages want a mark of their own at
+  each threshold, or the whole idea of nameable checkpoints is wrong for a body being drawn on and
+  the smooth fill is the honest answer. Do not tune the numbers to fix this — they are not the
+  problem — and do not invent a threshold mark before the question is settled.
+- **How the opening triad is drawn.** `revealNode()` currently forces `d=1` for a `difficultyChoice`
+  node, so all three pressures stay drawn in full as they always were. That is a **holding position,
+  not a decision**: the three worlds are shown for the first time in the Rock, and the era's own art
+  direction settles what they look like before an orbit has taken them. Until then, leave it.
