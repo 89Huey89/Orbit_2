@@ -256,13 +256,13 @@ const PLATE_STYLES={
   // grammar follows the light-ground astronomical ceiling in TT353: lime plaster, fine black drawing,
   // red setting-out and restrained mineral fills. The identity transform lets the shared plate registry
   // finish booting; ceiling.js owns every visible mark once render() takes its dedicated branch.
-  ceiling:{base:'paper',wash:0,era:2,render:'ceiling',can:{score:true,mode:true},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  ceiling:{base:'paper',wash:0,era:2,render:'ceiling',can:{score:true,mode:true},door:{button:'ceiling-open',label:'ERA II \u00b7 THE CEILING'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
   // Era I is a wall, not a sheet, and the atlas has nothing to say about it: no frame, no laid wires,
   // no engraved line, and a ground that is a lit material rather than a colour. It is pulled from the
   // paper plate only because a light ground is the nearer of the two starting points; every mark on it
   // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};

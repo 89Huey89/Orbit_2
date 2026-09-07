@@ -902,7 +902,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead};',context);
@@ -1232,14 +1232,41 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     assert.equal(wall.chapters[3],'BEFORE DAWN');
     assert(/decan course/i.test(wall.chartSaid)&&/wall holds/i.test(wall.chartSaid),'The Ceiling keeps its own completion sentence');
     assert(/barque/i.test(wall.opening),'The Ceiling keeps its own opening line');
+    // Every feat the simulation can record must have a word on this sheet. The conversion reads one
+    // table with the atlas's Latin behind it, which is only ever right while the era's table is
+    // complete; a ninth observation added to simulation.js would otherwise be captioned in Latin on a
+    // wall that has no Latin, and nothing would say so.
+    for(const key of Object.keys(OBSERVATIONS))assert(wall.observations[key],'The Ceiling names every observation the simulation can record: '+key);
     for(const key of ['first','dark','faded','vortex','angle','speed'])assert(wall.tips[key],'The Ceiling names a tip for every ending: '+key);
     for(const key of ['choose','dry','sling','release','bend'])assert(wall.held[key],'The Ceiling names every standing instruction: '+key);
     for(const sound of ['capture','death','medal','scratch'])assert(context.test.handFor(sound),'The Ceiling keeps its own voice: '+sound);
-    // Its entry label is the atlas's, because the button is read from outside the era: it names the
-    // door, and only says RETURN once the door has been gone through.
-    assert.equal(wall.chrome.entry,context.test.plateWords().chrome.entry);
     context.test.setPlate('night');
-    assert.equal(context.test.plateWords().chrome.entry,'ERA II \u00b7 THE CEILING','The frontispiece names the Ceiling by its place on the roster');
+  }
+  {
+    // A century with a door on the frontispiece names it on its own row, and the label carries its
+    // place on the roster docs/eras/JOURNEY.md §1.9 fixes. A plate with an ordinal and no door would
+    // be a century nothing can reach; a door on a plate with no ordinal would be a door to the atlas.
+    const styles=context.test.PLATE_STYLES,doors={};
+    for(const id in styles){
+      const style=styles[id];
+      if(style.door){
+        assert(style.era,'A door must open onto a century: '+id);
+        assert(style.door.button&&style.door.label,'A door names its button and its label: '+id);
+        assert(!doors[style.door.button],'Two centuries must not share one door: '+style.door.button);
+        doors[style.door.button]=id;
+      }
+      if(style.era)assert(style.door,'A century the frontispiece cannot reach is a century nobody plays: '+id);
+    }
+    assert.equal(styles.rock.door.label,'ERA I \u00b7 THE ROCK');
+    assert.equal(styles.ceiling.door.label,'ERA II \u00b7 THE CEILING');
+    // A door is not opened out from under a run in progress: changing the plate deals a new chart, and
+    // a player mid-flight would lose the one they were flying. Everything else about the doors is
+    // flown at the end of this layout, where dealing a fresh chart disturbs nothing after it.
+    context.test.setPlate('paper');
+    assert.equal(context.test.world.state,'playing','fixture expects a run in progress here');
+    context.test.enterEra('rock');
+    assert.equal(context.test.plateName,'paper','A century may not be entered out from under a run');
+    context.test.setPlate('night');
   }
   {
     // Two eras never share a cached entry, and both hit. applyPlate() points `ink` at a plate without
@@ -1593,6 +1620,30 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       const place=context.test.marginaliaGloss(fy,gloss);
       assert(place.y+place.h<=floor+1e-6,'The gloss stays out of the footer band at '+width+'x'+height+', waterline '+fy);
     }
+  }
+  // ---- The doors, last, because entering a century deals a fresh chart ----
+  // Entering puts a century's plate on the press; leaving puts back the plate that was there, and
+  // never strands the player on a plate that is itself a mode. Every era renders on both sides of the
+  // journey, so a hand that draws nothing at all would be caught here rather than on the page.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    for(const id in context.test.PLATE_STYLES){
+      if(!context.test.PLATE_STYLES[id].door)continue;
+      context.test.enterEra(id);
+      assert.equal(context.test.plateName,id,'A door opens onto its own century: '+id);
+      assert.equal(context.test.eraId(),context.test.PLATE_STYLES[id].era);
+      assert.equal(context.test.plateOwns('score'),true,'A century keeps its own record: '+id);
+      context.test.render(1/60);context.test.handleInput();context.test.render(1/60);
+      context.test.leaveEra();
+      assert.equal(context.test.plateName,'paper','Leaving a century puts back the plate that was on the press: '+id);
+      context.test.newWorld();
+    }
+    context.test.enterEra('rock');
+    context.test.enterEra('ceiling');
+    assert.equal(context.test.plateName,'paper','A door pressed from inside a century is the way back out');
+    context.test.leaveEra();
+    assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
+    context.test.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }

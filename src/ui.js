@@ -4,7 +4,7 @@
 // ---------- Presentation, storage, viewport, and the single gameplay input ----------
 // Every ripple, ring and blot carries its own seed so the burin cuts each one differently.
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
-let ceilingReturn=null;
+let eraReturn=null;
 // The atlas's own vocabulary — what a plain run of the printed star chart calls things, in its
 // own words. A plate cut for another century registers its own defineVoice() and replaces only the
 // entries it renames (see plateWords()/spoken() in src/plates.js); anything it leaves out is still
@@ -21,7 +21,7 @@ defineVoice('atlas',{
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED'},
-  chrome:{entry:'ERA II · THE CEILING',brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
+  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
@@ -155,8 +155,15 @@ function syncEraChrome(){
   // Everything here is a plate's own name for a fixture the atlas also has; the fixture stays where
   // it is, and only the words on it change. The entry button is the one exception even to that: what
   // it says depends on a capability (whether the standing plate is itself a mode, not on which one).
-  const chrome=plateWords().chrome,open=$('ceiling-open');
-  if(open)open.textContent=plateOwns('mode')?'RETURN TO THE ATLAS':chrome.entry;
+  const chrome=plateWords().chrome;
+  // Each century that has a door on the frontispiece names it on its own row in PLATE_STYLES, so a
+  // third era is a button in the markup and that row, rather than another label written out here. The
+  // doors stand on the atlas's sheet only; from inside a century the way back is the exit, which is
+  // the same door out of all of them.
+  for(const id in PLATE_STYLES){
+    const door=PLATE_STYLES[id].door;if(!door)continue;
+    const button=$(door.button);if(button)button.textContent=door.label;
+  }
   const brand=$('brand');if(brand)brand.textContent=chrome.brand;
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
   const endTitle=$('end-title');if(endTitle)endTitle.textContent=chrome.endTitle;
@@ -164,29 +171,28 @@ function syncEraChrome(){
   game.setAttribute('aria-label',chrome.gameLabel);
   canvas.setAttribute('aria-label',chrome.canvasLabel);
 }
-function enterCeiling(){
-  if(plateOwns('mode')){leaveCeiling();return;}
+// A century is entered by putting its plate on the press, and left by putting back whatever plate was
+// on it before. What the daily is doing is set aside on the way in and restored on the way out,
+// because a century is not a day of the atlas's own almanac. A plate that has something to wait for
+// before its sheet can be painted — a face still loading, say — names a `ready` painter and it is
+// called last, once there is something on screen to repaint.
+function enterEra(name){
+  if(plateOwns('mode')){leaveEra();return;}
   if(world&&world.state==='playing')return;
-  ceilingReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
+  if(!PLATES[name])return;
+  eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
-  applyPlate('ceiling');invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);ceilingFaceReady();
+  applyPlate(name);invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
+  const ready=handFor('ready');if(ready)ready();
 }
-function leaveCeiling(){
+function leaveEra(){
   if(!plateOwns('mode'))return;
-  const keep=ceilingReturn||{},restore=keep.plate&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode)&&PLATES[keep.plate]?keep.plate:'night';
+  const keep=eraReturn||{},kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
+  const restore=kept?keep.plate:'night';
   difficulty=keep.difficulty&&DARKNESS_MULT[keep.difficulty]?keep.difficulty:difficulty;
   dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
-  applyPlate(restore);ceilingReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
+  applyPlate(restore);eraReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
 }
-// The Rock prototype is a standalone page rather than a plate, so it is reached by navigating away
-// rather than by applyPlate; it lives one directory further from the atlas in dev than it does once
-// built, because the build copies it beside dist/index.html while dev serves it straight out of
-// docs/eras/prototypes/ beside src/. Read where the page itself was served from, at the moment of
-// the click rather than at load time, to tell the two trees apart.
-function rockPath(){
-  return location.pathname.includes('/src/')?'../docs/eras/prototypes/rock-read.html':'rock-read.html';
-}
-function openRock(){location.href=rockPath();}
 function setPlaying(){
   // A daily plate is entered in the log the moment its run begins, and only while it is the current
   // day's: that entry is the whole of what opens a past plate to be drawn again.
@@ -509,10 +515,12 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
-$('ceiling-open').addEventListener('click',enterCeiling);
-$('rock-open').addEventListener('click',openRock);
-$('ceiling-exit-end').addEventListener('click',leaveCeiling);
-$('ceiling-exit').addEventListener('click',leaveCeiling);
+for(const id in PLATE_STYLES){
+  const door=PLATE_STYLES[id].door;if(!door)continue;
+  const button=$(door.button);if(button)button.addEventListener('click',()=>enterEra(id));
+}
+$('ceiling-exit-end').addEventListener('click',leaveEra);
+$('ceiling-exit').addEventListener('click',leaveEra);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 // The full instruction paragraph prints on its own the first time the frontispiece is ever seen;

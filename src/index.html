@@ -25,10 +25,12 @@
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
+    .era-exit{display:none!important}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     #game[data-era="2"] .ceiling-only{display:revert!important}
     #game[data-era="1"] .rock-only{display:revert!important}
+    #game[data-era] .era-exit{display:revert!important}
     #game[data-era="2"] .footer{color:#5f4b34}
     #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -427,8 +429,8 @@
         <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
         <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
         <button id="ephemeris-open" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
-        <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
-        <button id="rock-open" class="diff-btn era-entry atlas-only" type="button" aria-label="Open a standalone readability spike for Era I, The Rock — toy physics on a cave wall, not a playable era">ERA I · THE ROCK</button>
+        <button id="ceiling-open" class="diff-btn era-entry atlas-only" type="button">ERA II · THE CEILING</button>
+        <button id="rock-open" class="diff-btn era-entry atlas-only" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
         <span id="daily-date" class="small daily-note atlas-only"></span>
       </div>
       <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
@@ -449,7 +451,7 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn ceiling-only" type="button">RETURN TO THE ATLAS</button></div>
+      <div class="end-plate-line"><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
     </div>
   </section>
   <section id="pause" class="screen hidden" aria-label="Paused"><strong id="pause-title">Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
@@ -491,7 +493,7 @@
       </svg>
     </button>
     <span class="footer-tools">
-    <button id="ceiling-exit" class="utility ceiling-only" aria-label="Return to the atlas" title="Return to the atlas">
+    <button id="ceiling-exit" class="utility era-exit" aria-label="Return to the atlas" title="Return to the atlas">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M10 5 3 12l7 7M3 12h17"/>
         <path d="M10 5 3 12l7 7" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
