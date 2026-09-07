@@ -407,7 +407,11 @@ const CEILING_FACES={
   body:"'Zilla Slab',Georgia,'Times New Roman',serif",
   hiero:HIERO_FACE
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES});
+// The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
+// curatorial layer — and that takes the same slab the Ceiling's does, for the same reason: it is the
+// type an excavation plate has been captioned in since the trade named the class, and it declares
+// itself modern where the Fell types would claim the wrong century by seventeen thousand years.
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:CEILING_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;

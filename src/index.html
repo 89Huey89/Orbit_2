@@ -26,6 +26,14 @@
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
     .era-exit{display:none!important}
+    /* Era I letters in the same modern slab era II does, and for the same reason: this wall has no
+       script of its own, so everything set on it is openly a curator's gloss. The palette is unlit rock
+       and the four pigments — the reddest ochre standing in for a gold this era does not have, and the
+       blacks standing in for a blue it does not have either. It reads light on dark because the HUD sits
+       at the top of the sheet, which is where the torch has already stopped reaching. */
+    #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
+    #game[data-era="1"] .footer{color:#c7bc9e}
+    #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     #game[data-era="2"] .ceiling-only{display:revert!important}

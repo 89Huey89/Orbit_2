@@ -224,6 +224,9 @@ function surveyLetter(text,x,y,size,rgb,alpha,t){
 // A unit vector across a construction's line, turned to the side away from a given direction.
 function surveyAside(ux,uy,dx,dy){let px=-uy,py=ux;if(px*dx+py*dy>0){px=-px;py=-py;}return [px,py];}
 function drawSurveys(){
+  // A plate that draws this in its own hand names the painter; an age with no geometry and no script to
+  // letter one in names a painter that draws nothing at all.
+  const own=handFor('surveys');if(own)return own();
   if(!surveys.length||!world)return;
   const rgb=(trailInk().path||ink.dark.pathInk),gold=ink.base.gold,base=onPaper()?.6:.46;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.textBaseline='alphabetic';

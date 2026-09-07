@@ -1194,7 +1194,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       assert.equal(context.test.eraId(),0,id+' is the atlas\'s own sheet, not a century cut beside it');
       assert.equal(context.test.plateOwns('score'),false,id+' keeps the atlas record');
       assert.equal(context.test.plateOwns('mode'),false,id+' is not entered as a mode');
-      for(const painter of ['atmosphere','node','hazard','player','dark','plateFrame','laid','flourish','frame'])
+      for(const painter of ['atmosphere','node','hazard','player','dark','plateFrame','laid','figure','surveys','hudLeaf','runningHead','chapterReveal','flourish','frame'])
         assert.equal(context.test.handFor(painter),undefined,id+' must be drawn by the atlas hand alone: '+painter);
     }
     // Every plate speaks a complete vocabulary. The atlas's words stand under whatever an era renames,
@@ -1258,6 +1258,15 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       if(style.era)assert(style.door,'A century the frontispiece cannot reach is a century nobody plays: '+id);
     }
     assert.equal(styles.rock.door.label,'ERA I \u00b7 THE ROCK');
+    // The Rock is drawn by its own hand and inherits the atlas's for what it does not name; the two it
+    // names silently are the two the era forbids outright, and a run through it must still reach every
+    // painter that carries planning information.
+    context.test.setPlate('rock');
+    for(const painter of ['atmosphere','node','hazard','player','dark','plateFrame','laid','figure','surveys','hudLeaf','runningHead','chapterReveal','flourish'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Rock names its own: '+painter);
+    assert.equal(context.test.handFor('frame'),undefined,'The Rock is drawn into the atlas\'s frame, not instead of it');
+    assert.equal(context.test.plateWords().chapterSaid.includes('Chamber'),true,'The Rock calls a chapter a chamber');
+    context.test.setPlate('night');
     assert.equal(styles.ceiling.door.label,'ERA II \u00b7 THE CEILING');
     // A door is not opened out from under a run in progress: changing the plate deals a new chart, and
     // a player mid-flight would lose the one they were flying. Everything else about the doors is

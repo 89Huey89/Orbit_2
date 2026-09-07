@@ -372,6 +372,9 @@ function hudLeafGradient(){
   return g;
 }
 function drawHudLeaf(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('hudLeaf');if(own)return own();
   if(!world||world.state==='ready'||world.state==='dead')return;
   const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=band*.64;
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
@@ -391,6 +394,9 @@ function runningHeadGradient(){
   return g;
 }
 function drawRunningHead(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('runningHead');if(own)return own();
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;

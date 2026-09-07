@@ -578,6 +578,9 @@ function chapterRevealLeaf(){
   return g;
 }
 function drawChapterReveal(dt){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('chapterReveal');if(own)return own(dt);
   if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
   // The plate title is written once and left as ink: it fades in under the pen, then stands at
