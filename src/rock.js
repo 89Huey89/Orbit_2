@@ -25,12 +25,12 @@ definePlate('rock',{
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'170,152,120',shaft:'4,3,3',dark:'2,2,2',
     ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'},
+    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',macroWarm:'156,146,128',macroCool:'104,102,108'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'170,152,120',shaft:'4,3,3',dark:'2,2,2',
     ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'}
+    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',macroWarm:'156,146,128',macroCool:'104,102,108'}
 });
 
 // ---------- The tunable rows ----------
@@ -148,7 +148,7 @@ const ROCK_CELL=15,ROCK_CW=ROCK_NW/ROCK_CELL,ROCK_CH=ROCK_NH/ROCK_CELL;
 // a threshold on a slow field pushed about by the fine relief, so it is lobed at the relief's scale, and
 // by a per-pixel hash, so it is ragged at the pixel's. The crust is a skin and stands barely proud, and
 // its grain is height; a spalled face and a lost scale sit below the surface; a pit is only ever a
-// shadow, and is not cut here at all. Rows y0 to y1 of it: see rockBakeWall for why a pass takes a range.
+// shadow, and is not cut here at all; a pocket is a small spalled face. Rows y0 to y1 of it: see rockBakeWall for why a pass takes a range.
 function rockHeightPass(F,y0,y1){
   const {HL,CR,BF,SA,SZ,ST,HN,GR,FM,H,CM,BM,SM}=F,NW=ROCK_NW,Q=ROCK_Q,QW=ROCK_QW,QH=ROCK_QH;
   for(let y=y0;y<y1;y++){
@@ -161,9 +161,12 @@ function rockHeightPass(F,y0,y1){
       const sav=(SA[a0]+(SA[a1]-SA[a0])*tx)*(1-ty)+(SA[b0]+(SA[b1]-SA[b0])*tx)*ty;
       let h=Math.imul(x,0x9E3779B1)^Math.imul(y,0x85EBCA77);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;
       const t1=(h&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5;
-      const cm=rockStep(.77,.80,crv+hn*.20+t1*.012),bm=rockStep(.80,.81,bfv+hn*.03),fold=1-Math.abs(bfv*2-1);
+      // A recessed face comes off the break field's top, and a pocket off the floor of the broad relief —
+      // a hollow deepens into a hole where it is already lowest — and both take the same lip and the same
+      // shadow below; the pocket's floor is darkened in the pass after this, out of the torch's reach.
+      const cm=rockStep(.77,.80,crv+hn*.14+t1*.006),bm=Math.max(rockStep(.80,.81,bfv+hn*.03),1-rockStep(.10,.13,hl+hn*.10+t1*.008)),fold=1-Math.abs(bfv*2-1);
       const sm=rockStep(.78,.80,sav+hn*.2+t1*.01)*SZ[a0],th=cm*ST[a0];
-      H[i]=hl+fold*.04+hn*.05+cm*.008+GR[i]*ROCK_K*.011*th-bm*.03-sm*.006-FM[i]*ROCK_K*.006;
+      H[i]=hl+fold*.04+hn*.05+cm*.003+GR[i]*ROCK_K*.011*th-bm*.03-sm*.006-FM[i]*ROCK_K*.006;
       CM[i]=cm/ROCK_K;BM[i]=bm/ROCK_K;SM[i]=sm/ROCK_K;
     }
   }
@@ -186,25 +189,26 @@ function rockCraze(x,y,wx,wy,hn,t2,cz,FX,FY){
   if((e&255)*ROCK_K>=.08+cz*.72)return 0;
   return (1-rockStep(.5,1.8,Math.sqrt(f2)-Math.sqrt(f1)+hn*.6))*(.1+((e>>>8)&255)*ROCK_K*.16+t2*.1);
 }
-// The light and the minerals. The torch stands below and to the left of the sheet, so a surface climbing
-// to the right or downward faces it, and a spalled face lies in the shadow the lip nearest the torch
-// throws across it. The per-pixel tooth is what lets ochre read on this ground at all, and is stronger in the
+// The light and the minerals. The lamp is above and to the right of the sheet — the torch's glow is a
+// brightness the eye does not take a normal from, and a form lit from below reads inside out — so a
+// surface climbing to the left or downward faces it, and a spalled face lies in the shadow the lip
+// nearest the lamp throws across it. The per-pixel tooth is what lets ochre read on this ground at all, and is stronger in the
 // crust, which is crystalline. Every colour is a plate token, mixed by weight. The crazing is cut where
 // the patch field says so and in the odd lone cell besides, only as far as the nearer cell is one of
 // them, so a lone fracture stops short of its full length as a fracture does.
 function rockShadePass(F,y0,y1){
-  const {BL,SF,ST,MP,MN,CZ,HN,GR,FM,H,CM,BM,SM,FX,FY,FA,d,st,cu,sc,ir,mg,ck}=F,NW=ROCK_NW,NH=ROCK_NH,N=NW*NH,Q=ROCK_Q,QW=ROCK_QW,QH=ROCK_QH;
+  const {HL,BL,SF,ST,MP,MN,CZ,HN,GR,FM,H,CM,BM,SM,FX,FY,FA,d,st,cu,sc,ir,mg,ck}=F,NW=ROCK_NW,NH=ROCK_NH,N=NW*NH,Q=ROCK_Q,QW=ROCK_QW,QH=ROCK_QH;
   for(let y=y0;y<y1;y++){
-    const ym=((y+NH-1)%NH)*NW,yp=((y+1)%NH)*NW,yd3=((y+3)%NH)*NW,yd8=((y+8)%NH)*NW,row=y*NW,cyi=(y/ROCK_CELL)|0;
+    const ym=((y+NH-1)%NH)*NW,yp=((y+1)%NH)*NW,yu3=((y+NH-3)%NH)*NW,yu8=((y+NH-8)%NH)*NW,row=y*NW,cyi=(y/ROCK_CELL)|0;
     const qi0=((y/Q)|0)*QW,fy=(y+.5)/Q-.5,iy=Math.floor(fy),ty=fy-iy,qy0=((iy+QH)%QH)*QW,qy1=((iy+1)%QH)*QW;
     for(let x=0;x<NW;x++){
-      const i=row+x,xm=(x+NW-1)%NW,xp=(x+1)%NW,xl3=(x+NW-3)%NW,xl8=(x+NW-8)%NW,qi=qi0+((x/Q)|0),x0=rockQX0[x],x1=rockQX1[x],tx=rockQTX[x];
+      const i=row+x,xm=(x+NW-1)%NW,xp=(x+1)%NW,xr3=(x+3)%NW,xr8=(x+8)%NW,qi=qi0+((x/Q)|0),x0=rockQX0[x],x1=rockQX1[x],tx=rockQTX[x];
       const bl=(BL[qy0+x0]+(BL[qy0+x1]-BL[qy0+x0])*tx)*(1-ty)+(BL[qy1+x0]+(BL[qy1+x1]-BL[qy1+x0])*tx)*ty;
       let h=Math.imul(x,0x9E3779B1)^Math.imul(y,0x85EBCA77);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;
       const t1=(h&255)*ROCK_K-.5,t2=((h>>>8)&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5,gr=GR[i]*ROCK_K,cm=CM[i]*ROCK_K,bm=BM[i]*ROCK_K,sm=SM[i]*ROCK_K,sf=SF[qi];
       const gx=(H[row+xp]-H[row+xm])*.5,gy=(H[yp+x]-H[ym+x])*.5;
-      const shade=bm*(.1+(1-BM[yd3+xl3]*ROCK_K)*.22+(1-BM[yd8+xl8]*ROCK_K)*.14),th=cm*ST[qi];
-      const lam=Math.min(1.28,Math.max(.06,((.62*gx-.60*gy)*46+bl+cm*.03)*(1-shade)*(1-th*(1-gr)*.16)*(1-cm*(1-cm)*.8)+t1*(.06+cm*.03)));
+      const shade=bm*(.1+(1-BM[yu3+xr3]*ROCK_K)*.22+(1-BM[yu8+xr8]*ROCK_K)*.14)+bm*(1-rockStep(.10,.16,HL[qi]))*.32,th=cm*ST[qi];
+      const lam=Math.min(1.28,Math.max(.06,((.60*gy-.62*gx)*46+bl+cm*.03)*(1-shade)*(1-th*(1-gr)*.16)*(1-cm*(1-cm)*.35)+t1*(.06+cm*.03)));
       const pm=rockStep(.88,.93,gr*.7+hn*.6+t1*.15)*MP[qi]*(1-cm),iron=sf*.5+rockStep(.6,.66,sf+hn*.12)*.2,mn=MN[qi]*(.6+hn*.8);
       // The line is wobbled by the fine relief, read a way off for its second axis, which is as good as
       // a second field and costs nothing.
@@ -245,12 +249,12 @@ function rockBakeWall(){
   // along one long sweeping line and its two flanks take the light differently; the height pass lays
   // the sharp crest itself along the same line at full size.
   for(let i=0;i<ROCK_QN;i++){const f=1-Math.abs(BF[i]*2-1);HL[i]=HL[i]*.75+f*f*.25;}
-  // The broad light — how the slow relief faces the torch, read a cell either side so a fold darkens
+  // The broad light — how the slow relief faces the lamp, read a cell either side so a fold darkens
   // as a whole and not only at its crest — is settled at the same size and read back up bilinearly,
   // because a cell of it read whole shows as a mosaic wherever the relief turns quickly.
   const BL=q();
   for(let y=0;y<QH;y++){const ym=((y+QH-1)%QH)*QW,yp=((y+1)%QH)*QW,row=y*QW;
-    for(let x=0;x<QW;x++){const i=row+x,gx=(HL[row+(x+1)%QW]-HL[row+(x+QW-1)%QW])/8,gy=(HL[yp+x]-HL[ym+x])/8;BL[i]=(.62*gx-.60*gy)*48+.52+HL[i]*.38;}}
+    for(let x=0;x<QW;x++){const i=row+x,gx=(HL[row+(x+1)%QW]-HL[row+(x+QW-1)%QW])/8,gy=(HL[yp+x]-HL[ym+x])/8;BL[i]=(.60*gy-.62*gx)*48+.52+HL[i]*.38;}}
   // Then the two fine ones, which have to be full-size — the relief that roughens every front, and the
   // crust's grain — each built in the one full-size scratch and kept as bytes; the scratch then becomes
   // the height itself. Before they are built, the two passes are each run over a few rows of
@@ -275,6 +279,35 @@ function rockBakeWall(){
   for(let y=0;y<NH;y+=60)rockShadePass(F,y,y+60);
   g.putImageData(img,0,0);
   rockWall=c;return rockWall;
+}
+
+// ---------- The slow field: what keeps the wall from repeating ----------
+// A tile 960 wide is seen one and a third times across a wide screen and twice down a phone, and an eye
+// that has seen a crust tongue once knows it when it comes round again. Enlarging the tile is linear in
+// the bake; laying a second, slower field over it at a period that is no small multiple of the first
+// is nearly free — it carries nothing finer than a hand's breadth, so it is baked at a quarter of its
+// size and read up smooth — and the two only repeat together at their least common multiple, twenty-two
+// tiles off. It is tone alone. The wall's recesses are cut in the tile itself, where they are shaded
+// at full size by the same lamp as everything else; a deeper rock behind the wall, kept only where it
+// opened and scrolled at its own rate, was built and measured, and is not here: cutting it in cost the
+// same again per frame as the whole wall, on this ground it read as a stain rather than as depth, and a
+// hollow in a wall a torch's length away is not deep enough to move against its own rim.
+const ROCK_MW=1408,ROCK_MH=1312,ROCK_MQ=4,ROCK_MSW=ROCK_MW/ROCK_MQ,ROCK_MSH=ROCK_MH/ROCK_MQ,ROCK_MX=-ROCK_MW*.37;
+let rockMacro=null;
+function rockBakeMacro(){
+  if(rockMacro)return rockMacro;
+  const w=ROCK_MSW,h=ROCK_MSH,n=w*h,tok=k=>ink.rock[k].split(',').map(Number),warm=tok('macroWarm'),cool=tok('macroCool');
+  const MF=rockBuild(new Float32Array(n),w,h,1,[[176,164,.4,3131],[88,82,1,3232],[44,41,.5,3333]]);
+  const c=makeCanvas(w,h),g=c.getContext('2d'),img=g.createImageData(w,h),d=img.data;
+  for(let i=0;i<n;i++){const t=MF[i],o=i*4;d[o]=cool[0]+(warm[0]-cool[0])*t;d[o+1]=cool[1]+(warm[1]-cool[1])*t;d[o+2]=cool[2]+(warm[2]-cool[2])*t;d[o+3]=255;}
+  g.putImageData(img,0,0);rockMacro={tone:c,pat:null};return rockMacro;
+}
+// The slow field over the whole wall as one overlay fill at the wall's own rate: fifty per cent grey is
+// that blend's rest, so the field lifts the wall where it stands above its middle and drops it below.
+function rockPaintMacro(){
+  const m=rockBakeMacro();if(!m.pat)m.pat=ctx.createPattern(m.tone,'repeat');
+  const sc=ROCK_MQ/DPR,mh=ROCK_MH/DPR,mOff=((world.cameraY*scale)%mh+mh)%mh,mx=ROCK_MX/DPR;
+  ctx.save();ctx.globalCompositeOperation='overlay';ctx.translate(mx,-mOff);ctx.scale(sc,sc);ctx.fillStyle=m.pat;ctx.fillRect(-mx/sc,mOff/sc,W/sc,H/sc);ctx.restore();
 }
 
 // The torch's own reach, in view space rather than world space — a light left behind in world space
@@ -315,6 +348,7 @@ function rockPaintWall(){
   const tileW=ROCK_NW/DPR,tileH=ROCK_NH/DPR,snap=v=>Math.round(v*DPR)/DPR;
   const off=((world.cameraY*scale)%tileH+tileH)%tileH;
   for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
+  rockPaintMacro();
 }
 
 // ---------- The four primitives, each taking the context they draw into so a hazard's own bake can
@@ -406,6 +440,33 @@ function rockEdgePath(g,x,y,r,seed){
   g.closePath();
 }
 
+// ---------- The rock's own form under a body ----------
+// Painters worked the rock's own bulges and hollows, giving figures modelled relief without a shaded
+// stroke (01-rock.md, Grammar): a body on this sheet sits on a rise or in a dish that was there before
+// any hand found it. The form is a sprite — one dome and one hollow, cached — laid under the pigment
+// and lit from above and to the right exactly as the tile is, since a form lit from anywhere else reads
+// as pasted on; which form a body has, or none, is read off the body's own seed.
+const ROCK_RELIEF_R=48,rockReliefSprites=new Map();
+function rockReliefSprite(kind){
+  const key=kind+':'+DPR.toFixed(2),cached=rockReliefSprites.get(key);if(cached)return cached;
+  const R=ROCK_RELIEF_R,pad=4,size=(R+pad)*2,px=Math.max(1,Math.round(size*DPR));
+  const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const lx=.7*kind,ly=-.7*kind,lg=g.createLinearGradient(lx*R,ly*R,-lx*R,-ly*R);
+  lg.addColorStop(0,`rgba(${ink.rock.kaolin},.9)`);lg.addColorStop(.5,`rgba(${ink.rock.kaolin},0)`);lg.addColorStop(1,`rgba(${ink.rock.crack},.9)`);
+  g.beginPath();g.arc(0,0,R,0,TAU);g.fillStyle=lg;g.fill();
+  // A foot that fades into the wall rather than a coin sitting on it.
+  const rg=g.createRadialGradient(0,0,R*.35,0,0,R);rg.addColorStop(0,`rgba(${ink.rock.crack},1)`);rg.addColorStop(1,`rgba(${ink.rock.crack},0)`);
+  g.globalCompositeOperation='destination-in';g.fillStyle=rg;g.fillRect(-size/2,-size/2,size,size);
+  const sprite={canvas:c,size};rockReliefSprites.set(key,sprite);return sprite;
+}
+// Returns what the body sits on: 1 a rise, -1 a dish, 0 flat rock.
+function rockRelief(n,x,y,r){
+  const k=(n.seed>>>0)%10;if(k<2)return 0;
+  const kind=k<6?1:-1,sprite=rockReliefSprite(kind),R=r*2*sprite.size/(ROCK_RELIEF_R*2);
+  ctx.save();ctx.globalCompositeOperation='overlay';ctx.drawImage(sprite.canvas,x-R,y-R,R*2,R*2);ctx.restore();
+  return kind;
+}
+
 // ---------- The body: what has been learned, staged over the observation clock alone ----------
 function rockCore(r,tier){return r*(tier==='moon'?.94:tier==='faint'?.6:.72);}
 function rockTone(tier){return tier==='moon'?ink.rock.kaolin:tier==='faint'?ink.rock.ochre:ink.rock.redOchre;}
@@ -413,16 +474,19 @@ function rockTone(tier){return tier==='moon'?ink.rock.kaolin:tier==='faint'?ink.
 // — except a difficultyChoice body, which the design already draws whole before it is observed (see
 // reveal.js's own comment on pen.d): the choice has to read before any caption could, on a sheet that
 // has none, so its taken-ness is never gated at all.
-function rockBody(n,x,y,r,tier,d,taken){
+function rockBody(n,x,y,r,tier,d,taken,relief){
   if(taken<=0)return;
   const core=rockCore(r,tier),tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major';
+  // Wet pigment pools in a dish and starves over a rise, where the wall's own tooth comes up through it
+  // sooner — the same attested observation from the other side (prototypes/rock.html does the same).
+  const pool=relief<0?1.15:relief>0?.85:1,starve=relief>0?1.3:1;
   // Colour before contour: the crude mass a hand lays down at the capture itself, ungated by d.
-  rockWash(ctx,x,y,core*1.06,tone,(moon?.17:.58)*taken,moon?18:12,n.seed+91);
+  rockWash(ctx,x,y,core*1.06,tone,(moon?.17:.58)*taken*pool,moon?18:12,n.seed+91);
   const edge=rockSpan(d,ROCK_STAGE.edge),tooth=rockSpan(d,ROCK_STAGE.tooth),marks=rockSpan(d,ROCK_STAGE.marks),detail=rockSpan(d,ROCK_STAGE.detail);
   if(marks>0){
     // Not a bigger dab: the same seeded scatter carried further, since raising n only ever adds.
     const base=moon?58:tier==='major'?46:bright?40:22;
-    rockWash(ctx,x,y,core,tone,(moon?.15:.5)*Math.min(1,.35+marks)*taken,Math.round(base*marks),n.seed);
+    rockWash(ctx,x,y,core,tone,(moon?.15:.5)*Math.min(1,.35+marks)*taken*pool,Math.round(base*marks),n.seed);
   }
   if(tooth>0){
     // The wall's own mineral speckle coming up through the pigment as it is worked — not a drawn line,
@@ -431,7 +495,7 @@ function rockBody(n,x,y,r,tier,d,taken){
     const rnd=seeded((n.seed^0x2ba9)>>>0||7),count=moon?26:40;
     for(let i=0;i<count;i++){
       const a=rnd()*TAU,rr=Math.sqrt(rnd())*core;
-      rockDab(ctx,x+Math.cos(a)*rr,y+Math.sin(a)*rr,(.7+rnd()*1.4)*scale,rnd()<.4?ink.rock.charcoal:ink.rock.manganese,(.05+rnd()*.12)*tooth*taken,n.seed+i+30);
+      rockDab(ctx,x+Math.cos(a)*rr,y+Math.sin(a)*rr,(.7+rnd()*1.4)*scale,rnd()<.4?ink.rock.charcoal:ink.rock.manganese,(.05+rnd()*.12)*tooth*taken*starve,n.seed+i+30);
     }
     ctx.restore();
   }
@@ -523,8 +587,9 @@ function rockNode(n,aim){
   const tier=rockTier(n);
   const state=active?1:target?1:used?.24:.6;
   ctx.save();
+  const relief=rockRelief(n,x,y,bodyR);
   rockRing(n,x,y,cap,state);
-  if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR,tier,pen.d,n.difficultyChoice?1:pen.taken);
+  if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR,tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
   else rockPhenomenon(n,x,y,bodyR);
   if(active)rockReleaseMarks(n,p,x,y);
   ctx.restore();
@@ -793,7 +858,7 @@ defineVoice('rock',{
 // Drops every baked tile and sprite cache this file owns; invalidateArt() calls this alongside its own
 // when the plate or the pixel ratio changes, so the next reach simply rebuilds lazily as it always did.
 function invalidateRockArt(){
-  rockWall=null;
+  rockWall=null;rockMacro=null;rockReliefSprites.clear();
   rockTorch=null;rockTorchKey='';
   rockDabSprites.clear();
   rockEdgeShapes.clear();
