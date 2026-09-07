@@ -57,6 +57,62 @@ They are the two least-tested eras on the ladder, not merely the two newest.
   hand-made era on its second or third iteration when given the critique above and told what
   the first pass got wrong.
 
+## The Rock's readability spike
+
+`rock-read.html` is not a signature sheet and is not held to the standard above. It is
+[JOURNEY.md](JOURNEY.md)'s stage 2: the Rock is now the front door, a new player's first run is era I,
+and before anything expensive is drawn the era owed an answer to one question — with no conventional
+text anywhere, can a player read the target phenomenon, the capture region, a weak body against a
+bright one, their own position, their trajectory, danger, and how far an observation has got? So the
+page is a **loop**, not a panel: a traveller flies, is taken into orbit, sweeps, and releases on a tap
+onto the tangent that orbit was building, with `positionPlayer()`'s own tangent formula, `SWEEP_FULL`
+and `n.documented` copied verbatim from `src/`, because a still frame cannot answer a question about
+reading something while the world will not wait. Press `L` for the legend and `D` for a diagnostic
+overlay that redraws the same seven signals in plain modern shapes, so the pre-literate language can be
+read against a modern one saying the same thing. The screenshot is
+[shots/rock-read.jpg](prototypes/shots/rock-read.jpg).
+
+Each signal is a distinct prehistoric mark rather than a scaled version of one: the next unvisited body
+is the only one drawn in full inside the torch's reach; the capture region is a dot-ring struck at the
+real `cap` radius, never staged wider or narrower than the truth the code will test; magnitude is three
+flat tiers, each a different mark — an ochre dab, a red-ochre cluster ringed with struck sparks, a pale
+kaolin disc with a manganese face; the traveller is the crayon's lit tip, the one hot-cored mark on the
+wall; the trajectory is a dust-line that warms from charcoal to red-ochre as it comes to thread the next
+capture region; danger is the Shaft, a true black void with a pecked rim, and the Flare, deep red-orange
+under soot; and the observation is dabs pressed into the capture ring as the sweep accumulates, sealing
+into a closed ring at `SWEEP_FULL` and freezing there when the orbit is let go.
+
+**Two things the spike actually settled.** The release window was measured on the page itself rather
+than argued about — instrumented frame by frame across a held orbit, it comes out at about one frame,
+five to seven degrees of sweep, which is [JOURNEY.md](JOURNEY.md) §3's finding reproduced
+independently, and it is a property of a fast orbit threading a small circle from a distance that no
+drawing style changes. What a drawing style *can* change is the lead-in, and the first pass got that
+wrong: the dust-line snapped from cold to warm exactly at the window, giving no warning at all. It was
+rebuilt as a continuous ramp over roughly 150 ms before the window opens, which is the honest answer to
+the question this stage asked — the cue cannot make the frame wider, it can only let the frame be
+anticipated.
+
+**And one the spike had to be rebuilt to ask at all.** The first pass drew every mark on a near-black
+rectangle, which quietly answers an easier question than the era poses: whether ochre reads is not in
+doubt, whether ochre reads *on lit limestone* is the whole risk, and a black ground hides it. The page
+now carries a wall — six octaves of height field baked at full resolution and shaded from its own
+gradient against one torch held low and left, tiling so it can scroll, with the dark biting in from
+every edge as the era says its frame must. That is what [What the escalations taught](#what-the-escalations-taught)
+predicted almost exactly: the first pass put the right marks in the right places and drew them as a
+diagram, and what it was missing was the material.
+
+**What it reads like, and what is still open.** Against the wall, the traveller reads at once — it is
+the only pure light on the sheet — and so do the Shaft and the closed dot-ring. What the rebuild
+exposed is that the marks and the ground now share a hue: red ochre survives on warm limestone by being
+*regular*, a made pattern against a natural one, rather than by being a different colour, which is a
+real constraint on every mark this era will ever draw. Three things are unresolved and are a
+judgement rather than a measurement: whether the three magnitude tiers separate at speed and in
+peripheral vision or only when looked at; whether the Flare still reads as danger rather than as a
+bright body, now that both sit in the same warm light; and whether a body outside the torch's reach
+being invisible is this era's finest idea or its worst, which is the UX risk [01-rock.md](01-rock.md)
+already carries in its own words. **The verdict on those is the author's to give against the running
+page, and is deliberately not recorded here.**
+
 ## The prototypes and the three-state reveal
 
 All nine pages in this folder — the eight single-body sheets above and the transition study below
