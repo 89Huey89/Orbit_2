@@ -523,7 +523,10 @@ const OBSERVER_MARKS={
   ctx.restore();
 }
 function darknessPlate(relief){
-  if(darknessPlates.has(relief))return darknessPlates.get(relief);
+  // The plate goes into the key beside relief, built once here, so two plates on screen at once (a
+  // cross-dissolve) never share a slot — and the lookup below can't drift from the store at the end.
+  const key=plateName+':'+(relief?'r':'n');
+  if(darknessPlates.has(key))return darknessPlates.get(key);
   const c=makeCanvas(640,180),g=c.getContext('2d'),rng=seeded(620173),w=c.width,h=c.height;
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
   // Seamless pools of dilute ink, growing opaque below the leading edge.
@@ -584,7 +587,7 @@ function darknessPlate(relief){
     g.strokeStyle=`rgba(${pigment},${.035+rng()*.055})`;g.lineWidth=.45;
     g.beginPath();g.moveTo(x,25);g.bezierCurveTo(x+length,21,x-length,top+4,x+.7,top);g.stroke();
   }
-  darknessPlates.set(relief,c);return c;
+  darknessPlates.set(key,c);return c;
 }
 // ---------- Marginalia carried on the rising ink ----------
 // A sea-monster and a gloss ride the shoreline, as they do in the empty quarters of an old chart.

@@ -24,11 +24,13 @@
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
     .ceiling-only{display:none!important}
-    #game[data-plate-id="ceiling"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
-    #game[data-plate-id="ceiling"] .atlas-only{display:none!important}
-    #game[data-plate-id="ceiling"] .ceiling-only{display:revert!important}
-    #game[data-plate-id="ceiling"] .footer{color:#5f4b34}
-    #game[data-plate-id="ceiling"] #catalogue-open,#game[data-plate-id="ceiling"] #plate{display:none}
+    .rock-only{display:none!important}
+    #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
+    #game[data-era] .atlas-only{display:none!important}
+    #game[data-era="2"] .ceiling-only{display:revert!important}
+    #game[data-era="1"] .rock-only{display:revert!important}
+    #game[data-era="2"] .footer{color:#5f4b34}
+    #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
@@ -118,57 +120,57 @@
     .printer-line{margin:20px 0 0;font-style:italic;font-family:var(--face-text);font-size:12px;letter-spacing:.05em;color:var(--muted);opacity:.85}
     /* Era III keeps the interface as an openly modern gloss over the wall; only actual sign strings use
        the hieroglyphic face. The image beneath follows TT353's light ground and never becomes a blue sky. */
-    #game[data-plate-id="ceiling"] #intro{background:rgba(221,207,173,.34)}
-    #game[data-plate-id="ceiling"] #end{background:rgba(221,207,173,.48)}
-    #game[data-plate-id="ceiling"] #pause{background:rgba(221,207,173,.82)}
-    #game[data-plate-id="ceiling"] .colophon{background:rgba(221,207,173,.97);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16;padding:36px 26px 34px}
-    #game[data-plate-id="ceiling"] h1,#game[data-plate-id="ceiling"] #score{font-family:'Zilla Slab',Georgia,serif;text-shadow:none}
+    #game[data-era="2"] #intro{background:rgba(221,207,173,.34)}
+    #game[data-era="2"] #end{background:rgba(221,207,173,.48)}
+    #game[data-era="2"] #pause{background:rgba(221,207,173,.82)}
+    #game[data-era="2"] .colophon{background:rgba(221,207,173,.97);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16;padding:36px 26px 34px}
+    #game[data-era="2"] h1,#game[data-era="2"] #score{font-family:'Zilla Slab',Georgia,serif;text-shadow:none}
     /* The cartouche, shenu — "that which encircles": a loop of doubled rope tied off at one end, and
        the one piece of this room's furniture that is already the shape of a readout. A figure inside
        it is held apart from the wall around it, which is what the ring was for. */
-    #game[data-plate-id="ceiling"] #score,#game[data-plate-id="ceiling"] #best{position:relative;display:inline-block;border:1.4px solid #241d16;border-radius:999px;background:rgba(238,228,205,.3)}
-    #game[data-plate-id="ceiling"] #score{padding:1px 22px 5px}
-    #game[data-plate-id="ceiling"] #best{padding:0 13px 2px}
-    #game[data-plate-id="ceiling"] #score::after,#game[data-plate-id="ceiling"] #best::after{content:'';position:absolute;right:-4px;top:24%;height:52%;border-right:1.4px solid #241d16}
+    #game[data-era="2"] #score,#game[data-era="2"] #best{position:relative;display:inline-block;border:1.4px solid #241d16;border-radius:999px;background:rgba(238,228,205,.3)}
+    #game[data-era="2"] #score{padding:1px 22px 5px}
+    #game[data-era="2"] #best{padding:0 13px 2px}
+    #game[data-era="2"] #score::after,#game[data-era="2"] #best::after{content:'';position:absolute;right:-4px;top:24%;height:52%;border-right:1.4px solid #241d16}
     /* The reed, charged and drying: the reservoir keeps its length but takes the shape of a brush
        laid on its side, so what drains along it reads as paint rather than as a bar. */
-    #game[data-plate-id="ceiling"] #ink{height:7px;width:62px;clip-path:polygon(0 20%,64% 4%,90% 32%,100% 50%,90% 68%,64% 96%,0 80%)}
+    #game[data-era="2"] #ink{height:7px;width:62px;clip-path:polygon(0 20%,64% 4%,90% 32%,100% 50%,90% 68%,64% 96%,0 80%)}
     /* The first pass survives on the wall wherever the flood fell short of it, so the signs on the
        frontispiece carry their own red setting-out a hair off register, as the painted ones do. */
     .ceiling-glyphs{position:relative;z-index:0}
     .ceiling-glyphs::before{content:attr(data-ghost);position:absolute;inset:0;z-index:-1;transform:translate(2.5px,-2px);color:#9d3724;opacity:.4}
-    #game[data-plate-id="ceiling"] .ceiling-title{top:12%;max-width:560px;margin:0 auto;padding:16px 22px 14px;background:rgba(238,228,205,.55);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16}
-    #game[data-plate-id="ceiling"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.07em;text-indent:.07em;line-height:1.06}
+    #game[data-era="2"] .ceiling-title{top:12%;max-width:560px;margin:0 auto;padding:16px 22px 14px;background:rgba(238,228,205,.55);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16}
+    #game[data-era="2"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.07em;text-indent:.07em;line-height:1.06}
     .ceiling-glyphs{margin:0 0 5px;color:#241d16;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.06em}
-    #game[data-plate-id="ceiling"] .title-rule::before,#game[data-plate-id="ceiling"] .title-rule::after{background:#9d3724}
-    #game[data-plate-id="ceiling"] .era-entry{border-color:rgba(157,55,36,.55);color:#7a3022}
+    #game[data-era="2"] .title-rule::before,#game[data-era="2"] .title-rule::after{background:#9d3724}
+    #game[data-era="2"] .era-entry{border-color:rgba(157,55,36,.55);color:#7a3022}
     .ceiling-context{max-width:42em;margin:12px auto 0;color:#5f4b34;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
-    #game[data-plate-id="ceiling"] .printer-line{margin-top:11px}
-    #game[data-plate-id="ceiling"] .brand{font-style:italic;letter-spacing:.16em}
-    #game[data-plate-id="ceiling"] .brand::after{background:#9d3724}
-    #game[data-plate-id="ceiling"] .score-frame::before{border-color:#9d3724}
+    #game[data-era="2"] .printer-line{margin-top:11px}
+    #game[data-era="2"] .brand{font-style:italic;letter-spacing:.16em}
+    #game[data-era="2"] .brand::after{background:#9d3724}
+    #game[data-era="2"] .score-frame::before{border-color:#9d3724}
     /* The wall's own device, brought into CSS: a black rule, a run of flat colour blocks in
        ceilingBlockRule's own cycle, and a black rule to close it, framing the title panel and the
        colophon exactly as it frames a register on the canvas beside them. */
-    #game[data-plate-id="ceiling"] .ceiling-title::before,#game[data-plate-id="ceiling"] .ceiling-title::after{content:'';position:absolute;left:0;right:0;height:7px;background:var(--blocks);border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;pointer-events:none}
-    #game[data-plate-id="ceiling"] .ceiling-title::before{top:0}
-    #game[data-plate-id="ceiling"] .ceiling-title::after{bottom:0}
-    #game[data-plate-id="ceiling"] .colophon::before,#game[data-plate-id="ceiling"] .colophon::after{content:'';position:absolute;left:0;right:0;top:auto;bottom:auto;height:8px;border:0;border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;background:var(--blocks);opacity:1}
-    #game[data-plate-id="ceiling"] .colophon::before{top:0}
-    #game[data-plate-id="ceiling"] .colophon::after{bottom:0}
+    #game[data-era="2"] .ceiling-title::before,#game[data-era="2"] .ceiling-title::after{content:'';position:absolute;left:0;right:0;height:7px;background:var(--blocks);border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;pointer-events:none}
+    #game[data-era="2"] .ceiling-title::before{top:0}
+    #game[data-era="2"] .ceiling-title::after{bottom:0}
+    #game[data-era="2"] .colophon::before,#game[data-era="2"] .colophon::after{content:'';position:absolute;left:0;right:0;top:auto;bottom:auto;height:8px;border:0;border-top:1.4px solid #241d16;border-bottom:1.4px solid #241d16;background:var(--blocks);opacity:1}
+    #game[data-era="2"] .colophon::before{top:0}
+    #game[data-era="2"] .colophon::after{bottom:0}
     /* Marginal ornament only, kept off the reading text: kheker reed-bundles crown the title panel as
        the frieze crowns the wall itself; ankh sit at the corners; papyrus/lotus columns flank both
        panels at the outer edge, hidden once a phone leaves no margin to flank into. */
-    #game[data-plate-id="ceiling"] .ceiling-frieze{display:flex;justify-content:center;margin:2px 0 6px;color:#241d16;pointer-events:none}
-    #game[data-plate-id="ceiling"] .ceiling-frieze svg{width:min(60vw,220px);height:auto}
-    #game[data-plate-id="ceiling"] .ceiling-corner{position:absolute;width:14px;height:20px;color:#241d16;opacity:.82;pointer-events:none}
-    #game[data-plate-id="ceiling"] .ceiling-corner.cc-tl{top:10px;left:9px}
-    #game[data-plate-id="ceiling"] .ceiling-corner.cc-tr{top:10px;right:9px}
-    #game[data-plate-id="ceiling"] .ceiling-column{position:absolute;top:50%;width:15px;height:72px;transform:translateY(-50%);color:#241d16;opacity:.88;pointer-events:none}
-    #game[data-plate-id="ceiling"] .ceiling-column.left{left:-19px}
-    #game[data-plate-id="ceiling"] .ceiling-column.right{right:-19px}
-    @media(max-width:480px){#game[data-plate-id="ceiling"] .ceiling-column{display:none}}
-    #game[data-plate-id="ceiling"] .eyebrow{letter-spacing:.28em}
+    #game[data-era="2"] .ceiling-frieze{display:flex;justify-content:center;margin:2px 0 6px;color:#241d16;pointer-events:none}
+    #game[data-era="2"] .ceiling-frieze svg{width:min(60vw,220px);height:auto}
+    #game[data-era="2"] .ceiling-corner{position:absolute;width:14px;height:20px;color:#241d16;opacity:.82;pointer-events:none}
+    #game[data-era="2"] .ceiling-corner.cc-tl{top:10px;left:9px}
+    #game[data-era="2"] .ceiling-corner.cc-tr{top:10px;right:9px}
+    #game[data-era="2"] .ceiling-column{position:absolute;top:50%;width:15px;height:72px;transform:translateY(-50%);color:#241d16;opacity:.88;pointer-events:none}
+    #game[data-era="2"] .ceiling-column.left{left:-19px}
+    #game[data-era="2"] .ceiling-column.right{right:-19px}
+    @media(max-width:480px){#game[data-era="2"] .ceiling-column{display:none}}
+    #game[data-era="2"] .eyebrow{letter-spacing:.28em}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
@@ -546,6 +548,7 @@
 <script src="figures-tt353.js"></script>
 <script src="signs-tt353.js"></script>
 <script src="ceiling.js"></script>
+<script src="rock.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="ui.js"></script>

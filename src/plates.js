@@ -110,11 +110,11 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-const currentBest=()=>typeof ceilingPlate==='function'&&ceilingPlate()?0:dailyOn?dailyBest:best;
+const currentBest=()=>plateOwns('score')?0:dailyOn?dailyBest:best;
 function recordBest(score){
-  // The era preview is deliberately a sandbox: its run is playable, but it cannot rewrite the
-  // atlas record while the historical progression and scoring are still being wired.
-  if(typeof ceilingPlate==='function'&&ceilingPlate())return;
+  // A plate that keeps its own record does not write the atlas's. Its run is playable and scored on
+  // its own sheet; what it may never do is rewrite a number the atlas earned.
+  if(plateOwns('score'))return;
   if(dailyOn){
     if(score>dailyBest){
       dailyBest=score;
@@ -127,7 +127,7 @@ function recordBest(score){
 }
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
-function setDifficulty(value){if(dailyOn)return;difficulty=value;if(!(typeof ceilingPlate==='function'&&ceilingPlate()))storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
+function setDifficulty(value){if(dailyOn)return;difficulty=value;if(!plateOwns('score'))storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
 function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
@@ -256,7 +256,13 @@ const PLATE_STYLES={
   // grammar follows the light-ground astronomical ceiling in TT353: lime plaster, fine black drawing,
   // red setting-out and restrained mineral fills. The identity transform lets the shared plate registry
   // finish booting; ceiling.js owns every visible mark once render() takes its dedicated branch.
-  ceiling:{base:'paper',wash:0,render:'ceiling',tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  ceiling:{base:'paper',wash:0,era:2,render:'ceiling',can:{score:true,mode:true},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era I is a wall, not a sheet, and the atlas has nothing to say about it: no frame, no laid wires,
+  // no engraved line, and a ground that is a lit material rather than a colour. It is pulled from the
+  // paper plate only because a light ground is the nearer of the two starting points; every mark on it
+  // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
+  // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -321,17 +327,60 @@ function definePlate(section,variants){
 }
 // Which of the two base plates a plate is pulled from, and what that means for the artwork.
 const plateBase=name=>PLATE_STYLES[name]?PLATE_STYLES[name].base:name;
+// A plate cut for a century of its own carries that century's ordinal; a colourway of the atlas
+// carries none. The stylesheet reads it to swap the whole frontispiece's furniture in two rules per
+// era rather than one rule per element, and `[data-plate-id]` narrows back to a variation inside one.
+const eraId=()=>(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].era)||0;
 const onPaper=()=>plateBase(plateName)==='paper';
 // A proof before letters carries no captions, labels, numerals or legend: figures and rings only.
 const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);
 // Whether the bodies on this plate are rendered rather than engraved. A plate that answers yes is still
 // pulled from the night plate's tokens and still answers no to onPaper(), so every existing fork stands.
 const modernPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='modern');
+// ---------- What a plate is, beyond its colours ----------
+// A plate was a colourway of one atlas for as long as there was one atlas. An era is not that: it
+// keeps its own record, hides furniture the atlas needs, calls the same things by other names and
+// draws them in another hand. The first era to arrive answered all four of those by being asked, at
+// two dozen places, whether it was itself — which is a question that has to be asked again for every
+// era after it. So the plate is asked what it *does* instead, and answers from its own row: `can` for
+// what it keeps to itself, a registered vocabulary for what it calls things, and a named hand for
+// what draws them. A new era is those three declarations and no new conditional anywhere.
+const plateOwns=trait=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].can&&PLATE_STYLES[plateName].can[trait]);
+// The vocabulary. It is registered rather than derived, because an era's own words live in that era's
+// own file, which loads after this one — so `defineVoice` is additive where `definePlate` is a single
+// declaration, and the atlas's words stand under every plate that does not replace them. Resolution is
+// memoised on the plate and the registration count, so the merge happens on a plate change and not in
+// a frame.
+const VOICES={};let voiceHeld=null,voiceKey='',voiceStamp=0;
+function defineVoice(id,words){VOICES[id]=mergeTokens(VOICES[id]||{},words);voiceStamp++;}
+function plateWords(){
+  const key=plateName+':'+voiceStamp;
+  if(voiceHeld&&voiceKey===key)return voiceHeld;
+  voiceHeld=mergeTokens(VOICES.atlas||{},VOICES[plateName]||{});voiceKey=key;return voiceHeld;
+}
+// A sentence with the run's own nouns dropped into it. The whole sentence belongs to the plate, not a
+// stem the code assembles, because word order is the first thing a century changes.
+const spoken=(key,vars)=>String(plateWords()[key]||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
+// The hand. A plate that draws in its own names only the painters that differ from the atlas's; every
+// painter it does not name is the atlas's own, so an era is a row in this registry rather than a fork
+// at every mark, and two hands can draw into one frame — which a render branch that returns early
+// can never do.
+const HANDS={atlas:{}};
+function defineHand(id,painters){HANDS[id]=Object.assign(HANDS[id]||{},painters);}
+const plateHand=()=>HANDS[(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render)||'atlas']||HANDS.atlas;
+const handFor=name=>plateHand()[name];
+// On its way out. The Ceiling's own call sites still ask this question at eighteen places in ui.js,
+// audio.js and frame.js; each of them is being moved onto the three declarations above, and the last
+// one to move takes this line with it. Nothing new may read it.
 const ceilingPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='ceiling');
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
-  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'}
+  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'},
+  // Torchlit limestone, and a palette with two holes in it that are the point rather than an omission:
+  // there is no gold, so the reddest ochre stands in and is spent as sparingly as gold ever was, and
+  // there is no blue at all, so everything the atlas says in blue this era says in its black.
+  rock:{paper:'#c7bc9e',paperRgb:'199,188,158',ink:'44,38,34',inkStrong:'33,31,30',inkSoft:'105,88,66',gold:'156,59,34',goldBright:'201,150,46',copper:'169,112,31',blue:'33,31,30',shieldBlue:'44,38,34',red:'156,59,34',text:'#2c2622',caption:'105,88,66',shadow:'#8a7f68'}
 });
 // ---------- The hand the plate letters in ----------
 // Every `ctx.font` in the game is built here. The Fell faces are era III's — the engraved atlas the
@@ -368,7 +417,7 @@ function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
   glowSprites.clear();regionInkCache.clear();
-  grain=grainTexture();laidTile=null;laidSheet=null;grainSheetCanvas=null;if(W&&H)backdrop=paintBackdrop();
+  grain=grainTexture();laidTiles.clear();laidSheets.clear();backdrops.clear();grainSheetCanvas=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
   if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();
 }
@@ -377,6 +426,7 @@ function syncPlate(){
   // derived plate can adjust a line or two of chrome without repeating the whole palette.
   game.setAttribute('data-plate',plateBase(plateName));
   game.setAttribute('data-plate-id',plateName);
+  const era=eraId();if(era)game.setAttribute('data-era',String(era));else game.removeAttribute('data-era');
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);
   const button=$('plate');if(button){button.setAttribute('aria-label',onPaper()?'Switch to night plate':'Switch to paper plate');button.setAttribute('aria-pressed',String(onPaper()));}
   if(typeof syncCeilingChrome==='function')syncCeilingChrome();
@@ -427,10 +477,14 @@ function makeCanvas(width,height){const c=document.createElement('canvas');c.wid
 // The sheet itself, as a seamless tile: laid wires every 1.5 px, heavier chain lines every 27 px, and
 // short fibres. It is multiplied over the finished frame on paper so every stroke breaks across the laid
 // lines instead of lying on top of them; at night the same tile is screened back at a whisper.
-let laidTile=null,laidKey='',laidSheet=null,laidSheetKey='';
+// Both are held as small maps rather than as one slot apiece. The key already named the plate, so a
+// single slot was correct for as long as only one plate was ever on the press at a time — but these two
+// are on the per-frame path, and a frame carrying two eras at once through one slot is a full rebuild
+// of a tile and a screen-sized sheet, every frame, for as long as the two are both on the sheet.
+const laidTiles=new Map(),laidSheets=new Map();
 function laidPaper(){
-  const key=plateName+':'+DPR;
-  if(laidTile&&laidKey===key)return laidTile;
+  const key=plateName+':'+DPR,held=laidTiles.get(key);
+  if(held)return held;
   const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=108,th=96;
   const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
   g.scale(unit,unit);
@@ -453,16 +507,16 @@ function laidPaper(){
       g.beginPath();g.moveTo(x+ox,y+oy);g.lineTo(x+ox+Math.cos(a)*l,y+oy+Math.sin(a)*l);g.stroke();
     }
   }
-  laidTile=c;laidKey=key;return c;
+  laidTiles.set(key,c);if(laidTiles.size>4)laidTiles.delete(laidTiles.keys().next().value);return c;
 }
 function laidSheetFor(){
-  const key=plateName+':'+W+'x'+H+':'+DPR;
-  if(laidSheet&&laidSheetKey===key)return laidSheet;
+  const key=plateName+':'+W+'x'+H+':'+DPR,held=laidSheets.get(key);
+  if(held)return held;
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');
   const pattern=g.createPattern(laidPaper(),'repeat');if(!pattern)return null;
   // One tile pixel to one device pixel, so the wires stay crisp whatever the pixel ratio.
   g.fillStyle=pattern;g.fillRect(0,0,c.width,c.height);
-  laidSheet=c;laidSheetKey=key;return c;
+  laidSheets.set(key,c);if(laidSheets.size>4)laidSheets.delete(laidSheets.keys().next().value);return c;
 }
 function drawLaidPaper(){
   // The observatory plate is not printed on a sheet, so it carries neither laid wires nor chain lines;
