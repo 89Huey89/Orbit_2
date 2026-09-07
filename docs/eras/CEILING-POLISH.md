@@ -1,16 +1,22 @@
 # The Ceiling · polish audit
 
-The Ceiling ships as a playable Era III preview (`src/ceiling.js`, entered from the frontispiece),
+The Ceiling ships as a playable Era II preview (`src/ceiling.js`, entered from the frontispiece),
 and it is the only era besides the engraved atlas that anyone can actually fly. Held beside the
 atlas it is plainly the weaker sheet, and the gap is not a matter of taste: the atlas is a
 *performance* — a chart being drawn, measured, turned and annotated while the player flies over
 it — and the Ceiling is a *picture* with a game on top of it. This file records what was measured,
 what causes the gap, and the order the gap should be closed in.
 
-**Status: all nine ranks below are built** (branch `claude/ceiling-preview-polish-jhk1g2`). What
-remains is recorded under "What is still open" at the foot of this file. The findings are kept in
-their original form rather than rewritten as a changelog, because the reasoning is what makes the
-build order defensible; each now carries what was actually done.
+**Status: the original nine ranks below are built** (branch `claude/ceiling-preview-polish-jhk1g2`).
+What remained of that pass is recorded under "What is still open" at the foot of this file. The
+findings are kept in their original form rather than rewritten as a changelog, because the
+reasoning is what makes the build order defensible; each now carries what was actually done.
+
+A second, later pass — the brief that retires the barque as the player — retires two of those
+built items (§5) and opens three more (§9–§11, rows 10–12 of the same table), none of them built
+yet. Both passes stand in this one file because both are true of the same renderer at different
+times, and the second could not have been written without the first: it is the first pass's own
+reasoning, read against a document the first pass did not have.
 
 ## How this was checked
 
@@ -148,22 +154,40 @@ glance. Nun's water lines already exist as a hatch and want the same drift.
 **P11 · Read the pull.** Give at least Apep the atlas's `pull` term, so the coil tightens as the
 barque is taken. It is the one place the still image is actively costing the player information.
 
-## 5 · The barque stands on its stern
+## 5 · The barque stands on its stern — retired as a description of the player
 
-`ceilingDrawPlayer()` (`:476`) rotates the hull by `Math.atan2(p.vy,p.vx)`. In orbit that is the
-tangent, so for half of every circle the boat is vertical or upside down. An Egyptian barque is
-drawn in profile, level, and this is not a stylistic preference — a boat on its stern is exactly
-what the grammar refuses. At orbit scale it reads as a yellow banana with a red dot on it.
+**Retired.** Both findings below, and the "built" row they earned in the table at the foot of this
+file, described the player's own avatar, and the player's own avatar is no longer the barque. The
+brief is explicit — "the previously designed solar barque should NOT be the player" — and
+[OBSERVER-CORE.md](OBSERVER-CORE.md) carries that out: `ceilingDrawPlayer()` stops drawing Ra's
+vessel and starts drawing a rush brush, the fan of it leading, the Observer Core sitting as a bare
+point at the wet tip of its frayed fibres. The barque itself does not leave the sheet — it returns
+to the register the brief and the tomb both actually give it, a real object in the astronomical and
+funerary tradition this era is drawn from, a motif the level and the sky may carry wherever
+`research/ceiling.md` already places it, never again standing in for the hand doing the observing.
+§9 below is what replaces this section as engineering.
 
-**P12 · Keep the barque level; let the *course* turn.** Hold the hull upright (or level it toward
-horizontal with a small heel), mirror it to face the direction of travel, and carry the heading in
-the water and the dabs instead of in the hull. The comment above the function proudly says "no
-banking" — good — but not banking and not being upside down are the same discipline.
+The reasoning that follows is kept rather than deleted because it does not stop being true merely
+because its subject changed hulls. Both P12 and P13 are about the same underlying fact — a small
+painted object must read clearly at arcade size while its heading sweeps through every angle of an
+orbit, over a light plaster ground, without the rotation itself turning into noise — and that fact
+does not belong to the barque. It belongs to whatever the player is drawn as next, and is exactly
+the constraint §9 opens with.
 
-**P13 · Let the crew do something.** One oar sweeping, or the solar disc's own slow travel along
-the deck, gives the player object the single moving part the atlas's quill gets from its flexing
-vane — and unlike the vane it is documented: the disc crosses the sky, that is the whole point of
-the barque.
+**P12 · Keep the barque level; let the *course* turn.** *(Retired with the barque; superseded by
+§9.)* Hold the hull upright (or level it toward horizontal with a small heel), mirror it to face
+the direction of travel, and carry the heading in the water and the dabs instead of in the hull.
+The comment above the function proudly says "no banking" — good — but not banking and not being
+upside down are the same discipline. `ceilingDrawPlayer()` (`:476`) rotates the hull by
+`Math.atan2(p.vy,p.vx)`. In orbit that is the tangent, so for half of every circle the boat is
+vertical or upside down. An Egyptian barque is drawn in profile, level, and this is not a
+stylistic preference — a boat on its stern is exactly what the grammar refuses. At orbit scale it
+reads as a yellow banana with a red dot on it.
+
+**P13 · Let the crew do something.** *(Retired with the barque; superseded by §9.)* One oar
+sweeping, or the solar disc's own slow travel along the deck, gives the player object the single
+moving part the atlas's quill gets from its flexing vane — and unlike the vane it is documented:
+the disc crosses the sky, that is the whole point of the barque.
 
 ## 6 · The furniture reads as clip-art at the size it is drawn
 
@@ -206,6 +230,139 @@ thing telling the player they never left the atlas.
 | f | `src/ui.js:184–185`, `src/simulation.js:160–167` | The end leaf still reports "*n* constellations traced" and prints the observations' **Latin** names (`TRES PERFECTI`, `VELOCITAS SUMMA`) on the Ceiling's colophon. |
 | g | `src/ceiling.js:496` | `blot` and `splat` are handled by the same branch, so a released bead and a graze look identical. |
 
+## 9 · The reed brush and the constant Core
+
+This is what §5 retires into. The brief's instrument for this era is a reed brush, and
+[OBSERVER-CORE.md](OBSERVER-CORE.md)'s tool table gives it a specific, attested shape: "the frayed
+fan of bruised fibre at the tip," New Kingdom rush-stem brushes (c. 1567–1085 BCE), the fan leading
+flat-on rather than a point, with the Observer Core sitting as a bare, argument-free disc at its wet
+tip. `ceilingDrawPlayer()` becomes, in full, a function that translates to `world.player`'s exact
+position, rotates to `Math.atan2(p.vy,p.vx)` with no leveling, no mirror, and no eased angle — the
+whole apparatus at `src/ceiling.js:83–90,1364–1367` (`ceilingFacing`, `ceilingAngle`, the eased
+turn) is deleted along with the hull it existed to keep upright, because a brush has no deck-side
+to protect. This is the one respect in which the reed brush is a strictly easier build than the
+barque it replaces: every other tool on [OBSERVER-CORE.md](OBSERVER-CORE.md)'s table — the burin,
+the sighting tube, the alidade, the quill, the eyepiece — already just turns with the heading the
+way the shipped quill and telescope do, and the brush joins them rather than needing its own
+special case.
+
+What the brush does not get easier on is legibility, and this is exactly the fact P12 and P13 were
+actually testing, stated now in its true and permanent form: a small asymmetric object must read at
+arcade size while its heading sweeps through every angle of an orbit, over a light plaster ground,
+without the constant rotation blurring into noise or the fibres vanishing into the wall's own tone.
+A frayed fan is, if anything, a harder silhouette to hold onto through a full turn than a hull was —
+a boat at least keeps a long axis a player's eye can anchor to; bristles read as a direction only if
+the wet core at their tip stays the brightest, sharpest thing in the cluster at every angle.
+
+That core is not new work. `ceilingReed(g,x,y,angle,alpha,rgb)` and `ceilingWet(g,x,y,size,alpha,rgb)`
+(`src/ceiling.js:151–178`) already draw exactly this pairing — a wedge of frayed fibre laid along a
+heading, and a dark wet core with a fainter bloom drying outward around it — and they already do it
+at the working end of a mark, not idly: they are the sprite riding the leading edge of the setting-out
+and correcting passes in `ceilingDrawNode()` (`:1250–1251,1255–1256`) and the closing stroke of
+`ceilingPolygon()` (`:214–215`). The wall invented the Observer Core's own dark-keyline-then-bright-
+fill recipe for its own hand three items ago, under a different name, for a different purpose. Building
+the player's tool is substantially reusing `ceilingReed()` for the bristle fan and `ceilingWet()` for
+the point at its tip, called at fixed, non-world-derived arguments for the Core itself — no `boost`,
+no `ink`, no shield state passed in, per [OBSERVER-CORE.md](OBSERVER-CORE.md)'s "Behaviour" rule —
+while the fan's own spread, wetness and this era's pigment-currency bloom (per
+[ECONOMY.md](ECONOMY.md)) are free to answer to `ink` exactly as the nib's bead does today, on the
+tool's geometry and never on the Core's own call.
+
+**P15 · Build the reed brush from the wall's own reed-and-wet-core primitives.** Delete
+`ceilingDrawPlayer()`'s hull, the block-band decoration, the naos, the crossed oars, the leveling
+and mirroring state; keep the shield and reflector ring treatment, which describe a held charge, not
+a hull, and reattach unchanged. Draw the fan with `ceilingReed()` at a size scaled to read at arcade
+scale (larger than the ordinary mark-head instance, the way the barque's own hull was larger than
+an ordinary wet dab), cap it with a fixed-argument call standing in for `markHead()`, and let the
+fan's density or wetness answer to `ink` the way the nib already does. Small in code, because most
+of the drawing already exists; the open risk is purely visual — confirm the fan reads as a direction
+at every angle before committing final proportions, the same discipline
+[OBSERVER-CORE.md](OBSERVER-CORE.md) already asks of the alidade.
+
+## 10 · The reveal generalizes past this wall
+
+[ARCHITECTURE.md](ARCHITECTURE.md) item 8 names `ceilingDrawNode()` as "the best existing model" for
+the universal three-state reveal every era now owes
+([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)), and reading the function against that claim, it is
+right to. `ceilingDrawNode()` (`:1240–1274`) already computes three graded stages from one clock —
+`red=clamp(t/.25,0,1)` (the setting-out ring, a reed dab riding its leading end), `correct=clamp
+((t-.22)/.28,0,1)` (a black correcting ring), `finish=clamp((t-.68)/.32,0,1)` (the wheel or sign
+painted in full) — and those three stages are already, structurally, phenomenon, observation and
+understood in every particular except one: `t` comes from `reveal.progress(n,NODE_REVEAL,y>0&&y<H)`
+(`:1242`), which reads `clock()`'s elapsed wall-clock seconds since the node entered the viewport
+(`src/reveal.js:24,46–57`), not whether the player has ever captured it. A body sitting untouched on
+screen for `NODE_REVEAL`'s 1.25 seconds fully documents itself, wheel and all, which is the precise
+failure the brief's central mechanic exists to close, and this file's own §1–§2 findings never
+caught it because they were reading the sheet for motion, not for what the motion was keyed to.
+
+The fix this doc's own P1–P9 already half-anticipated — carry the wall with the climb, give the wall
+its hand — turns out to be one clock away from also being the fix for this. Per
+[ARCHITECTURE.md](ARCHITECTURE.md) item 8 and [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md), the
+readability contract keeps `red` exactly as it is — position and the capture ring must stay legible
+the instant a body is on screen, phenomenon or not — so only `correct` and `finish` move, onto
+`player.orbitSweep/TAU` gated on capture, with `correct` and `finish`'s existing thresholds retuned
+to land near the swept-arc checkpoints [PROGRESSION.md](PROGRESSION.md) and
+[KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md) set out — roughly 90° for recognisable, roughly 240°
+for complete — rather than at fractions of a fixed 1.25-second window. This is not a new function to
+invent, and it is not a rewrite of `ceilingDrawNode()`'s shape: it is `t`'s source splitting in two,
+exactly as [ARCHITECTURE.md](ARCHITECTURE.md) item 8 already specifies for `revealNode()` in
+`src/reveal.js`, applied here to the sheet that already proves the split is drawable.
+
+**P16 · Retarget `ceilingDrawNode()`'s `correct`/`finish` clock from view-entry time to
+post-capture `orbitSweep`.** Keep `red` keyed to `reveal.progress(n,NODE_REVEAL,…)` as the
+phenomenon stage; compute a second value — 0 while uncaptured, `orbitSweep/TAU` while the player
+holds this node — and feed `correct`/`finish` from it instead of `t`. Medium effort, because the
+thresholds want tuning against a built sheet rather than carried over verbatim, and because every
+other node-family reveal on every future era answers to the same fix; low risk, because
+`OrbitWorld` already tracks `orbitSweep` for the sling charge and nothing about this reads or writes
+the simulation.
+
+## 11 · The frontier — how close the wall already is to breaking correctly
+
+[THE-FRONTIER.md](THE-FRONTIER.md) gives this era a specific, corrected mechanism, not the brief's
+own "paint flaking from plaster, pigment powdering away" verbatim: groundwater salts blister the
+plaster from its support in flakes, the secco binder fails on its own and lets pigment powder away
+independently, and successive plaster campaigns crack and drop whole facets at once — drawn, per
+that document, as "pale efflorescent bloom first, then flat matte voids in blocky, faceted shapes
+where plaster has detached — lifting in flakes, not soaking like a wash."
+
+`ceilingDrawDark()` (`:1575–1631`) was built and tuned before that document existed, to fix a
+different, purely technical complaint — this file's own "count the clocks" verdict, that the
+darkness read as two sine waves rather than a boundary with a material — and it is already close to
+right for reasons that had nothing to do with plaster conservation. It cuts pre-crack hairlines
+biting a little way into intact stone ahead of the break (`:1593–1601`, "the tell: short carbon
+hairlines biting a little way up into stone that is still intact, so the player reads where the
+break is headed before it arrives there") — this is cracks spreading, drawn correctly. It sets a
+handful of `CEILING_PALETTE.plaster` rectangles tilting loose above the line before they fall
+(`:1602–1614`) — this is a facet about to drop, drawn as the doc asks, a shape rather than a
+gradient. It sheds small chip particles falling behind the break and a slower lift of pale dust off
+it (`:1616–1630`) — flakes lifting away, and pigment powdering, both already separately drawn and
+already separately named in the code's own comments. Three of the frontier's stated mechanisms are
+already on the sheet, and none of them were built to satisfy this document.
+
+Two things are not yet right, read against [THE-FRONTIER.md](THE-FRONTIER.md) rather than against
+this file's original, narrower complaint. First, there is no efflorescent bloom: the fresh upper lip
+at the break (`:1589–1591`) is a pale hairline riding the fracture's own edge, not a preceding pale
+patch that spreads ahead of the crack the way a salt bloom would, and the two are visually distinct
+beats the document asks for in a specific order. Second, the fill behind the break itself is
+`CEILING_PALETTE.duatDeep` (`:1582`) — a flat near-black standing for the underworld this era's own
+cosmology puts behind the sky, which is a legitimate and era-true choice under
+[OVERVIEW.md](OVERVIEW.md) rule 2's mandate that no era borrow another's language, but is worth
+naming as a choice rather than an oversight: it reads as *what lies behind the wall* rather than as
+*the plaster's own bare support once the paint is gone*, and the two are different images even
+though both are, correctly, not "the universe ending." Neither gap changes what must be built for
+`ceilingDrawDark()` to satisfy [THE-FRONTIER.md](THE-FRONTIER.md) in full; both are small.
+
+**P17 · Add the efflorescent bloom, and confirm Duat is the intended reading rather than an
+inherited one.** A pale, soft-edged patch preceding the hairline cracks by a short distance —
+smaller in area than the crack network it precedes, brighter than the plaster around it, gone once
+the facet beneath it has dropped — closes the one drawn beat this era's decay is missing. The second
+half of this item is not a drawing task: confirm with whoever owns the era's cosmology that Duat is
+the wanted image behind a flaked wall and not a holdover from when this function's only job was to
+stop reading as a waterline; either answer is a one-line note here, not a rebuild. Small effort,
+no risk — nothing here touches `floorY`, `darknessSpeed()`, or the rate [THE-FRONTIER.md](THE-FRONTIER.md)
+holds fixed.
+
 ## What to build, in order
 
 The first four are what closes the gap the player actually feels; the rest is finishing.
@@ -216,11 +373,14 @@ The first four are what closes the gap the player actually feels; the rest is fi
 | 2 | **P1** carry the wall with the climb | medium | needs a taller cache; watch memory on mobile | built |
 | 3 | **P10/P11** three hazard motions and the pull | small | keep them flat; no glow | built |
 | 4 | **P14** the era's five sounds | small | none | built |
-| 5 | **P12/P13** level the barque, one moving part | small | none | built |
+| 5 | **P12/P13** level the barque, one moving part | small | none | built, then retired — §5, §9 |
 | 6 | **P7** the snapped cord and the plumb as the survey | medium | must not clutter the play channel | built |
 | 7 | **P2/P3** a register per watch, retire the lime card | large | the biggest win after P1, and the most work | built |
 | 8 | **P6/P8/P9** dabs, four capture marks, marginal floaters | medium | none | built |
 | 9 | **§6** furniture at a legible size; **§8** the seven defects | medium | a-g are mostly one-liners | built |
+| 10 | **P15** the reed brush and the constant Core | small | mostly reused primitives; the risk is legibility through a full turn, not code | open |
+| 11 | **P16** retarget the node reveal to `orbitSweep` | medium | thresholds want tuning against a built sheet | open |
+| 12 | **P17** the efflorescent bloom; confirm Duat | small | none | open |
 
 ## What must not be "fixed"
 

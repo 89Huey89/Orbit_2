@@ -80,7 +80,7 @@ the end of the story. That is the entire engineering bill for a run that never h
 |---|---|---|---|---|---|
 | **I** | [The Rock](01-rock.md) | c. 40,000–3,000 BCE | Lascaux, the Hall of the Bulls | ochre | phenomenon → memory |
 | **II** | [The Ceiling](02-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | the *khar* | phenomenon → named, ordered element |
-| **III** | [The Scroll](03-scroll.md) | c. 649–684 CE | the Dunhuang star chart, BL Or.8210/S.3326 | ink, the brush | individual light → catalogued relationship |
+| **III** | [The Scroll](03-scroll.md) | c. 649–684 CE | the Dunhuang star chart, BL Or.8210/S.3326 | the *mò*, the brush | individual light → catalogued relationship |
 | **IV** | [The Astrolabe](04-astrolabe.md) | 964–1437 CE | al-Ṣūfī's catalogue, read through the instrument | the *ḥibr* | visible object → measurable object |
 | **V** | [The Engraving](05-engraving.md) | c. 1540–1610 | Bayer's *Uranometria*; the atlas page | ink, the quill | observation → recorded knowledge |
 | **VI** | [The Lens](06-lens.md) | 1610–1990 | Galileo → the Carte du Ciel → the rendered sphere | exposure | light → world |

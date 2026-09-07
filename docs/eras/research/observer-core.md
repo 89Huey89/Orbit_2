@@ -378,7 +378,7 @@ change."
 - **The alidade/guide-line convergence (§2.4) is a real legibility risk**, not a hypothetical one: it
   is the one era where the tool's own geometry and the existing pricked preview line want to occupy
   the same visual role. Build one alidade sprite early and check it against a live transfer preview
-  before committing the era's full art, the way [`docs/eras/03-ceiling.md`](../03-ceiling.md)
+  before committing the era's full art, the way [`docs/eras/02-ceiling.md`](../02-ceiling.md)
   recommends spiking its own quadrats first.
 - **Pinning the Core's colour pair near-constant across every plate (§3.4) is a deliberate exception
   to an otherwise strict rule** — every other colour in the game is free to vary per era/plate. Flag

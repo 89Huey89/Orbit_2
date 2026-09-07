@@ -118,7 +118,7 @@ Depiction only, same four rows, this era's name and image over each.
 
 ## The bodies
 
-Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)) this era draws no
+Under the knowledge horizon ([KNOWLEDGE-HORIZON.md](../KNOWLEDGE-HORIZON.md)) this era draws no
 family, and it is the first that can tell bodies apart by a system. A body is a point in one of
 Ptolemy's six classes, cut as the Mainz globe cuts its stars — a drilled, gilded point, deeper and
 larger for a greater *megethos* — and the class letter, α′ to ϛ′, is what the held orbit brings
@@ -166,7 +166,7 @@ both attested and the game's own "THE LYRE." Fonts are Cinzel and GFS Didot, awa
 `document.fonts.ready` before first paint — GFS Didot alone covers both the epigraphic capitals and
 Ptolemy's magnitude ranks, so no second Greek face is used.
 
-Painter verdict: acceptable from Sonnet, with an Opus polish pass for depth. See [PROTOTYPES.md](PROTOTYPES.md).
+Painter verdict: acceptable from Sonnet, with an Opus polish pass for depth. See [PROTOTYPES.md](../PROTOTYPES.md).
 
 ## Risk
 

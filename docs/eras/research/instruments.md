@@ -21,7 +21,7 @@ and could not re-check.
 
 **Supersedes:**
 
-- **Which grammar leads.** `globe.md` §2 and [05-globe.md](../05-globe.md)'s own text choose the
+- **Which grammar leads.** `globe.md` §2 and [04-astrolabe.md](../04-astrolabe.md)'s own text choose the
   **manuscript page** as the era's primary grammar (per `DECISIONS.md` §4, cited there), with the
   instrument grammar — engraved brass, no colour, no fill — appearing "only once, small, as a
   colophon vignette." The new brief inverts this for the era's gameplay identity: "avoid generic
@@ -30,13 +30,13 @@ and could not re-check.
   alidade. Under the new brief, **instrument grammar is the era's primary register**; the
   manuscript page (al-Ṣūfī's constellation figures, gilt discs, flat colour) survives only as the
   *ground the geometric construction sits on* — a background register, not the chart's main voice.
-- **The player tool and the knowledge-gain statement.** Neither [05-globe.md](../05-globe.md) nor
+- **The player tool and the knowledge-gain statement.** Neither [04-astrolabe.md](../04-astrolabe.md) nor
   its research file names a player tool or a knowledge-gain arc for this era — those concepts
   postdate them. The new brief supplies both: player form is "an alidade / astronomical sighting
   pointer / measurement arm," the Observer Core sits at its sighting point, and the era's knowledge
   gain is **VISIBLE OBJECT → MEASURABLE OBJECT**. §10 below works out what that means concretely
   for a moving, one-tap avatar.
-- **The three reveal states.** [05-globe.md](../05-globe.md) describes only an end state (a body
+- **The three reveal states.** [04-astrolabe.md](../04-astrolabe.md) describes only an end state (a body
   "under the held orbit… a gold disc sized to its class… with a fine dark contour and a burnished
   rim"). The brief's three-state structure — a celestial target before orbit, sighting arcs and
   engraved divisions during it, a precisely measured phenomenon after — is new; §11 works it out.
@@ -416,7 +416,7 @@ above, not itself a documented period practice:
    ring around the body, its ticks now picked out in the gilt highlight (`#D4AF37`), with a small
    abjad-numeral value (§7's correction) lettered beside it in naskh — the body's now-known altitude
    or magnitude class, stated the way al-Ṣūfī stated a star's re-observed *qadr* (§6). The body
-   itself gains the manuscript-ground disc treatment [05-globe.md](../05-globe.md) already specifies
+   itself gains the manuscript-ground disc treatment [04-astrolabe.md](../04-astrolabe.md) already specifies
    (a gold disc sized to class, fine dark contour, burnished rim) *inside* that ring, so the finished
    state visually nests the instrument reading around the manuscript-tradition record it feeds —
    measured arc outside, catalogued disc inside, echoing §6's claim that the sighting and the
@@ -527,4 +527,4 @@ on dragon iconography in medieval Islamic and Christian art.
 - https://en.wikipedia.org/wiki/Burin_(engraving)
 - https://www.worldhistory.org/Astrolabe/
 - https://www.academia.edu/39239308/Kuehn_S_The_Dragon_in_Medieval_Islamic_Astrology_and_Its_Indian_and_Iranian_Influences (unverified — title as given could not be matched with confidence to a specific known publication this session; Sara Kuehn's attested published work on this subject is the book *The Dragon in Medieval East Christian and Islamic Art*, which may or may not be what this academia.edu entry actually contains)
-- `globe.md`, [../05-globe.md](../05-globe.md), [../DANGERS.md](../DANGERS.md) (this repository)
+- `globe.md`, [../04-astrolabe.md](../04-astrolabe.md), [../DANGERS.md](../DANGERS.md) (this repository)

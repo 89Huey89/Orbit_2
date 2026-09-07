@@ -17,9 +17,18 @@ some run of good landings anywhere on the chart, but because the player kept loo
 bodies, and held some of those orbits long enough to see them documented.
 
 Score still exists, is still recorded, and still drives the catalogue's unlocks exactly as it does
-today; [ECONOMY.md](ECONOMY.md) covers what changes there, which is one multiplier at release, not
-the meaning of the number. What score no longer does is decide the century. That job belongs to
-the observation ledger below.
+today. What score no longer does is decide the century — that job belongs to the observation ledger
+below — and the one change [ECONOMY.md](ECONOMY.md) makes at release, its currency multiplier, is
+not a change to score at all: it scales the era's own resource, not the number the catalogue reads.
+
+The brief also asks scoring to add bonus dimensions on top of the shipped formula — observation
+completeness, a discovery streak of fully documented bodies, a high-risk late release, and the era
+transition itself. That addition is settled as a decision, not as a design: no point value, trigger
+or formula for any of the four is written down anywhere in this pass, in this document or in
+[ECONOMY.md](ECONOMY.md)'s own currency table, and neither should be read as having quietly answered
+it. The gap is real and is not this document's to close by itself; like the ledger constants below,
+it wants a number picked off the score-distribution probe `verify.mjs` already carries, not a guess
+made here.
 
 ## The observation ledger
 
@@ -273,9 +282,11 @@ the endless tail after it is the game.
 - **The six catalogue plates remain [The Engraving](05-engraving.md)'s.** Cellarius, Verdigris,
   Foxed, Proof, Carta azzurra and Sepia are treatments of a printed atlas page, which is what era V
   now is under the split [OVERVIEW.md](OVERVIEW.md) describes; they keep their unlocks and their
-  place in the catalogue and do nothing on any other century's sheet. The five catalogue marks
-  become era V's tool variants on the same footing — a cosmetic choice inside one era, never a
-  choice of Observer Core.
+  place in the catalogue and do nothing on any other century's sheet. Three of the five catalogue
+  marks — the comet, the moth, and Saturn — become era V's tool variants on the same footing, per
+  [OBSERVER-CORE.md](OBSERVER-CORE.md): a cosmetic choice inside one era, never a choice of Observer
+  Core. The quill is already era V's own default tool, and the fifth mark, the telescope, is era
+  VI's.
 - **`src/reveal.js` is retargeted from `world.time` to `orbitSweep`,** as rule 2 already requires
   for every era's three-state reveal to be readable off the swept arc rather than the clock; this
   document's ledger reuses the same quantity once that retargeting has happened, not a new one.

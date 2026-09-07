@@ -28,94 +28,140 @@ Every era file should contain these fields before it is considered art-directed:
 | Feared sky | An attested omen/myth/risk, or an honest statement that none is securely recoverable |
 | Gameplay translation | Which part is factual, plausible reconstruction or declared invention |
 | Negative rules | Five things this era must never draw |
+| Knowledge structure | The background artefact — the remembered sky, the decan table, the assembling astrolabe, the mission map — that grows visibly as the era's own observation ledger fills, and stands in for a progress bar the era must never draw |
+
+The eleventh field is the brief's own addition, not this file's: nodes are phenomena that become
+knowledge through orbit, and every era needs a place for that knowledge to be seen accumulating
+that is not a number. [PROGRESSION.md](PROGRESSION.md)'s "The era's knowledge structure" names one candidate
+artefact per era — the remembered sky, the decan table, the star chart, the assembling astrolabe,
+the atlas page, the optical catalogue, the mission map, the manifest — and each era file carries its
+own section fleshing that candidate out, under whatever name the era's own record-keeping actually
+earns rather than a shared header.
 
 Use three evidence labels everywhere: **attested**, **plausible reconstruction**, **fictional
 gameplay translation**. “Looks appropriate” is not a fourth category.
 
-## The nine-era pass
+## The eight-era pass
 
-| Era | Universe model | Recommended controlled object | Bodies | Feared sky / danger logic | Main unresolved point |
+The nine-era pass this section used to run is gone, and not merely renumbered. Two of its slots —
+the Disc and the Marble — are retired to [CANDIDATES.md](CANDIDATES.md), because the brief's roster holds room for
+one prehistoric era and no Graeco-Roman one; two new eras — the Scroll and the Flyby — fill the gap
+that retirement leaves and close the two omissions this file itself argued were essential, below.
+What follows is rebuilt against the eight era files as they now stand rather than recommended ahead
+of them: the Scroll and the Flyby rows are read entirely off [03-scroll.md](03-scroll.md) and [07-flyby.md](07-flyby.md), the
+first time this table has had a built file to check rather than a proposal to make.
+
+| Era | Universe model | Controlled object | Bodies | Feared sky / danger logic | Main unresolved point |
 |---|---|---|---|---|---|
-| I · Rock | A lit mnemonic surface and palimpsest; no recoverable scientific cosmos | A fresh ochre dab/ember being carried across the wall, explicitly fictional | Bright/middle/faint dabs; Moon alone has a face | Shaft, flare, draught and unlit rock are material dangers; do not invent a Palaeolithic pantheon | State the player ontology in the era file; keep contested constellation readings visibly contested |
-| II · Disc | A portable horizon calendar and repeated solar cycle | The gold sun barge already present in the object's later phase | Equal gold punches, crescent and disc; no planetary surfaces | Lost sun, spiral, cup-mark swarm; oar-stroke crosswind remains weakly attested | Keep Nebra, Trundholm and Nordic rock-art evidence in separate labelled layers |
-| III · Ceiling | Painted cosmic order: decans, months, watches and moving lights | Flat night barque, explicitly borrowed from wider funerary art | Star signs/discs and a wanderer carrier; no seven surfaces | Apep, Eye, Shu and Nun as declared force translations | **Resolved in the playable special area and revised era file**; authored quadrats remain future work |
-| IV · Marble | A geocentric celestial sphere made legible by great circles | A drilled/inlaid star pin moving on an armillary track, not a glowing comet | Magnitude marks and relief figures; Moon may gain one attention reading | Charybdis, solar chariot, Anemoi, *galaxias* | The central Farnese Atlas is starless; the synthesis with other objects must stay visible |
-| V · Globe | A measured catalogue on a sphere, shown from both outside and inside | Decide between an attested manuscript comet and an astrolabe/alidade pointer; do not leave it as generic gilt decoration | Gold discs sized by re-observed magnitude; paired constellation views | Dragon node/eclipses, burning sun, wind, the “little cloud” | Player object and cosmology need their own section; Arabic shaping must be authored, not approximated |
-| VI · Engraving | Telescopic/cosmographic atlas: competing world systems coexist on printed sheets | An engraved comet-sign made by the same burin grammar as its route | Each family first appears as one dated observation, including period errors | VORAGO, MACULA, VENTUS; the era's own printed monsters and natural philosophy | 1600–1801 is broad; distinguish woodcut cosmography, copperplate atlas and telescopic observation internally |
-| VII · Plate | A two-dimensional survey field and archive; position survives through coordinates and exposure | A transient recorded as two or three silver knots / repeated exposure, with an open grease-pencil mark | Photographic morphology only; no locally coloured or painted planets | Emulsion loss, halation, tracking error, dark nebula: loss or falsification of evidence | Make the player a recorded moving object everywhere; remove any surviving painted-surface vocabulary |
-| VIII · Observatory | A multiwavelength measurement product with metadata, uncertainty and processing choices | A target reticle / tracked source / instrument line of sight, not a decorative spacecraft | Rendered measurement with terminator, false colour and confidence/scale | Black-hole shadow, CME, solar wind, extinction | Open the date to 1965 or add a Flyby era; otherwise the birth of comparative planetology is missing |
-| IX · Probe | A telemetry and resource network assembled by an autonomous observer | The self-replicating probe itself | Spectra, mass, composition and harvest yield before pictorial appearance | Wells, beams, ISM flux, attenuation and mission-time risk | Keep sensor truth distinct from era VIII's public-facing renderings; the probe has no human eye |
+| I · Rock | A lit mnemonic surface and palimpsest; no recoverable scientific cosmos | The ochre crayon's worn, ground-stone point, carrying the Observer Core; the dab it strikes is explicitly fictional | Bright/middle/faint dabs in three brightnesses; the Moon alone carries a face | Shaft, flare, draught and unlit rock are material dangers; no invented Palaeolithic pantheon | The torch twist's own Rule-1 test, the tally-field HUD's legibility, and keeping contested readings (Pleiades, Summer Triangle) visibly contested |
+| II · Ceiling | Painted cosmic order: decans, months, watches and moving lights | A rush brush, its frayed fan carrying the Core at the wet tip; the solar night barque steps down to a level motif ([OBSERVER-CORE.md](OBSERVER-CORE.md)) | Star signs and discs seated in a decan's hour; no modelled surfaces | Apep, the Eye of Ra, Shu and Nun — declared force translations of a painted mythology, not an ancient physics | Translating a flat, register-based sky into vertical speed without adding modelling the tradition never had |
+| III · Scroll | A bureaucracy's own filing system laid over the stars: three enclosures and twenty-eight mansions, a coordinate ruler for the Moon, Sun and five planets rather than a set of pictures | An armillary-inspired sighting tube (窺管), its forward aperture on the flight's own tangent carrying the Core; this era's contribution is sighting, not penmanship, so the Ceiling's brush is not repeated | An isolated, unnamed point joined to nothing until sighted; understood as a cataloged member of a named asterism, coloured to one of three attested pre-Han schools | Mars lingering at the Heart, the broom-star's tail, wind-angle divination, and the plain etymology of an eclipse — attested omen practice throughout, never an invented monster | The sighting tube's own three-to-six-century anachronism against this era's 649–684 CE window, and the unresolved vertical-column-versus-horizontal-HUD caption question |
+| IV · Astrolabe | A measured catalogue read through an instrument: a target sighted through two pierced holes, an angle read off a graduated brass limb | An alidade, its forward sighting pinnule carrying the Core, kept visibly shorter than the aim guide so the two lines never fuse | An unadorned, unsighted point; understood as a gilt-ticked ring with an abjad-numeral value lettered beside it in naskh | The Moon's ascending node, the sun's engraved burst, a named desert wind, and al-Ṣūfī's own "cloudy thing" — engraved terms, not painted decoration | The alidade's own geometry against the existing aim guide — the ladder's single hardest legibility risk |
+| V · Engraving | A printed atlas page at the height of what eye, compass and burin alone could do: a star fixed by lettering, a figure composed rather than measured | The quill, its nib the shipped Observer Core — the ladder's control case; the comet, moth and Saturn marks become this era's own cosmetic tool cuts | A point marked by a construction circle alone; understood as a Bayer-lettered figure, its magnitude given only by the size of the printed dot | VORAGO, MACULA and VENTUS — this era's own natural-philosophical figures for pull, radiance and wind | The honest anachronism of a default figure hand spanning a hundred-and-ninety-one years past the era's own 1540–1610 window |
+| VI · Lens | Three registers, one epistemology — resolving a distant point into a surface — worn in succession by the eyepiece, the plate and the rendered measurement | A refracting telescope, the Core seated at the eyepiece rather than the objective: the point that wants to know, not the point that gathers light | A blurred point or unresolved disc; understood as a resolved world — a ring, a terminator, a band — named and dated to its first observation | Emulsion void, halation, tracking drift and dark nebula: damaged or misleading observation, not a myth, and the ladder's own richest column of wrong beliefs kept | The ladder's largest authored-art bill — three palettes, three lettering systems, one unspiked register-progression mechanic — and which register's own beats resolve first |
+| VII · Flyby | The sky stops being a picture and becomes a physical place a machine can be sent to; the sensor's own frame — a raster, a mosaic, a mesh — precedes the surface it resolves into | The spacecraft's own hull, sensor forward, dish trailing or subordinate; the Core sits at the sensor's boresight — the first tool on the ladder that is not, in any sense, held | A bright point wearing a tracking halo; understood as a mapped world, gaining coordinates and an instrument margin only on arrival — the one era whose wrong-belief entry corrects the Lens's canals rather than adding a fresh one | Gravity well, radiation belt, solar wind or outgassing, and signal dropout: mission risk, named the way a flight controller would name it, never a monster | BLACK SPACE's own risk of reading as an empty rectangle unless the four attested textures that fill it are spiked before a single body is drawn against it |
+| VIII · Probe | A telemetry and resource network assembled by an autonomous observer, with no human eye or hand left in the loop | The replication core itself — the one tool this ladder does not hand from a person to a person, because no person is left holding it | A sensed mass of unconfirmed class; understood as an autonomously catalogued and priced body — the Moon's old exception finally retired, since every body is now read the same class-first way | WELL, BEAM, ISM FLUX and EXT — mission risk continued past the point a mission has anyone left to run it, careful not to repeat the Lens's or the Flyby's own idiom in the same row | The manifest's own repeating-rather-than-arming cadence, this file's one genuinely new and unspiked mechanical idea |
 
 ## The player through-line
 
-The controlled object should evolve from a human-made mark into an observer:
+This section used to argue, against no brief at all, that the controlled object should evolve from
+a human-made mark into an observer rather than stay one diegetic comet wearing nine costumes. The
+brief has since settled that argument outright, and gone one step further than this file knew to
+ask for: it does not merely let the object evolve, it names the one part of it that is not allowed
+to — "the player is the point that wants to know what comes next," constant across every costume,
+never the tool built around it. That constant has a name now, the Observer Core, and it is
+[OVERVIEW.md](OVERVIEW.md)'s own fifth rule.
+
+The chain this section used to propose,
 
 `mark → solar carrier → night carrier → coordinate pin → manuscript/instrument pointer → printed
-sign → recorded transient → target/instrument → autonomous probe`
+sign → recorded transient → target/instrument → autonomous probe`,
 
-That is more coherent than preserving one diegetic comet through every culture. Motion and input
-stay invariant; ontology changes. Each transition tells a piece of astronomy history: humans first
-mark the sky, then order it, measure it, record it, delegate sight to instruments and finally send
-the observer away from Earth.
+is superseded, not merely renumbered, by [OBSERVER-CORE.md](OBSERVER-CORE.md)'s own roster of eight tools — the
+crayon, the rush brush, the sighting tube, the alidade, the quill, the telescope, the probe hull,
+the replication core — each one ending, by construction, at the same argument-free `markHead()`
+call. This file's own contribution was the direction of travel and the reason it mattered
+historically; the roster, the evidence label on each tool, and the render-side argument for why a
+disc beats a spark, a star, a cross or a ring are no longer this file's to keep. Read
+[OBSERVER-CORE.md](OBSERVER-CORE.md) for what is now settled.
 
 ## The danger through-line
 
 Danger should change in what it means, while the four mechanics remain stable:
 
-`unknown material darkness → threatened solar/cosmic order → mythic and omen-bearing agents →
-natural philosophy → damaged or misleading observation → astrophysical field → mission risk`
+`unknown material darkness → mythic and omen-bearing agents → attested omen practice → measured,
+engraved hazard → natural philosophy → damaged or misleading observation → mission risk`
 
-Not every period needs a monster. The Plate is stronger when the enemy is failed evidence; the
-Probe is stronger when the enemy is signal loss and resource cost. Conversely, removing Apep or
-the Maya's feared Venus just to make every era “scientific” would erase the history the game wants
-to tell.
+Not every period needs a monster. The Lens's plate register is stronger when the enemy is failed
+evidence; the Flyby is stronger when the enemy is signal loss; the Probe is stronger when the enemy
+is its own resource cost and its own ageing, a machine outrunning entropy rather than night.
+Conversely, removing Apep or the Maya's feared Venus just to make every era “scientific” would erase
+the history the game wants to tell.
 
 ## Missing eras and styles
 
-### 1. Mesopotamian/Babylonian — essential
+Four cases were argued here. Two were taken whole; two are still missing, exactly as argued, and
+now belong to [CANDIDATES.md](CANDIDATES.md) rather than to a fresh case made twice.
 
-Place it between the Ceiling and Marble, c. 1000–500 BCE. It supplies the ladder's clearest union
-of systematic observation and ominous sky: impressed clay, ruled columns, cuneiform star names,
-lists, rising/setting relations and predictive/omen clauses. British Museum tablet 86378 is
+### Taken: Chinese ink-scroll astronomy
+
+This file argued that placing it before the Globe, c. 649–684 CE, was essential: without it the
+route stayed overwhelmingly West Asian–European and missed a complete, independent asterism
+tradition. The [Dunhuang Star Chart, Or.8210/S.3326](https://idp.bl.uk/collection/7861395E5F814419BA05483EAB254832/)
+— ink on a 3.3 m paper scroll with twelve sky zones plus a polar map, its stars and asterisms
+counted variously across sources — was named as adding brush, scroll, court/celestial bureaucracy,
+guest stars and omen text that no other era owned. The brief's roster takes the argument in full:
+era III, the Scroll, is exactly this case, built from [research/china.md](research/china.md) and centred on this same
+chart, with the sighting tube standing in for the brush this file once assumed the tool would be.
+
+### Taken: the Flyby, 1965–1989
+
+This file argued the years were structurally important on two counts: television scan lines,
+first-generation digital mosaics, mission-control type and annotated planetary strips as an art
+style in their own right, and, more importantly, the moment craters, rings, ice, dunes, storms and
+volcanism stopped being isolated observations and became comparative planetary classes — a gap this
+file said the knowledge horizon "already exposes." The brief settles it as a genuinely travelling
+era rather than an opening chapter of something else; era VII, the Flyby, is that era, built from
+[research/space-age.md](research/space-age.md), and [OVERVIEW.md](OVERVIEW.md) records the same closure as answering this file's own
+question about where 1965–1989 belonged.
+
+### Still missing: Mesopotamian/Babylonian
+
+Argued for as essential, between the Ceiling and a Graeco-Roman era that has since itself been
+retired: impressed clay, ruled columns, cuneiform star names, lists, rising/setting relations and
+predictive or omen clauses, supplying the ladder's clearest union of systematic observation and
+ominous sky. British Museum tablet 86378 is
 [tablet I of *MUL.APIN*](https://www.britishmuseum.org/collection/object/W_1899-0610-108), listing
-the divisions of heaven, dates of stellar risings and constellations in the Moon's path. This is
-not a variant of the Nebra disc or Egyptian ceiling; it is a new information and mark-making system.
+the divisions of heaven, dates of stellar risings and constellations in the Moon's path — not a
+variant of the Nebra disc or the Egyptian ceiling, but a new information and mark-making system. It
+remains missing and the case is unweakened; if anything the ladder's move to China for era III
+sharpens it, since a run that now goes from Egypt's painted register directly to a brush-drawn
+scroll skips the one ancient tradition built openly around tabulated prediction. Read the full,
+extended case in [CANDIDATES.md](CANDIDATES.md)'s own "The Babylonian planisphere."
 
-### 2. Chinese ink-scroll astronomy — essential
+### Still missing: the Maya screenfold codex
 
-Place it before the Globe, c. 649–684 CE. Without it the route remains overwhelmingly West
-Asian–European and misses a complete, independent asterism tradition. The
-[Dunhuang Star Chart, Or.8210/S.3326](https://idp.bl.uk/collection/7861395E5F814419BA05483EAB254832/)
-is ink on a 3.3 m paper scroll with twelve sky zones plus a polar map; the IDP records 1,345 stars.
-Its [atlas account](https://idp.bl.uk/discover/learning/chinese-astronomy/articles/the-chinese-sky/the-dunhuang-star-atlas/)
-describes 257 named asterisms and three star colours tied to three astronomical traditions. It
-adds brush, scroll, court/celestial bureaucracy, guest stars and omen text — none of which another
-era currently owns.
-
-### 3. The Flyby, 1965–1989 — structurally important
-
-Either add it between Plate and Observatory or let Observatory begin with a clearly separate
-Flyby chapter. Television scan lines, first-generation digital mosaics, mission-control type,
-calibration targets and annotated planetary strips are an art style in their own right. More
-importantly, this is when craters, rings, ice, dunes, storms and volcanism stop being isolated
-observations and become comparative planetary classes. The knowledge horizon already exposes this
-gap.
-
-### 4. Maya screenfold codex — strongest later expansion
-
-This is the most valuable addition outside the Eurasian route. The
-[Dresden Codex](https://www.loc.gov/item/2021667917/) combines bark-paper screenfold, glyphs,
-figures, ritual calendars, Venus calculations and eclipse tables. The holding library's
+Argued for as the strongest addition outside the Eurasian route: the
+[Dresden Codex](https://www.loc.gov/item/2021667917/), bark-paper screenfold, glyphs, figures,
+ritual calendars, Venus calculations and eclipse tables, with the holding library's own
 [content guide](https://www.slub-dresden.de/en/explore/manuscripts/the-dresden-maya-codex/content)
-states that Venus as morning star was feared as misfortune and that the pages picture struck
-victims. It would answer both halves of the brief — a wholly different visual system and a richly
-attested feared sky — without inventing a danger mythology.
+stating that Venus as morning star was feared as misfortune and that the pages picture struck
+victims — a wholly different visual system paired with a richly attested feared sky, without
+inventing a danger mythology. Nothing in this pass weakens that case or improves its slot; the
+brief's roster has no American era and no natural adjacency for one. Read the full case in
+[CANDIDATES.md](CANDIDATES.md)'s own "The Dresden Codex."
 
 ## Recommendation
 
-Keep the present nine as the production spine, but stop calling them a complete history. Add
-Babylonian and Chinese as the first two expansion eras; resolve the Flyby as either its own era or
-the opening act of Observatory before finalising the seven body families. Hold the Maya codex as
-the next full branch. A separate Renaissance woodcut/cosmography chapter is artistically useful,
-but less urgent because Engraving can own it internally; the three omissions above change the
-historical argument, not just the texture library.
+The present eight, per [OVERVIEW.md](OVERVIEW.md), are the production spine, and two of this file's own
+expansion arguments are no longer expansions to add — Chinese ink-scroll astronomy and the Flyby are
+built, as eras III and VII. What remains is Babylonian and the Dresden Codex, both still argued for
+above and both now fully written up as candidates in [CANDIDATES.md](CANDIDATES.md) rather than promises this file
+carries on its own. Keep calling the eight-era ladder a curated route, not a complete history: it
+was chosen for what the brief's own arc needed — one prehistoric era, no Graeco-Roman era, a
+straight line from Egypt into China — and dropping the Disc and the Marble to make room for that
+arc removed two well-attested traditions from the spine without making the sky they once described
+any less real. Nothing here is queued or scheduled. A candidate, this file's own or [CANDIDATES.md](CANDIDATES.md)'s,
+earns the ladder only once it can be shown to answer [OVERVIEW.md](OVERVIEW.md)'s five rules and this file's own
+contract in full — the ten fields it always asked and the eleventh, the knowledge structure, this
+pass just added to it.
