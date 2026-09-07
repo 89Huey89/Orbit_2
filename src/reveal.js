@@ -98,20 +98,47 @@ const primeList=[],primeOrder=[];
 // Fraction of a reveal spent inside one stage of it.
 const revealSpan=(t,from,to)=>clamp((t-from)/(to-from),0,1);
 // One shared record, refilled per node per frame: reveal state must not allocate while the chart moves.
-const NODE_PEN={t:1,done:true,age:Infinity,ring:1,keyline:1,hatch:1,wash:1,survey:1};
-// The colourist's order for one planet and its orbit: the ring first (finished at 0.6 s), the keyline cut
-// around the disc, the hatching laid in, the wash bloomed, the survey marks and rings last, the caption
-// after the ring is closed.
+const NODE_PEN={t:1,d:1,taken:1,done:true,age:Infinity,ring:1,keyline:1,hatch:1,wash:1,survey:1};
+// The crossing from looked-at to known happens on exactly one frame of one orbit, and each age will want
+// to mark it in its own hand. Finding the crossing is the same problem eight times, so it is solved once
+// here and `revealFlourish.fire` is the hook an era replaces; the atlas as shipped does nothing with it.
+const revealFlourish={fire(){}};
+let flourishFor=null,flourishAt=0;
+// A body is watched only while it is the one being orbited. Coming to a different body arms the watch at
+// whatever that body already stands at rather than firing on it, so a crossing is never reported twice
+// and never reported for an observation this orbit did not make.
+function watchCompletion(n,d){
+  if(n!==flourishFor){flourishFor=n;flourishAt=d;return;}
+  if(d>=1&&flourishAt<1)revealFlourish.fire(n);
+  flourishAt=d;
+}
+// Two clocks run over one body and they answer different questions. `t` is the pen reaching the page: the
+// phenomenon is owed to the player the instant the body is on screen, so the ring, the wedge and every
+// caption ride it. `d` is what the orbit has actually observed, as a fraction of SWEEP_FULL, and the
+// drawing of the body itself rides that instead — an un-orbited body is a mass and a position, a
+// documented one is a specimen. `d` is read from the world directly and never through `reveal.progress()`:
+// that throttle exists to stagger marks entering the view, and routing an earned observation through it
+// would blank a body that had been paid for the moment a fourth one scrolled in.
 function revealNode(n){
-  const t=reveal.progress(n,NODE_REVEAL);
-  NODE_PEN.t=t;NODE_PEN.done=t>=1;
-  if(t>=1){NODE_PEN.age=Infinity;NODE_PEN.ring=NODE_PEN.keyline=NODE_PEN.hatch=NODE_PEN.wash=NODE_PEN.survey=1;return NODE_PEN;}
-  NODE_PEN.age=reveal.age(n);
-  NODE_PEN.ring=revealSpan(t,0,.6);
-  NODE_PEN.keyline=revealSpan(t,.06,.44);
-  NODE_PEN.hatch=revealSpan(t,.3,.64);
-  NODE_PEN.wash=revealSpan(t,.38,.84);
-  NODE_PEN.survey=revealSpan(t,.6,.92);
+  const t=reveal.progress(n,NODE_REVEAL),p=world&&world.player,active=!!p&&p.node===n;
+  const observed=active?clamp(p.orbitSweep/SWEEP_FULL,0,1):(n.documented||0);
+  if(active)watchCompletion(n,observed);
+  // The opening choice is the one body drawn in full before it has been observed, and the design already
+  // made that exception: the three pressures are cut as three kinds of world precisely so the choice reads
+  // before its caption is legible. Staging them would withhold the only thing the choice is made on, which
+  // is the same reason every caption is owed to the player whole.
+  const d=n.difficultyChoice?1:observed;
+  // Taking the orbit is the event that turns a light into a body, so the disc has a clock of its own that
+  // begins at the capture rather than at the observation. It is urgent: a full hand may stagger a body
+  // entering the view, never one the traveller is already going round.
+  NODE_PEN.taken=active||n.visited?reveal.progress('taken:'+n.id,.35,true):0;
+  NODE_PEN.t=t;NODE_PEN.d=d;NODE_PEN.done=t>=1&&d>=1;
+  NODE_PEN.age=t>=1?Infinity:reveal.age(n);
+  NODE_PEN.ring=t>=1?1:revealSpan(t,0,.6);
+  NODE_PEN.keyline=revealSpan(d,0,.4);
+  NODE_PEN.hatch=revealSpan(d,.28,.62);
+  NODE_PEN.wash=revealSpan(d,.36,.84);
+  NODE_PEN.survey=revealSpan(d,.58,1);
   return NODE_PEN;
 }
 // A caption is written after its ring closes, a glyph every 40 ms.
@@ -170,6 +197,20 @@ function penWedgeEnd(pen,n,r){
   penNib(x,y,a+Math.PI/2,.9);
   ctx.restore();
 }
+// A circle gone round once by a hand that was not being careful: the radius breathes by a few per cent
+// on three slow harmonics with a little noise over them, and the path is laid through the midpoints so
+// the wobble reads as a wavering line rather than a polygon. It is a disc, not a blot — `landContour`
+// swings too far for a body, which has a size the player is about to judge a transfer against.
+function sketchDisc(g,r,rng){
+  const phase=rng()*TAU,drift=rng()*TAU,steps=26,pts=[];
+  for(let i=0;i<steps;i++){
+    const a=i/steps*TAU,k=1+Math.sin(a*2+phase)*.045+Math.sin(a*5-drift)*.028+(rng()-.5)*.05;
+    pts.push({x:Math.cos(a)*r*k,y:Math.sin(a)*r*k*.985});
+  }
+  const last=pts[steps-1],first=pts[0];g.beginPath();g.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
+  for(let i=0;i<steps;i++){const a=pts[i],b=pts[(i+1)%steps];g.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);}
+  g.closePath();
+}
 // ---------- Planets: the stages a colourist works in ----------
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
 // composite is drawn exactly as before, at no extra cost.
@@ -177,6 +218,35 @@ function revealPlanet(art,r,time,pen,seed){
   if(!pen||pen.done){drawPlanet(art,r,time);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
+  // (0) A body no orbit has ever taken is a light and nothing else: the phenomenon as it is seen from
+  // across the sheet, carrying a position and a magnitude and no shape whatever. Taking the orbit is what
+  // turns the light into a body, and the disc is laid in then — off true at the rim, grained and dirty,
+  // because a first sight of a thing is never a clean drawing of it. It starves away as the observation
+  // fills in behind it, so the specimen displaces the first sight instead of being laid over it.
+  if(pen.taken<1&&pen.ring>0){
+    const lit=(1-pen.taken)*pen.ring;
+    ctx.fillStyle=`rgba(${ink.reveal.bead},${.16*lit})`;
+    ctx.beginPath();ctx.arc(0,0,Math.max(2.4,core*.3),0,TAU);ctx.fill();
+    ctx.fillStyle=`rgba(${ink.reveal.bead},${.92*lit})`;
+    ctx.beginPath();ctx.arc(0,0,Math.max(1.1,core*.12),0,TAU);ctx.fill();
+  }
+  const laid=pen.taken*(1-revealSpan(pen.d,.08,.68));
+  if(laid>.012){
+    const rng=seeded((seed^0x5bd1e9)>>>0||1);
+    sketchDisc(ctx,core*1.02,rng);
+    ctx.fillStyle=`rgba(${ink.reveal.dry},${.33*laid})`;ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.reveal.strike},${.5*laid})`;ctx.lineWidth=1.05;ctx.stroke();
+    // The grain is the tooth of the sheet coming up through a first, hurried laying-in. It is seeded off
+    // the body so it sits still on the page rather than boiling under the orbit, and it is cut to the
+    // disc so nothing of the first sight escapes the outline the hand actually drew.
+    ctx.save();ctx.clip();
+    for(let i=0;i<64;i++){
+      const a=rng()*TAU,rad=Math.sqrt(rng())*core*1.04,dot=.3+rng()*.7;
+      ctx.fillStyle=`rgba(${rng()<.34?ink.reveal.spatter:ink.reveal.strike},${(.07+rng()*.2)*laid})`;
+      ctx.beginPath();ctx.arc(Math.cos(a)*rad,Math.sin(a)*rad,dot,0,TAU);ctx.fill();
+    }
+    ctx.restore();
+  }
   // (d) The survey arcs and the far half of a ring system are the last marks laid down.
   if(pen.survey>0){ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);ctx.restore();}
   // (c) The wash blooms as an irregular blot from a seeded point off the centre, its wet rim drying lighter

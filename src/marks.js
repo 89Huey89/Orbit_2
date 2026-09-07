@@ -188,9 +188,9 @@ function ringRadiusStep(radius){
   const r=Math.max(1,radius);
   return Math.max(.5,Math.round(Math.exp(Math.round(Math.log(r)*48)/48)*1000)/1000);
 }
-function engravedRing(radius,rgb,alpha,weight,seed){
+function engravedRing(radius,rgb,alpha,weight,seed,sketch){
   const rBucket=ringRadiusStep(radius),aBucket=Math.round(alpha/.05)*.05;
-  const key=rBucket+'|'+rgb+'|'+aBucket.toFixed(2)+'|'+weight+'|'+plateName+'|'+scale.toFixed(3)+'|'+seed;
+  const key=rBucket+'|'+rgb+'|'+aBucket.toFixed(2)+'|'+weight+'|'+plateName+'|'+scale.toFixed(3)+'|'+seed+(sketch?'|s':'');
   const cached=ringSprites.get(key);if(cached)return cached;
   const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
@@ -200,13 +200,23 @@ function engravedRing(radius,rgb,alpha,weight,seed){
     const chalkR=rBucket+((seed>>>2)&1?1:-1)*.8,from=((seed>>>9)%997)/997*TAU;
     burinArc(g,.5,-.4,chalkR,from,from+TAU*.62,ink.underdrawing.chalk,Number((aBucket*.55).toFixed(3)),Math.max(.5,weight*.9),seed^0x3d9,{segments:40,skips:6,wobble:.8});
   }
+  // An orbit no traveller has taken is not engraved yet, only set down: the hand goes round it more than
+  // once, well off true and open in more places than a cut ring is ever left. Taking it closes the line.
+  if(sketch){
+    burinArc(g,0,0,rBucket,0,TAU,rgb,aBucket,Math.max(.3,weight*.72),seed,{segments:64,skips:11+((seed>>>3)%5),wobble:1.4});
+    for(let k=0;k<2;k++){
+      const from=((seed>>>(4+k*5))%997)/997*TAU,off=k?1.7:-1.5;
+      burinArc(g,k?.9:-.8,k?-.7:.9,rBucket+off,from,from+TAU*(.46+k*.19),rgb,Number((aBucket*.5).toFixed(3)),Math.max(.25,weight*.5),seed+k*911,{segments:46,skips:6,wobble:1.8});
+    }
+  }else{
   burinArc(g,0,0,rBucket,0,TAU,rgb,aBucket,weight,seed,{segments:72,skips:4+((seed>>>3)%3)});
   // A fainter second pass a hairline off the true circle, where the hand went round twice.
   const hairGaps=2+((seed>>>5)&1),hairR=rBucket+((seed&1)?.9:-.9),slot=TAU/hairGaps,startOffset=((seed>>>7)%997)/997*TAU;
   for(let k=0;k<hairGaps;k++)burinArc(g,0,0,hairR,startOffset+k*slot,startOffset+k*slot+slot*.7,rgb,Number((aBucket*.4).toFixed(3)),Math.max(.25,weight*.35),seed+k*37,{skips:0,wobble:.12});
+  }
   const sprite={canvas:c,size,radius:rBucket};
   ringSprites.set(key,sprite);
-  if(ringSprites.size>64)ringSprites.delete(ringSprites.keys().next().value);
+  if(ringSprites.size>96)ringSprites.delete(ringSprites.keys().next().value);
   return sprite;
 }
 function engravedLine(x1,y1,x2,y2,rgb,alpha,weight,seed){burinSegment(ctx,x1,y1,x2,y2,rgb,alpha,weight,seed);}

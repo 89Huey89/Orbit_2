@@ -5,6 +5,11 @@
 // BEGIN SIMULATION
 const TAU = Math.PI * 2;
 const BASE_SPEED = 150, MAX_SPEED = 360, STAR_GAIN = 90;
+// Two thirds of a turn is what it takes to have looked at a body rather than merely arrived at it: the
+// arc an orbit must hold before the phenomenon is documented. Everything the journey counts as knowledge
+// is measured against it, and the renderer draws the body's own representation on the same fraction, so
+// it belongs beside the speeds rather than inside either of them.
+const SWEEP_FULL = TAU * 2 / 3;
 // The opening orbit, held only while the difficulty choice is pending, is flown at a gentler pace
 // than ordinary play so a new player has time to read all three targets before committing to one.
 const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
@@ -548,6 +553,10 @@ class OrbitWorld {
     this.positionPlayer();
     const launch=this.launchVelocity();p.vx=launch.vx;p.vy=launch.vy;
     p.launch={x:p.x,y:p.y,vx:p.vx,vy:p.vy,row:n.row,dwell:p.orbitTime,sweep:p.orbitSweep,period:TAU*p.rad/p.speed,charge:launch.charge,sling:n.type==='sling'};
+    // What the orbit actually observed, frozen onto the body as the traveller leaves it. The player's own
+    // sweep is zeroed by the next capture, so a released body that went on reading it would blank the
+    // moment the traveller landed anywhere else; what was looked at has to stay on the chart.
+    n.documented=clamp(p.orbitSweep/SWEEP_FULL,0,1);
     p.ignore=n.id; p.node=null; p.flightTime=0;
     this.emit('release',{x:p.x,y:p.y,vx:p.vx,vy:p.vy,charge:launch.charge,factor:launch.factor,sling:n.type==='sling'}); return true;
   }

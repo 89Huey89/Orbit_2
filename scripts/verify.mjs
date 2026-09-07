@@ -5,8 +5,8 @@ import vm from 'node:vm';
 import {bundle} from './bundle.mjs';
 const {html,script}=await bundle();
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
-const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN};',sandbox);
-const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
+const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN};',sandbox);
+const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
 const step=1/120;
 
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
@@ -692,6 +692,21 @@ assert.equal(orderA.catalogueFor(4+CONSTELLATIONS.length),orderA.catalogueFor(4)
   const deep=w=>JSON.stringify([...w.nodes].filter(n=>n.row>=30).map(n=>[n.row,n.baseY]).sort());
   assert.equal(deep(flown),deep(untouched),'How a run is flown cannot change the chart it is dealt');
 }
+// The observation clock rides the body released, never the generation that follows it: two flights of
+// one seed that hold the opening body for different fractions of SWEEP_FULL must document it
+// differently, yet the chart dealt beneath them — the same fields plate() above compares — must still
+// come out identical.
+{
+  const chart=w=>JSON.stringify(w.nodes.map(n=>[n.row,n.baseX,n.baseY,n.r,n.type]));
+  const brief=new OrbitWorld(20260905,440,860);brief.start();
+  brief.player.orbitSweep=SWEEP_FULL*.25;brief.release();
+  const lingering=new OrbitWorld(20260905,440,860);lingering.start();
+  lingering.player.orbitSweep=SWEEP_FULL*1.5;lingering.release();
+  while(brief.row<40)brief.generateRow();
+  while(lingering.row<40)lingering.generateRow();
+  assert.notEqual(brief.nodes[0].documented,lingering.nodes[0].documented,'The two flights must actually leave different documented fractions on the opening body, or this fixture proves nothing');
+  assert.equal(chart(brief),chart(lingering),'How the opening body was held cannot change the chart dealt beneath it');
+}
 // A sheet made narrower must not leave orbits standing outside its own edge, where a run is lost.
 {
   const w=new OrbitWorld(31,1280,860);w.start();
@@ -813,6 +828,48 @@ const hit=new OrbitWorld(9);hit.start();hit.release();hit.hazards.push({x:hit.pl
 for(let i=0;i<15;i++)hit.update(step);assert.equal(hit.state,'dead');assert.equal(hit.reason,'DRAWN INTO A VORTEX');
 const fade=new OrbitWorld(8);fade.start();fade.player.node.type='fading';fade.player.orbitTime=4.49;fade.update(.02);assert.equal(fade.reason,'THE ORBIT FADED');
 
+// n.documented freezes the fraction of SWEEP_FULL an orbit actually held, the moment the traveller
+// lets go of it: a partial hold documents partially, and one held past a full two thirds of a turn
+// still documents at exactly one, never past it.
+{
+  const partial=new OrbitWorld(106);partial.start();
+  const n=partial.player.node;partial.player.orbitSweep=SWEEP_FULL*.4;partial.release();
+  assert.equal(n.documented,.4,'A released body documents exactly the fraction of SWEEP_FULL it held');
+}
+{
+  const overheld=new OrbitWorld(107);overheld.start();
+  const n=overheld.player.node;overheld.player.orbitSweep=SWEEP_FULL*1.3;overheld.release();
+  assert.equal(n.documented,1,'An orbit held past SWEEP_FULL still documents at one and never beyond it');
+}
+// A body's documented fraction is frozen at release and nothing captured afterwards can touch it: the
+// player's own sweep is zeroed by the very next capture, and a body that went on reading it live would
+// blank the instant the traveller landed anywhere else.
+{
+  const w=new OrbitWorld(108);w.start();
+  const first=w.player.node;w.player.orbitSweep=SWEEP_FULL*.7;w.release();
+  const documented=first.documented,second=w.nodes.find(q=>q!==first&&!q.visited);
+  w.capture(second);
+  assert.equal(first.documented,documented,'A later capture must never rewrite an earlier body\'s documented fraction');
+}
+// Dying while still in orbit is not a release: die() never lets go of p.node, so a body held at death
+// carries no frozen fraction at all and the renderer's only truth is the live orbitSweep it can still read.
+{
+  const w=new OrbitWorld(109);w.start();
+  const n=w.player.node;n.type='fading';w.player.orbitTime=4.49;w.player.orbitSweep=SWEEP_FULL*.55;
+  w.update(.02);
+  assert.equal(w.state,'dead','A fading orbit held past 4.5s of dwell ends the run');
+  assert.equal(w.player.node,n,'Dying in orbit must leave the node on the player rather than clear it');
+  assert.equal(n.documented,undefined,'A body died on rather than released from is never frozen onto');
+}
+// A body neither captured nor released carries no documented fraction at all, which is exactly what
+// the renderer's own (n.documented||0) turns into nothing drawn.
+{
+  const w=new OrbitWorld(110);w.start();
+  const untouched=w.nodes.find(n=>!n.visited);
+  assert.equal(untouched.documented,undefined,'An untouched body carries no documented fraction');
+  assert.equal(untouched.documented||0,0,'A missing documented fraction reads as zero wherever it is asked for');
+}
+
 const LEDGER_KEY='orbit.ledger.v1';
 // Execute the complete script against native-API stand-ins. This catches boot,
 // input, storage, drawing-argument, and restart errors without a browser session.
@@ -837,7 +894,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
@@ -946,11 +1003,49 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       assert(busy<=3,'The pen never has more than three marks in hand');
       for(const key of probes)pen.progress(key,1);
       assert.equal(pen.report().drawing,3,'Five more marks fill the pen\'s hand and no further');
+      // Rendering claim: a fresh, un-orbited, non-difficultyChoice body has never been paid for, and
+      // revealNode must draw it as nothing more than a phenomenon: no documentation, no keyline.
+      const unmet=context.test.revealNode({row:-1});
+      assert.equal(unmet.d,0,'A body neither captured nor released reads no documentation at all');
+      assert.equal(unmet.keyline,0,'Its keyline has not begun either, since keyline only spans over d');
+      // L4: the pen's hand above is already full of three marks. A fourth body that was already paid
+      // for in an earlier orbit must still be drawn whole — REVEAL_CAP only staggers marks entering
+      // the view, and must never blank an observation the player has already earned.
+      const paid=context.test.revealNode({row:-2,documented:1});
+      assert.equal(paid.t,0,'A brand new mark still waits at nothing while the pen\'s hand is full');
+      assert.equal(paid.keyline,1,'An already-documented body keeps its keyline whatever the pen\'s hand holds');
+      assert.equal(paid.wash,1,'and its wash too, unblanked by a fourth mark entering the view');
+      assert.equal(paid.survey,1,'and its survey last of all, the same body paid for in full');
       assert.equal(probes.filter(key=>pen.peek(key)>=0).length,3-busy,'The marks past the third wait at nothing drawn');
       assert.equal(context.test.penLettering('THE QUIET',100,100,30,'text',.3,'center'),true,'The chapter name is written letter by letter');
     }
     assert(context.test.letteringTime('THE QUIET')>0);
     assert.equal(context.test.penLettering('THE QUIET',100,100,30,'text',99,'center'),false,'Finished lettering hands back to the printed text');
+  }
+  // The completion flourish fires exactly once on the <1→1 crossing of an orbit's own documented
+  // fraction, and never for a body let go before it gets there. A counting spy on revealFlourish.fire
+  // stands in for an era's own mark without changing what triggers it.
+  {
+    const fresh=context.test.world,p=fresh.player,origNode=p.node,origSweep=p.orbitSweep;
+    let fires=0;context.test.revealFlourish.fire=()=>{fires++;};
+    const probeA={row:-3};
+    p.node=probeA;p.orbitSweep=0;
+    context.test.revealNode(probeA);assert.equal(fires,0,'Arming the watch on a fresh orbit must not itself fire');
+    p.orbitSweep=context.test.SWEEP_FULL*.4;context.test.revealNode(probeA);assert.equal(fires,0,'A body still short of a full observation must not fire');
+    p.orbitSweep=context.test.SWEEP_FULL*.99;context.test.revealNode(probeA);assert.equal(fires,0,'One hundredth of a turn short of completion is still short of it');
+    p.orbitSweep=context.test.SWEEP_FULL;context.test.revealNode(probeA);assert.equal(fires,1,'The <1→1 crossing must fire exactly once');
+    p.orbitSweep=context.test.SWEEP_FULL*1.6;context.test.revealNode(probeA);assert.equal(fires,1,'A completed observation must not fire a second time on a later frame');
+    // A second body, watched from scratch, that is let go before it ever reaches completion must never
+    // have fired at all — however many times a released, unfinished body is still drawn afterwards.
+    const probeB={row:-4};
+    p.node=probeB;p.orbitSweep=0;
+    context.test.revealNode(probeB);assert.equal(fires,1,'Coming to a new body arms its own watch without firing on the switch');
+    p.orbitSweep=context.test.SWEEP_FULL*.5;context.test.revealNode(probeB);assert.equal(fires,1,'Still short of completion, still no fire');
+    probeB.documented=.5;p.node=null;
+    for(let i=0;i<3;i++)context.test.revealNode(probeB);
+    assert.equal(fires,1,'A body released before completion never fires the flourish, however often it is drawn afterwards');
+    context.test.revealFlourish.fire=()=>{};
+    p.node=origNode;p.orbitSweep=origSweep;
   }
   // The daily plate replaces the run seed with the UTC date's, forces Classic pressure,
   // and is not remembered: switching it off restores an ordinary run.
