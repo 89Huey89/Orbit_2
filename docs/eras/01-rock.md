@@ -117,6 +117,28 @@ Nothing surrounds this sky: no border, cartouche, colophon or maker's mark — a
 
 Stone-peck (capture), breath-huff (release), a low resonant tone after Reznikoff's cave-resonance research (perfect), a dry charcoal scrape (graze), a guttering torch-hiss into drip and echo (loss).
 
+## What is built
+
+The era is playable from the frontispiece — `src/rock.js`, registered as a hand over the shipped
+pipeline rather than as a renderer of its own, so it flies `OrbitWorld` unchanged and inherits the
+observation clock, the reveal queue and the release geometry instead of mirroring them. Built: the
+limestone ground and its one torch, the four primitives, the body's build order over the observation
+clock in the order this file sets it, the dot-ring at the node's real capture radius with the single
+completion cue on it, the Shaft, the Flare and the Draught, unlit rock drawn as nothing, the crayon's
+contact point with the Core at it, the forgetting with its spall margins, and the absence of a frame.
+
+Not built, and stated so it is not mistaken for a decision: the four pickups keep the tiers rather than
+the attested marks this file's Names table gives them — Newgrange's spiral, the reversed hand stencil,
+the ochre nodule; the constellation's cluster of dots is not drawn at all, only silently omitted; the
+remembered sky, this era's own background artefact, does not exist; the torch does not yet breathe; and
+the tally and dot-field HUD is still the atlas's numerals in a modern slab. The aim guide, the trail,
+the dried route, the connection lines and the written inscriptions are still drawn in the atlas's hand,
+in this plate's pigments.
+
+The opening triad is a row in the code, `ROCK_TRIAD`, carrying this file's own reading — the Moon for
+Tiro, a bright star for Adeptus, a faint one for Magister — and is deliberately not recorded as decided
+anywhere: open question K is answered against the running page, not on paper.
+
 ## The prototype
 
 `docs/eras/prototypes/rock.html` exists and paints the Hall of the Bulls at load. Its header comment records: every mark routes through three primitives (dab, hand stencil, engraved line/arc — pecked marks are engraved lines composed into pits); the ground is one relief baked once to an offscreen sprite and lit from a fixed torch bearing, with only the flicker/reach overlay, ember comet, aim guide and ochre-smear currency redrawn live; Lascaux's `#C7BC9E` ground is used, Chauvet's paler tone deliberately not mixed in; the six-dot Pleiades reading is drawn honestly ambiguous, three dots warmed and three left ordinary; pickups are reskinned per the Names table, each flagged where constructed; score is bundled per-ten-per-stroke in fives, a called-out compromise between the tally instruction and legibility at three digits. Painter verdict: Opus reached the standard on the second pass; budget Opus for this era. See [PROTOTYPES.md](PROTOTYPES.md). The prototype predates the knowledge horizon and paints seven families; `prototypes/turn-rock-disc.html` paints this sheet's bodies as the horizon now asks — three sizes of dab and the Moon's face — and studies the mechanics of a page turn out of this sheet. It was built pairing this era with the Nebra sky disc as the next sheet up, a pairing the reconciliation pass refused outright: the Disc does not hold era II on this ladder, is not this era's transition object, and is retired to [candidates/disc.md](candidates/disc.md) with its own research and prototype intact. What survives here is a study of the turn itself — the page-turn machinery `pageTurn()` and `drawSheetEdge()` animate — not a claim about what era I actually turns into, which is [The Ceiling](02-ceiling.md), reached by the growth-from-the-transition-object described above, never by a second sheet sliding up from below.

@@ -155,6 +155,26 @@ being invisible is this era's finest idea or its worst, which is the UX risk [01
 already carries in its own words. **The verdict on those is the author's to give against the running
 page, and is deliberately not recorded here.**
 
+**What the port then found, which is this page's most useful result and was not the question it was
+asked.** Era I is now built from this spike — `src/rock.js`, the ground and the four primitives and the
+body's build order carried across whole, none of the physics. Held against the shipped game, the first
+build of it read visibly softer and less finished than this page does, and the cause turned out to be
+one line rather than anything about the drawing: **the baked wall tile was being drawn at `size ×
+scale` CSS pixels on a context already transformed by the pixel ratio**, so on a 2× screen every baked
+sample was smeared across two device pixels. The wall's tooth is a per-pixel hash at the mark scale by
+construction — which is exactly the constraint this page discovered, that red ochre survives on warm
+limestone by being *regular* against something that is not — so upscaling it destroys precisely the
+detail the era's whole legibility rests on, and the sheet reads as fog. Drawn at one baked sample to
+one device pixel and snapped to whole ones, the same field reads as stone.
+
+Two things follow for every era after this one. **A baked ground is drawn at its native resolution or
+it is not worth baking**, and the tile's size in world units is then a consequence of the pixel ratio
+rather than a constant — which is fine, because what must stay constant is the rate the ground scrolls
+at, not how much of it a screen holds. And **the octave loop's per-pixel work is worth hoisting**: the
+two lattice columns a pixel falls between depend only on its x, and lifting that out of eleven passes
+over most of a million pixels took the wall's bake from 508 ms to 147 ms, measured, which is the
+difference between an era that stutters as it opens and one that does not.
+
 ## The prototypes and the three-state reveal
 
 All nine pages in this folder — the eight single-body sheets above and the transition study below

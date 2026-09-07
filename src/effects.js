@@ -37,6 +37,20 @@ definePlate('dark',{
     burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',burstViolet:'92,58,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
     floaterText:'34,24,16',screenFlash:'255,248,222'
+  },
+  // Era I states only what it cannot inherit. A crayon leaves no wet ink and dries to nothing, so the
+  // wake behind the traveller is ochre dust rather than iron gall going from glossy blue-black to
+  // sepia; the burst colours lose the atlas's blue and violet, which this era has no pigment for, and
+  // the flash and the floated numerals take the wall's own kaolin and charcoal. Everything the era does
+  // not name here — the shoreline, the spilled ink, the player's own tones — is its own hand's, drawn
+  // by src/rock.js, and never reaches these tokens at all.
+  rock:{
+    trailWash:'169,112,31',trailStroke:'44,38,34',trailEdge:'156,59,34',trailBleed:'201,150,46',
+    pathInk:'156,59,34',
+    trailWet:[156,59,34],trailDry:[169,112,31],blotWet:[156,59,34],blotDry:[201,150,46],
+    burstGold:'201,150,46',burstRed:'156,59,34',burstBlue:'44,38,34',burstViolet:'33,31,30',ringSimple:'156,59,34',
+    transferArc:'44,38,34',transferArcSoft:'105,88,66',transferTick:'33,31,30',transferNib:'44,38,34',
+    floaterText:'234,225,207',screenFlash:'255,247,225'
   }
 });
 // Blends two registered [r,g,b] plate colours into an `r,g,b` string for a template literal.

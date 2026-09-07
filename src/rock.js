@@ -56,15 +56,21 @@ const rockSpan=(t,r)=>clamp((t-r[0])/(r[1]-r[0]),0,1);
 // twice at a scroll offset with no seam ever showing.
 const ROCK_NW=960,ROCK_NH=900;
 const rockSS=t=>t*t*(3-2*t);
+// Which two lattice columns a pixel falls between, and how far, depends only on its x — so it is worked
+// out once per octave across the row rather than once per pixel. That is eleven passes over most of a
+// million pixels, and hoisting it is the difference between a wall that costs half a second to lay and
+// one that costs a seventh of one.
+const rockX0=new Int32Array(ROCK_NW),rockX1=new Int32Array(ROCK_NW),rockTX=new Float32Array(ROCK_NW);
 function rockOctave(arr,cx,cy,amp,seed){
   const gw=ROCK_NW/cx,gh=ROCK_NH/cy,rnd=seeded(seed),lat=new Float32Array(gw*gh);
   for(let i=0;i<lat.length;i++)lat[i]=rnd();
+  for(let x=0;x<ROCK_NW;x++){const fx=x/cx,ix=fx|0;rockTX[x]=rockSS(fx-ix);rockX0[x]=ix%gw;rockX1[x]=(ix+1)%gw;}
   for(let y=0;y<ROCK_NH;y++){
-    const fy=y/cy,iy=fy|0,ty=rockSS(fy-iy),y0=(iy%gh)*gw,y1=((iy+1)%gh)*gw;
+    const fy=y/cy,iy=fy|0,ty=rockSS(fy-iy),y0=(iy%gh)*gw,y1=((iy+1)%gh)*gw,row=y*ROCK_NW;
     for(let x=0;x<ROCK_NW;x++){
-      const fx=x/cx,ix=fx|0,tx=rockSS(fx-ix),x0=ix%gw,x1=(ix+1)%gw;
+      const tx=rockTX[x],x0=rockX0[x],x1=rockX1[x];
       const t=lat[y0+x0]+(lat[y0+x1]-lat[y0+x0])*tx,b=lat[y1+x0]+(lat[y1+x1]-lat[y1+x0])*tx;
-      arr[y*ROCK_NW+x]+=amp*(t+(b-t)*ty);
+      arr[row+x]+=amp*(t+(b-t)*ty);
     }
   }
 }
@@ -129,9 +135,15 @@ function rockTorchPass(strength){
 }
 function rockPaintWall(){
   rockBakeWall();
-  const tileW=Math.max(1,ROCK_NW*scale),tileH=Math.max(1,ROCK_NH*scale);
+  // One baked sample to one device pixel, and every blit landing on a whole one. The wall's tooth is a
+  // per-pixel term by construction — a hash at the mark scale, which is the scale the era's own risk
+  // lives at, since red ochre survives on warm limestone by being regular against something that is not
+  // — so drawing this tile at anything but its native resolution smears away exactly the detail it
+  // exists to carry, and lands a wall that reads as a fog. The tile still scrolls at the world's own
+  // rate: only how much wall a screen holds changes with the pixel ratio, never how fast it passes.
+  const tileW=ROCK_NW/DPR,tileH=ROCK_NH/DPR,snap=v=>Math.round(v*DPR)/DPR;
   const off=((world.cameraY*scale)%tileH+tileH)%tileH;
-  for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,x,y,tileW,tileH);
+  for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
 }
 
 // ---------- The four primitives, each taking the context they draw into so a hazard's own bake can
