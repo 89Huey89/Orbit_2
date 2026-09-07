@@ -49,8 +49,21 @@ one player, and every conclusion here is only as good as that anchor.
 | 40 ms | 5 | 13 | 29 | 8 | 28 | 26 % | 3 % | 6 |
 | 100 ms | 2 | 10 | 23 | 8 | 23 | 15 % | 0 % | 7 |
 
-`ledger` is the run's whole observation total under `PROGRESSION.md`'s provisional
-`0.35 + 0.65 × documented` over a 240° completion arc.
+`ledger` is the run's whole observation total. **The table above was measured under the older
+`0.35 + 0.65 × documented`.** [JOURNEY.md](JOURNEY.md) §1.4 has since retired both the floor and the
+quality term, so a run's knowledge is now the observed fraction alone. Re-measured under that
+formula, the same hands bank:
+
+| hand | knowledge p10 | median | p90 | mean per encounter |
+|---|---|---|---|---|
+| oracle | 52 | 58 | 64 | 0.60 |
+| 4 ms | 4 | 10 | 23 | 0.50 |
+| **16–25 ms (human)** | **3** | **5** | **13** | **0.44** |
+| 100 ms | 2 | 5 | 10 | 0.58 |
+
+Retiring the floor cost roughly 30 % of the yield. The row depths, capture counts and death causes
+are unchanged by the formula — only the knowledge columns move. Re-run either shape with
+`--floor` and `--span`.
 
 **The release window is about one frame wide.** This was found by accident and is the most
 load-bearing thing here: a pilot that decides and lets go in the same frame survives to the cap,
@@ -91,6 +104,14 @@ within a single run, each era carrying a sheet's worth of art — has a pacing p
 answered before that art is commissioned, and it names the axes an answer could move along: fewer
 eras per run, eras that persist across runs, thresholds that scale with the hand actually playing,
 or a run that is simply much longer than it is today.
+
+**Resolved, on the second axis.** [JOURNEY.md](JOURNEY.md) takes the ladder out of the single run
+entirely: knowledge persists, a run starts at the frontier it left off at, and an era is climbed over
+about five runs rather than four seconds. The whole table above is therefore a record of the problem
+that forced that decision, not a live constraint — the four-seconds-per-century arithmetic only ever
+applied to a ladder that had to fit inside one run. What survives from it into the new design is the
+factor-of-ten spread, which stops being a contradiction to resolve and becomes the mechanism by which
+skill shortens the climb.
 
 ## The second finding, in passing
 

@@ -16,9 +16,9 @@
    error: a player who anticipates well is also sometimes early, which this cannot represent, so a
    given lateness reads as the pessimistic end of the hand it stands for.
 
-   What it reports is what `PROGRESSION.md` says the era thresholds must be read off rather than
-   guessed at: how far a run gets, how many bodies it captures on the way, how much of each orbit it
-   actually holds, and what the observation ledger would therefore stand at by each row. */
+   What it reports is what `JOURNEY.md` reads its era thresholds off rather than guessing them: how
+   far a run gets, how many bodies it captures on the way, how much of each orbit it actually holds,
+   and what the Journey's knowledge would therefore stand at by each row. */
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 
@@ -28,14 +28,11 @@ vm.runInContext(simulation+'\nthis.api={OrbitWorld};',sandbox);
 const {OrbitWorld}=sandbox.api;
 
 const STEP=1/120,TAU=Math.PI*2;
-// The swept arc at which an observation is complete, per KNOWLEDGE-HORIZON.md's own checkpoint, and
-// the ledger PROGRESSION.md proposes over it: a tap-and-run capture banks the floor, a body held to
-// completion banks the whole. Both are provisional there and both are provisional here — they are
-// parameters of the probe precisely so the curve can be re-read once they move.
-const SWEEP_FULL=TAU*2/3,LEDGER_FLOOR=.35,LEDGER_SPAN=.65;
+// The swept arc at which an observation is complete, per KNOWLEDGE-HORIZON.md's own checkpoint. It is
+// a parameter of the probe rather than a constant of it, so the curve can be re-read if it moves.
+const SWEEP_FULL=TAU*2/3;
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const documented=sweep=>clamp(sweep/SWEEP_FULL,0,1);
-const ledgerOf=sweep=>LEDGER_FLOOR+LEDGER_SPAN*documented(sweep);
 
 // The hands the probe flies. The oracle is the suite's own pilot, kept as the top of the scale so a
 // degraded run always has the undegraded one to be read against; every other row is that pilot with
@@ -67,6 +64,14 @@ const PATIENCE=flag('patience',1.5)*TAU;
 // A run is cut off rather than flown forever, because the oracle does not die. Both ceilings are far
 // past anything a hand reaches, so they bind on the oracle's row only.
 const ROW_CAP=flag('rows',200),TIME_CAP=flag('seconds',420);
+// What one encounter contributes to the Journey's knowledge, as `JOURNEY.md` settles it: the observed
+// fraction of the completion arc and nothing else. There is no floor, because an encounter barely
+// looked at has barely been observed, and no landing term, because how cleanly a body was entered is
+// a question about flying rather than about knowing — it stays where it already is, in the score.
+// Both are flags rather than constants so the older `floor + span × documented` shape the planning
+// documents were first written against can still be read off the same instrument for comparison.
+const LEDGER_FLOOR=flag('floor',0),LEDGER_SPAN=flag('span',1);
+const ledgerOf=sweep=>LEDGER_FLOOR+LEDGER_SPAN*documented(sweep);
 const JSON_OUT=args.includes('--json');
 
 // The lateness jitter is drawn from a seeded generator rather than Math.random, so the probe reads
@@ -152,7 +157,8 @@ for(const hand of HANDS){
 
 if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,patience:PATIENCE/TAU,sweepFull:SWEEP_FULL,ledgerFloor:LEDGER_FLOOR,ledgerSpan:LEDGER_SPAN,report},null,2));process.exit(0);}
 
-console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s\n');
+console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s');
+console.log('knowledge per encounter = '+LEDGER_FLOOR+' + '+LEDGER_SPAN+' × documented\n');
 console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
 console.log('-'.repeat(83));
 for(const r of report)console.log(

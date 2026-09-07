@@ -40,8 +40,15 @@ route up the ladder and the two modes would collapse into one.
 
 ### 1.2 The Journey run
 
-A Journey run **starts at the current frontier**, not at era I. Completed eras are accumulated
-knowledge; they are not replayed every run. They stay permanently available in Free Play, unlimited.
+A Journey run **starts at the current frontier**, not at era I, and there is no way to pick an
+earlier era for a Journey run. Completed eras are accumulated knowledge; they are not replayed every
+run. They stay permanently available in Free Play, unlimited.
+
+The one exception is a deliberate **restart**: an explicit "begin the Journey again" action that
+returns the frontier to era I and clears the Journey's knowledge. It never happens implicitly, it is
+confirmed before it runs, and it leaves Free Play's unlocks and every contextual record untouched —
+what it resets is the climb, not the archive. Anyone who wants to re-fly a century without giving up
+their frontier uses Free Play, which is what Free Play is for.
 
 ### 1.3 A transition never ends the run
 
@@ -78,14 +85,26 @@ number of seamless transitions in one continuous run.
 Everything observed during a Journey run contributes permanently, **even if the player dies
 afterwards**. Death ends the attempt, not the knowledge.
 
-Partial observation counts, scaled by how much and how well:
+Partial observation counts, scaled by how much was actually observed:
 
 ```
-knowledgeContribution = observationCompletion × observationQuality
+knowledgeContribution = observationCompletion        // clamp(orbitSweep / SWEEP_FULL, 0, 1)
 ```
 
 A body observed to 80 % contributes more than one abandoned at 30 %. Full completion caps the
 contribution. Full documentation is *not* required for an encounter to have historical value.
+
+**There is no quality term and no floor.** An earlier draft of this design carried
+`completion × observationQuality`; the quality half is retired. How cleanly a body was entered — a
+tangent against a hard turn against a steep arrival — is a question about *flying*, not about
+*knowing*, and it already has a home: `capture()` pays it in score and in the ink dividend, where a
+steep arrival earns nothing at all. Knowledge is what was looked at. A floor is likewise refused: an
+encounter barely looked at has barely been observed, and a floor would pay a tap-and-run capture for
+an observation it never made.
+
+This is the one place where landing skill and knowledge are deliberately decoupled, and it is what
+keeps §1.5's milestones honest — an era is reached by looking, and the endless score is where flying
+is judged.
 
 This keeps the existing release decision live and must not become a waiting mechanic:
 
@@ -111,11 +130,45 @@ Indicative milestones (final wording per era file):
 | Space Age | remote mapping · physical arrival · orbital survey |
 | von Neumann | — per `08-probe.md` |
 
-**Milestone opportunities must be guaranteed by generation.** Historical progression may never be
-blocked indefinitely by RNG. An era whose milestone needs a `sling` body must be able to rely on one
-arriving.
+**How a milestone is recognised — the hybrid rule.** Each era's milestones carry that era's own name
+and its own share of the background artwork, but their *conditions* are, wherever possible, written
+over signals the simulation already emits and `ledger.js`'s `UNLOCKS` already knows how to read:
+captures by node type, perfects, constellations completed, bodies carried to full documentation,
+rows reached. Those can never be blocked by generation, because the generator already produces them.
 
-### 1.6 Contextual records
+**At most one curated condition per era** — one that genuinely needs its own generation guarantee,
+because it is the milestone that makes that century *that century* rather than a counter with a
+costume. That one is the era's own, and the generator owes it: an era whose milestone needs a `sling`
+body, a fork, or a particular hazard must be able to rely on one arriving.
+
+**Milestone opportunities must be guaranteed by generation.** Historical progression may never be
+blocked indefinitely by RNG. Holding the curated conditions to one per era keeps that promise to
+eight guarantees rather than to thirty, and keeps each one auditable on its own.
+
+### 1.6 How long the climb is
+
+**Five typical runs per era. Eight eras. Roughly forty runs for the whole ladder.**
+
+The threshold is the derived quantity, not the decision. Measured under §1.4's formula, a run at the
+author's own standard banks a median of **5** knowledge, so:
+
+```
+era threshold  = 25          (5 runs × 5 knowledge)
+whole ladder   = 200         (8 × 25)
+```
+
+Both are starting values to be re-read off `scripts/probe.mjs` once stage 6 is playable, not
+constants to defend. What matters is the shape they produce, and it is the shape §1.3 asks for:
+
+- A typical run banks 5 and clears a fifth of an era. No single ordinary run advances the ladder
+  alone, so an era is genuinely lived in rather than passed through.
+- A strong run (the 4 ms hand: median 10, p90 23) covers two to five typical runs' worth, so skill
+  visibly shortens the climb without collapsing it.
+- A near-perfect run banks 58 — **2.3 eras in one run**. Multiple transitions inside one continuous
+  run therefore happen, exactly as §1.3 requires, and happen only for exceptional play. The design
+  did not have to add anything to make that true; it falls out of the numbers.
+
+### 1.7 Contextual records
 
 No single universal high score. `orbit.best.v1` migrates forward into contextual records without
 breaking existing saves:
@@ -126,14 +179,14 @@ breaking existing saves:
 - **Final Frontier** — true endless score after the von Neumann era; this becomes the primary global
   endless record
 
-### 1.7 Endless is one shared driver, not eight curves
+### 1.8 Endless is one shared driver, not eight curves
 
 One normalised difficulty driver that keeps rising with run duration and progression, feeding chart
 pace, boundary speed, transfer distance, capture tolerance, hazard strength, gravity, wind, special
 object density and transfer complexity. Eras may apply restrained multipliers or economy
 differences on top. Solve endless growth **once**, not eight times.
 
-### 1.8 The era roster
+### 1.9 The era roster
 
 The user's names and the existing document names are the same eight rungs. Both are used in the
 repository; this table is the mapping.
@@ -161,7 +214,7 @@ An implementer reading the older documents will otherwise be actively misled. Th
 | "Open on any era already reached" is retired from v1 | `OPEN-QUESTIONS.md` item 11 | reinstated — it is the design. Its stated reason (an era whose ledger was never filled) dissolves once the ledger persists |
 | Reaching era VIII ends progression, then endless begins | `OVERVIEW.md`, `PROGRESSION.md` | endless scaling is needed from stage 4, for every unlocked era in Free Play |
 | The daily exists partly so players see other eras | `DANGERS.md` | the daily is a fairness instrument only; Free Play covers era access |
-| One universal record (`orbit.best.v1`) | shipped code | contextual records, §1.6 |
+| One universal record (`orbit.best.v1`) | shipped code | contextual records, §1.7 |
 | Build order: spine → Lens → Ceiling → … → Rock sixth | `OVERVIEW.md`, `IMPLEMENTATION.md` | the Rock is stage 2 — it is the front door |
 | The transition is a page turn between runs / a ten-step set piece that may pause play | `PROGRESSION.md` | it happens inside the arcade flow and never interrupts, §1.3 |
 
@@ -177,21 +230,28 @@ From `scripts/probe.mjs` (see `MEASUREMENTS.md`), 150 seeds per hand:
 
 - **Captures ≈ rows**, 1:1 on the main route.
 - **A hand calibrated to real play** (the author reaches ≈ row 20) is the 16–25 ms rung: median row
-  16, ~10 captures, ~35 s, banking ~7 ledger under the provisional `0.35 + 0.65 × documented`.
-- **A perfect pilot** banks 72 and survives to row 437 without dying. The spread between the two is
-  a factor of ten and no single threshold serves both — which is exactly why progression is now
-  persistent.
-- **Threshold arithmetic** for the human rung: threshold 7 → ~1 run per era → ~8 runs for the
-  ladder; 15 → ~2 runs per era; 20 → ~3. A 10–20 run arc is the target shape.
+  16, ~10 captures, ~35 s, a mean documented fraction of **0.44** per encounter, banking a median of
+  **5 knowledge** per run under §1.4's formula.
+- **A perfect pilot** banks 58 and survives to row 437 without dying. The spread between the two is
+  more than a factor of ten and no single threshold serves both — which is exactly why progression is
+  now persistent, and why one exceptional run crossing two era boundaries falls out of the numbers
+  instead of needing a rule.
+- **The run's whole knowledge total** for the human rung spreads p10–median–p90 as **3–5–13**. At
+  §1.6's threshold of 25 no ordinary run clears an era alone, which is the intended shape.
+- **These numbers moved when the formula did.** Under the earlier `0.35 + 0.65 × documented` the same
+  hand banked 7 and the oracle 72. Retiring the floor and the quality term (§1.4) cost roughly 30 %
+  of the yield. Any future change to the formula invalidates the threshold; re-run the probe with
+  `--floor` and `--span` rather than scaling the old number by hand.
 - **The release window is about one frame wide.** The same pilot costed a single 8 ms frame collapses
   from surviving the cap to a median of row 26. 57–80 % of runs die by leaving the star chart.
   Nothing in the era work may narrow that window.
-- **Endless is flat today**, which is why §1.7 is stage 4 and not stage 7: `chartPace`'s clamp
+- **Endless is flat today**, which is why §1.8 is stage 4 and not stage 7: `chartPace`'s clamp
   plateaus near row 28; `darknessSpeed()` has a *second*, independent wall-clock clamp that saturates
   around 236 s; hazard radius caps near k≈57; nebula radius is hard-capped with no row term; wind
   reach/force and the gravity pull coefficient have **no** row dependence at all.
 
-Re-run with `node scripts/probe.mjs`; `--seeds`, `--patience`, `--rows`, `--seconds`, `--json`.
+Re-run with `node scripts/probe.mjs`; `--seeds`, `--patience`, `--rows`, `--seconds`, `--floor`,
+`--span`, `--json`.
 
 ---
 
@@ -317,7 +377,7 @@ n.transition        boolean, the derived designation flag
 world.eraId         1..8, the current era ordinal
 world.eraKnowledge  the run's accumulating contribution for the current era
 world.transitionReady
-world.difficultyDriver()   the shared endless scalar, §1.7
+world.difficultyDriver()   the shared endless scalar, §1.8
 ```
 
 **Persistence** (new file `src/journey.js`, loaded after `ledger.js`):
@@ -327,6 +387,9 @@ JOURNEY_KEY = 'orbit.journey.v1'
 journey = {era:1, knowledge:0, milestones:{}, unlocked:[1], bests:{}}
 journeyCommit()     folds the run's contribution in; called on death and on page-hide,
                     exactly as ledger.js already does for the lifetime document
+journeyReset()      §1.2's deliberate restart — era back to 1, knowledge and milestones cleared,
+                    `unlocked` and `bests` untouched. Confirmed before it runs; never implicit.
+ERA_THRESHOLD       §1.6's 25, one number until an era earns its own
 ```
 
 **Mode** — one global, read by `plates.js` and `ui.js`:
@@ -415,7 +478,7 @@ conversions; `src/journey.js`.
   `runMode`. Free Play era selection reuses `ledger.js`'s `UNLOCKS`/`isUnlocked()`/`setCosmetic()`
   machinery — an era becomes an unlockable whose condition reads the Journey document. **The
   selection UI does not need to be designed; it needs to be re-pointed.**
-- Migrate `orbit.ledger.v1` and `orbit.best.v1` forward into §1.6's contextual records. Never mutate
+- Migrate `orbit.ledger.v1` and `orbit.best.v1` forward into §1.7's contextual records. Never mutate
   a stored shape in place.
 
 *Proven by*: two eras' cache entries at the same index never collide; `laidPaper()`/`laidSheetFor()`/
@@ -503,13 +566,15 @@ If that passes with placeholder visuals, the progression architecture is correct
 
 Decisions this file does not make, and which should not be invented by an implementer:
 
-- **The milestone tables for China and von Neumann**, and the final wording of all eight.
-- **Thresholds.** §3 gives the arithmetic and the instrument; the numbers are chosen against the
-  probe once stage 6 is playable, not before.
-- **`observationQuality`'s definition.** §1.4 fixes the shape; whether quality means the capture's
-  tangency, its arrival angle, or something else is not settled.
-- **Whether a Journey run may be started deliberately in an earlier era** (a "replay history" option
-  distinct from Free Play).
+- **The milestone tables for China and von Neumann**, and the final wording of all eight — including
+  which single condition per era is the curated one §1.5 allows.
+- **The threshold's final value.** §1.6 sets 25 per era from the measurement, which fixes the *shape*
+  — five typical runs per era, forty for the ladder. The number itself is re-read off the probe once
+  stage 6 is playable and the milestones, not the raw total, are what actually gate an era.
+- **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and
+  §1.6 measures the climb in knowledge; whether the milestones *are* the gate with the total merely
+  pacing them, or both must be satisfied, is not settled and should be decided in stage 6 against a
+  playable ladder rather than on paper.
 - **What the von Neumann era's own transition withholds** that no earlier one does, now that every
   transition grows outward from the traveller.
 - **Era VII's black space as a material** — the frontier needs a substance to fail in.
