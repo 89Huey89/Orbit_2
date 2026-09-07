@@ -167,6 +167,36 @@ limestone by being *regular* against something that is not — so upscaling it d
 detail the era's whole legibility rests on, and the sheet reads as fog. Drawn at one baked sample to
 one device pixel and snapped to whole ones, the same field reads as stone.
 
+**And what the ground had to become before it read as a cave at all.** The first built wall was the
+spike's own — three fields of wrapped value noise, shaded from the relief's gradient — and against
+photographs of Chauvet the author's verdict was that it read as textured plaster rather than as rock.
+The diagnosis is worth keeping, because it is about a class of surface rather than about this era: **a
+fractal field is continuous everywhere, and nothing in it ever stops.** Limestone stops. What the
+photographs carry over the broad undulation is discontinuity — a front where the crust ends, a face
+that has spalled, a crease the wall folds along, hairlines that end on one another — and none of that
+is a height field.
+
+Two ways of adding it failed first, and both failed for the same reason. Cutting the faces as
+straight-edged polygons, on the reasoning that limestone parts along flat planes, produced a net of
+outlines: what makes a margin read as a break is *the tone stepping across it*, not the margin being
+straight, and nothing in a cave is a straight line at that scale. Drawing them instead as curved blobs
+filled through `multiply` and `screen` read as watercolour laid on top, because the boundary was a
+clean vector curve while everything under it had grain. **A zone is not a shape drawn over a surface;
+it is a threshold taken in the surface's own pass** — on a slow field pushed by the fine relief and by
+the same per-pixel hash that carries the tooth, so a front is lobed at the scale of the rock and ragged
+at the scale of the grain. The crust then carries its popcorn as *height* rather than as colour, so the
+one light that shades the wall shades the crust with it. Crazing is a masked cell partition, so every
+hairline ends on another, and carries no lit lip: a hairline crack is a line of shadow and nothing
+else, and giving it a highlight is what makes a wall read as crackled glass.
+
+**Then it had to be taken back down again, and that is the half worth remembering.** The first wall
+with all of that in it was more eventful than the marks on it, and this era's own rule is that ochre
+survives on warm limestone by being *regular against a ground that is not*. A ground that busy takes
+from the marks exactly what it was meant to give them. Halving the zones' coverage and cutting the tone
+across each front to about a third — while keeping every front just as abrupt — restored it. The test
+that settled it is not "does this look like rock" but **"are the marks still the most regular thing in
+the frame"**, and it is the test every era's ground should be held to.
+
 Two things follow for every era after this one. **A baked ground is drawn at its native resolution or
 it is not worth baking**, and the tile's size in world units is then a consequence of the pixel ratio
 rather than a constant — which is fine, because what must stay constant is the rate the ground scrolls

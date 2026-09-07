@@ -23,14 +23,14 @@
 definePlate('rock',{
   night:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'164,146,116',shaft:'4,3,3',dark:'2,2,2',
+    stone:'170,152,120',shaft:'4,3,3',dark:'2,2,2',
     ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'236,226,200',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'},
+    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'164,146,116',shaft:'4,3,3',dark:'2,2,2',
+    stone:'170,152,120',shaft:'4,3,3',dark:'2,2,2',
     ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'236,226,200',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'}
+    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'}
 });
 
 // ---------- The tunable rows ----------
@@ -161,9 +161,9 @@ function rockHeightPass(F,y0,y1){
       const sav=(SA[a0]+(SA[a1]-SA[a0])*tx)*(1-ty)+(SA[b0]+(SA[b1]-SA[b0])*tx)*ty;
       let h=Math.imul(x,0x9E3779B1)^Math.imul(y,0x85EBCA77);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;
       const t1=(h&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5;
-      const cm=rockStep(.69,.72,crv+hn*.22+t1*.015),bm=rockStep(.80,.81,bfv+hn*.03),fold=1-Math.abs(bfv*2-1);
-      const sm=rockStep(.75,.78,sav+hn*.2+t1*.01)*SZ[a0],th=cm*ST[a0];
-      H[i]=hl+fold*.04+hn*.05+cm*.008+GR[i]*ROCK_K*.014*th-bm*.045-sm*.006-FM[i]*ROCK_K*.006;
+      const cm=rockStep(.77,.80,crv+hn*.20+t1*.012),bm=rockStep(.80,.81,bfv+hn*.03),fold=1-Math.abs(bfv*2-1);
+      const sm=rockStep(.78,.80,sav+hn*.2+t1*.01)*SZ[a0],th=cm*ST[a0];
+      H[i]=hl+fold*.04+hn*.05+cm*.008+GR[i]*ROCK_K*.011*th-bm*.03-sm*.006-FM[i]*ROCK_K*.006;
       CM[i]=cm/ROCK_K;BM[i]=bm/ROCK_K;SM[i]=sm/ROCK_K;
     }
   }
@@ -184,7 +184,7 @@ function rockCraze(x,y,wx,wy,hn,t2,cz,FX,FY){
   }
   let e=Math.imul(Math.min(c1,c2),0x27d4eb2f)^Math.imul(Math.max(c1,c2)+1,0x165667b1);e=Math.imul(e^(e>>>15),0x2C1B3C6D);e^=e>>>13;
   if((e&255)*ROCK_K>=.08+cz*.72)return 0;
-  return (1-rockStep(.5,1.8,Math.sqrt(f2)-Math.sqrt(f1)+hn*.6))*(.14+((e>>>8)&255)*ROCK_K*.2+t2*.12);
+  return (1-rockStep(.5,1.8,Math.sqrt(f2)-Math.sqrt(f1)+hn*.6))*(.1+((e>>>8)&255)*ROCK_K*.16+t2*.1);
 }
 // The light and the minerals. The torch stands below and to the left of the sheet, so a surface climbing
 // to the right or downward faces it, and a spalled face lies in the shadow the lip nearest the torch
@@ -204,17 +204,17 @@ function rockShadePass(F,y0,y1){
       const t1=(h&255)*ROCK_K-.5,t2=((h>>>8)&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5,gr=GR[i]*ROCK_K,cm=CM[i]*ROCK_K,bm=BM[i]*ROCK_K,sm=SM[i]*ROCK_K,sf=SF[qi];
       const gx=(H[row+xp]-H[row+xm])*.5,gy=(H[yp+x]-H[ym+x])*.5;
       const shade=bm*(.1+(1-BM[yd3+xl3]*ROCK_K)*.22+(1-BM[yd8+xl8]*ROCK_K)*.14),th=cm*ST[qi];
-      const lam=Math.min(1.28,Math.max(.06,((.62*gx-.60*gy)*46+bl+cm*.08)*(1-shade)*(1-th*(1-gr)*.22)*(1-cm*(1-cm)*1.3)+t1*(.06+cm*.05)));
-      const pm=rockStep(.86,.92,gr*.7+hn*.6+t1*.15)*MP[qi]*(1-cm),iron=sf*.5+rockStep(.6,.66,sf+hn*.12)*.35,mn=MN[qi]*(.6+hn*.8);
+      const lam=Math.min(1.28,Math.max(.06,((.62*gx-.60*gy)*46+bl+cm*.03)*(1-shade)*(1-th*(1-gr)*.16)*(1-cm*(1-cm)*.8)+t1*(.06+cm*.03)));
+      const pm=rockStep(.88,.93,gr*.7+hn*.6+t1*.15)*MP[qi]*(1-cm),iron=sf*.5+rockStep(.6,.66,sf+hn*.12)*.2,mn=MN[qi]*(.6+hn*.8);
       // The line is wobbled by the fine relief, read a way off for its second axis, which is as good as
       // a second field and costs nothing.
       let craze=0;const cz=CZ[qi]*(1-cm);
       if(cz>.02||(cm<.5&&FA[cyi*ROCK_CW+((x/ROCK_CELL)|0)]))craze=rockCraze(x,y,x+hn*5,y+(HN[(i+137*NW+251)%N]*ROCK_K-.5)*5,hn,t2,cz,FX,FY)*(1-cm);
       let r=st[0],gg=st[1],b=st[2],w=iron*.7*(1-cm);r+=(ir[0]-r)*w;gg+=(ir[1]-gg)*w;b+=(ir[2]-b)*w;
-      w=(sm*.5+bm*.4)*(1-cm);r+=(sc[0]-r)*w;gg+=(sc[1]-gg)*w;b+=(sc[2]-b)*w;
-      w=cm*(.25+th*.65)*(.85+t2*.3)*(.75+gr*.25);r+=(cu[0]-r)*w;gg+=(cu[1]-gg)*w;b+=(cu[2]-b)*w;
-      w=mn*(.75-cm*.3);r+=(mg[0]-r)*w;gg+=(mg[1]-gg)*w;b+=(mg[2]-b)*w;
-      w=Math.min(1,craze+FM[i]*ROCK_K*.4+pm*.55);r+=(ck[0]-r)*w;gg+=(ck[1]-gg)*w;b+=(ck[2]-b)*w;
+      w=(sm*.4+bm*.4)*(1-cm);r+=(sc[0]-r)*w;gg+=(sc[1]-gg)*w;b+=(sc[2]-b)*w;
+      w=cm*(.1+th*.28)*(.85+t2*.3)*(.75+gr*.25);r+=(cu[0]-r)*w;gg+=(cu[1]-gg)*w;b+=(cu[2]-b)*w;
+      w=mn*(.4-cm*.15);r+=(mg[0]-r)*w;gg+=(mg[1]-gg)*w;b+=(mg[2]-b)*w;
+      w=Math.min(1,craze+FM[i]*ROCK_K*.3+pm*.45);r+=(ck[0]-r)*w;gg+=(ck[1]-gg)*w;b+=(ck[2]-b)*w;
       const o=i*4;d[o]=Math.min(255,r*lam);d[o+1]=Math.min(255,gg*lam);d[o+2]=Math.min(255,b*lam);d[o+3]=255;
     }
   }
@@ -240,7 +240,7 @@ function rockBakeWall(){
   // The zones are decided here, once, on the slow fields: where the crazing gathers, where the wall is
   // pitted, where manganese has bloomed, how thick the crust is, and where scales have come away.
   const MP=q(),MN=q(),ST=q(),SZ=q();
-  for(let i=0;i<ROCK_QN;i++){const sf=SF[i],mb=MB[i];CZ[i]=rockStep(.71,.77,CZ[i]);MP[i]=rockStep(.36,.54,mb);MN[i]=rockStep(.66,.9,mb);ST[i]=rockStep(.3,.8,sf);SZ[i]=rockStep(.3,.42,sf)*(1-rockStep(.5,.6,sf));}
+  for(let i=0;i<ROCK_QN;i++){const sf=SF[i],mb=MB[i];CZ[i]=rockStep(.82,.87,CZ[i]);MP[i]=rockStep(.44,.58,mb);MN[i]=rockStep(.80,.96,mb);ST[i]=rockStep(.3,.8,sf);SZ[i]=rockStep(.34,.42,sf)*(1-rockStep(.46,.54,sf));}
   // The crease: the break field's middle contour, folded into the relief, so the wall turns a corner
   // along one long sweeping line and its two flanks take the light differently; the height pass lays
   // the sharp crest itself along the same line at full size.
@@ -262,7 +262,7 @@ function rockBakeWall(){
   // already running stays slow to its end. The first bake is the one that counts.
   const S=new Float32Array(N),HN=new Uint8Array(N),GR=new Uint8Array(N),FM=new Uint8Array(N);
   const cr=seeded(0xc4a2e),cn=ROCK_CW*ROCK_CH,FX=new Float32Array(cn),FY=new Float32Array(cn),FA=new Uint8Array(cn);
-  for(let k=0;k<cn;k++){FX[k]=cr();FY[k]=cr();FA[k]=cr()<.03?1:0;}
+  for(let k=0;k<cn;k++){FX[k]=cr();FY[k]=cr();FA[k]=cr()<.015?1:0;}
   const c=makeCanvas(NW,NH),g=c.getContext('2d'),img=g.createImageData(NW,NH),tok=n=>ink.rock[n].split(',').map(Number);
   const F={HL,BL,CR,SF,ST,SZ,BF,MP,MN,SA,CZ,HN,GR,FM,H:S,CM:new Uint8Array(N),BM:new Uint8Array(N),SM:new Uint8Array(N),FX,FY,FA,d:img.data,
     st:tok('stone'),cu:tok('crust'),sc:tok('scar'),ir:tok('stain'),mg:tok('manganese'),ck:tok('crack')};
