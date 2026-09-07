@@ -686,7 +686,7 @@ function drawNode(n,aim){
   }
   const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
   {
-    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed);
+    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed,!active&&!n.visited);
     const fit=ring.size*(ring.radius>0?r/ring.radius:1);
     ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
   }
