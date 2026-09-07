@@ -1,5 +1,5 @@
 'use strict';
-/* Orbit · Era III · The Ceiling
+/* Orbit · Era II · The Ceiling
    A playable, render-only reconstruction grounded in Senenmut's astronomical ceiling (TT353).
 
    Historical boundary:
@@ -63,6 +63,53 @@ const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // so the two can never drift apart. They are kept short on purpose: the outer two are set under the
 // circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
 const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
+const CEILING_LOSS={
+  'THE DARK CAUGHT UP':'THE WALL BROKE AWAY BENEATH',
+  'THE ORBIT FADED':'THE HOUR-CIRCLE FADED',
+  'DRAWN INTO A VORTEX':'APEP TOOK THE NIGHT BARQUE',
+  'SEARED BY A SUNSPOT FLARE':'THE EYE BURNED THE BARQUE',
+  'LEFT THE STAR CHART':'THE BARQUE LEFT THE REGISTER',
+  'THE NIB RAN DRY':'THE REED RAN DRY'
+};
+// The colophon's observation line, recast from the atlas's Latin (TRES PERFECTI, VELOCITAS SUMMA…)
+// into short curatorial captions in the Ceiling's own register — the era's Latin layer is only a
+// modern gloss, and several of the underlying words are themselves recalled rather than re-verified
+// (see docs/eras/03-ceiling.md's Names table), so nothing here is offered as hieroglyphic prose.
+// Keyed on the observation's own key (src/simulation.js's OBSERVATIONS), the same way CEILING_LOSS
+// is keyed on world.reason.
+const CEILING_OBSERVATIONS={
+  perfectThree:'THREE CLEAN TRANSFERS',
+  skipFive:'FIVE HOUR-CIRCLES SKIPPED',
+  maxSpeed:'THE BARQUE AT FULL SPEED',
+  graze:'APEP GRAZED AT FULL SPEED',
+  pureChart:'A DECAN COURSE IN CLEAN TRANSFERS',
+  fortyRows:'THE FORTIETH ROW',
+  threeMinutes:'THREE HOURS OF THE NIGHT',
+  rightAngle:'A RIGHT ANGLE ON THE CANON GRID'
+};
+// The era's whole vocabulary, registered under its own name so plateWords() can lay it over the
+// atlas's (see defineVoice()/plateWords() in src/plates.js): everything this table does not rename —
+// a tip it leaves as the atlas wrote it, a chrome field it does not mention — stands as the atlas's
+// own. `entry` is deliberately absent from chrome below: it is read from the atlas's own voice on
+// every plate, this one included, so the button that opens an era never has to ask which one it is.
+defineVoice('ceiling',{
+  chart:'DECAN COURSE',
+  chartNoun:'decan course',
+  chartSaid:'Decan course complete. Sixty bonus points. The wall holds for four seconds.',
+  observations:CEILING_OBSERVATIONS,
+  pressures:CEILING_COURSES,
+  pressureSet:'COURSE SET · {label}',
+  losses:CEILING_LOSS,
+  opening:'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.',
+  ended:'Preview run complete. Score {score}. Tap to try again or return to the atlas.',
+  unrecorded:'ERA PREVIEW · NOT RECORDED',
+  hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD'},
+  chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',pauseTitle:'The barque rests.',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.'},
+  tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.'},
+  chapters:CEILING_HOURS,
+  chapterSaid:'Hour {numeral}. {name}.',
+  held:{choose:'Choose the first hour-circle — your landing sets the course.',dry:'The reed is dry. Hold this circle, or seek the bright star.',sling:'One circuit quickens the barque. A clean landing keeps its course.',release:'Release when the painted dabs skim the next circle.',bend:'Apep bends the course. Follow the dabs; give the serpent room.'}
+});
 let ceilingWall=null,ceilingWallKey='',ceilingWallWatch=-1;
 // P2 · a register per watch. ceilingWall is keyed on the watch as well as the size, so each of the
 // four now bakes its own tile (see ceilingWatch()/ceilingBakeWall() below). ceilingChangeover is the
@@ -1702,3 +1749,25 @@ function renderCeiling(dt,aim){
   ceilingDrawRunningHead(dt);
   if(screenFlash>0){ctx.fillStyle=`rgba(157,55,36,${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
 }
+// The era's own hand: the whole frame above (renderCeiling) and its own five sounds
+// (docs/eras/03-ceiling.md's "Sound") — four painters below plus scratch's own parameter row, since
+// audio.js's scratch() draws its grain from a row of numbers rather than calling out to a function.
+// See defineHand()/handFor() in src/plates.js; everything neither names is still the atlas's own.
+defineHand('ceiling',{
+  frame:renderCeiling,
+  // In place of the quill: a muller grinding pigment on a stone slab. The grind is the same grain
+  // audio.js's scratch() always drew, at a lower, rougher setting — wider, slower and pitched down
+  // into the register a stone mortar rings in — never a second engine, per docs/eras/03-ceiling.md's
+  // "Sound".
+  scratch:{band:[260,380],q:[.5,1.1],peak:.075,attack:.006,dur:[.05,.05],gap:[.05,.07],ease:.02},
+  // A wet dab of pigment in place of the note off the row's own scale — the wall keeps no key, so
+  // nothing here climbs a scale — and a perfect transfer's dry brush-flick in place of the second
+  // chime: the loaded reed dragged once, dry, clear of the wet mark it just left; see
+  // docs/eras/03-ceiling.md's "Sound".
+  capture(a,row,perfect){a.tone(150,.24,0,.34,'sine',88);a.brush(480,.24);if(perfect)a.brush(2300,.15);},
+  // A dropped stone in place of the dying chord — one low strike and a short low knock, over fast,
+  // because a dropped stone does not ring the way a struck string does.
+  death(a){a.tone(88,.4,0,.55,'sine',32);a.brush(150,.5);},
+  // The naos sistrum (audio.js's own method), in place of the atlas's rising three-note chime.
+  medal(a){a.sistrum();}
+});

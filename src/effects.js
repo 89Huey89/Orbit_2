@@ -498,6 +498,9 @@ const OBSERVER_MARKS={
     ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-length*.6,breath*1.5);ctx.stroke();
   }
 };function drawPlayer(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('player');if(own)return own();
   if(world.state==='dead')return;const p=world.player,flight=!p.node;
   const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge(),inkHeld=world.inkLevel();
   const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
@@ -702,6 +705,9 @@ function drawDarkMarginalia(fy,time,alpha){
   ctx.restore();
 }
 function drawDark(dt=0){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('dark');if(own)return own(dt);
   // Match the visible hairline to the simulation's exact loss threshold.
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;

@@ -732,6 +732,9 @@ function grainSheet(){
   grainSheetCanvas=c;grainSheetKey=key;grainSheetSource=grain;return c;
 }
 function drawAtmosphere(dt=0,aim=null){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('atmosphere');if(own)return own(dt,aim);
   ctx.drawImage(backdrop,0,0,W,H);
   const chapter=clamp(Math.floor(world.progress/8),0,3);
   if(world.state!=='paused')regionBlend=lerp(regionBlend,chapter,1-Math.exp(-dt*.8));
