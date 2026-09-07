@@ -109,7 +109,7 @@ The atlas draws four separate records of a transfer. The Ceiling draws one and c
 | `drawSurveys()` — every departure and every landing measured, with arcs, ticks and numerals (`src/effects.js:146–335`) | *nothing* |
 | `drawTransferMark()` / `drawInkSplat()` / the drying blot / `burinArc()` (`src/effects.js:800–868`) | one flat red ellipse and one plain `ctx.arc` for **all four** ring kinds (`src/ceiling.js:496`) |
 
-**P6 · The route is dabs, not a line.** `03-ceiling.md` says in as many words that "the route is a
+**P6 · The route is dabs, not a line.** `02-ceiling.md` says in as many words that "the route is a
 sequence of brush dabs," the frontispiece copy promises "the painted dabs," and the aim guide
 already draws dabs — but the *flown* route is a continuous double line. Lay it as discrete loaded
 dabs, spaced by speed so the fast stretches thin out, which restores the speed reading the atlas
@@ -185,7 +185,7 @@ the barque.
 
 `src/audio.js` is shared wholesale and nothing in the Ceiling path touches it: flying the barque
 across a painted wall plays a **quill scratching on paper** (`audio.scratch`, called unconditionally
-from `src/ui.js:545`), and captures play the atlas's glass tones. `03-ceiling.md` already specifies
+from `src/ui.js:545`), and captures play the atlas's glass tones. `02-ceiling.md` already specifies
 the era's five sounds — a pigment grind on the orbit hold, a wet dab at a capture, a dry brush-flick
 at a perfect release, a low stone thud at death, a sistrum rattle at a completed course.
 
@@ -270,14 +270,14 @@ document early rather than at the end.
 ## What the facsimile corrected
 
 Partway through the build a high-resolution photograph of the Wilkinson facsimile of TT353 — the
-document `03-ceiling.md` already named as "the visual test for every decision on the built sheet" —
+document `02-ceiling.md` already named as "the visual test for every decision on the built sheet" —
 was read directly against the built wall for the first time. It overturned three things, and two of
 them were instructions given in this file's own voice. They are recorded here because the pattern
 matters more than the three fixes: a plausible reading of a photograph is not a source, and the
 sheet had been drifting on plausible readings.
 
 - **The star band.** A blue ground carrying yellow stars was inferred from a *different* Theban
-  ceiling and nearly written into this one — exactly the compositing `03-ceiling.md` forbids. TT353's
+  ceiling and nearly written into this one — exactly the compositing `02-ceiling.md` forbids. TT353's
   own bands are three staggered rows of five-lobed outlined stars over the red canon, framing every
   panel on all four sides. The band is now the sheet's main framing device, as it is on the wall.
 - **The twelve month circles.** This file complained that they read as "twelve identical wagon
@@ -333,7 +333,7 @@ sheet had been drifting on plausible readings.
 
   The thing to hold on to is that **KV17 is a different document, not more of this one.** It is
   Nineteenth Dynasty, roughly 1290 BCE — about a hundred and seventy years after TT353 — a different
-  tomb and a different reign, and its blue ground is exactly the reading `03-ceiling.md` rejects for
+  tomb and a different reign, and its blue ground is exactly the reading `02-ceiling.md` rejects for
   *this* sheet. This file already records one instance of a blue star band being inferred from
   another Theban ceiling and nearly composited in. So if a dark mode is built it is a **second plate
   pulled from a second document and named as such**, the way the atlas carries a night plate and a

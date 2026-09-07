@@ -130,7 +130,7 @@ rather than a gauge.
   section already describes.
 - **[The Ceiling](02-ceiling.md)** — the decan table filling in, register by register, in the hand
   Senenmut's ceiling already lays out.
-- **The Scroll** — the star chart becoming complete, asterism by asterism, in the
+- **[The Scroll](03-scroll.md)** — the star chart becoming complete, asterism by asterism, in the
   diagrammatic order [research/china.md](research/china.md) documents.
 - **[The Astrolabe](04-astrolabe.md)** — the instrument's own geometry assembling, ring by ring,
   toward the catalogue it was built to read.
@@ -139,7 +139,7 @@ rather than a gauge.
 - **[The Lens](06-lens.md)** — the catalogue forming across whichever of its three registers the
   run is passing through: the resolving telescope's log, the survey plate's grid, or the rendered
   measurement's table.
-- **The Flyby** — the mission map completing, frame by frame, the way a real flyby's
+- **[The Flyby](07-flyby.md)** — the mission map completing, frame by frame, the way a real flyby's
   own image mosaic was assembled from a single spacecraft's pass.
 - **[The Probe](08-probe.md)** — the daughter's own blueprint assembling from the ancestral plaque,
   filling toward the moment it is complete enough to be copied and launched. Nothing in the brief

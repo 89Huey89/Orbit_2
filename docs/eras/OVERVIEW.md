@@ -79,12 +79,12 @@ the end of the story. That is the entire engineering bill for a run that never h
 | | Era | When | Controlling document | Currency | Knowledge gain |
 |---|---|---|---|---|---|
 | **I** | [The Rock](01-rock.md) | c. 40,000–3,000 BCE | Lascaux, the Hall of the Bulls | ochre | phenomenon → memory |
-| **II** | [The Ceiling](02-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | pigment | phenomenon → named, ordered element |
-| **III** | The Scroll | c. 649–684 CE | the Dunhuang star chart, BL Or.8210/S.3326 | ink, the brush | individual light → catalogued relationship |
-| **IV** | [The Astrolabe](04-astrolabe.md) | 964–1437 CE | al-Ṣūfī's catalogue, read through the instrument | the measured line | visible object → measurable object |
+| **II** | [The Ceiling](02-ceiling.md) | c. 1473–1458 BCE | Senenmut's astronomical ceiling, TT353 | the *khar* | phenomenon → named, ordered element |
+| **III** | [The Scroll](03-scroll.md) | c. 649–684 CE | the Dunhuang star chart, BL Or.8210/S.3326 | ink, the brush | individual light → catalogued relationship |
+| **IV** | [The Astrolabe](04-astrolabe.md) | 964–1437 CE | al-Ṣūfī's catalogue, read through the instrument | the *ḥibr* | visible object → measurable object |
 | **V** | [The Engraving](05-engraving.md) | c. 1540–1610 | Bayer's *Uranometria*; the atlas page | ink, the quill | observation → recorded knowledge |
 | **VI** | [The Lens](06-lens.md) | 1610–1990 | Galileo → the Carte du Ciel → the rendered sphere | exposure | light → world |
-| **VII** | The Flyby | 1965– | Mariner 4, Voyager, the mission mosaic | propellant | world → place |
+| **VII** | [The Flyby](07-flyby.md) | 1965– | Mariner 4, Voyager, the mission mosaic | propellant | world → place |
 | **VIII** | [The Probe](08-probe.md) | the far future | the von Neumann probe | mass | place → autonomously explored world |
 
 Era VI carries three registers rather than one sheet — the resolving telescope, the photographic
