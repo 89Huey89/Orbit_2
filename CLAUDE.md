@@ -24,6 +24,10 @@ plate; nothing in it describes shipped behaviour.
   `node:assert/strict`).
 - `npm run build` — bundles into `dist/index.html` + `dist/assets/` via
   `scripts/bundle.mjs`.
+- `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
+  levels of hand and reports how deep a run actually gets, what it captures, and what the era
+  progression's observation ledger would stand at by each row. Makes no assertions and is not run by
+  `npm test`. Its first reading is `docs/eras/MEASUREMENTS.md`.
 - `npm run glyphs` — regenerates `src/glyphs.js` from the faces in
   `assets/fonts.source.css` (needs `fontkit`).
 - `npm run fonts` — regenerates `assets/fonts.css`, the same faces cut to the

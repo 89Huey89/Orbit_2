@@ -139,7 +139,13 @@ completion checkpoint are stated as provisional wherever they appear, and the pe
 compared against the ledger are not chosen at all yet. [PROGRESSION.md](PROGRESSION.md) names the
 instrument to tune them against — extend `verify.mjs`'s existing sixty-seed, row-48 tangent-seeking
 pilot to sum the ledger at every capture and log the curve — and nothing about the ledger's shape
-depends on where the numbers land; only the numbers do.
+depends on where the numbers land; only the numbers do. That instrument now exists as
+`scripts/probe.mjs`, and its first reading is [MEASUREMENTS.md](MEASUREMENTS.md). It says the
+numbers are harder to place than "only the numbers do" allows: a run flown by a hand calibrated
+against real play banks about 7 ledger in total, so eight eras spread across it come to roughly one
+capture and four seconds each, while the same constants bank 72 for a pilot that never mistimes a
+release. No single threshold set serves both ends, and that is a question about the ladder's shape
+rather than about a constant — it is stated at the foot of that file and is not answered here.
 
 **The exact sweep checkpoints, on a built sheet.** Capture, ~90°, ~180°, ~240° are
 [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md)'s own provisional table, stated as needing the same
