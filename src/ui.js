@@ -178,6 +178,15 @@ function leaveCeiling(){
   dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   applyPlate(restore);ceilingReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncCeilingChrome();render(0);
 }
+// The Rock prototype is a standalone page rather than a plate, so it is reached by navigating away
+// rather than by applyPlate; it lives one directory further from the atlas in dev than it does once
+// built, because the build copies it beside dist/index.html while dev serves it straight out of
+// docs/eras/prototypes/ beside src/. Read where the page itself was served from, at the moment of
+// the click rather than at load time, to tell the two trees apart.
+function rockPath(){
+  return location.pathname.includes('/src/')?'../docs/eras/prototypes/rock-read.html':'rock-read.html';
+}
+function openRock(){location.href=rockPath();}
 function setPlaying(){
   // A daily plate is entered in the log the moment its run begins, and only while it is the current
   // day's: that entry is the whole of what opens a past plate to be drawn again.
@@ -495,6 +504,7 @@ function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?65
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
 $('ceiling-open').addEventListener('click',enterCeiling);
+$('rock-open').addEventListener('click',openRock);
 $('ceiling-exit-end').addEventListener('click',leaveCeiling);
 $('ceiling-exit').addEventListener('click',leaveCeiling);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});

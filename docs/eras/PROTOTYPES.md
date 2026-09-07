@@ -82,15 +82,30 @@ capture region; danger is the Shaft, a true black void with a pecked rim, and th
 under soot; and the observation is dabs pressed into the capture ring as the sweep accumulates, sealing
 into a closed ring at `SWEEP_FULL` and freezing there when the orbit is let go.
 
-**Two things the spike actually settled.** The release window was measured on the page itself rather
-than argued about — instrumented frame by frame across a held orbit, it comes out at about one frame,
-five to seven degrees of sweep, which is [JOURNEY.md](JOURNEY.md) §3's finding reproduced
-independently, and it is a property of a fast orbit threading a small circle from a distance that no
-drawing style changes. What a drawing style *can* change is the lead-in, and the first pass got that
-wrong: the dust-line snapped from cold to warm exactly at the window, giving no warning at all. It was
-rebuilt as a continuous ramp over roughly 150 ms before the window opens, which is the honest answer to
-the question this stage asked — the cue cannot make the frame wider, it can only let the frame be
-anticipated.
+**What the spike got wrong first, and what that taught.** Its first finding was that the window in
+which a release connects is about one frame wide, that this reproduces
+[JOURNEY.md](JOURNEY.md) §3, and that no drawing style can widen it. The measurement was real — a
+frame-exact oracle connected on eleven frames out of twelve hundred — but the conclusion was not.
+§3's one frame is the *perfect* window, not the window in which a release lands at all, and the
+reason this page had only one frame was a geometry mistake of its own: it spaced bodies three to
+five hundred units apart behind a capture radius of forty, a tenth of the gap, where the shipped
+chart cuts every transfer to a short flight and gives a body a capture radius of roughly a third of
+it. It also tested only the one body it was aiming at, with a point test at the end of each step,
+where the shipped game sweeps the whole step against every orbit on the chart — and that
+forgiveness, that a tap a little early or a little late still finds *something*, is most of what
+makes an ordinary release landable. With the ratio and the test corrected the window is six to nine
+frames, about a seventh of a second, measured the same way. **The lesson is worth more than the
+first finding was: a spike that gets a ratio wrong will report a design problem that does not
+exist**, and this one nearly wrote "the Rock cannot be flown" into the record.
+
+**What a hand actually aims at.** The first pass gave the player only a warming dust-line, which
+asks a hand to *react* to an instant. The shipped game does something else entirely: it draws the
+run of the orbit a transfer threads the next one from, with the tangent struck brighter inside it,
+so nobody reacts to an instant — they arrive at a mark they can already see. That affordance is now
+on this sheet in its own language, a row of pressed dabs along the ring with one struck deeper at
+the middle of each run, and a line that would carry the traveller through a vortex or a flare is not
+marked at all, so danger is read in the same mark that carries the trajectory. The warmth ramp is
+kept beside it, and between them the release stopped being a reflex test.
 
 **And one the spike had to be rebuilt to ask at all.** The first pass drew every mark on a near-black
 rectangle, which quietly answers an easier question than the era poses: whether ochre reads is not in
@@ -99,7 +114,10 @@ now carries a wall — six octaves of height field baked at full resolution and 
 gradient against one torch held low and left, tiling so it can scroll, with the dark biting in from
 every edge as the era says its frame must. That is what [What the escalations taught](#what-the-escalations-taught)
 predicted almost exactly: the first pass put the right marks in the right places and drew them as a
-diagram, and what it was missing was the material.
+diagram, and what it was missing was the material. The sheet is also sized to the viewport rather than to a
+fixed landscape panel, and carries the viewport meta a phone needs to lay it out at the width of the
+glass instead of at 980 pixels, because the judgement this stage is waiting on is one made with the
+page in a hand.
 
 **What it reads like, and what is still open.** Against the wall, the traveller reads at once — it is
 the only pure light on the sheet — and so do the Shaft and the closed dot-ring. What the rebuild
@@ -107,7 +125,8 @@ exposed is that the marks and the ground now share a hue: red ochre survives on 
 *regular*, a made pattern against a natural one, rather than by being a different colour, which is a
 real constraint on every mark this era will ever draw. Three things are unresolved and are a
 judgement rather than a measurement: whether the three magnitude tiers separate at speed and in
-peripheral vision or only when looked at; whether the Flare still reads as danger rather than as a
+peripheral vision or only when looked at, now that the Moon has been brought down from a white cloud
+to a disc with a face; whether the Flare still reads as danger rather than as a
 bright body, now that both sit in the same warm light; and whether a body outside the torch's reach
 being invisible is this era's finest idea or its worst, which is the UX risk [01-rock.md](01-rock.md)
 already carries in its own words. **The verdict on those is the author's to give against the running
