@@ -1,5 +1,10 @@
 # The ascent through time
 
+> **Superseded in part.** The progression system this file describes — a ladder climbed inside a
+> single run — is not the design being built. [JOURNEY.md](JOURNEY.md) is the controlling document;
+> its "What this overrides" table names exactly which claims below are now stale. What this file
+> says about the eras themselves still stands.
+
 Orbit is a star atlas, and the history of the star atlas *is* the history of astronomy, which
 means the game already owns the subject a progression through time would be about: it does not
 have to invent a fiction to justify changing its look, only to admit which century a body was

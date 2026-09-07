@@ -1,5 +1,9 @@
 # Open questions
 
+> **Partly settled elsewhere.** [JOURNEY.md](JOURNEY.md) now locks the progression design and
+> answers several questions below — notably item 11, "open on", which is reinstated rather than
+> retired. Read it before treating anything here as open.
+
 What was undecided when the ladder was first written down, what the new brief and the decisions
 that reconciled it against this project have since settled and how, and what is still open. Read
 this before building anything. The brief in full, and the register that reconciled it against the

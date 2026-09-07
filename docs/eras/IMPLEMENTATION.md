@@ -1,5 +1,8 @@
 # What gets built, in what order
 
+> **Ordering superseded.** [JOURNEY.md](JOURNEY.md) carries the build plan. This file's per-stage
+> scouting of the code is still useful; its stage ordering and its single-run assumptions are not.
+
 This is the document a developer opens on day one. It does not re-cost what [ARCHITECTURE.md](ARCHITECTURE.md)
 already costs against the code, and it does not re-argue what [OVERVIEW.md](OVERVIEW.md),
 [PROGRESSION.md](PROGRESSION.md), [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md), [ECONOMY.md](ECONOMY.md),
