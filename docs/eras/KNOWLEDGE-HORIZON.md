@@ -69,7 +69,7 @@ Provisional, and stated as such: to be tuned once a built sheet exists, the way
 | ~240° | complete. Nothing further is gained past this point, however much longer the orbit is held. |
 
 This is the same fraction [PROGRESSION.md](PROGRESSION.md)'s observation ledger and
-[ECONOMY.md](ECONOMY.md)'s release dividend both read — `documented = clamp(orbitSweep/240°,0,1)`
+[ECONOMY.md](ECONOMY.md)'s release dividend both read — `documented = clamp(orbitSweep/(TAU*2/3),0,1)`
 — so a body's reveal state, the era's own progress toward its next transition, and how much of the
 traversal resource a release recovers are three readings of one computed value, not three clocks
 that could ever drift out of step with each other.

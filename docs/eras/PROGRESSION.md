@@ -41,7 +41,7 @@ designation below, and nothing else.
 A body captured in the current era contributes, once, at the moment of capture:
 
 ```
-0.35 + 0.65 × documented        documented = clamp(orbitSweep / 240°, 0, 1)
+0.35 + 0.65 × documented        documented = clamp(orbitSweep / (TAU*2/3), 0, 1)
 ```
 
 `orbitSweep` is not a new number. `OrbitWorld` already tracks it — set to zero at every capture
@@ -124,6 +124,27 @@ never a pickup and never a node whose only route to it is an optional detour. A 
 be designated, because a player who skips the fork must still meet the transition on schedule, and
 two players who fork differently must still meet the *same* transition body — which only the
 guaranteed main route can promise regardless of which detours either of them took to reach it.
+
+**And the flag is re-resolved, never set once and waited on.** This document's first statement of
+the designation said the next eligible node is flagged when the era arms, which read as a one-shot
+search — and a one-shot search is wrong, in a way that would have shipped silently. A main node is
+*skippable by design*: the flight can pass one and be caught by the next, and the score system pays
+a skip bonus for exactly that (`simulation.js`'s `skipBonus` on the capture event), so the game
+actively rewards the play that strands the flag. A skipped node is then pruned once the frontier
+passes it (`simulation.js`'s prune of nodes at `floorY+170`) and nothing anywhere recovers a
+dangling reference to it. A run that skipped its designated body would carry an armed era that can
+never resolve, for the rest of the run, and the better the player the likelier it is.
+
+So while an era is armed, the designation is a *derived* property, not a stored one: it names
+whichever eligible main node is currently the next one ahead, and it moves forward of its own
+accord when that node is skipped, pruned, or otherwise leaves the chart. Nothing is created and
+nothing is re-rolled when it moves — the flag simply lands on the next body the seed had already
+placed, which is why moving it costs the invariants nothing. The era resolves at the first eligible
+main node the player actually *captures* after arming, and the transition object is whichever body
+that turns out to be. Whether the flag should be visible on a node the player is going to skip, or
+only settle once the arrival is committed, is an open question for the built sheet: showing it early
+is the honest reading, but it means the object the player was looking at can hand its role to
+another before they reach it.
 
 ## The era's knowledge structure
 

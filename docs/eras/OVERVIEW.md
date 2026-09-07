@@ -148,6 +148,11 @@ An era that breaks any of these is a different game, not another plate.
 Build the spine before any new sheet, then outward from the eras nearest to what already exists,
 then the eras that ask for the most invention.
 
+What follows is the shape of the climb. The stage-by-stage order the work is actually done in —
+each stage costed against the code, with the assertions it must not break and the ones it owes —
+is [IMPLEMENTATION.md](IMPLEMENTATION.md), which corrects this list in two places where scouting
+the code contradicted the plan.
+
 1. **The spine, with no new art.** Retarget `src/reveal.js` from `world.time` to `orbitSweep`,
    generalising the Ceiling's existing four-stage reveal rather than inventing a new one. Add the
    observation ledger and the era-arming threshold; add the transition designation exactly as

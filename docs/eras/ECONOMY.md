@@ -62,7 +62,7 @@ refill," made literal, and exactly the number [PROGRESSION.md](PROGRESSION.md)'s
 already promises this file: "`documented` is the same fraction the release dividend will read."
 
 ```
-documented = clamp(orbitSweep / 240°, 0, 1)     // PROGRESSION.md's own ledger clock, unaltered
+documented = clamp(orbitSweep / (TAU*2/3), 0, 1)   // PROGRESSION.md's own ledger clock, unaltered
 dividend   = (perfect ? perfectGain : captureGain) × (1 + skipped×0.5) × (RELEASE_FLOOR + (1−RELEASE_FLOOR) × documented)
 ```
 

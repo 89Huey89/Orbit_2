@@ -13,6 +13,7 @@ outstanding.
 docs/
 └── eras/                     the progression through the history of the star atlas, in one run
     ├── OVERVIEW.md           the eight-era ladder, the five rules, the build order
+    ├── IMPLEMENTATION.md     the order the work is actually done in, costed against src/
     ├── PROGRESSION.md        the observation-gated run: the ledger, the transition object, endless mode
     ├── KNOWLEDGE-HORIZON.md  the three states a body is drawn through, on the swept arc of the orbit
     ├── ECONOMY.md            one traversal rule, eight skins; the probe's harvest
