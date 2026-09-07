@@ -23,12 +23,14 @@
 definePlate('rock',{
   night:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'158,143,118',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100'},
+    stone:'164,146,116',shaft:'4,3,3',dark:'2,2,2',
+    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
+    crust:'236,226,200',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'158,143,118',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100'}
+    stone:'164,146,116',shaft:'4,3,3',dark:'2,2,2',
+    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
+    crust:'236,226,200',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33'}
 });
 
 // ---------- The tunable rows ----------
@@ -49,63 +51,232 @@ function rockTier(n){
 const ROCK_STAGE={edge:[.10,.46],tooth:[.26,.70],marks:[.34,.88],detail:[.70,1]};
 const rockSpan=(t,r)=>clamp((t-r[0])/(r[1]-r[0]),0,1);
 
-// ---------- The wall: three value-noise fields, baked once, tiled and lit by one torch ----------
-// The field is baked at full resolution — every one of NW*NH cells reads its own honest interpolation
-// of the lattice below it — because a wall upscaled from a coarser grid is a fog, not a rock face. The
-// lattice is indexed modulo its own width and height, which is the whole reason the tile can be drawn
-// twice at a scroll offset with no seam ever showing.
+// ---------- The wall: height and minerals, baked once, tiled and lit by one torch ----------
+// The fine relief and the grain are baked at full resolution — every one of NW*NH cells reads its own
+// honest interpolation of the lattice below it — because a wall upscaled from a coarser grid is a fog,
+// not a rock face; the slow fields, with no detail finer than a hand's breadth, are not, and say so
+// below. Every lattice is indexed modulo its own width and height, which is the whole reason the tile
+// can be drawn twice at a scroll offset with no seam ever showing.
 const ROCK_NW=960,ROCK_NH=900;
 const rockSS=t=>t*t*(3-2*t);
-// Which two lattice columns a pixel falls between, and how far, depends only on its x — so it is worked
-// out once per octave across the row rather than once per pixel. That is eleven passes over most of a
-// million pixels, and hoisting it is the difference between a wall that costs half a second to lay and
-// one that costs a seventh of one.
-const rockX0=new Int32Array(ROCK_NW),rockX1=new Int32Array(ROCK_NW),rockTX=new Float32Array(ROCK_NW);
-function rockOctave(arr,cx,cy,amp,seed){
-  const gw=ROCK_NW/cx,gh=ROCK_NH/cy,rnd=seeded(seed),lat=new Float32Array(gw*gh);
+const rockStep=(lo,hi,v)=>{const t=Math.min(1,Math.max(0,(v-lo)/(hi-lo)));return t*t*(3-2*t);};
+// A byte read back as a fraction is multiplied by this rather than divided by 255, a fraction stored as
+// a byte is divided by it rather than multiplied, and the step above clamps rather than branching to a
+// whole nought or one: the engine types an arithmetic site by what it has seen there, and a site that
+// has only ever produced whole numbers is compiled as one, to be thrown away — with the whole fast pass
+// around it — the first time it does not. The two are the same number: 1/(1/255) is exactly 255.
+const ROCK_K=1/255;
+// Which two lattice columns a pixel falls between, and how far, depends only on its x, and the four
+// corner values of a cell are the same for every pixel in it — so the x weight is worked out once per
+// octave across the row, and the corners once per cell per row, with the y interpolation folded into
+// them; what is left per pixel is one multiply-add, which is what keeps nineteen octaves of it cheap
+// beside the memory they are written into. The lattice cells are given in wall pixels whatever the
+// field's own resolution, and must divide its width and height.
+const rockTX=new Float32Array(ROCK_NW);
+function rockOctave(arr,w,h,cx,cy,amp,seed){
+  const gw=w/cx,gh=h/cy,rnd=seeded(seed),lat=new Float32Array(gw*gh);
   for(let i=0;i<lat.length;i++)lat[i]=rnd();
-  for(let x=0;x<ROCK_NW;x++){const fx=x/cx,ix=fx|0;rockTX[x]=rockSS(fx-ix);rockX0[x]=ix%gw;rockX1[x]=(ix+1)%gw;}
-  for(let y=0;y<ROCK_NH;y++){
-    const fy=y/cy,iy=fy|0,ty=rockSS(fy-iy),y0=(iy%gh)*gw,y1=((iy+1)%gh)*gw,row=y*ROCK_NW;
-    for(let x=0;x<ROCK_NW;x++){
-      const tx=rockTX[x],x0=rockX0[x],x1=rockX1[x];
-      const t=lat[y0+x0]+(lat[y0+x1]-lat[y0+x0])*tx,b=lat[y1+x0]+(lat[y1+x1]-lat[y1+x0])*tx;
-      arr[row+x]+=amp*(t+(b-t)*ty);
+  for(let x=0;x<w;x++){const fx=x/cx;rockTX[x]=rockSS(fx-(fx|0))*amp;}
+  for(let y=0;y<h;y++){
+    const fy=y/cy,iy=fy|0,ty=rockSS(fy-iy),y0=(iy%gh)*gw,y1=((iy+1)%gh)*gw,row=y*w;
+    for(let ix=0;ix<gw;ix++){
+      const x1=(ix+1)%gw,a=lat[y0+ix]+(lat[y1+ix]-lat[y0+ix])*ty,b=lat[y0+x1]+(lat[y1+x1]-lat[y0+x1])*ty,aa=a*amp,dd=b-a;
+      for(let x=ix*cx,xe=x+cx;x<xe;x++)arr[row+x]+=aa+dd*rockTX[x];
     }
   }
 }
-function rockBuild(specs){
-  const a=new Float32Array(ROCK_NW*ROCK_NH);
-  for(const o of specs)rockOctave(a,o[0],o[1],o[2],o[3]);
-  let lo=1e9,hi=-1e9;for(let i=0;i<a.length;i++){if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}
-  const k=1/(hi-lo||1);for(let i=0;i<a.length;i++)a[i]=(a[i]-lo)*k;
-  return a;
+// Fresh memory is what this bake actually costs — every megabyte first touched is milliseconds of the
+// budget, and the arithmetic is cheap beside it — so a field is built into the array it is handed, at
+// the resolution that array has, and stretched to fill its own range.
+function rockBuild(arr,w,h,q,specs){
+  arr.fill(0);
+  for(const o of specs)rockOctave(arr,w,h,o[0]/q,o[1]/q,o[2],o[3]);
+  let lo=1e9,hi=-1e9;for(let i=0;i<arr.length;i++){if(arr[i]<lo)lo=arr[i];if(arr[i]>hi)hi=arr[i];}
+  const k=1/(hi-lo||1);for(let i=0;i<arr.length;i++)arr[i]=(arr[i]-lo)*k;
+  return arr;
+}
+// The slow fields — everything with no detail finer than a hand's breadth — are built at a quarter of
+// the wall's resolution and read back up through it, bilinearly where a front is cut from them and by
+// the nearest cell where they only tint. Which cell a wall column falls in, and how far across it, is
+// hoisted per column exactly as the octaves hoist theirs.
+const ROCK_Q=4,ROCK_QW=ROCK_NW/ROCK_Q,ROCK_QH=ROCK_NH/ROCK_Q,ROCK_QN=ROCK_QW*ROCK_QH;
+const rockQX0=new Int32Array(ROCK_NW),rockQX1=new Int32Array(ROCK_NW),rockQTX=new Float32Array(ROCK_NW);
+for(let x=0;x<ROCK_NW;x++){const fx=(x+.5)/ROCK_Q-.5,ix=Math.floor(fx);rockQTX[x]=fx-ix;rockQX0[x]=(ix+ROCK_QW)%ROCK_QW;rockQX1[x]=(ix+1)%ROCK_QW;}
+// A fractal field is continuous everywhere, and a wall that is only a fractal field reads as rendered
+// plaster: restless, but with nothing in it that ever breaks. What a cave wall carries over its broad
+// undulation is discontinuity — a calcite crust grown over the stone behind a hard, lobed front, with a
+// grain of its own; a fold that turns a corner along one long line; scales come away to fresh stone;
+// hairline crazing gathered in patches; iron that changes across a line rather than fading. Two earlier
+// passes struck all of that as vector shapes over the finished pixels, and both floated: a clean curve
+// laid over a grainy ground reads as a wash on glass however it is filled. So every one of them is now
+// a term in the height field or a threshold on a mineral field, roughened by the fine relief before it
+// is cut, and the one light shades the lot. A crust that stands proud takes its lit lip and its shadow
+// from the same gradient the bosses do, and its front is ragged at the grain's own scale because the
+// grain is what cut it.
+//
+// A groove's presence laid along a short run, to be cut into the height and darkened by the passes
+// below. The run may leave the tile on any side and comes back in at the other.
+function rockGroove(F,x0,y0,x1,y1,w,depth){
+  const dx=x1-x0,dy=y1-y0,l=dx*dx+dy*dy,reach=w+1;
+  const ax=Math.floor(Math.min(x0,x1)-reach),bx=Math.ceil(Math.max(x0,x1)+reach),ay=Math.floor(Math.min(y0,y1)-reach),by=Math.ceil(Math.max(y0,y1)+reach);
+  for(let y=ay;y<=by;y++){
+    const row=((y%ROCK_NH+ROCK_NH)%ROCK_NH)*ROCK_NW;
+    for(let x=ax;x<=bx;x++){
+      const t=l?clamp(((x-x0)*dx+(y-y0)*dy)/l,0,1):0,px=x0+t*dx-x,py=y0+t*dy-y,d=Math.sqrt(px*px+py*py);
+      if(d>=reach)continue;
+      const i=row+(x%ROCK_NW+ROCK_NW)%ROCK_NW,f=depth*(1-d/reach)*255;if(f>F[i])F[i]=f;
+    }
+  }
+}
+// The few long fissures — a fold that broke — walked in short steps that each turn a little, so no run
+// of one is straight for longer than a hand's width, and cut deeper and wider in some steps than others.
+function rockFissures(F,rng){
+  for(let n=0;n<3;n++){
+    let x=rng()*ROCK_NW,y=rng()*ROCK_NH,a=rng()*TAU;const steps=18+((rng()*16)|0);
+    for(let k=0;k<steps;k++){
+      a+=(rng()-.5)*.8;const len=8+rng()*14,nx=x+Math.cos(a)*len,ny=y+Math.sin(a)*len;
+      rockGroove(F,x,y,nx,ny,.4+rng()*.6,.45+rng()*.55);x=nx;y=ny;
+    }
+  }
+}
+// The crazing's cells: one jittered point in each cell of a lattice, and a hairline wherever the ground
+// nearest one point meets the ground nearest another. A crack network is a partition, not a curve —
+// every line in it ends on another line — which is why it is cut from cells rather than walked, and the
+// lattice wraps like every other one on this wall.
+const ROCK_CELL=15,ROCK_CW=ROCK_NW/ROCK_CELL,ROCK_CH=ROCK_NH/ROCK_CELL;
+// The height, with every discontinuity in it, and the fronts that were cut to make them. Each front is
+// a threshold on a slow field pushed about by the fine relief, so it is lobed at the relief's scale, and
+// by a per-pixel hash, so it is ragged at the pixel's. The crust is a skin and stands barely proud, and
+// its grain is height; a spalled face and a lost scale sit below the surface; a pit is only ever a
+// shadow, and is not cut here at all. Rows y0 to y1 of it: see rockBakeWall for why a pass takes a range.
+function rockHeightPass(F,y0,y1){
+  const {HL,CR,BF,SA,SZ,ST,HN,GR,FM,H,CM,BM,SM}=F,NW=ROCK_NW,Q=ROCK_Q,QW=ROCK_QW,QH=ROCK_QH;
+  for(let y=y0;y<y1;y++){
+    const fy=(y+.5)/Q-.5,iy=Math.floor(fy),ty=fy-iy,qy0=((iy+QH)%QH)*QW,qy1=((iy+1)%QH)*QW,row=y*NW;
+    for(let x=0;x<NW;x++){
+      const i=row+x,x0=rockQX0[x],x1=rockQX1[x],tx=rockQTX[x],a0=qy0+x0,a1=qy0+x1,b0=qy1+x0,b1=qy1+x1;
+      const hl=(HL[a0]+(HL[a1]-HL[a0])*tx)*(1-ty)+(HL[b0]+(HL[b1]-HL[b0])*tx)*ty;
+      const crv=(CR[a0]+(CR[a1]-CR[a0])*tx)*(1-ty)+(CR[b0]+(CR[b1]-CR[b0])*tx)*ty;
+      const bfv=(BF[a0]+(BF[a1]-BF[a0])*tx)*(1-ty)+(BF[b0]+(BF[b1]-BF[b0])*tx)*ty;
+      const sav=(SA[a0]+(SA[a1]-SA[a0])*tx)*(1-ty)+(SA[b0]+(SA[b1]-SA[b0])*tx)*ty;
+      let h=Math.imul(x,0x9E3779B1)^Math.imul(y,0x85EBCA77);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;
+      const t1=(h&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5;
+      const cm=rockStep(.69,.72,crv+hn*.22+t1*.015),bm=rockStep(.80,.81,bfv+hn*.03),fold=1-Math.abs(bfv*2-1);
+      const sm=rockStep(.75,.78,sav+hn*.2+t1*.01)*SZ[a0],th=cm*ST[a0];
+      H[i]=hl+fold*.04+hn*.05+cm*.008+GR[i]*ROCK_K*.014*th-bm*.045-sm*.006-FM[i]*ROCK_K*.006;
+      CM[i]=cm/ROCK_K;BM[i]=bm/ROCK_K;SM[i]=sm/ROCK_K;
+    }
+  }
+}
+// One hairline of the crazing, at one pixel. The ground here is nearest one cell's point and next
+// nearest another's, and where those two distances are all but equal is the line between the cells.
+// Not every line is cut — a hash of the pair decides, far more often inside a patch than out — and no
+// line is as dark as the next, or as wide along its whole length.
+function rockCraze(x,y,wx,wy,hn,t2,cz,FX,FY){
+  const cxi=(x/ROCK_CELL)|0,cyi=(y/ROCK_CELL)|0;
+  let f1=1e9,f2=1e9,c1=0,c2=0;
+  for(let oy=-1;oy<=1;oy++){
+    const ky=((cyi+oy+ROCK_CH)%ROCK_CH)*ROCK_CW,by=(cyi+oy)*ROCK_CELL;
+    for(let ox=-1;ox<=1;ox++){
+      const k=ky+(cxi+ox+ROCK_CW)%ROCK_CW,ex=(cxi+ox)*ROCK_CELL+FX[k]*ROCK_CELL-wx,ey=by+FY[k]*ROCK_CELL-wy,dd=ex*ex+ey*ey;
+      if(dd<f1){f2=f1;c2=c1;f1=dd;c1=k;}else if(dd<f2){f2=dd;c2=k;}
+    }
+  }
+  let e=Math.imul(Math.min(c1,c2),0x27d4eb2f)^Math.imul(Math.max(c1,c2)+1,0x165667b1);e=Math.imul(e^(e>>>15),0x2C1B3C6D);e^=e>>>13;
+  if((e&255)*ROCK_K>=.08+cz*.72)return 0;
+  return (1-rockStep(.5,1.8,Math.sqrt(f2)-Math.sqrt(f1)+hn*.6))*(.14+((e>>>8)&255)*ROCK_K*.2+t2*.12);
+}
+// The light and the minerals. The torch stands below and to the left of the sheet, so a surface climbing
+// to the right or downward faces it, and a spalled face lies in the shadow the lip nearest the torch
+// throws across it. The per-pixel tooth is what lets ochre read on this ground at all, and is stronger in the
+// crust, which is crystalline. Every colour is a plate token, mixed by weight. The crazing is cut where
+// the patch field says so and in the odd lone cell besides, only as far as the nearer cell is one of
+// them, so a lone fracture stops short of its full length as a fracture does.
+function rockShadePass(F,y0,y1){
+  const {BL,SF,ST,MP,MN,CZ,HN,GR,FM,H,CM,BM,SM,FX,FY,FA,d,st,cu,sc,ir,mg,ck}=F,NW=ROCK_NW,NH=ROCK_NH,N=NW*NH,Q=ROCK_Q,QW=ROCK_QW,QH=ROCK_QH;
+  for(let y=y0;y<y1;y++){
+    const ym=((y+NH-1)%NH)*NW,yp=((y+1)%NH)*NW,yd3=((y+3)%NH)*NW,yd8=((y+8)%NH)*NW,row=y*NW,cyi=(y/ROCK_CELL)|0;
+    const qi0=((y/Q)|0)*QW,fy=(y+.5)/Q-.5,iy=Math.floor(fy),ty=fy-iy,qy0=((iy+QH)%QH)*QW,qy1=((iy+1)%QH)*QW;
+    for(let x=0;x<NW;x++){
+      const i=row+x,xm=(x+NW-1)%NW,xp=(x+1)%NW,xl3=(x+NW-3)%NW,xl8=(x+NW-8)%NW,qi=qi0+((x/Q)|0),x0=rockQX0[x],x1=rockQX1[x],tx=rockQTX[x];
+      const bl=(BL[qy0+x0]+(BL[qy0+x1]-BL[qy0+x0])*tx)*(1-ty)+(BL[qy1+x0]+(BL[qy1+x1]-BL[qy1+x0])*tx)*ty;
+      let h=Math.imul(x,0x9E3779B1)^Math.imul(y,0x85EBCA77);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;
+      const t1=(h&255)*ROCK_K-.5,t2=((h>>>8)&255)*ROCK_K-.5,hn=HN[i]*ROCK_K-.5,gr=GR[i]*ROCK_K,cm=CM[i]*ROCK_K,bm=BM[i]*ROCK_K,sm=SM[i]*ROCK_K,sf=SF[qi];
+      const gx=(H[row+xp]-H[row+xm])*.5,gy=(H[yp+x]-H[ym+x])*.5;
+      const shade=bm*(.1+(1-BM[yd3+xl3]*ROCK_K)*.22+(1-BM[yd8+xl8]*ROCK_K)*.14),th=cm*ST[qi];
+      const lam=Math.min(1.28,Math.max(.06,((.62*gx-.60*gy)*46+bl+cm*.08)*(1-shade)*(1-th*(1-gr)*.22)*(1-cm*(1-cm)*1.3)+t1*(.06+cm*.05)));
+      const pm=rockStep(.86,.92,gr*.7+hn*.6+t1*.15)*MP[qi]*(1-cm),iron=sf*.5+rockStep(.6,.66,sf+hn*.12)*.35,mn=MN[qi]*(.6+hn*.8);
+      // The line is wobbled by the fine relief, read a way off for its second axis, which is as good as
+      // a second field and costs nothing.
+      let craze=0;const cz=CZ[qi]*(1-cm);
+      if(cz>.02||(cm<.5&&FA[cyi*ROCK_CW+((x/ROCK_CELL)|0)]))craze=rockCraze(x,y,x+hn*5,y+(HN[(i+137*NW+251)%N]*ROCK_K-.5)*5,hn,t2,cz,FX,FY)*(1-cm);
+      let r=st[0],gg=st[1],b=st[2],w=iron*.7*(1-cm);r+=(ir[0]-r)*w;gg+=(ir[1]-gg)*w;b+=(ir[2]-b)*w;
+      w=(sm*.5+bm*.4)*(1-cm);r+=(sc[0]-r)*w;gg+=(sc[1]-gg)*w;b+=(sc[2]-b)*w;
+      w=cm*(.25+th*.65)*(.85+t2*.3)*(.75+gr*.25);r+=(cu[0]-r)*w;gg+=(cu[1]-gg)*w;b+=(cu[2]-b)*w;
+      w=mn*(.75-cm*.3);r+=(mg[0]-r)*w;gg+=(mg[1]-gg)*w;b+=(mg[2]-b)*w;
+      w=Math.min(1,craze+FM[i]*ROCK_K*.4+pm*.55);r+=(ck[0]-r)*w;gg+=(ck[1]-gg)*w;b+=(ck[2]-b)*w;
+      const o=i*4;d[o]=Math.min(255,r*lam);d[o+1]=Math.min(255,gg*lam);d[o+2]=Math.min(255,b*lam);d[o+3]=255;
+    }
+  }
 }
 // Baked lazily on first reach rather than at load, so a player who never opens this era never pays for
 // it; invalidateRockArt() below drops it, and rockBakeWall() below rebuilds it once on next reach.
 let rockWall=null;
 function rockBakeWall(){
   if(rockWall)return rockWall;
-  // Room-sized bulges down to a hand's breadth, then the calcite sheen stretched vertically for the
-  // water that has run down this wall a long time, then the broad, slow iron staining underneath it all.
-  const HF=rockBuild([[320,300,1,101],[192,180,.42,202],[120,100,.17,303],[64,60,.07,404],[24,20,.028,505],[12,10,.012,606]]);
-  const CF=rockBuild([[192,900,1,707],[64,300,.45,808],[24,100,.2,909]]);
-  const SF=rockBuild([[320,900,1,1010],[192,300,.4,1111]]);
-  const c=makeCanvas(ROCK_NW,ROCK_NH),g=c.getContext('2d'),img=g.createImageData(ROCK_NW,ROCK_NH),d=img.data;
-  const LX=-.62,LY=.60,stone=ink.rock.stone.split(',').map(Number);
-  for(let y=0;y<ROCK_NH;y++){
-    for(let x=0;x<ROCK_NW;x++){
-      const i=y*ROCK_NW+x,xm=(x+ROCK_NW-1)%ROCK_NW,xp=(x+1)%ROCK_NW,ym=((y+ROCK_NH-1)%ROCK_NH)*ROCK_NW,yp=((y+1)%ROCK_NH)*ROCK_NW;
-      const gx=(HF[y*ROCK_NW+xp]-HF[y*ROCK_NW+xm])*.5,gy=(HF[yp+x]-HF[ym+x])*.5;
-      const tooth=(((x*73856093^y*19349663)>>>8)&255)/255-.5;
-      const lam=clamp((-gx*LX-gy*LY)*46+.54+HF[i]*.30+tooth*.03,.06,1.28);
-      const iron=SF[i],cal=CF[i];
-      const r=(stone[0]+iron*44+cal*20)*lam,gc=(stone[1]+iron*20+cal*22)*lam,b=(stone[2]-iron*22+cal*26)*lam;
-      const o=i*4;d[o]=Math.min(255,r);d[o+1]=Math.min(255,gc);d[o+2]=Math.min(255,b);d[o+3]=255;
-    }
-  }
-  g.putImageData(img,0,0);rockWall=c;return rockWall;
+  const NW=ROCK_NW,NH=ROCK_NH,N=NW*NH,QW=ROCK_QW,QH=ROCK_QH;
+  // The slow fields first: room-sized bulges down to a hand's breadth; the crust, run down the wall a
+  // little further than across it; the iron staining, stretched for the water that ran it; the slow
+  // field whose middle contour is folded into a crease and whose top is a spalled face; the manganese;
+  // the flake scars; and where the crazing gathers.
+  const q=()=>new Float32Array(ROCK_QN),Q=ROCK_Q;
+  const HL=rockBuild(q(),QW,QH,Q,[[320,300,1,101],[192,180,.42,202],[120,100,.12,303],[64,60,.04,404]]);
+  const CR=rockBuild(q(),QW,QH,Q,[[160,300,1,707],[64,100,.45,808]]);
+  const SF=rockBuild(q(),QW,QH,Q,[[320,900,1,1010],[192,300,.4,1111]]);
+  const BF=rockBuild(q(),QW,QH,Q,[[480,300,1,1212],[160,180,.35,1313]]);
+  const MB=rockBuild(q(),QW,QH,Q,[[120,100,1,1414],[48,60,.55,1515]]);
+  const SA=rockBuild(q(),QW,QH,Q,[[40,36,1,1818],[16,12,.35,1919]]);
+  const CZ=rockBuild(q(),QW,QH,Q,[[240,300,1,2020],[96,100,.5,2121]]);
+  // The zones are decided here, once, on the slow fields: where the crazing gathers, where the wall is
+  // pitted, where manganese has bloomed, how thick the crust is, and where scales have come away.
+  const MP=q(),MN=q(),ST=q(),SZ=q();
+  for(let i=0;i<ROCK_QN;i++){const sf=SF[i],mb=MB[i];CZ[i]=rockStep(.71,.77,CZ[i]);MP[i]=rockStep(.36,.54,mb);MN[i]=rockStep(.66,.9,mb);ST[i]=rockStep(.3,.8,sf);SZ[i]=rockStep(.3,.42,sf)*(1-rockStep(.5,.6,sf));}
+  // The crease: the break field's middle contour, folded into the relief, so the wall turns a corner
+  // along one long sweeping line and its two flanks take the light differently; the height pass lays
+  // the sharp crest itself along the same line at full size.
+  for(let i=0;i<ROCK_QN;i++){const f=1-Math.abs(BF[i]*2-1);HL[i]=HL[i]*.75+f*f*.25;}
+  // The broad light — how the slow relief faces the torch, read a cell either side so a fold darkens
+  // as a whole and not only at its crest — is settled at the same size and read back up bilinearly,
+  // because a cell of it read whole shows as a mosaic wherever the relief turns quickly.
+  const BL=q();
+  for(let y=0;y<QH;y++){const ym=((y+QH-1)%QH)*QW,yp=((y+1)%QH)*QW,row=y*QW;
+    for(let x=0;x<QW;x++){const i=row+x,gx=(HL[row+(x+1)%QW]-HL[row+(x+QW-1)%QW])/8,gy=(HL[yp+x]-HL[ym+x])/8;BL[i]=(.62*gx-.60*gy)*48+.52+HL[i]*.38;}}
+  // Then the two fine ones, which have to be full-size — the relief that roughens every front, and the
+  // crust's grain — each built in the one full-size scratch and kept as bytes; the scratch then becomes
+  // the height itself. Before they are built, the two passes are each run over a few rows of
+  // nothing, whose every result is overwritten: a loop this size is slow until the engine has made a
+  // fast version of it, and that is made in the background, so it is asked for first and the rest of
+  // the bake is done while it is being made. The rows are the first with crazing in them, so that the
+  // fast version has seen every branch it will meet; the bulk is then run in short calls rather than one
+  // long one, because only a fresh call picks the fast version up the moment it is ready, and a call
+  // already running stays slow to its end. The first bake is the one that counts.
+  const S=new Float32Array(N),HN=new Uint8Array(N),GR=new Uint8Array(N),FM=new Uint8Array(N);
+  const cr=seeded(0xc4a2e),cn=ROCK_CW*ROCK_CH,FX=new Float32Array(cn),FY=new Float32Array(cn),FA=new Uint8Array(cn);
+  for(let k=0;k<cn;k++){FX[k]=cr();FY[k]=cr();FA[k]=cr()<.03?1:0;}
+  const c=makeCanvas(NW,NH),g=c.getContext('2d'),img=g.createImageData(NW,NH),tok=n=>ink.rock[n].split(',').map(Number);
+  const F={HL,BL,CR,SF,ST,SZ,BF,MP,MN,SA,CZ,HN,GR,FM,H:S,CM:new Uint8Array(N),BM:new Uint8Array(N),SM:new Uint8Array(N),FX,FY,FA,d:img.data,
+    st:tok('stone'),cu:tok('crust'),sc:tok('scar'),ir:tok('stain'),mg:tok('manganese'),ck:tok('crack')};
+  let wy=0;for(let i=0;i<ROCK_QN;i++)if(CZ[i]>.5){wy=Math.min(NH-16,((i/QW)|0)*Q);break;}
+  rockHeightPass(F,wy,wy+16);rockShadePass(F,wy,wy+16);
+  rockBuild(S,NW,NH,1,[[24,20,1,505],[12,10,.3,606]]);for(let i=0;i<N;i++)HN[i]=S[i]*255;
+  rockBuild(S,NW,NH,1,[[3,3,1,1616]]);for(let i=0;i<N;i++)GR[i]=S[i]*255;
+  rockFissures(FM,seeded(0x5ca1e5));
+  for(let y=0;y<NH;y+=60)rockHeightPass(F,y,y+60);
+  for(let y=0;y<NH;y+=60)rockShadePass(F,y,y+60);
+  g.putImageData(img,0,0);
+  rockWall=c;return rockWall;
 }
+
 // The torch's own reach, in view space rather than world space — a light left behind in world space
 // would slide off the top of the sheet the instant the traveller climbed past it. Rebuilt whenever the
 // viewport's own size changes; never rebuilt for a scroll.
