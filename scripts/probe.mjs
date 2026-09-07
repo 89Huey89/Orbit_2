@@ -129,6 +129,12 @@ for(const hand of HANDS){
     completeShare:all.length?all.filter(s=>documented(s)>=1).length/all.length:0,
     ledgerPerCapture:mean(all.map(ledgerOf)),
     ledgerMedian:pct(runs.map(r=>r.ledger),.5),
+    ledgerP10:pct(runs.map(r=>r.ledger),.1),ledgerP90:pct(runs.map(r=>r.ledger),.9),
+    // What a threshold actually buys, which is the only question a per-era number has to answer:
+    // how many runs bank enough to clear it once. Under a ladder climbed inside one run this reads
+    // as "how many players ever see the next century"; under one climbed across runs it reads as
+    // "how often a run advances the ladder at all", and the same column serves both readings.
+    clears:[1,2,3,5,7,9,12].map(t=>({t,share:runs.filter(r=>r.ledger>=t).length/runs.length})),
     deaths,
     // How many runs got that far at all. The percentiles above say how deep a typical run goes; this
     // says how rare a deep one is, which is the number an era late on the ladder is really asking
@@ -175,6 +181,16 @@ console.log(pad('hand',9)+report[0].curve.map(c=>padL('r'+c.row,9)).join(''));
 console.log('-'.repeat(9+report[0].curve.length*9));
 for(const r of report)console.log(pad(r.hand,9)+r.curve.map(c=>padL(c.ledger===null?'—':c.ledger.toFixed(0),9)).join(''));
 console.log('\n  A blank means no run of that hand reached the row at all.');
+
+console.log('\nWhat share of runs banks enough observation to clear a threshold once\n');
+console.log(pad('hand',9)+padL('spread',13)+report[0].clears.map(c=>padL(c.t,7)).join(''));
+console.log('-'.repeat(22+report[0].clears.length*7));
+for(const r of report)console.log(
+  pad(r.hand,9)+padL(r.ledgerP10.toFixed(0)+'–'+r.ledgerMedian.toFixed(0)+'–'+r.ledgerP90.toFixed(0),13)+
+  r.clears.map(c=>padL((c.share*100).toFixed(0)+'%',7)).join(''));
+console.log('\n  spread · the run\'s whole observation total at p10, median and p90.');
+console.log('  Read down a column for a ladder climbed inside one run — the share of players who ever');
+console.log('  see the next century. Read it across for one climbed over many — how often a run advances.');
 
 console.log('\nWhat an eight-era ladder would cost each hand\n');
 for(const r of report)console.log(
