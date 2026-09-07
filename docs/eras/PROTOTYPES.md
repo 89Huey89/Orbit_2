@@ -79,8 +79,8 @@ flat tiers, each a different mark — an ochre dab, a red-ochre cluster ringed w
 kaolin disc with a manganese face; the traveller is the crayon's lit tip, the one hot-cored mark on the
 wall; the trajectory is a dust-line that warms from charcoal to red-ochre as it comes to thread the next
 capture region; danger is the Shaft, a true black void with a pecked rim, and the Flare, deep red-orange
-under soot; and the observation is dabs pressed into the capture ring as the sweep accumulates, sealing
-into a closed ring at `SWEEP_FULL` and freezing there when the orbit is let go.
+under soot; and the observation is the body itself, which is drawn on only as the orbit
+pays for it.
 
 **What the spike got wrong first, and what that taught.** Its first finding was that the window in
 which a release connects is about one frame wide, that this reproduces
@@ -97,6 +97,29 @@ makes an ordinary release landable. With the ratio and the test corrected the wi
 frames, about a seventh of a second, measured the same way. **The lesson is worth more than the
 first finding was: a spike that gets a ratio wrong will report a design problem that does not
 exist**, and this one nearly wrote "the Rock cannot be flown" into the record.
+
+**The ring says where, the body says what.** The first pass carried the observation on the capture
+ring — dabs pressed into it as the sweep accumulated — and left the body drawn whole the moment it
+became the target. That is two mistakes in one: it hands the player what a body *is* before an orbit
+has earned it, and it makes the capture region double as a progress meter, so the same fact is said
+twice and the one mark that must stay stable while a release is being timed is the one that keeps
+changing. The roles are now separated and the separation is the sheet's argument:
+
+- **the ring is where an observation is possible** — gameplay geometry, structurally unchanged while
+  the observation is made, receding only once a body is closed and offering nothing more;
+- **the body is what has been learned**, and it alone grows with the sweep;
+- **one brief change of state on the ring is the completion cue** — at the crossing into a full
+  observation the dots draw together into a single struck line and a little dust lifts off it, and
+  within two thirds of a second it has settled back to being geometry.
+
+The build is the era's own order of work rather than the atlas's, because a hand on a wall does not
+proceed as a colourist does. A crude mass of pigment goes on at the capture itself, unearned, since
+that is what taking the orbit *is*: colour before contour. The edge is then walked round it, off
+true, and firms as the orbit holds. The wall's tooth comes up through the pigment as it is worked.
+Dabs accumulate — the same dabs in the same places, more of them, because the wash is seeded and
+adding to its count only ever adds. And the thing that says *which* body this is arrives last,
+exactly where the atlas puts its survey arcs: the Moon's face is struck at the end of the orbit, not
+at the start of it, so a body observed halfway is a mass with an edge and no identity at all.
 
 **What a hand actually aims at.** The first pass gave the player only a warming dust-line, which
 asks a hand to *react* to an instant. The shipped game does something else entirely: it draws the
