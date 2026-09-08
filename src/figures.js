@@ -42,15 +42,20 @@ function renaissanceStarGlyph(g,cx,cy,magnitude,rgb,alpha,size,seed=0){
   g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.35,radius*.46),0,TAU);g.fill();
   if(index>=2){
     const rays=index>=5?8:index>=4?6:4,rng=seeded((seed^0x51f3a91d)>>>0||1);
-    g.strokeStyle=`rgba(${rgb},${alpha*(index>=4?.78:.62)})`;g.lineWidth=Math.max(.35,.48*size);
+    const weight=Math.max(.35,.48*size),rayAlpha=alpha*(index>=4?.78:.62);
     for(let i=0;i<rays;i++){
-      const a=i*TAU/rays-Math.PI/2,jitter=(rng()-.5)*.06,len=radius*(index>=4?.94: .78)*( .86+rng()*.16);
-      g.beginPath();g.moveTo(cx+Math.cos(a+jitter)*radius*.36,cy+Math.sin(a+jitter)*radius*.36);
-      g.lineTo(cx+Math.cos(a+jitter)*len,cy+Math.sin(a+jitter)*len);g.stroke();
+      const a=i*TAU/rays-Math.PI/2,jitter=(rng()-.5)*.06;
+      // Only the brightest class alternates long primary spokes with short secondary ticks, cut the
+      // way a printer's radiant star is engraved, rather than a spider of equal-length legs; every
+      // ray is laid as a burin cut, not a clean vector line, so the point reads as struck rather than drawn.
+      const primary=index<5||i%2===0,len=radius*(index>=4?(primary?.94:.58):.78)*(.86+rng()*.16);
+      const x1=cx+Math.cos(a+jitter)*radius*.36,y1=cy+Math.sin(a+jitter)*radius*.36;
+      const x2=cx+Math.cos(a+jitter)*len,y2=cy+Math.sin(a+jitter)*len;
+      burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha,weight,seed^(i*9176+7),{segments:len>radius*.7?3:2,wobble:.22,hair:false});
     }
   }
-  if(index===3){g.strokeStyle=`rgba(${rgb},${alpha*.42})`;g.lineWidth=Math.max(.3,.35*size);g.beginPath();g.arc(cx,cy,radius*.85,0,TAU);g.stroke();}
-  if(index>=4){g.strokeStyle=`rgba(${rgb},${alpha*.34})`;g.lineWidth=Math.max(.25,.3*size);g.beginPath();g.arc(cx,cy,radius*1.28,0,TAU);g.stroke();}
+  if(index===3)burinArc(g,cx,cy,radius*.85,0,TAU,rgb,alpha*.42,Math.max(.3,.35*size),seed^0x7c31,{wobble:.12,skips:1});
+  if(index>=4)burinArc(g,cx,cy,radius*1.28,0,TAU,rgb,alpha*.34,Math.max(.25,.3*size),seed^0x9d15,{wobble:.14,skips:2});
   g.restore();
   return radius;
 }

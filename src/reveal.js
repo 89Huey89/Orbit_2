@@ -212,6 +212,63 @@ function sketchDisc(g,r,rng){
   for(let i=0;i<steps;i++){const a=pts[i],b=pts[(i+1)%steps];g.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);}
   g.closePath();
 }
+// A first paper sight is not a miniature planet. It is the paper remembering pressure: a shallow,
+// irregular depression with a pin-prick at its centre, a broken compressed rim, and fibres dragged out
+// in the direction the observing hand came from. The shape is seeded, so it stays still on the sheet,
+// but its parts are revealed as the capture mark is made instead of appearing as one clean circle.
+function punchedLoop(g,r,flatten,rng,phase,steps=28){
+  const pts=[];
+  for(let i=0;i<steps;i++){
+    const a=i/steps*TAU;
+    const k=1+Math.sin(a*3+phase)*.065+Math.sin(a*7-phase*.7)*.035+(rng()-.5)*.028;
+    pts.push({x:Math.cos(a)*r*k,y:Math.sin(a)*r*flatten*k});
+  }
+  const last=pts[steps-1],first=pts[0];g.beginPath();g.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
+  for(let i=0;i<steps;i++){
+    const a=pts[i],b=pts[(i+1)%steps];g.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);
+  }
+  g.closePath();
+}
+function punchedMark(g,core,rng,alpha,progress,seed){
+  if(alpha<=.012)return;
+  g.save();
+  const phase=rng()*TAU,drag=phase+Math.PI*(.58+rng()*.32),build=clamp(progress,0,1);
+  const outer=core*(1.01+.025*Math.sin(phase));
+  // The shallow pressure bowl keeps the mark legible at the planet's scale without becoming a filled
+  // disc. Its darker lower rim and lighter upper rim do the work that a real fold in the paper would do.
+  punchedLoop(g,outer*1.08,.88,rng,phase);
+  g.fillStyle=`rgba(${ink.reveal.dry},${.065*alpha})`;g.fill();
+  punchedLoop(g,outer*.42,.8,rng,phase+.8);
+  g.fillStyle=`rgba(${ink.reveal.blot},${.12*alpha})`;g.fill();
+
+  const rimSweep=TAU*(.28+.72*build);
+  burinArc(g,0,0,outer,phase,phase+rimSweep,ink.reveal.washRim,.62*alpha,.78,seed^0x3a17,{segments:26,skips:3,wobble:1.1});
+  burinArc(g,0,0,outer*1.035,drag,drag+TAU*Math.min(.46,.16+.3*build),ink.base.paperRgb,.42*alpha,.7,seed^0x4c29,{segments:14,skips:2,wobble:.8});
+
+  // A few fibres escape the pressure rim. They are curved and unequal rather than radial ticks, so the
+  // mark feels pressed and dragged instead of stamped by a star-shaped brush.
+  const fibres=3+Math.round(build*7);
+  g.lineCap='round';
+  for(let i=0;i<fibres;i++){
+    const f=i/Math.max(1,fibres-1),a=drag+(f-.5)*1.15+(rng()-.5)*.22;
+    const inner=outer*(.69+rng()*.12),len=outer*(.16+rng()*.28)*(.65+.35*build);
+    const bend=(rng()-.5)*outer*.22,tx=Math.cos(a),ty=Math.sin(a),nx=-ty,ny=tx;
+    g.strokeStyle=`rgba(${i%3===0?ink.underdrawing.chalk:ink.reveal.strike},${(.2+rng()*.2)*alpha})`;
+    g.lineWidth=.35+rng()*.45;g.beginPath();
+    g.moveTo(tx*inner,ty*inner);
+    g.quadraticCurveTo(tx*(inner+len*.45)+nx*bend,ty*(inner+len*.45)+ny*bend,tx*(inner+len),ty*(inner+len));
+    g.stroke();
+  }
+
+  // The puncture itself is small and offset, as if the hand entered the sheet at a slight angle. It is
+  // the only part that stays dense while the outer pressure marks dry away into the resolved drawing.
+  const cx=Math.cos(drag)*outer*.09,cy=Math.sin(drag)*outer*.09*.82;
+  g.save();g.translate(cx,cy);
+  punchedLoop(g,outer*.17,.72,rng,drag+.4,16);
+  g.fillStyle=`rgba(${ink.reveal.blot},${.25*alpha})`;g.fill();
+  g.strokeStyle=`rgba(${ink.reveal.washRim},${.72*alpha})`;g.lineWidth=.65;g.stroke();
+  g.restore();
+}
 // ---------- Planets: the stages a colourist works in ----------
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
 // composite is drawn exactly as before, at no extra cost.
@@ -234,19 +291,22 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
   const laid=pen.taken*(1-revealSpan(pen.d,.08,.68));
   if(laid>.012){
     const rng=seeded((seed^0x5bd1e9)>>>0||1);
-    sketchDisc(ctx,core*1.02,rng);
-    ctx.fillStyle=`rgba(${ink.reveal.dry},${.33*laid})`;ctx.fill();
-    ctx.strokeStyle=`rgba(${ink.reveal.strike},${.5*laid})`;ctx.lineWidth=1.05;ctx.stroke();
-    // The grain is the tooth of the sheet coming up through a first, hurried laying-in. It is seeded off
-    // the body so it sits still on the page rather than boiling under the orbit, and it is cut to the
-    // disc so nothing of the first sight escapes the outline the hand actually drew.
-    ctx.save();ctx.clip();
-    for(let i=0;i<64;i++){
-      const a=rng()*TAU,rad=Math.sqrt(rng())*core*1.04,dot=.3+rng()*.7;
-      ctx.fillStyle=`rgba(${rng()<.34?ink.reveal.spatter:ink.reveal.strike},${(.07+rng()*.2)*laid})`;
-      ctx.beginPath();ctx.arc(Math.cos(a)*rad,Math.sin(a)*rad,dot,0,TAU);ctx.fill();
+    if(onPaper())punchedMark(ctx,core,rng,laid,pen.taken,seed);
+    else{
+      sketchDisc(ctx,core*1.02,rng);
+      ctx.fillStyle=`rgba(${ink.reveal.dry},${.33*laid})`;ctx.fill();
+      ctx.strokeStyle=`rgba(${ink.reveal.strike},${.5*laid})`;ctx.lineWidth=1.05;ctx.stroke();
+      // The grain is the tooth of the sheet coming up through a first, hurried laying-in. It is seeded off
+      // the body so it sits still on the page rather than boiling under the orbit, and it is cut to the
+      // disc so nothing of the first sight escapes the outline the hand actually drew.
+      ctx.save();ctx.clip();
+      for(let i=0;i<64;i++){
+        const a=rng()*TAU,rad=Math.sqrt(rng())*core*1.04,dot=.3+rng()*.7;
+        ctx.fillStyle=`rgba(${rng()<.34?ink.reveal.spatter:ink.reveal.strike},${(.07+rng()*.2)*laid})`;
+        ctx.beginPath();ctx.arc(Math.cos(a)*rad,Math.sin(a)*rad,dot,0,TAU);ctx.fill();
+      }
+      ctx.restore();
     }
-    ctx.restore();
   }
   // (d) The survey arcs and the far half of a ring system are the last marks laid down.
   if(pen.survey>0){ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);ctx.restore();}
