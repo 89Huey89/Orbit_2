@@ -352,6 +352,50 @@ function drawPlateFrame(){
     ctx.textAlign='right';ctx.fillText(String(value),W-outerR-tickLen*.72+2,y+2.5);
   }
 }
+// The atlas earns its geometry one capture at a time. What begins as a compass prick grows through
+// the pole, equator and ecliptic into a complete graticule; construction circles remain faintly visible
+// beneath the darker finished circles instead of appearing as decoration on an already complete sheet.
+let renaissanceGridLayer=null,renaissanceGridKey='';
+function paintRenaissanceGrid(g,progress){
+  const stage=n=>clamp(progress-n,0,1),band=frameBand()+4,cx=W*.5,cy=H*.54;
+  const rx=Math.min(W*.41,H*.43),ry=rx*.62,colors=ink.frame,rgb=ink.base.inkSoft;
+  const arc=(p,x,y,ax,ay,rotation=0,alpha=.18,weight=.55)=>{
+    if(p<=0)return;g.save();g.translate(x,y);g.rotate(rotation);
+    g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineWidth=weight;
+    g.beginPath();g.ellipse(0,0,ax,ay,0,-Math.PI/2,-Math.PI/2+TAU*p);g.stroke();g.restore();
+  };
+  g.save();g.beginPath();g.rect(band,band,Math.max(1,W-band*2),Math.max(1,H-band*2));g.clip();
+  // The pole is a real compass prick with two short crossed ruling strokes.
+  const pole=stage(0);if(pole>0){g.strokeStyle=`rgba(${rgb},${.28*pole})`;g.lineWidth=.65;g.beginPath();g.moveTo(cx-4,cy);g.lineTo(cx+4,cy);g.moveTo(cx,cy-4);g.lineTo(cx,cy+4);g.stroke();g.fillStyle=`rgba(${rgb},${.5*pole})`;g.beginPath();g.arc(cx,cy,1.15,0,TAU);g.fill();}
+  // Pale compass trials survive under the accepted projection.
+  arc(stage(1),cx,cy,rx*.34,ry*.34,0,.07);arc(stage(1.5),cx,cy,rx*.68,ry*.68,0,.07);
+  arc(stage(2),cx,cy,rx,ry,0,.2,.8); // celestial equator
+  arc(stage(3),cx,cy,rx,ry,-.31,.24,.9); // ecliptic
+  for(let i=1;i<=4;i++)arc(stage(3+i*.55),cx,cy,rx,ry*(1-i*.16),0,.1,.5); // parallels
+  for(let i=0;i<6;i++)arc(stage(5.4+i*.42),cx,cy,rx*(.16+i*.14),ry,0,.1,.5); // meridians
+  const ticks=stage(8);if(ticks>0){
+    g.save();g.translate(cx,cy);g.strokeStyle=colors.tick;g.fillStyle=colors.text;g.textAlign='center';g.font=plateFace(frameWide()?8:6.5,'text','italic');
+    const romans=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+    for(let i=0;i<120*ticks;i++){
+      const a=i/120*TAU,major=i%10===0,len=major?8:i%5===0?5:2.5,x=Math.cos(a)*rx,y=Math.sin(a)*ry,nx=Math.cos(a),ny=Math.sin(a);
+      g.globalAlpha=major?.52:.3;g.lineWidth=major?.8:.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+nx*len,y+ny*len*.62);g.stroke();
+      if(major){g.globalAlpha=.48;g.fillText(romans[i/10],x+nx*18,y+ny*12+3);}
+    }
+    g.restore();
+  }
+  const names=stage(9);if(names>0){g.globalAlpha=.42*names;g.fillStyle=colors.text;g.font=plateFace(frameWide()?8:6.5,'sc');g.textAlign='center';g.fillText('ÆQUATOR CÆLESTIS',cx,cy+ry+15);g.save();g.translate(cx+rx*.58,cy-ry*.54);g.rotate(-.31);g.fillText('ECLIPTICA',0,0);g.restore();}
+  g.restore();
+}
+function drawRenaissanceGrid(){
+  if(!world||plainPlate())return;
+  const count=Math.min(10,world.captures),progress=count;
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+count;
+  if(!renaissanceGridLayer||key!==renaissanceGridKey){
+    renaissanceGridLayer=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR)));const g=renaissanceGridLayer.getContext('2d');g.scale(DPR,DPR);paintRenaissanceGrid(g,progress);renaissanceGridKey=key;
+  }
+  ctx.drawImage(renaissanceGridLayer,0,0,W,H);
+}
+
 // The score, the pace and the flow are DOM, printed in the middle of the HUD band, and the chart scrolls up
 // beneath them. While a run is on, a soft leaf of the sheet's own ground is laid under that column,
 // feathered to nothing all round, so the figures never print straight across a planet.
@@ -407,7 +451,7 @@ function render(dt){
     const aim=world.aim();renderCeiling(dt,aim);updateUI(dt);return;
   }
   reveal.prime();prewarmGlyph();
-  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawGravitationalLenses();
+  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);

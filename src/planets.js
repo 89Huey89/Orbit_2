@@ -588,7 +588,7 @@ function prewarmGlyph(){
     glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice);return;
   }
 }
-function drawPlanet(art,r,time){
+function drawPlanet(art,r,time,impression=null){
   const t=reducedMotion?0:time,angle=art.tilt+t*art.spin;
   ctx.save();ctx.scale(r/60,r/60);ctx.drawImage(art.back,-72,-72,144,144);
   // The disc is only clipped when something is laid over it that could run past its edge: the weather
@@ -599,6 +599,7 @@ function drawPlanet(art,r,time){
   const spills=!!(art.weather||art.embers);
   ctx.save();
   if(spills){ctx.beginPath();ctx.arc(0,0,art.core,0,TAU);ctx.clip();}
+  if(onPaper()&&impression){ctx.translate(impression.x||0,impression.y||0);ctx.rotate(impression.rotation||0);}
   ctx.rotate(angle);
   ctx.drawImage(art.surface,-40,-40,80,80);
   if(art.embers){
@@ -627,4 +628,3 @@ function drawPlanet(art,r,time){
 function sx(x){return W*.5+x*scale+plateShift.x;}
 function sy(y){return (y-world.cameraY)*scale+plateShift.y;}
 function line(x1,y1,x2,y2,color,width=.6){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
-

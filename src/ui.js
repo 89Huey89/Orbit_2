@@ -55,18 +55,18 @@ function event(type,e){
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
     if(e.steep){
-      // Too steep to earn anything: a duller thud in place of the ordinary capture chime, and no
-      // floater, since there is no score to announce.
+      // A rough impression still earns its base; the duller strike and displaced colour carry the
+      // cost now, while the score floater makes the continuous angle progression explicit.
       audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);burst(e.x,e.y,6,'red',.4);
     }else{
       audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
       if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
-      floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     }
+    floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.angleBonus?'  ·  ANGLE +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
     const at={node:e.n};
-    if(e.steep)say('TOO STEEP · NO ORBIT EARNED',at);
+    if(e.steep)say('ROUGH IMPRESSION · BASE '+(e.gain-e.skipBonus),at);
     else if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
     else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',at);
     else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
@@ -282,7 +282,7 @@ function catalogueRecord(){
     [POWERUP_LABELS.reflector+' spent',commas(ledger.reflectorsSpent)],
     ['Slingshots left at top speed',commas(ledger.maxSpeedSlings)],
     ['Inkwells filled on a streak',commas(ledger.inkwellsFound)],
-    ['Arrivals too steep to score',commas(ledger.badAngles)],
+    ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
   let html=catalogueTable()+'<table class="ledger-table"><tbody>'+

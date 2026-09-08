@@ -117,20 +117,20 @@ const UNLOCKS=[
     describe:()=>'Leave 50 slingshot stars at full speed'},
   {id:'goldleaf',kind:'trail',name:'Gold leaf',latin:'Aurum foliatum',stat:'maxSpeedSlings',threshold:200,
     describe:()=>'Leave 200 slingshot stars at full speed'},
-  // Five inks earned by recklessness rather than skill: a lifetime count of arrivals too steep to
-  // score at all, each one a common-to-precious pigment the way the slingshot ladder runs chalk to
+  // Five inks earned by recklessness rather than skill: a lifetime count of rough impressions,
+  // each one a common-to-precious pigment the way the slingshot ladder runs chalk to
   // gold leaf. Bistre and Orpiment, below, stay the two hardest trail inks in the catalogue: they
   // still ask for the inkwell's standing streak rather than a lifetime total.
   {id:'umber',kind:'trail',name:'Umber',latin:'Umbra',stat:'badAngles',threshold:10,
-    describe:()=>'Land 10 arrivals too steep to score'},
+    describe:()=>'Leave 10 rough impressions'},
   {id:'woad',kind:'trail',name:'Woad',latin:'Glastum',stat:'badAngles',threshold:25,
-    describe:()=>'Land 25 arrivals too steep to score'},
+    describe:()=>'Leave 25 rough impressions'},
   {id:'vermilion',kind:'trail',name:'Vermilion',latin:'Cinnabaris',stat:'badAngles',threshold:75,
-    describe:()=>'Land 75 arrivals too steep to score'},
+    describe:()=>'Leave 75 rough impressions'},
   {id:'malachite',kind:'trail',name:'Malachite',latin:'Molochites',stat:'badAngles',threshold:200,
-    describe:()=>'Land 200 arrivals too steep to score'},
+    describe:()=>'Leave 200 rough impressions'},
   {id:'ultramarine',kind:'trail',name:'Ultramarine',latin:'Ultramarinus',stat:'badAngles',threshold:500,
-    describe:()=>'Land 500 arrivals too steep to score'},
+    describe:()=>'Leave 500 rough impressions'},
   {id:'bistre',kind:'trail',name:'Bistre',latin:'Fuligo',stat:'inkwellsFound',threshold:3,
     describe:()=>'Fill 3 inkwells on a reckless streak'},
   {id:'orpiment',kind:'trail',name:'Orpiment',latin:'Auripigmentum',stat:'inkwellsFound',threshold:10,

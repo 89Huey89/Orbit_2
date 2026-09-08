@@ -214,8 +214,8 @@ function sketchDisc(g,r,rng){
 // ---------- Planets: the stages a colourist works in ----------
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
 // composite is drawn exactly as before, at no extra cost.
-function revealPlanet(art,r,time,pen,seed){
-  if(!pen||pen.done){drawPlanet(art,r,time);return;}
+function revealPlanet(art,r,time,pen,seed,impression=null){
+  if(!pen||pen.done){drawPlanet(art,r,time,impression);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
   // (0) A body no orbit has ever taken is a light and nothing else: the phenomenon as it is seen from
@@ -257,7 +257,7 @@ function revealPlanet(art,r,time,pen,seed){
     ctx.save();
     ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.clip();
     landContour(ctx,ox,oy,grow,grow*.88,rng);
-    ctx.save();ctx.clip();ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
+    ctx.save();ctx.clip();if(onPaper()&&impression){ctx.translate(impression.x||0,impression.y||0);ctx.rotate(impression.rotation||0);}ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
     ctx.strokeStyle=`rgba(${ink.reveal.washRim},${.42*(1-dry)+.06})`;ctx.lineWidth=1.2;ctx.stroke();
     ctx.restore();
   }

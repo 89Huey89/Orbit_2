@@ -657,7 +657,7 @@ function drawNode(n,aim){
     else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
     ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   }
-  revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed);
+  revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed,n.impression);
   // The star's charge band is planning information, not depiction: the pilot reads the filling arc to
   // know when the lap is paid for. It therefore rides the pen reaching the page, as it always did, and
   // not the observation clock, which would hold back the first two fifths of a fill the release depends on.
@@ -1168,8 +1168,8 @@ function drawAim(aim){
     ctx.beginPath();ctx.arc(x,y,2.4*scale,0,TAU);ctx.stroke();
   }
   if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
-  // A course too steep to earn anything is marked with an open chevron across the line rather than
-  // the landing square: the flight still reaches the planet, but the landing pays nothing.
+  // A course below the bonus threshold is marked with an open chevron: it still earns the base
+  // impression, but the player can read before release that no angle bonus will be added.
   else if(aim?.steep){
     const l=legs[legs.length-1]||{ux:1,uy:0},w2=4.2*scale;
     ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.8)`;ctx.lineWidth=1;ctx.beginPath();

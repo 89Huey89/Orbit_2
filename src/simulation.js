@@ -271,12 +271,9 @@ function arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect) {
   if(perfect)return 90+Math.asin(clamp((radius-n.r)/n.r,-1,1))*180/Math.PI;
   return Math.atan2(Math.abs(rx*rvy-ry*rvx),-(rx*rvx+ry*rvy))*180/Math.PI;
 }
-// An arrival steeper than this still joins — there is no way to steer a flight once it is released,
-// so refusing it outright left a mistimed release with nothing to recover onto — but earns nothing:
-// see the steep case in OrbitWorld.capture. It is set to catch a flight that is falling onto a planet
-// rather than crossing its rim — about a quarter of the arrivals the chart offers — while leaving
-// anything with real angle on it the forgiving ordinary capture it has always been. A tangent-seeking
-// pilot never meets it at all.
+// Below this angle the impression is visibly rough and still counts toward the catalogue's pigment
+// ladder. It is no longer an all-or-nothing score gate: every arrival earns its base, while the full
+// sweep from a radial strike to a tangent earns a continuously increasing angle bonus.
 const GRAZE_MINIMUM = 16;
 // How many consecutive bad-angle or orbit-skipping captures in a row still have to be standing when
 // an inkwell is reached for it to yield a colour rather than run dry. See OrbitWorld.capture.
@@ -567,18 +564,19 @@ class OrbitWorld {
     const cross=rx*rvy-ry*rvx,alignment=clamp(Math.abs(cross)/Math.max(1e-8,radius*arrivalSpeed),0,1);
     const perfect=!!contact?.perfect,scoreMultiplier=this.speedMultiplier(Math.hypot(p.vx,p.vy));
     const angle=arrivalAngle(n,rx,ry,rvx,rvy,radius,perfect);
-    // A flight that comes down at the centre rather than across the rim still joins: there is no way
-    // to steer a flight once it is released, so turning one away outright only ever stranded a
-    // mistimed release with nothing left to recover onto. It lands as the same forgiving hard turn
-    // any angled arrival gets, but a steep one earns nothing at all — no score, no skip bonus, no ink
-    // dividend — so a careless release is still worse than a patient one, and the choice of pressure
-    // is never lost to it.
+    // Every accepted flight earns the base impression. Better crossings earn progressively more as
+    // their angle approaches the tangent; a radial strike receives no angle bonus, but is never blanked.
     const steep=angle<GRAZE_MINIMUM&&!this.difficultyPending;
+    const arrivalQuality=this.difficultyPending?1:clamp((angle-GRAZE_MINIMUM)/(90-GRAZE_MINIMUM),0,1);
     const square=!steep&&!!l&&Math.abs(angle-90)<=SQUARE_TOLERANCE,squareBonus=square?Math.round(10*scoreMultiplier):0;
     p.dir=cross>=0?1:-1; p.angle=Math.atan2(ry,rx); p.rad=radius||n.r;p.tangentCapture=perfect;
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
+    // A hurried strike leaves the hand-applied colour increasingly out of register with the engraved
+    // keyline. The offset is deterministic per body and frozen at capture, so it never boils on screen.
+    const rough=1-arrivalQuality,impressionRng=seeded((n.seed^0x73a91d)>>>0||1);
+    n.impression={quality:arrivalQuality,x:(impressionRng()-.5)*6*rough,y:(impressionRng()-.5)*6*rough,rotation:(impressionRng()-.5)*.08*rough};
     const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0;
     // A landing pays the nib back. A clean tangent arrival pays better than a hard turn; a steep one
     // pays nothing, exactly what it cost to get there. A skipped orbit was flown past at the same
@@ -594,19 +592,20 @@ class OrbitWorld {
       this.emit('difficulty',{value:n.difficultyChoice});
     }
     this.positionPlayer();
-    const skipBonus=steep?0:Math.round(skipped*10*scoreMultiplier);
+    const skipBonus=Math.round(skipped*10*scoreMultiplier);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     // An inkwell only pays out on a streak already standing when the traveller reaches it — the streak
     // this landing itself extends or breaks is read below, after it is folded in.
     const reckless=this.recklessStreak>=INK_STREAK_REQUIRED;
     this.combo=quick?Math.min(5,this.combo+1):1; this.maxCombo=Math.max(this.maxCombo,this.combo);
-    const baseGain=10+(this.combo-1)*2+(perfect?5:0)+(n.type==='gold'?15:0),gain=steep?0:Math.round(baseGain*scoreMultiplier)+skipBonus;
+    const baseGain=10+(this.combo-1)*2+(n.type==='gold'?15:0),angleBonus=Math.round(10*arrivalQuality*scoreMultiplier),perfectBonus=perfect?Math.round(5*scoreMultiplier):0;
+    const gain=Math.round(baseGain*scoreMultiplier)+angleBonus+perfectBonus+skipBonus;
     this.score+=gain+squareBonus; this.captures++; this.perfects+=perfect?1:0; this.squares+=square?1:0;
     this.perfectStreak=perfect?this.perfectStreak+1:0;
     this.recklessStreak=(steep||skip)?this.recklessStreak+1:0;
     this.progress=Math.max(this.progress,n.row); this.lastCaptureAt=this.elapsed;
     this.shake=perfect?1.8:steep?1.3:1.0;
-    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,steep,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
+    this.emit('capture',{x:p.x,y:p.y,n,gain,perfect,steep,skip,skipped,skipBonus,scoreMultiplier,combo:this.combo,angle,angleBonus,arrivalQuality,square,squareBonus,arrivalSpeed,radius,vx:rvx,vy:rvy,launch:l});
     if(square)this.observe('rightAngle');
     if(this.perfectStreak>=3)this.observe('perfectThree');
     if(skipped>=5)this.observe('skipFive');
