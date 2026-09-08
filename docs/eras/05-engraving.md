@@ -181,7 +181,12 @@ telling them so.
 **Once documented**, what results is a plate proof: a Bayer letter set beside the figure, a Latin
 name lettered under it, and a magnitude given by nothing more than the size of the printed dot
 itself — the entire vocabulary this era's eye has for a body's brightness, and, past that dot's own
-size, the entire vocabulary it has for the body at all. The caption carries a date, once per run,
+size, the entire vocabulary it has for the body at all. The six traditional classes are visibly
+separate: I and II grow into larger multi-rayed printer's signs, while V and VI remain only small
+punctures in the plate. A Greek letter is withheld until the point has been watched long enough;
+the occasional faint, uncertain point waits almost for the full orbit before it is classified. The
+right-hand key begins as a pale construction of all six forms and darkens class by class as play
+supplies those observations. The caption carries a date, once per run,
 the first time each constellation's own letter is completed — `1603 · URANOMETRIA`, the atlas's own
 year rather than a discovery date, because nothing on this sheet is discovered in the sense
 [06-lens.md](06-lens.md)'s dated family table means it; it is composed, and the date records the

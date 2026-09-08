@@ -160,6 +160,22 @@ const CONSTELLATIONS = [
   {name:'THE LANTERN',shape:[103,141,124]},
   {name:'THE MOTH',shape:[140,100,150]}
 ];
+// Renaissance stars are not discovered by their order in the generated fork. Their assumed brightness
+// is a separate, deterministic observation of the point itself: class I is brightest, class VI faintest.
+// The local generator keeps this from consuming the course RNG, so the atlas remains one chart per seed.
+const RENAISSANCE_GREEK_LETTERS=['α','β','γ','δ','ε','ζ','η','θ'];
+function renaissanceStarProfile(seed,index){
+  const rng=seeded((seed^0x6d2b79f5^Math.imul(index+1,0x45d9f3b))>>>0),brightness=rng();
+  const magnitude=brightness>.955?1:brightness>.84?2:brightness>.64?3:brightness>.39?4:brightness>.16?5:6;
+  // The faintest points are where the naked-eye observer is most honestly unsure. This is a mark of the
+  // chart's knowledge, not noise: once the point is watched long enough, even the uncertain classification settles.
+  const uncertain=magnitude>=5&&((seed>>>5)%5===0);
+  return {brightness,magnitude,uncertain};
+}
+function orderRenaissanceStars(chart){
+  const ordered=chart.stars.slice().sort((a,b)=>a.magnitude-b.magnitude||b.brightness-a.brightness||a.starIndex-b.starIndex);
+  for(let i=0;i<ordered.length;i++){ordered[i].greekIndex=i;ordered[i].greek=RENAISSANCE_GREEK_LETTERS[i]||'';}
+}
 // Named feats. Each is recorded at most once per run and reported as it happens.
 const OBSERVATIONS = {
   perfectThree:{name:'THREE PERFECT TRANSFERS',latin:'TRES PERFECTI'},
@@ -384,7 +400,10 @@ class OrbitWorld {
           const i=local-4,shape=CONSTELLATIONS[chart.catalogueIndex].shape;
           const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size,this.inboard(starR));
           const star=this.makeNode(side*reach,y+[24,42,18][i]*grow,starR,k,'gold');
-          star.cap=(star.r+9*grow)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;chart.stars.push(star);
+          const profile=renaissanceStarProfile(star.seed,i);
+          star.cap=(star.r+9*grow)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;
+          star.brightness=profile.brightness;star.magnitude=profile.magnitude;star.uncertain=profile.uncertain;
+          chart.stars.push(star);orderRenaissanceStars(chart);
         }
       }
     }

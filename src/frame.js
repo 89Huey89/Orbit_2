@@ -263,15 +263,19 @@ function buildFrameLayer(){
     g.font=plateFace(6.5,'text','italic');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText(engraverCredit(),rightX,oy+10);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
+    // Its ghost rows are printed with the first proof; a row becomes dark only after a player has held
+    // a matching star long enough to classify it, so the margin records the atlas's actual knowledge.
     const keyX=rightX,keyTop=Math.max(H*.28,band+70);
     g.font=plateFace(8,'sc');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('MAGNITUDINES',keyX,keyTop);
     g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+66,keyTop+3.5);g.stroke();
     g.font=plateFace(7.5,'text','italic');
+    const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
     for(let m=5;m>=0;m--){
       const row=keyTop+17+(5-m)*12;
-      starGlyph(g,keyX+7,row-4.5,m,ink.atmosphere.starGlyph,.62,1.3);
-      g.fillStyle=colors.text;g.fillText(MAGNITUDES[5-m],keyX+24,row);
+      const magnitude=6-m,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.72:.12;
+      renaissanceStarGlyph(g,keyX+7,row-4.5,magnitude,ink.atmosphere.starGlyph,alpha,1.3,0x1603+magnitude);
+      g.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;g.fillText(MAGNITUDES[5-m],keyX+24,row);
     }
   }
   return c;
@@ -340,7 +344,8 @@ function drawPlateFrame(){
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('plateFrame');if(own)return own();
   if(!W||!H)return;
-  const key=W+'x'+H+'x'+DPR+':'+plateName;
+  const legend=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+legend;
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
   const framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as

@@ -11,6 +11,61 @@ definePlate('figures',{
   night:{contour:'222,190,127',hatch:'222,190,127',wash:'222,190,127'},
   paper:{contour:'150,100,32',hatch:'58,42,28',wash:'58,42,28'}
 });
+// The printed Renaissance atlas treats a constellation star as a point of light, not a miniature world.
+// The thresholds are deliberately tied to the same two-thirds orbit used by the observer core: a normal
+// classification arrives after roughly 160 degrees, while an occasional faint and uncertain point needs
+// almost the whole observation before the quill will commit a Greek letter to the plate.
+const RENAISSANCE_STAR_CLASSIFIED=.68,RENAISSANCE_STAR_CERTAIN=.94;
+const renaissanceAtlas=()=>!modernPlate()&&eraId()===0;
+function renaissanceStarObservation(n){
+  const p=world&&world.player;
+  return clamp(p&&p.node===n?p.orbitSweep/SWEEP_FULL:n.documented||0,0,1);
+}
+function renaissanceStarClassified(n,observation){
+  if(!n||n.magnitude===undefined)return false;
+  return observation>=(n.uncertain?RENAISSANCE_STAR_CERTAIN:RENAISSANCE_STAR_CLASSIFIED);
+}
+function renaissanceLegendMask(){
+  if(!renaissanceAtlas()||!world)return 0;
+  let mask=0;
+  for(const chart of world.constellations)for(const star of chart.stars){
+    if(renaissanceStarClassified(star,renaissanceStarObservation(star)))mask|=1<<(star.magnitude-1);
+  }
+  return mask;
+}
+// Six distinct point sizes carry the six traditional classes. Only the upper two classes grow into
+// multi-ray printer's signs; classes V and VI stay as the small pricks a naked-eye atlas can honestly set.
+function renaissanceStarGlyph(g,cx,cy,magnitude,rgb,alpha,size,seed=0){
+  const index=clamp(6-(magnitude||6),0,5),radii=[.7,1.05,1.5,2.05,2.85,3.9],radius=radii[index]*size;
+  g.save();g.lineCap='round';
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.35,radius*.46),0,TAU);g.fill();
+  if(index>=2){
+    const rays=index>=5?8:index>=4?6:4,rng=seeded((seed^0x51f3a91d)>>>0||1);
+    g.strokeStyle=`rgba(${rgb},${alpha*(index>=4?.78:.62)})`;g.lineWidth=Math.max(.35,.48*size);
+    for(let i=0;i<rays;i++){
+      const a=i*TAU/rays-Math.PI/2,jitter=(rng()-.5)*.06,len=radius*(index>=4?.94: .78)*( .86+rng()*.16);
+      g.beginPath();g.moveTo(cx+Math.cos(a+jitter)*radius*.36,cy+Math.sin(a+jitter)*radius*.36);
+      g.lineTo(cx+Math.cos(a+jitter)*len,cy+Math.sin(a+jitter)*len);g.stroke();
+    }
+  }
+  if(index===3){g.strokeStyle=`rgba(${rgb},${alpha*.42})`;g.lineWidth=Math.max(.3,.35*size);g.beginPath();g.arc(cx,cy,radius*.85,0,TAU);g.stroke();}
+  if(index>=4){g.strokeStyle=`rgba(${rgb},${alpha*.34})`;g.lineWidth=Math.max(.25,.3*size);g.beginPath();g.arc(cx,cy,radius*1.28,0,TAU);g.stroke();}
+  g.restore();
+  return radius;
+}
+function revealRenaissanceStar(n,pen,rgb){
+  const faint=pen.taken<1?pen.ring:0;
+  if(faint>0)renaissanceStarGlyph(ctx,0,0,6,rgb,.78*faint,scale*.9,n.seed^0x17);
+  if(pen.taken>0)renaissanceStarGlyph(ctx,0,0,n.magnitude,rgb,pen.taken*(.38+.62*pen.d),scale,n.seed);
+}
+function drawRenaissanceStarLetter(n,observation,rgb){
+  if(plainPlate()||!renaissanceStarClassified(n,observation)||!n.greek)return;
+  const threshold=n.uncertain?RENAISSANCE_STAR_CERTAIN:RENAISSANCE_STAR_CLASSIFIED;
+  const inked=clamp((observation-threshold)/Math.max(.01,1-threshold),0,1),dir=n.x>=0?1:-1,size=Math.max(9,10*scale);
+  ctx.font=plateFace(size,'text','italic');ctx.textAlign=dir>0?'left':'right';ctx.textBaseline='alphabetic';
+  ctx.fillStyle=`rgba(${rgb},${.78*inked})`;
+  writeText(ctx,n.greek,dir*(4.6*scale)+dir*size*.35,-5.4*scale,inked,{size,nib:false});
+}
 const figureLayers=new Map();
 function figFrame(chart){
   const s=chart.stars,side=(s[0].x+s[1].x+s[2].x)>=0?1:-1;
@@ -552,7 +607,9 @@ function drawConstellations(){
       const first=chart.stars[0],last=chart.stars[2];ctx.strokeStyle=`rgba(${ink.marks.constellationComplete},${.16+Math.min(.22,chart.flash*.12)})`;ctx.lineWidth=.55*scale;
       ctx.beginPath();ctx.moveTo(sx(first.x),sy(first.y));ctx.lineTo(sx(last.x),sy(last.y));ctx.stroke();
     }
-    for(const n of chart.stars){
+    // Renaissance stars are drawn at the node itself, where the orbit, point size and letter share one
+    // observation clock. Later hands keep the older decorative marker until they claim their own form.
+    if(!renaissanceAtlas())for(const n of chart.stars){
       const x=sx(n.x),y=sy(n.y)-(n.r+15)*scale;
       ctx.strokeStyle=`rgba(${ink.marks.constellationStar},${chart.expired?.2:n.visited?.9:.6})`;ctx.fillStyle=n.visited?ink.marks.constellationFillLit:ink.marks.constellationFillDark;ctx.lineWidth=.8;
       ctx.beginPath();
@@ -646,7 +703,7 @@ function drawNode(n,aim){
   // The pen has to have reached this planet before any of it is on the page.
   const pen=revealNode(n),struck=used?revealRetire(n):0;
   if(pen.t<=0)return;
-  const gold=n.type==='gold',drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
+  const gold=n.type==='gold',renaissanceStar=n.routeRole==='star'&&renaissanceAtlas(),drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
   const reflector=n.type==='reflector',inkwell=n.type==='inkwell';
   // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
   // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
@@ -664,7 +721,8 @@ function drawNode(n,aim){
     else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
     ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   }
-  revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed,n.impression);
+  if(renaissanceStar)revealRenaissanceStar(n,pen,rgb);
+  else revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed,n.impression);
   // The star's charge band is planning information, not depiction: the pilot reads the filling arc to
   // know when the lap is paid for. It therefore rides the pen reaching the page, as it always did, and
   // not the observation clock, which would hold back the first two fifths of a fill the release depends on.
@@ -743,7 +801,7 @@ function drawNode(n,aim){
       ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
     }
   }
-  if(!used&&!captionsHeld()){
+  if(!used&&!captionsHeld()&&!renaissanceStar){
     ctx.font=plateFace(Math.max(9,10*scale));ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
     const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
@@ -757,6 +815,7 @@ function drawNode(n,aim){
       ctx.textAlign='center';ctx.font=plateFace(Math.max(9,9*scale),'sc');ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
     }
   }
+  if(renaissanceStar&&!captionsHeld())drawRenaissanceStarLetter(n,renaissanceStarObservation(n),rgb);
   ctx.restore();
 }
 // How far the innermost band of a vortex's field is wound about its eye, in radians. The bands
