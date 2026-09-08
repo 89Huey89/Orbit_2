@@ -397,15 +397,24 @@ function platePreview(id){
     artDot(41,22,1.5,.9,line)+artDot(79,49,1.3,.85,line)+artDot(77,21,1.1,.7,soft)+artDot(43,49,1.2,.7,soft)+
     artLine('M33 55h11M87 17H76',.7,.55,soft);
 }
-// A trail ink is the one cosmetic that is nothing but colour, so its card is a stroke of it: the wash
-// the nib leaves, the dried body over it, the wet leading half, the dry-brush edge and the bead held at
-// the point — every one of them the ink's own registered tone on the plate now on the press.
+// A trail ink is the one cosmetic that is nothing but colour, so its card is a stroke of it, and the
+// whole life of one: the card lays the same line the pen lays, read back to front. The bead at the point
+// and the wet leading half are the ink as it leaves the nib; the swelling body behind them is the same
+// ink drying; and the thin tail it runs back to is the dried route the run's whole flight is printed in
+// — which is a tone of its own, `path`, and the one most of the ink standing on a chart actually is (see
+// drawTrail and drawInkPath in src/effects.js, which read these very tokens). Under all of it the wash
+// the nib leaves in the paper, over it the dry-brush edge, and a blot where the stroke began. Every tone
+// is the ink's own registered value on the plate now on the press; nothing here is a stand-in for one.
+// The card prints them at close to full strength where the chart lays them thin and lets them fade, so
+// it reads as a pigment swatch rather than as a screenshot of a stroke — which is what a catalogue of
+// inks is for. The lay is one cubic; every segment below is cut from it, so they meet as one line.
 function trailPreview(id){
   const pen=trailInk(id),lay='M26 55C46 48 68 29 94 14',dry=artRgb(pen.dry);
   return (pen.keyline?artLine(lay,5.4,.34,artRgb(pen.keyline)):'')+
     artLine(lay,9,.2,artRgb(pen.wash))+
-    artLine(lay,3.2,.92,dry)+artLine('M39.5 48.8Q57 38.5 77.4 24.3',4.6,.92,dry)+
-    artLine('M62 31C74 24 84 19 94 14',3.4,1,artRgb(pen.wet))+
+    artLine('M26 55Q39.5 49.9 54.4 39.7',1.8,.8,artRgb(pen.path||ink.dark.pathInk))+
+    artLine('M47.8 43.9Q68.8 29.7 94 14',3.2,.92,dry)+artLine('M57.8 37.5Q69.5 29.5 82.6 21',4.6,.92,dry)+
+    artLine('M66 32Q79.2 22.8 94 14',3.4,1,artRgb(pen.wet))+
     artLine('M30 52C50 45 70 26 93 11',.7,.5,artRgb(pen.edge))+
     (pen.shimmer?artLine('M42 45C58 39 74 26 92 14',.6,.85,artRgb(pen.shimmer)):'')+
     artDot(95,13.5,3.4,1,artRgb(pen.wet))+
