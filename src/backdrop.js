@@ -254,7 +254,8 @@ definePlate('planets',{
     gold:    {light:'#d7c18b',body:'#9b8558',dark:'#34362f',rgb:'218,192,139',size:14,spin:.006},
     shield:  {light:'#bcd8e0',body:'#6f95a3',dark:'#26363c',rgb:'163,205,214',size:15,spin:.006},
     reflector:{light:'#dcc9e8',body:'#9c7fae',dark:'#3a2c42',rgb:'196,172,224',size:15,spin:.006},
-    inkwell: {light:'#e0c9a0',body:'#a67c4a',dark:'#3c2c18',rgb:'196,152,100',size:15,spin:.006}
+    inkwell: {light:'#e0c9a0',body:'#a67c4a',dark:'#3c2c18',rgb:'196,152,100',size:15,spin:.006},
+    dawn:    {light:'#f7e0c0',body:'#c39a6c',dark:'#3a2c20',rgb:'247,203,152',size:15,spin:.006}
   },
   paper:{
     ocean:   {light:'#e2dcc4',body:'#aebd9f',dark:'#465648',rgb:'62,104,84',   size:26,spin:.012}, // verdigris
@@ -267,7 +268,8 @@ definePlate('planets',{
     gold:    {light:'#ead495',body:'#c39e55',dark:'#4a3a1c',rgb:'190,132,46', size:14,spin:.006}, // bright ochre
     shield:  {light:'#d5dfd7',body:'#9ab6ac',dark:'#2e4640',rgb:'56,104,134', size:15,spin:.006}, // dull Prussian
     reflector:{light:'#d9cfe0',body:'#a390ac',dark:'#3c2c40',rgb:'92,58,120', size:15,spin:.006}, // deep plum
-    inkwell: {light:'#d8c4a0',body:'#8a6440',dark:'#301f10',rgb:'107,74,44', size:15,spin:.006}  // dark umber
+    inkwell: {light:'#d8c4a0',body:'#8a6440',dark:'#301f10',rgb:'107,74,44', size:15,spin:.006}, // dark umber
+    dawn:    {light:'#f0d4a4',body:'#cfa068',dark:'#4e2f14',rgb:'186,102,40', size:15,spin:.006}  // minium, red lead
   },
   // The observatory plate keeps the sizes and spins of the bodies it inherits and nothing else: a rendered
   // world is lit rather than hatched, so it needs the colour it actually is, not the pigment a colourist
@@ -284,7 +286,8 @@ definePlate('planets',{
     gold:    {light:'#ffe9a8',body:'#d8ab48',dark:'#3e2f0e',rgb:'246,206,116'},
     shield:  {light:'#cdeeff',body:'#4e9dc4',dark:'#12303f',rgb:'128,208,242'},
     reflector:{light:'#e6d2ff',body:'#8f6bc0',dark:'#2a1c40',rgb:'196,164,246'},
-    inkwell: {light:'#f2cf9a',body:'#c07f3c',dark:'#3a2410',rgb:'232,174,104'}
+    inkwell: {light:'#f2cf9a',body:'#c07f3c',dark:'#3a2410',rgb:'232,174,104'},
+    dawn:    {light:'#ffe6c0',body:'#e0954a',dark:'#3c2410',rgb:'250,196,130'}
   }
 });
 // The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived

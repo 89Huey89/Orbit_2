@@ -19,11 +19,13 @@ const OPENING_ORBIT_SPEED = BASE_SPEED * 0.6;
 // hardcore) are unchanged so existing saves, personal bests and the pressure multiplier lookup all
 // keep working; only the printed word changes.
 const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER'};
-// Display names for the two carried charges, in the same Latin voice: SCUTUM the shield, that turns
-// aside a vortex; REPULSA the repulse, that turns the traveller back from the chart's edge. As with
-// DIFFICULTY_LABELS, the internal type strings ('shield', 'reflector') are unchanged so nothing that
-// reads them has to know the printed word.
-const POWERUP_LABELS = {shield:'SCUTUM', reflector:'REPULSA'};
+// Display names for the three carried charges, in the same Latin voice: SCUTUM the shield, that turns
+// aside a vortex; REPULSA the repulse, that turns the traveller back from the chart's edge; AURORA the
+// dawn, that drives the rising dark back down the sheet. Each answers exactly one of the three ways a
+// run is taken from outside the nib, and each is carried one at a time. As with DIFFICULTY_LABELS, the
+// internal type strings ('shield', 'reflector', 'dawn') are unchanged so nothing that reads them has to
+// know the printed word.
+const POWERUP_LABELS = {shield:'SCUTUM', reflector:'REPULSA', dawn:'AURORA'};
 const FLIGHT_STEP = 1/120;
 // The nib carries a charge of ink, held as 0..1. Flight spends it by the distance flown, so a
 // transfer costs what it is long rather than what it takes; going faster crosses the same gulf for
@@ -44,6 +46,13 @@ const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
 // The credit is capped rather than stacked without limit, and leaks away in world units per second
 // whether or not it is spent, so a burst of skips buys a breather rather than a standing pardon.
 const DARKNESS_LEAD_PER_SKIP = 55, DARKNESS_LEAD_CAP = 260, DARKNESS_LEAD_DECAY = 28;
+// What a spent AURORA charge buys. The flood is driven back down the sheet at once, far enough that the
+// pen is clear of it on the very frame it would have been taken, and then held off for as long as a
+// completed constellation holds it off. The waterline is ordinarily not allowed to sit more than a hand's
+// breadth below the camera (see update), so the charge grants its own trailing room to open that floor —
+// above anything a burst of skipped orbits can bank, since this is the one credit that has to be enough
+// on its own rather than adding to whatever the run already had in hand.
+const DARKNESS_RESCUE_DROP = 230, DARKNESS_RESCUE_GRACE = 4, DARKNESS_RESCUE_LEAD = 420;
 // The chart is drawn for a pace rather than for a row count, and every transfer on it is cut to
 // take about the same time to fly. As the early slingshots put a faster pace within reach the
 // gulfs open to match, so speed earned on a star buys distance instead of merely arriving sooner.
@@ -338,7 +347,7 @@ class OrbitWorld {
     this.trail = []; this.inkPath = []; this.surveys = [];
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
-    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,reflectorArmed:false,ink:1,dryAnnounced:false};
+    this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,reflectorArmed:false,dawnArmed:false,ink:1,dryAnnounced:false};
     this.positionPlayer();
     if (offerDifficulty) this.spawnDifficultyPaths(); else this.ensureAhead();
   }
@@ -446,6 +455,20 @@ class OrbitWorld {
       const side = (prev.x+n.x)>0 ? -1 : 1;
       const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2-90;
       if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'inkwell');
+    }
+    // Rarest of the four, and the deepest: one carried charge turns back the rising dark itself. It is cut
+    // no earlier than the row where a median run ends, because what it answers is the loss a deep run is
+    // actually flying against rather than a mistake an opening row can make. Its rows are counted from the
+    // eighteenth rather than off a bare multiple: this charge hangs off the same flank as the gold detour
+    // and the other three, so a plain nineteenth or twentieth row would have offered it only where a fork
+    // or a satellite was already standing in the one place it could go, and the chart would have dealt it
+    // almost never. Counted this way it falls clear of both, on the eighteenth row and every thirty-second
+    // after it — one offer to a run that reaches the depth where the flood is what ends runs, and a second
+    // only to a run that is genuinely deep.
+    if (!fork && k >= 18 && k%32 === 18) {
+      const side = (prev.x+n.x)>0 ? -1 : 1;
+      const ex = side * Math.min(150*grow,this.width*.34,this.inboard(28*size)), ey = (prev.y+n.y)/2+90;
+      if (this.nodes.every(q=>Math.hypot(ex-q.x,ey-q.y)>q.r+q.amp+70)) this.makeNode(ex,ey,28*size,k-.5,'dawn');
     }
     // Hazards and the ways across. Through the opening regions a hole or a flare is placed clear of
     // every route between the last two main nodes, so it is scenery to be given room rather than an
@@ -629,7 +652,9 @@ class OrbitWorld {
     }
     this.positionPlayer();
     const skipBonus=Math.round(skipped*10*scoreMultiplier);
-    if(skipped>0)this.darknessLead=Math.min(DARKNESS_LEAD_CAP,this.darknessLead+skipped*DARKNESS_LEAD_PER_SKIP);
+    // The cap is on what skipping banks, not on the room the traveller is standing in: a rescue grants
+    // more than any burst of skips can, and a skip taken while that is still in hand must not cut it back.
+    if(skipped>0)this.darknessLead=Math.max(this.darknessLead,Math.min(DARKNESS_LEAD_CAP,this.darknessLead+skipped*DARKNESS_LEAD_PER_SKIP));
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     // An inkwell only pays out on a streak already standing when the traveller reaches it — the streak
     // this landing itself extends or breaks is read below, after it is folded in.
@@ -649,6 +674,7 @@ class OrbitWorld {
     if(this.progress>=40)this.observe('fortyRows');
     if(n.type==='shield'&&!p.shielded){p.shielded=true;this.emit('shield',{x:n.x,y:n.y});}
     if(n.type==='reflector'&&!p.reflectorArmed){p.reflectorArmed=true;this.emit('reflector',{x:n.x,y:n.y});}
+    if(n.type==='dawn'&&!p.dawnArmed){p.dawnArmed=true;this.emit('dawn',{x:n.x,y:n.y});}
     if(n.type==='inkwell')this.emit(reckless?'inkwell':'inkwellDry',{x:n.x,y:n.y});
     if(n.routeId!==undefined&&!perfect){
       const route=this.constellations.find(c=>c.id===n.routeId);if(route)route.pure=false;
@@ -684,6 +710,20 @@ class OrbitWorld {
     p.vx-=2*dot*nx;p.vy-=2*dot*ny;
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
+  }
+  // A carried dawn charge is spent on the rising dark itself: it consumes itself, drives the flood back
+  // down the sheet and holds it off for a reprieve, instead of ending the run where it stood. The drop is
+  // taken from the traveller rather than from the waterline, so the charge is worth the same whether the
+  // dark took a flight that had outrun it or an orbit it had crept up under.
+  darknessHit() {
+    if(this.state!=='playing')return;
+    const p=this.player;
+    if(!p.dawnArmed){this.die('THE DARK CAUGHT UP');return;}
+    p.dawnArmed=false;
+    this.darknessLead=Math.max(this.darknessLead,DARKNESS_RESCUE_LEAD);
+    this.floorY=Math.min(this.cameraY+this.height-25+this.darknessLead,Math.max(this.floorY,p.y+DARKNESS_RESCUE_DROP));
+    this.darknessGrace=Math.max(this.darknessGrace,DARKNESS_RESCUE_GRACE);
+    this.shake=3;this.emit('dawnBreak',{x:p.x,y:p.y});
   }
   // A carried reflector charge turns back a flight past the chart's edge: it consumes itself and
   // sends the traveller back into the chart instead of losing the run to it.
@@ -781,7 +821,7 @@ class OrbitWorld {
     this.darknessLead=Math.max(0,this.darknessLead-DARKNESS_LEAD_DECAY*dt);
     if(this.elapsed>1.5)this.floorY+=48*respite-this.darknessSpeed()*(dt-respite);
     this.floorY=Math.min(this.floorY,this.cameraY+this.height-25+this.darknessLead);
-    if(p.y>this.floorY-4)this.die('THE DARK CAUGHT UP');
+    if(p.y>this.floorY-4)this.darknessHit();
     if(Math.abs(p.x)>this.width/2+16)this.edgeHit();
     this.ensureAhead();
     // Pruning runs every physics tick (120 Hz), but the darkness only crosses any given element's

@@ -6,7 +6,7 @@ definePlate('dark',{
   night:{
     chapterShadow:'#080f18',chapterLabel:'#baa57b',chapterRule:'202,180,137',chapterDiamond:'216,195,154',
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
-    playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',playerReflector:'196,172,224',
+    playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',playerReflector:'196,172,224',playerDawn:'247,203,152',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
     // What the plate's own ink actually is, as against what colour it is: the atlas is written with a
     // cut quill, so its line swells and thins with the turn of the flight. See MATERIALS below.
@@ -26,7 +26,7 @@ definePlate('dark',{
   paper:{
     chapterShadow:'transparent',chapterLabel:'#5c4630',chapterRule:'58,42,28',chapterDiamond:'34,24,16',
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
-    playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',playerReflector:'92,58,120',
+    playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',playerReflector:'92,58,120',playerDawn:'186,102,40',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
     trailMedium:'quill',
     pathInk:'104,74,42',
@@ -899,6 +899,18 @@ const OBSERVER_MARKS={
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4+1.7);
     ctx.strokeStyle=`rgba(${ink.dark.playerReflector},${.55*pulse})`;ctx.lineWidth=1;ctx.setLineDash([2.4,2.4]);
     ctx.beginPath();ctx.arc(0,0,14,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  }
+  // The dawn's charge is not a ring at all but the light thrown off one, so the third charge is told from
+  // the other two by what kind of mark it is and not only by how wide it stands: twelve short spokes struck
+  // outward, the same light the body it was taken from has rising off it.
+  if(p.dawnArmed){
+    const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4+3.1);
+    ctx.strokeStyle=`rgba(${ink.dark.playerDawn},${.6*pulse})`;ctx.lineWidth=.9;ctx.beginPath();
+    for(let i=0;i<12;i++){
+      const a=i*TAU/12,long=i%2===0;
+      ctx.moveTo(Math.cos(a)*16.5,Math.sin(a)*16.5);ctx.lineTo(Math.cos(a)*(long?20.5:18.6),Math.sin(a)*(long?20.5:18.6));
+    }
+    ctx.stroke();
   }
   ctx.restore();
 }

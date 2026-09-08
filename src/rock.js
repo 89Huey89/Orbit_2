@@ -814,6 +814,16 @@ function rockPlayer(){
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(core.canvas,-core.R,-core.R,core.size,core.size);ctx.restore();
   // A shielded run carries the charge visibly, in the one colour this era spends on rarity: kaolin.
   if(p.shielded){ctx.strokeStyle=`rgba(${ink.rock.kaolin},.55)`;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,14,0,TAU);ctx.stroke();}
+  // The charge held against the forgetting is the one thing on this wall that is not a pigment at all:
+  // it is the torch, so it is struck outward in the flame's own colour rather than ringed in a mark.
+  if(p.dawnArmed){
+    ctx.strokeStyle=`rgba(${ink.rock.ember},.6)`;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.beginPath();
+    for(let i=0;i<10;i++){
+      const a=i*TAU/10,to=i%2===0?23:20.5;
+      ctx.moveTo(Math.cos(a)*17,Math.sin(a)*17);ctx.lineTo(Math.cos(a)*to,Math.sin(a)*to);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

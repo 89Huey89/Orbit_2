@@ -279,8 +279,14 @@ function planetWeather(family,core,seed){
 // the atlas) for Adeptus, and a volcanic world for Magister, so the choice reads at a glance before
 // its caption is even legible.
 const DIFFICULTY_FAMILY = {relaxed:'ocean', classic:'ringed', hardcore:'volcanic'};
+// The bodies that are offers rather than geology: a gold detour and the three carried charges. Each is
+// registered as its own family, so it keeps its own pigment and is drawn without the survey furniture a
+// specimen carries. What a charge actually offers is engraved around it as a device (see chargeDevice()
+// in src/figures.js), since the type is the whole reason to leave the main line for one; the gold detour
+// wears the rosette cut into its own specimen below, having nothing to declare but a bonus.
+const PICKUP_FAMILIES=new Set(['gold','shield','reflector','inkwell','dawn']);
 const planetFamilyFor=(type,row,runSeed,difficultyChoice)=>
-  type==='gold'?'gold':type==='shield'?'shield':type==='reflector'?'reflector':type==='inkwell'?'inkwell':DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed);
+  PICKUP_FAMILIES.has(type)?type:DIFFICULTY_FAMILY[difficultyChoice]||planetFamily(row,runSeed);
 const glyphKey=(seed,type,row,runSeed,difficultyChoice)=>seed+':'+type+':'+planetFamilyFor(type,row,runSeed,difficultyChoice);
 // Cutting one planet costs three or four offscreen sheets and something like a thousand marks laid on
 // them, so a planet that arrives without warning is a stutter, and two arriving together are a worse
@@ -295,7 +301,7 @@ const glyphKey=(seed,type,row,runSeed,difficultyChoice)=>seed+':'+type+':'+plane
 // and drawPlanet is never told which kind of specimen it was handed.
 const MODERN_LIGHT={x:-.42,y:-.46};
 // Worlds that hold an atmosphere scatter light around their own limb; a bare rock does not.
-const MODERN_AIR={ocean:1,ice:.72,ringed:.88,storm:1,dune:.4,volcanic:.22,crater:0,gold:.6,shield:.9,reflector:.9,inkwell:.6};
+const MODERN_AIR={ocean:1,ice:.72,ringed:.88,storm:1,dune:.4,volcanic:.22,crater:0,gold:.6,shield:.9,reflector:.9,inkwell:.6,dawn:.9};
 function modernNoise(g,core,rng,count,tone,alpha){
   for(let i=0;i<count;i++){
     const a=rng()*TAU,d=Math.sqrt(rng())*core,r=.3+rng()*1.5;
@@ -521,7 +527,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
-  if(family!=='gold'&&family!=='shield'&&family!=='reflector'&&family!=='inkwell')paintSurvey(g,core,family,tilt);
+  if(!PICKUP_FAMILIES.has(family))paintSurvey(g,core,family,tilt);
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
   g=surface.ink;
   // Paper: the body colour is a dilute wash on the sheet, not a printed flat, so the engraving above it
