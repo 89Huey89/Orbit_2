@@ -923,7 +923,9 @@ defineVoice('rock',{
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
-  chrome:{bestLabel:'Deepest'}
+  // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
+  // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
+  chrome:{bestLabel:'Deepest',pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',pauseLeave:'LEAVE THE WALL'}
 });
 
 // ---------- Invalidation ----------
