@@ -513,6 +513,13 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(wall.chrome.brand,'WNWT');
     assert.equal(wall.chrome.bestLabel,'Preview');
     assert.equal(wall.chrome.pauseTitle,'The barque rests.');
+    // The halt is lettered wholly in the era's own terms: no press stands idle on a painted wall, and
+    // nothing on it is taken up again but the course. Only the frontispiece the atlas returns to is
+    // shared, and this era renames that too.
+    assert.equal(wall.chrome.pauseEyebrow,'THE HOURS STAND STILL');
+    assert.equal(wall.chrome.pauseResume,'TAKE UP THE COURSE');
+    assert.equal(wall.chrome.pauseLeave,'LEAVE THE VOYAGE');
+    assert(!/press|pen|frontispiece/i.test([wall.chrome.pauseEyebrow,wall.chrome.pauseTitle,wall.chrome.pauseNote,wall.chrome.pauseResume,wall.chrome.pauseLeave].join(' ')),'No word of the atlas\'s own workshop is left standing on the pause leaf of another century');
     assert.equal(wall.unrecorded,'ERA PREVIEW \u00b7 NOT RECORDED');
     assert.equal(wall.chapters[0],'FIRST WATCH');
     assert.equal(wall.chapters[3],'BEFORE DAWN');

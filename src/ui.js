@@ -22,7 +22,7 @@ defineVoice('atlas',{
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED'},
-  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseNote:'Tap the sheet to continue',pauseResume:'RESUME',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
+  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
@@ -179,6 +179,7 @@ function syncEraChrome(){
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
   const endTitle=$('end-title');if(endTitle)endTitle.textContent=chrome.endTitle;
   const pauseTitle=$('pause-title');if(pauseTitle)pauseTitle.textContent=chrome.pauseTitle;
+  const pauseEyebrow=$('pause-eyebrow');if(pauseEyebrow)pauseEyebrow.textContent=chrome.pauseEyebrow;
   const pauseNote=$('pause-note');if(pauseNote)pauseNote.textContent=chrome.pauseNote;
   const pauseResume=$('pause-resume');if(pauseResume)pauseResume.textContent=chrome.pauseResume;
   const pauseLeave=$('pause-leave');if(pauseLeave)pauseLeave.textContent=chrome.pauseLeave;
