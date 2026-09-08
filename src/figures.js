@@ -37,9 +37,12 @@ function renaissanceLegendMask(){
 // Six distinct point sizes carry the six traditional classes. Only the upper two classes grow into
 // multi-ray printer's signs; classes V and VI stay as the small pricks a naked-eye atlas can honestly set.
 function renaissanceStarGlyph(g,cx,cy,magnitude,rgb,alpha,size,seed=0){
-  const index=clamp(6-(magnitude||6),0,5),radii=[.7,1.05,1.5,2.05,2.85,3.9],radius=radii[index]*size;
+  // Scaled up from the atlas's original .7-3.9 ramp: at that size the common faint classes (most stars
+  // land in IV-VI) were sub-pixel on a phone-width viewport, where `size` (the responsive `scale`) is
+  // well under 1. The six-class hierarchy is kept, just carried at a legible size.
+  const index=clamp(6-(magnitude||6),0,5),radii=[1.1,1.7,2.4,3.2,4.4,6],radius=radii[index]*size;
   g.save();g.lineCap='round';
-  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.35,radius*.46),0,TAU);g.fill();
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.6,radius*.46),0,TAU);g.fill();
   if(index>=2){
     const rays=index>=5?8:index>=4?6:4,rng=seeded((seed^0x51f3a91d)>>>0||1);
     const weight=Math.max(.35,.48*size),rayAlpha=alpha*(index>=4?.78:.62);
@@ -71,6 +74,36 @@ function drawRenaissanceStarLetter(n,observation,rgb){
   ctx.font=plateFace(size,'text','italic');ctx.textAlign=dir>0?'left':'right';ctx.textBaseline='alphabetic';
   ctx.fillStyle=`rgba(${rgb},${.78*inked})`;
   writeText(ctx,n.greek,dir*(4.6*scale)+dir*size*.35,-5.4*scale,inked,{size,nib:false});
+}
+// A slingshot star does not carry a fixed magnitude the way a catalogued point does — the atlas has
+// watched this one flare before, the way it watched Tycho's star of 1572 or Kepler's of 1604: a modest
+// ember at rest, brightening lap over lap as it is orbited, and spending that light in a burst at full
+// charge rather than holding still. It reads by the same charge the ring outside the frame fills with,
+// so the specimen and the instrument around it always agree.
+function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
+  const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(3.2+charge*3.6)*size;
+  g.save();g.lineCap='round';
+  const rings=charge>.08?1+Math.floor(charge*2.5):0;
+  for(let i=0;i<rings;i++){
+    const ringR=radius*(1.7+i*.8),ringAlpha=alpha*(.26-i*.08);
+    if(ringAlpha>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha,Math.max(.28,.38*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
+  }
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.7,radius*.4),0,TAU);g.fill();
+  const rays=charge>.05?4+Math.round(charge*4):0,rayAlpha=alpha*(.45+.5*charge);
+  for(let i=0;i<rays;i++){
+    const a=i*TAU/rays-Math.PI/2+(rng()-.5)*.12,len=radius*(.75+charge*1.15)*(.86+rng()*.18);
+    const x1=cx+Math.cos(a)*radius*.32,y1=cy+Math.sin(a)*radius*.32;
+    const x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;
+    burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha,Math.max(.32,.4*size),seed^(i*733+53),{segments:2,wobble:.2,hair:false});
+  }
+  g.restore();
+  return radius;
+}
+function revealNova(n,pen,rgb){
+  const p=world&&world.player,active=p&&p.node===n,charge=active?world.charge():0;
+  const faint=pen.taken<1?pen.ring:0;
+  if(faint>0)novaGlyph(ctx,0,0,0,rgb,.7*faint,scale*.9,n.seed^0x17);
+  if(pen.taken>0)novaGlyph(ctx,0,0,charge,rgb,pen.taken*(.4+.6*pen.d),scale,n.seed);
 }
 const figureLayers=new Map();
 function figFrame(chart){
@@ -782,7 +815,7 @@ function drawNode(n,aim){
   // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
   // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
   // plate's ordinary ink, reading as the plain, unmarked choice between the two.
-  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:ink.marks.node;
+  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:sling?ink.marks.slingFill:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
@@ -796,6 +829,7 @@ function drawNode(n,aim){
     ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
   }
   if(renaissanceStar)revealRenaissanceStar(n,pen,rgb);
+  else if(sling)revealNova(n,pen,rgb);
   else revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed,n.impression);
   // The star's charge band is planning information, not depiction: the pilot reads the filling arc to
   // know when the lap is paid for. It therefore rides the pen reaching the page, as it always did, and

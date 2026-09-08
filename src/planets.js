@@ -584,6 +584,7 @@ function prewarmGlyph(){
   const top=world.cameraY-460,bottom=world.cameraY+world.height+120;
   for(const n of world.nodes){
     if(n.y<top||n.y>bottom)continue;
+    if(n.type==='sling')continue;
     if(glyphs.has(glyphKey(n.seed,n.type,n.row,world.seed,n.difficultyChoice)))continue;
     glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice);return;
   }
