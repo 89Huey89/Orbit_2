@@ -592,12 +592,16 @@ for(let seed=1;seed<=60;seed++){
 assert.equal(failures.length,0,'Every tested route must remain playable: '+JSON.stringify(failures));
 assert(maxNodes<20&&maxHazards<12,'Endless generation should stay bounded');
 
-// Follow each optional three-star path, rejoin, and continue to row 48.
-// This exercises real tangent launches and automatic captures on both sides.
-let chartCompletions=0;const detourFailures=[];
+// Follow each optional three-star path, rejoin, and continue to row 48, then keep flying the same
+// course to row 60: forks no longer stop at the fourth region, and one seeded flight answers both,
+// since the pilot at row 48 has no notion of stopping there. Row 48 is a snapshot taken in passing,
+// not a second flight of the same seed under the same policy — the two used to be run separately.
+let chartCompletions=0,deepCharts=0,deepRows=0;
+const detourFailures=[],deepFailures=[],deepFigures=new Set();
 for(let seed=1;seed<=60;seed++){
   const rewards=[],w=new OrbitWorld(seed,seed%3===0?1280:440,860,(type,e)=>{if(type==='constellation')rewards.push(e);});w.start();
-  for(let i=0;i<120*240&&w.state==='playing'&&w.progress<48;i++){
+  let past48=false;
+  for(let i=0;i<120*320&&w.state==='playing'&&w.progress<60;i++){
     if(w.player.node){
       const row=Math.floor(w.progress)+1;
       const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
@@ -607,38 +611,24 @@ for(let seed=1;seed<=60;seed++){
     w.update(step);
     if(i===120*12&&seed%4===0)w.resize(1280,780);
     if(i===120*16&&seed%4===0)w.resize(440,860);
-    assert(w.nodes.length<20&&w.constellations.length<=Math.floor(w.row/8)+1,'Branch generation must stay bounded');
-  }
-  // Every region now carries a fork, so a course through row 48 offers six charts.
-  if(w.progress<48||w.constellationsCompleted<4)detourFailures.push({seed,progress:w.progress,completed:w.constellationsCompleted,reason:w.reason});
-  chartCompletions+=w.constellationsCompleted;
-  assert.equal(rewards.length,w.constellationsCompleted,'Exactly one reward event per completed chart');
-  assert(rewards.every(e=>e.gain===60&&e.chart.mask===7));
-  assert(rewards.every(e=>e.chart.name===e.chart.name.toUpperCase()&&e.chart.catalogueIndex>=0));
-  if(w.constellationsCompleted>=4){
-    const score=w.score,captures=w.captures,done=w.constellations.filter(c=>c.completed);
-    assert.equal(w.capture(done[done.length-1].stars[2]),false,'A visited star cannot be farmed');
-    assert.equal(w.score,score);assert.equal(w.captures,captures);
-  }
-}
-assert.equal(detourFailures.length,0,'Every optional path must be playable: '+JSON.stringify(detourFailures));
-
-// Forks no longer stop at the fourth region. Run the same star-following pilot on the
-// same sixty courses through row 60 to prove the later charts are reachable and
-// completable, and that the catalogue past the fourth region really varies.
-let deepCharts=0,deepRows=0;const deepFailures=[],deepFigures=new Set();
-for(let seed=1;seed<=60;seed++){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.start();
-  for(let i=0;i<120*320&&w.state==='playing'&&w.progress<60;i++){
-    if(w.player.node){
-      const row=Math.floor(w.progress)+1;
-      const target=w.nodes.find(n=>n.row===row&&n.routeRole==='star')||w.nodes.find(n=>n.row===row&&n.type!=='gold');
-      const aim=w.aim();
-      if(aim&&!aim.steep&&target&&aim.n.id===target.id&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
-    }
-    w.update(step);
     assert(w.nodes.length<20&&w.hazards.length<12&&w.nebulas.length<8,'Later generation must stay bounded');
+    if(w.progress<48)assert(w.constellations.length<=Math.floor(w.row/8)+1,'Branch generation must stay bounded');
+    if(!past48&&w.progress>=48){
+      past48=true;
+      // Every region now carries a fork, so a course through row 48 offers six charts.
+      if(w.constellationsCompleted<4)detourFailures.push({seed,progress:w.progress,completed:w.constellationsCompleted,reason:w.reason});
+      chartCompletions+=w.constellationsCompleted;
+      assert.equal(rewards.length,w.constellationsCompleted,'Exactly one reward event per completed chart');
+      assert(rewards.every(e=>e.gain===60&&e.chart.mask===7));
+      assert(rewards.every(e=>e.chart.name===e.chart.name.toUpperCase()&&e.chart.catalogueIndex>=0));
+      if(w.constellationsCompleted>=4){
+        const score=w.score,captures=w.captures,done=w.constellations.filter(c=>c.completed);
+        assert.equal(w.capture(done[done.length-1].stars[2]),false,'A visited star cannot be farmed');
+        assert.equal(w.score,score);assert.equal(w.captures,captures);
+      }
+    }
   }
+  if(!past48)detourFailures.push({seed,progress:w.progress,completed:w.constellationsCompleted,reason:w.reason});
   if(w.progress<60)deepFailures.push({seed,progress:w.progress,reason:w.reason,elapsed:w.elapsed});
   deepRows+=w.progress;
   for(const chart of w.constellations){
@@ -649,6 +639,7 @@ for(let seed=1;seed<=60;seed++){
   }
   deepCharts+=w.constellations.filter(c=>c.completed&&c.id>=4).length;
 }
+assert.equal(detourFailures.length,0,'Every optional path must be playable: '+JSON.stringify(detourFailures));
 assert.equal(deepFailures.length,0,'Forks past the fourth region must stay completable: '+JSON.stringify(deepFailures));
 assert(deepCharts>=60,'The later regions must actually be traced: '+deepCharts);
 assert(deepFigures.size>=8,'Later regions must draw a varying figure from the catalogue: '+deepFigures.size);
