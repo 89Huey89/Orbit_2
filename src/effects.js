@@ -54,7 +54,7 @@ definePlate('inks',{
     // Orpiment: the old illuminators' bright, faintly dangerous yellow-orange mineral.
     orpiment:{wet:[255,196,96],dry:[190,124,54],wash:'224,158,72',edge:'196,128,58',bleed:'236,172,84',blotWet:[252,194,94],blotDry:[188,122,52],path:'176,116,50'},
     // The badAngles ladder: five pigments running common to precious, the way the slingshot ladder
-    // runs chalk to gold leaf, but earned by a lifetime of arrivals too steep to score at all.
+    // runs chalk to gold leaf, but earned by a lifetime of visibly rough impressions.
     umber:{wet:[214,188,140],dry:[124,100,64],wash:'192,166,118',edge:'158,132,90',bleed:'200,174,124',blotWet:[212,186,138],blotDry:[126,102,66],path:'142,116,78'},
     woad:{wet:[176,196,224],dry:[92,112,148],wash:'140,160,196',edge:'108,128,164',bleed:'156,176,210',blotWet:[174,194,222],blotDry:[94,114,150],path:'104,124,158'},
     vermilion:{wet:[248,138,96],dry:[186,84,58],wash:'214,110,76',edge:'182,88,60',bleed:'228,124,86',blotWet:[246,136,94],blotDry:[188,86,60],path:'176,84,56'},

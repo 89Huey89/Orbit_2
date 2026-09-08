@@ -122,18 +122,6 @@ function paintPaperBackdrop(){
     const y=rng()*H,x=W*(.4+.22*Math.sin(y/H*4.4-1))+(rng()+rng()+rng()-1.5)*W*.18;
     g.fillStyle=`rgba(96,70,40,${rng()*.09})`;g.fillRect(x,y,rng()>.95?1.3:.7,.65);
   }
-  // A copperplate ecliptic pressed into the sheet: calibrated arcs and sparse hour marks.
-  const chartRadius=Math.max(W*.8,H*.46),chartFlatten=.48;
-  g.save();g.translate(W*.5,H*.62);
-  g.strokeStyle='rgba(84,60,32,.14)';g.lineWidth=.9;g.beginPath();g.ellipse(0,0,chartRadius,chartRadius*chartFlatten,0,0,TAU);g.stroke();
-  for(const offset of [-3,3]){g.strokeStyle='rgba(84,60,32,.075)';g.lineWidth=.5;g.beginPath();g.ellipse(0,0,chartRadius+offset,(chartRadius+offset)*chartFlatten,0,0,TAU);g.stroke();}
-  for(let i=0;i<120;i++){
-    const a=i/120*TAU,major=i%10===0,r=chartRadius,l=major?9:i%5===0?5:2.5;
-    g.strokeStyle=`rgba(84,60,32,${major?.2:.12})`;g.lineWidth=major?.8:.5;
-    g.beginPath();g.moveTo(Math.cos(a)*r,Math.sin(a)*r*chartFlatten);g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
-    if(major&&!plainPlate()){g.font=plateFace(10);g.fillStyle='rgba(84,60,32,.22)';g.textAlign='center';g.fillText(['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'][i/10],Math.cos(a)*(r+18),Math.sin(a)*(r+18)*chartFlatten+3);}
-  }
-  g.restore();
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.3,W/2,H*.5,Math.max(W,H)*.74);
   vignette.addColorStop(0,'rgba(120,84,40,0)');vignette.addColorStop(1,'rgba(96,64,28,.34)');g.fillStyle=vignette;g.fillRect(0,0,W,H);
   return c;
@@ -162,25 +150,6 @@ function paintNightBackdrop(){
   for(let i=0;i<34;i++){
     const x=rng()*W,y=rng()*H;g.strokeStyle='rgba(173,185,161,.028)';g.lineWidth=.5;g.beginPath();g.moveTo(x,y);g.lineTo(x+15+rng()*65,y-.2);g.stroke();
   }
-  // A copperplate ecliptic: calibrated arcs and sparse hour marks in the paper.
-  g.save();g.translate(W*.48,H*.51);g.rotate(-.48);
-  const chartRadius=Math.max(W*.8,H*.46),chartFlatten=.48;
-  g.strokeStyle='rgba(197,181,140,.095)';g.lineWidth=.65;
-  for(const offset of [-3,3]){
-    g.beginPath();g.ellipse(0,0,chartRadius+offset,(chartRadius+offset)*chartFlatten,0,0,TAU);g.stroke();
-  }
-  for(let i=0;i<120;i++){
-    const a=i/120*TAU,major=i%10===0,r=chartRadius,l=major?9:i%5===0?5:2.5;
-    g.strokeStyle=`rgba(207,189,146,${major?.18:.10})`;g.lineWidth=.55;
-    g.beginPath();g.moveTo(Math.cos(a)*(r-3),Math.sin(a)*(r-3)*chartFlatten);
-    g.lineTo(Math.cos(a)*(r+l),Math.sin(a)*(r+l)*chartFlatten);g.stroke();
-    if(major&&!plainPlate()){
-      g.save();g.translate(Math.cos(a)*(r+20),Math.sin(a)*(r+20)*chartFlatten);g.rotate(.48);
-      g.font=plateFace(12,'text','italic');g.textAlign='center';g.fillStyle='rgba(207,189,146,.2)';
-      g.fillText(['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][i/10],0,4);g.restore();
-    }
-  }
-  g.restore();
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.22,W/2,H*.5,Math.max(W,H)*.7);
   vignette.addColorStop(0,'rgba(3,8,15,0)');vignette.addColorStop(1,'rgba(2,6,13,.66)');g.fillStyle=vignette;g.fillRect(0,0,W,H);
   return c;
