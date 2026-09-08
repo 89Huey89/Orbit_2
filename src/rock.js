@@ -801,8 +801,8 @@ function rockPlayer(){
   ctx.save();
   // A short trail of fading ember dabs, sampled off the same shared trail every other era's own
   // traveller mark rides, so the era's tail keeps whatever cadence the rest of the chart already keeps.
-  for(let i=0;i<trail.length;i++){
-    const s=trail[i],age=world.time-s.time,life=clamp(1-age/TRAIL_LIFE,0,1);if(life<=0)continue;
+  for(let i=0;i<world.trail.length;i++){
+    const s=world.trail[i],age=world.time-s.time,life=clamp(1-age/TRAIL_LIFE,0,1);if(life<=0)continue;
     rockDab(ctx,sx(s.x),sy(s.y),(1.6+2*life)*scale,ink.rock.ember,.35*life,i+7);
   }
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of

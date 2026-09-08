@@ -109,34 +109,42 @@ const INK_PATH_CAP=3000;
 // the same line, and the cap is the longest any of it stays wet, so no dead sample is walked at all.
 const TRAIL_STEP=1/60,TRAIL_LIFE=1.25;
 let trailSampledAt=-1;
+// The dry route alone, distance-gated rather than time-gated so it reads the same whatever is
+// sampling it: a live frame here and there, or, replaying a finished run, every physics tick it took.
+function sampleInkPath(){
+  const p=world.player,last=world.inkPath[world.inkPath.length-1];
+  if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)world.inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
+  pruneInkPath();
+}
 function recordTrail(){
   if(world.state!=='playing'&&world.state!=='ready')return;
   const p=world.player;
   if(trailSampledAt<0||world.time<trailSampledAt||world.time-trailSampledAt>=TRAIL_STEP){
     trailSampledAt=world.time;
-    trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
+    world.trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
     const limit=reducedMotion?32:Math.ceil(TRAIL_LIFE/TRAIL_STEP);
-    if(trail.length>limit)trail.splice(0,trail.length-limit);
+    if(world.trail.length>limit)world.trail.splice(0,world.trail.length-limit);
   }
-  const last=inkPath[inkPath.length-1];
-  if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
-  pruneInkPath();
+  sampleInkPath();
 }
+// A replayed run keeps every sample rather than pruning by what has scrolled off the current
+// viewport: see keepAll on OrbitWorld. The live game still bounds both by camera and by a hard cap.
 function pruneInkPath(){
-  if(!H||!world)return;
+  if(!H||!world||world.keepAll)return;
   const below=H+220;
-  let gone=0;while(gone<inkPath.length&&sy(inkPath[gone].y)>below)gone++;
-  if(gone>0)inkPath.splice(0,gone);
-  if(inkPath.length>INK_PATH_CAP)inkPath.splice(0,inkPath.length-INK_PATH_CAP);
+  let gone=0;while(gone<world.inkPath.length&&sy(world.inkPath[gone].y)>below)gone++;
+  if(gone>0)world.inkPath.splice(0,gone);
+  if(world.inkPath.length>INK_PATH_CAP)world.inkPath.splice(0,world.inkPath.length-INK_PATH_CAP);
   // The surveyed departures and landings are dried ink beside the route, and are pruned with it.
-  let dropped=0;while(dropped<surveys.length&&sy(surveys[dropped].cy)>below)dropped++;
-  if(dropped>0)surveys.splice(0,dropped);
-  if(surveys.length>SURVEY_CAP)surveys.splice(0,surveys.length-SURVEY_CAP);
+  let dropped=0;while(dropped<world.surveys.length&&sy(world.surveys[dropped].cy)>below)dropped++;
+  if(dropped>0)world.surveys.splice(0,dropped);
+  if(world.surveys.length>SURVEY_CAP)world.surveys.splice(0,world.surveys.length-SURVEY_CAP);
 }
 // The dried route: one wash pass and three weights of burin line, the heavier where the flight was
 // faster, cut in the ink the pen is charged with. The wet trail dries into its head, so the line the
 // player is drawing now and the line drawn a minute ago are the same line.
 function drawInkPath(){
+  const inkPath=world.inkPath;
   if(inkPath.length<2)return;
   const pen=trailInk(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
   const band=p=>Math.min(2,Math.floor(clamp((p.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1)*3));
@@ -182,7 +190,7 @@ function recordDeparture(e){
   const speed=Math.hypot(e.vx,e.vy)||1;
   const record={kind:'departure',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
     bearing:Math.round(((Math.atan2(rx,-ry)*180/Math.PI)%360+360)%360)%360,birth:world.time,span:SURVEY_DEPARTURE};
-  surveys.push(record);pruneInkPath();return record;
+  world.surveys.push(record);pruneInkPath();return record;
 }
 // The landing: only a flight that was launched is surveyed, so the orbit the run opens on is not.
 function recordLanding(e){
@@ -192,7 +200,7 @@ function recordLanding(e){
   const record={kind:'landing',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
     angle:e.angle,square:!!e.square,squareBonus:e.squareBonus||0,gain:e.gain,
     mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING};
-  surveys.push(record);pruneInkPath();return record;
+  world.surveys.push(record);pruneInkPath();return record;
 }
 // A hairline drawn on from one end to the other, with the wet bead and the nib riding the moving end.
 function surveyLine(x0,y0,x1,y1,t,rgb,alpha,weight,head){
@@ -241,10 +249,10 @@ function drawSurveys(){
   // A plate that draws this in its own hand names the painter; an age with no geometry and no script to
   // letter one in names a painter that draws nothing at all.
   const own=handFor('surveys');if(own)return own();
-  if(!surveys.length||!world)return;
+  if(!world||!world.surveys.length)return;
   const rgb=(trailInk().path||ink.dark.pathInk),gold=ink.base.gold,base=onPaper()?.6:.46;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.textBaseline='alphabetic';
-  for(const s of surveys){
+  for(const s of world.surveys){
     const y=sy(s.cy);if(y<-320||y>H+320)continue;
     const t=surveyProgress(s);if(t<=0)continue;
     if(s.kind==='departure')drawDepartureSurvey(s,t,rgb,base);
@@ -351,6 +359,7 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   ctx.restore();
 }
 function drawTrail(){
+  const trail=world.trail;
   if(trail.length<2)return;
   const pen=trailInk();
   // Past the gauge's own copper mark (see updateUI) the nib is starved: the stroke skips beats and

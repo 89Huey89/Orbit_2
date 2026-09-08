@@ -119,7 +119,7 @@ function placeInscription(g){
     for(const z of world.hazards)cost+=inscriptionOverDisc(box,sx(z.x),sy(z.y),z.r*scale+8)*1.5;
     // The constructions still being drawn up at either end of the last flight are the busiest part of the
     // sheet, so the lettering keeps off them as well.
-    for(let k=Math.max(0,surveys.length-3);k<surveys.length;k++)cost+=inscriptionOverDisc(box,sx(surveys[k].x),sy(surveys[k].y),30*scale);
+    for(let k=Math.max(0,world.surveys.length-3);k<world.surveys.length;k++)cost+=inscriptionOverDisc(box,sx(world.surveys[k].x),sy(world.surveys[k].y),30*scale);
     cost+=inscriptionOverDisc(box,sx(p.x),sy(p.y),16*scale)*3;
     for(const q of others)clash+=inscriptionClash(box,sway,q);
     cost+=clash*40;

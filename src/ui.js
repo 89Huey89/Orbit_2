@@ -125,9 +125,10 @@ function event(type,e){
     audio.death();
     if(e.reason==='LEFT THE STAR CHART'){
       // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than
-      // bursting. The kill boundary sits 16 units past the visible edge, so the splat is pulled back
-      // to just inside it — on the edge the player actually left by, not out past where it is unseen.
-      const dir=e.x>=0?1:-1,edgeX=dir*Math.max(0,world.width/2-50);
+      // bursting. The kill boundary sits 16 units past the visible edge, so the splat sits at the
+      // actual point the player left by, only capped to just inside the visible edge in case that
+      // point landed further out than the sheet ever drew.
+      const dir=e.x>=0?1:-1,edgeX=dir*Math.min(Math.abs(e.x),Math.max(0,world.width/2-8));
       rings.push({kind:'splat',x:edgeX,y:e.y,dir,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
     }else{
       burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
@@ -142,7 +143,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trail=[];trailSampledAt=-1;inkPath=[];particles=[];rings=[];floaters=[];surveys=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];

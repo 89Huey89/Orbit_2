@@ -10,7 +10,7 @@ const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matche
 // live accessibility signal (reducedMotion stays about motion, this stays about which world is on
 // the press). See openReview()/renderReview() in src/review.js.
 let reviewing=false;
-let W=0,H=0,DPR=1,scale=1,world,trail=[],inkPath=[],particles=[],rings=[],floaters=[],surveys=[],glyphs=new Map();
+let W=0,H=0,DPR=1,scale=1,world,particles=[],rings=[],floaters=[],glyphs=new Map();
 // Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
 // higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
 function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}

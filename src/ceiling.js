@@ -1118,6 +1118,7 @@ function ceilingDrawRegisterGrid(){
 // same at any zoom, and cheap regardless of how long inkPath has grown: one pass, two strokes a dab,
 // nothing sampled that is not already on the path.
 function ceilingDrawRoute(){
+  const inkPath=world.inkPath;
   if(inkPath.length<2)return;
   ctx.save();ctx.lineCap='round';
   let carry=0;
@@ -1173,9 +1174,9 @@ function ceilingDrawLandingPlumb(s,t){
   ceilingNumber(ctx,n,bx,by+8*scale,h,CEILING_PALETTE.carbon,true);
 }
 function ceilingDrawSurveys(){
-  if(!surveys.length||!world)return;
+  if(!world||!world.surveys.length)return;
   ctx.save();
-  for(const s of surveys){
+  for(const s of world.surveys){
     const y=sy(s.cy);if(y<-160||y>H+160)continue;
     const t=surveyProgress(s);if(t<=0)continue;
     if(s.kind==='departure')ceilingDrawDepartureCord(s,t);else ceilingDrawLandingPlumb(s,t);

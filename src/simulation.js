@@ -331,6 +331,11 @@ class OrbitWorld {
     // Off by default: the darkness prunes what it has already passed (below), which a live run needs
     // and a replayed one, rebuilding a whole chart to be read back rather than played, does not.
     this.keepAll = false;
+    // The route actually flown and the departure/landing constructions measured along it: kept on the
+    // world itself, not a page-level global, so a replayed run builds its own copy rather than writing
+    // into whatever the live game happens to be carrying. See recordTrail/sampleInkPath/recordDeparture/
+    // recordLanding in src/effects.js and replayRun() in src/replay.js.
+    this.trail = []; this.inkPath = []; this.surveys = [];
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
     this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,reflectorArmed:false,ink:1,dryAnnounced:false};
