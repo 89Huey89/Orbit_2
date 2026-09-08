@@ -990,6 +990,44 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.newWorld();
     assert.equal(context.test.surveys.length,0,'A new run is dealt on a sheet with no constructions');
   }
+  // A rough impression cannot be joined, only arrested: its landing construction carries a skid mark of
+  // its own — gated strictly on the steep flag, seeded off the node so it never flickers, and drawn
+  // without a single non-finite canvas argument (the proxy above asserts that for every call it sees).
+  {
+    // A fresh newWorld() draws its opening node at a seed-dependent radius, so the offset that lands
+    // one course steep and another ordinary is pinned against a radius fixed here rather than left to
+    // whatever a given run happened to generate.
+    const roughFixture=(offset,speed)=>{
+      context.test.newWorld();context.test.setPlaying();
+      const w=context.test.world;w.difficultyPending=false;
+      const origin=w.player.node,destination=w.makeNode(0,-300,50,1,'still');
+      origin.r=40;origin.x=origin.baseX=offset-origin.r;origin.y=origin.baseY=0;
+      w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];w.nebulas=[];
+      w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();w.start();
+      return {w,destination};
+    };
+    const {w,destination}=roughFixture(-10,240),aim=w.aim();
+    assert(aim&&aim.steep,'The fixture must aim a rough, near-radial arrival: '+aim?.angle);
+    assert.equal(w.release(),true);
+    for(let i=0;i<120*3&&w.state==='playing'&&!w.player.node;i++)w.update(step);
+    assert.equal(w.player.node,destination,'The rough fixture must land');
+    const landing=context.test.surveys.at(-1);
+    assert.equal(landing.kind,'landing');
+    assert.equal(landing.rough,true,'A steep arrival is surveyed as a rough impression, marked for its skid');
+    assert(Number.isInteger(landing.seed)&&landing.seed>0,'The skid mark is drawn from a stable per-node seed');
+    // Mid-reveal, then fully settled: every canvas call the stand-in sees along the way must stay finite.
+    context.test.render(step);
+    for(let i=0;i<60;i++)w.update(step);
+    context.test.render(step);
+    // An ordinary, non-rough landing must carry no skid mark at all.
+    const control=roughFixture(20,150);
+    assert.equal(control.w.aim().steep,false,'The control fixture must not be rough');
+    assert.equal(control.w.release(),true);
+    for(let i=0;i<120*3&&control.w.state==='playing'&&!control.w.player.node;i++)control.w.update(step);
+    assert.equal(context.test.surveys.at(-1).rough,false,'An ordinary landing carries no skid mark');
+    context.test.render(step);
+    context.test.newWorld();
+  }
   // A nebula patch is baked into a sprite of its own, whatever the plate.
   {
     const patch=context.test.nebulaSprite(4711,26);
