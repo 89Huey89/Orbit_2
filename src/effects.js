@@ -881,26 +881,35 @@ function manicule(x,y,dir,size,rgb,alpha){
 // registered ink, drying from wet to dry exactly as the release blot does. Reduced motion keeps only the
 // pool itself, at its full size at once, and drops the flicks and droplets as the decorative filaments
 // they are.
-function drawInkSplat(r,t){
-  const rng=seeded(r.seed),grow=reducedMotion?1:clamp(t*7,.3,1);
-  const dry=clamp((t-.12)/.88,0,1),alpha=r.alpha*clamp(1-t*t,0,1);
-  const pen=trailInk(),rgb=mixRgb(pen.blotWet,pen.blotDry,dry),base=r.dir>=0?0:Math.PI;
-  ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
-  if(!reducedMotion){
+// The spill itself, in its own local space and on any context that can take a burin, so the thing is
+// drawn in exactly one place: the chart spills one where a run left the sheet, and the catalogue prints
+// one on a card in the ink it is offering. `t` is how far through its life the splat is — that alone
+// fixes how far it has spread, how far it has dried from blotWet toward blotDry, and every alpha on it
+// — `spray` flings the flicks and droplets (the chart biases them the way the flight was headed), and
+// `flung` is what reduced motion drops: without it the splat is only its pool, at full size at once.
+function inkSplat(g,pen,t,seed,size,peak,spray,flung){
+  const rng=seeded(seed),grow=flung?clamp(t*7,.3,1):1;
+  const dry=clamp((t-.12)/.88,0,1),alpha=peak*clamp(1-t*t,0,1);
+  const rgb=mixRgb(pen.blotWet,pen.blotDry,dry);
+  if(flung){
     for(let i=0;i<5;i++){
-      const a=base+(rng()-.5)*2.6,len=(16+rng()*34)*grow;
-      burinSegment(ctx,0,0,Math.cos(a)*len,Math.sin(a)*len,rgb,alpha*.5,.5+rng()*.6,r.seed+i*31+1,{segments:5,wobble:1.5,hair:false});
+      const a=spray+(rng()-.5)*2.6,len=(16+rng()*34)*grow;
+      burinSegment(g,0,0,Math.cos(a)*len,Math.sin(a)*len,rgb,alpha*.5,.5+rng()*.6,seed+i*31+1,{segments:5,wobble:1.5,hair:false});
     }
     for(let i=0;i<7;i++){
-      const a=base+(rng()-.5)*2.6,d=(8+rng()*32)*grow,size=(1.4+rng()*3.6)*grow;
-      landContour(ctx,Math.cos(a)*d,Math.sin(a)*d,size,size*.8,seeded(r.seed+i*17+3));
-      ctx.fillStyle=`rgba(${rgb},${alpha*.68})`;ctx.fill();
+      const a=spray+(rng()-.5)*2.6,d=(8+rng()*32)*grow,drop=(1.4+rng()*3.6)*grow;
+      landContour(g,Math.cos(a)*d,Math.sin(a)*d,drop,drop*.8,seeded(seed+i*17+3));
+      g.fillStyle=`rgba(${rgb},${alpha*.68})`;g.fill();
     }
   }
-  const size=r.size*grow;
-  landContour(ctx,0,0,size,size*.86,seeded(r.seed));
-  ctx.fillStyle=`rgba(${rgb},${alpha*.85})`;ctx.fill();
-  ctx.strokeStyle=`rgba(${rgb},${alpha*.55})`;ctx.lineWidth=.5;ctx.stroke();
+  const pool=size*grow;
+  landContour(g,0,0,pool,pool*.86,seeded(seed));
+  g.fillStyle=`rgba(${rgb},${alpha*.85})`;g.fill();
+  g.strokeStyle=`rgba(${rgb},${alpha*.55})`;g.lineWidth=.5;g.stroke();
+}
+function drawInkSplat(r,t){
+  ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
+  inkSplat(ctx,trailInk(),t,r.seed,r.size,r.alpha,r.dir>=0?0:Math.PI,!reducedMotion);
   ctx.restore();
 }
 function drawEffects(dt){

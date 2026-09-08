@@ -417,8 +417,34 @@ function trailPreview(id){
     artLine('M66 32Q79.2 22.8 94 14',3.4,1,artRgb(pen.wet))+
     artLine('M30 52C50 45 70 26 93 11',.7,.5,artRgb(pen.edge))+
     (pen.shimmer?artLine('M42 45C58 39 74 26 92 14',.6,.85,artRgb(pen.shimmer)):'')+
-    artDot(95,13.5,3.4,1,artRgb(pen.wet))+
-    artDot(25,56,2.8,.85,artRgb(pen.blotDry))+artDot(20,59.5,1.4,.6,artRgb(pen.blotDry));
+    artDot(95,13.5,3.4,1,artRgb(pen.wet));
+}
+// Where the stroke began, the card spills one — and that one is not drawn here at all. A splat is a
+// seeded contour under five burin flicks and seven flung droplets, and reproducing any of that in path
+// data would be a second copy of it to keep true; so the card carries a canvas at the same field the
+// SVG is cut on, and `inkSplat` (src/effects.js) paints it, the very function the chart spills with, at
+// the ink's own blotWet-to-blotDry mix and at its own alphas. What the card chooses is only the moment:
+// SPLAT_LIFE is a seventh of the way in, which is exactly where the spill has finished spreading and
+// has barely begun to dry, so the card shows an ink at its fullest body — .70 on the pool's own .85,
+// against the .72 the chart peaks at. The spray is thrown left, out of the window and away from the
+// stroke, and the seed is the ink's own name, so a card keeps one blot rather than a new one per pass.
+const SPLAT_LIFE=.18,SPLAT_SIZE=11.5,SPLAT_AT=[25,57];
+const splatSeed=id=>{let h=0x811c9dc5;for(let i=0;i<id.length;i++)h=Math.imul(h^id.charCodeAt(i),0x01000193);return h>>>0;};
+function paintCatalogueSplats(body){
+  if(!body||!body.querySelectorAll)return;
+  for(const c of body.querySelectorAll('canvas.cat-splat')){
+    const w=c.clientWidth,h=c.clientHeight;
+    if(!(w>0&&h>0)||!c.getContext)continue;
+    c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+    const g=c.getContext('2d');if(!g)continue;
+    // The same fit the SVG beside it is given, so the spill lands on the stroke's own start.
+    const k=Math.min(w/120,h/72);
+    g.setTransform(DPR,0,0,DPR,0,0);
+    g.translate((w-120*k)/2,(h-72*k)/2);g.scale(k,k);
+    g.translate(SPLAT_AT[0],SPLAT_AT[1]);
+    g.lineCap='round';g.lineJoin='round';
+    inkSplat(g,trailInk(c.getAttribute('data-ink')),SPLAT_LIFE,splatSeed(c.getAttribute('data-ink')||''),SPLAT_SIZE,.72,Math.PI,true);
+  }
 }
 // The five observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
 const MARK_ART={
@@ -586,8 +612,9 @@ const PREVIEW_ART={
 };
 function cataloguePreview(item,kind,locked=false){
   const cut=PREVIEW_ART[kind],art=cut?cut(item.id):medalRoundel(artFill(artStar(60,36,6,13,5)));
+  const spill=!locked&&kind==='trail'?'<canvas class="cat-splat" data-ink="'+plainText(item.id)+'" aria-hidden="true"></canvas>':'';
   const shown=locked?'<span class="cat-preview-glyph">?</span>'
-    :'<svg class="cat-art" viewBox="'+ART_FIELD+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+art+'</svg>';
+    :'<svg class="cat-art" viewBox="'+ART_FIELD+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+art+'</svg>'+spill;
   return '<span class="cat-preview'+(locked?' is-locked':'')+'" data-kind="'+plainText(kind)+'" data-item="'+plainText(item.id)+'" aria-hidden="true">'+
     shown+'<span class="cat-preview-rule"></span></span>';
 }
@@ -645,6 +672,7 @@ function renderCatalogue(){
   html+=`<div class="cat-pane${catalogueTab==='catalogue'?'':' hidden'}" data-pane="catalogue">${catalogueItems()}</div>`;
   html+=`<div class="cat-pane${catalogueTab==='insignia'?'':' hidden'}" data-pane="insignia">${catalogueInsignia()}</div>`;
   body.innerHTML=html;
+  paintCatalogueSplats(body);
   const field=$('initials');
   if(field&&field.addEventListener&&!field.wired){
     field.wired=true;
