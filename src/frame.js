@@ -366,43 +366,206 @@ function drawPlateFrame(){
 // The atlas earns its geometry one capture at a time. What begins as a compass prick grows through
 // the pole, equator and ecliptic into a complete graticule; construction circles remain faintly visible
 // beneath the darker finished circles instead of appearing as decoration on an already complete sheet.
+//
+// Which figure the captures construct is the player's, from the catalogue (`sphere` in COSMETIC_KINDS,
+// src/ledger.js). The atlas builds its graticule, but the same ten stages will as readily lay out an
+// astrolabe's rete, the Ptolemaic orbs or a volvelle's dials — all four are things a sixteenth-century
+// hand set out from one prick with one pair of compasses, and none of them is more or less earned than
+// another. A sheet may also be left unruled, and then nothing here is drawn at all.
 let renaissanceGridLayer=null,renaissanceGridKey='';
-function paintRenaissanceGrid(g,progress){
-  const stage=n=>clamp(progress-n,0,1),band=frameBand()+4,cx=W*.5,cy=H*.54;
-  const rx=Math.min(W*.41,H*.43),ry=rx*.62,colors=ink.frame,rgb=ink.base.inkSoft;
+// Every construction stands on the same centre and the same axes and arrives at the same rate, so the
+// measure is taken once and each hand below is only its own drawing. `stage(n)` is how far the
+// construction has got past its nth mark, `arc` the part-swept ellipse every one of them is built out
+// of, and `prick` the compass hole all four of them open on.
+function sphereMeasure(g,progress){
+  const cx=W*.5,cy=H*.54,rx=Math.min(W*.41,H*.43),ry=rx*.62,rgb=ink.base.inkSoft;
   const arc=(p,x,y,ax,ay,rotation=0,alpha=.18,weight=.55)=>{
     if(p<=0)return;g.save();g.translate(x,y);g.rotate(rotation);
     g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineWidth=weight;
     g.beginPath();g.ellipse(0,0,ax,ay,0,-Math.PI/2,-Math.PI/2+TAU*p);g.stroke();g.restore();
   };
-  g.save();g.beginPath();g.rect(band,band,Math.max(1,W-band*2),Math.max(1,H-band*2));g.clip();
   // The pole is a real compass prick with two short crossed ruling strokes.
-  const pole=stage(0);if(pole>0){g.strokeStyle=`rgba(${rgb},${.28*pole})`;g.lineWidth=.65;g.beginPath();g.moveTo(cx-4,cy);g.lineTo(cx+4,cy);g.moveTo(cx,cy-4);g.lineTo(cx,cy+4);g.stroke();g.fillStyle=`rgba(${rgb},${.5*pole})`;g.beginPath();g.arc(cx,cy,1.15,0,TAU);g.fill();}
+  const prick=p=>{
+    if(p<=0)return;
+    g.strokeStyle=`rgba(${rgb},${.28*p})`;g.lineWidth=.65;
+    g.beginPath();g.moveTo(cx-4,cy);g.lineTo(cx+4,cy);g.moveTo(cx,cy-4);g.lineTo(cx,cy+4);g.stroke();
+    g.fillStyle=`rgba(${rgb},${.5*p})`;g.beginPath();g.arc(cx,cy,1.15,0,TAU);g.fill();
+  };
+  // Lettering a construction names its parts with: one line, set where the part it names actually is.
+  const label=(p,text,x,y,rotation=0)=>{
+    if(p<=0)return;
+    g.save();g.globalAlpha=.42*p;g.fillStyle=ink.frame.text;g.font=plateFace(frameWide()?8:6.5,'sc');g.textAlign='center';
+    g.translate(x,y);if(rotation)g.rotate(rotation);g.fillText(text,0,0);g.restore();
+  };
+  return {stage:n=>clamp(progress-n,0,1),cx,cy,rx,ry,rgb,colors:ink.frame,arc,prick,label};
+}
+// A graduated limb: 120 divisions cut round an ellipse, every tenth one long and numbered in the hours
+// the atlas counts them in. It is the last thing struck on three of the four constructions, and cutting
+// it once here keeps the three of them graduated by the same hand.
+function sphereGraduation(g,m,p,ax,ay,numbered=true){
+  if(p<=0)return;
+  const {cx,cy,colors}=m;
+  g.save();g.translate(cx,cy);g.strokeStyle=colors.tick;g.fillStyle=colors.text;g.textAlign='center';g.font=plateFace(frameWide()?8:6.5,'text','italic');
+  const romans=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  for(let i=0;i<120*p;i++){
+    const a=i/120*TAU,major=i%10===0,len=major?8:i%5===0?5:2.5,x=Math.cos(a)*ax,y=Math.sin(a)*ay,nx=Math.cos(a),ny=Math.sin(a);
+    g.globalAlpha=major?.52:.3;g.lineWidth=major?.8:.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+nx*len,y+ny*len*.62);g.stroke();
+    if(major&&numbered){g.globalAlpha=.48;g.fillText(romans[i/10],x+nx*18,y+ny*12+3);}
+  }
+  g.restore();
+}
+// The atlas's own: a sphere seen very nearly edge-on, equator and oblique ecliptic first, then the
+// parallels and meridians between them.
+function paintGraticuleSphere(g,m){
+  const {stage,cx,cy,rx,ry,arc}=m;
+  m.prick(stage(0));
   // Pale compass trials survive under the accepted projection.
   arc(stage(1),cx,cy,rx*.34,ry*.34,0,.07);arc(stage(1.5),cx,cy,rx*.68,ry*.68,0,.07);
   arc(stage(2),cx,cy,rx,ry,0,.2,.8); // celestial equator
   arc(stage(3),cx,cy,rx,ry,-.31,.24,.9); // ecliptic
   for(let i=1;i<=4;i++)arc(stage(3+i*.55),cx,cy,rx,ry*(1-i*.16),0,.1,.5); // parallels
   for(let i=0;i<6;i++)arc(stage(5.4+i*.42),cx,cy,rx*(.16+i*.14),ry,0,.1,.5); // meridians
-  const ticks=stage(8);if(ticks>0){
-    g.save();g.translate(cx,cy);g.strokeStyle=colors.tick;g.fillStyle=colors.text;g.textAlign='center';g.font=plateFace(frameWide()?8:6.5,'text','italic');
-    const romans=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-    for(let i=0;i<120*ticks;i++){
-      const a=i/120*TAU,major=i%10===0,len=major?8:i%5===0?5:2.5,x=Math.cos(a)*rx,y=Math.sin(a)*ry,nx=Math.cos(a),ny=Math.sin(a);
-      g.globalAlpha=major?.52:.3;g.lineWidth=major?.8:.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+nx*len,y+ny*len*.62);g.stroke();
-      if(major){g.globalAlpha=.48;g.fillText(romans[i/10],x+nx*18,y+ny*12+3);}
+  sphereGraduation(g,m,stage(8),rx,ry);
+  const names=stage(9);
+  m.label(names,'ÆQUATOR CÆLESTIS',cx,cy+ry+15);m.label(names,'ECLIPTICA',cx+rx*.58,cy-ry*.54,-.31);
+}
+// The pierced plate that turns over an astrolabe's tympan: the limb, the two tropics between which the
+// whole zodiac lies, and the eccentric ecliptic ring laid tangent to both of them — which is the one
+// construction on this sheet that is a real theorem rather than a decoration, since a circle tangent
+// inside Capricorn and outside Cancer can only be drawn in one place. The tongues are star pointers,
+// each ending on a star the rete is cut to carry.
+function paintReteSphere(g,m){
+  const {stage,cx,cy,rx,arc,rgb}=m;
+  const R=rx,cancer=R*.44,er=(R-cancer)/2,ex=cx+Math.cos(-.9)*(R-er),ey=cy+Math.sin(-.9)*(R-er);
+  m.prick(stage(0));
+  arc(stage(1),cx,cy,R*.34,R*.34,0,.07);arc(stage(1.5),cx,cy,R*.68,R*.68,0,.07);
+  arc(stage(2),cx,cy,R,R,0,.2,.8); // the limb, and with it the tropic of Capricorn
+  arc(stage(3),ex,ey,er,er,0,.24,.9); // the ecliptic, eccentric and tangent to both tropics
+  arc(stage(3.55),cx,cy,cancer,cancer,0,.12,.5); // the tropic of Cancer
+  arc(stage(4.1),cx,cy,R*.72,R*.72,0,.1,.5); // the equator
+  // The east-west bar and the meridian: the rete's own frame, all that holds the rest of it together.
+  const bar=stage(4.65);
+  if(bar>0){
+    g.save();g.strokeStyle=`rgba(${rgb},${.14*bar})`;g.lineWidth=.7;
+    g.beginPath();g.moveTo(cx-R*bar,cy);g.lineTo(cx+R*bar,cy);g.moveTo(cx,cy-R*bar);g.lineTo(cx,cy+R*bar);g.stroke();g.restore();
+  }
+  // Six star pointers, one per stage: a tongue curling off the ecliptic ring to the star it names, with
+  // the star itself pricked at the point of it.
+  for(let i=0;i<6;i++){
+    const p=stage(5.4+i*.42);if(p<=0)continue;
+    const a=-.9+(i-2.5)*.86,from=er*.92,to=R*(.52+(i%3)*.17);
+    const bx=ex+Math.cos(a)*from,by=ey+Math.sin(a)*from,tx=cx+Math.cos(a)*to,ty=cy+Math.sin(a)*to;
+    g.save();g.strokeStyle=`rgba(${rgb},${.17*p})`;g.lineWidth=.6;
+    g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(bx+Math.cos(a+.9)*22,by+Math.sin(a+.9)*22,tx,ty);g.stroke();
+    // The point is filed to a barb so the star it reads against is unmistakable.
+    g.beginPath();g.moveTo(tx,ty);g.lineTo(tx-Math.cos(a-.4)*7,ty-Math.sin(a-.4)*7);g.moveTo(tx,ty);g.lineTo(tx-Math.cos(a+.4)*7,ty-Math.sin(a+.4)*7);g.stroke();
+    g.fillStyle=`rgba(${rgb},${.3*p})`;g.beginPath();g.arc(tx,ty,1.1,0,TAU);g.fill();g.restore();
+  }
+  sphereGraduation(g,m,stage(8),R,R);
+  const names=stage(9);
+  // An instrument is named on its own limb, inside the graduation, rather than under it: the band below
+  // the construction is where the sheet's standing instructions are written.
+  m.label(names,'RETE',cx,cy+R-13);m.label(names,'ZODIACUS',ex,ey-er-7);
+}
+// The spheres as Sacrobosco's readers were taught them: the earth at the centre, seven orbs round it
+// carrying their planets on epicycles, and the firmament outside them all. It is the one construction
+// here whose stages are a list rather than a geometry — a capture buys the next heaven.
+function paintOrbSphere(g,m){
+  const {stage,cx,cy,rx,arc,rgb}=m;
+  const R=rx,earth=stage(0);
+  m.prick(earth);
+  // The earth is drawn as a body, not a point: the small hatched disc every one of these diagrams
+  // opens on, laid over the prick that set the compasses.
+  if(earth>0){
+    const globe=R*.055;
+    g.save();g.strokeStyle=`rgba(${rgb},${.22*earth})`;g.lineWidth=.5;
+    g.beginPath();g.arc(cx,cy,globe,0,TAU);g.stroke();
+    for(let i=-2;i<=2;i++){const dy=i*R*.021,half=Math.sqrt(Math.max(0,globe*globe-dy*dy));g.beginPath();g.moveTo(cx-half,cy+dy);g.lineTo(cx+half,cy+dy);g.stroke();}
+    g.restore();
+  }
+  arc(stage(1),cx,cy,R*.34,R*.34,0,.07);arc(stage(1.5),cx,cy,R*.68,R*.68,0,.07);
+  for(let i=0;i<7;i++){
+    const p=stage(2+i*.86);if(p<=0)continue;
+    const r=R*(.16+i*.115),a=-.62+i*1.17;
+    arc(p,cx,cy,r,r,0,i===6?.16:.11,i===6?.7:.55);
+    // Each orb carries its planet on a small epicycle, which is the whole reason a heaven is a shell
+    // and not a line: the sweep of the deferent is the orb, the little circle on it is the wandering.
+    const ex=cx+Math.cos(a)*r,ey=cy+Math.sin(a)*r,er=R*.045;
+    g.save();g.strokeStyle=`rgba(${rgb},${.15*p})`;g.lineWidth=.5;
+    g.beginPath();g.arc(ex,ey,er,0,TAU*p);g.stroke();
+    g.fillStyle=`rgba(${rgb},${.28*p})`;g.beginPath();g.arc(ex+Math.cos(a+1.1)*er,ey+Math.sin(a+1.1)*er,1.2,0,TAU);g.fill();g.restore();
+  }
+  // The firmament: the fixed stars on a doubled ring, with the sphere beyond them that moves it.
+  const sky=stage(8);
+  arc(sky,cx,cy,R*.955,R*.955,0,.14,.75);arc(sky,cx,cy,R,R,0,.18,.9);
+  if(sky>0){
+    g.save();g.fillStyle=`rgba(${rgb},${.3*sky})`;
+    for(let i=0;i<48*sky;i++){const a=i/48*TAU+.13,r=R*.978;g.fillRect(cx+Math.cos(a)*r-.55,cy+Math.sin(a)*r-.55,1.1,1.1);}
+    g.restore();
+  }
+  const names=stage(9);
+  m.label(names,'TERRA',cx,cy+R*.055+13);m.label(names,'PRIMUM MOBILE',cx,cy-R-9);
+}
+// Apian's paper instrument: dials cut one inside another on a common pin, with an index arm swung over
+// them and a thread hanging off it. A volvelle is read rather than looked at, so it is built outward —
+// the pin, then the plates it turns on, then the arm that does the reading.
+function paintVolvelleSphere(g,m){
+  const {stage,cx,cy,rx,arc,rgb}=m;
+  const R=rx;
+  m.prick(stage(0));
+  arc(stage(1),cx,cy,R*.34,R*.34,0,.07);arc(stage(1.5),cx,cy,R*.68,R*.68,0,.07);
+  arc(stage(2),cx,cy,R,R,0,.2,.8); // the mount, and the graduated band's outer edge
+  arc(stage(2.6),cx,cy,R*.9,R*.9,0,.14,.6); // its inner edge
+  for(let i=0;i<3;i++)arc(stage(3.2+i*.62),cx,cy,R*(.74-i*.16),R*(.74-i*.16),0,.11,.55); // the turning plates
+  // The band is divided into twelve, and each plate carries its own quarter marks, so the dials read
+  // against one another rather than each being a bare circle.
+  const spokes=stage(5.1);
+  if(spokes>0){
+    g.save();g.strokeStyle=`rgba(${rgb},${.13*spokes})`;g.lineWidth=.5;
+    for(let i=0;i<12*spokes;i++){
+      const a=i/12*TAU-Math.PI/2;
+      g.beginPath();g.moveTo(cx+Math.cos(a)*R*.9,cy+Math.sin(a)*R*.9);g.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);g.stroke();
+      if(i%3===0){g.beginPath();g.moveTo(cx+Math.cos(a)*R*.42,cy+Math.sin(a)*R*.42);g.lineTo(cx+Math.cos(a)*R*.74,cy+Math.sin(a)*R*.74);g.stroke();}
     }
     g.restore();
   }
-  const names=stage(9);if(names>0){g.globalAlpha=.42*names;g.fillStyle=colors.text;g.font=plateFace(frameWide()?8:6.5,'sc');g.textAlign='center';g.fillText('ÆQUATOR CÆLESTIS',cx,cy+ry+15);g.save();g.translate(cx+rx*.58,cy-ry*.54);g.rotate(-.31);g.fillText('ECLIPTICA',0,0);g.restore();}
+  // The index: one arm across the whole instrument, filed to a point at the reading end and pierced at
+  // the pin, with the plumb thread the reading is actually taken on hanging from it.
+  const arm=stage(6.4);
+  if(arm>0){
+    const a=-1.09,tip=R*1.02*arm,tail=R*.44*arm;
+    const tx=cx+Math.cos(a)*tip,ty=cy+Math.sin(a)*tip;
+    g.save();g.strokeStyle=`rgba(${rgb},${.24*arm})`;g.lineWidth=1;
+    g.beginPath();g.moveTo(cx-Math.cos(a)*tail,cy-Math.sin(a)*tail);g.lineTo(tx,ty);g.stroke();
+    g.lineWidth=.55;
+    g.beginPath();g.moveTo(tx,ty);g.lineTo(tx-Math.cos(a-.32)*11,ty-Math.sin(a-.32)*11);g.moveTo(tx,ty);g.lineTo(tx-Math.cos(a+.32)*11,ty-Math.sin(a+.32)*11);g.stroke();
+    g.beginPath();g.arc(cx,cy,3.2,0,TAU);g.stroke();
+    // The thread falls plumb from a point along the arm, whatever angle the arm is set at.
+    const hx=cx+Math.cos(a)*R*.66,hy=cy+Math.sin(a)*R*.66;
+    g.strokeStyle=`rgba(${rgb},${.12*arm})`;g.lineWidth=.4;
+    g.beginPath();g.moveTo(hx,hy);g.lineTo(hx,hy+R*.3*arm);g.stroke();
+    g.fillStyle=`rgba(${rgb},${.22*arm})`;g.beginPath();g.arc(hx,hy+R*.3*arm,1.6,0,TAU);g.fill();g.restore();
+  }
+  sphereGraduation(g,m,stage(8),R,R,false);
+  const names=stage(9);
+  m.label(names,'VOLVELLA',cx,cy+R-13);m.label(names,'INDEX',cx+Math.cos(-1.09)*R*.78+16,cy+Math.sin(-1.09)*R*.78);
+}
+const SPHERE_HANDS={graticule:paintGraticuleSphere,rete:paintReteSphere,orbs:paintOrbSphere,volvelle:paintVolvelleSphere};
+function paintRenaissanceGrid(g,progress,style){
+  const hand=SPHERE_HANDS[style]||SPHERE_HANDS.graticule,band=frameBand()+4;
+  g.save();g.beginPath();g.rect(band,band,Math.max(1,W-band*2),Math.max(1,H-band*2));g.clip();
+  hand(g,sphereMeasure(g,progress));
   g.restore();
 }
 function drawRenaissanceGrid(){
   if(!world||plainPlate())return;
+  // An unruled sheet is a selection like any other, and the cheapest one: nothing is painted and no
+  // layer is kept, so the construction costs exactly nothing when it is not wanted.
+  const style=sphereStyle();if(!SPHERE_HANDS[style])return;
   const count=Math.min(10,world.captures),progress=count;
-  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+count;
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+style+':'+count;
   if(!renaissanceGridLayer||key!==renaissanceGridKey){
-    renaissanceGridLayer=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR)));const g=renaissanceGridLayer.getContext('2d');g.scale(DPR,DPR);paintRenaissanceGrid(g,progress);renaissanceGridKey=key;
+    renaissanceGridLayer=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR)));const g=renaissanceGridLayer.getContext('2d');g.scale(DPR,DPR);paintRenaissanceGrid(g,progress,style);renaissanceGridKey=key;
   }
   ctx.drawImage(renaissanceGridLayer,0,0,W,H);
 }

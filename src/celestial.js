@@ -110,13 +110,86 @@ function distantGlobe(g,x,y,r,family,seed){
   }
   g.strokeStyle=`rgba(${ink.plates.globeRim},${paper?.4:.27})`;g.lineWidth=1.1;g.beginPath();g.arc(x,y,r,Math.PI*.82,Math.PI*1.72);g.stroke();
 }
-function celestialPlate(index){
+// A compass rose, as a chart carries one: sixteen points about a common centre, each cut in two halves
+// that meet on its own axis so the one half is inked and the other left as the sheet — which is what
+// lets a rose be read at a glance from the far side of a chart, and is the only reason a rose is drawn
+// this way rather than as a star.
+function paintWindRose(g,x,y,r,paper){
+  const line=ink.plates.chartLine,fleck=ink.plates.ringFleck,base=r*.14;
+  for(let i=0;i<16;i++){
+    const a=-Math.PI/2+i/16*TAU,len=r*(i%4===0?1:i%2?.44:.68);
+    for(const side of [-1,1]){
+      const edge=a+side*Math.PI/16;
+      g.beginPath();g.moveTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.lineTo(x+Math.cos(edge)*base,y+Math.sin(edge)*base);g.lineTo(x,y);g.closePath();
+      g.fillStyle=`rgba(${side<0?line:fleck},${(side<0?.26:.13)*(paper?1.3:1)})`;g.fill();
+      g.strokeStyle=`rgba(${line},${paper?.24:.16})`;g.lineWidth=.35;g.stroke();
+    }
+  }
+  g.strokeStyle=`rgba(${line},${paper?.3:.2})`;g.lineWidth=.5;
+  for(const rr of [base,r*.68,r]){g.beginPath();g.arc(x,y,rr,0,TAU);g.stroke();}
+  // North is picked out with a lys, as it is on every chart that has one, so the rose says which way
+  // the sheet is meant to be held.
+  g.beginPath();g.moveTo(x,y-r*1.28);g.lineTo(x-r*.09,y-r*1.04);g.lineTo(x+r*.09,y-r*1.04);g.closePath();
+  g.fillStyle=`rgba(${line},${paper?.3:.2})`;g.fill();g.stroke();
+}
+// A portolan's rhumb web in place of a chapter's figure: a hidden circle pricked with wind-nodes, each
+// throwing its thirty-two lines clean across the sheet, and the rose set on the node the chart is
+// oriented from. Every line fades away from the node it leaves, because a chart's rhumbs are ruled in
+// one charge of ink and run out of it — and because a web of hard lines all the way to the edge would
+// read as a grid laid over the chart rather than as something printed a long way behind it.
+function paintRhumbPlate(g,index,w,h){
+  const paper=onPaper(),rng=seeded(41077+index*911);
+  const cx=w*[.34,.62,.5,.44][index],cy=h*[.42,.55,.35,.6][index];
+  const R=Math.min(w,h)*[.34,.29,.38,.32][index],phase=[0,.19,.4,-.24][index],reach=Math.hypot(w,h);
+  // A chart carries more than one rose: the great one on the node it is oriented from, and a lesser one
+  // on another node away from it, at the size a portolan's second rose actually is.
+  const great=R*.31,lesser=R*.16,secondAt=1+Math.floor(rng()*8);
+  const nodes=[[cx,cy,32,great]];
+  for(let i=0;i<8;i++){const a=phase+i/8*TAU;nodes.push([cx+Math.cos(a)*R,cy+Math.sin(a)*R,16,i+1===secondAt?lesser:0]);}
+  g.strokeStyle=`rgba(${ink.plates.chartLine},${paper?.14:.075})`;g.lineWidth=.6;
+  g.beginPath();g.arc(cx,cy,R,0,TAU);g.stroke();
+  // Where a node carries a rose, its lines are ruled from the rose's own points outward rather than from
+  // the prick underneath it — as they are on the chart, and because thirty-two lines meeting at a point
+  // would otherwise swallow the very figure they are meant to leave.
+  for(const [nx,ny,rays,from] of nodes){
+    for(let i=0;i<rays;i++){
+      const a=phase+i/rays*TAU,cardinal=i%(rays/4)===0,half=i%(rays/8)===0;
+      const tone=cardinal?ink.plates.ringFleck:ink.plates.chartLine;
+      const alpha=(rays===32?.14:.085)*(cardinal?2:half?1.4:1)*(paper?1.5:1);
+      const sx0=nx+Math.cos(a)*from,sy0=ny+Math.sin(a)*from,ex=nx+Math.cos(a)*reach,ey=ny+Math.sin(a)*reach;
+      const stroke=g.createLinearGradient(sx0,sy0,ex,ey);
+      stroke.addColorStop(0,`rgba(${tone},${alpha})`);stroke.addColorStop(.42,`rgba(${tone},${alpha*.5})`);stroke.addColorStop(1,`rgba(${tone},0)`);
+      g.strokeStyle=stroke;g.lineWidth=cardinal?.55:.4;
+      g.beginPath();g.moveTo(sx0,sy0);g.lineTo(ex,ey);g.stroke();
+    }
+  }
+  paintWindRose(g,cx,cy,great,paper);
+  const second=nodes[secondAt];
+  paintWindRose(g,second[0],second[1],lesser,paper);
+  // The scale of leagues, ruled and stepped, in the corner a chart puts it in.
+  const bx=w*.12,by=h*.88,step=w*.055;
+  g.strokeStyle=`rgba(${ink.plates.chartLine},${paper?.22:.13})`;g.lineWidth=.6;
+  g.beginPath();g.moveTo(bx,by);g.lineTo(bx+step*5,by);g.stroke();
+  for(let i=0;i<=5;i++){g.beginPath();g.moveTo(bx+i*step,by-4);g.lineTo(bx+i*step,by+4);g.stroke();}
+  for(let i=0;i<5;i+=2){g.fillStyle=`rgba(${ink.plates.chartLine},${paper?.14:.08})`;g.fillRect(bx+i*step,by-3,step,3);}
+  // The same hand-stippled grain the chapter prints carry, so the two styles sit on one sheet.
+  for(let i=0;i<2600;i++){
+    const x=rng()*w,y=rng()*h;
+    g.fillStyle=i%2?`rgba(${ink.plates.speckleLight},${paper?.05:.035})`:`rgba(${ink.plates.speckleDark},${paper?.05:.07})`;
+    g.fillRect(x,y,.55,.7);
+  }
+}
+function celestialPlate(index,style){
+  // A counterproof is the very same copper pulled a second time, so it asks for the chapter print's own
+  // plate and differs only in how that plate is laid down; only the rhumb web is a different cut.
+  const cut=style==='rhumbs'?'rhumbs':'chapters';
   // The plate goes into the key as well as the region index — a cross-dissolve holds two plates in one
   // frame, so each must keep its own cached illustration — and it is built once, here, so the lookup
   // below and the store at the end of the function can never be spelled two different ways.
-  const key=plateName+':'+index;
+  const key=plateName+':'+cut+':'+index;
   if(celestialPlates.has(key))return celestialPlates.get(key);
   const c=makeCanvas(720,1200),g=c.getContext('2d'),rng=seeded(98153+index*437),w=c.width,h=c.height;
+  if(cut==='rhumbs'){paintRhumbPlate(g,index,w,h);celestialPlates.set(key,c);return c;}
   if(!onPaper()){
     const tones=ink.plates.tones[index];
     const base=g.createLinearGradient(0,0,w,h);base.addColorStop(0,tones[0]);base.addColorStop(1,tones[1]);g.fillStyle=base;g.fillRect(0,0,w,h);
@@ -360,26 +433,39 @@ function celestialPlacement(){
 }
 function drawCelestialScene(index,weight){
   if(weight<.001)return;
-  const plate=celestialPlate(index),place=celestialPlacement();
+  const style=sceneryStyle();if(style==='none')return;
+  const plate=celestialPlate(index,style),place=celestialPlacement();
   // On paper the plate sits back as a distant engraving beneath the gameplay marks, so it is blitted
   // at a reduced alpha; night is unaffected.
   // The plate is laid larger than the sheet so it fills it at any aspect; on a phone that is half a
   // screen of engraving blended in beyond both margins every frame. Only the part on the sheet is
   // blitted, with a little overhang so the resampler still has neighbours to read at the edges.
-  const dw=plate.width*place.fit,dh=plate.height*place.fit;
+  const dw=plate.width*place.fit,dh=plate.height*place.fit,overhang=Math.max(2,Math.ceil(place.fit*2));
   // The chapter plates are engraved illustrations; on the observatory plate they are held far back, so
   // they read as the faint deep-sky field a long exposure returns rather than as a printed globe.
   ctx.save();ctx.globalAlpha=onPaper()?weight*.72:modernPlate()?weight*.22:weight;
-  blitVisible(plate,place.x,place.y,dw,dh,Math.max(2,Math.ceil(place.fit*2)));
+  if(style==='counterproof'){
+    // A counterproof is pulled off an impression while it is still wet, onto a second damp sheet: what
+    // comes back is reversed, weaker, and softened by the pass. So the same plate is laid mirrored, at
+    // rather less than half a charge, and again a hair off itself — which is the doubling a damp sheet
+    // actually takes, rather than a blur standing in for one. Mirroring the whole transform means the
+    // blit's own clipping is mirrored with it, so the plate is asked for at its usual coordinates and
+    // still lands, and is still cut to the sheet, on the other side of the middle.
+    ctx.globalAlpha*=.62;ctx.translate(W,0);ctx.scale(-1,1);
+    blitVisible(plate,place.x,place.y,dw,dh,overhang);
+    ctx.globalAlpha*=.5;
+    blitVisible(plate,place.x+1.3,place.y+1,dw,dh,overhang);
+  }else blitVisible(plate,place.x,place.y,dw,dh,overhang);
   ctx.restore();
-  drawPlateCaptions(index,weight,place);
+  drawPlateCaptions(index,weight,place,style);
 }
 // The plate's caption block — its Latin title, the table numeral, the figure line and, on two of the plates,
 // Galileo's own marginal figure above them — used to be baked into the print at its lower-left corner, where a
 // narrow sheet cropped it against the frame. It is set live instead, at the print's own place on a wide sheet
 // and drawn in to the foot of the margin on a narrow one, in the same whisper the print carries it at.
-function drawPlateCaptions(index,weight,place){
+function drawPlateCaptions(index,weight,place,style){
   if(plainPlate()||weight<.001)return;
+  const figures=style!=='rhumbs';
   const paper=onPaper(),fit=clamp(place.fit,.7,1.15),inner=frameBand()+9;
   const x=Math.max(inner,place.x+48*place.fit);
   // Also stops short of the impressum: at the start of a run, before a climbing camera has carried
@@ -387,10 +473,17 @@ function drawPlateCaptions(index,weight,place){
   const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit,impressumTop()-45*fit-8);
   ctx.save();ctx.globalAlpha=paper?weight*.72:weight;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   ctx.font=plateFace(17*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
-  ctx.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],x,y);
+  // A rhumb web is not a figure of anything, so it is captioned as a chart is: by the quarter of the
+  // wind its rose is oriented from, and by the ruled scale rather than by a draughtsman.
+  ctx.fillText(figures
+    ?['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index]
+    :['Rosa ventorum · Septentrio','Rosa ventorum · Oriens','Rosa ventorum · Meridies','Rosa ventorum · Occidens'][index],x,y);
   ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
   ctx.font=plateFace(11*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
-  ctx.fillText(['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index],x,y+45*fit);
+  ctx.fillText(figures
+    ?['Fig. I · Luna, Galilaeo delin.','Fig. II · Saturnus, Galilaeo delin.','Fig. III · Sol maculosus, Galilaeo delin.','Fig. IV · Jupiter et satellites, Galilaeo delin.'][index]
+    :'Scala leucarum · XXV ad partem',x,y+45*fit);
+  if(!figures){ctx.restore();return;}
   if(index===1){
     // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set above the caption —
     // a small marginal figure, not the plate's big ring system.
@@ -470,7 +563,11 @@ function ambientClearance(point,tail,aim){
   return clamp(clearance,0,1);
 }
 function makeAmbientEvent(chapter){
-  const rng=ambience.random,kind=ambience.sequence%2===0?'comet':'glint';
+  // A glint picks out a mark that is already on the distant illustration, at the coordinate the plate
+  // engraves it at. Only the chapter print puts a mark there: a bare sheet has none, a rhumb web has
+  // none of these, and a counterproof is reversed, so the coordinate no longer says where the mark is.
+  // In all three the sheet keeps its comets, which are its own and never the illustration's.
+  const rng=ambience.random,kind=ambience.sequence%2===0||sceneryStyle()!=='chapterplates'?'comet':'glint';
   for(let attempt=0;attempt<8;attempt++){
     const e={kind,chapter,age:0,life:kind==='comet'?4.5+rng()*1.5:3.6+rng()*1.4,visibility:0};
     if(kind==='comet'){
@@ -753,17 +850,23 @@ function drawAtmosphere(dt=0,aim=null){
   if(Math.abs(chapter-regionBlend)<.001)regionBlend=chapter;
   plateShift=plateRegistration();
   const first=Math.floor(regionBlend),second=Math.min(3,first+1),mix=regionBlend-first;
+  // The distance is a selection (see `scenery` in COSMETIC_KINDS, src/ledger.js), and a bare sheet is
+  // the one a fresh atlas ships with: the chapter print, the wash it is knocked back with down the
+  // play channel, and both drifting dust plates are the layers the ascent carries more slowly than the
+  // chart, and they stand or fall together. The page turn is not one of them — the chapter still
+  // changes on a bare sheet — so the fresh sheet still rises whatever is or is not printed on it.
+  const distance=sceneryOn();
   if(mix>0&&!reducedMotion){
     // The new chapter arrives as a fresh sheet drawn up from below the frame, its dust and its own
     // marginalia riding with it; the old plate stays where it lies and fades away underneath.
     const turn=pageTurn(mix),slide=(1-turn)*H;
-    drawCelestialScene(first,1-turn*.9);drawChannelVeil();drawRegion(first,1-turn);
+    if(distance){drawCelestialScene(first,1-turn*.9);drawChannelVeil();drawRegion(first,1-turn);}
     ctx.save();ctx.beginPath();ctx.rect(0,slide,W,Math.max(0,H-slide));ctx.clip();
     ctx.globalAlpha=(1-turn)*.7;ctx.fillStyle=ink.base.paper;ctx.fillRect(0,slide,W,Math.max(0,H-slide));ctx.globalAlpha=1;
-    drawCelestialScene(second,1);drawChannelVeil();drawRegion(second,1);
+    if(distance){drawCelestialScene(second,1);drawChannelVeil();drawRegion(second,1);}
     ctx.restore();
     drawSheetEdge(slide,1-turn);
-  }else{
+  }else if(distance){
     drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
     drawChannelVeil();
     drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
