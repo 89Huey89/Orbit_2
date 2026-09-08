@@ -5,24 +5,22 @@ authoritative gameplay/design spec — it documents every rule and number in the
 game, in the game's own atlas-engraving prose. Read it for *what the game
 does*; this file is the map for working on *the code*.
 
-`docs/` holds work that has not been built yet — currently `docs/eras/`, the
-plan to extend the plate system into an eight-era progression through the history
-of the star atlas, from a Palaeolithic cave wall to a self-replicating probe,
-climbed across many runs.
+**The eight-era progression system is indefinitely postponed** (since 2026-09-08, no
+resumption date set). It was the plan to extend the plate system into an eight-era
+progression through the history of the star atlas, from a Palaeolithic cave wall to
+a self-replicating probe, climbed across many runs. Its planning documents are
+archived under `docs/archive/eras/` — kept for reference, not a live backlog. Do not
+build toward it, and do not treat anything in that tree as an active plan, unless
+explicitly asked to resume it. `docs/archive/eras/JOURNEY.md` was the controlling
+document for that design; `docs/README.md` maps the rest of the archive.
 
-**`docs/eras/JOURNEY.md` is the controlling document and the one to read first.**
-It carries the locked progression design, a verified code map, the landmines, and
-the staged build plan; it names, in its "What this overrides" table, the claims in
-the older files that are now stale — including the assumption, still written
-throughout them, that the ladder is climbed inside a single run. Where it
-disagrees with another file in `docs/eras/`, it is right.
-`docs/eras/MEASUREMENTS.md` holds what the simulation actually measures, so the
-numbers behind the design are not re-derived. `docs/eras/OVERVIEW.md` is the
-older entry point and remains useful for the eras themselves;
-`docs/eras/research/` holds the sourced research behind each era and
-`docs/eras/prototypes/` one standalone canvas page per era (open in a browser,
-press `L` for a legend) with its faces and screenshots. Read it before adding a
-plate; nothing in it describes shipped behaviour.
+**Current focus is exclusively the shipped Renaissance atlas** — era V, the only
+plate a run ships with today (see README.md's "Plates" and "Catalogue" sections, and
+`src/plates.js`). Further polish there is the active work, not new eras or
+progression plumbing. Two pieces of that archived plan are already shipped and
+unaffected by the postponement — Era I (`src/rock.js`) and Era II (`src/ceiling.js`),
+standalone preview doors on the frontispiece, outside of any progression system; see
+README.md's "The eras".
 
 ## Commands
 
@@ -37,7 +35,7 @@ plate; nothing in it describes shipped behaviour.
 - `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
   levels of hand and reports how deep a run actually gets, what it captures, and what the era
   progression's observation ledger would stand at by each row. Makes no assertions and is not run by
-  `npm test`. Its first reading is `docs/eras/MEASUREMENTS.md`.
+  `npm test`. Its first reading is `docs/archive/eras/MEASUREMENTS.md`.
 - `npm run glyphs` — regenerates `src/glyphs.js` from the faces in
   `assets/fonts.source.css` (needs `fontkit`).
 - `npm run fonts` — regenerates `assets/fonts.css`, the same faces cut to the

@@ -8,12 +8,12 @@ new Script(script,{filename:'dist/index.html'});
 const externalRef=/<(script|link|img|audio|video)\b[^>]*(src|href)=["']https?:/i;
 if(externalRef.test(html))throw new Error('External dependency found.');
 if(!html.includes('new OrbitWorld('))throw new Error('Game bootstrap missing.');
-// The Rock's readability spike (docs/eras/JOURNEY.md's stage 2) is still shipped as a sibling page,
+// The Rock's readability spike (docs/archive/eras/JOURNEY.md's stage 2) is still shipped as a sibling page,
 // though the frontispiece no longer opens it: era I is a plate now, flown on OrbitWorld, and the spike
 // is the record of the question that had to be answered before it could be drawn — a standalone canvas
 // sheet with its own toy physics, never a module the game loads. It is deployed static HTML, so it is
 // held to the same no-network rule as the page it stands beside.
-const rock=await readFile(new URL('../docs/eras/prototypes/rock-read.html',import.meta.url),'utf8');
+const rock=await readFile(new URL('../docs/archive/eras/prototypes/rock-read.html',import.meta.url),'utf8');
 if(externalRef.test(rock))throw new Error('External dependency found in the Rock prototype.');
 const dist=new URL('../dist/',import.meta.url);
 await mkdir(dist,{recursive:true});

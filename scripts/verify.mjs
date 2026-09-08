@@ -1231,7 +1231,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     // conversion, and a plate that declares its own render must still name the painter that draws it.
     context.test.setPlate('ceiling');
     const wall=context.test.plateWords();
-    assert.equal(context.test.eraId(),2,'The Ceiling is era II on the roster docs/eras/JOURNEY.md fixes');
+    assert.equal(context.test.eraId(),2,'The Ceiling is era II on the roster docs/archive/eras/JOURNEY.md fixes');
     assert.equal(context.test.plateOwns('score'),true,'The Ceiling keeps its own record');
     assert.equal(context.test.plateOwns('mode'),true,'The Ceiling is entered and left as a mode');
     assert.equal(typeof context.test.handFor('frame'),'function','A plate that draws a whole frame in its own hand must name that painter');
@@ -1265,7 +1265,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   }
   {
     // A century with a door on the frontispiece names it on its own row, and the label carries its
-    // place on the roster docs/eras/JOURNEY.md §1.9 fixes. A plate with an ordinal and no door would
+    // place on the roster docs/archive/eras/JOURNEY.md §1.9 fixes. A plate with an ordinal and no door would
     // be a century nothing can reach; a door on a plate with no ordinal would be a door to the atlas.
     const styles=context.test.PLATE_STYLES,doors={};
     for(const id in styles){

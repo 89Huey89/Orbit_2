@@ -8,7 +8,7 @@
 // sandbox: two hands can work into one frame, and the next century is another row in that registry
 // rather than another question asked at every mark.
 //
-// See docs/eras/01-rock.md for what the era is, and docs/eras/PROTOTYPES.md for what its readability
+// See docs/archive/eras/01-rock.md for what the era is, and docs/archive/eras/PROTOTYPES.md for what its readability
 // spike proved. The spike is the porting source for the language on this sheet; none of its physics
 // comes with it, because the simulation is and stays OrbitWorld.
 

@@ -1,0 +1,694 @@
+<!doctype html>
+<!--
+  Orbit — the turn from I, "The Rock", to II, "The Disc", under the knowledge horizon
+  (docs/archive/eras/KNOWLEDGE-HORIZON.md), painted in the two hands already settled in rock.html and
+  disc.html (docs/archive/eras/01-rock.md, docs/archive/eras/02-disc.md). This is a mockup of a mid-run page turn,
+  not of the run's opening: the traveller has already climbed three bodies and has just been
+  captured by a fourth when the century changes.
+
+  THE CONCEIT. The vertical of the sheet is space and the stack of sheets is time. The bottom edge
+  of every sheet is the Earth — the place the observer stands, the place the darkness rises from,
+  and the place the next sheet is pushed up from. When the page turns the OBSERVER goes back to the
+  ground and looks up again; the TRAVELLER does not. The flight, the rows, the score and the chart
+  run on unbroken underneath, exactly as the shipped page turn already keeps them, and only the
+  hand that draws them is a later one. What the new hand inherits is the record: the flown route
+  is struck again from the ground up, tap by tap, because the Bronze Age read the older marks the
+  same way we read theirs — from the floor, in a poorer light, and then went further.
+
+  WHAT EACH ERA CAN KNOW. Neither sheet shows the game's seven families, because neither culture
+  could see a surface. The Rock tells its bodies apart by the only thing a naked eye can measure,
+  brightness, so a body is a dab of ochre in one of three sizes; the Disc tells them apart by
+  nothing at all, one punch always, which is the disc's own grammar (research §2). The Moon is the
+  one body with a face on either sheet: a pale disc with dark blotches on the rock, the gold crescent
+  on the disc. The constellation is a cluster of dots on the rock, six with three ringed (as
+  ambiguous as Lascaux's shoulder dots are), and the Pleiades on the disc, seven punches. The orbit
+  rings, the release and capture geometry and the route are the same on both sheets, because they
+  are the apparatus and not the claim.
+
+  THE TURN, by a phase t from 0 to 1 (auto-plays over nine seconds and loops; Space pauses;
+  the arrow keys scrub by 0.02; ?t=0.42 in the URL holds a phase for a screenshot):
+    0.00–0.15  the Rock; the ember lands on the held body — a capture, on which the page is armed.
+    0.15–0.60  the Disc rises from the bottom edge, from the Earth, with its shadow and its cut rim
+               ahead of it, over the rock, which stays where it lies and goes dark beneath.
+    0.47–0.85  the inherited route is re-struck from the floor upward, each tap with the punch's own
+               flash; each earlier body's ring is chased as the taps reach it; the held body is
+               struck last, in place, and its ring chased — the first thing the new century sees.
+    0.85–1.00  a faint museum gloss, in the modern serif and nobody else's words.
+
+  Every mark on the rock is a dab, a stencil or a flint scratch lit by one carried torch; every
+  mark on the disc is chased, damascened, punched or pecked under one raking light. Both sheets are
+  baked once; per frame only the turn, the ember, the barge, the re-striking and the gloss are drawn.
+  Press L for a legend naming each thing by the game's own term.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Rock → The Disc — Orbit era-turn mockup</title>
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#050403;overflow:hidden}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;box-shadow:0 0 90px 22px rgba(0,0,0,.85)}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<script>
+'use strict';
+/* ---------- seeded randomness, so both sheets are the same sheets on every load ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const TAU=Math.PI*2,RR=mulberry32(0x17000BCE),RD=mulberry32(0x1600BCE);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,ss=t=>t*t*(3-2*t);
+function hexa(h,a){const n=parseInt(h.slice(1),16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+const W=1280,H=800;
+
+/* ---------- canvas: a fixed 1280x800 sheet drawn at devicePixelRatio and scaled to the window ---------- */
+const cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false});
+let DPR=1;
+function fit(){DPR=Math.max(1,Math.min(2,window.devicePixelRatio||1));const s=Math.min(window.innerWidth/W,window.innerHeight/H);
+  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',fit);fit();
+function layer(){const c=document.createElement('canvas');c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);return{c,g};}
+
+/* ================= ONE CHART, TWO HANDS ================= */
+/* The chart is the same object on both sheets: the same bodies at the same places, the same orbit
+   radii, the same route. Only the depiction changes. `mag` is the one thing the Rock can know about
+   a body — 0 bright, 1 middle, 2 faint — and the one thing the Disc refuses to. */
+const NODES={
+  A:{x:520,y:655,r:42,mag:2},B:{x:700,y:540,r:50,mag:1},C:{x:540,y:415,r:46,mag:2},
+  D:{x:720,y:270,r:58,mag:0},                                   // the held body
+  E:{x:300,y:560,r:40,mag:1},F:{x:960,y:470,r:50,mag:0},G:{x:1010,y:645,r:38,mag:2}};
+const MOON={x:350,y:320,r:60,body:30};
+const CLUSTER={x:950,y:230};
+const CL3=[[-40,12],[-8,-24],[30,18]];                          // the three the game's route uses
+const CL_ROCK=[[-56,-14],[-2,4],[36,-14]];                      // three more on the wall, unringed
+const CL_DISC=[[-52,-16],[2,-46],[42,-10],[8,36]];              // four more punches: the Pleiades' seven
+const FY=690;                                                   // where the unlit rock begins to rise
+
+/* The route: from the bottom edge — the floor, the Earth — up through A, B and C, each held for
+   part of a lap, to the entry point on D. One polyline, sampled fine, with the index at which each
+   ring is reached kept beside it, so both hands can strike it in the same order. */
+function ringPt(n,a){return[n.x+Math.cos(a)*n.r,n.y+Math.sin(a)*n.r];}
+function curve(p,q){const dx=q[0]-p[0],dy=q[1]-p[1],d=Math.hypot(dx,dy),mx=(p[0]+q[0])*.5,my=(p[1]+q[1])*.5;
+  const cx=mx-dy/d*d*.22,cy=my+dx/d*d*.22,n=Math.max(4,Math.round(d/5)),o=[];
+  for(let i=0;i<=n;i++){const t=i/n,u=1-t;o.push([u*u*p[0]+2*u*t*cx+t*t*q[0],u*u*p[1]+2*u*t*cy+t*t*q[1]]);}return o;}
+function buildRoute(){
+  const order=[NODES.A,NODES.B,NODES.C,NODES.D],pts=[],marks={};let prev=[600,H];
+  for(let k=0;k<order.length;k++){const n=order[k],next=order[k+1];
+    const ang=Math.atan2(prev[1]-n.y,prev[0]-n.x);
+    let aIn=ang+.55,dir=1;
+    if(next){ // hold the lap the way that leaves the ring nearest the next body
+      const e1=ringPt(n,aIn+Math.PI*1.25),e2=ringPt(n,ang-.55-Math.PI*1.25);
+      if(Math.hypot(e2[0]-next.x,e2[1]-next.y)<Math.hypot(e1[0]-next.x,e1[1]-next.y)){aIn=ang-.55;dir=-1;}}
+    const pIn=ringPt(n,aIn),seg=curve(prev,pIn);
+    for(const q of(pts.length?seg.slice(1):seg))pts.push(q);
+    marks[k]={node:n,idx:pts.length-1,aIn:aIn,dir:dir};
+    if(!next)break;
+    const aOut=aIn+dir*Math.PI*1.25,m=Math.round(Math.abs(aOut-aIn)*n.r/5);
+    for(let i=1;i<=m;i++){const a=aIn+(aOut-aIn)*i/m;pts.push(ringPt(n,a));}
+    prev=ringPt(n,aOut);}
+  return{pts,marks};}
+const ROUTE=buildRoute();
+const HELD=ROUTE.marks[3];                                      // the entry on D
+const LAST_FROM=ROUTE.marks[2];                                 // C: the route is dry up to its exit
+let lastStart=ROUTE.pts.length-1;while(lastStart>0&&Math.hypot(ROUTE.pts[lastStart][0]-NODES.C.x,ROUTE.pts[lastStart][1]-NODES.C.y)>NODES.C.r+2)lastStart--;
+const DRY=ROUTE.pts.slice(0,lastStart+1),LAST=ROUTE.pts.slice(lastStart);   // dry up to C; the last transfer is flown live
+
+/* ================= I · THE ROCK ================= */
+const TR={redOchre:'#9C3B22',ochre:'#C9962E',ochreDeep:'#A9701F',manganese:'#211F1E',charcoal:'#2C2622',kaolin:'#EAE1CF',stone:'#C7BC9E',flame:'#FFBE72'};
+/* The torch is carried: it stands where the traveller is, so the wall is lit round the held body
+   and the floor the run climbed from has gone back into the dark. */
+const TX=690,TY=330,AMB=.085;
+const NW=642,NH=402;
+function octave(arr,cx,cy,amp,seed){
+  const gw=Math.ceil(NW/cx)+3,gh=Math.ceil(NH/cy)+3,rnd=mulberry32(seed),lat=new Float32Array(gw*gh);
+  for(let i=0;i<lat.length;i++)lat[i]=rnd();
+  for(let y=0;y<NH;y++){const fy=y/cy,iy=fy|0,sy=ss(fy-iy);
+    for(let x=0;x<NW;x++){const fx=x/cx,ix=fx|0,sx=ss(fx-ix),i0=iy*gw+ix;
+      const t=lat[i0]+(lat[i0+1]-lat[i0])*sx,b=lat[i0+gw]+(lat[i0+gw+1]-lat[i0+gw])*sx;
+      arr[y*NW+x]+=amp*(t+(b-t)*sy);}}}
+function build(specs){const a=new Float32Array(NW*NH);
+  for(const o of specs)octave(a,o[0],o[1],o[2],o[3]);
+  let lo=1e9,hi=-1e9;for(let i=0;i<a.length;i++){if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}
+  const k=1/(hi-lo||1);for(let i=0;i<a.length;i++)a[i]=(a[i]-lo)*k;return a;}
+const HF=build([[152,112,1,101],[76,58,.44,202],[37,31,.185,303],[18,16,.072,404],[9,8,.030,505],[4.5,4,.013,606]]);
+const CF=build([[70,240,1,707],[26,120,.45,808],[10,44,.2,909]]);
+const SF=build([[210,170,1,1010],[88,72,.4,1111]]);
+const GX=new Float32Array(NW*NH),GY=new Float32Array(NW*NH);
+for(let y=1;y<NH-1;y++)for(let x=1;x<NW-1;x++){const i=y*NW+x;GX[i]=(HF[i+1]-HF[i-1])*.5;GY[i]=(HF[i+NW]-HF[i-NW])*.5;}
+function samp(F,x,y){const fx=x*.5,fy=y*.5;let ix=fx|0,iy=fy|0;
+  if(ix<0)ix=0;else if(ix>NW-2)ix=NW-2;if(iy<0)iy=0;else if(iy>NH-2)iy=NH-2;
+  const tx=fx-ix,ty=fy-iy,i0=iy*NW+ix,t=F[i0]+(F[i0+1]-F[i0])*tx,b=F[i0+NW]+(F[i0+NW+1]-F[i0+NW])*tx;
+  return t+(b-t)*ty;}
+const hAt=(x,y)=>samp(HF,x,y),calAt=(x,y)=>samp(CF,x,y);
+function edgeAt(x,y){const n=(calAt(x,y)-.5)*54+(hAt(x,y)-.5)*30;
+  return ss(clamp((Math.min(x,W-x,y*1.15,(H-y)*1.1)+n)/112,0,1));}
+/* The rising darkness is the rock the torch has not reached: nothing is drawn, the light simply
+   stops. Its edge is the wall's own, bitten by the calcite runs and the swells. */
+function floodRaw(y,cal,h){return ss(clamp((y-(FY+(cal-.5)*44+(h-.5)*26))/95,0,1));}
+function floodAt(x,y){return floodRaw(y,calAt(x,y),hAt(x,y));}
+const fall=d=>AMB+.44/(1+2.6*(d/430)*(d/430))+.50/(1+.80*(d/1180)*(d/1180));
+function lightAt(x,y){return fall(Math.hypot(x-TX,y-TY))*edgeAt(x,y)*(1-.9*floodAt(x,y));}
+function litRGB(hex,x,y,k){const n=parseInt(hex.slice(1),16),L=lightAt(x,y)*(k||1)*1.5+.07;
+  return 'rgb('+Math.min(255,(n>>16&255)*L|0)+','+Math.min(255,(n>>8&255)*(L*.83)|0)+','+Math.min(255,(n&255)*(L*.62)|0)+')';}
+function paintRockGround(){
+  const A=document.createElement('canvas'),LT=document.createElement('canvas'),SP=document.createElement('canvas');
+  for(const c of[A,LT,SP]){c.width=W;c.height=H;}
+  const ag_=A.getContext('2d'),lg=LT.getContext('2d'),sg=SP.getContext('2d');
+  const ai=ag_.createImageData(W,H),li=lg.createImageData(W,H),si=sg.createImageData(W,H),AD=ai.data,LD=li.data,SD=si.data;
+  const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n=Math.imul(n^n>>>13,1274126177);return((n^n>>>16)>>>0)/4294967296;};
+  let p=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++,p+=4){
+    const fx=x*.5,fy=y*.5;let ix=fx|0,iy=fy|0;
+    if(ix>NW-2)ix=NW-2;if(iy>NH-2)iy=NH-2;
+    const tx=fx-ix,ty=fy-iy,i0=iy*NW+ix,i1=i0+1,i2=i0+NW,i3=i2+1,
+      w0=(1-tx)*(1-ty),w1=tx*(1-ty),w2=(1-tx)*ty,w3=tx*ty;
+    const h=HF[i0]*w0+HF[i1]*w1+HF[i2]*w2+HF[i3]*w3,
+          cal=CF[i0]*w0+CF[i1]*w1+CF[i2]*w2+CF[i3]*w3,
+          stn=SF[i0]*w0+SF[i1]*w1+SF[i2]*w2+SF[i3]*w3;
+    let gx=(GX[i0]*w0+GX[i1]*w1+GX[i2]*w2+GX[i3]*w3)*112,
+        gy=(GY[i0]*w0+GY[i1]*w1+GY[i2]*w2+GY[i3]*w3)*112;
+    const r1=hash(x,y),r2=hash(x+7919,y+104729),r3=hash(x>>1,(y>>1)+31337);
+    gx+=(r1-.5)*.30+(r3-.5)*.34;gy+=(r2-.5)*.30+(hash((x>>1)+77,y>>1)-.5)*.34;
+    const cw=cal*cal,gr=(r1-.5)*11;
+    AD[p]=196+46*cw+26*h-30*stn+gr;AD[p+1]=185+44*cw+24*h-38*stn+gr;AD[p+2]=156+46*cw+21*h-44*stn+gr;AD[p+3]=255;
+    let dx=TX-x,dy=TY-y;const d=Math.sqrt(dx*dx+dy*dy)+1e-3;dx/=d;dy/=d;
+    const fl=1-.9*floodRaw(y,cal,h);
+    const L=fall(d)*ss(clamp((Math.min(x,W-x,y*1.15,(H-y)*1.1)+(cal-.5)*54+(h-.5)*30)/112,0,1))*fl;
+    let lam=.60-(gx*dx+gy*dy)*.40;if(lam<0)lam=0;else if(lam>1.6)lam=1.6;
+    const ao=.60+.46*h,lit=lam*L*ao*1.02,
+          amb=(AMB*1.35*ss(clamp((Math.min(x,W-x,y,H-y))/150,0,1))+.018)*fl;
+    let lr=(lit+amb*.30)*255,lgc=(lit*.775+amb*.42)*255,lb=(lit*.545+amb*.72)*255;
+    LD[p]=lr>255?255:lr;LD[p+1]=lgc>255?255:lgc;LD[p+2]=lb>255?255:lb;LD[p+3]=255;
+    let sp=lam-.92;sp=sp>0?sp*sp*cw*cw*L*168:0;if(sp>110)sp=110;
+    SD[p]=sp;SD[p+1]=sp*.88;SD[p+2]=sp*.7;SD[p+3]=255;}
+  ag_.putImageData(ai,0,0);lg.putImageData(li,0,0);sg.putImageData(si,0,0);
+  return{albedo:A,light:LT,sheen:SP};}
+
+/* ---- the three primitives of the rock: dab, stencil, scratch (and the pecked pit) ---- */
+let FLAT=false;
+function dab(g,x,y,r,col,a,seed){
+  const rel=FLAT?.5:hAt(x,y),al=clamp(a*(.56+.78*(1-rel)),0,1);if(al<.004)return;
+  const rnd=mulberry32(((seed>>>0)||7)*40503>>>0),gr=g.createRadialGradient(x,y,0,x,y,r);
+  gr.addColorStop(0,hexa(col,al));gr.addColorStop(.5,hexa(col,al*.74));gr.addColorStop(.82,hexa(col,al*.28));gr.addColorStop(1,hexa(col,0));
+  g.save();g.fillStyle=gr;g.beginPath();
+  for(let i=0;i<=10;i++){const t=i/10*TAU,rr=r*(.8+rnd()*.4),px=x+Math.cos(t)*rr,py=y+Math.sin(t)*rr;i?g.lineTo(px,py):g.moveTo(px,py);}
+  g.closePath();g.fill();g.restore();}
+function wash(g,x,y,r,col,a,seed,squash){const rnd=mulberry32(((seed>>>0)||3)*2654435761>>>0),sq=squash||1;
+  if(r<10){dab(g,x,y,r,col,a*.94,seed);
+    for(let i=0;i<4;i++){const t=rnd()*TAU,d=rnd()*r*.45;dab(g,x+Math.cos(t)*d,y+Math.sin(t)*d*sq,r*(.36+rnd()*.4),col,a*.5,seed+i*7);}return;}
+  const n=Math.round(r*r*.14)+16;
+  for(let i=0;i<n;i++){const t=rnd()*TAU,dd=Math.sqrt(rnd()),px=x+Math.cos(t)*dd*r,py=y+Math.sin(t)*dd*r*sq;
+    dab(g,px,py,r*(.16+rnd()*.2),col,a*(.5+.5*(1-dd)),i*7+seed);}}
+const PADS=new Map();
+function pad(r,col,v){const k=r+col+v;let c=PADS.get(k);if(c)return c;
+  const q=Math.ceil(r*1.5)+3;c=document.createElement('canvas');c.width=c.height=q*2;
+  const g=c.getContext('2d');g.translate(q,q);FLAT=true;wash(g,0,0,r,col,1,v*37+5,1);FLAT=false;PADS.set(k,c);return c;}
+function stamp(g,x,y,r,col,a,seed){const c=pad(Math.round(r),col,(seed>>>0)&7);
+  g.save();g.globalAlpha=clamp(a*(.56+.78*(1-hAt(x,y))),0,1);g.drawImage(c,x-c.width*.5,y-c.height*.5);g.restore();}
+function cover(g,x,y,r,col,a,seed){const rnd=mulberry32(((seed>>>0)||5)*97+11),L=lightAt(x,y);if(L<.05)return;
+  const gr=g.createRadialGradient(x,y,0,x,y,r),cc=litRGB(col,x,y),al=clamp(a*(.4+.9*(1-hAt(x,y)))*clamp(L*1.5,0,1),0,1);
+  gr.addColorStop(0,cc.replace('rgb(','rgba(').replace(')',','+al+')'));
+  gr.addColorStop(1,cc.replace('rgb(','rgba(').replace(')',',0)'));
+  g.save();g.fillStyle=gr;g.beginPath();
+  for(let i=0;i<=9;i++){const t=i/9*TAU,rr=r*(.78+rnd()*.44);i?g.lineTo(x+Math.cos(t)*rr,y+Math.sin(t)*rr):g.moveTo(x+Math.cos(t)*rr,y+Math.sin(t)*rr);}
+  g.closePath();g.fill();g.restore();}
+function scratch(g,p,o){o=o||{};const w=o.w||1.6,al=o.alpha!=null?o.alpha:1,brk=o.brk!=null?o.brk:.13,rnd=mulberry32((((o.seed>>>0)||3)*2246822519)>>>0);
+  g.save();g.lineCap='round';g.lineJoin='round';
+  for(let i=1;i<p.length;i++){
+    const x0=p[i-1][0],y0=p[i-1][1],x1=p[i][0],y1=p[i][1],mx=(x0+x1)*.5,my=(y0+y1)*.5,L=lightAt(mx,my);
+    if(L<.05)continue;if(rnd()<brk*(.4+hAt(mx,my)))continue;
+    let dx=TX-mx,dy=TY-my;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const off=w*.62,dk=o.dark?1:0;
+    g.strokeStyle='rgba(20,16,12,'+(al*(.5*L+.12)*(1+dk*.9)).toFixed(3)+')';g.lineWidth=w*(1.2+dk*.5);
+    g.beginPath();g.moveTo(x0-dx*off,y0-dy*off);g.lineTo(x1-dx*off,y1-dy*off);g.stroke();
+    g.strokeStyle='rgba(233,222,197,'+(al*.4*L*(1-dk*.82)).toFixed(3)+')';g.lineWidth=w*.78;
+    g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+    g.strokeStyle='rgba(255,224,172,'+(al*(dk?.3:.52)*L).toFixed(3)+')';g.lineWidth=Math.max(.5,w*(dk?.26:.4));
+    g.beginPath();g.moveTo(x0+dx*off*.95,y0+dy*off*.95);g.lineTo(x1+dx*off*.95,y1+dy*off*.95);g.stroke();}
+  g.restore();}
+function peck(g,x,y,r,o){o=o||{};const L=lightAt(x,y);if(L<.05)return;const a=(o.alpha!=null?o.alpha:1)*L;
+  let dx=TX-x,dy=TY-y;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;g.save();
+  let gr=g.createRadialGradient(x+dx*r*.55,y+dy*r*.55,0,x,y,r*1.9);
+  gr.addColorStop(0,'rgba(255,225,174,'+(a*.5).toFixed(3)+')');gr.addColorStop(1,'rgba(255,225,174,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r*1.95,0,TAU);g.fill();
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle='rgba(28,23,18,'+(a*.6+.07).toFixed(3)+')';g.fill();
+  g.beginPath();g.arc(x-dx*r*.36,y-dy*r*.36,r*.58,0,TAU);g.fillStyle='rgba(232,204,158,'+(a*.46).toFixed(3)+')';g.fill();
+  g.restore();}
+function handShape(g,cx,cy,s,dir,flip,d){
+  g.save();g.translate(cx,cy);g.rotate(dir);g.scale(flip,1);g.lineCap='round';g.lineJoin='round';
+  g.beginPath();g.ellipse(0,.06*s,.38*s+d,.44*s+d,0,0,TAU);g.fill();
+  g.beginPath();g.ellipse(.02*s,.44*s,.27*s+d,.26*s+d,0,0,TAU);g.fill();
+  for(const[a,len,th]of[[-1.13,1.00,.082],[-1.40,1.14,.086],[-1.68,1.06,.082],[-1.96,.88,.074]]){
+    g.lineWidth=th*2*s+d*2;g.beginPath();g.moveTo(Math.cos(a)*.24*s,Math.sin(a)*.24*s-.02*s);
+    g.lineTo(Math.cos(a)*len*s,Math.sin(a)*len*s);g.stroke();}
+  g.lineWidth=.098*2*s+d*2;g.beginPath();g.moveTo(.22*s,.22*s);g.quadraticCurveTo(.58*s,.16*s,.74*s,-.10*s);g.stroke();
+  g.restore();}
+function stencil(g,cx,cy,s,dir,flip,seed,col){
+  const rnd=mulberry32(((seed>>>0)||9)*69069>>>0);
+  const F=rr=>clamp(2.3-rr/(s*1.05),0,1);
+  for(let i=0;i<5200;i++){const t=rnd()*TAU,rr=Math.sqrt(rnd())*s*2.3;
+    dab(g,cx+Math.cos(t)*rr,cy+Math.sin(t)*rr*1.05,2.4+rnd()*7,col,(.30+rnd()*.34)*F(rr),i*3+seed);}
+  for(let i=0;i<1500;i++){const t=rnd()*TAU,rr=s*(.95+rnd()*.62);
+    dab(g,cx+Math.cos(t)*rr,cy+Math.sin(t)*rr*1.05,2.2+rnd()*5,col,.34+rnd()*.3,i*5+seed+900);}
+  for(let i=0;i<2600;i++){const t=rnd()*TAU,rr=Math.sqrt(rnd())*s*2.35,x=cx+Math.cos(t)*rr,y=cy+Math.sin(t)*rr*1.05;
+    g.globalAlpha=(.18+rnd()*.3)*F(rr)*(1-hAt(x,y)*.6);g.fillStyle=col;g.fillRect(x,y,1.2+rnd()*1.7,1.2+rnd()*1.7);}
+  g.globalAlpha=1;
+  g.save();g.globalCompositeOperation='destination-out';
+  for(let k=2;k>=0;k--){g.globalAlpha=k===0?1:.34;g.fillStyle='#000';g.strokeStyle='#000';handShape(g,cx,cy,s,dir,flip,k*1.1);}
+  g.restore();}
+function crackPath(x,y,steps,seed){const rnd=mulberry32(((seed>>>0)||11)*22695477>>>0),p=[[x,y]];let a=rnd()*TAU;
+  for(let i=0;i<steps;i++){const gx=samp(GX,x,y),gy=samp(GY,x,y);let ta=Math.atan2(gx,-gy);
+    if(Math.cos(ta-a)<0)ta+=Math.PI;
+    a+=Math.sin(ta-a)*.5+(rnd()-.5)*.32;x+=Math.cos(a)*5.2;y+=Math.sin(a)*5.2;
+    if(x<-30||x>W+30||y<-30||y>H+30)break;p.push([x,y]);}
+  return p;}
+
+/* ---- the Rock's bodies: a dab in one of three sizes, and a dot-ring for its orbit ---- */
+const DAB_R=[21,13.5,7.5];                                      // bright, middle, faint
+function rockBody(g,n,seed){const r=DAB_R[n.mag];
+  wash(g,n.x,n.y,r,n.mag===2?TR.ochreDeep:TR.redOchre,n.mag===2?.8:1.1,seed,1);
+  if(n.mag<2)wash(g,n.x,n.y,r*.6,TR.redOchre,n.mag===0?.9:.5,seed+3,1);}   // pressed twice: the bright ones were
+function rockRing(g,n,seed){const m=Math.round(n.r*.72);
+  for(let i=0;i<m;i++){const a=i/m*TAU,x=n.x+Math.cos(a)*n.r,y=n.y+Math.sin(a)*n.r*.97;
+    wash(g,x,y,5.4,TR.redOchre,1.05,i*5+seed,1);}}
+/* The Moon: the one body with a face. Kaolin, the covering pigment, lit from the torch, with the
+   blotches everyone has always seen in it laid on in manganese — a face, not a smile. */
+function rockMoon(g){const rnd=mulberry32(0x4d4f4f4e);
+  wash(g,MOON.x,MOON.y,MOON.body,TR.kaolin,0,1,1);
+  for(let i=0;i<260;i++){const t=rnd()*TAU,dd=Math.pow(rnd(),.45);cover(g,MOON.x+Math.cos(t)*dd*MOON.body*.98,MOON.y+Math.sin(t)*dd*MOON.body*.98,4+rnd()*8,TR.kaolin,.22+rnd()*.26,i+7);}
+  for(let i=0;i<60;i++){const t=rnd()*TAU;cover(g,MOON.x+Math.cos(t)*MOON.body*.9,MOON.y+Math.sin(t)*MOON.body*.9,2.5+rnd()*3.5,TR.kaolin,.5,i*3+9);}}
+function rockMoonFace(g){
+  for(const[dx,dy,r,a]of[[-9,-8,8,.6],[8,-11,6,.55],[4,6,9.5,.62],[-11,10,5,.45]])
+    wash(g,MOON.x+dx,MOON.y+dy,r,TR.manganese,a,(dx*7+dy)|0,1);}
+
+function paintRockPigment(g){
+  // the wall carried marks before this run: older dots under everything, and a cluster of hand dots
+  for(let i=0;i<110;i++){const x=60+RR()*1160,y=60+RR()*640;
+    let clear=Math.hypot(x-128,y-112)>170&&Math.hypot(x-CLUSTER.x,y-CLUSTER.y)>110&&Math.hypot(x-MOON.x,y-MOON.y)>MOON.r+22;
+    for(const k in NODES){const b=NODES[k];if(Math.hypot(x-b.x,y-b.y)<b.r+26)clear=false;}
+    if(clear)wash(g,x,y,3+RR()*2.6,RR()<.7?TR.redOchre:TR.ochreDeep,.14+RR()*.22,i*7,1);}
+  for(let i=0;i<30;i++)wash(g,1090+RR()*100,120+RR()*70,7.5,TR.redOchre,.5,i*11+1,1);
+  stencil(g,128,112,64,-.06,1,5,TR.redOchre);                  // the title and the maker's mark, one gesture
+  for(const k in NODES){const n=NODES[k];rockRing(g,n,k.charCodeAt(0)*31);rockBody(g,n,k.charCodeAt(0)*17);}
+  rockRing(g,MOON,77);rockMoon(g);rockMoonFace(g);
+  // the cluster: six dots, three of them warmed and larger — as ambiguous as the wall itself is
+  for(let i=0;i<3;i++)wash(g,CLUSTER.x+CL3[i][0],CLUSTER.y+CL3[i][1],10,TR.redOchre,1,i*17+5,1);
+  for(let i=0;i<3;i++)wash(g,CLUSTER.x+CL_ROCK[i][0],CLUSTER.y+CL_ROCK[i][1],8,TR.ochreDeep,.62,i*19+9,1);
+  // HUD: the score as a dot field, and the best as a fainter one, and the ochre in hand as a smear
+  const df=(x,y,w,h,n,seed)=>{const rnd=mulberry32(seed);for(let i=0;i<n;i++)wash(g,x+rnd()*w,y+rnd()*h,5+rnd()*2.4,TR.redOchre,1.1,i*3+seed,1);};
+  df(520,40,150,42,44,31);df(1040,40,110,48,22,41);
+  for(let i=0;i<40;i++)wash(g,520+i*4.8,110+Math.sin(i*.4)*2.6,10,TR.ochreDeep,.16,i*3+9,.6);
+  for(let i=0;i<27;i++)wash(g,520+i*4.8,110+Math.sin(i*.4)*2.6,10,TR.redOchre,.8,i*3+9,.6);}
+
+function paintRockCuts(g){
+  for(let i=0;i<11;i++){const p=crackPath(60+RR()*1160,50+RR()*640,20+RR()*34,i*13+7);
+    scratch(g,p,{w:1.1+RR()*1.2,alpha:.42,brk:.16,dark:true,seed:i*31+3});}
+  scratch(g,crackPath(880,80,70,911),{w:1.9,alpha:.45,brk:.1,dark:true,seed:800});
+  // the used orbits: each ring the run has already left is struck through once
+  for(const n of[NODES.A,NODES.B,NODES.C]){const a=-.7;
+    scratch(g,[[n.x+Math.cos(a)*(n.r+10),n.y+Math.sin(a)*(n.r+10)],[n.x-Math.cos(a)*(n.r+10),n.y-Math.sin(a)*(n.r+10)]],{w:1.5,alpha:.7,brk:.12,seed:n.x});}
+  // the route, dry as far as C: a flint line from the floor upward
+  scratch(g,DRY,{w:2.2,alpha:.9,brk:.1,seed:77});
+  // the cluster's three, ringed and joined, so the game can find them without the wall claiming anything
+  for(let i=0;i<3;i++){const p=[];for(let k=0;k<=34;k++){const t=k/34*TAU;p.push([CLUSTER.x+CL3[i][0]+Math.cos(t)*16,CLUSTER.y+CL3[i][1]+Math.sin(t)*16]);}
+    scratch(g,p,{w:1.9,alpha:.85,brk:.12,seed:CL3[i][0]|0});}
+  scratch(g,CL3.map(q=>[CLUSTER.x+q[0],CLUSTER.y+q[1]]),{w:1.7,alpha:.62,brk:.24,seed:99});
+  // the HUD's tallies: pace, then flow, one notch per unit; one scored rule brackets them
+  const tally=(x,y,n,of,h,gap,seed)=>{for(let i=0;i<of;i++){const px=x+i*gap;
+    scratch(g,[[px+(i%3)*.6,y],[px-1.2+(i%2)*.9,y+h]],{w:i<n?2.6:1.3,alpha:i<n?1:.32,brk:i<n?.03:.3,seed:seed+i});}};
+  tally(520,136,5,7,17,12,201);tally(520,164,3,5,17,12,211);
+  scratch(g,[[506,130],[506,186]],{w:2.2,alpha:.8,brk:.1,seed:221});
+  scratch(g,[[1028,40],[1028,92]],{w:2,alpha:.7,brk:.14,seed:223});
+  // the floor: the run's notch-rule along the bottom, the Lebombo bone laid flat, most of it gone
+  // back into the dark the torch has left behind
+  for(let i=0;i<58;i++){const x=124+i*18.4,h=(i%5===4)?22:14;
+    scratch(g,[[x,772-h],[x-1.8,772]],{w:i%5===4?3:2.1,alpha:i<41?1:.34,brk:.06,seed:400+i});}}
+
+/* ---------- bake the wall ---------- */
+const GND=paintRockGround(),ROCK=layer();
+ROCK.g.drawImage(GND.albedo,0,0,W,H);
+{const pig=layer();paintRockPigment(pig.g);
+ ROCK.g.save();ROCK.g.globalCompositeOperation='multiply';ROCK.g.drawImage(pig.c,0,0,W,H);
+ ROCK.g.drawImage(GND.light,0,0,W,H);
+ ROCK.g.globalCompositeOperation='lighter';ROCK.g.drawImage(GND.sheen,0,0,W,H);ROCK.g.restore();}
+paintRockCuts(ROCK.g);
+
+function glow(stops){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(128,128,0,128,128,128);for(const st of stops)gr.addColorStop(st[0],st[1]);
+  g.fillStyle=gr;g.fillRect(0,0,256,256);return c;}
+const EMBER=glow([[0,'rgba(255,240,205,1)'],[.14,'rgba(255,168,74,.75)'],[.5,'rgba(224,88,26,.2)'],[1,'rgba(200,70,20,0)']]);
+function blit(g,c,x,y,r,a,op){g.save();g.globalAlpha=a;if(op)g.globalCompositeOperation=op;g.drawImage(c,x-r,y-r,r*2,r*2);g.restore();}
+const HALO=layer();
+(function(){const g=HALO.g,gr=g.createRadialGradient(TX,TY,50,TX,TY,780);
+  gr.addColorStop(0,'rgba(255,190,116,1)');gr.addColorStop(.17,'rgba(255,172,92,.78)');
+  gr.addColorStop(.5,'rgba(255,146,66,.26)');gr.addColorStop(1,'rgba(255,132,52,0)');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);})();
+function flicker(g,s){const f=Math.sin(s*10.7)*.5+Math.sin(s*6.3+1.3)*.32+Math.sin(s*21.1+.7)*.18;
+  g.save();g.globalAlpha=.14+.11*f;g.globalCompositeOperation='lighter';
+  g.drawImage(HALO.c,Math.round(f*8),Math.round(Math.sin(s*8.1+.4)*6),W,H);g.restore();return .9+f*.1;}
+
+/* The ember is the torch, carried: it flies the last transfer in, lands on D at t=0.08, and circles. */
+const T_CAP=.08,SPIN=19.8;
+function emberAt(t){
+  if(t<T_CAP){const q=clamp(t/T_CAP,0,1),i=q*(LAST.length-1),k=Math.min(LAST.length-2,i|0),f=i-k;
+    return[lerp(LAST[k][0],LAST[k+1][0],f),lerp(LAST[k][1],LAST[k+1][1],f)];}
+  const a=HELD.aIn+HELD.dir*(t-T_CAP)*SPIN;return[NODES.D.x+Math.cos(a)*NODES.D.r,NODES.D.y+Math.sin(a)*NODES.D.r*.97];}
+function paintRockLive(g,t,br){
+  // the last transfer, laid wet behind the ember and drying into the route
+  const q=clamp(t/T_CAP,0,1),n=Math.max(2,Math.round(1+q*(LAST.length-1)));
+  scratch(g,LAST.slice(0,n),{w:2.2,alpha:.9,brk:.1,seed:78});
+  if(t>=T_CAP){ // the capture: a broken etched ripple, and the lap itself scratched as it is held
+    const age=t-T_CAP,rr=NODES.D.r+8+ss(clamp(age/.09,0,1))*26,al=clamp(1-age/.1,0,1);
+    if(al>0){const p=[];for(let i=0;i<=60;i++){const a=i/60*TAU;p.push([NODES.D.x+Math.cos(a)*rr,NODES.D.y+Math.sin(a)*rr*.97]);}
+      scratch(g,p,{w:1.6,alpha:al*.9,brk:.4,seed:501});}
+    const a0=HELD.aIn,a1=HELD.aIn+HELD.dir*Math.min(TAU,age*SPIN),m=Math.max(2,Math.round(Math.abs(a1-a0)*NODES.D.r/5)),p=[];
+    for(let i=0;i<=m;i++){const a=a0+(a1-a0)*i/m;p.push([NODES.D.x+Math.cos(a)*NODES.D.r,NODES.D.y+Math.sin(a)*NODES.D.r*.97]);}
+    scratch(g,p,{w:2.2,alpha:.9,brk:.1,seed:79});}
+  // the aim guide toward the cluster, as far as the torch's breath allows
+  const e=emberAt(t);
+  if(t>=T_CAP){g.save();g.globalCompositeOperation='multiply';const tx=CLUSTER.x+CL3[0][0],ty=CLUSTER.y+CL3[0][1];
+    for(let i=1;i<=14;i++){const qq=i/14;if(qq>.62)break;stamp(g,lerp(e[0],tx,qq)+Math.sin(qq*2.2)*16,lerp(e[1],ty,qq)-Math.sin(qq*Math.PI)*40,4,TR.ochreDeep,.5*(1-qq*.5),i*7);}
+    g.restore();}
+  for(let i=11;i>0;i--){const b=emberAt(t-i*.0028),qq=1-i/12;blit(g,EMBER,b[0],b[1],13*qq+4,.45*qq*qq,'lighter');}
+  blit(g,EMBER,e[0],e[1],46*br,.95,'lighter');}
+
+/* ================= II · THE DISC ================= */
+const TD={bronzeDeep:'#1d1208',bronze:'#4a3117',bronzeLit:'#8C6239',burnish:'#B5834D',patina:'#4E8074',patinaDeep:'#2E4B44',
+  gold:'#D4AF37',goldHi:'#F2DC9B',goldLo:'#8a6a19',gloss:'rgba(226,203,160,.55)',glossDim:'rgba(226,203,160,.34)',legend:'rgba(150,205,190,.85)'};
+function face(px,style){return (style?style+' ':'')+px+'px Georgia,"Iowan Old Style","Times New Roman",serif';}
+function ink(g,x,y,s,o){o=o||{};g.save();g.font=face(o.size||10,o.style||'');g.fillStyle=o.fill||TD.gloss;g.textAlign=o.align||'center';g.textBaseline=o.base||'alphabetic';
+  try{g.letterSpacing=(o.track!=null?o.track:1.1)+'px';}catch(e){}
+  g.globalAlpha=o.alpha!=null?o.alpha:1;g.fillText(s,x,y);g.restore();}
+function poly(g,p,close){g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)g.lineTo(p[i][0],p[i][1]);if(close)g.closePath();}
+function off(p,dx,dy){const o=new Array(p.length);for(let i=0;i<p.length;i++)o[i]=[p[i][0]+dx,p[i][1]+dy];return o;}
+function bbox(p){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of p){if(q[0]<x0)x0=q[0];if(q[0]>x1)x1=q[0];if(q[1]<y0)y0=q[1];if(q[1]>y1)y1=q[1];}return{x0,y0,x1,y1};}
+function arcPts(cx,cy,r,a0,a1,wob,seed){const rnd=mulberry32(seed>>>0||5),n=Math.max(6,Math.round(Math.abs(a1-a0)*r/5));const p=[];
+  for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n,rr=r+(wob?(rnd()-.5)*wob:0);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}return p;}
+function ringPts(cx,cy,r,wob,seed){return arcPts(cx,cy,r,0,TAU,wob,seed);}
+function bandPts(cx,cy,ri,ro,a0,a1,seed){return arcPts(cx,cy,ro,a0,a1,.7,seed).concat(arcPts(cx,cy,ri,a1,a0,.7,seed+1));}
+function dome(g,x,y,r,sign,amt,hi){const d=r*.42;
+  let a=g.createRadialGradient(x-d*sign,y-d*sign,0,x-d*sign,y-d*sign,r);a.addColorStop(0,hexa(hi,amt));a.addColorStop(1,hexa(hi,0));
+  g.fillStyle=a;g.beginPath();g.arc(x-d*sign,y-d*sign,r,0,TAU);g.fill();
+  let b=g.createRadialGradient(x+d*sign,y+d*sign,0,x+d*sign,y+d*sign,r);b.addColorStop(0,'rgba(8,5,2,'+amt+')');b.addColorStop(1,'rgba(8,5,2,0)');
+  g.fillStyle=b;g.beginPath();g.arc(x+d*sign,y+d*sign,r,0,TAU);g.fill();}
+function chase(g,p,o){o=o||{};const w=o.w||1.5;g.save();g.lineJoin='round';g.lineCap=o.cap||'round';g.globalAlpha=o.alpha!=null?o.alpha:1;
+  poly(g,off(p,-.85,-.85),o.close);g.strokeStyle=o.lip||'rgba(206,166,109,.42)';g.lineWidth=w*.85;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=o.dark||'rgba(10,6,2,.72)';g.lineWidth=w;g.stroke();g.restore();}
+function inlayLine(g,p,w,seed,o){o=o||{};const gold=o.gold||TD.gold,hi=o.hi||TD.goldHi,lo=o.lo||TD.goldLo;
+  g.save();g.lineJoin='round';g.lineCap=o.cap||'round';
+  poly(g,off(p,1.4,1.5),o.close);g.strokeStyle='rgba(6,4,2,.5)';g.lineWidth=w+3.4;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=TD.bronzeDeep;g.lineWidth=w+2;g.stroke();
+  poly(g,off(p,.5,.5),o.close);g.strokeStyle=lo;g.lineWidth=w;g.stroke();
+  poly(g,p,o.close);g.strokeStyle=gold;g.lineWidth=w*.82;g.stroke();
+  poly(g,off(p,-.75,-.8),o.close);g.strokeStyle=hi;g.lineWidth=Math.max(.55,w*.26);g.globalAlpha=.8;g.stroke();g.globalAlpha=1;
+  const rnd=mulberry32((seed>>>0||11)*2654435761>>>0),step=Math.max(1,Math.round(p.length/14));
+  for(let i=1;i<p.length-1;i+=step)if(rnd()<.6){const q=p[i];g.globalAlpha=.14+rnd()*.2;g.fillStyle=rnd()<.5?hi:'rgba(18,11,4,.9)';
+    g.beginPath();g.ellipse(q[0],q[1],w*.32,w*.2,rnd()*TAU,0,TAU);g.fill();}
+  g.restore();}
+function inlayShape(g,p,seed,o){o=o||{};const gold=o.gold||TD.gold,hi=o.hi||TD.goldHi,lo=o.lo||TD.goldLo,bb=bbox(p);
+  g.save();
+  g.save();g.shadowColor='rgba(5,3,1,.85)';g.shadowBlur=5;g.shadowOffsetX=2.4;g.shadowOffsetY=2.6;
+  poly(g,p,true);g.fillStyle='#170e05';g.fill();g.restore();
+  poly(g,p,true);g.strokeStyle=TD.bronzeDeep;g.lineWidth=4.2;g.stroke();
+  const lg=g.createLinearGradient(bb.x0,bb.y0,bb.x1,bb.y1);lg.addColorStop(0,hi);lg.addColorStop(.42,gold);lg.addColorStop(1,lo);
+  poly(g,p,true);g.fillStyle=lg;g.fill();
+  g.save();poly(g,p,true);g.clip();
+  const rnd=mulberry32((seed>>>0||3)*40503),ww=bb.x1-bb.x0,hh=bb.y1-bb.y0,n=clamp(Math.round(ww*hh/300),4,90);
+  for(let i=0;i<n;i++)dome(g,bb.x0+rnd()*ww,bb.y0+rnd()*hh,2.2+rnd()*5.5,rnd()<.5?1:-1,.1+rnd()*.13,hi);
+  if(o.paint)o.paint(g,bb,rnd);
+  poly(g,p,true);g.strokeStyle='rgba(34,20,7,.55)';g.lineWidth=2.4;g.stroke();
+  poly(g,off(p,-1.7,-1.8),true);g.strokeStyle=hi;g.lineWidth=2.1;g.globalAlpha=.5;g.stroke();
+  poly(g,off(p,1.9,2),true);g.strokeStyle=lo;g.lineWidth=2.6;g.globalAlpha=.55;g.stroke();
+  g.restore();g.restore();}
+function punchStar(g,x,y,r,seed,o){o=o||{};const gold=o.gold||TD.gold,hi=o.hi||TD.goldHi,lo=o.lo||TD.goldLo;
+  g.save();
+  g.beginPath();g.arc(x+1.1,y+1.3,r*1.12,0,TAU);g.fillStyle='rgba(6,4,2,.55)';g.fill();
+  g.beginPath();g.arc(x,y,r*1.06,0,TAU);g.fillStyle=TD.bronzeDeep;g.fill();
+  const gr=g.createRadialGradient(x-r*.4,y-r*.44,r*.04,x,y,r*1.06);gr.addColorStop(0,hi);gr.addColorStop(.48,gold);gr.addColorStop(1,lo);
+  g.beginPath();g.arc(x,y,r*.9,0,TAU);g.fillStyle=gr;g.fill();
+  const rnd=mulberry32((seed>>>0||7)*97+13);
+  for(let i=0;i<3;i++){const a=rnd()*TAU,d=r*.3*rnd();dome(g,x+Math.cos(a)*d,y+Math.sin(a)*d,r*.45,rnd()<.5?1:-1,.2,hi);}
+  g.beginPath();g.arc(x-r*.28,y-r*.32,r*.26,0,TAU);g.fillStyle=hi;g.globalAlpha=.55;g.fill();
+  g.restore();}
+function dpeck(g,x,y,r,o){o=o||{};const lit=o.lit||'rgba(226,186,126,.4)';
+  g.save();
+  g.beginPath();g.arc(x-r*.28,y-r*.3,r*1.16,0,TAU);g.fillStyle=lit;g.globalAlpha=.5;g.fill();g.globalAlpha=1;
+  g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=o.dark||'rgba(11,7,3,.82)';g.fill();
+  g.beginPath();g.arc(x+r*.34,y+r*.36,r*.56,0,TAU);g.fillStyle=lit;g.fill();
+  g.restore();}
+/* the punch's own flash: the one beat the foil takes to seat, bright and then gone */
+function punchFlash(g,x,y,r,f,k){k=k||1;g.save();g.globalAlpha=f*.9;
+  g.beginPath();g.arc(x,y,r*(1+(1-f)*2.6*k),0,TAU);g.strokeStyle='#fff3d2';g.lineWidth=1.6*f+.4;g.stroke();
+  g.globalAlpha=f*f*.95;g.beginPath();g.arc(x,y,r*.8,0,TAU);g.fillStyle='#fffaf0';g.fill();g.restore();}
+
+function paintDiscGround(g){
+  g.fillStyle='#120b05';g.fillRect(0,0,W,H);
+  for(let i=0;i<52;i++){const x=RD()*W,y=RD()*H,r=90+RD()*240,gr=g.createRadialGradient(x,y,0,x,y,r);
+    const c=RD()<.6?'#0b0603':'#5d3d1a';gr.addColorStop(0,hexa(c,.55));gr.addColorStop(1,hexa(c,0));
+    g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+  for(let i=0;i<520;i++){const x=RD()*W,y=RD()*H,r=12+RD()*40,s=RD()<.7?-1:1;
+    dome(g,x,y,r,s,.1+RD()*.14,TD.burnish);
+    if(RD()<.34){const a0=s<0?Math.PI*.85:Math.PI*1.85;
+      chase(g,arcPts(x,y,r*.86,a0,a0+Math.PI*.8,r*.06,i),{w:1.3,alpha:.16+RD()*.14,lip:'rgba(228,186,124,.6)',dark:'rgba(6,3,1,.5)'});}}
+  for(let i=0;i<760;i++){const x=RD()*W,y=RD()*H,r=3.5+RD()*9;dome(g,x,y,r,RD()<.62?-1:1,.06+RD()*.09,TD.burnish);}
+  for(let i=0;i<90;i++){const rr=60+RD()*720,a0=RD()*TAU,sp=.15+RD()*.75;
+    chase(g,arcPts(640,400,rr,a0,a0+sp,2.2,i*7+1),{w:.9,alpha:.07+RD()*.09,lip:'rgba(226,186,124,.5)',dark:'rgba(8,5,2,.5)'});}
+  for(let i=0;i<170;i++){const x=RD()*W,y=RD()*H,l=2+RD()*9;
+    g.save();g.translate(x,y);g.rotate(-Math.PI/4+(RD()-.5)*.7);g.globalAlpha=.06+RD()*.16;
+    g.fillStyle='#f0d9a8';g.beginPath();g.ellipse(0,0,l,.6+RD()*.7,0,0,TAU);g.fill();g.restore();}
+  g.save();g.globalCompositeOperation='lighter';
+  for(let i=0;i<200;i++){const rr=40+RD()*760,a0=RD()*TAU,sp=.08+RD()*.5;
+    chase(g,arcPts(640,400,rr,a0,a0+sp,1.6,i*13),{w:.7,alpha:.05+RD()*.05,lip:'rgba(190,150,96,.5)',dark:'rgba(140,105,60,.2)'});}
+  g.restore();
+  const pits=[];
+  for(let i=0;i<520;i++){const x=RD()*W,y=RD()*H,r=.7+RD()*2.6;dpeck(g,x,y,r,{lit:'rgba(214,172,112,.3)'});if(RD()<.34)pits.push([x,y,r]);}
+  for(const[x,y,r]of pits){g.beginPath();g.arc(x,y,r*(1.1+RD()*1.5),0,TAU);g.fillStyle=hexa(RD()<.5?TD.patina:TD.patinaDeep,.14+RD()*.2);g.fill();}
+  for(let i=0;i<16;i++){const x=RD()*W,y=RD()*H,r=16+RD()*44,gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,hexa(TD.patinaDeep,.16));gr.addColorStop(1,hexa(TD.patinaDeep,0));g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+  for(let i=0;i<5200;i++){g.globalAlpha=.04+RD()*.09;g.fillStyle=RD()<.5?'#150c05':'#8a6132';g.fillRect(RD()*W,RD()*H,1,1);}
+  g.globalAlpha=1;
+  const rake=g.createLinearGradient(0,0,W*.9,H);rake.addColorStop(0,'rgba(255,222,168,.09)');rake.addColorStop(.4,'rgba(255,222,168,.01)');rake.addColorStop(1,'rgba(0,0,0,.5)');
+  g.fillStyle=rake;g.fillRect(0,0,W,H);
+  const vig=g.createRadialGradient(W*.42,H*.4,140,W*.5,H*.5,820);vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.78)');
+  g.fillStyle=vig;g.fillRect(0,0,W,H);}
+function paintRim(g){
+  for(const top of[true,false]){
+    const y0=top?0:H,dir=top?1:-1,bandH=44;
+    const gr=g.createLinearGradient(0,y0,0,y0+dir*bandH);
+    gr.addColorStop(0,hexa(TD.burnish,.3));gr.addColorStop(.55,'rgba(120,84,44,.12)');gr.addColorStop(1,'rgba(0,0,0,.28)');
+    g.fillStyle=gr;g.fillRect(0,Math.min(y0,y0+dir*bandH),W,bandH);
+    const bow=(x)=>y0+dir*(21+Math.sin((x/W)*Math.PI)*-7*dir*dir);
+    const edge=[];for(let x=-10;x<=W+10;x+=14)edge.push([x,y0+dir*(bandH-2)+Math.sin(x/W*Math.PI)*dir*5]);
+    chase(g,edge,{w:1.7,alpha:.7});
+    for(let i=0;i<70;i++){const x=RD()*W,y=Math.min(y0,y0+dir*bandH)+RD()*bandH;
+      g.beginPath();g.arc(x,y,1.5+RD()*5,0,TAU);g.fillStyle=hexa(RD()<.5?TD.patina:TD.patinaDeep,.05+RD()*.14);g.fill();}
+    for(let x=26;x<W;x+=33.6){const y=bow(x);
+      dpeck(g,x,y,4.6,{lit:'rgba(232,192,132,.5)'});
+      g.beginPath();g.arc(x,y,2.1,0,TAU);g.fillStyle='rgba(0,0,0,.85)';g.fill();
+      g.beginPath();g.arc(x+.9,y+1,1.3,0,TAU);g.fillStyle='rgba(150,110,62,.5)';g.fill();}}}
+const ARC={r:526,thick:46,half:41*Math.PI/180,lc:520,rc:W-520,cy:400};
+function paintArcs(g){
+  for(const side of[-1,1]){
+    const cx=side<0?ARC.lc:ARC.rc,base=side<0?Math.PI:0;
+    const a0=base-ARC.half,a1=base+ARC.half,ri=ARC.r-ARC.thick,ro=ARC.r;
+    const band=bandPts(cx,ARC.cy,ri,ro,a0,a1,71+side);
+    inlayShape(g,band,83+side,{});
+    g.save();poly(g,band,true);g.clip();
+    for(let k=0;k<=16;k++){const a=a0+(a1-a0)*k/16,long=k%4===0;
+      const p=[[cx+Math.cos(a)*(ro-2),ARC.cy+Math.sin(a)*(ro-2)],[cx+Math.cos(a)*(ro-(long?ARC.thick*.5:ARC.thick*.26)),ARC.cy+Math.sin(a)*(ro-(long?ARC.thick*.5:ARC.thick*.26))]];
+      chase(g,p,{w:long?1.8:1.1,alpha:long?.7:.4,lip:'rgba(255,238,190,.45)',dark:'rgba(52,32,6,.75)'});}
+    for(let k=0;k<=13;k++){const a=a0+(a1-a0)*(k+.5)/14,rr=ri+ARC.thick*.72;
+      dome(g,cx+Math.cos(a)*rr,ARC.cy+Math.sin(a)*rr,5.5,1,.4,TD.goldHi);}
+    g.restore();
+    for(const a of[a0,a1]){const xo=cx+Math.cos(a)*ro,yo=ARC.cy+Math.sin(a)*ro,xi=cx+Math.cos(a)*ri,yi=ARC.cy+Math.sin(a)*ri;
+      chase(g,[[xo,yo],[xi,yi]],{w:2.2,alpha:.8,lip:'rgba(255,238,190,.5)'});
+      chase(g,[[xo+Math.cos(a)*7,yo+Math.sin(a)*7],[xi+Math.cos(a)*7,yi+Math.sin(a)*7]],{w:1.2,alpha:.45});}}}
+function paintShip(g,cx,cy,len,o){o=o||{};
+  const sp=o.spread||Math.PI*.24,r=(len/2)/Math.sin(sp),C=[cx,cy-r],a0=Math.PI/2-sp,a1=Math.PI/2+sp;
+  const d=Math.max(2.6,len*.05),ow=o.w||Math.max(1.4,len*.017),sd=o.seed||9;
+  const OL=o.oarLen!=null?o.oarLen:Math.min(23,len*.12),cr=Math.min(24,len*.07);
+  const line=(rad,seed)=>arcPts(C[0],C[1],rad,a0,a1,o.wob!=null?o.wob:Math.min(1.5,len*.004),seed);
+  const put=(p,w,s)=>o.inlay?inlayLine(g,p,w,s,{}):chase(g,p,{w:w,alpha:o.alpha||.6});
+  put(line(r,sd),ow,sd+1);put(line(r+d,sd+2),ow*.8,sd+3);
+  const n=o.oars||14;
+  for(let i=0;i<=n;i++){const t=i/n,a=a0+(a1-a0)*t,L=OL*(.72+.42*Math.sin(t*Math.PI));
+    put([[C[0]+Math.cos(a)*(r+d),C[1]+Math.sin(a)*(r+d)],[C[0]+Math.cos(a)*(r+d+L),C[1]+Math.sin(a)*(r+d+L)]],ow*.62,sd+20+i);}
+  for(const e of[a0,a1]){const dir=e<Math.PI/2?1:-1;
+    const ex=C[0]+Math.cos(e)*(r+d/2)-Math.cos(e)*cr*1.15,ey=C[1]+Math.sin(e)*(r+d/2)-Math.sin(e)*cr*1.15,p=[];
+    for(let i=0;i<=26;i++){const t=i/26,ang=(e+Math.PI)+t*TAU*.8*dir,rr=cr*(1-t*.42);p.push([ex+Math.cos(ang)*rr,ey+Math.sin(ang)*rr]);}
+    put(p,ow*.7,sd+90+dir);}
+  if(o.sun){const sx=cx,sy=cy-len*.30;o.inlay?punchStar(g,sx,sy,len*.08,sd+120):chase(g,ringPts(sx,sy,len*.075,.5,sd+121),{w:ow*.8,alpha:o.alpha||.6,close:true});}}
+function punchNumeral(g,x,y,n,o){o=o||{};const dr=o.dr||3.6,gap=o.gap||4.4,bh=o.bh||(dr*2+7),align=o.align||'left';
+  const digits=String(Math.max(0,Math.round(n))).split('').map(Number);
+  const wide=Math.max.apply(null,digits.map(d=>Math.max(1,d)*(dr*2+gap)+dr*2));
+  digits.forEach((d,i)=>{const mid=y+i*bh+dr,x0=(align==='right'?x-wide:x)+dr;
+    chase(g,[[x0-dr*1.6,mid],[x0-dr*1.6+wide-dr*.4,mid]],{w:dr*2.6,alpha:.85,cap:'butt',dark:'rgba(5,3,1,.7)',lip:'rgba(206,166,109,.35)'});
+    chase(g,[[x0-dr*1.6,mid+dr*1.35],[x0-dr*1.6+wide-dr*.4,mid+dr*1.35]],{w:1,alpha:.4,cap:'butt'});
+    for(let k=0;k<d;k++)punchStar(g,x0+k*(dr*2+gap),mid,dr,(i*13+k*7+1)|0,o);
+    if(d===0)chase(g,[[x0-dr*.4,mid],[x0+dr*2.4,mid]],{w:2.2,alpha:.75,dark:'rgba(8,5,2,.9)'});});}
+/* the disc's one mark for a body: a punch, always the same size, whatever the Rock could see */
+const PUNCH_R=6.4;
+function discRing(g,n,seed,o){o=o||{};
+  chase(g,ringPts(n.x,n.y,n.r,1.1,seed),{w:2.4,close:true,alpha:o.alpha!=null?o.alpha:.95,lip:'rgba(248,214,150,.8)'});
+  chase(g,ringPts(n.x,n.y,n.r+5,.9,seed+1),{w:1,close:true,alpha:.4});}
+function discStruck(g,n,seed){const a=-.7;
+  chase(g,[[n.x+Math.cos(a)*(n.r+10),n.y+Math.sin(a)*(n.r+10)],[n.x-Math.cos(a)*(n.r+10),n.y-Math.sin(a)*(n.r+10)]],{w:1.4,alpha:.7});}
+function discMoon(g){const cx=MOON.x+6,cy=MOON.y,r=MOON.body,cr=[];
+  for(let i=0;i<=48;i++){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}
+  for(let i=48;i>=0;i--){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([cx+12+Math.cos(a)*(r*.8),cy-2+Math.sin(a)*(r*.8)]);}
+  inlayShape(g,cr,202,{});}
+function paintDiscSheet(g){
+  paintDiscGround(g);
+  // the disc's own scattered sky behind everything: one punch, no order, no register
+  for(let i=0;i<30;i++){const x=150+RD()*980,y=90+RD()*580;let clear=true;
+    for(const k in NODES){const b=NODES[k];if(Math.hypot(x-b.x,y-b.y)<b.r+24)clear=false;}
+    if(Math.hypot(x-MOON.x,y-MOON.y)<MOON.r+20||Math.hypot(x-CLUSTER.x,y-CLUSTER.y)<96)clear=false;
+    if(y<200&&x>180&&x<1180)clear=false;
+    if(clear){g.save();g.globalAlpha=.72;punchStar(g,x,y,2+RD()*2.2,400+i);g.restore();}}
+  paintArcs(g);paintRim(g);
+  // the title mark, top left, as the disc arranges it: the sun or full moon, and the crescent
+  inlayShape(g,ringPts(232,110,36,.9,201),201,{});
+  {const cr=[];for(let i=0;i<=48;i++){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([296+Math.cos(a)*32,104+Math.sin(a)*32]);}
+   for(let i=48;i>=0;i--){const a=-Math.PI*.62+(Math.PI*1.24)*i/48;cr.push([308+Math.cos(a)*26,101+Math.sin(a)*26]);}
+   inlayShape(g,cr,202,{});}
+  ink(g,264,168,'the sky disc, seen close',{size:9.5,fill:TD.glossDim,track:1.4});
+  // the HUD: score and best as stacked punch bands, and the foil in hand as a strip that narrows
+  punchNumeral(g,672,56,68,{dr:4.4,gap:5,bh:20,align:'right'});
+  ink(g,684,70,'struck',{size:9.5,fill:TD.glossDim,align:'left',track:1.5});
+  ink(g,684,84,'this run',{size:9.5,fill:TD.glossDim,align:'left',track:1.5});
+  punchNumeral(g,1072,56,118,{dr:4.4,gap:5,bh:20,align:'right'});
+  ink(g,1072,112,'best',{size:9.5,fill:TD.glossDim,align:'right',track:1.6});
+  for(let i=0;i<7;i++)i<5?punchStar(g,600+i*13,118,3.6,230+i):dpeck(g,600+i*13,118,3,{lit:'rgba(206,166,109,.32)'});
+  for(let i=0;i<5;i++)i<3?punchStar(g,600+i*13,140,3.6,240+i):dpeck(g,600+i*13,140,3,{lit:'rgba(206,166,109,.32)'});
+  {const x0=556,x1=724,y=170,full=(x)=>15-(x-x0)/(x1-x0)*10,strip=[];
+   for(let x=x0;x<=x1;x+=6)strip.push([x,y-full(x)/2]);for(let x=x1;x>=x0;x-=6)strip.push([x,y+full(x)/2]);
+   inlayShape(g,strip,250,{});
+   const xs=lerp(x0,x1,.62),spent=[];
+   for(let x=xs;x<=x1+2;x+=6)spent.push([x,y-full(x)/2-1.2]);for(let x=x1+2;x>=xs;x-=6)spent.push([x,y+full(x)/2+1.2]);
+   g.save();poly(g,spent,true);g.fillStyle='rgba(10,6,3,.85)';g.fill();chase(g,spent,{w:1.1,close:true,alpha:.6});g.restore();
+   for(let x=x0+21;x<x1;x+=21)chase(g,[[x,y-10],[x,y+10]],{w:.9,alpha:.4});}
+  // the bodies not on the route: a punch each, ringed; and the Moon as the crescent
+  for(const k of['E','F','G']){const n=NODES[k];discRing(g,n,k.charCodeAt(0)*7);punchStar(g,n.x,n.y,PUNCH_R,k.charCodeAt(0)*3);}
+  discRing(g,MOON,99);discMoon(g);
+  // the three already climbed: their stars are known, their rings arrive with the record
+  for(const k of['A','B','C']){const n=NODES[k];punchStar(g,n.x,n.y,PUNCH_R,k.charCodeAt(0)*3);}
+  // the Pleiades: seven punches, the figure itself, three of them the game's route, joined
+  chase(g,CL3.map(q=>[CLUSTER.x+q[0],CLUSTER.y+q[1]]),{w:1.7,alpha:1,lip:'rgba(244,206,146,.8)'});
+  for(let i=0;i<3;i++)punchStar(g,CLUSTER.x+CL3[i][0],CLUSTER.y+CL3[i][1],i===0?7.4:6.4,31+i*5);
+  for(let i=0;i<4;i++)punchStar(g,CLUSTER.x+CL_DISC[i][0],CLUSTER.y+CL_DISC[i][1],5.6,51+i*5);
+  chase(g,ringPts(CLUSTER.x+CL3[0][0],CLUSTER.y+CL3[0][1],13,.7,44),{w:1,close:true,alpha:.45});
+  chase(g,ringPts(CLUSTER.x,CLUSTER.y,74,1.4,45),{w:.9,close:true,alpha:.28});
+  // the footer: the barge along the bottom edge, where the disc itself carries it — the Earth's edge
+  paintShip(g,640,744,920,{spread:Math.PI*.042,inlay:true,oars:34,w:5,oarLen:15,seed:300});}
+/* the disc's darkness: the ground the disc went into, rising — laid over the live marks each frame */
+const DFLOOD=layer();
+(function(){const g=DFLOOD.g,gr=g.createLinearGradient(0,600,0,H);
+  gr.addColorStop(0,'rgba(8,5,2,0)');gr.addColorStop(.55,'rgba(8,5,2,.34)');gr.addColorStop(1,'rgba(8,5,2,.66)');
+  g.fillStyle=gr;g.fillRect(0,600,W,H-600);})();
+const DISC=layer();paintDiscSheet(DISC.g);
+
+/* ---- the re-striking: the record read from the floor up ---- */
+const TAPS=[];{let acc=0;for(let i=1;i<ROUTE.pts.length;i++){const a=ROUTE.pts[i-1],b=ROUTE.pts[i],len=Math.hypot(b[0]-a[0],b[1]-a[1]);
+  acc+=len;if(acc>=12.5){TAPS.push([b[0],b[1],i]);acc=0;}}}
+const T_RE0=.47,T_RE1=.85,SPAN=(T_RE1-T_RE0)*.9;
+const tapBorn=i=>T_RE0+SPAN*(i/TAPS.length);
+function tapIndexAt(idx){let k=0;while(k<TAPS.length&&TAPS[k][2]<idx)k++;return Math.min(k,TAPS.length-1);}
+const RING_BORN={};for(let k=0;k<3;k++)RING_BORN[k]=tapBorn(tapIndexAt(ROUTE.marks[k].idx));
+const T_HELD=T_RE0+SPAN*.97;
+function bargeAt(t){const a=HELD.aIn+HELD.dir*(t-T_HELD)*SPIN;return[NODES.D.x+Math.cos(a)*NODES.D.r,NODES.D.y+Math.sin(a)*NODES.D.r,a];}
+function paintBarge(g,x,y,ang){g.save();g.translate(x,y);g.rotate(ang);paintShip(g,0,9,48,{spread:Math.PI*.32,inlay:true,oars:7,sun:true,oarLen:7,seed:55});g.restore();}
+function paintDiscLive(g,t){
+  for(let i=0;i<TAPS.length;i++){const age=t-tapBorn(i);if(age<0)break;
+    const q=i/TAPS.length;punchStar(g,TAPS[i][0],TAPS[i][1],1.9+q*1.6,90+i);
+    if(age<.03)punchFlash(g,TAPS[i][0],TAPS[i][1],3.2,1-age/.03);}
+  for(let k=0;k<3;k++){const n=ROUTE.marks[k].node,age=t-RING_BORN[k];if(age<0)continue;
+    const prog=ss(clamp(age/.05,0,1)),a0=ROUTE.marks[k].aIn,dir=ROUTE.marks[k].dir;
+    chase(g,arcPts(n.x,n.y,n.r,a0,a0+dir*TAU*prog,1.1,k*7+3),{w:2.4,alpha:.95,lip:'rgba(248,214,150,.8)'});
+    if(prog>=1){chase(g,ringPts(n.x,n.y,n.r+5,.9,k*7+4),{w:1,close:true,alpha:.4});discStruck(g,n,k);}
+    else punchFlash(g,n.x+Math.cos(a0+dir*TAU*prog)*n.r,n.y+Math.sin(a0+dir*TAU*prog)*n.r,3,.7,.6);}
+  const hAge=t-T_HELD;
+  if(hAge>=0){ // the held body, struck last and in place: the first thing this century sees
+    const f=clamp(1-hAge/.07,0,1);
+    punchStar(g,NODES.D.x,NODES.D.y,PUNCH_R,999);
+    if(f>0){punchFlash(g,NODES.D.x,NODES.D.y,PUNCH_R*1.3,f,2.2);
+      g.save();g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(NODES.D.x,NODES.D.y,0,NODES.D.x,NODES.D.y,90);
+      gr.addColorStop(0,'rgba(255,236,190,'+(f*.5).toFixed(3)+')');gr.addColorStop(1,'rgba(255,236,190,0)');g.fillStyle=gr;g.fillRect(NODES.D.x-90,NODES.D.y-90,180,180);g.restore();}
+    const prog=ss(clamp((hAge-.015)/.06,0,1)),a0=HELD.aIn,dir=HELD.dir;
+    if(prog>0)chase(g,arcPts(NODES.D.x,NODES.D.y,NODES.D.r,a0,a0+dir*TAU*prog,1.1,77),{w:2.6,alpha:1,lip:'rgba(248,214,150,.85)'});
+    if(prog>=1){chase(g,ringPts(NODES.D.x,NODES.D.y,NODES.D.r+5,.9,78),{w:1,close:true,alpha:.45});
+      // and the lap being held, seated in foil, filling as it is flown
+      const a1=a0+dir*Math.min(TAU*.999,(hAge-.075)*SPIN);if(a1!==a0&&hAge>.075)inlayLine(g,arcPts(NODES.D.x,NODES.D.y,NODES.D.r,a0,a1,.9,79),2.4,79);
+      const b=bargeAt(t);paintBarge(g,b[0],b[1],b[2]+Math.PI/2);}}
+  g.drawImage(DFLOOD.c,0,0,W,H);
+  // the gloss: a museum label in the modern serif, which is the only writing this object honestly carries
+  const ga=clamp((t-.85)/.1,0,1);
+  if(ga>0){ink(g,168,598,'II · the disc · c. 1600 BCE',{size:12.5,style:'italic',align:'left',alpha:ga});
+    ink(g,168,614,'the observer returns to Earth; the traveller does not',{size:9.5,fill:TD.glossDim,align:'left',track:1.1,alpha:ga});}}
+
+/* ================= THE TURN ================= */
+const T_S0=.15,T_S1=.60;
+function sheetOffset(t){if(t<T_S0)return H;if(t>=T_S1)return 0;return H*(1-ss((t-T_S0)/(T_S1-T_S0)));}
+function paintTurn(g,t,secs){
+  const yoff=sheetOffset(t),u=clamp((t-T_S0)/(T_S1-T_S0),0,1);
+  g.fillStyle='#050403';g.fillRect(0,0,W,H);
+  if(yoff>0){ // the rock stays where it lies and goes dark beneath the sheet coming up over it
+    g.save();g.globalAlpha=1-.55*ss(u);g.drawImage(ROCK.c,0,0,W,H);
+    const br=flicker(g,secs);paintRockLive(g,t,br);g.restore();
+    if(yoff<H){const sh=g.createLinearGradient(0,yoff-90,0,yoff);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.7)');
+      g.fillStyle=sh;g.fillRect(0,yoff-90,W,90);}}
+  if(yoff<H){g.save();g.translate(0,yoff);g.drawImage(DISC.c,0,0,W,H);paintDiscLive(g,t);g.restore();
+    // the cut edge: the rim itself is the leading edge, and it catches the light as it comes up
+    if(yoff>0){g.save();g.globalAlpha=.7;g.strokeStyle='rgba(244,214,150,.9)';g.lineWidth=1.2;g.beginPath();g.moveTo(0,yoff+.5);g.lineTo(W,yoff+.5);g.stroke();g.restore();}}}
+
+/* ---------- the legend (press L): the game's own term against each thing on whichever sheet is up ---------- */
+const LEG_ROCK=[
+  [640,786,'the bottom edge is the Earth — the cave floor, where the run climbed from; the torch has moved on and the floor has gone dark'],
+  [NODES.D.x,NODES.D.y-NODES.D.r-14,'the held body — the ember has just landed (a capture): the page is armed on it'],
+  [NODES.B.x+70,NODES.B.y+8,'the route — a flint line from the floor up through three bodies, each ring struck through once it is left'],
+  [NODES.F.x,NODES.F.y-NODES.F.r-12,'bright'],[NODES.E.x,NODES.E.y-NODES.E.r-12,'middle'],[NODES.G.x,NODES.G.y-NODES.G.r-12,'faint — three sizes of dab, the only difference a naked eye can measure'],
+  [MOON.x,MOON.y-MOON.r-12,'the Moon — the one body with a face'],
+  [CLUSTER.x,CLUSTER.y-70,'the cluster — six dots, three ringed: the constellation, as ambiguous as the wall is'],
+  [640,FY+20,'the flood — unlit rock rising from below: nothing is drawn'],
+  [595,30,'HUD — score as a dot field, pace and flow as tallies, the ochre in hand as a smear'],
+  [128,224,'the hand stencil — the title and the maker\'s mark; no word exists']];
+const LEG_DISC=[
+  [640,786,'the bottom edge is the Earth — the barge and the rim; this sheet came up from here'],
+  [NODES.D.x,NODES.D.y-NODES.D.r-14,'the held body — re-struck in gold, in place: the first thing this century sees'],
+  [NODES.B.x+70,NODES.B.y+8,'the inherited route — the older record, re-read from the ground up as a run of taps'],
+  [NODES.F.x,NODES.F.y-NODES.F.r-12,'one punch, always — no size codes brightness (the disc\'s own grammar)'],
+  [MOON.x,MOON.y-MOON.r-12,'the Moon — the crescent'],
+  [CLUSTER.x,CLUSTER.y-88,'the Pleiades — seven punches, the figure itself; three of them the route'],
+  [640,660,'the flood — the ground the disc went into, rising'],
+  [168,632,'the gloss — a modern museum label, never the culture\'s own words'],
+  [264,50,'the title mark — sun or full moon, and the crescent'],
+  [860,30,'HUD — score and best as punched bands, pace, flow, the foil narrowing as it is spent'],
+  [70,400,'the horizon arcs — the attested 82°, the frame and the scale']];
+function paintLegend(g,t){const disc=t>=.33,yo=disc?sheetOffset(t):0;
+  g.save();g.fillStyle='rgba(3,6,10,.58)';g.fillRect(0,0,W,H);
+  for(const[x,y0,s]of(disc?LEG_DISC:LEG_ROCK)){const y=y0+yo;if(y<12||y>H-4)continue;
+    g.font=face(10.5);g.textAlign='center';try{g.letterSpacing='.5px';}catch(e){}
+    const w=g.measureText(s).width,cx=clamp(x,w/2+10,W-w/2-10);
+    g.fillStyle='rgba(0,0,0,.66)';g.fillRect(cx-w/2-5,y-11,w+10,15);
+    g.fillStyle=TD.legend;g.fillText(s,cx,y);
+    g.beginPath();g.moveTo(x,y+2);g.lineTo(x,y+9);g.strokeStyle='rgba(150,205,190,.5)';g.lineWidth=1;g.stroke();}
+  g.restore();}
+
+/* ---------- the clock: nine seconds a turn, looping; Space holds it, the arrows scrub it, ?t= pins it ---------- */
+const CYCLE=9;
+const pinned=(()=>{const m=/[?&]t=([0-9.]+)/.exec(location.search);return m?clamp(parseFloat(m[1]),0,.999):null;})();
+let showLegend=false,paused=pinned!=null,phase=pinned!=null?pinned:0,last=performance.now();
+window.addEventListener('keydown',e=>{
+  if(e.key==='l'||e.key==='L')showLegend=!showLegend;
+  else if(e.key===' '){paused=!paused;e.preventDefault();}
+  else if(e.key==='ArrowRight'){phase=(phase+.02)%1;paused=true;}
+  else if(e.key==='ArrowLeft'){phase=(phase-.02+1)%1;paused=true;}});
+function frame(now){const dt=(now-last)/1000;last=now;
+  if(!paused)phase=(phase+dt/CYCLE)%1;
+  paintTurn(ctx,phase,now/1000);
+  if(showLegend)paintLegend(ctx,phase);
+  requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

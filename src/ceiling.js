@@ -74,7 +74,7 @@ const CEILING_LOSS={
 // The colophon's observation line, recast from the atlas's Latin (TRES PERFECTI, VELOCITAS SUMMA…)
 // into short curatorial captions in the Ceiling's own register — the era's Latin layer is only a
 // modern gloss, and several of the underlying words are themselves recalled rather than re-verified
-// (see docs/eras/02-ceiling.md's Names table), so nothing here is offered as hieroglyphic prose.
+// (see docs/archive/eras/02-ceiling.md's Names table), so nothing here is offered as hieroglyphic prose.
 // Keyed on the observation's own key (src/simulation.js's OBSERVATIONS), the same way CEILING_LOSS
 // is keyed on world.reason.
 const CEILING_OBSERVATIONS={
@@ -601,7 +601,7 @@ function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
 }
 // The star band, corrected: not a single file of small solid stars but a broad woven band of three
 // staggered rows, the sheet's main framing device and, by sheer repetition of one flat unit, its
-// principal source of density (docs/eras/02-ceiling.md, "The grammar" — hierarchy from scale,
+// principal source of density (docs/archive/eras/02-ceiling.md, "The grammar" — hierarchy from scale,
 // separation, overlap and register, never from rendering up a single mark). The middle row sits a
 // half-gap out of phase with its neighbours so the three interlock instead of stacking into a plain
 // square grid. Used for the tile's own two side bands, which pass with the climb like every other
@@ -829,7 +829,7 @@ function ceilingBakeWall(watch){
   // P1 · carry the wall with the climb. The wall used to be one canvas the size of the screen, blitted
   // at 0,0 forever, so forty rows of climbing never moved a single kheker or a single month circle.
   // It is baked here as one repeating TILE instead: the room's own architecture — the kheker frieze
-  // crowning it and the foot's block rule closing it (docs/eras/02-ceiling.md, "Frame and furniture" —
+  // crowning it and the foot's block rule closing it (docs/archive/eras/02-ceiling.md, "Frame and furniture" —
   // a tomb ceiling's boundary is its architecture, not a page border) — is cached apart from this and
   // pinned to the viewport by ceilingDrawRegisterGrid(). Everything else drawn below is furniture, and
   // furniture passes: the plaster itself, the painter's snapped canon grid, both star bands, the
@@ -960,7 +960,7 @@ function ceilingBakeWall(watch){
     procStripH=procFig*2.3+procCap*1.5+10,procY=footY-procFig*.15,
     hiY=footY-procStripH,span=hiY-loY,bullY=loY+span*.24,hippoY=loY+span*.7;
   // P2 · a register per watch. TT353 is one authored sheet and the circumpolar pair, the decan columns
-  // and the twelve month circles are not separate chapters of it (docs/eras/02-ceiling.md, "The
+  // and the twelve month circles are not separate chapters of it (docs/archive/eras/02-ceiling.md, "The
   // signature sheet") — but which of that one sheet's furniture the flight is currently passing is
   // exactly the kind of thing a night's watches divide, the way a real visit to the room would not take
   // in the whole ceiling in one glance. So each watch is given a different reach of the same wall
@@ -1194,7 +1194,7 @@ function ceilingDrawDecanCharts(){
   ctx.restore();
 }
 // The ordinary bodies draw from the wall's own range of star colours, and yellow is deliberately not
-// in it. Yellow ochre is the sheet's small local accent (docs/eras/research/ceiling.md, §3: "small
+// in it. Yellow ochre is the sheet's small local accent (docs/archive/eras/research/ceiling.md, §3: "small
 // local fill and star sign; do not infer generic gold from it") and this plate spends the whole of it
 // on the two bodies that have to be told apart at a glance — the gold body and the slingshot. An
 // ordinary star reaching into the same pot was costing the sheet twice: half the field wore the
@@ -1696,7 +1696,7 @@ function ceilingDrawRunningHead(dt){
 }
 // P3 · the flat lime chapter card is retired outright rather than softened. It used to fill
 // W*.18..W*.82 with opaque lime and cover the very hour-circles the player was aiming at every time a
-// watch turned — the crudest single element on the sheet (docs/eras/CEILING-POLISH.md, "1 · The wall
+// watch turned — the crudest single element on the sheet (docs/archive/eras/CEILING-POLISH.md, "1 · The wall
 // does not move"). Now that P2 gives every watch its own register, the new furniture arriving under
 // the flight IS the announcement, exactly the preferred outcome that file names; no card is needed to
 // say what the wall is already saying by looking different. What is left of the old card is the brief
@@ -1709,9 +1709,9 @@ function ceilingDrawChangeover(dt){
   const age=chapterReveal.age,a=Math.sin(clamp(age/CEILING_CHANGE_DUR,0,1)*Math.PI),cy=H*.5,label=CEILING_HOURS[chapterReveal.index];
   ctx.save();ctx.textAlign='center';
   // A band of fresh plaster laid across, translucent rather than the old opaque fill, so whatever it
-  // covers is dimmed, never hidden — docs/eras/CEILING-POLISH.md P3's own alternative, applied to the
+  // covers is dimmed, never hidden — docs/archive/eras/CEILING-POLISH.md P3's own alternative, applied to the
   // register change itself rather than to a card standing apart from it. It is set in `lime`, the
-  // palette's own brighter repair tone (docs/eras/02-ceiling.md's palette table: "wear and repairs"),
+  // palette's own brighter repair tone (docs/archive/eras/02-ceiling.md's palette table: "wear and repairs"),
   // not the base `plaster` the rest of the wall is mixed from — the same colour, at full opacity, would
   // be invisible laid over itself.
   ctx.globalAlpha=a*.6;ctx.fillStyle=CEILING_PALETTE.lime;ctx.fillRect(W*.18,cy-48,W*.64,100);
@@ -1750,7 +1750,7 @@ function renderCeiling(dt,aim){
   if(screenFlash>0){ctx.fillStyle=`rgba(157,55,36,${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
 }
 // The era's own hand: the whole frame above (renderCeiling) and its own five sounds
-// (docs/eras/02-ceiling.md's "Sound") — four painters below plus scratch's own parameter row, since
+// (docs/archive/eras/02-ceiling.md's "Sound") — four painters below plus scratch's own parameter row, since
 // audio.js's scratch() draws its grain from a row of numbers rather than calling out to a function.
 // See defineHand()/handFor() in src/plates.js; everything neither names is still the atlas's own.
 defineHand('ceiling',{
@@ -1758,13 +1758,13 @@ defineHand('ceiling',{
   ready:ceilingFaceReady,
   // In place of the quill: a muller grinding pigment on a stone slab. The grind is the same grain
   // audio.js's scratch() always drew, at a lower, rougher setting — wider, slower and pitched down
-  // into the register a stone mortar rings in — never a second engine, per docs/eras/02-ceiling.md's
+  // into the register a stone mortar rings in — never a second engine, per docs/archive/eras/02-ceiling.md's
   // "Sound".
   scratch:{band:[260,380],q:[.5,1.1],peak:.075,attack:.006,dur:[.05,.05],gap:[.05,.07],ease:.02},
   // A wet dab of pigment in place of the note off the row's own scale — the wall keeps no key, so
   // nothing here climbs a scale — and a perfect transfer's dry brush-flick in place of the second
   // chime: the loaded reed dragged once, dry, clear of the wet mark it just left; see
-  // docs/eras/02-ceiling.md's "Sound".
+  // docs/archive/eras/02-ceiling.md's "Sound".
   capture(a,row,perfect){a.tone(150,.24,0,.34,'sine',88);a.brush(480,.24);if(perfect)a.brush(2300,.15);},
   // A dropped stone in place of the dying chord — one low strike and a short low knock, over fast,
   // because a dropped stone does not ring the way a struck string does.
