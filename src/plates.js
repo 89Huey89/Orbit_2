@@ -135,6 +135,7 @@ function syncDaily(){
   $('daily-end').setAttribute('aria-pressed',String(dailyOn));
   $('daily-date').textContent=dailyOn?dailyLabel():'';
   $('best').textContent=currentBest();
+  if(typeof syncImpressumScreen==='function')syncImpressumScreen();
   syncDifficulty();
 }
 // Toggled from the title screen before a run, or from the colophon after one: the run-complete screen
@@ -432,6 +433,7 @@ function syncPlate(){
   const era=eraId();if(era)game.setAttribute('data-era',String(era));else game.removeAttribute('data-era');
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);
   const button=$('plate');if(button){button.setAttribute('aria-label',onPaper()?'Switch to night plate':'Switch to paper plate');button.setAttribute('aria-pressed',String(onPaper()));}
+  if(typeof syncImpressumScreen==='function')syncImpressumScreen();
   if(typeof syncEraChrome==='function')syncEraChrome();
 }
 // Point `ink` at a plate without touching storage or the cached artwork: used while the modules are

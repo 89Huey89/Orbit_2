@@ -910,7 +910,7 @@ get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmet
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
-get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead};',context);
+get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics};',context);
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
   const inscribed=()=>written().map(g=>g.text).join(' | ');
@@ -918,6 +918,21 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
+  // The impressum is engraved on the sheet, not attached to the viewport. The same stored world
+  // coordinate must therefore move downward when the camera rises, with no second anchor created.
+  {
+    const w=context.test.world,markY=w.impressumY,screenBefore=context.test.sy(markY),cameraBefore=w.cameraY;
+    assert(Number.isFinite(markY),'The impressum receives one finite world anchor');
+    w.cameraY=cameraBefore-100;
+    assert(context.test.sy(markY)>screenBefore,'A rising camera carries the engraved impressum downward');
+    assert.equal(w.impressumY,markY,'Camera motion never re-anchors the impressum');
+    w.cameraY=cameraBefore;
+    const rows=context.test.impressumRows();
+    assert.equal(rows.length,9,'The impressum reserves every line before achievements are earned');
+    assert.equal(rows[0].text,'AUGUSTA VINDELICORUM');
+    assert.equal(rows[1].text,'EX OFFICINA ORBIS TABULAE');
+    assert.equal(rows[2].text,'TAB. V · I  /  A1');
+  }
   // ---------- The ledger and the catalogue ----------
   // A browser with no ledger — or with a ledger that is not JSON at all — opens on an empty one, with
   // every cosmetic at its classic default and nothing unlocked.
@@ -1108,6 +1123,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     // A daily run begun today writes that day into the log, which is what opens it ever after.
     context.test.setDaily(true);
     assert.equal(context.test.dailyReplay,false);
+    assert.equal(context.test.impressumRows()[8].text,'TABULA DIEI · '+today,'The impressum records the exact current daily date');
     context.test.setPlaying();
     assert(context.test.dailyLog[today].plays>=1,'A daily run begun today enters that day in the log');
     assert.equal(context.test.dailyOpen(today),true);

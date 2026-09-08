@@ -221,6 +221,7 @@ function showEnd(){
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
+  syncImpressumScreen();
   // Which situation the run ended in, in the same precedence the atlas always checked it in; a plate
   // that gives several of these the same line (the Ceiling gives four of the six one shared sentence)
   // still reads correctly, since only the chosen key's text is ever read. The old inline ternary this

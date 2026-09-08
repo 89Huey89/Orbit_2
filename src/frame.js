@@ -460,6 +460,102 @@ function drawRunningHead(){
   ctx.fillText(head,W*.5,y);
   ctx.restore();
 }
+// The impressum is plate furniture, not a running HUD element. Its centre is stored on the current
+// world once, in the lower part of the opening sheet. From then on it is always transformed through
+// sx()/sy(), so a rising camera carries the already engraved cartouche downward with the rest of the
+// sheet. It is never re-created at the viewport edge and never follows the traveller.
+const IMPRESSUM_ROWS=9,IMPRESSUM_REVEAL=.52;
+function impressumMetrics(){
+  const inner=frameBand()*.92+8,size=frameWide()?7.4:6.4,lineH=size*1.48,padY=9;
+  const width=Math.min(frameWide()?392:320,Math.max(100,W-inner*2-10));
+  return {inner,size,lineH,padY,width,height:padY*2+lineH*IMPRESSUM_ROWS};
+}
+function impressumAnchor(metrics){
+  if(!world)return null;
+  if(!Number.isFinite(world.impressumY)){
+    const min=metrics.inner+metrics.height*.5+4,max=H-footerBand()-metrics.height*.5-7;
+    const target=min<=max?max:(min+max)*.5;
+    world.impressumX=0;
+    world.impressumY=world.cameraY+(target-plateShift.y)/scale;
+  }
+  return {x:Number.isFinite(world.impressumX)?world.impressumX:0,y:world.impressumY};
+}
+function impressumHasCapture(){return !!(ledger&&ledger.captures>0)||(world&&world.captures>0);}
+function impressumHasConstellation(){
+  const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
+  return lifetime>0||!!(world&&world.constellationsCompleted>0);
+}
+function impressumHasPerfectChain(){
+  const lifetime=!!(ledger&&ledger.observations&&ledger.observations.perfectThree);
+  const current=!!(world&&world.observations&&world.observations.some(o=>o.key==='perfectThree'));
+  return lifetime||current;
+}
+function impressumHasRoughImpression(){
+  const lifetime=!!(ledger&&ledger.badAngles>0);
+  const current=typeof runTally!=='undefined'&&runTally&&runTally.badAngles>0;
+  return lifetime||current;
+}
+function impressumHasCompleteAtlas(){
+  const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
+  return lifetime>=12||!!(world&&lifetime+world.constellationsCompleted>=12);
+}
+function impressumRows(){
+  const perfect=impressumHasPerfectChain(),complete=impressumHasCompleteAtlas();
+  const engraver=typeof engraverCredit==='function'?engraverCredit().toUpperCase():'DELINEAVIT ET SCULPSIT · ORBIS TABULA';
+  return [
+    {key:'place',text:'AUGUSTA VINDELICORUM'},
+    {key:'printer',text:'EX OFFICINA ORBIS TABULAE'},
+    {key:'plate',text:'TAB. V · I  /  A1'},
+    {key:'year',text:impressumHasCapture()?'ANNO MDCIII':''},
+    {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
+    {key:'engraver',text:perfect?engraver:'',device:perfect},
+    {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},
+    {key:'privilege',text:complete?'SERENISSIMO PRINCIPI · PATRONO ASTRONOMIÆ · CUM PRIVILEGIO':''},
+    {key:'daily',text:dailyOn?'TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':''):''}
+  ];
+}
+function impressumRowProgress(row){
+  if(!row.text)return 0;
+  if(reducedMotion||world.state==='ready'||world.state==='dead')return 1;
+  return reveal.progress('impressum:'+row.key,IMPRESSUM_REVEAL,true);
+}
+function impressumDevice(g,x,y,size,alpha,seed){
+  const rgb=onPaper()?ink.base.inkStrong:ink.base.inkSoft;
+  burinArc(g,x,y,size*.46,0,TAU,rgb,alpha,.55,seed,{segments:14,skips:1,wobble:.18});
+  burinSegment(g,x-size*.54,y+size*.5,x+size*.55,y-size*.54,rgb,alpha,.65,seed+7,{segments:4,skips:0,hair:false,wobble:.22});
+  burinSegment(g,x-size*.48,y-size*.46,x+size*.28,y+size*.43,rgb,alpha*.82,.5,seed+13,{segments:4,skips:0,hair:false,wobble:.2});
+  burinSegment(g,x+size*.22,y+size*.38,x+size*.7,y+size*.05,rgb,alpha*.76,.45,seed+19,{segments:3,skips:0,hair:false,wobble:.18});
+}
+function impressumScreenLine(){
+  if(plainPlate())return 'Impressum · ANTE LITTERAS';
+  let line='Impressum · AUGUSTA VINDELICORUM · TAB. V · I';
+  if(dailyOn)line+=' · TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':'');
+  return line;
+}
+function syncImpressumScreen(){
+  const line=$('atlas-impressum');if(line)line.textContent=impressumScreenLine();
+}
+function drawImpressum(){
+  if(!world||eraId()!==0||plainPlate()||!W||!H)return;
+  const m=impressumMetrics(),a=impressumAnchor(m),x=sx(a.x),y=sy(a.y),left=x-m.width*.5,top=y-m.height*.5;
+  if(top>H-m.inner||top+m.height<m.inner)return;
+  const colors=ink.frame,rows=impressumRows();
+  ctx.save();
+  ctx.beginPath();ctx.rect(m.inner,m.inner,Math.max(0,W-m.inner*2),Math.max(0,H-m.inner*2));ctx.clip();
+  burinRect(ctx,left,top,m.width,m.height,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70211);
+  burinRect(ctx,left+4,top+4,m.width-8,m.height-8,ink.base.inkSoft,onPaper()?.36:.25,.6,70217);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=plateFace(m.size,'sc');
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i],ry=top+m.padY+m.lineH*(i+.5),progress=impressumRowProgress(row);
+    if(!row.text){
+      burinSegment(ctx,left+m.width*.25,ry,left+m.width*.75,ry,ink.base.inkSoft,onPaper()?.16:.1,.35,70231+i,{segments:6,skips:1,hair:false,wobble:.16});
+      continue;
+    }
+    ctx.fillStyle=colors.text;writeText(ctx,row.text,x,ry,progress,{size:m.size,nib:true});
+    if(row.device&&progress>=1)impressumDevice(ctx,left+m.width*.86,ry,m.size*.9,onPaper()?.55:.4,70267);
+  }
+  ctx.restore();
+}
 function render(dt){
   // A plate that draws its whole frame in its own hand names one painter here (see defineHand() in
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
@@ -471,7 +567,7 @@ function render(dt){
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
-  drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawPlayer();drawDark(dt);ctx.restore();
+  drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();drawRunningHead();drawHudLeaf();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);

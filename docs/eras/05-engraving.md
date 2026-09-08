@@ -129,7 +129,8 @@ different drawings existing anywhere in the code.
 | Score | a numeral tally in Arabic digits, set beside the plate-mark | attested convention for this era's captions |
 | Chapter | — not this era's; the four chapter plates and their Galilean quotations now belong to [06-lens.md](06-lens.md). This sheet shows one signature sheet, dressed in six catalogue colourways, not a cycling chapter | n/a — moved out with the dated-discovery table |
 | Best | the deepest row the plate reached before the sheet was lost | constructed, on shipped mechanics |
-| Daily | the day's own pull off the press, dated as any print run was | fictional gameplay translation |
+| Daily | the day's own pull off the press, dated in the impressum as any print run was | fictional gameplay translation |
+| Impressum | the plate's own record of place, maker, workshop and privilege | constructed period furniture, grounded in the printed-atlas tradition |
 | Title | the plate-mark itself, undressed | deliberately untranslated |
 
 ## Currency and the rule
@@ -310,6 +311,51 @@ four winds lettered round it in small capitals — SEPTENTRIO, ORIENS, OCCIDENS,
 Latin cardinal names a period atlas margin would actually carry. A scale bar and a credit line sit
 in the same wide-sheet margin. Nothing on the frame changes what a trajectory needs to be read; it
 is furniture cut around the play field, never over it.
+
+## The impressum cartouche
+
+A Renaissance plate should record not only the sky it contains but the fact that it was made. The
+lower margin therefore carries a narrow **impressum cartouche**, set inside the frame's furniture
+and kept clear of the play channel, the HUD leaf and the run's live inscriptions. It is not a modern
+status panel and it is never pinned to the viewport: it is a small piece of the plate, ruled and
+lettered in the same Fell hand as the title, with a tiny device between its lines. The playfield
+stays fixed. When the sheet advances, the cartouche advances with the already engraved sheet and
+therefore moves downward, exactly like every other mark, until the inner rule carries it out of
+view. The title and end leaves may show the same state as static leaves, so a daily run can be
+recognised as a dated pull without introducing a second in-run element.
+
+The cartouche is assembled in the order in which a sheet earns the right to call itself a proof. Its
+fixed workshop furniture is present from the first pull; the more boastful lines are left as ruled
+spaces until the corresponding achievement has happened:
+
+| Proof state | What the cartouche sets |
+|---|---|
+| Every pull | `AUGUSTA VINDELICORUM` as the print place, `EX OFFICINA ORBIS TABULAE` as the printer or publisher, `TAB. V · I` as the plate number, and `A1` as the sheet signature at lower right. The workshop name is deliberate game fiction; Augsburg is inherited from Bayer's signature sheet, not a claim about a historical printer. |
+| First documented star | `ANNO MDCIII`, the year of the atlas convention now being set on the sheet. It is the first proof that the page has begun to document itself rather than merely carry blank furniture. |
+| First constellation | `URANOMETRIA`, the title line, set as the plate's own name rather than as a modern level label. |
+| First rough impression | A small setter's correction sign — `* CORR.` beside the relevant rule — admits that the compositor had to mark an imperfect setting instead of pretending that every proof came out clean. |
+| First uninterrupted perfect-transfer chain | The engraver's name line, `DELINEAVIT ET SCULPSIT`, and a small compass-and-quill burin mark cut from the chain's repeated tangent gesture. The existing `Delineavit` catalogue credit supplies the player's initials when it is earned, so the line can become personal without changing the plate's authorship fiction. |
+| Complete atlas | `SERENISSIMO PRINCIPI · PATRONO ASTRONOMIÆ` and `CUM PRIVILEGIO`, a dedication to a princely patron and the printer's privilege notice. They are the cartouche's final claim that the whole convention has been completed and authorised. |
+| Daily Run | `TABULA DIEI · YYYY-MM-DD`, using the same UTC date that seeds the daily plate, so the sheet reads as that day's exact pull from the press. A past-day replay appends `· ITERUM`; it never changes the recorded date or the chart. |
+
+The completed form can therefore read:
+
+`AUGUSTA VINDELICORUM · EX OFFICINA ORBIS TABULAE · TAB. V · I · A1`
+
+`ANNO MDCIII · URANOMETRIA · DELINEAVIT ET SCULPSIT · A.B.C.`
+
+`SERENISSIMO PRINCIPI · PATRONO ASTRONOMIÆ · CUM PRIVILEGIO`
+
+`TABULA DIEI · 2026-09-08`
+
+The mark and the correction sign are engraved linework, not emoji-like badges: the former is a
+compact cut device, the latter a tiny compositor's intervention. At reduced motion the whole earned
+state is already printed; in an ordinary run each newly earned line is set once at the cartouche's
+world position and then becomes inert ink. No line follows the traveller, no cartouche is regenerated
+at the viewport edge, and nothing is attached to the HUD or the player. This makes the daily's date
+visible as material provenance — a dated impression of the same seed everyone received — while the
+completed atlas supplies the dedication and privilege that turn a good run into a finished
+Renaissance publication.
 
 ## The signature sheet
 
