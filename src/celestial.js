@@ -111,7 +111,11 @@ function distantGlobe(g,x,y,r,family,seed){
   g.strokeStyle=`rgba(${ink.plates.globeRim},${paper?.4:.27})`;g.lineWidth=1.1;g.beginPath();g.arc(x,y,r,Math.PI*.82,Math.PI*1.72);g.stroke();
 }
 function celestialPlate(index){
-  if(celestialPlates.has(index))return celestialPlates.get(index);
+  // The plate goes into the key as well as the region index — a cross-dissolve holds two plates in one
+  // frame, so each must keep its own cached illustration — and it is built once, here, so the lookup
+  // below and the store at the end of the function can never be spelled two different ways.
+  const key=plateName+':'+index;
+  if(celestialPlates.has(key))return celestialPlates.get(key);
   const c=makeCanvas(720,1200),g=c.getContext('2d'),rng=seeded(98153+index*437),w=c.width,h=c.height;
   if(!onPaper()){
     const tones=ink.plates.tones[index];
@@ -339,7 +343,7 @@ function celestialPlate(index){
     // the background grain, and the plate must stay fully transparent otherwise so the laid-paper
     // backdrop shows through.
   }
-  celestialPlates.set(index,c);return c;
+  celestialPlates.set(key,c);return c;
 }
 function celestialPlacement(index){
   const fit=Math.max(W/720,H/1200)*1.07;
@@ -574,6 +578,9 @@ function chapterRevealLeaf(){
   return g;
 }
 function drawChapterReveal(dt){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('chapterReveal');if(own)return own(dt);
   if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
   // The plate title is written once and left as ink: it fades in under the pen, then stands at
@@ -618,7 +625,7 @@ definePlate('atmosphere',{
     cometTrail:PLATES.paper.base.inkSoft,cometHead:PLATES.paper.base.ink,cometDot:PLATES.paper.base.inkStrong,glintBlue:'52,84,120',glintWarm:'150,100,32'}
 });
 function regionPlate(index,near){
-  const key=index+':'+near+(onPaper()?'p':'');if(regionPlates.has(key))return regionPlates.get(key);
+  const key=plateName+':'+index+':'+near+(onPaper()?'p':'');if(regionPlates.has(key))return regionPlates.get(key);
   const region=atlasRegions[index],rc=regionInk(region),paper=onPaper(),c=makeCanvas(384,768),g=c.getContext('2d'),rng=seeded(region.seed+(near?1701:0));
   const w=c.width,h=c.height,phase=[0,.9,2.4,-.7][index];
   const center=v=>w*([.38,.48,.66,.32][index]+[.14,.25,.21,.1][index]*Math.sin(v*TAU+phase));
@@ -716,7 +723,7 @@ function drawSheetEdge(y,strength){
 }
 function grainSheet(){
   if(!grain||!W||!H)return null;
-  const key=W+'x'+H+':'+DPR;
+  const key=plateName+':'+W+'x'+H+':'+DPR;
   if(grainSheetCanvas&&grainSheetKey===key&&grainSheetSource===grain)return grainSheetCanvas;
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');
   if(!g||!g.createPattern)return null;
@@ -728,6 +735,9 @@ function grainSheet(){
   grainSheetCanvas=c;grainSheetKey=key;grainSheetSource=grain;return c;
 }
 function drawAtmosphere(dt=0,aim=null){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('atmosphere');if(own)return own(dt,aim);
   ctx.drawImage(backdrop,0,0,W,H);
   const chapter=clamp(Math.floor(world.progress/8),0,3);
   if(world.state!=='paused')regionBlend=lerp(regionBlend,chapter,1-Math.exp(-dt*.8));

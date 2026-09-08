@@ -109,7 +109,8 @@ let flourishFor=null,flourishAt=0;
 // and never reported for an observation this orbit did not make.
 function watchCompletion(n,d){
   if(n!==flourishFor){flourishFor=n;flourishAt=d;return;}
-  if(d>=1&&flourishAt<1)revealFlourish.fire(n);
+  // Each age marks the crossing in its own hand; the atlas, having nothing to say at it, does nothing.
+  if(d>=1&&flourishAt<1)(handFor('flourish')||revealFlourish.fire)(n);
   flourishAt=d;
 }
 // Two clocks run over one body and they answer different questions. `t` is the pen reaching the page: the

@@ -1,7 +1,19 @@
 'use strict';
 /* Orbit · src/backdrop.js
    The two sheets: aged laid paper, and indigo night with starlight. */
-function paintBackdrop(){return modernPlate()?paintModernBackdrop():dressSheet(onPaper()?paintPaperBackdrop():paintNightBackdrop());}
+// The painted sheet a plate is pulled on, kept by plate and by size. It was rebuilt on every call and
+// held in one variable, which was right while a plate change was the only thing that could ask for a
+// different one; a frame that carries two eras asks for both, and a sheet is the most expensive thing
+// on the page to paint twice.
+const backdrops=new Map();
+function paintBackdrop(){
+  const key=plateName+':'+W+'x'+H+':'+DPR,held=backdrops.get(key);
+  if(held)return held;
+  const c=buildBackdrop();
+  backdrops.set(key,c);if(backdrops.size>4)backdrops.delete(backdrops.keys().next().value);
+  return c;
+}
+function buildBackdrop(){return modernPlate()?paintModernBackdrop():dressSheet(onPaper()?paintPaperBackdrop():paintNightBackdrop());}
 // A derived plate is pulled on its base plate's sheet and then dressed: the whole sheet is washed
 // toward the new ground colour, keeping every fibre, laid line and tide mark of the original beneath
 // it, and each plate adds whatever else belongs to it — gold leaf, oxidation, or another century of

@@ -9,6 +9,12 @@ const sandbox={};vm.createContext(sandbox);vm.runInContext(simulation+'\nthis.ap
 const {OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN}=sandbox.api;
 const step=1/120;
 
+// Nothing may ask the plate which era it is by name. Twenty-one places once did, across four files,
+// and every era after the first would have had to be answered at all of them; the plate is asked what
+// it does instead. This is the guard that keeps that true, because the cheapest way to add an era is
+// always to add a second name beside the first.
+assert(!/ceilingPlate/.test(script),'No code may ask whether the plate is the Ceiling by name');
+
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
 assert.equal(segmentCircle(-100,20,100,20,0,0,10),null);
 assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
@@ -893,13 +899,13 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   });
   function element(id){
     if(items.has(id))return items.get(id);
-    const classes=new Set(),e={id,style:{},textContent:'',innerHTML:'',classList:{add:(...x)=>x.forEach(a=>classes.add(a)),remove:(...x)=>x.forEach(a=>classes.delete(a)),toggle:(x,force)=>force?classes.add(x):classes.delete(x),contains:x=>classes.has(x)},setAttribute(){},getContext:()=>drawing,getBoundingClientRect:()=>({width,height}),closest:()=>null,addEventListener:(type,fn)=>{events[id+':'+type]=fn;}};
+    const classes=new Set(),e={id,style:{},textContent:'',innerHTML:'',classList:{add:(...x)=>x.forEach(a=>classes.add(a)),remove:(...x)=>x.forEach(a=>classes.delete(a)),toggle:(x,force)=>force?classes.add(x):classes.delete(x),contains:x=>classes.has(x)},setAttribute(){},getContext:()=>drawing,getBoundingClientRect:()=>({width,height}),closest:()=>null,removeAttribute(){},addEventListener:(type,fn)=>{events[id+':'+type]=fn;}};
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead};',context);
@@ -1182,6 +1188,119 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     context.test.render(1/60);
   }
   context.test.setPlate('night');
+  // ---- A plate says what it is, and nothing asks it which century it is ----
+  {
+    // The two plates the atlas is actually printed on answer no to every question an era asks of
+    // itself, so nothing an era declares can reach them.
+    for(const id of ['night','paper']){
+      context.test.setPlate(id);
+      assert.equal(context.test.eraId(),0,id+' is the atlas\'s own sheet, not a century cut beside it');
+      assert.equal(context.test.plateOwns('score'),false,id+' keeps the atlas record');
+      assert.equal(context.test.plateOwns('mode'),false,id+' is not entered as a mode');
+      for(const painter of ['atmosphere','node','hazard','player','dark','plateFrame','laid','figure','surveys','hudLeaf','runningHead','chapterReveal','flourish','frame'])
+        assert.equal(context.test.handFor(painter),undefined,id+' must be drawn by the atlas hand alone: '+painter);
+    }
+    // Every plate speaks a complete vocabulary. The atlas's words stand under whatever an era renames,
+    // so no call site carries a fallback — which is only true while no era leaves a hole in the table.
+    context.test.setPlate('night');
+    const atlas=context.test.plateWords(),keys=Object.keys(atlas).sort().join(',');
+    for(const id of context.test.plateIds){
+      context.test.setPlate(id);
+      assert.equal(Object.keys(context.test.plateWords()).sort().join(','),keys,'Every plate must speak a complete vocabulary: '+id);
+    }
+    // The Ceiling is a shipped sheet and entsandboxing it may not change one word of it. These are the
+    // strings it said before the plate was asked what it does instead of which era it is; they pin the
+    // conversion, and a plate that declares its own render must still name the painter that draws it.
+    context.test.setPlate('ceiling');
+    const wall=context.test.plateWords();
+    assert.equal(context.test.eraId(),2,'The Ceiling is era II on the roster docs/eras/JOURNEY.md fixes');
+    assert.equal(context.test.plateOwns('score'),true,'The Ceiling keeps its own record');
+    assert.equal(context.test.plateOwns('mode'),true,'The Ceiling is entered and left as a mode');
+    assert.equal(typeof context.test.handFor('frame'),'function','A plate that draws a whole frame in its own hand must name that painter');
+    assert.equal(wall.chart,'DECAN COURSE');
+    assert.equal(wall.chartNoun,'decan course');
+    assert.equal(wall.losses['THE DARK CAUGHT UP'],'THE WALL BROKE AWAY BENEATH');
+    assert.equal(wall.losses['THE NIB RAN DRY'],'THE REED RAN DRY');
+    assert.equal(wall.observations.perfectThree,'THREE CLEAN TRANSFERS');
+    assert.equal(wall.observations.rightAngle,'A RIGHT ANGLE ON THE CANON GRID');
+    assert.equal(wall.pressures.relaxed,'QUIET NIGHT');
+    assert.equal(wall.pressures.hardcore,'HARD NIGHT');
+    assert.equal(wall.hud.pace,'COURSE \u00d7');
+    assert.equal(wall.hud.shield,'PROTECTION HELD');
+    assert.equal(wall.chrome.brand,'WNWT');
+    assert.equal(wall.chrome.bestLabel,'Preview');
+    assert.equal(wall.chrome.pauseTitle,'The barque rests.');
+    assert.equal(wall.unrecorded,'ERA PREVIEW \u00b7 NOT RECORDED');
+    assert.equal(wall.chapters[0],'FIRST WATCH');
+    assert.equal(wall.chapters[3],'BEFORE DAWN');
+    assert(/decan course/i.test(wall.chartSaid)&&/wall holds/i.test(wall.chartSaid),'The Ceiling keeps its own completion sentence');
+    assert(/barque/i.test(wall.opening),'The Ceiling keeps its own opening line');
+    // Every feat the simulation can record must have a word on this sheet. The conversion reads one
+    // table with the atlas's Latin behind it, which is only ever right while the era's table is
+    // complete; a ninth observation added to simulation.js would otherwise be captioned in Latin on a
+    // wall that has no Latin, and nothing would say so.
+    for(const key of Object.keys(OBSERVATIONS))assert(wall.observations[key],'The Ceiling names every observation the simulation can record: '+key);
+    for(const key of ['first','dark','faded','vortex','angle','speed'])assert(wall.tips[key],'The Ceiling names a tip for every ending: '+key);
+    for(const key of ['choose','dry','sling','release','bend'])assert(wall.held[key],'The Ceiling names every standing instruction: '+key);
+    for(const sound of ['capture','death','medal','scratch'])assert(context.test.handFor(sound),'The Ceiling keeps its own voice: '+sound);
+    context.test.setPlate('night');
+  }
+  {
+    // A century with a door on the frontispiece names it on its own row, and the label carries its
+    // place on the roster docs/eras/JOURNEY.md §1.9 fixes. A plate with an ordinal and no door would
+    // be a century nothing can reach; a door on a plate with no ordinal would be a door to the atlas.
+    const styles=context.test.PLATE_STYLES,doors={};
+    for(const id in styles){
+      const style=styles[id];
+      if(style.door){
+        assert(style.era,'A door must open onto a century: '+id);
+        assert(style.door.button&&style.door.label,'A door names its button and its label: '+id);
+        assert(!doors[style.door.button],'Two centuries must not share one door: '+style.door.button);
+        doors[style.door.button]=id;
+      }
+      if(style.era)assert(style.door,'A century the frontispiece cannot reach is a century nobody plays: '+id);
+    }
+    assert.equal(styles.rock.door.label,'ERA I \u00b7 THE ROCK');
+    // The Rock is drawn by its own hand and inherits the atlas's for what it does not name; the two it
+    // names silently are the two the era forbids outright, and a run through it must still reach every
+    // painter that carries planning information.
+    context.test.setPlate('rock');
+    for(const painter of ['atmosphere','node','hazard','player','dark','plateFrame','laid','figure','surveys','hudLeaf','runningHead','chapterReveal','flourish'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Rock names its own: '+painter);
+    assert.equal(context.test.handFor('frame'),undefined,'The Rock is drawn into the atlas\'s frame, not instead of it');
+    assert.equal(context.test.plateWords().chapterSaid.includes('Chamber'),true,'The Rock calls a chapter a chamber');
+    context.test.setPlate('night');
+    assert.equal(styles.ceiling.door.label,'ERA II \u00b7 THE CEILING');
+    // A door is not opened out from under a run in progress: changing the plate deals a new chart, and
+    // a player mid-flight would lose the one they were flying. Everything else about the doors is
+    // flown at the end of this layout, where dealing a fresh chart disturbs nothing after it.
+    context.test.setPlate('paper');
+    assert.equal(context.test.world.state,'playing','fixture expects a run in progress here');
+    context.test.enterEra('rock');
+    assert.equal(context.test.plateName,'paper','A century may not be entered out from under a run');
+    context.test.setPlate('night');
+  }
+  {
+    // Two eras never share a cached entry, and both hit. applyPlate() points `ink` at a plate without
+    // clearing the cached artwork, which is exactly what a frame carrying two eras does — so this is the
+    // shape that must not rebuild. The sheet and the ground are the expensive two.
+    const held=context.test.plateName;
+    context.test.applyPlate('rock');
+    const rockTile=context.test.laidPaper(),rockSheet=context.test.laidSheetFor(),rockGround=context.test.paintBackdrop();
+    context.test.applyPlate('night');
+    const nightTile=context.test.laidPaper(),nightSheet=context.test.laidSheetFor(),nightGround=context.test.paintBackdrop();
+    assert.notEqual(rockTile,nightTile,'Two eras must not share one laid tile');
+    assert.notEqual(rockSheet,nightSheet,'Two eras must not share one laid sheet');
+    assert.notEqual(rockGround,nightGround,'Two eras must not share one painted ground');
+    context.test.applyPlate('rock');
+    assert.equal(context.test.laidPaper(),rockTile,'A second era in one frame must hit the tile it already built');
+    assert.equal(context.test.laidSheetFor(),rockSheet,'A second era in one frame must hit the sheet it already built');
+    assert.equal(context.test.paintBackdrop(),rockGround,'A second era in one frame must hit the ground it already built');
+    context.test.applyPlate('night');
+    assert.equal(context.test.laidPaper(),nightTile,'And the first era must still hit its own');
+    assert.equal(context.test.paintBackdrop(),nightGround);
+    context.test.applyPlate(held);
+  }
   // Every cosmetic selection draws: the frame ornaments and figure styles into the cached layers, the
   // observer marks, inks and capture marks through a live frame with a capture ripple in hand.
   {
@@ -1513,6 +1632,30 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       const place=context.test.marginaliaGloss(fy,gloss);
       assert(place.y+place.h<=floor+1e-6,'The gloss stays out of the footer band at '+width+'x'+height+', waterline '+fy);
     }
+  }
+  // ---- The doors, last, because entering a century deals a fresh chart ----
+  // Entering puts a century's plate on the press; leaving puts back the plate that was there, and
+  // never strands the player on a plate that is itself a mode. Every era renders on both sides of the
+  // journey, so a hand that draws nothing at all would be caught here rather than on the page.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    for(const id in context.test.PLATE_STYLES){
+      if(!context.test.PLATE_STYLES[id].door)continue;
+      context.test.enterEra(id);
+      assert.equal(context.test.plateName,id,'A door opens onto its own century: '+id);
+      assert.equal(context.test.eraId(),context.test.PLATE_STYLES[id].era);
+      assert.equal(context.test.plateOwns('score'),true,'A century keeps its own record: '+id);
+      context.test.render(1/60);context.test.handleInput();context.test.render(1/60);
+      context.test.leaveEra();
+      assert.equal(context.test.plateName,'paper','Leaving a century puts back the plate that was on the press: '+id);
+      context.test.newWorld();
+    }
+    context.test.enterEra('rock');
+    context.test.enterEra('ceiling');
+    assert.equal(context.test.plateName,'paper','A door pressed from inside a century is the way back out');
+    context.test.leaveEra();
+    assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
+    context.test.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }

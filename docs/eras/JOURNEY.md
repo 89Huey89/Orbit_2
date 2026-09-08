@@ -346,9 +346,18 @@ Either give every era a complete token set, or clear `ink` before applying.
 `Math.min(4,…+1)`; **and `ceiling.js:90` `ceilingWatch()`**, which the older documents miss entirely.
 Grepping one literal finds one of them.
 
-**L7 · `ceilingPlate()` is read at 24 sites, not 4.** `ui.js` ×13, `audio.js` ×6, `plates.js` ×4,
-`frame.js` ×1 — announcements, end-screen text, the tutorial line, the sistrum, the grind. The older
-documents name four "bypasses". Entsandboxing the Ceiling means answering all 24.
+**L7 · paid off.** It read: *`ceilingPlate()` is read at 24 sites, not 4.* The true count when the work
+was done was **21** — `ui.js` ×13, `audio.js` ×4, `plates.js` ×3, `frame.js` ×1; audio.js and plates.js
+had already been consolidated since the landmine was written. It is now **nought**, and a source-level
+assertion in `verify.mjs` fails the suite if the string comes back.
+
+What the census found is worth more than the count. The 21 were not one question asked 21 times:
+**five** were capabilities (keeps its own record · is entered as a mode), **fifteen** were *vocabulary* —
+"what is this thing called here", which wants a table and not a fork — **one** was a hand (it draws the
+whole frame), and **one was dead code**: a Ceiling wording for the dark-death tip, sitting inside a
+branch the preview flag had already excluded, that no player has ever seen. A second era answering the
+same way would not have added 21 conditionals; it would have written the same fifteen-row table out by
+hand a second time. That is the argument for the three declarations in §6.1 below.
 
 **L8 · `darknessRelief` names two unrelated things** in one global scope: a render-side smoothed tint
 in `plates.js` and `OrbitWorld.prototype.darknessRelief()` in the simulation. Rename the render-side
@@ -366,6 +375,31 @@ must not take any of these names.
 ## 6 · Contracts — fix these names before any parallel work starts
 
 So that stages built by different agents fit together without a rename pass.
+
+### 6.1 · What a plate declares — built
+
+Landed. `src/plates.js` carries three optional, purely declarative fields on a plate's own row, and no
+code anywhere asks which era is on the press:
+
+```
+can        {score,mode}     what the plate keeps to itself
+door       {button,label}   the frontispiece door that opens onto it, if it has one
+era        1..8             the ordinal; nought is not "no era" — the printed atlas is itself era V
+render     'ceiling'|'rock' which hand draws it, keyed into the painter registry
+```
+
+```
+plateOwns(trait)     defineVoice(id,words) / plateWords() / spoken(key,vars)
+defineHand(id,{...}) / handFor(name)        eraId()
+```
+
+`defineVoice` is additive rather than a single declaration, because an era's words belong in that era's
+own file, which loads after `plates.js`. `handFor` returns undefined for a plate that names no painter
+of that kind, and every seam in the pipeline is two lines at the head of the atlas's own painter, so a
+plate that names none is drawn exactly as it always was — asserted painter by painter for the night and
+paper plates. Sixteen seams exist: `atmosphere`, `node`, `hazard`, `player`, `dark`, `plateFrame`,
+`laid`, `figure`, `surveys`, `hudLeaf`, `runningHead`, `chapterReveal`, `flourish`, `ready`, `frame`,
+and the four audio ones (`scratch` as a row of numbers, `capture`/`death`/`medal` as painters).
 
 **Simulation-side** (inside the markers, added to `verify.mjs:8`'s list):
 
@@ -442,7 +476,7 @@ already-documented node is **not** gated by `REVEAL_CAP`; the flourish fires exa
 crossing and never for a body that does not complete. *Must not break*: `:684`, `:693` — add a fixture
 flying one seed two ways and asserting an identical node array despite differing `documented`.
 
-### Stage 2 — the Prehistory readability prototype · *parallel-safe, art-led*
+### Stage 2 — the Prehistory readability prototype · *done*
 
 The Rock is now the front door: a new player's first run, possibly several, is era I. Its own risk
 section flags an unspiked question and it must be answered before anything expensive is drawn.
@@ -456,7 +490,31 @@ completion.
 *Proven by*: eye, against the one-frame release window from §3 — if the pre-literate language costs
 the player timing, it has failed regardless of how it looks. Record the outcome in `PROTOTYPES.md`.
 
-### Stage 3 — era state and Journey persistence · *single-owner, the riskiest stage*
+**Landed**, and the era is now built from it — see stage 7 below. The spike page survives in
+`prototypes/rock-read.html` as the record of the question; the frontispiece no longer opens it.
+
+### Stage 3 — era state and Journey persistence · *front half landed*
+
+**What is built.** The plate-declares-itself seam (§6.1), `eraId()` and `data-era`, the Ceiling fully
+entsandboxed (L7, nought reads left), the caches keyed, and the singleton-to-map conversions. **What is
+not:** `src/journey.js`, the persisted document, `runMode`, the milestone table, the Free Play
+re-pointing, and the migrations. Those are the whole of the rest of this stage and none of them exists.
+
+Two corrections to the plan below, both measured rather than argued:
+
+- **Four of the nine caches needed the plate folded in, not nine.** `figureLayers`, `glowSprites`,
+  `flareSprites`, `nebulaSprites` and `ringSprites` already carried `plateName`. The four that did not
+  were `celestialPlates` (a bare region index), `regionPlates` (only paper against not-paper),
+  `grainSheet` and `darknessPlates` (a bare boolean).
+- **`paintBackdrop()` was worse than a single slot.** It rebuilt the whole sheet on every call and the
+  only thing holding a result was the variable it was assigned to. It is now the cache itself, over a
+  `buildBackdrop()` that paints. `laidTile`/`laidSheet` became small maps beside it.
+- **L5 was never live.** `definePlate()` writes every section for every plate and nothing else ever
+  writes `PLATES`, so no plate can carry a key another lacks and `applyPlate()` cannot strand one. It
+  stays true only while every era token is registered through `definePlate`; that is a discipline, not
+  a fix, and the fixtures assert the key sets match across all plates.
+
+
 
 Everything in §6's contracts, and nothing else. Land it in separately revertible commits in this
 order: the `eraId()` accessor; the Ceiling entsandboxing; the cache keys; the singleton-to-map
@@ -544,6 +602,19 @@ README prose once it ships.
 Order: **I Prehistory first** (already prototyped in stage 2), then VI Telescopic and II Egypt (both
 have shipped renderers), then V and VII, then IV, III, and finally VIII.
 
+**Era I is built** — `src/rock.js`, registered as a hand. The ground, the four primitives, the body's
+build order over the observation clock, the ring and its completion cue, the two dangers the spike
+drew plus the Draught, the traveller, the forgetting, and the fixtures of a printed sheet it names as
+drawing nothing. Still the atlas's hand on that sheet, and the next pass rather than that one: the aim
+guide, the wet trail and the dried route, the connection lines, the particle effects and the written
+inscriptions. Not built at all: the economy row, the knowledge-structure painter, the tool geometry
+beyond the crayon's contact point, the signature sheet, and sound.
+
+One thing the port learned that every later era inherits: **a baked ground must be drawn at one sample
+to one device pixel.** The wall's tooth is a per-pixel term, and drawing its tile at `size × scale` CSS
+pixels on a 2× screen smeared away exactly the detail it exists to carry — the sheet read as fog until
+the blit was made 1:1 and snapped to whole device pixels. See `PROTOTYPES.md`.
+
 ---
 
 ## 8 · The acceptance test
@@ -578,4 +649,9 @@ Decisions this file does not make, and which should not be invented by an implem
 - **What the von Neumann era's own transition withholds** that no earlier one does, now that every
   transition grows outward from the traveller.
 - **Era VII's black space as a material** — the frontier needs a substance to fail in.
-- **The Rock's triad**, pending stage 2.
+- **The Rock's triad.** Still open, and deliberately not decided in code: `ROCK_TRIAD` in
+  `src/rock.js` is one row mapping each pressure to a brightness — the Moon for Tiro, a bright star for
+  Adeptus, a faint one for Magister, which is the reading `01-rock.md` offers — with the two tier
+  thresholds beside it. It is a row to be read against the running page, not a decision recorded here.
+  `PROTOTYPES.md`'s own open question is the same one: whether three brightnesses separate at speed and
+  in peripheral vision, or only when looked at.

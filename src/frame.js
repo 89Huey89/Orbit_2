@@ -336,6 +336,9 @@ function blitFrameLayer(layer){
   ctx.drawImage(layer,Math.max(0,sw-sd),sd,Math.min(sd,sw),mid*k,W-d,d,d,mid);
 }
 function drawPlateFrame(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('plateFrame');if(own)return own();
   if(!W||!H)return;
   const key=W+'x'+H+'x'+DPR+':'+plateName;
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
@@ -413,6 +416,9 @@ function hudLeafGradient(){
   return g;
 }
 function drawHudLeaf(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('hudLeaf');if(own)return own();
   if(!world||world.state==='ready'||world.state==='dead')return;
   const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=band*.64;
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
@@ -432,6 +438,9 @@ function runningHeadGradient(){
   return g;
 }
 function drawRunningHead(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('runningHead');if(own)return own();
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
@@ -447,9 +456,11 @@ function drawRunningHead(){
   ctx.restore();
 }
 function render(dt){
-  if(ceilingPlate()){
-    const aim=world.aim();renderCeiling(dt,aim);updateUI(dt);return;
-  }
+  // A plate that draws its whole frame in its own hand names one painter here (see defineHand() in
+  // src/plates.js) and this file steps aside completely; everything below that it does not draw
+  // instead is still the atlas's own, since every other painter in this file is unchanged.
+  const own=handFor('frame');
+  if(own){own(dt,world.aim());updateUI(dt);return;}
   reveal.prime();prewarmGlyph();
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);

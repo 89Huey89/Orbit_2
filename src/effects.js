@@ -37,6 +37,20 @@ definePlate('dark',{
     burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',burstViolet:'92,58,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
     floaterText:'34,24,16',screenFlash:'255,248,222'
+  },
+  // Era I states only what it cannot inherit. A crayon leaves no wet ink and dries to nothing, so the
+  // wake behind the traveller is ochre dust rather than iron gall going from glossy blue-black to
+  // sepia; the burst colours lose the atlas's blue and violet, which this era has no pigment for, and
+  // the flash and the floated numerals take the wall's own kaolin and charcoal. Everything the era does
+  // not name here — the shoreline, the spilled ink, the player's own tones — is its own hand's, drawn
+  // by src/rock.js, and never reaches these tokens at all.
+  rock:{
+    trailWash:'169,112,31',trailStroke:'44,38,34',trailEdge:'156,59,34',trailBleed:'201,150,46',
+    pathInk:'156,59,34',
+    trailWet:[156,59,34],trailDry:[169,112,31],blotWet:[156,59,34],blotDry:[201,150,46],
+    burstGold:'201,150,46',burstRed:'156,59,34',burstBlue:'44,38,34',burstViolet:'33,31,30',ringSimple:'156,59,34',
+    transferArc:'44,38,34',transferArcSoft:'105,88,66',transferTick:'33,31,30',transferNib:'44,38,34',
+    floaterText:'234,225,207',screenFlash:'255,247,225'
   }
 });
 // Blends two registered [r,g,b] plate colours into an `r,g,b` string for a template literal.
@@ -224,6 +238,9 @@ function surveyLetter(text,x,y,size,rgb,alpha,t){
 // A unit vector across a construction's line, turned to the side away from a given direction.
 function surveyAside(ux,uy,dx,dy){let px=-uy,py=ux;if(px*dx+py*dy>0){px=-px;py=-py;}return [px,py];}
 function drawSurveys(){
+  // A plate that draws this in its own hand names the painter; an age with no geometry and no script to
+  // letter one in names a painter that draws nothing at all.
+  const own=handFor('surveys');if(own)return own();
   if(!surveys.length||!world)return;
   const rgb=(trailInk().path||ink.dark.pathInk),gold=ink.base.gold,base=onPaper()?.6:.46;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.textBaseline='alphabetic';
@@ -498,6 +515,9 @@ const OBSERVER_MARKS={
     ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-length*.6,breath*1.5);ctx.stroke();
   }
 };function drawPlayer(){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('player');if(own)return own();
   if(world.state==='dead')return;const p=world.player,flight=!p.node;
   const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge(),inkHeld=world.inkLevel();
   const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
@@ -523,7 +543,10 @@ const OBSERVER_MARKS={
   ctx.restore();
 }
 function darknessPlate(relief){
-  if(darknessPlates.has(relief))return darknessPlates.get(relief);
+  // The plate goes into the key beside relief, built once here, so two plates on screen at once (a
+  // cross-dissolve) never share a slot — and the lookup below can't drift from the store at the end.
+  const key=plateName+':'+(relief?'r':'n');
+  if(darknessPlates.has(key))return darknessPlates.get(key);
   const c=makeCanvas(640,180),g=c.getContext('2d'),rng=seeded(620173),w=c.width,h=c.height;
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
   // Seamless pools of dilute ink, growing opaque below the leading edge.
@@ -584,7 +607,7 @@ function darknessPlate(relief){
     g.strokeStyle=`rgba(${pigment},${.035+rng()*.055})`;g.lineWidth=.45;
     g.beginPath();g.moveTo(x,25);g.bezierCurveTo(x+length,21,x-length,top+4,x+.7,top);g.stroke();
   }
-  darknessPlates.set(relief,c);return c;
+  darknessPlates.set(key,c);return c;
 }
 // ---------- Marginalia carried on the rising ink ----------
 // A sea-monster and a gloss ride the shoreline, as they do in the empty quarters of an old chart.
@@ -699,6 +722,9 @@ function drawDarkMarginalia(fy,time,alpha){
   ctx.restore();
 }
 function drawDark(dt=0){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('dark');if(own)return own(dt);
   // Match the visible hairline to the simulation's exact loss threshold.
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
