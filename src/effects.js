@@ -88,9 +88,11 @@ definePlate('inks',{
     ultramarine:{wet:[20,30,110],dry:[76,96,180],wash:'40,56,140',edge:'28,42,120',bleed:'52,70,156',blotWet:[18,28,108],blotDry:[78,98,182],path:'48,64,150'}
   }
 });
-// The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen.
-function trailInk(){
-  const chosen=ink.inks[cosmetic('trail')];
+// The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen. The
+// catalogue itself asks for an ink by name rather than for the one in hand, so a card can be printed in
+// the very ink it offers; every other caller wants whatever is loaded and passes nothing.
+function trailInk(id=cosmetic('trail')){
+  const chosen=ink.inks[id];
   if(chosen)return chosen;
   return {wet:ink.dark.trailWet,dry:ink.dark.trailDry,wash:ink.dark.trailWash,edge:ink.dark.trailEdge,
     bleed:ink.dark.trailBleed,blotWet:ink.dark.blotWet,blotDry:ink.dark.blotDry};
