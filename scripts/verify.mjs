@@ -1463,7 +1463,7 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
     assert(page.includes('Named feats')&&page.includes('Insignia'),'The catalogue lists the named feats as medals');
     assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
     if(!seededLedger){
-      assert(page.includes('cat-row locked')&&page.includes('Capture 1,000 orbits in all'),'A locked entry is a blank rule with its condition');
+      assert(page.includes('cat-row cat-card locked')&&page.includes('Capture 1,000 orbits in all'),'A locked entry is a blank rule with its condition');
       assert(!page.includes('id="initials"'),'The initials field waits for the engraver\'s credit');
     }else{
       assert(page.includes('id="initials"'),'The engraver\'s credit brings out the initials field');
