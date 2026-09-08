@@ -148,16 +148,41 @@ function trailMaterial(){
   if(ink.inks[chosen])return MATERIALS[chosen]||MATERIALS.quill;
   return MATERIALS[ink.dark.trailMedium]||MATERIALS.quill;
 }
+// ---------- The cross-section of a stroke ----------
+// A stroke is not an outline with a fill, and it is not a pale band with a dark line dropped on top of
+// it: that gives two edges and two centres, and the eye obligingly reads two marks laid over one
+// another. What a real stroke has is one gradient across its width — full-strength ink where the point
+// pressed, thinning through a duller shoulder to a damp margin that fades into the sheet. So the stroke
+// is laid as a ramp of passes from the outside in: each entry is how far out that pass sits, as a
+// fraction of the distance from the core's own width to the wash's, and how much ink it lays there.
+// Being translucent they accumulate — about three quarters opaque down the middle, thinning smoothly
+// all the way out — so there is no step anywhere across the section for the eye to catch a second edge
+// on. The margin takes the wash's tone and the shoulder the dry-brush edge's, which makes the ramp a
+// gradient of colour as well: dilute and dull at the edge, full ink at the centre, as thinned ink
+// actually behaves.
+const STROKE_PROFILE=[[1,.16],[.7,.12],[.45,.18],[.22,.28],[0,.4]];
 // The scribe's hand: the nib is held at a constant angle to the sheet, so which way the flight happens
 // to be going decides whether the stroke is the full width of the cut edge or the hairline along it.
 const NIB_COS=Math.cos(-.7),NIB_SIN=Math.sin(-.7);
 // The tooth of the sheet, read where the mark actually fell rather than at some point along the
 // stroke, so a dry medium's grain belongs to the paper and stays on it instead of crawling under the
 // line as the camera climbs.
-function sheetTooth(x,y){const s=Math.sin(x*12.9898+y*78.233)*43758.5453;return s-Math.floor(s);}
-// Where the settled grain of a granulating pigment is gathered before it is filled, as flat triples of
-// x, y and radius. Held here and emptied per frame rather than allocated inside the stroke.
-const grains=[];
+//
+// It has to be a *field* rather than a throw of dice per sample, which is the whole reason for the
+// lattice and the interpolation. A stroke is laid down as seventy-odd short pieces, and giving each
+// piece its own independent roughness turns the line into a string of separate beads — the eye reads
+// the pieces rather than the line. Read off a smooth field a dozen units across, the same stroke
+// thins and thickens along its length, and a dry medium that loses the sheet loses it for a run of
+// samples, the way a stick that skips actually skips.
+function sheetHash(i,j){const s=Math.sin(i*12.9898+j*78.233)*43758.5453;return s-Math.floor(s);}
+function sheetNoise(x,y,span){
+  const u=x/span,v=y/span,i=Math.floor(u),j=Math.floor(v);
+  const fu=u-i,fv=v-j,su=fu*fu*(3-2*fu),sv=fv*fv*(3-2*fv);
+  return lerp(lerp(sheetHash(i,j),sheetHash(i+1,j),su),lerp(sheetHash(i,j+1),sheetHash(i+1,j+1),su),sv);
+}
+// How coarse each field is, in world units: the tooth the stroke rides, the wander it takes across the
+// sheet, and the far finer drift of settled mineral inside the line.
+const TOOTH_SPAN=12,WANDER_SPAN=9,GRAIN_SPAN=4.5;
 // ---------- The route already flown ----------
 // The wet trail is a hundred-odd samples that fade in a second; the dried path is the whole route the
 // run has taken, kept in world coordinates and printed under the wet ink every frame. It is bounded
@@ -443,11 +468,15 @@ function drawTrail(){
   // Only a liquid medium dries, so only a liquid medium is mixed from its wet tone to its dry one as
   // the segment ages. Chalk, silverpoint and leaf are already the colour they will stay the instant
   // they touch the sheet, so the settled tone is written out once here rather than mixed seventy-five
-  // times — and it is what the grain of a granulating pigment is filled in as well, since a grain is
-  // exactly what is left of the ink once the water has gone.
+  // times — and it is the tone a granulating pigment's settled grain is drawn in as well, since grain
+  // is exactly what is left of the ink once the water has gone.
   const settled=pen.dry.join(',');
-  grains.length=0;
-  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  // Butt caps, not round ones. A round cap reaches half the stroke's width past each end, so every
+  // joint between two of the seventy-odd pieces is painted twice and comes out at nearly double the
+  // alpha — a bead at every sample, all the way along a line that is meant to be continuous. Butt caps
+  // abut instead of overlapping; the wedge they leave on the outside of a turn is a few hundredths of a
+  // pixel at these widths and angles, and never as visible as the beading was.
+  ctx.save();ctx.lineCap='butt';ctx.lineJoin='round';
   for(let i=1;i<trail.length;i++){
     const a=trail[i-1],b=trail[i],age=world.time-b.time;
     const life=reducedMotion?.48:b.air?1.18:.78,t=clamp(1-age/life,0,1);if(t===0)continue;
@@ -459,12 +488,13 @@ function drawTrail(){
     // A dry stick prints on the peaks of the sheet and skips the hollows. What breaks is the core of
     // the stroke, not the dust shed around it — a chalk line is continuous and granular at once, where
     // dropping the whole segment would only make a dashed line. A liquid ink floods the tooth and
-    // barely notices it.
+    // barely notices it. Both ends of the segment are read, so the stroke's roughness and its wander
+    // pass unbroken from one piece to the next instead of jumping at every joint.
     let grain=1,bare=false;
     if(m.tooth>0){
-      const bite=sheetTooth(b.x,b.y);
-      bare=bite<m.tooth*.22;
-      grain=1-m.tooth*.5*(1-bite);
+      const bite=(sheetNoise(a.x,a.y,TOOTH_SPAN)+sheetNoise(b.x,b.y,TOOTH_SPAN))*.5;
+      bare=bite<m.tooth*.2;
+      grain=1-m.tooth*.55*(1-bite);
     }
     const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
     const weight=t*(1+boost*.7*m.swell);
@@ -472,29 +502,46 @@ function drawTrail(){
     // as the flight turns and an orbit is written the way a letter is. A stick or a stylus has no edge
     // to turn and holds one width whichever way the flight goes.
     const cut=m.nib>0?Math.abs((dx*NIB_SIN-dy*NIB_COS)/d):1;
-    const gauge=(1+m.nib*(cut-.62))*m.body*scale*thin;
+    const spread=m.body*scale*thin,gauge=(1+m.nib*(cut-.62))*spread;
     // Whatever feels the grain of the sheet also wanders on it: a chalk line is never straight, where a
-    // stylus on prepared ground is. Read off the position, so the wander is the sheet's and not the
-    // hand's, and shared by the ends the segments have in common.
-    const drift=m.tooth*.9,ax=drift?(sheetTooth(a.x*.37,a.y*.37)-.5)*drift:0,bx=drift?(sheetTooth(b.x*.37,b.y*.37)-.5)*drift:0;
+    // stylus on prepared ground is. A second field, read across the sheet rather than along it so the
+    // line does not veer in step with its own fading, and taken at both ends, so consecutive pieces
+    // share the point between them and the wander is a drift rather than a stagger.
+    const drift=m.tooth*.9;
+    const ax=drift?(sheetNoise(a.y,a.x,WANDER_SPAN)-.5)*drift:0,bx=drift?(sheetNoise(b.y,b.x,WANDER_SPAN)-.5)*drift:0;
     const x1=sx(a.x+nx*ax),y1=sy(a.y+ny*ax),x2=sx(b.x+nx*bx),y2=sy(b.y+ny*bx);
-    // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. A wet stroke is laid
-    // glossy and dries as the segment ages, from blue-black to matte sepia on paper, bright to dim ink
-    // at night; a dry one arrives already settled.
+    // A wet stroke is laid glossy and dries as the segment ages, from blue-black to matte sepia on
+    // paper, bright to dim ink at night; a dry one arrives already settled.
     const dried=m.wet?mixRgb(pen.wet,pen.dry,1-t*t):settled;
-    if(m.halo>0)line(x1,y1,x2,y2,`rgba(${pen.wash},${t*t*.16*m.halo*grain})`,(1+3.5*weight)*gauge*m.bloom);
     // Gold leaf is laid over a dark keyline, the way a gilder cuts the line first and lays the leaf into it.
     if(pen.keyline)line(x1,y1,x2,y2,`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*gauge);
     // Leaf takes or it does not. Where a flake failed, the mordant line stands bare and the run of gold
-    // breaks the way beaten leaf actually breaks; where one took cleanly, the burnisher left a facet.
-    const flake=m.leaf?sheetTooth(b.x*1.7,b.y*1.7):1;
-    if(flake>.1&&!bare)line(x1,y1,x2,y2,`rgba(${dried},${t*t*.77*grain})`,(.18+1.2*weight)*gauge);
-    if(pen.burnish&&flake>.94&&!reducedMotion)line(x1,y1,x2,y2,`rgba(${pen.burnish},${t*t*.72})`,(.15+.5*weight)*gauge);
-    if(!reducedMotion){
-      if(!bare){
-        const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
-        line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36*grain})`,.4*scale*thin);
+    // breaks in patches the way beaten leaf actually breaks; where it took, the burnisher left a facet
+    // that comes up and falls away again along the run rather than switching on at one sample.
+    // Interpolating the field gathers it about its middle rather than spreading it evenly over nought
+    // to one, so both of these thresholds sit near a half to bite at all.
+    const flake=m.leaf?sheetNoise(b.x,b.y,7):1;
+    // The section, laid from the margin inward. The margin takes `spread` and the core `gauge`, so the
+    // damp edge stays an even band while the middle keeps the nib's thick and thin: what soaks into the
+    // sheet spreads by the paper's own capillary action and knows nothing about the angle the nib is
+    // held at. As a stroke runs dry the ink holds to one side of the point, so the outer passes lean
+    // across while the core stays on the line the point took — a dry-brush margin as an asymmetry of
+    // the section, rather than as a second stroke ruled alongside the first.
+    const margin=(1+3.5*weight)*spread*m.bloom,core=(.18+1.2*weight)*gauge,reach=margin-core;
+    const lean=reducedMotion?0:(.55+Math.sin(b.time*19)*.3)*(1-t)*.55;
+    if(flake>.36){
+      for(let j=0;j<STROKE_PROFILE.length;j++){
+        const out=STROKE_PROFILE[j][0];
+        // The wash is the only pass a material may be without — gold leaf has no damp margin at all —
+        // and the two densest passes are the ones the sheet's tooth takes out, leaving the dust.
+        if(j===0?m.halo<=0:bare&&j>2)continue;
+        const off=lean*out,tone=j===0?pen.wash:j===1?pen.edge:dried;
+        line(x1+nx*off,y1+ny*off,x2+nx*off,y2+ny*off,
+          `rgba(${tone},${t*t*STROKE_PROFILE[j][1]*grain*(j===0?m.halo:1)})`,core+reach*out);
       }
+    }
+    if(pen.burnish&&flake>.6&&!reducedMotion)line(x1,y1,x2,y2,`rgba(${pen.burnish},${t*t*(flake-.6)*2.4})`,(.15+.5*weight)*gauge);
+    if(!reducedMotion){
       // Silverpoint catches the light along the stroke: a faint shimmer that travels segment by segment.
       if(pen.shimmer){
         const glint=Math.max(0,Math.sin(world.time*3.1-i*.35));
@@ -502,18 +549,18 @@ function drawTrail(){
       }
       // Ground mineral does not dissolve: it drops into the hollows of the sheet and stays there as
       // visible grain. Malachite, ground coarse to keep its green, is the worst of them; a dye like
-      // woad or iron gall stains evenly and drops nothing at all. The grains are collected rather than
-      // filled where they fall, because what is left once the water has gone is the settled tone
-      // whatever age the stroke is — so the whole scattering is one colour and one fill.
-      if(m.settle>0&&t>.3){
-        const drop=sheetTooth(b.y,b.x);
-        if(drop<m.settle*.22){
-          // One hash decides whether a grain fell here; its own fraction, spread back out over the
-          // whole range, decides how big it is and where across the stroke it came to rest. The whole
-          // scattering shares one alpha, so a grain thins away with the stroke by shrinking rather than
-          // by fading — which is also the truer picture of it sinking into the sheet.
-          const size=(drop*37)%1,across=((drop*61)%1-.5)*(1+2.4*weight)*gauge;
-          grains.push(x2+nx*across,y2+ny*across,(.3+size*.85)*scale*t);
+      // woad or iron gall stains evenly and drops nothing at all. Drawn not as specks but as a fine
+      // thread of the same ink laid again where the grain collected: at a line a pixel and a half wide
+      // a speck is not a grain of pigment but a bead on a string, and the eye reads the beads instead
+      // of the line. Density is what granulation looks like at this size, and laying the ink twice is
+      // what density is. It wanders, but only within the core it belongs to — a thread that strays past
+      // the stroke's own margin stops being grain in the ink and becomes a second line beside it.
+      if(m.settle>0&&!bare){
+        const fleck=sheetNoise(b.x,b.y,GRAIN_SPAN);
+        if(fleck>.4){
+          const across=(fleck-.66)*.9*core;
+          line(x1+nx*across,y1+ny*across,x2+nx*across,y2+ny*across,
+            `rgba(${dried},${t*t*(fleck-.4)*1.7*m.settle})`,core*.55);
         }
       }
       if(m.feather>0&&b.air&&i%6===0&&t<.88){
@@ -521,12 +568,6 @@ function drawTrail(){
         line(sx(b.x+nx*sign),sy(b.y+ny*sign),sx(b.x-dx/d*reach+nx*reach*sign),sy(b.y-dy/d*reach+ny*reach*sign),`rgba(${pen.bleed},${t*.24*m.feather})`,.4*scale);
       }
     }
-  }
-  if(grains.length){
-    ctx.fillStyle=`rgba(${settled},${.5*m.settle})`;
-    ctx.beginPath();
-    for(let i=0;i<grains.length;i+=3){ctx.moveTo(grains[i]+grains[i+2],grains[i+1]);ctx.arc(grains[i],grains[i+1],grains[i+2],0,TAU);}
-    ctx.fill();
   }
   ctx.restore();
 }
