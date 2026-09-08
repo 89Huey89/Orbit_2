@@ -377,14 +377,15 @@
     .cat-preview{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:75px;flex:0 0 75px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.6),rgba(var(--veil),.12));color:var(--gold)}
     .cat-preview::before,.cat-preview::after{content:'';position:absolute;inset:6px;border:1px solid var(--line);pointer-events:none}
     .cat-preview::after{inset:12px 21%;border-top:0;border-bottom:0;opacity:.5}
-    .cat-preview-glyph{position:relative;z-index:1;font-family:var(--face-text);font-size:34px;line-height:1;color:var(--gold);text-shadow:0 0 12px rgba(var(--veil),.8)}
+    /* The drawing itself: cut as inline SVG by cataloguePreview() in src/ui.js, on a 120x72 field it
+       fills, and inked in currentColor so a card takes the plate's gold without naming a colour. */
+    .cat-art{position:relative;z-index:1;display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+    /* The spill over it, painted by inkSplat() in src/effects.js — the chart's own splat, in the ink
+       the card is offering. It sits over the stroke exactly as the chart's spill sits over its trail. */
+    .cat-splat{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none}
+    .cat-preview-glyph{position:relative;z-index:1;font-family:var(--face-sc);font-size:25px;line-height:1;color:var(--muted)}
     .cat-preview-rule{position:absolute;left:16%;right:16%;bottom:9px;height:1px;background:var(--line)}
-    .cat-preview[data-kind="trail"] .cat-preview-glyph{font-size:42px;transform:rotate(-22deg)}
-    .cat-preview[data-kind="capture"] .cat-preview-glyph{font-size:31px}
-    .cat-preview[data-kind="frame"] .cat-preview-glyph{font-size:37px}
-    .cat-preview[data-kind="figures"] .cat-preview-glyph{font-size:35px}
     .cat-preview.is-locked{color:var(--muted);border-style:dashed;opacity:.72}
-    .cat-preview.is-locked .cat-preview-glyph{font-family:var(--face-sc);font-size:25px;color:var(--muted)}
     .cat-card-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:3px}
     .cat-name{display:block;overflow:hidden;max-width:100%;font-family:var(--face-text);font-size:15px;line-height:1.1;text-overflow:ellipsis;white-space:nowrap;color:inherit}
     .cat-latin{display:block;overflow:hidden;max-width:100%;font-size:10px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}

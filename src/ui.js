@@ -352,18 +352,276 @@ function catalogueRecord(){
     '</tbody></table></section>';
   return html;
 }
-const PREVIEW_GLYPHS={
-  plate:{night:'☽',paper:'▧',cellarius:'✶',verdigris:'❧',foxed:'◌',proof:'◇',azzurra:'✧',sepia:'◈'},
-  mark:{quill:'✒',comet:'☄',telescope:'⌖',moth:'✦',saturn:'♄'},
-  trail:{irongall:'╱',sanguine:'╱',silverpoint:'∿',goldleaf:'✦',umber:'╱',woad:'╱',vermilion:'╱',malachite:'╱',ultramarine:'╱',bistre:'╱',orpiment:'✧'},
-  capture:{ripple:'◌',rose:'✥',seal:'✹',manicule:'☞'},
-  frame:{windheads:'◒',strapwork:'❦',acanthus:'❧',seamonsters:'♆'},
-  figures:{hevelius:'✺',bayer:'✷',bode:'✹'}
+// ---------- The catalogue's engraved previews ----------
+// Every card shows the thing itself rather than a stand-in character. These were single Unicode
+// dingbats before, set in the plate's own face — and a face that was never cut for a nib or a comet
+// falls through to whatever the device keeps for them, which on a phone is the colour emoji font: a
+// glossy pen and a cartoon comet, laid on an engraved plate. They are cut here instead, in the
+// vocabulary of the marks they stand for, as inline SVG over a 120×72 field held inside the middle of
+// the window so its own rules still read around the drawing. Everything strokes in currentColor — the
+// plate's gold — except the two kinds that are themselves about colour: a plate prints as a swatch of
+// its own ground, ink and gold, and a trail ink is laid in the very ink it would letter a run in.
+const ART_FIELD='0 0 120 72',ART_GROUND='rgb(var(--veil))';
+const artRound=n=>Math.round(n*10)/10;
+const artRgb=v=>'rgb('+(Array.isArray(v)?v.join(','):v)+')';
+const artLine=(d,w=1.1,a=1,c='',extra='')=>'<path d="'+d+'"'+(c?' stroke="'+c+'"':'')+' stroke-width="'+w+'"'+(a===1?'':' opacity="'+a+'"')+extra+'/>';
+const artFill=(d,a=1,c='')=>'<path d="'+d+'" stroke="none" fill="'+(c||'currentColor')+'"'+(a===1?'':' opacity="'+a+'"')+'/>';
+const artDot=(x,y,r,a=1,c='')=>'<circle cx="'+artRound(x)+'" cy="'+artRound(y)+'" r="'+artRound(r)+'" stroke="none" fill="'+(c||'currentColor')+'"'+(a===1?'':' opacity="'+a+'"')+'/>';
+const artRing=(x,y,r,w=1.1,a=1,c='')=>'<circle cx="'+artRound(x)+'" cy="'+artRound(y)+'" r="'+artRound(r)+'"'+(c?' stroke="'+c+'"':'')+' stroke-width="'+w+'"'+(a===1?'':' opacity="'+a+'"')+'/>';
+// Arcs, stars and spirals are cut rather than typed out: a ring of beads, a compass rose and a
+// vortex are all far shorter as a loop than as path data, and stay true when a size is changed.
+function artArc(cx,cy,r,from,to){
+  const x0=cx+Math.cos(from)*r,y0=cy+Math.sin(from)*r,x1=cx+Math.cos(to)*r,y1=cy+Math.sin(to)*r;
+  return 'M'+artRound(x0)+' '+artRound(y0)+'A'+artRound(r)+' '+artRound(r)+' 0 '+(Math.abs(to-from)>Math.PI?1:0)+' '+(to>from?1:0)+' '+artRound(x1)+' '+artRound(y1);
+}
+function artStar(cx,cy,points,outer,inner,turn=-Math.PI/2){
+  let d='';
+  for(let i=0;i<points*2;i++){
+    const a=turn+i*Math.PI/points,r=i%2?inner:outer;
+    d+=(i?'L':'M')+artRound(cx+Math.cos(a)*r)+' '+artRound(cy+Math.sin(a)*r);
+  }
+  return d+'Z';
+}
+function artSpiral(cx,cy,rFrom,rTo,from,to,steps=44){
+  let d='';
+  for(let i=0;i<=steps;i++){
+    const u=i/steps,a=lerp(from,to,u),r=lerp(rFrom,rTo,u);
+    d+=(i?'L':'M')+artRound(cx+Math.cos(a)*r)+' '+artRound(cy+Math.sin(a)*r);
+  }
+  return d;
+}
+// A plate is a colourway, so its card is a sheet of it: the plate's own ground under its own ink, with
+// one orbit and one star of its own gold. Every derived plate has passed the base tokens through its
+// transform already (see PLATE_STYLES in src/plates.js), so this reads eight sheets from one drawing.
+function platePreview(id){
+  const p=(PLATES[id]||PLATES.night).base,line=artRgb(p.ink),soft=artRgb(p.inkSoft),gold=artRgb(p.gold);
+  return '<rect x="25" y="10" width="70" height="52" fill="'+p.paper+'" stroke="'+line+'" stroke-width="1.1"/>'+
+    '<rect x="29" y="14" width="62" height="44" fill="none" stroke="'+soft+'" stroke-width=".6" opacity=".7"/>'+
+    artRing(60,36,18,.7,.6,soft)+artRing(60,36,11,1,.85,line)+
+    artFill(artStar(60,36,4,7.5,2.2),1,gold)+
+    artDot(41,22,1.5,.9,line)+artDot(79,49,1.3,.85,line)+artDot(77,21,1.1,.7,soft)+artDot(43,49,1.2,.7,soft)+
+    artLine('M33 55h11M87 17H76',.7,.55,soft);
+}
+// A trail ink is the one cosmetic that is nothing but colour, so its card is a stroke of it, and the
+// whole life of one: the card lays the same line the pen lays, read back to front. The bead at the point
+// and the wet leading half are the ink as it leaves the nib; the swelling body behind them is the same
+// ink drying; and the thin tail it runs back to is the dried route the run's whole flight is printed in
+// — which is a tone of its own, `path`, and the one most of the ink standing on a chart actually is (see
+// drawTrail and drawInkPath in src/effects.js, which read these very tokens). Under all of it the wash
+// the nib leaves in the paper, over it the dry-brush edge, and a blot where the stroke began. Every tone
+// is the ink's own registered value on the plate now on the press; nothing here is a stand-in for one.
+// The card prints them at close to full strength where the chart lays them thin and lets them fade, so
+// it reads as a pigment swatch rather than as a screenshot of a stroke — which is what a catalogue of
+// inks is for. The lay is one cubic; every segment below is cut from it, so they meet as one line.
+function trailPreview(id){
+  const pen=trailInk(id),lay='M26 55C46 48 68 29 94 14',dry=artRgb(pen.dry);
+  return (pen.keyline?artLine(lay,5.4,.34,artRgb(pen.keyline)):'')+
+    artLine(lay,9,.2,artRgb(pen.wash))+
+    artLine('M26 55Q39.5 49.9 54.4 39.7',1.8,.8,artRgb(pen.path||ink.dark.pathInk))+
+    artLine('M47.8 43.9Q68.8 29.7 94 14',3.2,.92,dry)+artLine('M57.8 37.5Q69.5 29.5 82.6 21',4.6,.92,dry)+
+    artLine('M66 32Q79.2 22.8 94 14',3.4,1,artRgb(pen.wet))+
+    artLine('M30 52C50 45 70 26 93 11',.7,.5,artRgb(pen.edge))+
+    (pen.shimmer?artLine('M42 45C58 39 74 26 92 14',.6,.85,artRgb(pen.shimmer)):'')+
+    artDot(95,13.5,3.4,1,artRgb(pen.wet));
+}
+// Where the stroke began, the card spills one — and that one is not drawn here at all. A splat is a
+// seeded contour under five burin flicks and seven flung droplets, and reproducing any of that in path
+// data would be a second copy of it to keep true; so the card carries a canvas at the same field the
+// SVG is cut on, and `inkSplat` (src/effects.js) paints it, the very function the chart spills with, at
+// the ink's own blotWet-to-blotDry mix and at its own alphas. What the card chooses is only the moment:
+// SPLAT_LIFE is a seventh of the way in, which is exactly where the spill has finished spreading and
+// has barely begun to dry, so the card shows an ink at its fullest body — .70 on the pool's own .85,
+// against the .72 the chart peaks at. The spray is thrown left, out of the window and away from the
+// stroke, and the seed is the ink's own name, so a card keeps one blot rather than a new one per pass.
+const SPLAT_LIFE=.18,SPLAT_SIZE=11.5,SPLAT_AT=[25,57];
+const splatSeed=id=>{let h=0x811c9dc5;for(let i=0;i<id.length;i++)h=Math.imul(h^id.charCodeAt(i),0x01000193);return h>>>0;};
+function paintCatalogueSplats(body){
+  if(!body||!body.querySelectorAll)return;
+  for(const c of body.querySelectorAll('canvas.cat-splat')){
+    const w=c.clientWidth,h=c.clientHeight;
+    if(!(w>0&&h>0)||!c.getContext)continue;
+    c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+    const g=c.getContext('2d');if(!g)continue;
+    // The same fit the SVG beside it is given, so the spill lands on the stroke's own start.
+    const k=Math.min(w/120,h/72);
+    g.setTransform(DPR,0,0,DPR,0,0);
+    g.translate((w-120*k)/2,(h-72*k)/2);g.scale(k,k);
+    g.translate(SPLAT_AT[0],SPLAT_AT[1]);
+    g.lineCap='round';g.lineJoin='round';
+    inkSplat(g,trailInk(c.getAttribute('data-ink')),SPLAT_LIFE,splatSeed(c.getAttribute('data-ink')||''),SPLAT_SIZE,.72,Math.PI,true);
+  }
+}
+// The five observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
+const MARK_ART={
+  quill:artFill('M38 44C52 26 72 15 96 12C90 30 68 45 44 52Z',.14)+
+    artLine('M38 44C52 26 72 15 96 12C90 30 68 45 44 52Z',.7,.5)+
+    artLine('M34 47Q62 33 96 13',1.3)+
+    artLine('M46 41l-4-9M56 36l-4-9M66 31l-4-9M76 25l-4-9M86 19l-4-8',.6,.6)+
+    artLine('M46 41l-7 5M56 36l-7 5M66 31l-7 5M76 25l-7 5M86 19l-7 5',.55,.45)+
+    artFill('M33 44L16 57L38 50Z',.9)+artLine('M18.5 55.5L32 47',1,1,ART_GROUND)+
+    artLine('M30 42.5L34 47M36 48.5L39 53',.6,.7)+artDot(21,53.5,2.2),
+  comet:artFill('M86 20C56 14 28 26 12 46C36 42 62 40 88 32Z',.12)+
+    artLine('M80 19C62 13 40 20 22 32',.6,.45)+
+    artLine('M81 22C60 20 36 28 16 42',.9,.75)+
+    artLine('M82 26C58 27 32 36 14 49',1,.9)+
+    artLine('M81 30C58 34 34 44 18 56',.8,.6)+
+    artLine('M80 33C60 42 44 50 32 60',.55,.4)+
+    artDot(86,26,5.6,.3)+artRing(86,26,5.6,1.2),
+  telescope:artFill('M88 18L56 24L22 30L22 44L56 50L88 56Z',.12)+
+    artLine('M88 18L56 24L22 30M88 56L56 50L22 44',1,.9)+
+    artLine('M34 28v18M44 26v22M68 22v30M78 20v36',.45,.3)+
+    '<ellipse cx="88" cy="37" rx="2.8" ry="19" stroke-width="1"/>'+
+    '<ellipse cx="56" cy="37" rx="2.4" ry="13" stroke-width=".8" opacity=".8"/>'+
+    '<ellipse cx="22" cy="37" rx="1.8" ry="7" stroke-width=".8" opacity=".8"/>'+
+    artLine('M92 32L101 29',.5,.4,'',' stroke-dasharray="3 3"')+artFill(artStar(106,27,4,4.4,1.3),.85),
+  moth:artFill('M58 26C44 16 28 22 27 34C26 44 42 44 58 34Z',.14)+artFill('M62 26C76 16 92 22 93 34C94 44 78 44 62 34Z',.14)+
+    artLine('M58 26C44 16 28 22 27 34C26 44 42 44 58 34Z',.9,.9)+artLine('M62 26C76 16 92 22 93 34C94 44 78 44 62 34Z',.9,.9)+
+    artLine('M58 34C48 38 42 48 48 56C54 60 60 48 60 40Z',.8,.75)+artLine('M62 34C72 38 78 48 72 56C66 60 60 48 60 40Z',.8,.75)+
+    artLine('M56 30L34 28M56 33L32 36M57 36L37 41',.4,.4)+artLine('M64 30L86 28M64 33L88 36M63 36L83 41',.4,.4)+
+    artLine('M57 21C52 14 46 11 40 11M63 21C68 14 74 11 80 11',.8,.8)+
+    artLine('M50 14l-3-3M45 12l-2-3M69 14l3-3M74 12l2-3',.45,.5)+
+    artLine('M60 22V54',2.4)+artDot(60,22,3,.9),
+  saturn:'<ellipse cx="60" cy="36" rx="30" ry="9" transform="rotate(-16 60 36)" stroke-width="1.2"/>'+
+    '<ellipse cx="60" cy="36" rx="23" ry="6.4" transform="rotate(-16 60 36)" stroke-width=".7" opacity=".6"/>'+
+    artDot(60,36,13,1,ART_GROUND)+artDot(60,36,13,.16)+artRing(60,36,13,1.3)+
+    artLine('M49 31C55 33 66 33 71 31',.6,.5)+artLine('M48 41C55 39 66 39 72 41',.55,.45)
+};
+// What the burin leaves at a planet as the traveller is taken (see CAPTURE_MARKS in src/effects.js).
+const CAPTURE_ART={
+  ripple:(()=>{
+    let broken='',outer='',fan='';
+    for(let i=0;i<5;i++){
+      const a=i/5*TAU-Math.PI/2;
+      broken+=artArc(60,36,20,a+.13,a+TAU/5-.13);outer+=artArc(60,36,26,a+.3,a+TAU/5-.36);
+    }
+    for(let i=-2;i<=2;i++){
+      const a=i*.13,reach=9*(1-Math.abs(i)*.16);
+      fan+='M'+artRound(60+Math.cos(a)*28)+' '+artRound(36+Math.sin(a)*28)+'L'+artRound(60+Math.cos(a)*(28+reach))+' '+artRound(36+Math.sin(a)*(28+reach));
+    }
+    return artLine(broken,1.4)+artLine(outer,.7,.55)+artRing(60,36,7,.9,.65)+artLine(fan,.6,.7);
+  })(),
+  rose:artFill(artStar(60,36,4,26,7),.9)+artFill(artStar(60,36,4,17,6,-Math.PI/4),.6)+
+    artRing(60,36,7.5,.8,.7)+artRing(60,36,28.5,.6,.45)+artLine('M70 36H98',.7,.6),
+  seal:artFill('M62 12C77 11 88 20 87 33C86 45 76 59 61 59C46 60 33 49 32 35C31 21 46 13 62 12Z',.2)+
+    artLine('M62 12C77 11 88 20 87 33C86 45 76 59 61 59C46 60 33 49 32 35C31 21 46 13 62 12Z',1)+
+    artLine(artStar(60,36,6,15,6.5),.85,.9)+artRing(60,36,19,.7,.7),
+  manicule:'<g transform="translate(56 36) scale(28)">'+
+    artLine('M-1 -.5L-.66 -.6L-.66 .6L-1 .5Z',.04)+
+    artLine('M-.62 -.52C-.2 -.6 -.02 -.42 .18 -.34L.92 -.26C1.16 -.2 1.16 -.02 .9 .02L.2 .06C.42 .3 .24 .62 -.16 .6L-.62 .56Z',.04)+
+    artLine('M-.1 .1L.16 .13M-.14 .3L.1 .32',.024,.75)+'</g>'
+};
+// The marginal ornaments cut into the frame's four corners (see frameOrnaments in src/frame.js).
+const FRAME_ART={
+  windheads:(()=>{
+    let curls='';
+    for(let i=0;i<5;i++){
+      const a=Math.PI*.74+i/4*Math.PI*.98;
+      curls+=artRing(44+Math.cos(a)*17.4,34+Math.sin(a)*17.4,5.6,.85,.8);
+    }
+    return artRing(44,34,17,1.3)+curls+
+      artLine('M48 23Q56 20.5 62 24',1,.8)+artLine('M49 28Q55 32 61 28',1.1,.9)+
+      artLine('M42 40Q53 48 61 39',1.1,.85)+artRing(59,35,4,1.1)+artDot(59,35,1.7,.85)+
+      artLine('M64 31L98 20',.9,.5)+artLine('M64 33L100 27',1,.7)+artLine('M64 35L101 36',1.1,.8)+
+      artLine('M64 37L99 44',1,.65)+artLine('M64 39L96 52',.9,.5);
+  })(),
+  strapwork:artLine('M24 30H50M70 30H96M24 42H50M70 42H96',1.1,.9)+
+    artLine('M24 30A6 6 0 0 0 24 42M96 30A6 6 0 0 1 96 42',.95,.85)+
+    artLine('M52 10V62M68 10V62',1.1,.95)+
+    artLine('M52 10A8 8 0 0 1 68 10M52 62A8 8 0 0 0 68 62',.95,.9)+
+    artLine('M27 36L34 29L41 36L34 43ZM79 36L86 29L93 36L86 43ZM60 14L67 21L60 28L53 21Z',.8,.85)+
+    artRing(34,36,1.8,.6,.7)+artRing(86,36,1.8,.6,.7)+artRing(60,21,1.8,.6,.7),
+  acanthus:artLine('M20 58C34 55 46 43 54 30C61 21 74 13 87 18',1.6,.9)+
+    artLine(artSpiral(86,27,9,1.2,-1.4,-1.4+TAU*1.35),1.1,.9)+artDot(86,27,1.5,.8)+
+    artFill('M30 52C31 43 37 37 45 35C43 43 38 49 30 52Z',.12)+artLine('M30 52C31 43 37 37 45 35C43 43 38 49 30 52Z',.9,.85)+
+    artFill('M43 40C46 31 53 26 61 25C58 33 52 38 43 40Z',.12)+artLine('M43 40C46 31 53 26 61 25C58 33 52 38 43 40Z',.9,.8)+
+    artFill('M56 28C60 20 67 16 75 15C71 23 65 27 56 28Z',.12)+artLine('M56 28C60 20 67 16 75 15C71 23 65 27 56 28Z',.9,.75)+
+    artLine('M32 50C36 46 40 42 44 37M45 38C48 33 52 30 59 27M57 27C60 23 65 19 72 17',.4,.45),
+  seamonsters:artLine('M14 52A12 12 0 0 1 38 52M38 52A14 14 0 0 1 66 52',1.2)+
+    artLine('M20 44l-3-3M28 40l-2-4M36 44l-3-3M46 40l-3-4M56 39l-2-4M62 45l-3-3',.5,.45)+
+    artLine('M66 52C74 48 74 38 80 30',1.2,.95)+
+    artFill('M74 28C74 20 82 15 91 18C99 21 100 29 94 32L80 35Z',.16)+
+    artLine('M74 28C74 20 82 15 91 18C99 21 100 29 94 32L80 35Z',1.1)+
+    artLine('M80 25L96 22',.65,.7)+artDot(81,22.5,1.4)+
+    artLine('M84 28v3M88 27v3M92 26v3',.5,.5)+
+    artLine('M88 15L84 7M91 15L92 6M92 16L99 9',.7,.5)+
+    artLine('M12 55H108',.6,.3)+artLine('M16 59H104',.55,.22)+artLine('M22 63H98',.5,.15)
+};
+// The three engraver's manners, shown on the Lyre — one of the twelve figures the chart actually deals
+// (see CONSTELLATIONS in src/simulation.js) — so the card offers a hand rather than an invented beast.
+// One contour and one set of stars, cut at the weight, breakage and hatching the chosen hand uses:
+// Hevelius's medium broken line, Bayer's finer and more continuous one, Bode's heavy cut under far more
+// shading (see FIGURE_STYLES in src/figures.js). The stars are struck the same in all three, since the
+// hand changes how the figure over them is engraved and never where the chart says they stand.
+const FIGURE_SHELL='M46 44C46 56 52 61 60 61C68 61 74 56 74 44Z';
+const FIGURE_ARMS='M48 44C40 38 34 28 36 19M72 44C80 38 86 28 84 19M33 20H87';
+const FIGURE_STRINGS='M48 21V44M54 21V44M60 21V44M66 21V44M72 21V44';
+const FIGURE_STARS=[[36,17],[84,17],[60,20],[60,61],[40,31]];
+const FIGURE_STIPPLE=[[54,50],[60,52],[66,50],[57,56],[63,56],[50,47],[70,47],[60,46],[60,58]];
+function figurePreview(weight,dash,hatch,stipple){
+  let hat='';
+  for(let i=0;i<hatch;i++)hat+='M'+artRound(49+i*3.4)+' 46l2.4 '+artRound(8-Math.abs(i-hatch/2)*1.4);
+  const cut=dash?' stroke-dasharray="'+dash+'"':'';
+  return artLine(FIGURE_SHELL,weight,.92,'',cut)+artLine(FIGURE_ARMS,weight,.92,'',cut)+
+    artLine(artSpiral(36,17,4.5,1,-.4,-.4+TAU*1.1,22),weight*.85,.85)+
+    artLine(artSpiral(84,17,4.5,1,Math.PI+.4,Math.PI+.4-TAU*1.1,22),weight*.85,.85)+
+    artLine(FIGURE_STRINGS,weight*.5,.6)+artLine(hat,weight*.5,.42)+
+    FIGURE_STIPPLE.slice(0,stipple).map(([x,y])=>artDot(x,y,.9,.5)).join('')+
+    FIGURE_STARS.map(([x,y])=>artFill(artStar(x,y,4,4.4,1.3),.95)).join('');
+}
+const FIGURE_ART={
+  hevelius:figurePreview(1.15,'4.5 2.2',4,5),
+  bayer:figurePreview(.75,'',3,3),
+  bode:figurePreview(1.9,'3 2.6',7,9)
+};
+// A struck medal: a beaded rim, a plain field, and the feat's own device cut into it.
+function medalRoundel(device){
+  let beads='';
+  for(let i=0;i<26;i++){const a=i/26*TAU;beads+=artDot(60+Math.cos(a)*23.2,36+Math.sin(a)*23.2,.85,.6);}
+  return artRing(60,36,26,1.3)+artRing(60,36,20,.6,.55)+beads+device;
+}
+const MEDAL_ART={
+  // Three perfect transfers in a row, five orbits cleared in one flight, the chart's top speed.
+  perfecti:medalRoundel(artFill(artStar(47,36,4,4.8,1.5))+artFill(artStar(60,36,4,4.8,1.5))+artFill(artStar(73,36,4,4.8,1.5))),
+  quinque:medalRoundel(artLine('M46 44Q60 22 74 44',1.2)+[46,53,60,67,74].map(x=>artDot(x,46,1.7,.9)).join('')),
+  summa:medalRoundel(artLine('M50 26L63 36L50 46M60 26L73 36L60 46',2)),
+  // A vortex grazed at speed, a chart traced in perfect transfers alone, the fortieth row.
+  periculum:medalRoundel(artLine(artSpiral(60,36,13,1.4,0,TAU*1.7),1.1)+artLine('M47 25C55 32 63 40 73 46',1.1,.8)),
+  pura:medalRoundel(artLine('M60 25L48 45L72 45Z',.9,.8)+artFill(artStar(60,25,4,4.6,1.4))+artFill(artStar(48,45,4,4.6,1.4))+artFill(artStar(72,45,4,4.6,1.4))),
+  altitudo:medalRoundel(artLine('M60 48V24M55 29L60 22L65 29',1.5)+artLine('M51 46H69M53 40H67M55 34H65',.8,.7)),
+  // Three minutes aloft, a right angle of arrival, twenty-five narrow escapes, ten thousand orbits.
+  vigilia:medalRoundel(artLine('M50 24H70L60.5 36L70 48H50L59.5 36Z',1.2)+artLine('M54 45H66',.8,.7)+artDot(60,33,1.2,.8)),
+  rectus:medalRoundel(artLine('M48 22V48H76',1.6)+artLine('M48 41H55V48',.8,.8)+artDot(48,48,2)),
+  evasio:medalRoundel(artLine(artArc(60,36,14,.8,TAU-.8),1.5)+artLine('M49 42C57 39 68 35 78 31',1.1,.85)),
+  myrias:medalRoundel(artLine('M50 27L70 46M70 27L50 46',1.6)+artLine('M50 21H70',1.1,.85)+
+    [[46,29],[74,29],[46,45],[74,45]].map(([x,y])=>artDot(x,y,1,.5)).join(''))
+};
+// The engraver's own two: the burin the plate is cut with, and the stamp the sheet is owned by.
+const CREDIT_ART=artFill('M24 44C18 40 18 32 24 28C31 25 39 29 39 36C39 43 31 47 24 44Z',.16)+
+  artLine('M24 44C18 40 18 32 24 28C31 25 39 29 39 36C39 43 31 47 24 44Z',1.2)+
+  artLine('M39 31L45 30V42L39 41Z',.9,.9)+
+  artFill('M45 31L92 21L96 26L46 41Z',.14)+artLine('M45 31L92 21L96 26L46 41Z',1.2)+
+  artLine('M46 34L93 24',.55,.5)+artLine('M28 56H92',.6,.3);
+const STAMP_ART='<ellipse cx="60" cy="36" rx="32" ry="22" stroke-width="1.3"/>'+
+  '<ellipse cx="60" cy="36" rx="27" ry="17.5" stroke-width=".6" opacity=".55"/>'+
+  artFill('M44 41C50 37 55 37 60 39C65 37 70 37 76 41L76 30C70 26 65 26 60 28C55 26 50 26 44 30Z',.14)+
+  artLine('M44 41C50 37 55 37 60 39C65 37 70 37 76 41L76 30C70 26 65 26 60 28C55 26 50 26 44 30Z',1.1)+
+  artLine('M60 28V39',.8,.8)+artLine('M47 47H73',.6,.5);
+const PREVIEW_ART={
+  plate:platePreview,trail:trailPreview,
+  mark:id=>MARK_ART[id]||MARK_ART.quill,
+  capture:id=>CAPTURE_ART[id]||CAPTURE_ART.ripple,
+  frame:id=>FRAME_ART[id]||FRAME_ART.windheads,
+  figures:id=>FIGURE_ART[id]||FIGURE_ART.hevelius,
+  medal:id=>MEDAL_ART[id]||medalRoundel(artFill(artStar(60,36,6,13,5))),
+  credit:()=>CREDIT_ART,stamp:()=>STAMP_ART
 };
 function cataloguePreview(item,kind,locked=false){
-  const glyph=(PREVIEW_GLYPHS[kind]&&PREVIEW_GLYPHS[kind][item.id])||'✧';
+  const cut=PREVIEW_ART[kind],art=cut?cut(item.id):medalRoundel(artFill(artStar(60,36,6,13,5)));
+  const spill=!locked&&kind==='trail'?'<canvas class="cat-splat" data-ink="'+plainText(item.id)+'" aria-hidden="true"></canvas>':'';
+  const shown=locked?'<span class="cat-preview-glyph">?</span>'
+    :'<svg class="cat-art" viewBox="'+ART_FIELD+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+art+'</svg>'+spill;
   return '<span class="cat-preview'+(locked?' is-locked':'')+'" data-kind="'+plainText(kind)+'" data-item="'+plainText(item.id)+'" aria-hidden="true">'+
-    '<span class="cat-preview-glyph">'+(locked?'?':glyph)+'</span><span class="cat-preview-rule"></span></span>';
+    shown+'<span class="cat-preview-rule"></span></span>';
 }
 function catalogueRow(item,kind){
   const entry=UNLOCK_BY_ID[item.id];
@@ -419,6 +677,7 @@ function renderCatalogue(){
   html+=`<div class="cat-pane${catalogueTab==='catalogue'?'':' hidden'}" data-pane="catalogue">${catalogueItems()}</div>`;
   html+=`<div class="cat-pane${catalogueTab==='insignia'?'':' hidden'}" data-pane="insignia">${catalogueInsignia()}</div>`;
   body.innerHTML=html;
+  paintCatalogueSplats(body);
   const field=$('initials');
   if(field&&field.addEventListener&&!field.wired){
     field.wired=true;
