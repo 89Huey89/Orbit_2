@@ -36,36 +36,64 @@ function renaissanceLegendMask(){
 }
 // Six distinct point sizes carry the six traditional classes. Only the upper two classes grow into
 // multi-ray printer's signs; classes V and VI stay as the small pricks a naked-eye atlas can honestly set.
+const RENAISSANCE_STAR_RADII=[3.2,4.4,5.8,7.6,9.8,13];
+// How far the whole sign actually reaches from its own centre, in the same units the radii are given in:
+// the outer class circle where the class has one, the longest spoke where it does not, the punch alone
+// for the two classes that are nothing but a punch. Anything set beside a star measures itself off this,
+// so a first-magnitude sign and a sixth-magnitude prick are each given exactly the room they take.
+function renaissanceStarSpan(magnitude){
+  const index=clamp(6-(magnitude||6),0,5);
+  return RENAISSANCE_STAR_RADII[index]*(index>=4?1.76:index===3?1.5:index===2?1.36:.62);
+}
 function renaissanceStarGlyph(g,cx,cy,magnitude,rgb,alpha,size,seed=0){
-  // Scaled up from the atlas's original .7-3.9 ramp: at that size the common faint classes (most stars
-  // land in IV-VI) were sub-pixel on a phone-width viewport, where `size` (the responsive `scale`) is
-  // well under 1. The six-class hierarchy is kept, just carried at a legible size.
-  const index=clamp(6-(magnitude||6),0,5),radii=[1.1,1.7,2.4,3.2,4.4,6],radius=radii[index]*size;
+  // Sized for the phone the plate is actually read on (see "Viewport" in README.md), not for the desk.
+  // `size` is the responsive `scale`, which sits at about .98 on the target sheet, so these radii are
+  // very nearly the printed millimetres: the atlas's original .7-3.9 ramp put four of the six classes
+  // under two pixels across, a hair inside a forty-eight-pixel orbit, and the commonest of them printed
+  // as nothing at all on paper. The six-class hierarchy is unchanged; only the gauge of the punch is,
+  // and every class is now a mark the eye can find without hunting for it.
+  const index=clamp(6-(magnitude||6),0,5),radius=RENAISSANCE_STAR_RADII[index]*size;
   g.save();g.lineCap='round';
-  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.6,radius*.46),0,TAU);g.fill();
+  // Classes V and VI have no spokes at all, so the punch is the whole of the sign and is set proportionally
+  // deeper; from class IV up the point is only the centre of a figure the rays finish.
+  const core=Math.max(1.1,radius*(index>=2?.46:.62));
+  // On the pale sheet the ochre a catalogued star is set in has little to read against at this size, so the
+  // punch is bedded on a fine dark ring first, the way the gilder cuts his line before the leaf goes in.
+  if(onPaper()){g.fillStyle=`rgba(${ink.base.ink},${.36*alpha})`;g.beginPath();g.arc(cx,cy,core*1.3,0,TAU);g.fill();}
+  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,core,0,TAU);g.fill();
   if(index>=2){
     const rays=index>=5?8:index>=4?6:4,rng=seeded((seed^0x51f3a91d)>>>0||1);
-    const weight=Math.max(.35,.48*size),rayAlpha=alpha*(index>=4?.78:.62);
+    // A larger sign wants a heavier burin under it, or the spokes read as scratches beside their own
+    // point: the cut thickens by class the way an engraver changes tools rather than only pressure.
+    const weight=Math.max(.45,(.42+index*.07)*size),rayAlpha=alpha*(index>=4?.85:.7);
     for(let i=0;i<rays;i++){
       const a=i*TAU/rays-Math.PI/2,jitter=(rng()-.5)*.06;
       // Only the brightest class alternates long primary spokes with short secondary ticks, cut the
       // way a printer's radiant star is engraved, rather than a spider of equal-length legs; every
       // ray is laid as a burin cut, not a clean vector line, so the point reads as struck rather than drawn.
-      const primary=index<5||i%2===0,len=radius*(index>=4?(primary?.94:.58):.78)*(.86+rng()*.16);
-      const x1=cx+Math.cos(a+jitter)*radius*.36,y1=cy+Math.sin(a+jitter)*radius*.36;
+      // The spokes are struck from outside the punch and carry well past it. They used to end barely
+      // clear of the point they came from, which made every class above IV read as one thickened dot
+      // with a fringe rather than as a radiant sign.
+      const primary=index<5||i%2===0,len=radius*(index>=4?(primary?1.62:1.02):1.36)*(.86+rng()*.16);
+      const x1=cx+Math.cos(a+jitter)*core*1.5,y1=cy+Math.sin(a+jitter)*core*1.5;
       const x2=cx+Math.cos(a+jitter)*len,y2=cy+Math.sin(a+jitter)*len;
-      burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha,weight,seed^(i*9176+7),{segments:len>radius*.7?3:2,wobble:.22,hair:false});
+      burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha,weight,seed^(i*9176+7),{segments:len>radius?3:2,wobble:.22,hair:false});
     }
   }
-  if(index===3)burinArc(g,cx,cy,radius*.85,0,TAU,rgb,alpha*.42,Math.max(.3,.35*size),seed^0x7c31,{wobble:.12,skips:1});
-  if(index>=4)burinArc(g,cx,cy,radius*1.28,0,TAU,rgb,alpha*.34,Math.max(.25,.3*size),seed^0x9d15,{wobble:.14,skips:2});
+  // Both class circles now ride outside the spokes rather than under them, so the ray and the ring stay
+  // two separate marks at every class instead of crossing into one another.
+  if(index===3)burinArc(g,cx,cy,radius*1.5,0,TAU,rgb,alpha*.46,Math.max(.36,.42*size),seed^0x7c31,{wobble:.12,skips:1});
+  if(index>=4)burinArc(g,cx,cy,radius*1.76,0,TAU,rgb,alpha*.38,Math.max(.32,.36*size),seed^0x9d15,{wobble:.14,skips:2});
   g.restore();
   return radius;
 }
 function revealRenaissanceStar(n,pen,rgb){
   const faint=pen.taken<1?pen.ring:0;
-  if(faint>0)renaissanceStarGlyph(ctx,0,0,6,rgb,.78*faint,scale*.9,n.seed^0x17);
-  if(pen.taken>0)renaissanceStarGlyph(ctx,0,0,n.magnitude,rgb,pen.taken*(.38+.62*pen.d),scale,n.seed);
+  if(faint>0)renaissanceStarGlyph(ctx,0,0,6,rgb,.82*faint,scale*.9,n.seed^0x17);
+  // The classified point is printed at nearly full strength from the moment the quill commits to it.
+  // The old floor of .38 was the pen drying, not the plate: a star already entered in the catalogue is
+  // not a faint one, and on the pale sheet the ochre it is set in had nothing left to read against.
+  if(pen.taken>0)renaissanceStarGlyph(ctx,0,0,n.magnitude,rgb,pen.taken*(.56+.44*pen.d),scale,n.seed);
 }
 function drawRenaissanceStarLetter(n,observation,rgb){
   if(plainPlate()||!renaissanceStarClassified(n,observation)||!n.greek)return;
@@ -73,37 +101,64 @@ function drawRenaissanceStarLetter(n,observation,rgb){
   const inked=clamp((observation-threshold)/Math.max(.01,1-threshold),0,1),dir=n.x>=0?1:-1,size=Math.max(9,10*scale);
   ctx.font=plateFace(size,'text','italic');ctx.textAlign=dir>0?'left':'right';ctx.textBaseline='alphabetic';
   ctx.fillStyle=`rgba(${rgb},${.78*inked})`;
-  writeText(ctx,n.greek,dir*(4.6*scale)+dir*size*.35,-5.4*scale,inked,{size,nib:false});
+  // Set clear of whatever the sign itself reaches, rather than at a fixed hair's breadth from the centre:
+  // at the gauge the classes are now punched at, a flat offset put the letter across the star's own spokes.
+  writeText(ctx,n.greek,dir*((renaissanceStarSpan(n.magnitude)+2.8)*scale)+dir*size*.35,-5.4*scale,inked,{size,nib:false});
 }
 // A slingshot star does not carry a fixed magnitude the way a catalogued point does — the atlas has
 // watched this one flare before, the way it watched Tycho's star of 1572 or Kepler's of 1604: a modest
 // ember at rest, brightening lap over lap as it is orbited, and spending that light in a burst at full
 // charge rather than holding still. It reads by the same charge the ring outside the frame fills with,
 // so the specimen and the instrument around it always agree.
+// Nothing here emits light: the plate has no lamp in it, and an engraving never had one either. A star
+// is made to blaze by the four things a burin can actually do — leave the sheet bare around the point,
+// throw long spokes off it, ring it in corona, and fleck the ground beyond with sparks — and the atlas
+// spends more of all four the fuller the lap runs. The old ember was a three-pixel dot adrift in a
+// forty-pixel instrument ring, so the specimen read as fainter than the gauge measuring it.
 function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
-  const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(3.2+charge*3.6)*size;
+  const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(8.4+charge*8.4)*size,core=Math.max(1.2,radius*.4);
   g.save();g.lineCap='round';
-  const rings=charge>.08?1+Math.floor(charge*2.5):0;
+  // Three coronas at the most, and spaced so that even the outermost stays inside the charge band the
+  // instrument draws at r*.73: the burst is the specimen's, and it never reaches across the gauge.
+  const rings=1+Math.round(charge*2);
   for(let i=0;i<rings;i++){
-    const ringR=radius*(1.7+i*.8),ringAlpha=alpha*(.26-i*.08);
-    if(ringAlpha>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha,Math.max(.28,.38*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
+    const ringR=radius*(1.5+i*.42),ringAlpha=alpha*(.34+charge*.2-i*.07);
+    if(ringAlpha>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha,Math.max(.38,.5*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
   }
-  g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(cx,cy,Math.max(.7,radius*.4),0,TAU);g.fill();
-  const rays=charge>.05?4+Math.round(charge*4):0,rayAlpha=alpha*(.45+.5*charge);
+  // Long primary spokes alternating with short ticks, as a printer's radiant star is cut rather than a
+  // spider of equal legs. They are laid before the reserve below, which then takes their inner ends off,
+  // and they are cut heavy: a thin spoke beside a bold instrument ring reads as a scratch, not as light.
+  const rays=8+2*Math.round(charge*4),rayAlpha=alpha*(.62+.38*charge),weight=Math.max(.6,(.72+charge*.5)*size);
   for(let i=0;i<rays;i++){
-    const a=i*TAU/rays-Math.PI/2+(rng()-.5)*.12,len=radius*(.75+charge*1.15)*(.86+rng()*.18);
-    const x1=cx+Math.cos(a)*radius*.32,y1=cy+Math.sin(a)*radius*.32;
+    const a=i*TAU/rays-Math.PI/2+(rng()-.5)*.1,primary=i%2===0;
+    const len=radius*(primary?1.3+charge*.75:.96+charge*.44)*(.88+rng()*.16);
+    const x1=cx+Math.cos(a)*core*1.55,y1=cy+Math.sin(a)*core*1.55;
     const x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;
-    burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha,Math.max(.32,.4*size),seed^(i*733+53),{segments:2,wobble:.2,hair:false});
+    burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha*(primary?1:.72),weight,seed^(i*733+53),{segments:len>radius?3:2,wobble:.2,hair:false});
   }
+  // The sparks a nova throws past its own corona, stippled onto the ground as the lap fills. They stay
+  // well inside the charge band outside them, so the specimen never crowds the instrument.
+  const flecks=charge>.5?Math.round((charge-.5)*44):0;
+  for(let i=0;i<flecks;i++){
+    const a=rng()*TAU,d=radius*(1.4+rng()*.75);
+    g.fillStyle=`rgba(${rgb},${alpha*(.28+charge*.34)*(.4+rng()*.6)})`;
+    g.beginPath();g.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,Math.max(.4,.55*size),0,TAU);g.fill();
+  }
+  // A reserve of bare sheet around the point: the engraver's own way of printing light is to cut nothing
+  // at all there. It crops the spokes back so they spring from a clear halo instead of out of the ink.
+  g.fillStyle=`rgba(${ink.base.paperRgb},${.74*alpha})`;g.beginPath();g.arc(cx,cy,core*1.42,0,TAU);g.fill();
+  // On the pale sheet the warm ink of the point is laid over a dark keyline first, the way the gilder
+  // cuts his line before the leaf goes into it; at night the ground is already the dark behind it.
+  if(onPaper()){g.fillStyle=`rgba(${ink.base.inkStrong},${.58*alpha})`;g.beginPath();g.arc(cx,cy,core*1.15,0,TAU);g.fill();}
+  g.fillStyle=`rgba(${rgb},${Math.min(1,alpha*(.86+.28*charge))})`;g.beginPath();g.arc(cx,cy,core,0,TAU);g.fill();
   g.restore();
   return radius;
 }
 function revealNova(n,pen,rgb){
   const p=world&&world.player,active=p&&p.node===n,charge=active?world.charge():0;
   const faint=pen.taken<1?pen.ring:0;
-  if(faint>0)novaGlyph(ctx,0,0,0,rgb,.7*faint,scale*.9,n.seed^0x17);
-  if(pen.taken>0)novaGlyph(ctx,0,0,charge,rgb,pen.taken*(.4+.6*pen.d),scale,n.seed);
+  if(faint>0)novaGlyph(ctx,0,0,0,rgb,.72*faint,scale*.9,n.seed^0x17);
+  if(pen.taken>0)novaGlyph(ctx,0,0,charge,rgb,pen.taken*(.58+.42*pen.d),scale,n.seed);
 }
 const figureLayers=new Map();
 function figFrame(chart){

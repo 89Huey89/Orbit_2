@@ -274,7 +274,10 @@ function buildFrameLayer(){
     for(let m=5;m>=0;m--){
       const row=keyTop+17+(5-m)*12;
       const magnitude=6-m,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.72:.12;
-      renaissanceStarGlyph(g,keyX+7,row-4.5,magnitude,ink.atmosphere.starGlyph,alpha,1.3,0x1603+magnitude);
+      // The key is set to its twelve-pixel rule, not to the gauge the chart itself is punched at: the
+      // sign on the plate is cut for a hand-held sheet, and printed at that size the first class alone
+      // would run into the row above it. This factor holds the six forms at the size the margin has room for.
+      renaissanceStarGlyph(g,keyX+7,row-4.5,magnitude,ink.atmosphere.starGlyph,alpha,.72,0x1603+magnitude);
       g.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;g.fillText(MAGNITUDES[5-m],keyX+24,row);
     }
   }

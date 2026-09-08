@@ -71,6 +71,25 @@ does the same before deploying `dist/` to GitHub Pages on every push to `main`.
   `<script|link|img|audio|video src/href="https?:...">`. Fonts, art, and
   audio are all generated or embedded in the repo.
 
+## Target viewport
+
+**Mobile is the target; the iPhone 15 Pro Max (430×932 CSS px, portrait) is the
+reference sheet.** Every visual size — glyph radii, stroke weights, type sizes,
+spacing — is judged there first, and on the paper plate, which is what the game is
+actually played on. Desktop is supported and gets the wide-sheet marginalia (compass
+rose, scale bar, engraver's line, MAGNITUDINES key), but it is a bonus: where a size
+reads well on a laptop and badly in the hand, the hand wins.
+
+`scale` (`Math.min(W/440, H/780)`, set in `resize()` in `ui.js`) is about **0.98** on
+that viewport, so a number written in the source is very nearly a CSS pixel there —
+but a CSS pixel on a phone is physically about two thirds of one on a desktop monitor,
+which is why marks that look fine in a desktop browser can be unreadable on the
+device. Size against the target, not against the window you are testing in.
+
+Check a change at 430×932 before calling it done: `npm start`, then a 430×932 viewport
+(devtools device emulation or a headless browser). `npm test` never renders a browser,
+so it cannot catch any of this.
+
 ## Conventions
 
 - Code is written dense (packed statements, little whitespace); comments are
