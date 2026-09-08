@@ -455,22 +455,53 @@ function paintCatalogueSplats(body){
     inkSplat(g,trailInk(c.getAttribute('data-ink')),SPLAT_LIFE,splatSeed(c.getAttribute('data-ink')||''),SPLAT_SIZE,.72,Math.PI,true);
   }
 }
-// The five observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
+// The eight observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
+// Five of them are walked out of a loop here rather than typed as path data — the feather's vane off
+// the very `vaneProfile` the flight lays it with, and the comet's rays, Saturn's hatching, the
+// cross-staff's divisions and the moon's broken terminator off the same arithmetic the chart uses —
+// so a card cannot quietly drift from the mark it is offering.
 const MARK_ART={
-  quill:artFill('M38 44C52 26 72 15 96 12C90 30 68 45 44 52Z',.14)+
-    artLine('M38 44C52 26 72 15 96 12C90 30 68 45 44 52Z',.7,.5)+
-    artLine('M34 47Q62 33 96 13',1.3)+
-    artLine('M46 41l-4-9M56 36l-4-9M66 31l-4-9M76 25l-4-9M86 19l-4-8',.6,.6)+
-    artLine('M46 41l-7 5M56 36l-7 5M66 31l-7 5M76 25l-7 5M86 19l-7 5',.55,.45)+
-    artFill('M33 44L16 57L38 50Z',.9)+artLine('M18.5 55.5L32 47',1,1,ART_GROUND)+
-    artLine('M30 42.5L34 47M36 48.5L39 53',.6,.7)+artDot(21,53.5,2.2),
-  comet:artFill('M86 20C56 14 28 26 12 46C36 42 62 40 88 32Z',.12)+
-    artLine('M80 19C62 13 40 20 22 32',.6,.45)+
-    artLine('M81 22C60 20 36 28 16 42',.9,.75)+
-    artLine('M82 26C58 27 32 36 14 49',1,.9)+
-    artLine('M81 30C58 34 34 44 18 56',.8,.6)+
-    artLine('M80 33C60 42 44 50 32 60',.55,.4)+
-    artDot(86,26,5.6,.3)+artRing(86,26,5.6,1.2),
+  quill:(()=>{
+    const QX=40,QY=43,PX=108,PY=11,CX=72,CY=18,N=26,edge=[[],[]];
+    let barbs='';
+    for(let i=0;i<N;i++){
+      const u=(i+.7)/(N+.7),x=qAt(u,QX,CX,PX),y=qAt(u,QY,CY,PY);
+      const tx=2*((1-u)*(CX-QX)+u*(PX-CX)),ty=2*((1-u)*(CY-QY)+u*(PY-CY)),tl=Math.hypot(tx,ty)||1;
+      const ux=tx/tl,uy=ty/tl,w=vaneProfile(u);
+      for(const side of [-1,1]){
+        const r=w*(side>0?14:9.4),nx=-uy*side,ny=ux*side,ex=x+nx*r+ux*r*.95,ey=y+ny*r+uy*r*.95;
+        barbs+='M'+artRound(x)+' '+artRound(y)+'Q'+artRound(x+nx*r*.78+ux*r*.2)+' '+artRound(y+ny*r*.78+uy*r*.2)+' '+artRound(ex)+' '+artRound(ey);
+        edge[side>0?0:1].push(artRound(ex)+' '+artRound(ey));
+      }
+    }
+    const vane=side=>'M'+QX+' '+QY+'L'+edge[side].join('L')+'L'+PX+' '+PY+'Z';
+    return artFill(vane(0),.17)+artFill(vane(1),.13)+artLine(barbs,.45,.68)+
+      artLine('M'+QX+' '+QY+'Q'+CX+' '+CY+' '+PX+' '+PY,1.3)+
+      artLine('M26.1 47.3L38.7 40.8M29.9 52.7L41.3 45.3',.75,.8)+
+      artLine('M31 46.7L33.3 50.4M34.4 44.8L36.7 48.5',.5,.5)+
+      artFill('M10 63L26.1 47.3L29.9 52.7Z',.9)+artLine('M12.4 61L24.4 50.2',1,1,ART_GROUND)+
+      artLine('M22.5 47.2L26.6 52.9',.6,.7)+artDot(15.6,59.3,2.2);
+  })(),
+  comet:(()=>{
+    const HX=94,HY=31,LEN=78,SPREAD=15,CURL=5,RAYS=9;
+    let rays='',beard='';
+    for(let i=0;i<RAYS;i++){
+      const v=i/(RAYS-1)*2-1,s=v*(.42+.58*Math.abs(v)),run=.62+(i%3)*.14+(i&1)*.08;
+      rays+='M'+artRound(HX-6-Math.abs(s)*5)+' '+artRound(HY+s*11)+
+        'Q'+artRound(HX-LEN*.36)+' '+artRound(HY+s*SPREAD*.3+CURL*.3)+
+        ' '+artRound(HX-LEN*run)+' '+artRound(HY+s*SPREAD+CURL*run);
+    }
+    for(let i=0;i<9;i++){
+      const a=(i/8-.5)*2.1,r=13,out=3+((i*5)%4)*1.7;
+      beard+='M'+artRound(HX+Math.cos(a)*r)+' '+artRound(HY+Math.sin(a)*r)+'L'+artRound(HX+Math.cos(a)*(r+out))+' '+artRound(HY+Math.sin(a)*(r+out));
+    }
+    const u=.64,far=LEN*u;
+    const wash='M'+(HX-4)+' '+artRound(HY-2.6)+'Q'+artRound(HX-far*.5)+' '+artRound(HY-SPREAD*u*.44+CURL*.2)+
+      ' '+artRound(HX-far)+' '+artRound(HY-SPREAD*u*.78+CURL*u)+'L'+artRound(HX-far)+' '+artRound(HY+SPREAD*u+CURL*u)+
+      'Q'+artRound(HX-far*.5)+' '+artRound(HY+SPREAD*u*.5+CURL*.2)+' '+(HX-4)+' '+artRound(HY+2.6)+'Z';
+    return artFill(wash,.1)+artLine(rays,.7,.6)+
+      artDot(HX,HY,11.5,.15)+artLine(beard,.55,.55)+artDot(HX,HY,5.6,.3)+artRing(HX,HY,5.6,1.2);
+  })(),
   telescope:artFill('M88 18L56 24L22 30L22 44L56 50L88 56Z',.12)+
     artLine('M88 18L56 24L22 30M88 56L56 50L22 44',1,.9)+
     artLine('M34 28v18M44 26v22M68 22v30M78 20v36',.45,.3)+
@@ -485,10 +516,56 @@ const MARK_ART={
     artLine('M57 21C52 14 46 11 40 11M63 21C68 14 74 11 80 11',.8,.8)+
     artLine('M50 14l-3-3M45 12l-2-3M69 14l3-3M74 12l2-3',.45,.5)+
     artLine('M60 22V54',2.4)+artDot(60,22,3,.9),
-  saturn:'<ellipse cx="60" cy="36" rx="30" ry="9" transform="rotate(-16 60 36)" stroke-width="1.2"/>'+
-    '<ellipse cx="60" cy="36" rx="23" ry="6.4" transform="rotate(-16 60 36)" stroke-width=".7" opacity=".6"/>'+
-    artDot(60,36,13,1,ART_GROUND)+artDot(60,36,13,.16)+artRing(60,36,13,1.3)+
-    artLine('M49 31C55 33 66 33 71 31',.6,.5)+artLine('M48 41C55 39 66 39 72 41',.55,.45)
+  // Three bodies and no ring, since that is what the glass showed and what the chart draws.
+  saturn:(()=>{
+    let bars='';
+    for(const side of [-1,1])for(let i=0;i<4;i++){
+      const y=28+i*5.4,w=9*Math.sqrt(Math.max(0,1-((y-36)/14)*((y-36)/14)));
+      bars+='M'+artRound(60+side*(30-w))+' '+y+'H'+artRound(60+side*(30+w));
+    }
+    return '<ellipse cx="30" cy="36" rx="10.5" ry="14" transform="rotate(-7 30 36)" stroke-width="1.1" fill="currentColor" fill-opacity=".18"/>'+
+      '<ellipse cx="90" cy="36" rx="10.5" ry="14" transform="rotate(7 90 36)" stroke-width="1.1" fill="currentColor" fill-opacity=".18"/>'+
+      artLine(bars,.5,.5)+artDot(60,36,12,.2)+artRing(60,36,12,1.3)+
+      artLine('M50 31C55 33 66 33 70 31M50 41C55 39 66 39 70 41',.55,.5);
+  })(),
+  crossstaff:(()=>{
+    const Y=36,X0=112,X1=14,CROSS=54,ARM=25;
+    let ticks='';
+    for(let i=1;i<12;i++){const x=lerp(X0,X1,i/12),t=i%3?1:1.8;ticks+='M'+artRound(x)+' '+artRound(Y-3.2*t)+'V'+artRound(Y+3.2*t);}
+    return artLine('M'+X0+' '+Y+'H'+X1,1.4)+artLine(ticks,.5,.6)+
+      artFill('M'+(CROSS-2.6)+' '+(Y-ARM)+'H'+(CROSS+2.6)+'V'+(Y+ARM)+'H'+(CROSS-2.6)+'Z',.14)+
+      artLine('M'+CROSS+' '+(Y-ARM)+'V'+(Y+ARM),1.4)+
+      artLine('M'+(CROSS-2)+' '+(Y-ARM)+'H'+(CROSS+10)+'M'+(CROSS-2)+' '+(Y+ARM)+'H'+(CROSS+10),1)+
+      artLine('M'+X1+' '+(Y-8)+'V'+(Y+8)+'M'+(X1-4)+' '+(Y-5)+'V'+(Y+5),.9)+
+      artLine('M'+CROSS+' '+(Y-ARM)+'L'+(X1-4)+' '+Y+'M'+CROSS+' '+(Y+ARM)+'L'+(X1-4)+' '+Y,.5,.45);
+  })(),
+  burin:(()=>{
+    let turning='';
+    for(let i=0;i<3;i++){const x=35-i*5.8;turning+='M'+x+' 25.4Q'+(x-2.5)+' 36 '+(x+.9)+' 46';}
+    return artFill('M110 40L40 32.4L40 46Z',.16)+artLine('M110 40L40 32.4L40 46Z',.9)+
+      artFill('M106 39.2L44 33.9L44 37.7Z',.55)+
+      artFill('M40 32.4C34.9 23.4 19.8 24.1 17.6 36.5C17 43.4 20.4 46 24.6 46L40 46Z',.22)+
+      artLine('M40 32.4C34.9 23.4 19.8 24.1 17.6 36.5C17 43.4 20.4 46 24.6 46L40 46Z',1)+
+      artLine(turning,.5,.5)+artLine('M110 40L100 34.6',.8,.9)+
+      artLine('M110 38.6Q104.7 29 90.8 29.6Q80 30.3 83 36.1',.7,.8);
+  })(),
+  moon:(()=>{
+    const CX=64,CY=36,R=30,K=Math.cos(Math.PI*.4);
+    let term='',dark='';
+    for(let i=1;i<=14;i++){
+      const th=Math.PI/2-i/14*Math.PI,jag=(((i*7)%5)-2)*1.4+((i&1)?1:-.9);
+      term+='L'+artRound(CX+Math.cos(th)*(K*R+jag))+' '+artRound(CY+Math.sin(th)*R);
+    }
+    for(let i=0;i<4;i++){const a0=Math.PI/2+i*Math.PI/4+.16;dark+=artArc(CX,CY,R,a0,a0+Math.PI/4-.32);}
+    const limb=artArc(CX,CY,R,-Math.PI/2,Math.PI/2);
+    let spots='';
+    for(const [along,y,r] of [[.34,-13,5.4],[.5,11,7.4],[.72,1.4,3.9]]){
+      const edge=Math.sqrt(Math.max(.04,1-(y/R)*(y/R))),x=CX+lerp(K*R,R,along)*edge;
+      spots+=artDot(x,CY+y,r,.26)+artRing(x,CY+y,r,.5,.6);
+    }
+    return artFill(limb+term+'Z',.22)+artLine(limb,1.2)+artLine('M'+CX+' '+(CY+R)+term,.75,.85)+
+      artLine(dark,.6,.45)+spots;
+  })()
 };
 // What the burin leaves at a planet as the traveller is taken (see CAPTURE_MARKS in src/effects.js).
 const CAPTURE_ART={

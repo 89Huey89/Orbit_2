@@ -240,6 +240,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['telescope',{perfects:99},false],['telescope',{perfects:100},true],
       ['moth',{perfects:499},false],['moth',{perfects:500},true],
       ['saturn',{perfects:1499},false],['saturn',{perfects:1500},true],
+      ['crossstaff',{constellations:{'THE LYRE':13,'THE SAIL':11}},false],['crossstaff',{constellations:{'THE LYRE':13,'THE SAIL':12}},true],
+      ['burin',{captures:2499},false],['burin',{captures:2500},true],
+      ['moon',{bestRow:49},false],['moon',{bestRow:50},true],
       ['sanguine',{maxSpeedSlings:9},false],['sanguine',{maxSpeedSlings:10},true],
       ['silverpoint',{maxSpeedSlings:49},false],['silverpoint',{maxSpeedSlings:50},true],
       ['goldleaf',{maxSpeedSlings:199},false],['goldleaf',{maxSpeedSlings:200},true],
@@ -280,7 +283,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,46,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,49,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
     const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestChapter:4,deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
