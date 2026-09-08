@@ -345,15 +345,22 @@ function celestialPlate(index){
   }
   celestialPlates.set(key,c);return c;
 }
-function celestialPlacement(index){
+// How far the scenery rides the ascent relative to the chart itself: the two dust layers behind it
+// (drawRegion) are nearer and carry their own faster factors, this is the furthest thing on the
+// plate, so it is barely moved by the same climb that scrolls a node clean off the sheet.
+const CELESTIAL_PARALLAX=.05;
+function celestialPlacement(){
   const fit=Math.max(W/720,H/1200)*1.07;
   const x=(W-720*fit)/2,y=(H-1200*fit)/2;
-  const drift=reducedMotion?0:Math.sin(-world.cameraY*.0005+index*.9)*10*fit;
-  return {x,y:y+drift,fit};
+  // Tied to cameraY exactly as sy() is, not to elapsed time, so the scenery is engraved on the sheet
+  // rather than pasted on the glass: it holds still with the world under pause and reduced motion,
+  // and only ever moves because the chart itself has scrolled.
+  const parallax=reducedMotion?0:-world.cameraY*scale*CELESTIAL_PARALLAX;
+  return {x,y:y+parallax,fit};
 }
 function drawCelestialScene(index,weight){
   if(weight<.001)return;
-  const plate=celestialPlate(index),place=celestialPlacement(index);
+  const plate=celestialPlate(index),place=celestialPlacement();
   // On paper the plate sits back as a distant engraving beneath the gameplay marks, so it is blitted
   // at a reduced alpha; night is unaffected.
   // The plate is laid larger than the sheet so it fills it at any aspect; on a phone that is half a
@@ -439,7 +446,7 @@ function drawChannelVeil(){
 }
 function ambientPoint(e,progress){
   if(e.kind==='comet')return {x:lerp(e.x,e.endX,progress)*W,y:lerp(e.y,e.endY,progress)*H};
-  const place=celestialPlacement(e.chapter);
+  const place=celestialPlacement();
   return {x:place.x+e.x*place.fit,y:place.y+e.y*place.fit};
 }
 function ambientClearance(point,tail,aim){
