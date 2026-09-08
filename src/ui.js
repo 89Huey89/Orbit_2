@@ -22,7 +22,7 @@ defineVoice('atlas',{
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED'},
-  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
+  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseNote:'Tap the sheet to continue',pauseResume:'RESUME',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
@@ -160,7 +160,7 @@ function newWorld(){
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
-  syncLastReviewButton();
+  syncLastReviewButton();syncPauseControl();
 }
 function syncEraChrome(){
   // Everything here is a plate's own name for a fixture the atlas also has; the fixture stays where
@@ -179,6 +179,10 @@ function syncEraChrome(){
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
   const endTitle=$('end-title');if(endTitle)endTitle.textContent=chrome.endTitle;
   const pauseTitle=$('pause-title');if(pauseTitle)pauseTitle.textContent=chrome.pauseTitle;
+  const pauseNote=$('pause-note');if(pauseNote)pauseNote.textContent=chrome.pauseNote;
+  const pauseResume=$('pause-resume');if(pauseResume)pauseResume.textContent=chrome.pauseResume;
+  const pauseLeave=$('pause-leave');if(pauseLeave)pauseLeave.textContent=chrome.pauseLeave;
+  syncPauseControl();
   game.setAttribute('aria-label',chrome.gameLabel);
   canvas.setAttribute('aria-label',chrome.canvasLabel);
 }
@@ -527,7 +531,7 @@ function handleInput(){
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing'){if(world.release()&&replayLog)replayLog.releases.push(world.time);}
   else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
-  else if(world.state==='paused'){world.state='playing';accumulator=0;renderDue=0;paceIntervals.length=0;frameTime=performance.now();$('pause').classList.add('hidden');}
+  else if(world.state==='paused')resume();
 }
 game.addEventListener('pointerdown',e=>{
   if(e.target.closest('button')||!e.isPrimary||e.button!==0)return;
@@ -539,10 +543,39 @@ for(const type of ['touchstart','touchend'])game.addEventListener(type,()=>audio
 window.addEventListener('keydown',e=>{
   if(e.code==='Escape'&&(catalogueOpen||ephemerisOpen)){e.preventDefault();if(catalogueOpen)closeCatalogue();else closeEphemeris();return;}
   if(catalogueOpen||ephemerisOpen)return;
+  // With no leaf open over the plate, Escape is the desk's own halt: it sets a run down and takes it up.
+  if(e.code==='Escape'&&!reviewing&&world&&(world.state==='playing'||world.state==='paused')){e.preventDefault();if(world.state==='playing')pause();else resume();return;}
   if((e.code==='Space'||e.code==='Enter')&&!e.repeat&&!e.target.closest('button')){e.preventDefault();handleInput();}
 });
 game.addEventListener('contextmenu',e=>e.preventDefault());
-function pause(){if(world&&world.state==='playing'){world.state='paused';$('pause').classList.remove('hidden');accumulator=0;}}
+// One control does both, so it is a switch and says so — the plate's own name for the halt, and beside
+// it whether the run is being held down, exactly as the sound and daily switches are read.
+function syncPauseControl(){
+  const control=$('pause-open');if(!control)return;
+  control.setAttribute('aria-label',plateWords().chrome.pauseLabel);
+  control.setAttribute('aria-pressed',String(!!(world&&world.state==='paused')));
+}
+// A run is suspended by the footer's own control, by Escape, or by the page being switched away from,
+// and it is taken up again by that same control, by a tap anywhere on the sheet exactly as it always
+// was, or from the leaf the suspended sheet now carries: the plate's word for the halt, and beneath it
+// the two things that can be done with a run held in hand.
+function pause(){if(world&&world.state==='playing'){world.state='paused';$('pause').classList.remove('hidden');accumulator=0;$('announcement').textContent=plateWords().chrome.pauseTitle;syncPauseControl();}}
+function resume(){
+  if(!world||world.state!=='paused')return;
+  // The presentation clock is picked up from now rather than from whenever the run was set down, so a
+  // sheet left standing for a minute does not come back to a minute's worth of frames owed.
+  world.state='playing';accumulator=0;renderDue=0;paceIntervals.length=0;frameTime=performance.now();$('pause').classList.add('hidden');syncPauseControl();
+}
+// Leaving a suspended run is not a death: no colophon is pulled and nothing is scored, the plate in hand
+// is simply set aside unfinished and the frontispiece comes back up with a fresh chart dealt behind it.
+// What the run did is still folded into the ledger, exactly as it is when the page is switched away from,
+// so orbits already flown are never lost with the sheet; anything earned waits for the next colophon to
+// name it. A preview era keeps its own record and so writes nothing here, as it writes nothing anywhere.
+function leaveRun(){
+  if(!world||world.state!=='paused')return;
+  if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+  newWorld();resetToFrontispiece();render(0);
+}
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){
     pause();
@@ -553,6 +586,13 @@ document.addEventListener('visibilitychange',()=>{
   }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
 });
 window.addEventListener('blur',pause);
+$('pause-open').addEventListener('click',()=>{
+  if(!world)return;
+  if(world.state==='playing'){pause();if(audio.enabled)audio.brush(1200,.12);}
+  else if(world.state==='paused'){resume();if(audio.enabled)audio.brush(1600,.1);}
+});
+$('pause-resume').addEventListener('click',()=>{if(world&&world.state==='paused'){resume();if(audio.enabled)audio.brush(1600,.1);}});
+$('pause-leave').addEventListener('click',()=>{if(world&&world.state==='paused'){leaveRun();if(audio.enabled)audio.tone(392,.35,0,.15);}});
 $('sound').addEventListener('click',()=>{audio.toggle();storage.set('orbit.sound.v1',audio.enabled?'on':'off');syncSound();if(audio.enabled)audio.tone(440,.25,0,.2);});
 $('plate').addEventListener('click',()=>{setPlate(onPaper()?'night':'paper');if(audio.enabled)audio.brush(1500,.12);});
 $('catalogue-open').addEventListener('click',()=>{if(catalogueOpen)closeCatalogue();else openCatalogue();});

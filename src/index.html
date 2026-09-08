@@ -82,6 +82,10 @@
     .utility.muted .mute-mark{display:block}
     .utility.muted .sound-wave{display:none}
     .footer-tools{display:flex;align-items:center}
+    /* The one control that only exists while a run does, and it stands exactly where the catalogue's
+       own button stands when no run is in progress, so the row of marks keeps its count either way. */
+    #pause-open{display:none}
+    #game.playing #pause-open{display:grid}
     #plate .plate-paper{display:none}
     #game[data-plate="paper"] #plate .plate-paper{display:block}
     #game[data-plate="paper"] #plate .plate-night{display:none}
@@ -114,6 +118,7 @@
     #reflector{color:var(--reflector)}
     #pause{background:rgba(var(--veil),.65);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
     #pause strong{font-style:italic;font-family:var(--face-text);font-size:40px;font-weight:400;letter-spacing:.04em}
+    .pause-menu{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:5px}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -207,6 +212,7 @@
       #end #end-tip{font-size:10px}
       #pause strong{font-size:28px}
       #pause .title-rule{margin-top:6px}
+      #pause .pause-menu{gap:6px;margin-top:1px}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
     @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}.end-stats{margin:9px 0 15px;padding-top:10px}}
@@ -548,7 +554,15 @@
     </div>
   </section>
   <button id="review-close" class="diff-btn" type="button">CLOSE</button>
-  <section id="pause" class="screen hidden" aria-label="Paused"><strong id="pause-title">Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
+  <section id="pause" class="screen hidden" aria-label="Paused">
+    <strong id="pause-title">Suspended.</strong>
+    <div class="title-rule"><span></span></div>
+    <span class="instruction" id="pause-note">Tap the sheet to continue</span>
+    <div class="pause-menu">
+      <button id="pause-resume" class="diff-btn" type="button">RESUME</button>
+      <button id="pause-leave" class="diff-btn" type="button">RETURN TO THE FRONTISPIECE</button>
+    </div>
+  </section>
   <section id="catalogue" class="screen hidden" aria-label="Catalogue" aria-hidden="true">
     <div class="catalogue-leaf">
       <div class="catalogue-head">
@@ -587,6 +601,12 @@
       </svg>
     </button>
     <span class="footer-tools">
+    <button id="pause-open" class="utility" aria-label="Pause the run" aria-pressed="false" title="Pause">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 5h3.4v14H7.2zM13.4 5h3.4v14h-3.4z"/>
+        <path d="M7.2 5h3.4v14H7.2zM13.4 5h3.4v14h-3.4z" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
+      </svg>
+    </button>
     <button id="ceiling-exit" class="utility era-exit" aria-label="Return to the atlas" title="Return to the atlas">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M10 5 3 12l7 7M3 12h17"/>

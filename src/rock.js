@@ -923,7 +923,9 @@ defineVoice('rock',{
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
-  chrome:{bestLabel:'Deepest'}
+  // Only the two words that name something era I does not have: this wall carries no frontispiece to
+  // return to, and the torch is what a halt here is measured in.
+  chrome:{bestLabel:'Deepest',pauseNote:'Tap the wall to continue',pauseLeave:'LEAVE THE WALL'}
 });
 
 // ---------- Invalidation ----------
