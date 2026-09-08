@@ -268,6 +268,7 @@ function punchedMark(g,core,rng,alpha,progress,seed){
   g.fillStyle=`rgba(${ink.reveal.blot},${.25*alpha})`;g.fill();
   g.strokeStyle=`rgba(${ink.reveal.washRim},${.72*alpha})`;g.lineWidth=.65;g.stroke();
   g.restore();
+  g.restore();
 }
 // ---------- Planets: the stages a colourist works in ----------
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
