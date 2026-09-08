@@ -8,6 +8,9 @@ definePlate('dark',{
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
     playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',playerReflector:'196,172,224',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
+    // What the plate's own ink actually is, as against what colour it is: the atlas is written with a
+    // cut quill, so its line swells and thins with the turn of the flight. See MATERIALS below.
+    trailMedium:'quill',
     // The route already flown, long dry on the sheet.
     pathInk:'128,134,116',
     // A fresh stroke is bright ink; as it ages it sinks back to a dimmer, drier tone.
@@ -25,6 +28,7 @@ definePlate('dark',{
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
     playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',playerReflector:'92,58,120',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',
+    trailMedium:'quill',
     pathInk:'104,74,42',
     // Wet iron-gall is glossy blue-black; it dries to a matte sepia within a second.
     trailWet:[24,26,46],trailDry:[122,88,52],blotWet:[20,22,42],blotDry:[130,98,58],
@@ -46,6 +50,7 @@ definePlate('dark',{
   // by src/rock.js, and never reaches these tokens at all.
   rock:{
     trailWash:'169,112,31',trailStroke:'44,38,34',trailEdge:'156,59,34',trailBleed:'201,150,46',
+    trailMedium:'crayon',
     pathInk:'156,59,34',
     trailWet:[156,59,34],trailDry:[169,112,31],blotWet:[156,59,34],blotDry:[201,150,46],
     burstGold:'201,150,46',burstRed:'156,59,34',burstBlue:'44,38,34',burstViolet:'33,31,30',ringSimple:'156,59,34',
@@ -62,7 +67,7 @@ definePlate('inks',{
   night:{
     sanguine:{wet:[214,116,88],dry:[150,86,68],wash:'196,110,84',edge:'170,96,74',bleed:'206,120,92',blotWet:[214,116,88],blotDry:[152,90,70],path:'150,86,68'},
     silverpoint:{wet:[226,230,236],dry:[132,138,146],wash:'170,176,184',edge:'150,158,168',bleed:'196,202,210',blotWet:[214,220,228],blotDry:[134,140,148],shimmer:'244,248,255',path:'126,132,140'},
-    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',path:'164,128,64'},
+    goldleaf:{wet:[252,222,150],dry:[178,140,70],wash:'214,178,104',edge:'150,116,54',bleed:'232,198,126',blotWet:[250,220,148],blotDry:[176,138,68],keyline:'26,20,8',burnish:'255,240,196',path:'164,128,64'},
     // A reckless line's ink: soot-black bistre, warm rather than the iron gall's cool near-black.
     bistre:{wet:[232,208,168],dry:[138,112,82],wash:'210,182,140',edge:'176,148,108',bleed:'218,192,150',blotWet:[230,206,166],blotDry:[140,114,84],path:'150,122,88'},
     // Orpiment: the old illuminators' bright, faintly dangerous yellow-orange mineral.
@@ -78,7 +83,7 @@ definePlate('inks',{
   paper:{
     sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
     silverpoint:{wet:[96,100,108],dry:[142,144,148],wash:'126,130,136',edge:'112,116,122',bleed:'134,138,144',blotWet:[94,98,106],blotDry:[144,146,150],shimmer:'250,250,252',path:'118,122,128'},
-    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',path:'160,120,48'},
+    goldleaf:{wet:[146,104,30],dry:[184,142,64],wash:'168,124,44',edge:'132,96,32',bleed:'186,146,70',blotWet:[144,102,28],blotDry:[186,144,66],keyline:'40,28,10',burnish:'236,206,132',path:'160,120,48'},
     bistre:{wet:[58,44,30],dry:[146,112,72],wash:'96,74,50',edge:'80,60,40',bleed:'104,80,54',blotWet:[56,42,28],blotDry:[148,114,74],path:'112,86,58'},
     orpiment:{wet:[150,88,20],dry:[196,140,58],wash:'176,112,36',edge:'140,88,30',bleed:'198,142,60',blotWet:[148,86,18],blotDry:[198,142,60],path:'168,106,40'},
     umber:{wet:[68,52,30],dry:[138,108,66],wash:'92,70,42',edge:'76,58,34',bleed:'100,76,46',blotWet:[66,50,28],blotDry:[140,110,68],path:'108,82,50'},
@@ -95,6 +100,64 @@ function trailInk(){
   return {wet:ink.dark.trailWet,dry:ink.dark.trailDry,wash:ink.dark.trailWash,edge:ink.dark.trailEdge,
     bleed:ink.dark.trailBleed,blotWet:ink.dark.blotWet,blotDry:ink.dark.blotDry};
 }
+// ---------- What each ink is made of ----------
+// Colour is registered per plate above, because a plate may grind its own; substance is not, because
+// chalk is chalk on either sheet. What the catalogue actually holds is eleven different materials, and
+// until this table they were eleven colours of one stroke. Each is described by how it behaves under
+// the hand rather than by what it looks like, and drawTrail reads the same nine numbers off all of
+// them: `nib`, how much a cut edge swells the stroke across itself and thins it to a hairline along
+// itself; `swell`, how much speed alone broadens it; `body`, the weight it lays overall; `tooth`, how
+// far it breaks on the grain of the sheet; `feather`, how far it wicks into the fibres; `settle`, how
+// much of it is mineral grain that drops into the hollows instead of dissolving; `halo` and `bloom`,
+// the strength and breadth of the damp wash — or the dust — around the line; and `wet`, whether it is
+// laid liquid at all, and so whether it dries after it is laid.
+const MATERIALS={
+  // A cut quill charged with iron gall: the broadest range of any of them, a dye rather than a
+  // pigment so it stains the sheet evenly, and notorious for feathering along the fibres.
+  quill:{nib:1,swell:1,body:1,tooth:.06,feather:1,settle:0,halo:1,bloom:1,wet:1},
+  // Ochre and charcoal rubbed on rock: no wet stage, no nib, and heavy break-up on a coarse wall.
+  crayon:{nib:0,swell:.5,body:1.1,tooth:.85,feather:0,settle:.5,halo:1.3,bloom:1.3,wet:0},
+  // Red chalk in a holder. It rides the tooth of the paper, printing on the peaks and skipping the
+  // hollows, and what it leaves is dust: soft-edged, granular, already the colour it will stay, and
+  // broken rather than broad — a stick that is pressed harder does not draw a wider line, it crumbles.
+  sanguine:{nib:0,swell:.55,body:1,tooth:1,feather:0,settle:.5,halo:1.15,bloom:1.25,wet:0},
+  // A silver stylus on prepared ground. It cannot be pressed darker and it cannot be made broader —
+  // one faint, even hairline whatever the hand does, which is the whole character of the medium.
+  silverpoint:{nib:0,swell:.12,body:.5,tooth:.14,feather:0,settle:0,halo:.3,bloom:.7,wet:0},
+  // Leaf is not a stroke at all. It is laid in flakes onto a mordant line and burnished, so where a
+  // flake failed to take the dark line beneath shows through, and a facet catches the light.
+  goldleaf:{nib:.25,swell:.5,body:1.1,tooth:0,feather:0,settle:0,halo:0,bloom:1,wet:0,leaf:1},
+  // The five earth and mineral pigments, ground in gum and laid with a brush: a softer edge than a
+  // nib's, a damp wash around the line, and visible grain where the heavier ones settled.
+  umber:{nib:.55,swell:1,body:1.05,tooth:.2,feather:.5,settle:.7,halo:1.25,bloom:1.15,wet:1},
+  // Woad is a dye, not a ground mineral: nothing in it settles, and it wicks as far as iron gall.
+  woad:{nib:.6,swell:1.05,body:1,tooth:.12,feather:1,settle:0,halo:1.25,bloom:1.15,wet:1},
+  vermilion:{nib:.5,swell:.95,body:1.15,tooth:.22,feather:.28,settle:.85,halo:1.2,bloom:1.12,wet:1},
+  // Malachite is the coarsest grind in the catalogue — ground fine it loses its green — so it is the
+  // most granular thing the pen can be charged with.
+  malachite:{nib:.45,swell:.95,body:1.1,tooth:.34,feather:.22,settle:1,halo:1.2,bloom:1.12,wet:1},
+  ultramarine:{nib:.45,swell:.95,body:1.1,tooth:.3,feather:.26,settle:.9,halo:1.2,bloom:1.12,wet:1},
+  // Soot in gum: a transparent wash rather than a body colour, so it lays light and wicks freely.
+  bistre:{nib:.7,swell:1.15,body:.95,tooth:.1,feather:.9,settle:.12,halo:1.35,bloom:1.2,wet:1},
+  orpiment:{nib:.5,swell:.9,body:1.1,tooth:.38,feather:.2,settle:.8,halo:1.2,bloom:1.12,wet:1}
+};
+// A catalogue ink brings its own substance; the plate's own ink is whatever medium the plate writes
+// in, which is the one thing about the trail an era gets to name for itself.
+function trailMaterial(){
+  const chosen=cosmetic('trail');
+  if(ink.inks[chosen])return MATERIALS[chosen]||MATERIALS.quill;
+  return MATERIALS[ink.dark.trailMedium]||MATERIALS.quill;
+}
+// The scribe's hand: the nib is held at a constant angle to the sheet, so which way the flight happens
+// to be going decides whether the stroke is the full width of the cut edge or the hairline along it.
+const NIB_COS=Math.cos(-.7),NIB_SIN=Math.sin(-.7);
+// The tooth of the sheet, read where the mark actually fell rather than at some point along the
+// stroke, so a dry medium's grain belongs to the paper and stays on it instead of crawling under the
+// line as the camera climbs.
+function sheetTooth(x,y){const s=Math.sin(x*12.9898+y*78.233)*43758.5453;return s-Math.floor(s);}
+// Where the settled grain of a granulating pigment is gathered before it is filled, as flat triples of
+// x, y and radius. Held here and emptied per frame rather than allocated inside the stroke.
+const grains=[];
 // ---------- The route already flown ----------
 // The wet trail is a hundred-odd samples that fade in a second; the dried path is the whole route the
 // run has taken, kept in world coordinates and printed under the wet ink every frame. It is bounded
@@ -146,16 +209,28 @@ function pruneInkPath(){
 function drawInkPath(){
   const inkPath=world.inkPath;
   if(inkPath.length<2)return;
-  const pen=trailInk(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
+  const pen=trailInk(),m=trailMaterial(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
+  // The route is the same substance the wet trail was, so it is laid at the same weight and with the
+  // same wash around it: a stylus leaves a fine faint rule where chalk leaves a broad dusty one. What a
+  // medium that breaks on the tooth cannot leave is a crisp line, so the burin passes give way to the
+  // wash by exactly as much as the sheet's grain took out of it.
+  const crisp=1-m.tooth*.5;
   const band=p=>Math.min(2,Math.floor(clamp((p.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1)*3));
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.strokeStyle=`rgba(${rgb},${paper?.11:.08})`;ctx.lineWidth=1.9*scale;
+  ctx.strokeStyle=`rgba(${rgb},${(paper?.11:.08)*m.halo})`;ctx.lineWidth=1.9*scale*m.bloom*m.body;
   ctx.beginPath();
   ctx.moveTo(sx(inkPath[0].x),sy(inkPath[0].y));
   for(let i=1;i<inkPath.length;i++)ctx.lineTo(sx(inkPath[i].x),sy(inkPath[i].y));
   ctx.stroke();
+  // A gilder cuts the line before laying the leaf into it, and the route keeps that cut as much as the
+  // wet trail does, so a gilded run reads as gold on a drawn line rather than as a gold line. It is the
+  // wash's own path stroked a second time rather than a second path, since three thousand points are
+  // expensive to walk and free to stroke again.
+  if(pen.keyline){
+    ctx.strokeStyle=`rgba(${pen.keyline},${paper?.16:.12})`;ctx.lineWidth=.55*scale*m.body;ctx.stroke();
+  }
   for(let weight=0;weight<3;weight++){
-    ctx.strokeStyle=`rgba(${rgb},${(paper?.4:.3)+weight*.05})`;ctx.lineWidth=(.34+weight*.26)*scale;
+    ctx.strokeStyle=`rgba(${rgb},${((paper?.4:.3)+weight*.05)*crisp})`;ctx.lineWidth=(.34+weight*.26)*scale*m.body;
     ctx.beginPath();
     for(let i=1;i<inkPath.length;i++){
       if(band(inkPath[i])!==weight)continue;
@@ -361,10 +436,17 @@ function drawLandingSurvey(s,t,rgb,gold,base){
 function drawTrail(){
   const trail=world.trail;
   if(trail.length<2)return;
-  const pen=trailInk();
+  const pen=trailInk(),m=trailMaterial();
   // Past the gauge's own copper mark (see updateUI) the nib is starved: the stroke skips beats and
   // loses its weight the nearer the reservoir runs to dry, as a real pen scratches out its last ink.
   const starved=clamp(1-world.inkLevel()/.34,0,1),thin=1-starved*.55;
+  // Only a liquid medium dries, so only a liquid medium is mixed from its wet tone to its dry one as
+  // the segment ages. Chalk, silverpoint and leaf are already the colour they will stay the instant
+  // they touch the sheet, so the settled tone is written out once here rather than mixed seventy-five
+  // times — and it is what the grain of a granulating pigment is filled in as well, since a grain is
+  // exactly what is left of the ink once the water has gone.
+  const settled=pen.dry.join(',');
+  grains.length=0;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   for(let i=1;i<trail.length;i++){
     const a=trail[i-1],b=trail[i],age=world.time-b.time;
@@ -374,27 +456,77 @@ function drawTrail(){
       if(skip<starved*.6)continue;
     }
     const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<.01)continue;
-    const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),weight=t*(1+boost*.7);
-    // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. The stroke is laid wet and
-    // dries as the segment ages, from glossy blue-black to matte sepia on paper, bright to dim ink at night.
-    const dried=mixRgb(pen.wet,pen.dry,1-t*t);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.wash},${t*t*.16})`,(1+3.5*weight)*scale*thin);
+    // A dry stick prints on the peaks of the sheet and skips the hollows. What breaks is the core of
+    // the stroke, not the dust shed around it — a chalk line is continuous and granular at once, where
+    // dropping the whole segment would only make a dashed line. A liquid ink floods the tooth and
+    // barely notices it.
+    let grain=1,bare=false;
+    if(m.tooth>0){
+      const bite=sheetTooth(b.x,b.y);
+      bare=bite<m.tooth*.22;
+      grain=1-m.tooth*.5*(1-bite);
+    }
+    const nx=-dy/d,ny=dx/d,boost=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
+    const weight=t*(1+boost*.7*m.swell);
+    // The cut of the nib: full width across its edge, a hairline along it, so the line swells and thins
+    // as the flight turns and an orbit is written the way a letter is. A stick or a stylus has no edge
+    // to turn and holds one width whichever way the flight goes.
+    const cut=m.nib>0?Math.abs((dx*NIB_SIN-dy*NIB_COS)/d):1;
+    const gauge=(1+m.nib*(cut-.62))*m.body*scale*thin;
+    // Whatever feels the grain of the sheet also wanders on it: a chalk line is never straight, where a
+    // stylus on prepared ground is. Read off the position, so the wander is the sheet's and not the
+    // hand's, and shared by the ends the segments have in common.
+    const drift=m.tooth*.9,ax=drift?(sheetTooth(a.x*.37,a.y*.37)-.5)*drift:0,bx=drift?(sheetTooth(b.x*.37,b.y*.37)-.5)*drift:0;
+    const x1=sx(a.x+nx*ax),y1=sy(a.y+ny*ax),x2=sx(b.x+nx*bx),y2=sy(b.y+ny*bx);
+    // A tapered wash, a fine pen stroke and a dry-brush edge follow real motion. A wet stroke is laid
+    // glossy and dries as the segment ages, from blue-black to matte sepia on paper, bright to dim ink
+    // at night; a dry one arrives already settled.
+    const dried=m.wet?mixRgb(pen.wet,pen.dry,1-t*t):settled;
+    if(m.halo>0)line(x1,y1,x2,y2,`rgba(${pen.wash},${t*t*.16*m.halo*grain})`,(1+3.5*weight)*gauge*m.bloom);
     // Gold leaf is laid over a dark keyline, the way a gilder cuts the line first and lays the leaf into it.
-    if(pen.keyline)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*scale*thin);
-    line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${dried},${t*t*.77})`,(.18+1.2*weight)*scale*thin);
+    if(pen.keyline)line(x1,y1,x2,y2,`rgba(${pen.keyline},${t*t*.5})`,(.5+1.7*weight)*gauge);
+    // Leaf takes or it does not. Where a flake failed, the mordant line stands bare and the run of gold
+    // breaks the way beaten leaf actually breaks; where one took cleanly, the burnisher left a facet.
+    const flake=m.leaf?sheetTooth(b.x*1.7,b.y*1.7):1;
+    if(flake>.1&&!bare)line(x1,y1,x2,y2,`rgba(${dried},${t*t*.77*grain})`,(.18+1.2*weight)*gauge);
+    if(pen.burnish&&flake>.94&&!reducedMotion)line(x1,y1,x2,y2,`rgba(${pen.burnish},${t*t*.72})`,(.15+.5*weight)*gauge);
     if(!reducedMotion){
-      const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
-      line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36})`,.4*scale*thin);
+      if(!bare){
+        const offset=(.55+Math.sin(b.time*19)*.3)*(1-t)+.6;
+        line(sx(a.x+nx*offset),sy(a.y+ny*offset),sx(b.x+nx*offset),sy(b.y+ny*offset),`rgba(${pen.edge},${t*.36*grain})`,.4*scale*thin);
+      }
       // Silverpoint catches the light along the stroke: a faint shimmer that travels segment by segment.
       if(pen.shimmer){
         const glint=Math.max(0,Math.sin(world.time*3.1-i*.35));
-        if(glint>.55)line(sx(a.x),sy(a.y),sx(b.x),sy(b.y),`rgba(${pen.shimmer},${t*t*(glint-.55)*.9})`,(.15+.5*weight)*scale);
+        if(glint>.55)line(x1,y1,x2,y2,`rgba(${pen.shimmer},${t*t*(glint-.55)*.9})`,(.15+.5*weight)*scale);
       }
-      if(b.air&&i%6===0&&t<.88){
-        const reach=(1-t)*(1.5+boost*2.5),sign=i%12===0?1:-1;
-        line(sx(b.x+nx*sign),sy(b.y+ny*sign),sx(b.x-dx/d*reach+nx*reach*sign),sy(b.y-dy/d*reach+ny*reach*sign),`rgba(${pen.bleed},${t*.24})`,.4*scale);
+      // Ground mineral does not dissolve: it drops into the hollows of the sheet and stays there as
+      // visible grain. Malachite, ground coarse to keep its green, is the worst of them; a dye like
+      // woad or iron gall stains evenly and drops nothing at all. The grains are collected rather than
+      // filled where they fall, because what is left once the water has gone is the settled tone
+      // whatever age the stroke is — so the whole scattering is one colour and one fill.
+      if(m.settle>0&&t>.3){
+        const drop=sheetTooth(b.y,b.x);
+        if(drop<m.settle*.22){
+          // One hash decides whether a grain fell here; its own fraction, spread back out over the
+          // whole range, decides how big it is and where across the stroke it came to rest. The whole
+          // scattering shares one alpha, so a grain thins away with the stroke by shrinking rather than
+          // by fading — which is also the truer picture of it sinking into the sheet.
+          const size=(drop*37)%1,across=((drop*61)%1-.5)*(1+2.4*weight)*gauge;
+          grains.push(x2+nx*across,y2+ny*across,(.3+size*.85)*scale*t);
+        }
+      }
+      if(m.feather>0&&b.air&&i%6===0&&t<.88){
+        const reach=(1-t)*(1.5+boost*2.5)*m.feather,sign=i%12===0?1:-1;
+        line(sx(b.x+nx*sign),sy(b.y+ny*sign),sx(b.x-dx/d*reach+nx*reach*sign),sy(b.y-dy/d*reach+ny*reach*sign),`rgba(${pen.bleed},${t*.24*m.feather})`,.4*scale);
       }
     }
+  }
+  if(grains.length){
+    ctx.fillStyle=`rgba(${settled},${.5*m.settle})`;
+    ctx.beginPath();
+    for(let i=0;i<grains.length;i+=3){ctx.moveTo(grains[i]+grains[i+2],grains[i+1]);ctx.arc(grains[i],grains[i+1],grains[i+2],0,TAU);}
+    ctx.fill();
   }
   ctx.restore();
 }
