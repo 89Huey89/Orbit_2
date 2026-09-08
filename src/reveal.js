@@ -277,17 +277,21 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
   if(!pen||pen.done){drawPlanet(art,r,time,impression);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
-  // (0) A body no orbit has ever taken is a light and nothing else: the phenomenon as it is seen from
-  // across the sheet, carrying a position and a magnitude and no shape whatever. Taking the orbit is what
-  // turns the light into a body, and the disc is laid in then — off true at the rim, grained and dirty,
-  // because a first sight of a thing is never a clean drawing of it. It starves away as the observation
-  // fills in behind it, so the specimen displaces the first sight instead of being laid over it.
+  // (0) A body no orbit has ever taken is still only a phenomenon. Night keeps that as a light; paper
+  // gives it a very faint pressure impression so the material grammar is visible without revealing its
+  // identity. Taking the orbit makes the pressure mark darker and more complete, then the mark dries away
+  // as the specimen fills in behind it.
   if(pen.taken<1&&pen.ring>0){
     const lit=(1-pen.taken)*pen.ring;
-    ctx.fillStyle=`rgba(${ink.reveal.bead},${.16*lit})`;
-    ctx.beginPath();ctx.arc(0,0,Math.max(2.4,core*.3),0,TAU);ctx.fill();
-    ctx.fillStyle=`rgba(${ink.reveal.bead},${.92*lit})`;
-    ctx.beginPath();ctx.arc(0,0,Math.max(1.1,core*.12),0,TAU);ctx.fill();
+    if(onPaper()){
+      const rng=seeded((seed^0x7a41c3)>>>0||1);
+      punchedMark(ctx,core,rng,.42*lit,pen.taken,seed^0x19d7);
+    }else{
+      ctx.fillStyle=`rgba(${ink.reveal.bead},${.16*lit})`;
+      ctx.beginPath();ctx.arc(0,0,Math.max(2.4,core*.3),0,TAU);ctx.fill();
+      ctx.fillStyle=`rgba(${ink.reveal.bead},${.92*lit})`;
+      ctx.beginPath();ctx.arc(0,0,Math.max(1.1,core*.12),0,TAU);ctx.fill();
+    }
   }
   const laid=pen.taken*(1-revealSpan(pen.d,.08,.68));
   if(laid>.012){
