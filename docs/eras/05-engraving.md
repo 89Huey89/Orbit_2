@@ -56,15 +56,22 @@ picked out separately below.
 
 Everything on this sheet is built from a burin's own line, never a wash laid down first and drawn
 over. A contour is cut, then hatching darkens a body toward its limb — never a gradient, because a
-graver cannot lay one — then a fine stipple stands in for tone where hatching alone would go muddy,
-and colour, where it appears at all, arrives last and by hand, a wash applied after the plate was
-already pulled and deliberately a shade off the printed line beneath it. Construction geometry —
-the compass-struck circle, the divided arc, the straightedge's own ruled line — is not decoration
-on this sheet; it is the actual method by which a figure was composed before any instrument existed
-that could measure one, the geometer's tools standing in for the astronomer's. The sheet itself is
-present as a material object rather than a neutral background: laid wires and chain lines from the
-mould the paper was formed in, foxing, a plate-mark pressed into the sheet's own edge by the press
-that printed it.
+graver cannot lay one — then a fine stipple stands in for tone where hatching alone would go muddy.
+Colour, where it appears at all, arrives last and by hand: a brush wash applied after the plate was
+already pulled, with uneven pigment, dry gaps, visible bristle-loaded starts and a few strokes that
+wander just beyond the printed contour. It must read as a colourist working on a finished proof, not
+as a second colour plate that missed registration. A perfect landing keeps the wash cleanly inside
+the figure; a hard landing freezes a small offset in that wash; and when all three stars of a
+constellation are documented, one complete colour pass is laid over the figure. Initials, coats of
+arms and garments may carry that colour, while the star signs and the compass-struck coordinate
+grid remain black printed marks. The three figure-hand cosmetics carry three related colourist
+manners as well: mineral, rubricated and dry, each still visibly hand-applied.
+Construction geometry — the compass-struck circle, the divided arc, the straightedge's own ruled
+line — is not decoration on this sheet; it is the actual method by which a figure was composed before
+any instrument existed that could measure one, the geometer's tools standing in for the astronomer's.
+The sheet itself is present as a material object rather than a neutral background: laid wires and
+chain lines from the mould the paper was formed in, foxing, a plate-mark pressed into the sheet's own
+edge by the press that printed it.
 
 ## Palette
 
@@ -75,8 +82,8 @@ that printed it.
 | Gold ink, night ground | `#E2C385` | the burin's line where the night reading is chosen — a printer's gold-on-blue convention, after Cellarius |
 | Iron-gall ink, paper ground | `#3A2A1C` | the burin's line on the sheet itself, browning slightly with age even where it has not yet failed |
 | Copper, night ground | `#CD9F7A` | the plate-mark's own bevel, compass hinges, ruling furniture |
-| Blue-grey mineral wash, night ground | `#94B4B1` | the shield's tinted ring, a hand-applied wash off-register from the printed line under it |
-| Vermilion accent, paper ground | `#A63A28` | a rubricated caption or a single colour-plated body, spent sparingly against the sheet's own brown |
+| Blue-grey mineral wash, night ground | `#94B4B1` | a hand-applied mineral wash over a printed figure, with the occasional rough landing carrying it slightly beyond the line |
+| Vermilion accent, paper ground | `#A63A28` | a rubricated caption or hand-coloured garment, spent sparingly against the sheet's own brown |
 | Reserved sheet, unprinted | the ground colour itself | wherever the plate held no ink at all — a body's own unlit limb, a construction line not yet cut |
 
 ## Lettering and the hand
@@ -98,9 +105,10 @@ default **Hevelius manner** (*More Hevelii*), broken and heavy, mirrored for the
 geometric, less broken, the hand that actually belongs inside this era's own window; and **Bode
 manner** (*More Bodii*), unlocked at twenty-five completions, heavier again and far more shaded than
 either. Each hand answers to one shared table of weights — line weight, how often a contour breaks,
-how jagged its own break is, how dense the hatching, how heavy the stipple — so the same twelve
-constructions can be cut three different ways without three different drawings existing anywhere in
-the code.
+how jagged its own break is, how dense the hatching, how heavy the stipple — and to its paired
+colourist manner: Hevelius's mineral wash, Bayer's denser rubrication, or Bode's dry, patchy brush.
+The same twelve constructions can therefore be cut and coloured three different ways without three
+different drawings existing anywhere in the code.
 
 ## Names
 

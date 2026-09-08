@@ -97,11 +97,13 @@ assert(exact.event.perfect&&Math.abs(exact.event.angle-90)<1e-6,'An exact tangen
 assert(exact.event.square&&exact.event.squareBonus===10&&exact.world.squares===1,'An exact tangent is a square worth ten at the opening pace');
 assert(exact.world.observations.some(o=>o.key==='rightAngle'),'The first square is observed');
 assert(exact.world.score===exact.event.gain+10,'The square bonus is added beside the landing reward');
+assert(exact.event.n.impression?.perfect&&exact.event.n.impression.x===0&&exact.event.n.impression.y===0,'A perfect landing keeps hand-colour inside the engraving');
 assert(!shy.event.square&&Math.abs(shy.event.angle-90)>1.5&&Math.abs(shy.event.angle-90)<15,'A tangent released late joins off the ring and is not a square');
 {
   const events=[],w=new OrbitWorld(32,440,860,(type,e)=>{if(type==='capture')events.push(e);}),destination=w.makeNode(0,-400,54,1,'still');
   w.player.node=null;w.player.x=0;w.player.y=-400+54;w.player.vx=0;w.player.vy=-150;w.player.launch={row:0,sweep:1};w.state='playing';
   assert.equal(w.capture(destination),true);assert.equal(events.length,1);
+  assert(!events[0].n.impression?.perfect&&events[0].n.impression?.quality<1,'A rough landing records a distinct hand-colour impression');
   assert(!events[0].perfect&&!events[0].square&&events[0].angle<10,'A flight straight at the centre reads near zero');
 }
 function curvedFixture(speed=240,drift=false,angle=-.002){

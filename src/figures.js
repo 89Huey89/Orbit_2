@@ -5,11 +5,12 @@
 // Behind the three stars of a fork, draw the figure the route is named for — every entry in the
 // twelve-figure catalogue has its own engraving — as Hevelius or Bayer would cut it: broken ink contours and stipple that are
 // always present once the frame is on the page, fine hatching that fills in as each star is captured,
-// and a last dilute wash once the whole chart is complete. An expired chart fades to hairlines. The
-// figure is baked once per (chart, plate, side, scale) into an offscreen layer and blitted per frame.
+// and hand-colour that arrives in broken passes as the figure is documented. An expired chart fades to
+// hairlines. The figure is baked once per (chart, plate, side, scale) into an offscreen layer and blitted
+// per frame.
 definePlate('figures',{
-  night:{contour:'222,190,127',hatch:'222,190,127',wash:'222,190,127'},
-  paper:{contour:'150,100,32',hatch:'58,42,28',wash:'58,42,28'}
+  night:{contour:'222,190,127',hatch:'222,190,127',wash:'148,180,177'},
+  paper:{contour:'150,100,32',hatch:'58,42,28',wash:'166,58,40'}
 });
 // The printed Renaissance atlas treats a constellation star as a point of light, not a miniature world.
 // The thresholds are deliberately tied to the same two-thirds orbit used by the observer core: a normal
@@ -105,9 +106,19 @@ function figRibbonRange(spine,fn,steps,from,to){
 // scaled as it is set. So all twelve engravings answer to the chosen hand without being rewritten:
 // Bayer's is finer, more geometric and less broken, Bode's heavier and far more shaded.
 const FIGURE_STYLES={
-  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1},
-  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65},
-  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7}
+  // The cut and the colourist are one cosmetic hand: the same selected manner changes how the
+  // figure is engraved and how its wash is brushed over the finished line.
+  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1,wash:'mineral'},
+  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65,wash:'rubricated'},
+  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7,wash:'dry'}
+};
+const HAND_COLOUR_STYLES={
+  // A dilute mineral wash: broken coverage and soft pigment, with short bristle marks at each start.
+  mineral:{coverage:.72,skip:.24,alpha:.56,brush:.8,grain:.34},
+  // Bayer's finer hand is paired with a more deliberate rubricated pass, still visibly laid by hand.
+  rubricated:{coverage:.82,skip:.15,alpha:.62,brush:.62,grain:.22},
+  // Bode's heavier cut gets a dry, uneven pass: darker islands and more unpainted paper between them.
+  dry:{coverage:.58,skip:.36,alpha:.68,brush:1.12,grain:.5}
 };
 const figureStyle=()=>FIGURE_STYLES[cosmetic('figures')]||FIGURE_STYLES.hevelius;
 let figStyle=FIGURE_STYLES.hevelius;
@@ -145,11 +156,54 @@ function figHatch(g,spine,leftFn,rightFn,count,rng){
     g.beginPath();g.moveTo(x-Math.cos(a)*len,y-Math.sin(a)*len);g.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.stroke();
   }
 }
-function figWash(g,left,right){
+// A colourist's pass is collected while the black plate is being cut, then painted after the figure
+// has finished. That ordering is important: this is pigment brushed onto a pulled print, not a colour
+// plate that landed during printing. The strips deliberately vary in density, leave dry gaps and put a
+// small bristle-loaded start at the beginning of a stroke. A perfect landing has no offset; rougher
+// arrivals carry the frozen `n.impression` offset made by simulation.js.
+function figWash(g,left,right,state){
+  if(state&&state.handColour){state.colourRegions.push({left,right});return;}
   g.beginPath();g.moveTo(left[0].x,left[0].y);
   for(const p of left)g.lineTo(p.x,p.y);
   for(let i=right.length-1;i>=0;i--)g.lineTo(right[i].x,right[i].y);
   g.closePath();g.fill();
+}
+function colourPoint(p,c,dx,dy,rotation){
+  const x=p.x-c.x,y=p.y-c.y,cos=Math.cos(rotation),sin=Math.sin(rotation);
+  return {x:c.x+dx+x*cos-y*sin,y:c.y+dy+x*sin+y*cos};
+}
+function paintHandColour(g,state){
+  if(!state.handColour||!state.wash||state.colourFrac<=0||!state.colourRegions.length)return;
+  const style=HAND_COLOUR_STYLES[state.colourStyle]||HAND_COLOUR_STYLES.mineral;
+  const rng=seeded(state.colourSeed>>>0||1),full=state.colourFull;
+  for(const region of state.colourRegions){
+    const {left,right}=region,segments=Math.min(left.length,right.length)-1;
+    if(segments<1)continue;
+    let cx=0,cy=0,total=0;
+    for(const p of left) {cx+=p.x;cy+=p.y;total++;}
+    for(const p of right) {cx+=p.x;cy+=p.y;total++;}
+    const centre={x:cx/total,y:cy/total};
+    let i=0;
+    while(i<segments){
+      const strokeLength=1+Math.floor(rng()*(style.brush>1?3:5)),end=Math.min(segments,i+strokeLength);
+      const painted=full||rng()<state.colourFrac;
+      if(!painted||rng()<style.skip||rng()>style.coverage){i=end;continue;}
+      const dx=state.colourOffset.x+(rng()-.5)*style.grain*state.colourRough,
+        dy=state.colourOffset.y+(rng()-.5)*style.grain*state.colourRough,
+        rotation=state.colourOffset.rotation+(rng()-.5)*.006*style.brush*state.colourRough,
+        alpha=style.alpha*(.48+rng()*.72)*(full?1:.86)*state.colourFade;
+      const a=colourPoint(left[i],centre,dx,dy,rotation),b=colourPoint(left[end],centre,dx,dy,rotation),
+        c=colourPoint(right[end],centre,dx,dy,rotation),d=colourPoint(right[i],centre,dx,dy,rotation);
+      g.save();g.globalAlpha=alpha;g.fillStyle=state.wash;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.lineTo(c.x,c.y);g.lineTo(d.x,d.y);g.closePath();g.fill();
+      // The loaded brush leaves a visible, rounded start rather than a perfectly clipped vector edge.
+      if(rng()<.7){
+        const r=Math.max(.55,Math.min(2.4,Math.hypot(d.x-a.x,d.y-a.y)*.08))*style.brush;
+        g.globalAlpha=alpha*.58;g.beginPath();g.arc((a.x+d.x)/2,(a.y+d.y)/2,r,0,TAU);g.fill();
+      }
+      g.restore();
+      i=end;
+    }
+  }
 }
 // A long sailmaker's needle: a thin tapering shaft with a pierced eye near the blunt end, and a
 // curling thread that doubles back through all three stars.
@@ -164,7 +218,7 @@ function figNeedle(g,p0,p1,p2,side,rng,state){
   const thread=[];for(let i=0;i<=60;i++){const t=.08+i/60*.86,s=spine.at(t),amp=20*Math.sin(t*Math.PI),o=Math.sin(t*11+side)*amp;thread.push({x:s.x+s.px*o,y:s.y+s.py*o});}
   g.lineWidth=1;figInk(g,thread,rng,.7,.1,1);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-halfW(t)-2,t=>halfW(t)+2,26,rng,.9);
 }
 // A billowing lateen sail on a spar: a near-straight luff close to the spine and a bulging leech that
@@ -177,7 +231,7 @@ function figSail(g,p0,p1,p2,side,rng,state){
   figInk(g,left,rng,.6,.06,1.5);figInk(g,right,rng,1,.05,1.2);
   figInk(g,[left[2],right[2]],rng,.5,0,1);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,inner,outer,30,rng,.9);
 }
 // A classical chelys lyre: two curved arms rising from a soundbox to a crossbar, with strings strung
@@ -204,7 +258,7 @@ function figLyre(g,p0,p1,p2,side,rng,state){
     figHatch(g,spine,t=>-armOut(t),t=>-armIn(t),Math.round(20*state.hatchFrac),rng);
     figHatch(g,spine,armIn,armOut,Math.round(20*state.hatchFrac),rng);
   }
-  if(state.wash){g.fillStyle=state.wash;figWash(g,leftOut,leftIn);figWash(g,rightIn,rightOut);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,leftOut,leftIn,state);figWash(g,rightIn,rightOut,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-armOut(t),armOut,22,rng,.7);
 }
 // A pointed diadem: a thin band that arcs past the stars with occasional spikes, and a jewel collar
@@ -219,7 +273,7 @@ function figCrown(g,p0,p1,p2,side,rng,state){
     g.beginPath();g.arc(p.x,p.y,p.r+21,-.65,.65);g.stroke();
   }
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-band(t)*.45,band,Math.round(40*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-band(t)*.45-2,t=>band(t)+2,24,rng,.9);
 }
 // Points along a circular arc, ready for figInk to cut as a broken hand-drawn curve.
@@ -268,7 +322,7 @@ function figCompass(g,p0,p1,p2,side,rng,state){
   const inB=t=>legB(clamp(t,0,hinge))-wB(clamp(t,0,hinge)),outB=t=>legB(clamp(t,0,hinge))+wB(clamp(t,0,hinge));
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inA,outA,Math.round(22*state.hatchFrac),rng);
     figHatch(g,spine,inB,outB,Math.round(26*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,aIn,aOut);figWash(g,bIn,bOut);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,aIn,aOut,state);figWash(g,bIn,bOut,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>inA(t)-4,t=>outB(t)+4,26,rng,.85);
 }
 // An hourglass. The waist pinches at the middle star, and the two plates are set on the outer
@@ -298,7 +352,7 @@ function figHourglass(g,p0,p1,p2,side,rng,state){
     g.fillRect(s.x+s.px*o,s.y+s.py*o,.9,.9);
   }
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-waist(t),waist,Math.round(52*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-waist(t)-3,t=>waist(t)+3,22,rng,.85);
 }
 // A serpent. The body is a wave whose centre line crosses the spine at each of the three stars,
@@ -325,7 +379,7 @@ function figSerpent(g,p0,p1,p2,side,rng,state){
   g.lineWidth=.8;g.beginPath();g.moveTo(20,-1.4);g.lineTo(30,-4.6);g.moveTo(24.6,-2.9);g.lineTo(30,.6);g.stroke();
   g.restore();
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>mid(t)-thick(t),t=>mid(t)+thick(t),Math.round(60*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>mid(t)-thick(t)-2,t=>mid(t)+thick(t)+2,30,rng,.8);
 }
 // A ship. The hull is bellied out below, its keel deepest at the bottom star, the mast is stepped
@@ -365,7 +419,7 @@ function figArgo(g,p0,p1,p2,side,rng,state){
   const flag=[];for(let i=0;i<=10;i++){const u=i/10;flag.push(figAt(spine,lerp(t2+.025,t2+.014,u),u*32+Math.sin(u*6)*4));}
   figInk(g,flag,rng,.5,.04,.85);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,deck,hull,Math.round(50*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,sheer,keel);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,sheer,keel,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>deck(t)-2,t=>hull(t)+2,26,rng,.85);
 }
 // An astrolabe. The graduated limb rings the middle star, the alidade lies along all three, its
@@ -404,8 +458,10 @@ function figAstrolabe(g,p0,p1,p2,side,rng,state){
     figHatch(g,spine,t=>-halfRule(t),halfRule,Math.round(14*state.hatchFrac),rng);
   }
   if(state.wash){
-    g.fillStyle=state.wash;figWash(g,left,right);
-    g.beginPath();g.arc(p1.x,p1.y,limbOuter,0,TAU);g.arc(p1.x,p1.y,limbInner,TAU,0,true);g.fill();
+    g.fillStyle=state.wash;figWash(g,left,right,state);
+    // The annular limb is a printed rule in the hand-colour path; the old solid fill remains only for
+    // non-atlas callers that still use figWash as a plain completed wash.
+    if(!state.handColour){g.beginPath();g.arc(p1.x,p1.y,limbOuter,0,TAU);g.arc(p1.x,p1.y,limbInner,TAU,0,true);g.fill();}
   }
   g.fillStyle=state.contour;figStipple(g,spine,t=>-halfRule(t)-3,t=>halfRule(t)+3,18,rng,.8);
 }
@@ -435,7 +491,7 @@ function figQuill(g,p0,p1,p2,side,rng,state){
   figInk(g,[figAt(spine,nib+.055,0),figAt(spine,nib-.01,0)],rng,.3,0,.6);
   figInk(g,[figAt(spine,nib+.062,-3.6),figAt(spine,nib+.062,3.6)],rng,.3,0,.7);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,vane,Math.round(54*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>inner(t)-2,t=>vane(t)+2,26,rng,.8);
 }
 // A hanging lantern. The dome springs from the top star, the flame burns at the middle one and
@@ -467,7 +523,7 @@ function figLantern(g,p0,p1,p2,side,rng,state){
     figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45);
   }
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-body(t),body,Math.round(56*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-body(t)-3,t=>body(t)+3,26,rng,.85);
 }
 // A moth. The wings open either side of the middle star, the head and its feathered antennae are
@@ -519,7 +575,7 @@ function figMoth(g,p0,p1,p2,side,rng,state){
     figHatch(g,spine,t=>-span(t),t=>-body(t),Math.round(34*state.hatchFrac),rng);
     figHatch(g,spine,body,span,Math.round(34*state.hatchFrac),rng);
   }
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,bodyL);figWash(g,bodyR,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,bodyL,state);figWash(g,bodyR,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-span(t)-2,t=>span(t)+2,34,rng,.8);
 }
 // A placeholder for catalogue figures that have no engraving of their own yet: a broken
@@ -538,7 +594,7 @@ function figAsterism(g,p0,p1,p2,side,rng,state){
   g.beginPath();g.moveTo(-10,0);g.lineTo(10,0);g.moveTo(0,-10);g.lineTo(0,10);g.stroke();g.restore();
   for(const q of [p0,p1,p2]){g.lineWidth=.9;g.beginPath();g.arc(q.x,q.y,q.r+13,-.5,.5);g.stroke();g.beginPath();g.arc(q.x,q.y,q.r+13,Math.PI-.5,Math.PI+.5);g.stroke();}
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-swell(t),swell,Math.round(34*state.hatchFrac),rng);}
-  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right);}
+  if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-swell(t)-3,t=>swell(t)+3,22,rng,.85);
 }
 // Every entry in the catalogue has its own engraving, looked up by name. figAsterism remains only
@@ -553,13 +609,26 @@ function buildFigureLayer(chart,frame,count,curScale){
   const w=Math.max(1,Math.ceil(frame.w*curScale)),h=Math.max(1,Math.ceil(frame.h*curScale));
   const c=makeCanvas(w,h),g=c.getContext('2d');
   g.scale(curScale,curScale);g.translate(-frame.originX,-frame.originY);g.lineJoin='round';g.lineCap='round';
-  const rng=seeded(48200+((chart.catalogueIndex??chart.id)+chart.id*13)*104729),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
+  const figureSeed=48200+((chart.catalogueIndex??chart.id)+chart.id*13)*104729,
+    rng=seeded(figureSeed),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
   figStyle=figureStyle();
-  const contourA=(onPaper()?.4:.3)*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07;
+  const contourA=(onPaper()?.4:.3)*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07,
+    handColour=renaissanceAtlas(),seen=chart.stars.filter(star=>star.visited&&star.impression),
+    colourOffset=seen.length?seen.reduce((out,star)=>({x:out.x+star.impression.x/seen.length,y:out.y+star.impression.y/seen.length,rotation:out.rotation+star.impression.rotation/seen.length}),{x:0,y:0,rotation:0}):{x:0,y:0,rotation:0},
+    colourRough=seen.length?seen.reduce((total,star)=>total+(star.impression.perfect?0:1-(star.impression.quality??1)),0)/seen.length:0;
   const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,style:figStyle,
-    hatchFrac:expired?0:count/3,wash:(!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
+    hatchFrac:expired?0:count/3,
+    // Partial colour is earned by each visited star; completion permits the colourist to make one
+    // final pass over all the figure's parts. The unprinted star signs and coordinate furniture
+    // never enter this region list and remain black ink.
+    handColour,colourRegions:[],colourStyle:figStyle.wash,colourSeed:(figureSeed^0x4c4f52)>>>0,
+    colourOffset,colourRough,colourFrac:expired?0:Math.min(1,count/3),colourFull:!expired&&chart.completed,colourFade:fade,
+    wash:handColour&&count>0||(!handColour&&!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
   const [p0,p1,p2]=chart.stars;
   figureFor(chart)(figPen(g,figStyle),p0,p1,p2,frame.side,rng,state);
+  // All black engraving marks have now been laid. Only after that does the hand-colour pass touch the
+  // pulled sheet, so a displaced patch reads as a brush stroke over ink with its own hand-drawn edge.
+  paintHandColour(g,state);
   // Never let the ink cross the orbit rings, release marks, or the pricked guide around a star.
   g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#000';
   for(const s of chart.stars){g.beginPath();g.arc(s.x,s.y,s.r+8,0,TAU);g.fill();}

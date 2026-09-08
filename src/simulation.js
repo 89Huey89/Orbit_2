@@ -592,10 +592,13 @@ class OrbitWorld {
     // Smooth entries preserve momentum. A hard turn sheds some excess speed.
     p.speed=perfect?arrivalSpeed:clamp(BASE_SPEED+(arrivalSpeed-BASE_SPEED)*(.72+.28*alignment),BASE_SPEED,MAX_SPEED);
     p.node=n; p.orbitTime=0;p.orbitSweep=0;p.chargeAnnounced=false; n.visited=true; n.flash=1;
-    // A hurried strike leaves the hand-applied colour increasingly out of register with the engraved
-    // keyline. The offset is deterministic per body and frozen at capture, so it never boils on screen.
-    const rough=1-arrivalQuality,impressionRng=seeded((n.seed^0x73a91d)>>>0||1);
-    n.impression={quality:arrivalQuality,x:(impressionRng()-.5)*6*rough,y:(impressionRng()-.5)*6*rough,rotation:(impressionRng()-.5)*.08*rough};
+    // A hurried strike leaves the hand-applied colour increasingly offset from the engraved keyline.
+    // The brush offset is deterministic per body and frozen at capture, so it never boils on screen.
+    // Perfect tangent landings leave the colourist's brush inside the printed figure. Every other
+    // arrival carries a small, deterministic hand-colour offset: the rougher the landing, the more
+    // visibly the wash wanders beyond the engraved contour.
+    const rough=perfect?0:1-arrivalQuality,impressionRng=seeded((n.seed^0x73a91d)>>>0||1);
+    n.impression={quality:perfect?1:arrivalQuality,perfect,x:(impressionRng()-.5)*6*rough,y:(impressionRng()-.5)*6*rough,rotation:(impressionRng()-.5)*.08*rough};
     const skipped=l?Math.max(0,Math.ceil(n.row)-Math.floor(l.row)-1):0;
     // A landing pays the nib back. A clean tangent arrival pays better than a hard turn; a steep one
     // pays nothing, exactly what it cost to get there. A skipped orbit was flown past at the same
