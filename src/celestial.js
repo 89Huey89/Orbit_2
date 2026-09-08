@@ -382,7 +382,9 @@ function drawPlateCaptions(index,weight,place){
   if(plainPlate()||weight<.001)return;
   const paper=onPaper(),fit=clamp(place.fit,.7,1.15),inner=frameBand()+9;
   const x=Math.max(inner,place.x+48*place.fit);
-  const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit);
+  // Also stops short of the impressum: at the start of a run, before a climbing camera has carried
+  // the cartouche down and out of the way, it sits in this same lower margin (see impressumTop()).
+  const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit,impressumTop()-45*fit-8);
   ctx.save();ctx.globalAlpha=paper?weight*.72:weight;ctx.textAlign='left';ctx.textBaseline='alphabetic';
   ctx.font=plateFace(17*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
   ctx.fillText(['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index],x,y);
