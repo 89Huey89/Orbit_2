@@ -47,7 +47,11 @@ function event(type,e){
       say('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),{x:e.x,y:e.y});
     }
   }else if(type==='charged'){
-    if(e.max)tally('maxSpeedSlings');
+    // The trail ladder counts the star's own band filling, which every charged event means by
+    // definition; gating it on e.max instead asked for the chart's absolute top speed, a bar a
+    // hand loses the moment its release is a frame late, and the ladder's chalk-to-gold-leaf
+    // reading of common-to-rare needs its first rung reachable the way a full charge already is.
+    tally('maxSpeedSlings');
     audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');if(e.steep)tally('badAngles');
@@ -335,7 +339,7 @@ function catalogueRecord(){
     ['Vortices grazed',commas(ledger.grazes)],
     [POWERUP_LABELS.shield+' spent',commas(ledger.shieldsSpent)],
     [POWERUP_LABELS.reflector+' spent',commas(ledger.reflectorsSpent)],
-    ['Slingshots left at top speed',commas(ledger.maxSpeedSlings)],
+    ['Slingshots left at full charge',commas(ledger.maxSpeedSlings)],
     ['Inkwells filled on a streak',commas(ledger.inkwellsFound)],
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
