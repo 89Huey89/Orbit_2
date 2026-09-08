@@ -151,6 +151,23 @@ const UNLOCKS=[
     describe:()=>'Complete one constellation 10 times'},
   {id:'bode',kind:'figures',name:'Bode manner',latin:'More Bodii',stat:'topConstellation',threshold:25,
     describe:()=>'Complete one constellation 25 times'},
+  // Three other instruments the captures may build instead of the graticule. Each is drawn to the same
+  // ten stages, so what earns them is only which figure the atlas is constructing, never how much of it
+  // a run gets to see.
+  {id:'rete',kind:'sphere',name:'Astrolabe rete',latin:'Rete astrolabii',stat:'captures',threshold:500,
+    describe:()=>'Capture 500 orbits in all'},
+  {id:'orbs',kind:'sphere',name:'Ptolemaic orbs',latin:'Orbes Ptolemaici',stat:'bestRow',threshold:30,
+    describe:()=>'Reach row 30'},
+  {id:'volvelle',kind:'sphere',name:'Volvelle',latin:'Volvella',stat:'topConstellation',threshold:5,
+    describe:()=>'Complete one constellation 5 times'},
+  // The distance behind the chart. A sheet ships bare, so every one of these is earned — the illustrated
+  // chapter plates first, by reaching a second chapter and seeing that there is more than one.
+  {id:'chapterplates',kind:'scenery',name:'Chapter plates',latin:'Tabulæ capitum',test:l=>l.deepestChapter>=2,
+    describe:()=>'Reach chapter II, The Drift'},
+  {id:'rhumbs',kind:'scenery',name:'Rhumb lines',latin:'Lineæ ventorum',stat:'runs',threshold:15,
+    describe:()=>'Play 15 runs'},
+  {id:'counterproof',kind:'scenery',name:'Counterproof',latin:'Contra-proba',test:l=>l.deepestChapter>=4,
+    describe:()=>'Reach chapter IV, The Deep'},
   {id:'delineavit',kind:'credit',name:'Engraver’s credit',latin:'Delineavit',stat:'runs',threshold:50,
     describe:()=>'Play 50 runs'},
   {id:'exlibris',kind:'stamp',name:'Ex libris stamp',latin:'Ex libris',test:l=>Object.keys(DARKNESS_MULT).every(key=>(l.personalBests[key]||0)>0),
@@ -211,7 +228,16 @@ const COSMETIC_KINDS=[
   {kind:'frame',title:'Frame ornaments',latin:'Ornamenta marginis',fallback:'windheads',
     stock:[{id:'windheads',name:'Wind-heads',latin:'Capita ventorum'}]},
   {kind:'figures',title:'Figure styles',latin:'Manus figurarum',fallback:'hevelius',
-    stock:[{id:'hevelius',name:'Hevelius manner',latin:'More Hevelii'}]}
+    stock:[{id:'hevelius',name:'Hevelius manner',latin:'More Hevelii'}]},
+  // The figure the captures construct behind the chart, and whether they construct one at all. The
+  // graticule is the atlas's own and the one a fresh sheet builds; `none` leaves the sheet unruled.
+  {kind:'sphere',title:'Constructions',latin:'Sphæræ',fallback:'graticule',
+    stock:[{id:'graticule',name:'Celestial graticule',latin:'Sphæra cælestis'},{id:'none',name:'Nothing drawn',latin:'Nihil'}]},
+  // The distance: every layer behind the chart that the ascent carries more slowly than the chart
+  // itself — the illustrated chapter plate and the two drifting dust plates alike. It is the one
+  // category whose default is nothing: an atlas is a sheet with a chart on it before it is a view.
+  {kind:'scenery',title:'Scenery',latin:'Prospectus',fallback:'none',
+    stock:[{id:'none',name:'Bare sheet',latin:'Charta nuda'}]}
 ];
 const COSMETIC_FALLBACK={};for(const group of COSMETIC_KINDS)COSMETIC_FALLBACK[group.kind]=group.fallback;
 // Every item of a category, stock first, then the catalogue's own in the order they are earned.
@@ -234,6 +260,15 @@ function readCosmetics(){
 const cosmetics=readCosmetics();
 function saveCosmetics(){storage.set(COSMETICS_KEY,JSON.stringify(cosmetics));}
 const cosmetic=kind=>cosmetics[kind]||COSMETIC_FALLBACK[kind];
+// The two the painters ask for by name every frame: which figure the captures are constructing
+// (src/frame.js) and what the distance behind the chart is dressed with (src/celestial.js). `none`
+// on either is a real answer — the sheet is left unruled, or left bare — not a missing selection.
+const sphereStyle=()=>cosmetic('sphere');
+const sceneryStyle=()=>cosmetic('scenery');
+// Whether anything at all is printed behind the chart at the ascent's own slower rate: the chapter
+// plate, its channel wash and both dust plates stand or fall together, so one question answers for
+// all of them wherever the distance is drawn.
+const sceneryOn=()=>sceneryStyle()!=='none';
 // Record a selection without acting on it; the plate's own setter calls this so the two keys agree.
 function recordCosmetic(kind,id){
   if(cosmetics[kind]===id)return;

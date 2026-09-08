@@ -152,12 +152,20 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
-get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
+get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
+  // The distance behind the chart ships bare and every style of it has to be earned, so a test that
+  // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
+  // one. Each style is selected in turn, the body run under it, and whatever was chosen put back.
+  const everyScene=body=>{
+    const held=context.test.cosmetic('scenery');
+    for(const style of ['none','chapterplates','rhumbs','counterproof']){context.test.recordCosmetic('scenery',style);body(style);}
+    context.test.recordCosmetic('scenery',held);
+  };
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
   const inscribed=()=>written().map(g=>g.text).join(' | ');
@@ -209,7 +217,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       inkwellsFound:fresh.inkwellsFound,badAngles:fresh.badAngles,runs:fresh.runs,observations:fresh.observations,personalBests:fresh.personalBests,allFourInOneRun:fresh.allFourInOneRun},
       {captures:0,perfects:0,bestFlow:0,constellations:{},grazes:0,shieldsSpent:0,reflectorsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,runs:{},observations:{},personalBests:{},allFourInOneRun:false},
       'A fresh or unreadable ledger opens empty');
-    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius'},'Cosmetics default to the classic look');
+    // The classic look, and — the one category that defaults to nothing rather than to something — a
+    // sheet that prints no distance behind the chart at all until the catalogue earns one.
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius',sphere:'graticule',scenery:'none'},'Cosmetics default to the classic look, and to a bare sheet behind it');
     assert.equal(context.test.isUnlocked('cellarius'),false);
     assert.equal(context.test.setCosmetic('mark','saturn'),false,'A locked cosmetic can never be selected');
     assert.equal(context.test.cosmetic('mark'),'quill','A refused selection leaves the default in place');
@@ -248,6 +258,12 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['seamonsters',{bestRow:59},false],['seamonsters',{bestRow:60},true],
       ['bayer',{constellations:{'THE LYRE':9,'THE SAIL':9}},false],['bayer',{constellations:{'THE LYRE':10}},true],
       ['bode',{constellations:{'THE LYRE':24}},false],['bode',{constellations:{'THE LYRE':25}},true],
+      ['rete',{captures:499},false],['rete',{captures:500},true],
+      ['orbs',{bestRow:29},false],['orbs',{bestRow:30},true],
+      ['volvelle',{constellations:{'THE LYRE':4}},false],['volvelle',{constellations:{'THE LYRE':5}},true],
+      ['chapterplates',{deepestChapter:1},false],['chapterplates',{deepestChapter:2},true],
+      ['rhumbs',{runs:{classic:14}},false],['rhumbs',{runs:{classic:9,relaxed:6}},true],
+      ['counterproof',{deepestChapter:3},false],['counterproof',{deepestChapter:4},true],
       ['delineavit',{runs:{classic:49}},false],['delineavit',{runs:{classic:30,relaxed:20}},true],
       ['exlibris',{personalBests:{relaxed:10,classic:10}},false],['exlibris',{personalBests:{relaxed:10,classic:10,hardcore:10}},true],
       ['perfecti',{observations:{}},false],['perfecti',{observations:{perfectThree:1}},true],
@@ -264,10 +280,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,40,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,46,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
     const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
-      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
+      constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestChapter:4,deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
       shieldsSpent:15,reflectorsSpent:15,
       observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});
     assert.equal(context.test.unlockedIds(everything).size,context.test.UNLOCKS.length);
@@ -434,10 +450,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.dailyOn,false);assert.equal(context.test.dailyReplay,false);
     context.test.newWorld();
   }
-  for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+  everyScene(()=>{for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);});
   // Both plates must boot, draw every chapter, and switch mid-run without touching the simulation.
   context.test.setPlate('paper');assert.equal(context.test.plateName,'paper');
-  for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+  everyScene(()=>{for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);});
   // Every entry in the catalogue is engraved: none of them falls through to the generic asterism,
   // and each figure bakes a layer with finite arguments part-traced, completed and expired.
   for(const entry of CONSTELLATIONS){
@@ -466,11 +482,37 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.setPlate(id);
     assert.equal(context.test.plateName,id);
     assert.equal(context.test.plainPlate(),id==='proof','Only the proof plate is pulled before letters');
-    for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);
+    everyScene(()=>{for(let chapter=0;chapter<4;chapter++)context.test.drawCelestialScene(chapter,1);});
     assert(context.test.buildFrameLayer(),'Every plate must build a frame: '+id);
     context.test.render(1/60);
   }
   context.test.setPlate('night');
+  // ---- What stands behind the chart: the construction the captures build, and the distance ----
+  // The construction is ten separate drawings rather than one, so every style is put through every
+  // stage it passes: a figure that only sets out correctly once it is finished is not one the atlas
+  // earns. The canvas stand-in refuses a non-finite argument, so a radius or an angle that goes bad at
+  // any one stage of any one style fails here rather than on the sheet.
+  {
+    const heldSphere=context.test.cosmetic('sphere'),heldCaptures=context.test.world.captures;
+    for(const plate of ['night','paper']){
+      context.test.setPlate(plate);
+      for(const style of ['graticule','rete','orbs','volvelle','none']){
+        context.test.recordCosmetic('sphere',style);
+        for(const captures of [0,1,3,6,9,10,25]){context.test.world.captures=captures;context.test.render(1/60);}
+      }
+    }
+    context.test.setPlate('night');context.test.recordCosmetic('sphere',heldSphere);context.test.world.captures=heldCaptures;
+  }
+  // And every distance, through whole frames rather than through the plate alone, so that the chapter
+  // print, the wash down the play channel and both dust plates are drawn together or skipped together —
+  // including across a page turn, which is the one thing that still happens on a bare sheet.
+  {
+    const heldProgress=context.test.world.progress;
+    everyScene(()=>{
+      for(const progress of [0,7.4,8.2,9,17,26]){context.test.world.progress=progress;context.test.render(1/60);}
+    });
+    context.test.world.progress=heldProgress;
+  }
   // ---- A plate says what it is, and nothing asks it which century it is ----
   {
     // The two plates the atlas is actually printed on answer no to every question an era asks of
@@ -708,6 +750,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const group of context.test.COSMETIC_KINDS)assert(page.includes(group.title),'The catalogue lists '+group.title);
     assert(page.includes('Named feats')&&page.includes('Insignia'),'The catalogue lists the named feats as medals');
     assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
+    assert(page.includes('Celestial graticule')&&page.includes('Nothing drawn'),'The construction can always be chosen, or left undrawn');
+    assert(page.includes('Bare sheet')&&page.includes('Charta nuda'),'A bare sheet is always on offer as the distance');
     if(!seededLedger){
       assert(page.includes('cat-row cat-card locked')&&page.includes('Capture 1,000 orbits in all'),'A locked entry is a blank rule with its condition');
       assert(!page.includes('id="initials"'),'The initials field waits for the engraver\'s credit');

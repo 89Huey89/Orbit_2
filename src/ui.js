@@ -610,8 +610,91 @@ const STAMP_ART='<ellipse cx="60" cy="36" rx="32" ry="22" stroke-width="1.3"/>'+
   artFill('M44 41C50 37 55 37 60 39C65 37 70 37 76 41L76 30C70 26 65 26 60 28C55 26 50 26 44 30Z',.14)+
   artLine('M44 41C50 37 55 37 60 39C65 37 70 37 76 41L76 30C70 26 65 26 60 28C55 26 50 26 44 30Z',1.1)+
   artLine('M60 28V39',.8,.8)+artLine('M47 47H73',.6,.5);
+// ---------- The two categories that are about what stands behind the chart ----------
+// An oval is the one primitive the rest of this file never needed: the graticule is a sphere seen
+// edge-on, and so is every parallel and meridian on it.
+const artOval=(x,y,rx,ry,w=1.1,a=1,turn=0)=>'<ellipse cx="'+artRound(x)+'" cy="'+artRound(y)+'" rx="'+artRound(rx)+'" ry="'+artRound(ry)+'" stroke-width="'+w+'"'+(a===1?'':' opacity="'+a+'"')+(turn?' transform="rotate('+artRound(turn)+' '+artRound(x)+' '+artRound(y)+')"':'')+'/>';
+// Strokes cut radially between two radii, as one path: the divisions of a dial, the graduations of a
+// limb, and the rhumbs a wind-node throws are all the same figure at different reaches.
+function artRays(x,y,r0,r1,count,turn=0){
+  let d='';
+  for(let i=0;i<count;i++){
+    const a=turn+i/count*TAU;
+    d+='M'+artRound(x+Math.cos(a)*r0)+' '+artRound(y+Math.sin(a)*r0)+'L'+artRound(x+Math.cos(a)*r1)+' '+artRound(y+Math.sin(a)*r1);
+  }
+  return d;
+}
+// The compass prick and its two crossed ruling strokes: the first mark of every construction, and on
+// the unruled card the only one.
+const SPHERE_PRICK=artLine('M55.5 36h9M60 31.5v9',.7,.8)+artDot(60,36,1.2,.95);
+// Each construction as its own hand actually sets it out (see SPHERE_HANDS in src/frame.js), cut small.
+const SPHERE_ART={
+  graticule:artOval(60,36,33,20.5,1,.9)+artOval(60,36,33,20.5,.85,.7,-18)+
+    artOval(60,36,33,17,.5,.45)+artOval(60,36,33,11,.5,.4)+
+    artOval(60,36,9,20.5,.5,.42)+artOval(60,36,20,20.5,.5,.36)+SPHERE_PRICK,
+  // The limb, the two tropics, and the eccentric ecliptic laid tangent inside one and outside the
+  // other — set out at the very proportions paintReteSphere solves for.
+  rete:artRing(60,36,30,1,.9)+artRing(60,36,13.2,.55,.45)+artRing(60,36,21.6,.5,.35)+
+    artRing(73.4,19.1,8.4,.9,.75)+artLine('M30 36h60M60 6v60',.5,.28)+
+    artLine('M67.6 26.5Q57 31 46 42',.6,.6)+artLine('M45.5 39.5L46 42L48.5 42.4',.5,.6)+artDot(46,42,1.1,.85)+
+    artLine('M80.5 25Q86 35 81 47',.6,.6)+artLine('M83 44.8L81 47L78.5 46',.5,.6)+artDot(81,47,1.1,.85),
+  // Seven heavens about the earth, the outermost doubled and pricked with the fixed stars.
+  orbs:artRing(60,36,30,1,.9)+artRing(60,36,28.4,.55,.45)+
+    [5.5,9.5,13.5,17.5,21.5,25.5].map(r=>artRing(60,36,r,.5,.4)).join('')+
+    artRing(60,36,3,.6,.7)+artLine('M57.3 34.7h5.4M57.3 37.3h5.4',.45,.5)+
+    artRing(75.5,25,2.8,.55,.6)+artDot(77.5,23.3,1,.85)+
+    Array.from({length:8},(_,i)=>artDot(60+Math.cos(i/8*TAU+.4)*29.2,36+Math.sin(i/8*TAU+.4)*29.2,.75,.55)).join(''),
+  // Dials on a common pin, divided into twelve, with the index swung over them and its thread hanging.
+  volvelle:artRing(60,36,30,1,.9)+artRing(60,36,27,.55,.45)+artRing(60,36,22,.5,.4)+artRing(60,36,17,.5,.36)+artRing(60,36,12,.5,.3)+
+    artLine(artRays(60,36,27,30,12,-Math.PI/2),.5,.42)+artLine(artRays(60,36,17,22,4,-Math.PI/2),.5,.3)+
+    artLine('M53.6 48.5L74.5 21.7',1)+artLine('M70.5 21.2L74.5 21.7L74.9 25.6',.55,.75)+
+    artRing(60,36,3.2,.7,.8)+artLine('M67.5 30.5V43',.4,.4)+artDot(67.5,43,1.4,.6),
+  // An unruled sheet: its corner marks, and the prick that is the one thing a capture always makes.
+  none:artLine('M28 14h7M28 14v7M92 14h-7M92 14v7M28 58h7M28 58v-7M92 58h-7M92 58v-7',.6,.34)+SPHERE_PRICK
+};
+// The chapter print in miniature: plate I's monumental lunar limb, its graduated arc, and the small
+// companion above it — which is what the distance is when it is switched on. Drawn deliberately past
+// the field on the left, exactly as the print runs off the sheet.
+const SCENE_PRINT=artRing(6,44,34,1,.55)+artLine(artArc(6,44,24,-1.16,1.16),.55,.32)+
+  artRing(22,30,4,.5,.5)+artRing(14,55,5.5,.5,.42)+artRing(29,49,3,.5,.38)+
+  artLine(artArc(6,44,38,-1.2,1.2),.5,.3)+
+  artLine(Array.from({length:9},(_,i)=>{const a=-1.2+i*.3,out=38+(i%2?3:6);
+    return 'M'+artRound(6+Math.cos(a)*38)+' '+artRound(44+Math.sin(a)*38)+'L'+artRound(6+Math.cos(a)*out)+' '+artRound(44+Math.sin(a)*out);}).join(''),.45,.3)+
+  artRing(97,15,11,.8,.5)+artRing(94,12,2.6,.45,.4)+artRing(100,19,2,.45,.35);
+// A wind rose, cut as paintWindRose cuts it: sixteen points in halves, one inked and one left open.
+function artRose(x,y,r){
+  let art='';
+  for(let i=0;i<16;i++){
+    const a=-Math.PI/2+i/16*TAU,len=r*(i%4===0?1:i%2?.44:.68);
+    for(const side of [-1,1]){
+      const edge=a+side*Math.PI/16;
+      const d='M'+artRound(x+Math.cos(a)*len)+' '+artRound(y+Math.sin(a)*len)+'L'+artRound(x+Math.cos(edge)*r*.14)+' '+artRound(y+Math.sin(edge)*r*.14)+'L'+artRound(x)+' '+artRound(y)+'Z';
+      art+=artFill(d,side<0?.5:.16)+artLine(d,.35,.5);
+    }
+  }
+  return art+artRing(x,y,r*.14,.4,.5)+artRing(x,y,r*.68,.4,.4);
+}
+const SCENE_ART={
+  // A sheet with nothing behind the chart: its plate-mark, its inner rule and its laid lines, and that
+  // is the whole card, because that is the whole of what is printed there.
+  none:'<rect x="25" y="10" width="70" height="52" fill="none" stroke="currentColor" stroke-width="1" opacity=".75"/>'+
+    '<rect x="29" y="14" width="62" height="44" fill="none" stroke="currentColor" stroke-width=".5" opacity=".35"/>'+
+    artLine('M33 22h54M33 30h54M33 38h54M33 46h54M33 54h54',.4,.15),
+  chapterplates:SCENE_PRINT,
+  // The hidden circle, its eight wind-nodes each throwing their own lines clean across the sheet, the
+  // four winds heavier than the rest of them, and the rose on the node the chart is oriented from.
+  rhumbs:artLine(Array.from({length:8},(_,i)=>{const a=i/8*TAU;return artRays(60+Math.cos(a)*26,36+Math.sin(a)*26,0,90,8);}).join(''),.35,.11)+
+    artLine(artRays(60,36,15,90,16),.4,.18)+artLine(artRays(60,36,15,90,4),.4,.4)+
+    artRing(60,36,26,.4,.26)+artRose(60,36,15),
+  // The same copper pulled a second time onto a damp sheet: reversed, weaker, and doubled a hair off
+  // itself. The card is the print's own art run through the very transform the blit runs it through.
+  counterproof:'<g transform="translate(120,0) scale(-1,1)"><g opacity=".5">'+SCENE_PRINT+'</g>'+
+    '<g opacity=".26" transform="translate(2,1.5)">'+SCENE_PRINT+'</g></g>'
+};
 const PREVIEW_ART={
   plate:platePreview,trail:trailPreview,
+  sphere:id=>SPHERE_ART[id]||SPHERE_ART.graticule,
+  scenery:id=>SCENE_ART[id]||SCENE_ART.none,
   mark:id=>MARK_ART[id]||MARK_ART.quill,
   capture:id=>CAPTURE_ART[id]||CAPTURE_ART.ripple,
   frame:id=>FRAME_ART[id]||FRAME_ART.windheads,
