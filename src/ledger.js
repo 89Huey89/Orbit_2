@@ -111,6 +111,15 @@ const UNLOCKS=[
     describe:()=>'Make 500 perfect transfers'},
   {id:'saturn',kind:'mark',name:'Saturn with handles',latin:'Saturnus ansatus',stat:'perfects',threshold:1500,
     describe:()=>'Make 1,500 perfect transfers'},
+  // Three marks that are not the sky but the observing of it: the instrument an angle was actually
+  // taken with, the tool this plate was cut with, and the one body the century drew from life. Each
+  // hangs off a figure of its own rather than a fourth rung of the perfect-transfer ladder.
+  {id:'crossstaff',kind:'mark',name:'Cross-staff',latin:'Radius astronomicus',stat:'constellations',threshold:25,
+    describe:()=>'Trace 25 constellations in all'},
+  {id:'burin',kind:'mark',name:"Engraver's burin",latin:'Scalprum',stat:'captures',threshold:2500,
+    describe:()=>'Capture 2,500 orbits in all'},
+  {id:'moon',kind:'mark',name:'Galilean moon',latin:'Luna',stat:'bestRow',threshold:50,
+    describe:()=>'Reach row 50'},
   {id:'sanguine',kind:'trail',name:'Red chalk',latin:'Sanguinea',stat:'maxSpeedSlings',threshold:10,
     describe:()=>'Leave 10 slingshot stars at full speed'},
   {id:'silverpoint',kind:'trail',name:'Silverpoint',latin:'Stilus argenteus',stat:'maxSpeedSlings',threshold:50,

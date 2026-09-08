@@ -575,8 +575,9 @@ function drawTrail(){
 }
 // ---------- Observer marks: the glyph the traveller is engraved as ----------
 // Every mark is cut in the same local space — the heading along +x, the moving point at the origin —
-// and every one ends with the same head, so the actual position stays legible over a pale planet
-// whatever is chosen. The comet is the plate's own mark and the default.
+// and every one either ends with the shared head or, as the quill and the graver do, cuts its own
+// keylined point, so the actual position stays legible over a pale planet whatever is chosen. The
+// quill is the plate's own mark and the default; the other seven are earned.
 // The head all marks share: a reserved highlight on paper, a dark keyline, and the nib ticks that
 // brighten with the charge held.
 function markHead(boost,charge,inkHeld=1){
@@ -588,61 +589,126 @@ function markHead(boost,charge,inkHeld=1){
   ctx.beginPath();ctx.moveTo(5.1,0);ctx.lineTo(7.8+boost*1.5,0);ctx.moveTo(0,-4.7);ctx.lineTo(0,-6.4);ctx.moveTo(0,4.7);ctx.lineTo(0,6.1);ctx.stroke();
 }
 const markStroke=(alpha,width)=>{ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${alpha})`;ctx.lineWidth=width;};
+// A point on a quadratic at t. A mark laid in pieces — a comet's rays fading along their own length,
+// a feather's barbs standing off a curved rachis — is walked with this rather than built as a path
+// object per piece, since the pen redraws every one of them on every frame.
+const qAt=(t,a,c,b)=>{const u=1-t;return u*u*a+2*u*t*c+t*t*b;};
+// The half-width of a feather's vane along its rachis: nothing at the quill, widest two fifths of the
+// way out, nothing again at the tip. Barbs and the wash they enclose are both cut to this, so the two
+// agree and the vane closes rather than bristling past its own edge.
+const vaneProfile=u=>Math.sin(Math.PI*Math.pow(u,.78));
 const OBSERVER_MARKS={
   // The pen itself: the nib leads, cut to a point at the traveller's exact position and turned along
-  // the flight, with the barrel and the feather trailing behind it. The vane flexes back as the flight
-  // quickens and breathes a little; under reduced motion it is held still.
+  // the flight, with the stripped barrel and then the feather trailing behind it. The vane flexes
+  // back as the flight quickens and breathes a little; under reduced motion it is held still.
   quill(length,boost,breath,charge,inkHeld=1){
-    const flex=reducedMotion?0:boost*3.6+breath*1.6,back=-length*1.05;
+    const flex=reducedMotion?0:boost*3.6+breath*1.6;
+    // A feather does not grow when the hand moves faster. The plume keeps very nearly its own length
+    // whatever the flight is doing and answers to speed in the flex of the vane instead.
+    const plume=-(24+length*.3),tipY=-5.2-flex*.9,cx=plume*.5,cy=-1.1-flex*.26,BARBS=30;
     // On paper a ring of reserved, unprinted sheet keeps the ink of the vane clear of the nib.
-    if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4,0,7.4,5,0,0,TAU);ctx.fill();}
-    const tipY=-6-flex;
-    // The vane, laid either side of the shaft as a long lens of dilute ink.
-    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.3)`;
-    ctx.beginPath();ctx.moveTo(-5,-.6);
-    ctx.quadraticCurveTo(back*.4,-4.4-flex*.3,back,tipY);
-    ctx.quadraticCurveTo(back*.5,5.4-flex*.2,-5,1.8);ctx.fill();
-    markStroke(.78,1);
-    ctx.beginPath();ctx.moveTo(-5,0);ctx.quadraticCurveTo(back*.45,-1.6-flex*.35,back,tipY);ctx.stroke();
-    // The barbs of the feather, longer and more swept the further back they are cut.
-    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.72)`;ctx.lineWidth=.55;
-    ctx.beginPath();
-    for(let i=1;i<=12;i++){
-      const u=i/13,x=lerp(-5.5,back,u),y=lerp(-.3,tipY*.94,u);
-      const sweep=Math.sin(Math.PI*Math.min(1,u*1.15));
-      ctx.moveTo(x,y);ctx.lineTo(x-3.4-u*2.6,y+3.4+sweep*4.4);
-      ctx.moveTo(x,y);ctx.lineTo(x-2.6-u*1.8,y-2.2-sweep*3.1);
+    if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4.4,0,8,4.6,0,0,TAU);ctx.fill();}
+    // The vane is laid twice from one formula: once as the wash the barb tips enclose, once as the
+    // barbs themselves, thirty a side. One side is cut broad and the other narrow, which is what makes
+    // this a flight feather rather than a leaf.
+    for(const side of [-1,1]){
+      const reach=(side>0?4.7:3.1)*(1+boost*.07);
+      for(let pass=0;pass<2;pass++){
+        if(pass){ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${side>0?.56:.46})`;ctx.lineWidth=.34;}
+        else ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},${side>0?.28:.22})`;
+        ctx.beginPath();if(!pass)ctx.moveTo(-10.6,-.5);
+        for(let i=0;i<BARBS;i++){
+          const u=(i+.7)/(BARBS+.7),x=qAt(u,-10.6,cx,plume),y=qAt(u,-.5,cy,tipY);
+          const tx=2*((1-u)*(cx+10.6)+u*(plume-cx)),ty=2*((1-u)*(cy+.5)+u*(tipY-cy)),tl=Math.hypot(tx,ty)||1;
+          const ux=tx/tl,uy=ty/tl,w=vaneProfile(u)*reach,nx=-uy*side,ny=ux*side;
+          // Every barb leaves the rachis across it and is swept back along it, so the vane closes to
+          // the tip instead of standing off the shaft like the teeth of a comb.
+          const ex=x+nx*w+ux*w*.95,ey=y+ny*w+uy*w*.95;
+          if(pass){ctx.moveTo(x,y);ctx.quadraticCurveTo(x+nx*w*.78+ux*w*.2,y+ny*w*.78+uy*w*.2,ex,ey);}
+          else ctx.lineTo(ex,ey);
+        }
+        if(pass)ctx.stroke();else{ctx.lineTo(plume,tipY);ctx.fill();}
+      }
     }
+    // The rachis, laid over the barbs it carries.
+    markStroke(.8,.95);
+    ctx.beginPath();ctx.moveTo(-10.6,-.5);ctx.quadraticCurveTo(cx,cy,plume,tipY);ctx.stroke();
+    // The stripped barrel between the cut and the feather: a quill is bared where the hand holds it,
+    // so the shaft is two outlines with nothing printed between them and the sheet showing through,
+    // which is the only way an engraver had of saying that a thing was translucent.
+    markStroke(.66,.7);
+    ctx.beginPath();ctx.moveTo(-7,-2.2);ctx.quadraticCurveTo(-9,-2.2,-11.2,-1.4);
+    ctx.moveTo(-7,2.2);ctx.quadraticCurveTo(-9,2.1,-10.9,1);ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.42)`;ctx.lineWidth=.38;
+    ctx.beginPath();
+    for(let i=0;i<3;i++){const x=-8-i*1.4;ctx.moveTo(x,-2.1+i*.14);ctx.quadraticCurveTo(x-.55,0,x+.2,2.1-i*.18);}
     ctx.stroke();
-    // The nib: a cut point with its slit and shoulder, keylined so the moving point stays legible over
-    // a pale planet, exactly as the comet's head is.
+    // The nib: one taper from the barrel to a cut point at the traveller's own position, keylined so
+    // that point stays legible over a pale planet exactly as the shared head is.
     ctx.fillStyle=ink.dark.playerKeyline;
-    ctx.beginPath();ctx.moveTo(.6,0);ctx.lineTo(-7.4,-3.1);ctx.lineTo(-9.4,0);ctx.lineTo(-7.4,3.1);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(1.5,0);ctx.quadraticCurveTo(-3.2,-.85,-7.3,-2.2);
+    ctx.lineTo(-7.3,2.2);ctx.quadraticCurveTo(-3.2,.85,1.5,0);ctx.fill();
     ctx.fillStyle=ink.dark.playerMid;
-    ctx.beginPath();ctx.moveTo(-.6,0);ctx.lineTo(-7,-2.1);ctx.lineTo(-8.4,0);ctx.lineTo(-7,2.1);ctx.closePath();ctx.fill();
-    ctx.fillStyle=ink.dark.playerHighlight;
-    ctx.beginPath();ctx.ellipse(-5.6,-.5,1.9,1.2,0,0,TAU);ctx.fill();
-    ctx.strokeStyle=ink.dark.playerKeyline;ctx.lineWidth=.5;
-    ctx.beginPath();ctx.moveTo(-.4,0);ctx.lineTo(-6.4,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(.4,0);ctx.quadraticCurveTo(-3.4,-.55,-6.9,-1.65);
+    ctx.lineTo(-6.9,1.65);ctx.quadraticCurveTo(-3.4,.55,.4,0);ctx.fill();
+    ctx.fillStyle=ink.dark.playerHighlight;ctx.beginPath();ctx.ellipse(-4.6,-.7,1.9,.62,-.1,0,TAU);ctx.fill();
+    // The slit runs from the point back to the vent that stops it splitting further, which is the one
+    // detail that says a nib has been cut rather than merely sharpened.
+    ctx.strokeStyle=`rgba(${ink.dark.playerNib},.5)`;ctx.lineWidth=.45;
+    ctx.beginPath();ctx.moveTo(1.1,0);ctx.lineTo(-4.7,0);ctx.moveTo(-5.2,-1.2);ctx.lineTo(-5.2,1.2);ctx.stroke();
     // The bead of wet ink held at the point. It brightens with the slingshot charge in hand and
     // dries away as the nib empties, so a starved point is visible before the line ever stops.
     ctx.fillStyle=`rgba(${ink.dark.playerNib},${(.4+charge*.45)*(.24+inkHeld*.76)})`;
-    ctx.beginPath();ctx.arc(-1.6,0,(1+charge*.5)*(.4+inkHeld*.6),0,TAU);ctx.fill();
+    ctx.beginPath();ctx.arc(-1.4,0,(1+charge*.5)*(.4+inkHeld*.6),0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.42+charge*.3})`;ctx.lineWidth=.55;
-    ctx.beginPath();ctx.moveTo(-6.6,-3.4);ctx.lineTo(-6.6,-5.4);ctx.moveTo(-6.6,3.4);ctx.lineTo(-6.6,5.1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-5.6,-2.8);ctx.lineTo(-5.6,-4.8);ctx.moveTo(-5.6,2.8);ctx.lineTo(-5.6,4.5);ctx.stroke();
     return true;
   },
-  // A little copperplate comet: a bright head and asymmetric engraved filaments.
-  comet(length,boost,breath){
-    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.2)`;ctx.beginPath();ctx.moveTo(4,0);
-    ctx.bezierCurveTo(-3,-4.4,-length*.7,-2.8,-length,0);
-    ctx.bezierCurveTo(-length*.58,2.3,-4,4.1,4,0);ctx.fill();
-    for(let i=0;i<5;i++){
-      const side=i%2?1:-1,spread=(1+i*.48)*(1+boost*.28)+breath;
-      ctx.strokeStyle=`rgba(${i%2?ink.dark.playerFilamentA:ink.dark.playerFilamentB},${.56-i*.065})`;ctx.lineWidth=i===0?.7:.45;
-      ctx.beginPath();ctx.moveTo(1,side*.8);
-      ctx.bezierCurveTo(-length*.26,side*spread,-length*.63,side*(spread+.7),-length*(.72+i*.1),side*(.4+i*.22));ctx.stroke();
+  // A comet as the plates of the century actually cut one — Hevelius's Cometographia, Lubieniecki's
+  // Theatrum — where the tail is not a shape with an outline but a bundle of divergent rays. They
+  // widen away from the head, lean off the axis as the dust of a real tail lags behind the motion,
+  // and run out of ink at different lengths rather than closing to a point, which is what stops the
+  // whole mark reading as a leaf. Only the near half is washed, in stacked wedges, so the wash has
+  // somewhere to end that the hatching over it can hide.
+  comet(length,boost,breath,charge=0){
+    const spread=4+boost*4.8+breath*1.2,curl=1.9+boost*1.7,RAYS=9,STEPS=4;
+    for(let i=0;i<3;i++){
+      const far=length*(.3+i*.17),u=far/length;
+      ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.11)`;
+      ctx.beginPath();ctx.moveTo(2.6,-1.7);
+      ctx.quadraticCurveTo(-far*.5,-spread*u*.44+curl*.2,-far,-spread*u*.78+curl*u);
+      ctx.lineTo(-far,spread*u+curl*u);
+      ctx.quadraticCurveTo(-far*.5,spread*u*.5+curl*.2,2.6,1.7);ctx.fill();
     }
+    for(let k=0;k<STEPS;k++){
+      const t0=k/STEPS,t1=(k+1)/STEPS;
+      ctx.strokeStyle=`rgba(${k<2?ink.dark.playerFilamentB:ink.dark.playerFilamentA},${.52-k*.1})`;
+      ctx.lineWidth=.76-k*.13;
+      ctx.beginPath();
+      for(let i=0;i<RAYS;i++){
+        // Rays crowd the axis and thin toward the edges of the fan, and each runs its own length, so
+        // the tail ends ragged. Every one is walked in four pieces that fade as they go.
+        const v=i/(RAYS-1)*2-1,s=v*(.42+.58*Math.abs(v)),run=.62+(i%3)*.14+(i&1)*.08;
+        // Each ray leaves the coma's own limb rather than the nucleus, so the tail opens out of a
+        // head that has width instead of being whisked out of a single point.
+        const sx0=-2.6-Math.abs(s)*2.2,sy0=s*5.2;
+        const ex=-length*run,ey=s*spread+curl*run,ccx=-length*.36,ccy=s*spread*.3+curl*.3;
+        ctx.moveTo(qAt(t0,sx0,ccx,ex),qAt(t0,sy0,ccy,ey));
+        ctx.lineTo(qAt(t1,sx0,ccx,ex),qAt(t1,sy0,ccy,ey));
+      }
+      ctx.stroke();
+    }
+    // The coma: the head's own hood of light, and the beard of short rays standing off its sunward
+    // limb that every engraver of a comet drew. Both gather with the charge in hand.
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},${.19+charge*.11})`;
+    ctx.beginPath();ctx.ellipse(-.8,0,7.2,6.1,0,0,TAU);ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${.34+charge*.2})`;ctx.lineWidth=.4;
+    ctx.beginPath();
+    for(let i=0;i<9;i++){
+      const a=(i/8-.5)*2.1,r=6.3,out=1.4+((i*5)%4)*.75+charge*1.2;
+      ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+out),Math.sin(a)*(r+out));
+    }
+    ctx.stroke();
   },
   telescope(length,boost,breath){
     const back=-length*.86,joint=back*.45;
@@ -679,25 +745,135 @@ const OBSERVER_MARKS={
       markStroke(.5,.4);
       ctx.beginPath();ctx.moveTo(3.4,side*1.2);ctx.quadraticCurveTo(8,side*2.4,10.5,side*(5+breath));ctx.stroke();
     }
-    markStroke(.6,.9);ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(-length*.42,0);ctx.stroke();
+    markStroke(.6,.9);ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(-span*.72,0);ctx.stroke();
   },
+  // Saturn as Galileo actually reported it in 1610 and drew it in 1616: not one body but three, the
+  // handles standing clear of the globe on either side, since the glass he had could not resolve
+  // that they were one ring. The mark is therefore the only one in the catalogue with no heading of
+  // its own, and the shared head at the middle of it is the whole of what points.
   saturn(length,boost,breath){
-    const reach=8.4+breath;
+    const reach=8.6+breath;
     for(const side of [-1,1]){
       ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.24)`;
-      ctx.beginPath();ctx.ellipse(side*reach,0,3.3,4.1,0,0,TAU);ctx.fill();
-      markStroke(.8,.85);ctx.beginPath();ctx.ellipse(side*reach,0,3.3,4.1,0,0,TAU);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(side*reach,0,3.2,4.2,side*.12,0,TAU);ctx.fill();
+      markStroke(.8,.85);ctx.beginPath();ctx.ellipse(side*reach,0,3.2,4.2,side*.12,0,TAU);ctx.stroke();
       ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.4;
       ctx.beginPath();
-      for(let i=0;i<4;i++){const y=-2.4+i*1.6;ctx.moveTo(side*(reach-2.4),y);ctx.lineTo(side*(reach+2.4),y);}
+      for(let i=0;i<4;i++){const y=-2.4+i*1.6,w=2.6*Math.sqrt(Math.max(0,1-(y/4.2)*(y/4.2)));ctx.moveTo(side*(reach-w),y);ctx.lineTo(side*(reach+w),y);}
       ctx.stroke();
     }
-    markStroke(.6,.6);
-    ctx.beginPath();ctx.moveTo(-reach+3,0);ctx.lineTo(reach-3,0);ctx.stroke();
-    // The wake of the observation, faint behind the figure.
-    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${.3+boost*.2})`;ctx.lineWidth=.4;
-    ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-length*.6,breath*1.5);ctx.stroke();
+    // The observation's own wake: two hatched strokes rather than one ruled line, since a ruled line
+    // through three separate bodies reads as a skewer holding them together.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${.26+boost*.2})`;ctx.lineWidth=.4;
+    ctx.beginPath();
+    for(const side of [-1,1]){ctx.moveTo(-13,side*1.4);ctx.lineTo(-length*.52,side*(2.6+breath*1.5));}
+    ctx.stroke();
+  },
+  // The cross-staff the sky was actually shot with, sighted along its length: the graduated staff
+  // runs back from the body being observed to the eye, and the transversary slides down it toward
+  // the eye as the flight quickens — which is the way the instrument opens to a wider angle, and so
+  // exactly the motion of taking a reading. Its arm opens a little further with the charge in hand.
+  crossstaff(length,boost,breath,charge=0){
+    const back=-length*.92,slide=lerp(.42,.72,clamp(boost+breath*.4,0,1)),cross=back*slide,arm=6.4+charge*1.5;
+    markStroke(.74,1);
+    ctx.beginPath();ctx.moveTo(2.6,0);ctx.lineTo(back,0);ctx.stroke();
+    // The divisions cut into the staff, every third one struck longer as the scales of the period are.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.4;
+    ctx.beginPath();
+    for(let i=1;i<12;i++){const x=lerp(2.6,back,i/12),t=i%3?1:1.9;ctx.moveTo(x,-1.1*t);ctx.lineTo(x,1.1*t);}
+    ctx.stroke();
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.2)`;
+    ctx.beginPath();ctx.moveTo(cross-1.1,-arm);ctx.lineTo(cross+1.1,-arm);ctx.lineTo(cross+1.1,arm);ctx.lineTo(cross-1.1,arm);ctx.closePath();ctx.fill();
+    markStroke(.82,1);
+    ctx.beginPath();ctx.moveTo(cross,-arm);ctx.lineTo(cross,arm);
+    // A sighting vane stands at each end of the transversary, turned to face the observation.
+    ctx.moveTo(cross-.6,-arm);ctx.lineTo(cross+3.4,-arm);ctx.moveTo(cross-.6,arm);ctx.lineTo(cross+3.4,arm);ctx.stroke();
+    // The eye end: the little pierced plate the staff is held against the cheek by.
+    markStroke(.7,.8);
+    ctx.beginPath();ctx.moveTo(back,-2.6);ctx.lineTo(back,2.6);ctx.moveTo(back-1.4,-1.7);ctx.lineTo(back-1.4,1.7);ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${.3+boost*.18})`;ctx.lineWidth=.4;
+    ctx.beginPath();ctx.moveTo(cross,-arm);ctx.lineTo(back-1.4,0);ctx.moveTo(cross,arm);ctx.lineTo(back-1.4,0);ctx.stroke();
+  },
+  // The graver that cut this plate, laid as an engraver lays one: the blade almost flat on the
+  // copper with its point at the traveller, the short mushroom handle — flat underneath, so it
+  // clears the plate — seated in the heel of the hand behind it, and the shaving the point is
+  // lifting out of the line, which runs longer and stands further off the faster the line is being
+  // cut. The shaving is the one part of the mark that is not the tool but the work.
+  burin(length,boost,breath,charge=0){
+    const coil=reducedMotion?.9:.9+boost*.45+breath*.2;
+    // The blade: a long slim wedge to the point, with the top facet of its lozenge section laid in
+    // as a narrow band, which is the whole of how a square section was ever drawn in line.
+    ctx.fillStyle=ink.dark.playerKeyline;
+    ctx.beginPath();ctx.moveTo(2.4,0);ctx.lineTo(-17,-3.4);ctx.lineTo(-17,2.7);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerMid;
+    ctx.beginPath();ctx.moveTo(1.2,-.15);ctx.lineTo(-16.2,-2.7);ctx.lineTo(-16.2,-.9);ctx.closePath();ctx.fill();
+    ctx.fillStyle=ink.dark.playerHighlight;
+    ctx.beginPath();ctx.moveTo(.4,-.1);ctx.lineTo(-8,-1.3);ctx.lineTo(-8,-.7);ctx.closePath();ctx.fill();
+    // The face the point is actually cut on, struck across the very end of the blade.
+    ctx.strokeStyle=`rgba(${ink.dark.playerNib},${.5+charge*.3})`;ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(2.4,0);ctx.lineTo(-.8,-1.9);ctx.stroke();
+    // The handle: half a mushroom, hatched round its turning.
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.26)`;
+    ctx.beginPath();ctx.moveTo(-17,-3.4);ctx.bezierCurveTo(-18.6,-6.3,-23,-6,-23.6,-1.4);
+    ctx.quadraticCurveTo(-23.8,1.7,-22,2.7);ctx.closePath();ctx.fill();
+    markStroke(.8,.85);
+    ctx.beginPath();ctx.moveTo(-17,-3.4);ctx.bezierCurveTo(-18.6,-6.3,-23,-6,-23.6,-1.4);
+    ctx.quadraticCurveTo(-23.8,1.7,-22,2.7);ctx.lineTo(-17,2.7);ctx.closePath();ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.45)`;ctx.lineWidth=.36;
+    ctx.beginPath();
+    for(let i=0;i<3;i++){const x=-18.6-i*1.7;ctx.moveTo(x,-5.4+i*.8);ctx.quadraticCurveTo(x-.8,-.6,x+.3,2.7);}
+    ctx.stroke();
+    // The shaving: it springs off the point and rolls up on itself, tightening as it goes, the way
+    // copper leaves a graver — never a closed loop, which the eye reads as a bubble rather than a
+    // curl, and never longer than the blade it is being lifted off.
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},${.46+charge*.16})`;ctx.lineWidth=.42;
+    ctx.beginPath();ctx.moveTo(2.2,-.5);
+    ctx.quadraticCurveTo(.6,-4.6*coil,-2.6*coil-1.2,-4.4*coil);
+    ctx.quadraticCurveTo(-4.8*coil-2.4,-4.1*coil,-4.2*coil-2,-2.1*coil);ctx.stroke();
+    return true;
+  },
+  // The moon as Galileo washed it in 1610, carried at the traveller's shoulder: the crescent laid in
+  // wash rather than drawn in outline, its terminator broken by the mountains he was the first to
+  // say were there, the dark limb kept only as a broken contour, and three of his own spots laid
+  // along the light and drawn far larger than they are, exactly as he drew them. The disc is set
+  // wholly behind the head, since a ring closed around the head reads as an eye. The phase opens
+  // with the slingshot charge in hand, so the mark waxes as the flight is loaded.
+  moon(length,boost,breath,charge=0){
+    const R=8.4,CX=-12.6,k=Math.cos(Math.PI*(.34+charge*.26));
+    // The terminator is walked rather than swept, in fourteen pieces off one fixed jag: a ragged
+    // edge is the whole of what the wash was arguing, and a clean arc here would be the smooth moon
+    // it was arguing against.
+    ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.32)`;
+    ctx.beginPath();ctx.arc(CX,0,R,-Math.PI/2,Math.PI/2);
+    for(let i=1;i<=14;i++){
+      const th=Math.PI/2-i/14*Math.PI,jag=((i*7)%5-2)*.4+((i&1)?.3:-.25);
+      ctx.lineTo(CX+Math.cos(th)*(k*R+jag),Math.sin(th)*R);
+    }
+    ctx.closePath();ctx.fill();
+    markStroke(.76,.95);
+    ctx.beginPath();ctx.arc(CX,0,R,-Math.PI/2,Math.PI/2);ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentB},.52)`;ctx.lineWidth=.45;
+    ctx.beginPath();ctx.moveTo(CX,R);
+    for(let i=1;i<=14;i++){
+      const th=Math.PI/2-i/14*Math.PI,jag=((i*7)%5-2)*.4+((i&1)?.3:-.25);
+      ctx.lineTo(CX+Math.cos(th)*(k*R+jag),Math.sin(th)*R);
+    }
+    ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.3)`;ctx.lineWidth=.4;
+    ctx.beginPath();
+    for(let i=0;i<4;i++){
+      const a0=Math.PI/2+i*Math.PI/4+.16;
+      ctx.moveTo(CX+Math.cos(a0)*R,Math.sin(a0)*R);ctx.arc(CX,0,R,a0,a0+Math.PI/4-.32);
+    }
+    ctx.stroke();
+    for(const [along,y,r] of [[.34,-3.7,1.5],[.5,3.1,2.1],[.72,.4,1.1]]){
+      const edge=Math.sqrt(Math.max(.04,1-(y/R)*(y/R))),x=CX+lerp(k*R,R,along)*edge;
+      ctx.fillStyle=`rgba(${ink.dark.playerFilamentA},.32)`;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();
+      ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.35;
+      ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();
+    }
   }
+
 };function drawPlayer(){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
