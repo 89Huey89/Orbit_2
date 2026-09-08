@@ -216,11 +216,11 @@ function sketchDisc(g,r,rng){
 // irregular depression with a pin-prick at its centre, a broken compressed rim, and fibres dragged out
 // in the direction the observing hand came from. The shape is seeded, so it stays still on the sheet,
 // but its parts are revealed as the capture mark is made instead of appearing as one clean circle.
-function punchedLoop(g,r,flatten,rng,phase,steps=28){
+function punchedLoop(g,r,flatten,rng,phase,steps=40){
   const pts=[];
   for(let i=0;i<steps;i++){
     const a=i/steps*TAU;
-    const k=1+Math.sin(a*3+phase)*.065+Math.sin(a*7-phase*.7)*.035+(rng()-.5)*.028;
+    const k=1+Math.sin(a*3+phase)*.018+Math.sin(a*7-phase*.7)*.01+(rng()-.5)*.008;
     pts.push({x:Math.cos(a)*r*k,y:Math.sin(a)*r*flatten*k});
   }
   const last=pts[steps-1],first=pts[0];g.beginPath();g.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
@@ -234,40 +234,37 @@ function punchedMark(g,core,rng,alpha,progress,seed){
   g.save();
   const phase=rng()*TAU,drag=phase+Math.PI*(.58+rng()*.32),build=clamp(progress,0,1);
   const outer=core*(1.01+.025*Math.sin(phase));
-  // The shallow pressure bowl keeps the mark legible at the planet's scale without becoming a filled
-  // disc. Its darker lower rim and lighter upper rim do the work that a real fold in the paper would do.
-  punchedLoop(g,outer*1.08,.88,rng,phase);
-  g.fillStyle=`rgba(${ink.reveal.dry},${.065*alpha})`;g.fill();
-  punchedLoop(g,outer*.42,.8,rng,phase+.8);
-  g.fillStyle=`rgba(${ink.reveal.blot},${.12*alpha})`;g.fill();
+  // The rim is nearly circular: the organic character belongs to the paper fibres and the slight offset,
+  // not to a ragged painted outline. It closes as the capture mark is made.
+  const rimSweep=TAU*(.62+.38*build);
+  burinArc(g,0,0,outer,phase,phase+rimSweep,ink.reveal.washRim,.72*alpha,.82,seed^0x3a17,{segments:42,skips:1,wobble:.28});
+  burinArc(g,0,0,outer*1.018,drag,drag+TAU*Math.min(.28,.1+.18*build),ink.base.paperRgb,.22*alpha,.55,seed^0x4c29,{segments:12,skips:1,wobble:.2});
 
-  const rimSweep=TAU*(.28+.72*build);
-  burinArc(g,0,0,outer,phase,phase+rimSweep,ink.reveal.washRim,.62*alpha,.78,seed^0x3a17,{segments:26,skips:3,wobble:1.1});
-  burinArc(g,0,0,outer*1.035,drag,drag+TAU*Math.min(.46,.16+.3*build),ink.base.paperRgb,.42*alpha,.7,seed^0x4c29,{segments:14,skips:2,wobble:.8});
+  // A punched sheet needs a dark absence, not a dilute painted centre. Keep the cavity compact and
+  // slightly off-axis so it reads as a puncture through the page rather than a planet-sized blot.
+  const cx=Math.cos(drag)*outer*.08,cy=Math.sin(drag)*outer*.08*.82,hole=outer*(.27+rng()*.035);
+  g.save();g.translate(cx,cy);
+  punchedLoop(g,hole,.88,rng,drag+.4,32);
+  const holeAlpha=clamp(.25+.72*alpha,0,1);
+  g.fillStyle=`rgba(${ink.reveal.blot},${holeAlpha})`;g.fill();
+  g.strokeStyle=`rgba(${ink.base.inkStrong},${clamp(.5+.4*alpha,0,1)})`;g.lineWidth=.7;g.stroke();
+  g.restore();
 
-  // A few fibres escape the pressure rim. They are curved and unequal rather than radial ticks, so the
-  // mark feels pressed and dragged instead of stamped by a star-shaped brush.
-  const fibres=3+Math.round(build*7);
+  // Only short fibre burrs escape the rim. Their small cluster gives the punch direction without turning
+  // the body into a rough painting.
+  const fibres=2+Math.round(build*4);
   g.lineCap='round';
   for(let i=0;i<fibres;i++){
     const f=i/Math.max(1,fibres-1),a=drag+(f-.5)*1.15+(rng()-.5)*.22;
-    const inner=outer*(.69+rng()*.12),len=outer*(.16+rng()*.28)*(.65+.35*build);
-    const bend=(rng()-.5)*outer*.22,tx=Math.cos(a),ty=Math.sin(a),nx=-ty,ny=tx;
-    g.strokeStyle=`rgba(${i%3===0?ink.underdrawing.chalk:ink.reveal.strike},${(.2+rng()*.2)*alpha})`;
-    g.lineWidth=.35+rng()*.45;g.beginPath();
+    const inner=outer*(1.0+rng()*.025),len=outer*(.07+rng()*.12)*(.7+.3*build);
+    const bend=(rng()-.5)*outer*.08,tx=Math.cos(a),ty=Math.sin(a),nx=-ty,ny=tx;
+    g.strokeStyle=`rgba(${i%3===0?ink.underdrawing.chalk:ink.reveal.strike},${(.16+rng()*.16)*alpha})`;
+    g.lineWidth=.3+rng()*.3;g.beginPath();
     g.moveTo(tx*inner,ty*inner);
     g.quadraticCurveTo(tx*(inner+len*.45)+nx*bend,ty*(inner+len*.45)+ny*bend,tx*(inner+len),ty*(inner+len));
     g.stroke();
   }
 
-  // The puncture itself is small and offset, as if the hand entered the sheet at a slight angle. It is
-  // the only part that stays dense while the outer pressure marks dry away into the resolved drawing.
-  const cx=Math.cos(drag)*outer*.09,cy=Math.sin(drag)*outer*.09*.82;
-  g.save();g.translate(cx,cy);
-  punchedLoop(g,outer*.17,.72,rng,drag+.4,16);
-  g.fillStyle=`rgba(${ink.reveal.blot},${.25*alpha})`;g.fill();
-  g.strokeStyle=`rgba(${ink.reveal.washRim},${.72*alpha})`;g.lineWidth=.65;g.stroke();
-  g.restore();
   g.restore();
 }
 // ---------- Planets: the stages a colourist works in ----------
