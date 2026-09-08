@@ -328,6 +328,9 @@ class OrbitWorld {
     this.perfectStreak=0;this.recklessStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1; this.capMult = 1;
+    // Off by default: the darkness prunes what it has already passed (below), which a live run needs
+    // and a replayed one, rebuilding a whole chart to be read back rather than played, does not.
+    this.keepAll = false;
     const n = this.makeNode(-45, 0, 57, 0, 'still'); n.visited = true;
     this.lastMain = n;
     this.player = {x:0,y:0,vx:0,vy:0,angle:-.45,dir:-1,speed:offerDifficulty?OPENING_ORBIT_SPEED:BASE_SPEED,rad:n.r,node:n,orbitTime:0,orbitSweep:0,chargeAnnounced:false,tangentCapture:true,flightTime:0,ignore:-1,launch:null,deadTime:0,shielded:false,reflectorArmed:false,ink:1,dryAnnounced:false};
@@ -779,11 +782,13 @@ class OrbitWorld {
     // Pruning runs every physics tick (120 Hz), but the darkness only crosses any given element's
     // threshold now and then — checking first avoids allocating a new array on every tick that has
     // nothing to remove, which is nearly all of them.
-    const pruneY=this.floorY+170;
-    if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(n=>n===p.node||n.y<pruneY);
-    if(this.hazards.some(h=>h.y>=pruneY))this.hazards=this.hazards.filter(h=>h.y<pruneY);
-    if(this.nebulas.some(g=>g.y-g.r>=pruneY))this.nebulas=this.nebulas.filter(g=>g.y-g.r<pruneY);
-    if(this.constellations.length>14)this.constellations=this.constellations.slice(-14);
+    if(!this.keepAll){
+      const pruneY=this.floorY+170;
+      if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(n=>n===p.node||n.y<pruneY);
+      if(this.hazards.some(h=>h.y>=pruneY))this.hazards=this.hazards.filter(h=>h.y<pruneY);
+      if(this.nebulas.some(g=>g.y-g.r>=pruneY))this.nebulas=this.nebulas.filter(g=>g.y-g.r<pruneY);
+      if(this.constellations.length>14)this.constellations=this.constellations.slice(-14);
+    }
     for(const chart of this.constellations){
       chart.flash=Math.max(0,chart.flash-dt);
       if(!chart.completed&&chart.stars.some(s=>!s.visited&&s.y-s.cap>this.floorY-4))chart.expired=true;

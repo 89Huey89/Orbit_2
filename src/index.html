@@ -456,6 +456,13 @@
     #game.over #end-score,#game.over #record{animation:ink-rise .5s ease-out .5s backwards}
     #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
     #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
+    /* — Reviewing: the colophon steps aside and the finished plate takes the whole frame, free to drag. — */
+    #review-close{position:absolute;z-index:6;top:max(17px,calc(env(safe-area-inset-top) + 7px));right:max(15px,calc(env(safe-area-inset-right) + 7px));display:none}
+    #game.reviewing #review-close{display:inline-block}
+    #game.reviewing .hud{opacity:0}
+    #game.reviewing .footer{visibility:hidden;pointer-events:none}
+    #game.reviewing #sky{cursor:grab}
+    #game.reviewing.review-dragging #sky{cursor:grabbing}
   </style>
 </head>
 <body>
@@ -515,6 +522,8 @@
         <button id="ephemeris-open" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
         <button id="ceiling-open" class="diff-btn era-entry atlas-only" type="button">ERA II · THE CEILING</button>
         <button id="rock-open" class="diff-btn era-entry atlas-only" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
+        <button id="review-last" class="diff-btn atlas-only" type="button" hidden>REVIEW LAST PLATE</button>
+        <span id="review-last-note" class="small daily-note atlas-only"></span>
         <span id="daily-date" class="small daily-note atlas-only"></span>
       </div>
       <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
@@ -535,9 +544,10 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
+      <div class="end-plate-line"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
     </div>
   </section>
+  <button id="review-close" class="diff-btn" type="button">CLOSE</button>
   <section id="pause" class="screen hidden" aria-label="Paused"><strong id="pause-title">Suspended.</strong><div class="title-rule"><span></span></div><span class="instruction">Tap to continue</span></section>
   <section id="catalogue" class="screen hidden" aria-label="Catalogue" aria-hidden="true">
     <div class="catalogue-leaf">
@@ -621,6 +631,7 @@
 <script src="simulation.js"></script>
 <script src="audio.js"></script>
 <script src="plates.js"></script>
+<script src="replay.js"></script>
 <script src="ledger.js"></script>
 <script src="backdrop.js"></script>
 <script src="planets.js"></script>
@@ -637,6 +648,7 @@
 <script src="rock.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
+<script src="review.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>

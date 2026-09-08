@@ -44,7 +44,7 @@ const reveal=(function(){
     // one waits at 0, unless it is urgent — anything already inside the view draws at once, so a mark can
     // never be invisible where it matters.
     progress(key,duration,urgent){
-      if(reducedMotion)return 1;
+      if(reducedMotion||reviewing)return 1;
       let mark=born.get(key);
       if(!mark){
         if(!urgent&&drawing.size>=REVEAL_CAP)return 0;
@@ -57,13 +57,13 @@ const reveal=(function(){
     },
     // Seconds since a mark was begun, or -1 when it has never been asked for.
     age(key){
-      if(reducedMotion)return Infinity;
+      if(reducedMotion||reviewing)return Infinity;
       const mark=born.get(key);return mark?clock()-mark.birth:-1;
     },
     // Progress without registering: -1 for a mark the pen has not started. Used by the connection lines,
     // which follow whichever node is being drawn, and by the tests.
     peek(key){
-      if(reducedMotion)return 1;
+      if(reducedMotion||reviewing)return 1;
       const mark=born.get(key);if(!mark)return -1;
       return clamp((clock()-mark.birth)/mark.span,0,1);
     },
@@ -72,7 +72,7 @@ const reveal=(function(){
     // margin, nearest first, so the drawing is seen. The view keeps the traveller far enough below its top
     // that the next ring closes before a full-speed flight can reach it.
     prime(){
-      if(reducedMotion||!world)return;
+      if(reducedMotion||reviewing||!world)return;
       const top=world.cameraY-REVEAL_MARGIN,bottom=world.cameraY+world.height+80,inView=world.cameraY+world.height*.45;
       primeList.length=0;
       for(const n of world.nodes)if(n.y>top&&n.y<bottom)primeList.push(n.y,n,NODE_REVEAL);
@@ -419,7 +419,7 @@ function revealFigure(chart,draw){
 // The pricked line into a planet is drawn on as that planet is: everything above the pen's reach on the
 // least advanced of the marks currently being drawn is held back.
 function revealConnections(draw){
-  if(reducedMotion||!world){draw();return;}
+  if(reducedMotion||reviewing||!world){draw();return;}
   let frontier=-1;
   for(const n of world.nodes){
     if(n.type==='gold')continue;

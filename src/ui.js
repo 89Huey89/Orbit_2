@@ -5,6 +5,7 @@
 // Every ripple, ring and blot carries its own seed so the burin cuts each one differently.
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
 let eraReturn=null;
+let replayLog=null;
 // The atlas's own vocabulary — what a plain run of the printed star chart calls things, in its
 // own words. A plate cut for another century registers its own defineVoice() and replaces only the
 // entries it renames (see plateWords()/spoken() in src/plates.js); anything it leaves out is still
@@ -147,9 +148,15 @@ function newWorld(){
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
+  // A chart's whole course reduces to one thing repeated: when the traveller released. Kept here as
+  // world.time — the sim's own clock, immune to real time and frame jitter — so the plate can later be
+  // flown again from nothing but its seed and this list. Nothing reads this yet; it is laid down against
+  // the review screen still to come.
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
+  syncLastReviewButton();
 }
 function syncEraChrome(){
   // Everything here is a plate's own name for a fixture the atlas also has; the fixture stays where
@@ -222,6 +229,9 @@ function showEnd(){
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
   syncImpressumScreen();
+  // Saved regardless of preview: the plate itself was really drawn, whether or not its score was
+  // the kind the ledger keeps. Eras I and II are their own doors, outside review entirely.
+  if(eraId()===0)saveLastReplay(replayLog,{score:world.score,row,reason:world.reason,capturedAt:Date.now()});
   // Which situation the run ended in, in the same precedence the atlas always checked it in; a plate
   // that gives several of these the same line (the Ceiling gives four of the six one shared sentence)
   // still reads correctly, since only the chosen key's text is ever read. The old inline ternary this
@@ -495,17 +505,23 @@ function resize(){
   // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
   ctx.imageSmoothingQuality='high';
   backdrop=paintBackdrop();if(!grain)grain=grainTexture();
-  if(world)world.resize(W/scale,H/scale);
+  if(world){
+    world.resize(W/scale,H/scale);
+    // A resize mid-run pulls already-drawn nodes inboard (see OrbitWorld.resize), which the seed alone
+    // cannot reproduce; logged here so a replay can repeat the same pull at the same moment instead of
+    // only matching the run up to the first time the window changed shape.
+    if(replayLog)replayLog.resizes.push({at:world.time,width:world.width,height:world.height});
+  }
 }
 function enterFullscreen(){
   if(document.fullscreenElement||document.webkitFullscreenElement)return;
   try{const request=game.requestFullscreen||game.webkitRequestFullscreen;if(request){const p=request.call(game,{navigationUI:'hide'});if(p&&p.catch)p.catch(()=>{});}}catch(_){}
 }
 function handleInput(){
-  if(catalogueOpen||ephemerisOpen)return;
+  if(catalogueOpen||ephemerisOpen||reviewing)return;
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
-  else if(world.state==='playing')world.release();
+  else if(world.state==='playing'){if(world.release()&&replayLog)replayLog.releases.push(world.time);}
   else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
   else if(world.state==='paused'){world.state='playing';accumulator=0;renderDue=0;paceIntervals.length=0;frameTime=performance.now();$('pause').classList.add('hidden');}
 }
@@ -619,17 +635,21 @@ function tick(now){
   const raw=frameTime?now-frameTime:0;
   const dt=frameTime?Math.min(raw/1000,.05):0;frameTime=now;
   if(!document.hidden){
-    accumulator+=dt;
-    while(accumulator>=FLIGHT_STEP){
-      world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
+    if(reviewing){
+      if(--presentIn<=0){presentIn=presentEvery;renderReview();}
+    }else{
+      accumulator+=dt;
+      while(accumulator>=FLIGHT_STEP){
+        world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
+      }
+      recordTrail();
+      audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
+      pacePresent(dt,raw);
+      renderDue+=dt;
+      if(--presentIn<=0){presentIn=presentEvery;render(renderDue);renderDue=0;}
     }
-    recordTrail();
-    audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
-    pacePresent(dt,raw);
-    renderDue+=dt;
-    if(--presentIn<=0){presentIn=presentEvery;render(renderDue);renderDue=0;}
   }
   requestAnimationFrame(tick);
 }
 if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
-syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncEraChrome();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);

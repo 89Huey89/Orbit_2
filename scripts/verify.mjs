@@ -156,7 +156,8 @@ get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmet
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
-get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics};',context);
+get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,\
+replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
   const inscribed=()=>written().map(g=>g.text).join(' | ');
@@ -164,6 +165,24 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
+  // ---- A plate saved on a previous visit: the frontispiece names it, or stays silent about nothing ----
+  {
+    // storageBlocked throws on the raw getItem the same way a real blocked store would; storage.get()
+    // inside the app already catches that (see plates.js), so the fixture matches its own stand-in here.
+    let stored=null;try{stored=context.localStorage.getItem('orbit.lastReplay.v1');}catch(_){}
+    const btn=context.document.getElementById('review-last');
+    if(stored){
+      const rec=JSON.parse(stored);
+      assert.equal(btn.hidden,false,'A saved plate must show REVIEW LAST PLATE on the frontispiece: '+width+'x'+height);
+      assert.equal(context.document.getElementById('review-last-note').textContent,'ROW '+rec.row+' · '+rec.score,'Its note must read the saved row and score: '+width+'x'+height);
+      events['review-last:click']();
+      assert.equal(context.test.reviewing,true,'Clicking it must open a review of the saved plate: '+width+'x'+height);
+      assert.equal(context.test.reviewWorld.seed,rec.seed,'It must rebuild the saved seed, not whatever run is live: '+width+'x'+height);
+      context.test.closeReview();
+      assert.equal(context.test.reviewing,false);
+      assert.equal(context.document.getElementById('intro').classList.contains('hidden'),false,'Closing a review opened from the frontispiece must return to it, not to the colophon: '+width+'x'+height);
+    }else assert.equal(btn.hidden,true,'With nothing saved yet, the frontispiece must not offer to review it: '+width+'x'+height);
+  }
   // The impressum is engraved on the sheet, not attached to the viewport. The same stored world
   // coordinate must therefore move downward when the camera rises, with no second anchor created.
   {
@@ -897,6 +916,51 @@ get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,
       assert(place.y+place.h<=floor+1e-6,'The gloss stays out of the footer band at '+width+'x'+height+', waterline '+fy);
     }
   }
+  // ---- The replay: a chart rebuilt from nothing but its seed and when the traveller released ----
+  // A middling pilot — it takes any release that isn't steep, not only a perfect one — flies a real
+  // session through the actual gameplay input, exactly as a tap would. What it plays is then handed to
+  // replayRun() as nothing but replayLog, and the two must agree on everything pruning does not touch:
+  // an unpruned replay is expected to outgrow the live, pruned world's own arrays, not match them.
+  {
+    context.test.newWorld();context.test.handleInput();
+    let guard=0;
+    while(context.test.world.state==='playing'&&guard++<20000){
+      const w=context.test.world;
+      if(w.player.node){const aim=w.aim();if(aim&&!aim.steep)context.test.handleInput();}
+      frames(1);
+    }
+    const live=context.test.world;
+    assert.equal(live.state,'dead','The replay fixture must actually finish a run to be worth replaying: '+width+'x'+height);
+    const log=context.test.replayLog;
+    assert(log.releases.length>=4,'The fixture must record a real handful of releases: '+width+'x'+height);
+    const replayed=context.test.replayRun(log);
+    assert.equal(replayed.state,'dead','A replayed run must reach the same end the live one did: '+width+'x'+height);
+    assert.equal(replayed.reason,live.reason,'A replayed run must die of the same cause: '+width+'x'+height);
+    for(const key of ['score','captures','perfects','squares','maxCombo','progress','constellationsCompleted'])
+      assert.equal(replayed[key],live[key],'A replayed run must match the live one on '+key+' at '+width+'x'+height);
+    assert.equal(replayed.observations.map(o=>o.key).sort().join(),live.observations.map(o=>o.key).sort().join(),'A replayed run must earn the same observations: '+width+'x'+height);
+    assert(Math.abs(replayed.player.x-live.player.x)<1e-6&&Math.abs(replayed.player.y-live.player.y)<1e-6,'A replayed run must land in the same place: '+width+'x'+height);
+    assert(replayed.nodes.length>live.nodes.length,'An unpruned replay must keep more of the chart than the darkness left the live run holding: '+width+'x'+height);
+    // ---- The review: a free-scrolling camera over that same, unpruned replay ----
+    context.test.showEnd();
+    assert.equal(context.test.reviewing,false,'The colophon alone must not start a review: '+width+'x'+height);
+    context.test.openReview();
+    assert.equal(context.test.reviewing,true,'REVIEW THE PLATE must open one: '+width+'x'+height);
+    const rw=context.test.reviewWorld;
+    assert(rw&&rw.state==='dead'&&rw.nodes.length===replayed.nodes.length,'A review is the same unpruned replay, not a second one: '+width+'x'+height);
+    context.test.renderReview();
+    const bounds=context.test.reviewBounds(rw);
+    assert(bounds.min<=bounds.max,'A review\'s scroll range must never invert, however short the run: '+width+'x'+height);
+    context.test.panReviewBy(-1e9);
+    assert.equal(context.test.reviewCameraY,bounds.min,'Panning past the top of the climb must stop there: '+width+'x'+height);
+    context.test.panReviewBy(1e9);
+    assert.equal(context.test.reviewCameraY,bounds.max,'Panning past the opening must stop there, not run on: '+width+'x'+height);
+    context.test.renderReview();
+    context.test.handleInput();
+    assert.equal(context.test.reviewing,true,'Reviewing holds the gameplay input exactly as the catalogue and ephemeris do: '+width+'x'+height);
+    context.test.closeReview();
+    assert.equal(context.test.reviewing,false,'CLOSE must end the review: '+width+'x'+height);
+  }
   // ---- The doors, last, because entering a century deals a fresh chart ----
   // Entering puts a century's plate on the press; leaving puts back the plate that was there, and
   // never strands the player on a plate that is itself a mode. Every era renders on both sides of the
@@ -979,11 +1043,14 @@ const FULL_LEDGER=JSON.stringify({captures:10500,perfects:4000,bestFlow:9,conste
   deepestChapter:4,deepestHardcoreChapter:4,grazes:40,shieldsSpent:20,reflectorsSpent:10,maxSpeedSlings:400,inkwellsFound:14,badAngles:550,runs:{classic:140,relaxed:6,hardcore:20},
   playSeconds:41000,personalBests:{classic:2400,relaxed:900,hardcore:1800},
   observations:{perfectThree:6,skipFive:5,maxSpeed:3,graze:2,pureChart:2,fortyRows:9,threeMinutes:4,rightAngle:12},allFourInOneRun:true});
+// A plate from a previous visit, saved under its own seed and viewport rather than this layout's —
+// review has to rebuild it as it was flown, not as the frontispiece booting it happens to be sized.
+const SAVED_REPLAY=JSON.stringify({seed:1,width:440,height:860,offerDifficulty:true,releases:[],resizes:[],score:250,row:9,reason:'THE NIB RAN DRY',capturedAt:Date.now()});
 const pLayouts=Promise.all([
   runtimeLayout({width:390,height:844}),
   runtimeLayout({width:430,height:932,storageBlocked:true,reduceMotion:true}),
   // The whole catalogue earned, on a wide plate where the frame prints its credit line and its legend.
-  runtimeLayout({width:1440,height:900,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB',
+  runtimeLayout({width:1440,height:900,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB','orbit.lastReplay.v1':SAVED_REPLAY,
     'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}}),
   runtimeLayout({width:844,height:390}),
   // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one. The
@@ -1895,7 +1962,7 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
 
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
 
 }finally{
   for(const w of workers)w.terminate();

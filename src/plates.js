@@ -5,6 +5,11 @@
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// A second, unrelated reason for the pen to skip its own stroke-by-stroke drawing: reviewing a
+// finished plate wants every mark already standing, exactly as it stands after the run, never a
+// live accessibility signal (reducedMotion stays about motion, this stays about which world is on
+// the press). See openReview()/renderReview() in src/review.js.
+let reviewing=false;
 let W=0,H=0,DPR=1,scale=1,world,trail=[],inkPath=[],particles=[],rings=[],floaters=[],surveys=[],glyphs=new Map();
 // Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
 // higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
