@@ -17,15 +17,18 @@ function replayRun(log){
     world.darknessMult=DARKNESS_MULT[e.value];world.inkMult=INK_MULT[e.value];world.perfectMult=PERFECT_MULT[e.value];world.capMult=CAP_MULT[e.value];
   },log.offerDifficulty);
   world.keepAll=true;
-  world.start();
-  const releases=log.releases||[],resizes=log.resizes||[];
-  let ri=0,zi=0,guard=0;
-  while(world.state==='playing'&&guard++<REPLAY_TICK_GUARD){
+  const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
+  let ri=0,zi=0,guard=0,started=false;
+  // The live clock keeps running while the traveller is still reading the frontispiece (nodes wobble
+  // there too), so a release logged against world.time is only meaningful once that same idle stretch
+  // has been sat through here — start() is held off, exactly like the live 'ready' state, until it has.
+  while(world.state!=='dead'&&guard++<REPLAY_TICK_GUARD){
     // Checked before the tick, not after: live input lands between two ticks, on whatever world.time
     // the most recently completed one left behind, and never on the tick a release or resize is itself
     // logged against. Firing after update() here instead would let every mark answer to an orbit sweep
     // one tick further along than the one it actually answered to live.
     while(zi<resizes.length&&world.time>=resizes[zi].at){world.resize(resizes[zi].width,resizes[zi].height);zi++;}
+    if(!started&&world.time>=startedAt){world.start();started=true;}
     while(ri<releases.length&&world.time>=releases[ri]){world.release();ri++;}
     world.update(FLIGHT_STEP);
   }

@@ -35,7 +35,7 @@ function say(text,where){
   return inscribe(text,where);
 }
 function event(type,e){
-  if(type==='start'){audio.start();return;}
+  if(type==='start'){audio.start();if(replayLog)replayLog.startedAt=world.time;return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
     // The departure is surveyed on the orbit just left, and stays on the sheet as dried ink.
@@ -150,9 +150,12 @@ function newWorld(){
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
   // A chart's whole course reduces to one thing repeated: when the traveller released. Kept here as
   // world.time — the sim's own clock, immune to real time and frame jitter — so the plate can later be
-  // flown again from nothing but its seed and this list. Nothing reads this yet; it is laid down against
-  // the review screen still to come.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,releases:[],resizes:[]};
+  // flown again from nothing but its seed and this list. startedAt defaults to 0 (an immediate start)
+  // and is corrected the moment 'start' actually fires (event(), below): the sim clock ticks on while
+  // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
+  // logs every release well after world.time zero, and the replay has to sit through that same idle
+  // stretch rather than starting cold at the first release's own timestamp.
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,startedAt:0,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');

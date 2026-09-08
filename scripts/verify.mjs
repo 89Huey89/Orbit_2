@@ -921,8 +921,12 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // session through the actual gameplay input, exactly as a tap would. What it plays is then handed to
   // replayRun() as nothing but replayLog, and the two must agree on everything pruning does not touch:
   // an unpruned replay is expected to outgrow the live, pruned world's own arrays, not match them.
+  // A dawdle on the frontispiece is folded in before the first tap: world.time keeps ticking (and its
+  // nodes keep wobbling) while the sheet just sits there waiting to be started, so every release this
+  // pilot logs afterward is stamped well past zero, and the replay has to sit through that same idle
+  // stretch rather than starting cold at the first release's own timestamp.
   {
-    context.test.newWorld();context.test.handleInput();
+    context.test.newWorld();frames(300);context.test.handleInput();
     let guard=0;
     while(context.test.world.state==='playing'&&guard++<20000){
       const w=context.test.world;
@@ -951,6 +955,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.renderReview();
     const bounds=context.test.reviewBounds(rw);
     assert(bounds.min<=bounds.max,'A review\'s scroll range must never invert, however short the run: '+width+'x'+height);
+    assert(bounds.min<bounds.max,'A run that climbed several rows must leave the review something to scroll through: '+width+'x'+height);
     context.test.panReviewBy(-1e9);
     assert.equal(context.test.reviewCameraY,bounds.min,'Panning past the top of the climb must stop there: '+width+'x'+height);
     context.test.panReviewBy(1e9);
