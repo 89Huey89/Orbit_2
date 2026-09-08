@@ -834,6 +834,31 @@ assert.equal(respite.floorY,frozenFloor);assert.equal(respite.darknessGrace,froz
 respite.state='playing';for(let i=0;i<120*4;i++)respite.update(step);
 assert.equal(respite.darknessGrace,0);const recoveredFloor=respite.floorY;respite.update(step);assert(respite.floorY<recoveredFloor,'Darkness resumes after the reward');
 
+// A skipped orbit also banks a capped, decaying head start on the flood: a burst of skips keeps the
+// pursuit off-screen for a few seconds instead of it being re-painted at the sill next frame.
+{
+  const w=new OrbitWorld(81,440,860);w.start();
+  const origin=w.player.node,target=w.makeNode(origin.x+origin.r+25,origin.y-900,54,6,'still');
+  w.nodes=[origin,target];w.lastMain=target;w.player.angle=0;w.player.dir=-1;w.positionPlayer();
+  const aim=w.aim();assert.equal(aim?.n,target);assert.equal(aim.steep,false,'the fixture must actually score');
+  w.elapsed=5;w.release();
+  for(let i=0;i<120*10&&w.state==='playing'&&!w.player.node;i++)w.update(step);
+  assert.equal(w.player.node,target,'the long transfer lands');
+  assert(w.darknessLead>259&&w.darknessLead<=260,'five skipped orbits at 55 each are capped at 260, not stacked without limit');
+  // Force the camera far ahead, as the skips just flown would, and confirm the floor is let to trail
+  // behind the ordinary 25-unit slack rather than being snapped back to the sill immediately.
+  w.cameraY-=600;const bound=w.cameraY+w.height-25;w.floorY=bound+w.darknessLead-5;
+  w.update(step);
+  assert(w.floorY>bound+1,'the banked lead must widen the clamp, not just the ordinary 25-unit slack');
+  // Pulled well clear of the player so idle chase alone cannot end the run, the credit still leaks
+  // away on its own rather than standing as a permanent pardon.
+  w.floorY=w.player.y+900;
+  for(let i=0;i<120*15&&w.darknessLead>0;i++)w.update(step);
+  assert.equal(w.state,'playing');assert.equal(w.darknessLead,0,'the head start leaks away rather than standing forever');
+  w.floorY=w.cameraY+w.height+50;w.update(step);
+  assert(w.floorY<=w.cameraY+w.height-25+1e-6,'once spent, the ordinary slack is all that is left');
+}
+
 // Explicit hazard contact and disappearing-node deadline.
 const hit=new OrbitWorld(9);hit.start();hit.release();hit.hazards.push({x:hit.player.x+hit.player.vx*.05,y:hit.player.y+hit.player.vy*.05,r:10,near:false});
 for(let i=0;i<15;i++)hit.update(step);assert.equal(hit.state,'dead');assert.equal(hit.reason,'DRAWN INTO A VORTEX');

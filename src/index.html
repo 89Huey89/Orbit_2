@@ -311,6 +311,82 @@
       #game .exlibris{display:none}
       #game #end-unlocked{margin:2px 0 3px;font-size:9px}
     }
+    /* — Mobile-first studiolo: the atlas remains a Renaissance leaf, but the hand reaches it with
+       one thumb. Cards carry the engraved preview; the old ruled register survives in the record pane. — */
+    #catalogue{align-items:stretch;justify-content:stretch;padding:0;background:rgba(var(--veil),.82)}
+    #catalogue .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom));background:rgba(var(--veil),.975)}
+    #game.cataloguing .footer{visibility:hidden;pointer-events:none}
+    #catalogue .catalogue-head{padding-bottom:2px}
+    #catalogue .catalogue-head .eyebrow{font-size:8px;letter-spacing:.28em;margin-bottom:4px}
+    #catalogue h2{font-size:clamp(22px,7vw,29px);letter-spacing:.23em;text-indent:.23em}
+    #catalogue .title-rule{margin-top:7px;width:70px}
+    .catalogue-body{margin-top:5px;padding:0 2px 4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+    .catalogue-body::-webkit-scrollbar{width:5px}
+    .catalogue-body::-webkit-scrollbar-track{background:transparent}
+    .catalogue-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:0}
+    .cat-tabs{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 -2px 10px;padding:4px 0 9px;background:linear-gradient(rgba(var(--veil),1),rgba(var(--veil),.96) 76%,transparent)}
+    .cat-tab-btn{min-height:44px;width:100%;padding:6px 3px;font-size:9px;letter-spacing:.13em;line-height:1.2}
+    .cat-tab-btn::after{content:attr(data-sub);display:block;margin-top:3px;font-family:var(--face-text);font-size:10px;letter-spacing:.02em;text-transform:none;color:var(--muted)}
+    .cat-tab-btn[aria-pressed="true"]::after{color:var(--gold)}
+    .cat-overview{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin:0 0 14px;padding:10px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.3),rgba(var(--veil),.72));position:relative}
+    .cat-overview::before{content:'';position:absolute;inset:4px;border:1px solid var(--line);opacity:.48;pointer-events:none}
+    .cat-overview-seal{position:relative;z-index:1;width:59px;height:59px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--gold);border-radius:50%;color:var(--gold)}
+    .cat-overview-seal::after{content:'';position:absolute;inset:4px;border:1px solid var(--line);border-radius:50%}
+    .cat-overview-seal strong{font-family:var(--face-text);font-size:22px;font-weight:400;line-height:1}
+    .cat-overview-seal span{font-family:var(--face-sc);font-size:8px;letter-spacing:.08em;color:var(--muted);margin-top:3px}
+    .cat-overview-copy{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+    .cat-overview-kicker,.cat-overview-progress{font-family:var(--face-sc);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+    .cat-overview-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--face-text);font-size:15px;font-weight:400;color:var(--ivory)}
+    .cat-overview-progress{color:var(--gold);font-size:8px}
+    .cat-progress-rule{height:2px;display:block;margin-top:4px;background:var(--line)}
+    .cat-progress-rule i{display:block;height:100%;background:var(--gold)}
+    .record-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0 0 15px}
+    .record-stat{min-height:70px;display:flex;flex-direction:column;justify-content:center;padding:9px 10px;border:1px solid var(--line);background:rgba(var(--veil),.26)}
+    .record-stat strong{font-family:var(--face-text);font-size:22px;font-weight:400;line-height:1.05;color:var(--best);font-variant-numeric:tabular-nums}
+    .record-stat span{margin-top:6px;font-family:var(--face-sc);font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+    .ledger-table th{font-size:8.5px;letter-spacing:.14em;padding:8px 3px 8px 0}
+    .ledger-table td{font-size:14px;padding:8px 3px 8px 0}
+    .cat-group{margin-top:20px}
+    .cat-group h3{min-height:30px;font-size:10px;letter-spacing:.16em;padding-bottom:6px}
+    .cat-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:8px 0 0;list-style:none}
+    .cat-row{min-width:0;border:1px solid var(--line);background:rgba(var(--veil),.22)}
+    .cat-item{min-height:154px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;width:100%;padding:9px;background:none;border:0;text-align:left;color:var(--copy)}
+    .cat-item:hover,.cat-item:focus-visible{color:var(--ivory);background:rgba(var(--veil),.24)}
+    .cat-item:focus-visible{outline:1px solid var(--gold);outline-offset:-3px}
+    .cat-item[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--gold);color:var(--ivory)}
+    .cat-item[aria-pressed="true"] .cat-name::before{content:'◆ ';font-size:7px;vertical-align:middle;color:var(--gold)}
+    .cat-preview{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:75px;flex:0 0 75px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.6),rgba(var(--veil),.12));color:var(--gold)}
+    .cat-preview::before,.cat-preview::after{content:'';position:absolute;inset:6px;border:1px solid var(--line);pointer-events:none}
+    .cat-preview::after{inset:12px 21%;border-top:0;border-bottom:0;opacity:.5}
+    .cat-preview-glyph{position:relative;z-index:1;font-family:var(--face-text);font-size:34px;line-height:1;color:var(--gold);text-shadow:0 0 12px rgba(var(--veil),.8)}
+    .cat-preview-rule{position:absolute;left:16%;right:16%;bottom:9px;height:1px;background:var(--line)}
+    .cat-preview[data-kind="trail"] .cat-preview-glyph{font-size:42px;transform:rotate(-22deg)}
+    .cat-preview[data-kind="capture"] .cat-preview-glyph{font-size:31px}
+    .cat-preview[data-kind="frame"] .cat-preview-glyph{font-size:37px}
+    .cat-preview[data-kind="figures"] .cat-preview-glyph{font-size:35px}
+    .cat-preview.is-locked{color:var(--muted);border-style:dashed;opacity:.72}
+    .cat-preview.is-locked .cat-preview-glyph{font-family:var(--face-sc);font-size:25px;color:var(--muted)}
+    .cat-card-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:3px}
+    .cat-name{display:block;overflow:hidden;max-width:100%;font-family:var(--face-text);font-size:15px;line-height:1.1;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+    .cat-latin{display:block;overflow:hidden;max-width:100%;font-size:10px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+    .cat-state{margin-top:3px;font-family:var(--face-sc);font-size:8px;letter-spacing:.13em;color:var(--gold)}
+    .cat-cond{display:block;margin-top:4px;font-size:10px;line-height:1.35;color:var(--muted);opacity:.9}
+    .cat-card.locked{display:flex;flex-direction:column;gap:8px;padding:9px;min-height:205px}
+    .cat-card.locked .cat-card-copy{flex:1}
+    .cat-card.locked .cat-name{color:var(--copy)}
+    .cat-granted{display:block}
+    .cat-initials{min-height:44px;margin:14px 0 0;padding:8px 0;font-size:9px}
+    .cat-initials input{min-height:40px;width:4.6em}
+    #catalogue-close{min-height:44px;margin:9px auto 0;padding:8px 16px}
+    @media(min-width:720px){
+      #catalogue{padding:28px 28px 84px}
+      #catalogue .catalogue-leaf{width:min(920px,100%);height:min(720px,100%);padding:22px 25px 15px}
+      #catalogue .catalogue-head .eyebrow{font-size:9px}
+      .cat-tabs{margin-bottom:14px}
+      .cat-overview{padding:13px 16px}
+      .cat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .cat-item{min-height:162px}
+    }
     /* — The ephemeris: an almanac leaf of the daily plates, ruled as a month table — */
     #ephemeris{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
     .eph-leaf{max-width:min(460px,100%)}

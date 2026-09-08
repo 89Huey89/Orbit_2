@@ -38,6 +38,12 @@ const FLIGHT_STEP = 1/120;
 const INK_REACH = 2000;
 const INK_ORBIT_GAIN = 0.13, INK_SLING_GAIN = 0.85;
 const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
+// A skipped orbit also buys a head start on the flood: the floor is allowed to trail this far
+// further behind the camera's bottom edge than its ordinary 25-unit slack, so a traveller who
+// outran the pursuit sees it, rather than finding it re-painted at the sill on the very next frame.
+// The credit is capped rather than stacked without limit, and leaks away in world units per second
+// whether or not it is spent, so a burst of skips buys a breather rather than a standing pardon.
+const DARKNESS_LEAD_PER_SKIP = 55, DARKNESS_LEAD_CAP = 260, DARKNESS_LEAD_DECAY = 28;
 // The chart is drawn for a pace rather than for a row count, and every transfer on it is cut to
 // take about the same time to fly. As the early slingshots put a faster pace within reach the
 // gulfs open to match, so speed earned on a star buys distance instead of merely arriving sooner.
@@ -310,7 +316,7 @@ class OrbitWorld {
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
-    this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;
+    this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;this.darknessLead=0;
     // Figure order and nebula placement use their own streams so the main course
     // generation for a seed is unaffected by them.
     const shuffle=seeded((seed*2654435761>>>0)^0x9e3779b9);
@@ -615,6 +621,7 @@ class OrbitWorld {
     }
     this.positionPlayer();
     const skipBonus=Math.round(skipped*10*scoreMultiplier);
+    if(skipped>0)this.darknessLead=Math.min(DARKNESS_LEAD_CAP,this.darknessLead+skipped*DARKNESS_LEAD_PER_SKIP);
     const skip=skipped>0,quick=l&&l.sweep<TAU*1.25;
     // An inkwell only pays out on a streak already standing when the traveller reaches it — the streak
     // this landing itself extends or breaks is read below, after it is folded in.
@@ -763,8 +770,9 @@ class OrbitWorld {
     const target=this.topY-this.height*.57;
     if(target<this.cameraY)this.cameraY=lerp(this.cameraY,target,1-Math.exp(-dt*4));
     const respite=Math.min(dt,this.darknessGrace);this.darknessGrace=Math.max(0,this.darknessGrace-dt);
+    this.darknessLead=Math.max(0,this.darknessLead-DARKNESS_LEAD_DECAY*dt);
     if(this.elapsed>1.5)this.floorY+=48*respite-this.darknessSpeed()*(dt-respite);
-    this.floorY=Math.min(this.floorY,this.cameraY+this.height-25);
+    this.floorY=Math.min(this.floorY,this.cameraY+this.height-25+this.darknessLead);
     if(p.y>this.floorY-4)this.die('THE DARK CAUGHT UP');
     if(Math.abs(p.x)>this.width/2+16)this.edgeHit();
     this.ensureAhead();

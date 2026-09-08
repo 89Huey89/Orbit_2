@@ -271,6 +271,29 @@ function catalogueTable(){
     rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
     '</tbody></table>';
 }
+function catalogueOverview(){
+  const total=UNLOCKS.length,earned=unlockedIds().size,percent=total?Math.round(earned/total*100):100;
+  const locked=UNLOCKS.filter(entry=>!isUnlocked(entry.id));
+  const next=locked.map(entry=>({entry,progress:unlockProgress(entry)}))
+    .filter(item=>item.progress).sort((a,b)=>a.progress.value/a.progress.threshold-b.progress.value/b.progress.threshold)[0];
+  const nextText=next?next.entry.describe():locked.length?'Complete a named feat':'The catalogue is complete';
+  const nextProgress=next?commas(Math.min(next.progress.value,next.progress.threshold))+' / '+commas(next.progress.threshold):locked.length?'SPECIAL':commas(total)+' / '+commas(total);
+  return '<div class="cat-overview">'+
+    '<div class="cat-overview-seal"><strong>'+earned+'</strong><span>/ '+total+'</span></div>'+
+    '<div class="cat-overview-copy"><span class="cat-overview-kicker">THE STUDIOLO · '+percent+'%</span>'+
+      '<strong>'+plainText(nextText)+'</strong>'+
+      '<span class="cat-overview-progress">NEXT · '+nextProgress+'</span>'+
+      '<span class="cat-progress-rule"><i style="width:'+percent+'%"></i></span></div>'+
+    '</div>';
+}
+function recordOverview(){
+  return '<div class="record-overview">'+
+    '<div class="record-stat"><strong>'+commas(unlockedIds().size)+' / '+UNLOCKS.length+'</strong><span>Unlocks</span></div>'+
+    '<div class="record-stat"><strong>'+commas(ledgerStat('constellations'))+' / '+CONSTELLATIONS.length+'</strong><span>Routes traced</span></div>'+
+    '<div class="record-stat"><strong>'+commas(ledger.bestRow)+'</strong><span>Highest row</span></div>'+
+    '<div class="record-stat"><strong>'+commas(ledger.bestFlow)+'×</strong><span>Best flow</span></div>'+
+    '</div>';
+}
 // The score and the run count the ledger holds for each pressure, TIRO through MAGISTER, beside the
 // daily plate's own tally under its own name.
 function pressureTable(){
@@ -298,7 +321,7 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=catalogueTable()+'<table class="ledger-table"><tbody>'+
+  let html=recordOverview()+catalogueTable()+'<table class="ledger-table"><tbody>'+
     rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
     '</tbody></table>';
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
@@ -310,31 +333,48 @@ function catalogueRecord(){
     '</tbody></table></section>';
   return html;
 }
+const PREVIEW_GLYPHS={
+  plate:{night:'☽',paper:'▧',cellarius:'✶',verdigris:'❧',foxed:'◌',proof:'◇',azzurra:'✧',sepia:'◈'},
+  mark:{quill:'✒',comet:'☄',telescope:'⌖',moth:'✦',saturn:'♄'},
+  trail:{irongall:'╱',sanguine:'╱',silverpoint:'∿',goldleaf:'✦',umber:'╱',woad:'╱',vermilion:'╱',malachite:'╱',ultramarine:'╱',bistre:'╱',orpiment:'✧'},
+  capture:{ripple:'◌',rose:'✥',seal:'✹',manicule:'☞'},
+  frame:{windheads:'◒',strapwork:'❦',acanthus:'❧',seamonsters:'♆'},
+  figures:{hevelius:'✺',bayer:'✷',bode:'✹'}
+};
+function cataloguePreview(item,kind,locked=false){
+  const glyph=(PREVIEW_GLYPHS[kind]&&PREVIEW_GLYPHS[kind][item.id])||'✧';
+  return '<span class="cat-preview'+(locked?' is-locked':'')+'" data-kind="'+plainText(kind)+'" data-item="'+plainText(item.id)+'" aria-hidden="true">'+
+    '<span class="cat-preview-glyph">'+(locked?'?':glyph)+'</span><span class="cat-preview-rule"></span></span>';
+}
 function catalogueRow(item,kind){
   const entry=UNLOCK_BY_ID[item.id];
   if(entry&&!isUnlocked(item.id)){
     const progress=unlockProgress(entry);
-    const need=entry.describe()+(progress?' · '+commas(Math.min(progress.value,progress.threshold))+' / '+commas(progress.threshold):'');
-    return `<li class="cat-row locked"><span class="cat-blank" aria-hidden="true"></span><span class="cat-cond">${plainText(need)}</span></li>`;
+    const need=entry.describe()+(progress?' · '+commas(Math.min(progress.value,progress.threshold))+' / '+commas(progress.threshold):' · SPECIAL FEAT');
+    return `<li class="cat-row cat-card locked">${cataloguePreview(item,entry.kind||kind||'medal',true)}<div class="cat-card-copy"><span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">LOCKED</span><span class="cat-cond">${plainText(need)}</span></div></li>`;
   }
-  const label=`<span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span>`;
-  if(!kind)return `<li class="cat-row"><span class="cat-granted">${label}</span></li>`;
-  const chosen=cosmetic(kind)===item.id;
-  return `<li class="cat-row"><button class="cat-item" type="button" data-kind="${kind}" data-id="${item.id}" aria-pressed="${chosen}">${label}</button></li>`;
+  const chosen=kind&&cosmetic(kind)===item.id;
+  const label=`<span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">${chosen?'EQUIPPED':'UNLOCKED'}</span>`;
+  if(!kind)return `<li class="cat-row cat-card">${cataloguePreview(item,entry?.kind||'medal')}<div class="cat-card-copy">${label}</div></li>`;
+  return `<li class="cat-row cat-card"><button class="cat-item" type="button" data-kind="${kind}" data-id="${item.id}" aria-pressed="${chosen}">${cataloguePreview(item,kind)}<span class="cat-card-copy">${label}</span></button></li>`;
 }
 // Every cosmetic group, the named feats as earned-or-not, and the engraver's credit — the catalogue
 // half of the leaf, unchanged from before the Record tab existed beside it.
 function catalogueItems(){
-  let html='';
+  let html=catalogueOverview();
   for(const group of COSMETIC_KINDS){
-    html+=`<section class="cat-group"><h3>${group.title}<span class="cat-latin">${group.latin}</span></h3><ul>`;
+    html+=`<section class="cat-group"><h3>${group.title}<span class="cat-latin">${group.latin}</span></h3><ul class="cat-grid">`;
     for(const item of cosmeticItems(group.kind))html+=catalogueRow(item,group.kind);
     html+='</ul></section>';
   }
-  html+='<section class="cat-group"><h3>Named feats<span class="cat-latin">Insignia</span></h3><ul>';
+  return html;
+}
+function catalogueInsignia(){
+  let html=catalogueOverview();
+  html+='<section class="cat-group"><h3>Named feats<span class="cat-latin">Insignia</span></h3><ul class="cat-grid">';
   for(const entry of UNLOCKS)if(entry.kind==='medal')html+=catalogueRow(entry,null);
   html+='</ul></section>';
-  html+='<section class="cat-group"><h3>The engraver<span class="cat-latin">Sculptor</span></h3><ul>';
+  html+='<section class="cat-group"><h3>The engraver<span class="cat-latin">Sculptor</span></h3><ul class="cat-grid">';
   for(const id of ['delineavit','exlibris'])html+=catalogueRow(UNLOCK_BY_ID[id],null);
   html+='</ul>';
   if(isUnlocked('delineavit')){
@@ -344,20 +384,21 @@ function catalogueItems(){
   html+='</section>';
   return html;
 }
-// The leaf holds two sections — the ledger's Record and the unlockables' Catalogue — and a small tab
-// switch between them. Both are always rendered into the DOM on every pass; only the inactive one is
+// The leaf holds three sections — the ledger's Record, the cosmetic Catalogue, and Insignia — and a
+// small tab switch between them. All are rendered into the DOM on every pass; only the inactive one is
 // hidden with the .hidden class already used elsewhere for whole-screen show/hide (see .cat-pane.hidden
 // in src/index.html), so anything that reads the leaf's markup — including scripts/verify.mjs, which
-// searches catalogue-body's innerHTML right after opening it — finds both sections regardless of which
+// searches catalogue-body's innerHTML right after opening it — finds every section regardless of which
 // tab is showing.
 function renderCatalogue(){
   const body=$('catalogue-body');if(!body)return;
-  const tabs=[['record','RECORD'],['catalogue','CATALOGUE']];
+  const tabs=[['record','RECORD','CHRONICLE'],['catalogue','CATALOGUE','STUDIOLO'],['insignia','INSIGNIA','FEATS']];
   let html='<div class="cat-tabs">'+
-    tabs.map(([id,label])=>`<button type="button" class="diff-btn cat-tab-btn" data-tab="${id}" aria-pressed="${catalogueTab===id}">${label}</button>`).join('')+
+    tabs.map(([id,label,sub])=>`<button type="button" class="diff-btn cat-tab-btn" data-tab="${id}" data-sub="${sub}" aria-pressed="${catalogueTab===id}">${label}</button>`).join('')+
     '</div>';
   html+=`<div class="cat-pane${catalogueTab==='record'?'':' hidden'}" data-pane="record">${catalogueRecord()}</div>`;
   html+=`<div class="cat-pane${catalogueTab==='catalogue'?'':' hidden'}" data-pane="catalogue">${catalogueItems()}</div>`;
+  html+=`<div class="cat-pane${catalogueTab==='insignia'?'':' hidden'}" data-pane="insignia">${catalogueInsignia()}</div>`;
   body.innerHTML=html;
   const field=$('initials');
   if(field&&field.addEventListener&&!field.wired){
