@@ -850,10 +850,11 @@ assert.equal(respite.darknessGrace,0);const recoveredFloor=respite.floorY;respit
   w.cameraY-=600;const bound=w.cameraY+w.height-25;w.floorY=bound+w.darknessLead-5;
   w.update(step);
   assert(w.floorY>bound+1,'the banked lead must widen the clamp, not just the ordinary 25-unit slack');
-  // Pulled well clear of the player so idle chase alone cannot end the run, the credit still leaks
-  // away on its own rather than standing as a permanent pardon.
-  w.floorY=w.player.y+900;
-  for(let i=0;i<120*15&&w.darknessLead>0;i++)w.update(step);
+  // Put the camera back to an ordinary trailing distance — the forced value above exists only to
+  // prove the clamp, and pinning the floor near the player every tick keeps idle chase from ending
+  // the run — so the credit's own leak, not a collision, is what the next check observes.
+  w.cameraY=w.player.y-w.height*.57;
+  for(let i=0;i<120*15&&w.darknessLead>0;i++){w.floorY=w.player.y+400;w.update(step);}
   assert.equal(w.state,'playing');assert.equal(w.darknessLead,0,'the head start leaks away rather than standing forever');
   w.floorY=w.cameraY+w.height+50;w.update(step);
   assert(w.floorY<=w.cameraY+w.height-25+1e-6,'once spent, the ordinary slack is all that is left');
