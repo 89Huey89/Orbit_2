@@ -684,9 +684,11 @@ function glossSprite(relief){
   darkMarginalia.set(key,sprite);return sprite;
 }
 // The lowest line the shoreline's marginalia may reach: the footer band across the bottom of the plate,
-// where the chapter name and the utility buttons are set, plus the frame's own inner rule. The waterline
-// itself goes on rising past it — only the monster and the gloss are held above.
-function marginaliaFloor(){return H-footerBand()-frameBand()*.92;}
+// where the chapter name and the utility buttons are set, plus the frame's own inner rule; or the top
+// of the impressum's cartouche, at the start of a run when that furniture still sits in this same
+// lower margin — whichever comes first. The waterline itself goes on rising past it — only the
+// monster and the gloss are held above.
+function marginaliaFloor(){return Math.min(H-footerBand()-frameBand()*.92,impressumTop()-8);}
 // Where the gloss is printed for a given waterline: it rides just under the ink until the flood would
 // carry it into the footer band, and from there it stays where it is while the ink goes on past it.
 function marginaliaGloss(fy,gloss){

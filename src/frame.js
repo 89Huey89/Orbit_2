@@ -483,6 +483,19 @@ function impressumAnchor(metrics){
   }
   return {x:Number.isFinite(world.impressumX)?world.impressumX:0,y:world.impressumY};
 }
+// The top of the impressum's cartouche, in screen space, for other lower-margin marginalia to stay
+// clear of (src/celestial.js's plate captions, src/effects.js's drifting gloss): each of those hugs
+// the footer band on its own account, the same strip the impressum claims at the foot of the opening
+// sheet, so left uncoordinated they print straight through it at the start of a run. Answers Infinity
+// whenever the cartouche itself would not be drawn — off era, a plain plate, or scrolled past either
+// edge — so nothing clamps against a box that isn't actually there to collide with.
+function impressumTop(){
+  if(!world||eraId()!==0||plainPlate()||!W||!H)return Infinity;
+  const m=impressumMetrics(),a=impressumAnchor(m);if(!a)return Infinity;
+  const top=sy(a.y)-m.height*.5;
+  if(top>H-m.inner||top+m.height<m.inner)return Infinity;
+  return top;
+}
 function impressumHasCapture(){return !!(ledger&&ledger.captures>0)||(world&&world.captures>0);}
 function impressumHasConstellation(){
   const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
