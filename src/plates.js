@@ -143,6 +143,14 @@ function syncDaily(){
   if(typeof syncImpressumScreen==='function')syncImpressumScreen();
   syncDifficulty();
 }
+// The plate the daily's own showcase asks for right now, drawn from dailySetup() in src/ledger.js \u2014
+// which this file loads before, hence the guard already used the same way by setPlate() below \u2014 or
+// null while there is no daily to show one for.
+function dailyPressPlate(){
+  if(!dailyOn||typeof dailySetup!=='function')return null;
+  const shown=dailySetup().plate;
+  return shown&&PLATES[shown]?shown:null;
+}
 // Toggled from the title screen before a run, or from the colophon after one: the run-complete screen
 // carries its own DAILY PLATE switch (see #daily-end in ui.js) precisely so the daily plate is never a
 // one-way door \u2014 tapping to try again always honours whichever plate was chosen last, standard included.
@@ -152,6 +160,11 @@ function setDaily(on,date){
   const today=utcDay();
   dailyDay=on&&dailyOpen(date)?date:today;
   dailyOn=on;dailyReplay=on&&dailyDay!==today;dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  // Puts the daily's own showcase on the press, or takes it back off again: applyPlate alone, exactly
+  // as an era's own door changes the plate, so orbit.plate.v1 and the ledger's cosmetic choice are
+  // never touched by a day's setup.
+  const shown=dailyPressPlate()||(typeof cosmetics==='object'&&cosmetics&&PLATES[cosmetics.plate]?cosmetics.plate:plateName);
+  if(shown!==plateName){applyPlate(shown);invalidateArt();syncPlate();}
   syncDaily();
   if(world&&world.state==='ready'){newWorld();recordAtStart=currentBest();if(W&&H)render(0);}
 }

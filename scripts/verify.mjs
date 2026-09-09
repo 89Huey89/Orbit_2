@@ -130,6 +130,42 @@ function taskSling60(){
   return {boostedTransfers};
 }
 
+// The daily plate's varyOpening lets a seed draw the second and third planets and all twelve regions'
+// figures itself instead of reading the same fixed values every other chart opens on (see the
+// constructor and catalogueFor() in src/simulation.js). It reuses the same formula every later planet
+// already trusted, so this checks two things rather than re-proving the formula: that the opening
+// actually varies from one seed to the next, and that a course drawn this way is exactly as playable
+// through the same depth an ordinary seed already is.
+function taskVariedOpening(){
+  let totalCaptures=0;const failures=[];
+  const opens=[],firstFigures=new Set();
+  for(let seed=1;seed<=20;seed++){
+    const w=new OrbitWorld(seed,440,860,()=>{},false,true);
+    opens.push({x1:w.nodes.find(n=>n.row===1).x,x2:w.nodes.find(n=>n.row===2).x});
+    firstFigures.add(w.catalogueFor(0));
+    // No figure may repeat before all twelve have been drawn, exactly as an ordinary seed's later
+    // regions already promise — only now the promise covers the first four regions too.
+    const order=Array.from({length:12},(_,r)=>w.catalogueFor(r));
+    assert.equal(new Set(order).size,12,'A varied opening must still draw all twelve figures before any repeats: seed '+seed);
+    assert.equal(w.catalogueFor(12),order[0],'The thirteenth region must repeat the first exactly as an ordinary seed\'s does');
+    w.start();
+    for(let i=0;i<120*220&&w.state==='playing'&&w.progress<40;i++){
+      if(w.player.node){
+        const aim=w.aim();
+        if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      }
+      w.update(step);
+      assert(Number.isFinite(w.player.x)&&Number.isFinite(w.player.y));
+    }
+    totalCaptures+=w.captures;
+    if(w.progress<40)failures.push({seed,progress:w.progress,reason:w.reason});
+  }
+  assert.equal(failures.length,0,'A varied opening must stay exactly as playable as a fixed one: '+JSON.stringify(failures));
+  assert(new Set(opens.map(o=>o.x1)).size>1&&new Set(opens.map(o=>o.x2)).size>1,'The second and third planets must actually move from one seed to the next');
+  assert(firstFigures.size>1,'The first region\'s own figure must actually vary from one seed to the next');
+  return {totalCaptures,variedOpenings:opens.length,variedFigures:firstFigures.size};
+}
+
 function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   const events={},items=new Map(),raf=[],saved=new Map(Object.entries(seed));
   let lensCopies=0;
@@ -152,7 +188,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
-get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
+get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
@@ -173,6 +209,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // in flight, after death, and across pause/restart, including reduced motion.
   let clock=1;const frames=count=>{for(let i=0;i<count;i++){const next=raf.shift();assert(next);next(clock+=1000/60);}};
   assert.equal(context.test.world.state,'ready');
+  assert.equal(context.test.world.varyOpening,false,'An ordinary run keeps the fixed opening, not the daily\'s own');
   // ---- A plate saved on a previous visit: the frontispiece names it, or stays silent about nothing ----
   {
     // storageBlocked throws on the raw getItem the same way a real blocked store would; storage.get()
@@ -360,16 +397,61 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // The daily plate replaces the run seed with the UTC date's, forces Classic pressure,
   // and is not remembered: switching it off restores an ordinary run.
   const beforeDaily=context.test.world;
+  const plateBeforeDaily=context.test.plateName,cosmeticsBeforeDaily=JSON.parse(JSON.stringify(context.test.cosmetics));
+  const plateStorageBeforeDaily=saved.get('orbit.plate.v1'),cosmeticsStorageBeforeDaily=saved.get('orbit.cosmetics.v1');
   events['daily:click']();
   assert.equal(context.test.dailyOn,true);
   assert(/^\d{4}-\d{2}-\d{2}$/.test(context.test.dailyDay),'The daily course is keyed to a UTC date');
   assert.equal(context.test.world.seed,context.test.dailySeed,'The daily course comes from the date, not the clock');
   assert.equal(context.test.world.darknessMult,1,'The daily plate is always played at Classic pressure');
   assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+context.test.dailyDay));
-  assert.equal(new OrbitWorld(context.test.dailySeed).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'Everyone plays the same daily chart');
+  assert.equal(new OrbitWorld(context.test.dailySeed,440,860,()=>{},false,true).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'Everyone plays the same daily chart');
+  assert.equal(context.test.world.varyOpening,true,'The daily plate draws its own opening rather than the fixed one');
+  // A saved daily replay carries its varyOpening flag, so reviewing it later rebuilds the same varied
+  // opening rather than quietly falling back to the fixed one; a log saved before the flag existed —
+  // undefined rather than true or false — must fall back to the fixed opening exactly as OrbitWorld's
+  // own default does, so an old save from before this shipped still replays as it always did.
+  {
+    const dailyReplayed=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,varyOpening:true,startedAt:0,releases:[],resizes:[]});
+    assert.equal(dailyReplayed.catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A replayed daily plate rebuilds the same varied opening');
+    const predatesFlag=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,startedAt:0,releases:[],resizes:[]});
+    assert.equal(predatesFlag.varyOpening,false,'A replay log saved before this flag existed falls back to the fixed opening');
+  }
+  // ---------- The daily's own showcase: a setup drawn from the same date hash ----------
+  {
+    // Array.from (called on this module's own Array, not the sandbox's) rather than .map, and JSON
+    // round-tripping below for the setup itself: the sandboxed script runs in its own vm realm, so a
+    // structural compare against one of its arrays or objects fails deepStrictEqual on prototype
+    // identity alone even when every element matches, exactly as context.test.cosmetics already has
+    // to be unwrapped this way above.
+    const kinds=Array.from(context.test.COSMETIC_KINDS,g=>g.kind);
+    const setup=JSON.parse(JSON.stringify(context.test.dailySetupFor(context.test.dailyDay)));
+    assert.deepEqual(Object.keys(setup).sort(),kinds.slice().sort(),'A daily setup names every cosmetic category');
+    for(const kind of kinds)assert(context.test.cosmeticItems(kind).some(item=>item.id===setup[kind]),'The daily draws an item the catalogue actually lists, for '+kind);
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.dailySetupFor(context.test.dailyDay))),setup,'The same day always draws the same setup');
+    assert.equal(context.test.plateName,setup.plate,'The daily puts its own drawn plate on the press');
+    for(const kind of kinds)assert.equal(context.test.activeCosmetic(kind),setup[kind],'The daily overrides '+kind+' while it is current');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),cosmeticsBeforeDaily,'The showcase never touches the ledger\'s own cosmetic choices');
+    assert.equal(saved.get('orbit.plate.v1'),plateStorageBeforeDaily,'The showcase never writes the stored plate');
+    assert.equal(saved.get('orbit.cosmetics.v1'),cosmeticsStorageBeforeDaily,'The showcase never writes the stored cosmetics');
+    // Short of a ledger that has already earned the whole catalogue, some day in a modest search draws
+    // a cosmetic nothing has unlocked yet \u2014 the whole point of a showcase \u2014 without that day unlocking it.
+    if(context.test.unlockedIds().size<context.test.UNLOCKS.length){
+      let shownLocked=null;
+      for(let y=1970;y<2070&&!shownLocked;y++){
+        const trial=context.test.dailySetupFor(y+'-01-01');
+        for(const kind of kinds)if(!context.test.isUnlocked(trial[kind])){shownLocked={kind,id:trial[kind]};break;}
+      }
+      assert(shownLocked,'Some day in a century of them shows a cosmetic nothing has unlocked yet');
+      assert.equal(context.test.isUnlocked(shownLocked.id),false,'Showing it never earns it');
+    }
+  }
   events['daily:click']();
   assert.equal(context.test.dailyOn,false);assert.equal(element('daily-date').textContent,'');
   assert(context.test.world!==beforeDaily&&context.test.world.state==='ready','Leaving the daily plate deals a fresh ordinary course');
+  assert.equal(context.test.world.varyOpening,false,'Leaving the daily plate returns to the fixed opening');
+  assert.equal(context.test.plateName,plateBeforeDaily,'Leaving the daily restores whichever plate was actually on the press');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),cosmeticsBeforeDaily,'Leaving the daily leaves the ledger\'s own cosmetic choices exactly as they were');
   // ---------- The ephemeris: the almanac of daily plates, and drawing a past one again ----------
   // One rule holds the whole leaf up: a day is written into the log only by a run begun while it was
   // the current day, and it is the log alone that opens a plate to be drawn again.
@@ -417,7 +499,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.replayDaily(drawnDay),true);
     assert.equal(context.test.dailyDay,drawnDay);assert.equal(context.test.dailyReplay,true);
     assert.equal(context.test.world.seed,context.test.dailySeed,'A repeated plate is dealt from its own date');
-    assert.equal(new OrbitWorld(context.test.dailySeed).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A repeat deals exactly the plate of that day');
+    assert.equal(new OrbitWorld(context.test.dailySeed,440,860,()=>{},false,true).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A repeat deals exactly the plate of that day');
     assert.equal(context.test.world.darknessMult,1,'A repeated daily plate keeps its Classic pressure');
     assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+drawnDay)&&element('daily-date').textContent.includes('iterum'),element('daily-date').textContent);
     assert(context.test.scoreLine().includes('Tabula diei '+drawnDay+' (iterum)'),context.test.scoreLine());
@@ -1132,6 +1214,7 @@ if(!isMainThread){
     if(task==='route60')result=taskRoute60();
     else if(task==='detourDeep')result=taskDetourDeep();
     else if(task==='sling60')result=taskSling60();
+    else if(task==='variedOpening')result=taskVariedOpening();
     else if(task==='runtime')result=runtime(params.width,params.height,params.storageBlocked,params.reduceMotion,params.seed);
     else throw new Error('Unknown worker task: '+task);
     parentPort.postMessage({ok:true,result});
@@ -1171,6 +1254,7 @@ function runtimeLayout(params){return runInWorker('runtime',{script,simulation,p
 const pRoute=runInWorker('route60',{simulation});
 const pDetourDeep=runInWorker('detourDeep',{simulation});
 const pSling=runInWorker('sling60',{simulation});
+const pVaried=runInWorker('variedOpening',{simulation});
 // A ledger that has earned the whole catalogue, seeded into storage before the page boots, so the
 // unlocked half of every screen is exercised as well as the empty one.
 const FULL_LEDGER=JSON.stringify({captures:10500,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
@@ -1777,6 +1861,23 @@ for(let region=0;region<4;region++)assert.equal(orderA.catalogueFor(region),regi
 const drawn=[];for(let region=4;region<4+CONSTELLATIONS.length;region++)drawn.push(orderA.catalogueFor(region));
 assert.equal(new Set(drawn).size,CONSTELLATIONS.length,'No figure repeats until the catalogue is exhausted');
 assert.equal(orderA.catalogueFor(4+CONSTELLATIONS.length),orderA.catalogueFor(4),'The catalogue then starts again');
+// Omitting varyOpening — every existing fixture and every ordinary run — must read exactly as it
+// always has: the same fixed second and third planets, whatever the seed.
+for(const seed of [1,4242,99999]){
+  const w=new OrbitWorld(seed);
+  assert.equal(w.nodes.find(n=>n.row===1).x,77,'An unvaried opening keeps its fixed second planet: seed '+seed);
+  assert.equal(w.nodes.find(n=>n.row===2).x,-75,'An unvaried opening keeps its fixed third planet: seed '+seed);
+}
+// varyOpening lets the same seed draw both instead: a seed fixes what it draws, two different seeds
+// need not agree, and the whole twelve-figure catalogue — the first four regions included — keeps the
+// no-repeat-before-exhaustion promise an ordinary seed already keeps for the eight later ones alone.
+const variedA=new OrbitWorld(4242,440,860,()=>{},false,true),variedB=new OrbitWorld(4242,440,860,()=>{},false,true),variedC=new OrbitWorld(4243,440,860,()=>{},false,true);
+assert.deepEqual(variedA.catalogueOrder,variedB.catalogueOrder,'A seed fixes a varied opening exactly as it fixes an ordinary one');
+assert.notDeepEqual(variedA.catalogueOrder,variedC.catalogueOrder,'Different seeds still vary the drawn order');
+assert.equal(new Set(variedA.catalogueOrder).size,CONSTELLATIONS.length,'A varied opening still shuffles the whole catalogue, not a subset of it');
+const variedDrawn=[];for(let region=0;region<CONSTELLATIONS.length;region++)variedDrawn.push(variedA.catalogueFor(region));
+assert.equal(new Set(variedDrawn).size,CONSTELLATIONS.length,'No figure repeats before the catalogue is exhausted, first four regions included');
+assert.equal(variedA.catalogueFor(CONSTELLATIONS.length),variedA.catalogueFor(0),'The catalogue then starts again, exactly as the unvaried opening already does');
 
 // ---------- The chart is cut for the pace it expects ----------
 // Every transfer is drawn to take about the same time to fly at the pace the chart is cut for, so the
@@ -1914,6 +2015,7 @@ assert(routesClosed>200,'Hazards must actually close routes, not merely be allow
 assert(routesClosed<hazardsPlaced*.6,'A closed route stays an event, not the standing state of the chart: '+routesClosed+'/'+hazardsPlaced);
 
 const {boostedTransfers}=await pSling;
+const {totalCaptures:variedCaptures,variedOpenings,variedFigures}=await pVaried;
 
 const missed=new OrbitWorld(77);while(missed.row<7)missed.generateRow();missed.start();
 const partial=missed.constellations[0];missed.capture(partial.stars[0]);missed.capture(partial.exit);
@@ -2152,7 +2254,7 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
 
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,variedOpening:{seeds:variedOpenings,transfers:variedCaptures,distinctFirstFigures:variedFigures},runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','a varied opening that draws the second and third planets and all twelve regions’ figures from its own seed, exactly as playable as a fixed one','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
 
 }finally{
   for(const w of workers)w.terminate();

@@ -160,7 +160,7 @@ function event(type,e){
 function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn);
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -171,7 +171,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,startedAt:0,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,startedAt:0,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -218,10 +218,14 @@ function enterEra(name){
 }
 function leaveEra(){
   if(!plateOwns('mode'))return;
-  const keep=eraReturn||{},kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
-  const restore=kept?keep.plate:'night';
+  const keep=eraReturn||{};
   difficulty=keep.difficulty&&DARKNESS_MULT[keep.difficulty]?keep.difficulty:difficulty;
   dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  // A daily returned to asks its own showcase again — freshly, in case the day turned over while the
+  // era held the press — rather than trusting the plate snapshotted on the way in; anything else puts
+  // back whatever plate was standing before the era, or night if that was itself another mode's own.
+  const kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
+  const restore=dailyPressPlate()||(kept?keep.plate:'night');
   applyPlate(restore);eraReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
 }
 function setPlaying(){

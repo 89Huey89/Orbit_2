@@ -320,8 +320,14 @@ class OrbitWorld {
   // printed as TIRO, ADEPTUS, MAGISTER (see DIFFICULTY_LABELS) — in place of the single first node;
   // whichever one the player captures sets the run's difficulty. Off by default so every existing
   // fixture and fixed layout keeps its ordinary single-node opening.
-  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false) {
-    this.random = seeded(seed); this.seed = seed; this.emit = emit;
+  // varyOpening lets the seed itself decide the two things every chart otherwise opens on the same
+  // way: which figure the first four regions carry (ordinarily always the Needle, the Sail, the Lyre
+  // and the Crown, in that order) and where the second and third planets sit (ordinarily always the
+  // same two points). Off by default, so an existing fixture, a fixed layout or an ordinary run reads
+  // exactly as it always has; the daily plate is the one course dealt with it on, since a showcase of
+  // its own is the whole point of a plate everyone is handed the same seed for.
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false) {
+    this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
@@ -330,9 +336,12 @@ class OrbitWorld {
     // generation for a seed is unaffected by them.
     const shuffle=seeded((seed*2654435761>>>0)^0x9e3779b9);
     const deal=list=>{for(let i=list.length-1;i>0;i--){const j=Math.floor(shuffle()*(i+1));const t=list[i];list[i]=list[j];list[j]=t;}return list;};
-    // The eight later figures come first, then the four opening ones, so a region past
-    // the fourth never repeats a figure until the whole catalogue has been used.
-    this.catalogueOrder=[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
+    // The eight later figures come first, then the four opening ones, so a region past the fourth
+    // never repeats a figure until the whole catalogue has been used — unless the opening itself is
+    // varying, in which case there is no fixed four to hold back: one shuffle of the whole catalogue
+    // gives every region, the first four included, the same guarantee against an early repeat.
+    this.catalogueOrder=this.varyOpening?deal(CONSTELLATIONS.map((_,i)=>i))
+      :[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.windRandom=seeded((seed*22699>>>0)^0x7715);this.flarePhase=0;
     this.perfectStreak=0;this.recklessStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
@@ -382,12 +391,17 @@ class OrbitWorld {
     // orbit has to stay clear of the chart's edge, which is where the traveller is lost.
     const spread = Math.min(this.width*.29*Math.min(grow,1.45), this.inboard(57*size), 232);
     const apart = 58*grow;
-    let x = k === 1 ? 77 : k === 2 ? -75 : (rng()-.5)*spread*2;
-    if (k > 2 && Math.abs(x - prev.baseX) < apart) x = clamp(x + (x < 0 ? apart*1.24 : -apart*1.24), -spread, spread);
+    // The second and third planets ordinarily sit at two fixed points regardless of seed, exactly as
+    // the first four regions ordinarily carry a fixed figure: varyOpening lets the same general rule
+    // that already places every later planet place these two as well, rather than reading in two
+    // numbers of its own.
+    const fixedStart=!this.varyOpening&&k<=2;
+    let x = k === 1 && !this.varyOpening ? 77 : k === 2 && !this.varyOpening ? -75 : (rng()-.5)*spread*2;
+    if ((!fixedStart) && Math.abs(x - prev.baseX) < apart) x = clamp(x + (x < 0 ? apart*1.24 : -apart*1.24), -spread, spread);
     // Every transfer is cut to about TRANSFER_SECONDS at the pace the chart is drawn for, so the
     // gulf between two orbits grows with that pace rather than with the row number.
-    let y = prev.baseY - (k <= 2 ? 207 : chartPace(k)*TRANSFER_SECONDS + rng()*30);
-    let radius = k < 3 ? 54 : (54 - Math.min(13,k*.39) + rng()*7)*size;
+    let y = prev.baseY - (fixedStart ? 207 : chartPace(k)*TRANSFER_SECONDS + rng()*30);
+    let radius = fixedStart ? 54 : (54 - Math.min(13,k*.39) + rng()*7)*size;
     if(fork){x=local===3||local===7?0:-side*Math.min([0,0,0,0,100,82,106][local]*grow,spread);radius=(local===3||local===7?55:55-Math.min(region,4)*2)*size;}
     const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : 'still';
     // A slingshot star keeps its original ring whatever the chart does around it: the charge is
@@ -566,7 +580,7 @@ class OrbitWorld {
       }
     }
   }
-  catalogueFor(region) { return region<4?region:this.catalogueOrder[(region-4)%CONSTELLATIONS.length]; }
+  catalogueFor(region) { return this.varyOpening?this.catalogueOrder[region%CONSTELLATIONS.length]:region<4?region:this.catalogueOrder[(region-4)%CONSTELLATIONS.length]; }
   // A named feat, reported and recorded once per run.
   observe(key) {
     if(this.observed.has(key)||!OBSERVATIONS[key])return false;
