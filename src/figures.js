@@ -1124,8 +1124,14 @@ definePlate('field',{
     windLine:'70,54,38',windHead:'46,34,24',windShade:'96,78,56',
     fog:'116,94,66',fogEdge:'58,42,28'}
 });
-// A sunspot in the Galileo manner: a dark umbra, a penumbra of fine radial strokes, and a broken
-// limb. Everything that does not move is baked into a sprite; only the flare's rays are cut live.
+// A sunspot in the Galileo manner: a dark body, a penumbra of fine radial strokes, and rays cut
+// live. The body itself is not the round pool it once was: a vortex's void is a circle no matter
+// how it is broken up, so a disc drawn the same way for the flare read as the same hazard at any
+// distance the strokes around it are too faint to save. Cutting the body as a nine-point burst
+// instead gives the two hazards a silhouette apart, readable in the same instant the eye would
+// otherwise have to read ink colour or ray density to tell them. Everything that does not move is
+// baked into a sprite; only the flare's rays are cut live.
+const FLARE_SPIKES=9;
 const flareSprites=new Map();
 function flareSprite(seed,radius,core){
   const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+Math.round(core)+':'+plateName+':'+DPR.toFixed(2);
@@ -1143,14 +1149,19 @@ function flareSprite(seed,radius,core){
     g.quadraticCurveTo(Math.cos(a+bow)*(from+to)/2,Math.sin(a+bow)*(from+to)/2,Math.cos(a+bow*2)*to,Math.sin(a+bow*2)*to);
     g.stroke();
   }
-  // Two broken contours: the outer limb of the penumbra and the edge of the umbra.
-  burinArc(g,0,0,r,0,TAU,p.flareEdge,.34,.6,seed+7,{segments:34,skips:4});
-  burinArc(g,0,0,r*.82,0,TAU,p.flareEdge,.2,.45,seed+13,{segments:26,skips:5});
-  // The umbra itself: a pool of ink with a ragged edge and a rubricated rim.
+  // The body: a burst rather than a disc, its points reaching out toward the drawn radius and its
+  // notches cut back near the old umbra's edge, each wobbled its own amount so it reads engraved
+  // rather than stamped. The rim is struck along the same jagged path, not a circle around it.
+  const tip=Math.max(u*1.3,r*.85),notch=u*.62;
   g.beginPath();
-  for(let i=0;i<=22;i++){const a=i/22*TAU,jr=u*(1+(rng()-.5)*.18);const x=Math.cos(a)*jr,y=Math.sin(a)*jr;if(i)g.lineTo(x,y);else g.moveTo(x,y);}
+  for(let i=0;i<FLARE_SPIKES*2;i++){
+    const a=i/(FLARE_SPIKES*2)*TAU+rng()*.02,spike=i%2===0;
+    const jr=spike?tip*(.9+rng()*.22):notch*(.75+rng()*.3);
+    const x=Math.cos(a)*jr,y=Math.sin(a)*jr;
+    if(i)g.lineTo(x,y);else g.moveTo(x,y);
+  }
   g.closePath();g.fillStyle=`rgba(${p.flareUmbra},${onPaper()?.92:.96})`;g.fill();
-  burinArc(g,0,0,u,0,TAU,p.flareRim,.75,.9,seed+19,{segments:20,skips:2});
+  g.strokeStyle=`rgba(${p.flareRim},.75)`;g.lineWidth=.9;g.stroke();
   for(let i=0;i<14;i++){const a=rng()*TAU,d=u*(1.05+rng()*.5);g.fillStyle=`rgba(${p.flarePenumbra},${.14+rng()*.3})`;g.fillRect(Math.cos(a)*d,Math.sin(a)*d,.8,.8);}
   // Two lesser spots of the same group, as the sunspot plates always show.
   for(let i=0;i<2;i++){
@@ -1182,11 +1193,13 @@ function drawFlare(h){
     ctx.lineTo(Math.cos(a+.035)*(reach-2.6*scale),Math.sin(a+.035)*(reach-2.6*scale));
     ctx.stroke();
   }
-  // The flare: burin strokes leaving the limb, breathing with the plate's own time.
-  for(let i=0;i<36;i++){
-    const a=i/36*TAU+(h.phase||0)*.1,len=r*(.5+rng()*1.05)*pulse;
-    ctx.strokeStyle=`rgba(${c.flareRay},${(.1+rng()*.26)*pulse})`;ctx.lineWidth=(i%3?.45:.85)*scale;
-    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r+1),Math.sin(a)*(r+1));ctx.lineTo(Math.cos(a)*(r+1+len),Math.sin(a)*(r+1+len));ctx.stroke();
+  // The flare: a breathing extension struck outward from each of the burst's own points, so the
+  // one part of this mark cut live lines up with the jagged body baked into the sprite instead of
+  // scattering a different rhythm of rays against it.
+  for(let i=0;i<FLARE_SPIKES;i++){
+    const a=i/FLARE_SPIKES*TAU+(h.phase||0)*.1,len=r*(.35+rng()*.45)*pulse;
+    ctx.strokeStyle=`rgba(${c.flareRay},${(.22+rng()*.3)*pulse})`;ctx.lineWidth=(i%2?.7:1.1)*scale;
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r*.8),Math.sin(a)*(r*.8));ctx.lineTo(Math.cos(a)*(r*.8+len),Math.sin(a)*(r*.8+len));ctx.stroke();
   }
   const sprite=flareSprite(h.seed,r,core);
   ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
