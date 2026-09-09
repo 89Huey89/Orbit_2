@@ -67,6 +67,11 @@ const HAZARD_CLOSES_ROUTE = 12;
 // arrive after the flares, so each of the three fields is met on its own before any two are: the
 // vortex that draws in, the sunspot that pushes off, and last the gust that simply blows.
 const WIND_FROM_ROW = 20;
+// The row from which a comet may stand in for the row's ordinary vortex or flare, and then only
+// rarely — one row in nine, well under the flare's one in five. It is held back this deep because it
+// is a fourth field to read on a chart that has already taught its player three, so it is only dealt
+// once the other three are old news and asks to be met on its own rather than crowded in beside them.
+const COMET_FROM_ROW = 40;
 // How far along a course the pen will still set it down. At the opening pace the whole transfer is
 // drawn and nothing is hidden; as the chart's speed is earned the far part of a fast crossing is
 // left unset, so a run flown at full pace commits to the last of it unseen. The release marks and
@@ -114,10 +119,19 @@ function orbitTangents(a,b,dir) {
   }
   return paths;
 }
+// A drifting node's whole path is one sine in x, so this is the single place its position, velocity
+// and acceleration are ever computed from — real flight and the aim guide's own closest-approach
+// solver (transferContact, below) both read it, which is what keeps the two in agreement. An errant
+// node rides the same first term at the same rate, plus a second, faster and smaller one at a rate
+// that shares no simple ratio with it, so the path never settles into a rhythm a glance can
+// extrapolate the way a single sine's can. Both terms stay exact closed forms, so the guide solves
+// for the sum exactly as it always solved for the one term drift alone ever needed.
 function nodeMotion(n,time) {
   if(!n.amp)return {x:n.x,y:n.y,vx:n.vx,vy:n.vy,ax:0};
   const phase=time*.72+n.phase;
-  return {x:n.baseX+Math.sin(phase)*n.amp,y:n.y,vx:Math.cos(phase)*n.amp*.72,vy:0,ax:-Math.sin(phase)*n.amp*.72*.72};
+  if(n.type!=='errant')return {x:n.baseX+Math.sin(phase)*n.amp,y:n.y,vx:Math.cos(phase)*n.amp*.72,vy:0,ax:-Math.sin(phase)*n.amp*.72*.72};
+  const phase2=time*1.94+n.phase*1.7,amp2=n.amp*.42;
+  return {x:n.baseX+Math.sin(phase)*n.amp+Math.sin(phase2)*amp2,y:n.y,vx:Math.cos(phase)*n.amp*.72+Math.cos(phase2)*amp2*1.94,vy:0,ax:-Math.sin(phase)*n.amp*.72*.72-Math.sin(phase2)*amp2*1.94*1.94};
 }
 // A grazing flight joins at closest approach, where relative velocity is
 // tangent to the orbit. Other flights retain the forgiving outer capture rim.
@@ -213,10 +227,16 @@ const SQUARE_TOLERANCE = 1.5;
 // under another name, which is why the shape here is a table it can be added to rather than a
 // condition it would have to be threaded through. An absent kind is the vortex, so a fixture that
 // names no kind keeps the behaviour it has always had.
+// COMETA reverses that shape rather than adding a new one to it: `reverses` flips the sign the
+// instant a flight crosses the drawn edge, so the same field that stands a flight off at any
+// ordinary distance turns and draws it home once it is close enough to feel — read the way a
+// comet's tail is pressure at a distance and its gravity only once something is finally inside it.
+// Nothing else in this file reads `reverses`, so every row above it is exactly as it always was.
 const HAZARD_KINDS = {
   vortex:{sign:1,core:1,reach:100,lethal:true,latin:'VORAGO',loss:'DRAWN INTO A VORTEX'},
   flare:{sign:-1,core:.6,reach:100,lethal:true,latin:'MACULA',loss:'SEARED BY A SUNSPOT FLARE'},
-  wind:{sign:0,core:0,reach:55,lethal:false,latin:'VENTUS',loss:null}
+  wind:{sign:0,core:0,reach:55,lethal:false,latin:'VENTUS',loss:null},
+  comet:{sign:1,core:.55,reach:100,lethal:true,reverses:true,latin:'COMETA',loss:'CAUGHT BY A COMET'}
 };
 function hazardKind(h) { return HAZARD_KINDS[h.kind]||HAZARD_KINDS.vortex; }
 function hazardCore(h) { return h.r*hazardKind(h).core; }
@@ -241,7 +261,9 @@ function bendVelocity(p,hazards,dt) {
     // A wind-head blows one steady way over the whole of its reach instead of toward or away from a
     // centre, so its is the one field that does not lie along the radius.
     if(kind.sign===0){const gust=WIND_FORCE*edge*edge;ax+=Math.cos(h.dir||0)*gust;ay+=Math.sin(h.dir||0)*gust;continue;}
-    const pull=kind.sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
+    // A comet's own sign, reversed outside its drawn edge: see COMETA above.
+    const sign=kind.reverses&&d>=h.r*kind.core?-kind.sign:kind.sign;
+    const pull=sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
     ax+=dx/d*pull;ay+=dy/d*pull;
   }
   // This local arcade field turns momentum while preserving earned speed.
@@ -372,7 +394,7 @@ class OrbitWorld {
     this.row = 1;
   }
   makeNode(x, y, r, row, type) {
-    const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:(r+11)*this.capMult,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:0};
+    const n = {id:this.serial++,x,y,baseX:x,baseY:y,r,cap:(r+11)*this.capMult,row,type,phase:this.random()*TAU,seed:Math.floor(this.random()*1e8),visited:false,flash:0,vx:0,vy:0,amp:type==='drift'?12+this.random()*10:type==='errant'?14+this.random()*12:0};
     this.nodes.push(n); return n;
   }
   // The furthest from the middle a node of this radius may be cut and still keep its whole orbit —
@@ -403,7 +425,9 @@ class OrbitWorld {
     let y = prev.baseY - (fixedStart ? 207 : chartPace(k)*TRANSFER_SECONDS + rng()*30);
     let radius = fixedStart ? 54 : (54 - Math.min(13,k*.39) + rng()*7)*size;
     if(fork){x=local===3||local===7?0:-side*Math.min([0,0,0,0,100,82,106][local]*grow,spread);radius=(local===3||local===7?55:55-Math.min(region,4)*2)*size;}
-    const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : 'still';
+    // An errant node is held back well past drift and fading, both old news by the row it starts on,
+    // so a run deep enough to have learned the other two still meets something it has not.
+    const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : k>=36&&k%11===3 ? 'errant' : 'still';
     // A slingshot star keeps its original ring whatever the chart does around it: the charge is
     // earned per lap, so a wider ring would only make the same 90 units of speed cost more time
     // against the rising dark.
@@ -524,7 +548,7 @@ class OrbitWorld {
       if(place){
         // From the third region, sunspot flares alternate with vortices under the
         // same placement rules: they repel instead of pulling and only their core kills.
-        const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
+        const kind=k>=COMET_FROM_ROW&&k%9===2?'comet':k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
         this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
       }
     }
@@ -759,7 +783,7 @@ class OrbitWorld {
     for(const n of this.nodes){
       const edge=this.inboard(n.r+n.amp);
       n.baseX=clamp(n.baseX,-edge,edge);
-      n.x=n.amp?n.baseX+Math.sin(this.time*.72+n.phase)*n.amp:n.baseX;
+      n.x=n.amp?nodeMotion(n,this.time).x:n.baseX;
       if(n.shortcut){const far=this.inboard(n.shortcut.r);n.shortcut.x=clamp(n.shortcut.x,-far,far);}
     }
     for(const h of this.hazards){const edge=this.inboard(h.r);h.x=clamp(h.x,-edge,edge);}
@@ -774,7 +798,7 @@ class OrbitWorld {
     if(this.state==='dead'){this.player.deadTime+=dt;return;}
     for(const n of this.nodes){
       n.flash=Math.max(0,n.flash-dt*1.8);
-      if(n.amp){n.x=n.baseX+Math.sin(this.time*.72+n.phase)*n.amp;n.vx=Math.cos(this.time*.72+n.phase)*n.amp*.72;}
+      if(n.amp){const m=nodeMotion(n,this.time);n.x=m.x;n.vx=m.vx;}
     }
     const p=this.player;
     if(this.state==='ready'){p.angle+=p.dir*dt*.78;this.positionPlayer();return;}

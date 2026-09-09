@@ -1384,6 +1384,30 @@ assert.equal(hazardCore({r:24}),24);assert.equal(hazardCore({r:24,kind:'vortex'}
 // An unknown kind falls back to the vortex, so a fixture naming none keeps its old behaviour.
 assert.equal(hazardKind({}).latin,'VORAGO');assert.equal(hazardKind({kind:'wind'}).lethal,false);
 
+// COMETA reverses its own sign at the drawn edge instead of holding one sign throughout: outside its
+// core it behaves like a flare, inside it like a vortex. A single steering step at each side of that
+// edge is enough to prove the flip, since bendVelocity reads the flag fresh on every call.
+function cometPush(x){const h={x:0,y:0,r:24,kind:'comet',seed:9,phase:0},p={x,y:0,vx:0,vy:-200};bendVelocity(p,[h],step);return p.vx;}
+assert(cometPush(24*.55+15)>0,'Outside its own core a comet pushes a flight away, like a flare');
+assert(cometPush(24*.55-6)<0,'Inside its own core a comet draws a flight in, like a vortex');
+assert.equal(hazardCore({r:24,kind:'comet'}),24*.55);
+assert.equal(hazardKind({kind:'comet'}).reverses,true);assert.equal(hazardKind({kind:'comet'}).latin,'COMETA');
+const cometHead=headOn('comet');assert.equal(cometHead.hit?.kind,'hazard');
+assert(Math.abs(cometHead.y-(24*.55+3))<3,'A comet is lethal exactly as deep as its own reversed core is drawn');
+
+// nodeMotion's vx and ax must be the true derivatives of the x it returns, for every node it moves:
+// transferContact's Newton-Raphson closest-approach solver reads them as exact, not approximate, and
+// a wrong coefficient here would show up there as a guide that disagrees with where flight actually
+// lands rather than as anything obviously broken in this function on its own.
+function checkMotionDerivatives(type){
+  const n={baseX:12,y:-40,amp:19,phase:.7,type},h=1e-4,t=1.3;
+  const at=nodeMotion(n,t),before=nodeMotion(n,t-h),after=nodeMotion(n,t+h);
+  const vx=(after.x-before.x)/(2*h),ax=(after.vx-before.vx)/(2*h);
+  assert(Math.abs(at.vx-vx)<1e-3,'nodeMotion vx must be the derivative of its own x for type '+type);
+  assert(Math.abs(at.ax-ax)<1e-3,'nodeMotion ax must be the derivative of its own vx for type '+type);
+}
+checkMotionDerivatives('drift');checkMotionDerivatives('errant');
+
 // The arrival angle reads 90 for a line exactly tangent to the drawn ring, a little off for a smooth
 // entry joined inside or outside it, and far below for a hard turn toward the centre. Only the exact
 // tangent is a square and earns its own bonus, once per landing, on top of the perfect transfer.
@@ -1526,10 +1550,10 @@ assert.equal(fogged.captures[0].perfect,true,'A fogged guide still describes a p
 
 // A perfect transfer reaches a rim tangent without changing direction or speed.
 // Test both arrival windings, fast frame-spanning flights, and rough center hits.
-function transferFixture(offset,speed=240,drift=false){
+function transferFixture(offset,speed=240,moving=false){
   const captures=[],w=new OrbitWorld(101,440,860,(type,e)=>{if(type==='capture')captures.push(e);});
-  const origin=w.player.node,destination=w.makeNode(0,-300,50,1,drift?'drift':'still');
-  if(drift){destination.amp=18;destination.phase=.4;}
+  const origin=w.player.node,destination=w.makeNode(0,-300,50,1,moving||'still');
+  if(moving){destination.amp=18;destination.phase=.4;}
   origin.x=origin.baseX=offset-origin.r;w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();
   w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.start();return {w,destination,captures};
 }
@@ -1600,7 +1624,7 @@ assert(roughFast.w.player.speed<300&&roughFast.w.player.speed>BASE_SPEED,'A shar
 for(const offset of [-80,80])assert.equal(transferFixture(offset).w.aim(),null,'A flight outside the capture rim must miss');
 let driftCaptures=0;
 for(let angle=-.22;angle<=.22;angle+=.003){
-  const test=transferFixture(50,240,true);test.w.player.angle=angle;test.w.positionPlayer();const aim=test.w.aim();
+  const test=transferFixture(50,240,'drift');test.w.player.angle=angle;test.w.positionPlayer();const aim=test.w.aim();
   if(!aim?.perfect)continue;
   test.w.release();const incoming={vx:test.w.player.vx,vy:test.w.player.vy};
   for(let i=0;i<120*4&&!test.w.player.node&&test.w.state==='playing';i++)test.w.update(step);
@@ -1608,6 +1632,18 @@ for(let angle=-.22;angle<=.22;angle+=.003){
   assert(Math.hypot(test.w.player.vx-incoming.vx,test.w.player.vy-incoming.vy)<.1,'A moving capture preserves velocity within the planet motion remaining in the fixed step');driftCaptures++;
 }
 assert(driftCaptures>3,'Exercise a real range of moving-planet tangent arrivals');
+// An errant node's two-term path must keep the guide and real flight in exactly the agreement a
+// single-term drift already had to keep.
+let errantCaptures=0;
+for(let angle=-.22;angle<=.22;angle+=.003){
+  const test=transferFixture(50,240,'errant');test.w.player.angle=angle;test.w.positionPlayer();const aim=test.w.aim();
+  if(!aim?.perfect)continue;
+  test.w.release();const incoming={vx:test.w.player.vx,vy:test.w.player.vy};
+  for(let i=0;i<120*4&&!test.w.player.node&&test.w.state==='playing';i++)test.w.update(step);
+  assert.equal(test.w.player.node,test.destination);assert.equal(test.captures[0].perfect,true,'An errant guide must predict the actual tangent capture');
+  assert(Math.hypot(test.w.player.vx-incoming.vx,test.w.player.vy-incoming.vy)<.1,'An errant capture preserves velocity within the planet motion remaining in the fixed step');errantCaptures++;
+}
+assert(errantCaptures>3,'Exercise a real range of errant-planet tangent arrivals');
 for(const dir of [-1,1])for(const path of orbitTangents({x:0,y:0,r:57},{x:77,y:-207,r:54},dir)){
   const dx=path.bx-path.x,dy=path.by-path.y;
   assert(Math.abs(path.x*dx+path.y*dy)<1e-8);
@@ -2017,13 +2053,14 @@ assert(nebulaCount>=120,'Nebula patches must actually appear: '+nebulaCount);
 // has to be flyable both ways it can be flown — a smooth tangent for a perfect transfer and a
 // centre-directed line for a player not yet flying them — and clear of the whole gravity field, not
 // merely of the lethal core, or the flight would be bent into the hazard it was drawn around.
-let hazardsPlaced=0,routesClosed=0;
+let hazardsPlaced=0,routesClosed=0,cometsPlaced=0;
 for(let seed=1;seed<=120;seed++){
   const w=new OrbitWorld(seed,440,860);
   const rowOf=new Map(),placed=[];
   // Only the lethal hazards go through the route-closing placement; a wind-head is put on a route
   // deliberately and is exempt, since it cannot shut one.
   while(w.row<70){const before=w.hazards.length;w.generateRow();for(const h of w.hazards.slice(before))if(hazardKind(h).lethal)placed.push(h);}
+  cometsPlaced+=placed.filter(h=>h.kind==='comet').length;
   for(const n of w.nodes)if(Number.isInteger(n.row)&&n.type!=='gold'&&n.type!=='shield'&&n.routeRole!=='star')rowOf.set(n.row,n);
   for(const h of placed){
     const n=rowOf.get(h.row),prev=rowOf.get(h.row-1);if(!n||!prev)continue;
@@ -2041,6 +2078,21 @@ for(let seed=1;seed<=120;seed++){
 }
 assert(routesClosed>200,'Hazards must actually close routes, not merely be allowed to: '+routesClosed);
 assert(routesClosed<hazardsPlaced*.6,'A closed route stays an event, not the standing state of the chart: '+routesClosed+'/'+hazardsPlaced);
+assert(cometsPlaced>15,'A comet must actually be dealt across many seeds, not merely be allowed to: '+cometsPlaced);
+
+// Both new fixtures are held back well past where every existing one already levels off.
+{
+  const w=new OrbitWorld(901,440,860);
+  let earliestErrant=Infinity,earliestComet=Infinity;
+  while(w.row<90){
+    const beforeN=w.nodes.length,beforeH=w.hazards.length;w.generateRow();
+    for(const n of w.nodes.slice(beforeN))if(n.type==='errant')earliestErrant=Math.min(earliestErrant,n.row);
+    for(const h of w.hazards.slice(beforeH))if(h.kind==='comet')earliestComet=Math.min(earliestComet,h.row);
+  }
+  assert(earliestErrant>=36,'No errant node appears before row 36');
+  assert(earliestComet>=40,'No comet hazard appears before row 40');
+  assert(earliestErrant<90&&earliestComet<90,'Both new fixtures must actually appear by row 90 on a representative seed');
+}
 
 const {boostedTransfers}=await pSling;
 const {totalCaptures:variedCaptures,variedOpenings,variedFigures}=await pVaried;

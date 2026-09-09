@@ -950,11 +950,11 @@ function drawNode(n,aim){
   const pen=revealNode(n),struck=used?revealRetire(n):0;
   if(pen.t<=0)return;
   const gold=n.type==='gold',renaissanceStar=n.routeRole==='star'&&renaissanceAtlas(),drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
-  const reflector=n.type==='reflector',inkwell=n.type==='inkwell',dawn=n.type==='dawn';
+  const reflector=n.type==='reflector',inkwell=n.type==='inkwell',dawn=n.type==='dawn',errant=n.type==='errant';
   // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
   // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
   // plate's ordinary ink, reading as the plain, unmarked choice between the two.
-  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:dawn?ink.marks.nodeDawn:sling?ink.marks.slingFill:ink.marks.node;
+  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:errant?ink.marks.nodeErrant:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:dawn?ink.marks.nodeDawn:sling?ink.marks.slingFill:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
@@ -1401,6 +1401,63 @@ function hazardAccretionSprite(seed,radius){
   if(hazardAccretionSprites.size>24)hazardAccretionSprites.delete(hazardAccretionSprites.keys().next().value);
   return sprite;
 }
+// A comet: two dotted rings rather than one, because this is the one hazard whose field changes its
+// mind. The outer ring, barbed outward exactly as a flare's own field ring is, marks where the
+// tail's pressure begins to stand a flight off; the inner ring, barbed inward, marks the coma's own
+// edge, where the sign in bendVelocity flips and the flight is drawn into a lethal core instead.
+// Nothing fills the gap between the two rings — no halo, no hatch — because the point of the second
+// ring is that the danger is not where a single drawn body would put it, so the eye is sent to the
+// two rings rather than to a centre. The tail is pure decoration: h.dir is thrown once at generation
+// and never read by bendVelocity, so it says which way this comet is travelling without claiming the
+// field itself is shaped by it.
+function drawComet(h){
+  const x=sx(h.x),y=sy(h.y),core=hazardCore(h)*scale,reach=gravityRadius(h)*scale;
+  if(x+reach*1.2<0||x-reach*1.2>W||y+reach*1.2<0||y-reach*1.2>H)return;
+  const c=ink.field,rng=seeded(h.seed);
+  ctx.save();ctx.translate(x,y);
+  ctx.setLineDash([1.7*scale,4.4*scale]);
+  ctx.strokeStyle=`rgba(${c.fieldRing},.3)`;ctx.lineWidth=.8*scale;
+  ctx.beginPath();ctx.arc(0,0,reach,0,TAU);ctx.stroke();
+  ctx.strokeStyle=`rgba(${c.fieldRing},.36)`;ctx.lineWidth=.75*scale;
+  ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.stroke();
+  ctx.setLineDash([]);
+  for(let i=0;i<8;i++){
+    // The outer ring's barbs point out, as a flare's field does: this reach only stands a flight off.
+    const a=i/8*TAU+(h.phase||0)*.2;
+    ctx.strokeStyle=`rgba(${c.fieldRing},.32)`;ctx.lineWidth=.65*scale;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a-.035)*(reach-2.6*scale),Math.sin(a-.035)*(reach-2.6*scale));
+    ctx.lineTo(Math.cos(a)*(reach+1.4*scale),Math.sin(a)*(reach+1.4*scale));
+    ctx.lineTo(Math.cos(a+.035)*(reach-2.6*scale),Math.sin(a+.035)*(reach-2.6*scale));
+    ctx.stroke();
+    // The inner ring's barbs point in: past here the same field draws a flight down into the core.
+    const b=a+TAU/16;
+    ctx.strokeStyle=`rgba(${c.fieldRing},.4)`;ctx.lineWidth=.65*scale;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(b-.05)*(core+2.6*scale),Math.sin(b-.05)*(core+2.6*scale));
+    ctx.lineTo(Math.cos(b)*(core-1.4*scale),Math.sin(b)*(core-1.4*scale));
+    ctx.lineTo(Math.cos(b+.05)*(core+2.6*scale),Math.sin(b+.05)*(core+2.6*scale));
+    ctx.stroke();
+  }
+  const nucleus=hazardCoreSprite(h.seed,core*.55);
+  ctx.drawImage(nucleus.canvas,-nucleus.size/2,-nucleus.size/2,nucleus.size,nucleus.size);
+  const dir=h.dir||0,start=core*.9,span=reach*1.15-start;
+  ctx.lineCap='round';
+  for(let i=0;i<6;i++){
+    const lane=i/5-.5,spread=core*1.3,wobble=1.4+rng()*1.5,phase=rng()*TAU;
+    const travel=reducedMotion?0:world.time*.4+(h.phase||0);
+    ctx.strokeStyle=`rgba(${c.windLine},${.14+rng()*.16})`;ctx.lineWidth=(i%2?.5:.8)*scale;
+    ctx.beginPath();
+    for(let j=0;j<=12;j++){
+      const t=j/12,d=start+span*t;
+      const off=lane*spread*(.3+t*.7)+Math.sin(t*wobble*TAU+phase-travel)*core*.12;
+      const px=Math.cos(dir)*d-Math.sin(dir)*off,py=Math.sin(dir)*d+Math.cos(dir)*off;
+      if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawHazard(h){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -1408,6 +1465,7 @@ function drawHazard(h){
   if(h.kind==='nebula')return drawNebula(h);
   if(h.kind==='flare')return drawFlare(h);
   if(h.kind==='wind')return drawWind(h);
+  if(h.kind==='comet')return drawComet(h);
   const x=sx(h.x),y=sy(h.y),r=h.r*scale;if(y<-r*3||y>H+r*3)return;
   ctx.save();ctx.translate(x,y);const pulse=reducedMotion?1:.95+.05*Math.sin(world.time*1.2+(h.phase||0)),paper=onPaper();
   const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);

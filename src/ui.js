@@ -78,6 +78,7 @@ function event(type,e){
     else if(e.square)say('RIGHT ANGLE · +'+e.squareBonus,at);
     else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
     else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
+    else if(e.n.type==='errant'&&e.n.row<40)say('AN ERRANT ORBIT',at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
     say((plateWords().chart||e.chart.name)+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
@@ -267,7 +268,7 @@ function showEnd(){
   // this same dark-tip case, but nested inside the branch that only runs once the plate is already
   // known not to be the Ceiling — so the era's own wording was written but never once reached, and is
   // recorded here rather than silently dropped with the ternary that could never read it.
-  const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
+  const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'||world.reason==='CAUGHT BY A COMET'?'vortex':world.perfects<2?'angle':'speed';
   $('end-tip').textContent=plateWords().tips[tip];
   $('announcement').textContent=spoken('ended',{score:world.score,best:best});
 }
