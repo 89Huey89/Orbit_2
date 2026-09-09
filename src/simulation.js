@@ -314,6 +314,27 @@ function arrivalAim(n,contact,distance,vx,vy) {
   const angle=arrivalAngle(n,contact.rx,contact.ry,contact.rvx,contact.rvy,contact.distance,contact.perfect);
   return {n,distance,perfect:contact.perfect,angle,steep:angle<GRAZE_MINIMUM,entryAngle:Math.atan2(contact.ry,contact.rx),entryDir:contact.rx*contact.rvy-contact.ry*contact.rvx>=0?1:-1,cx:contact.cx,cy:contact.cy,radius:contact.distance,dx:vx/speed,dy:vy/speed};
 }
+// How much further a wide fork sends its stars than the catalogue's own plain reach, how sharply a
+// pinched one pulls the middle star back in, and the odds a region draws a wide, a pinched or a
+// guarded fork — independent draws, so a deep region can be all three at once, which is earned depth
+// doing what earned depth already does everywhere else on the chart. Both the width and the pinch
+// leave every star on the side its fork has always branched from and never move the main line itself,
+// so neither can ever put a star in the main line's own way or send a well-flown course somewhere the
+// chart it was drawn for did not put it: only the gold route's own shape changes. Wide and pinched
+// start at the second constellation; guarded waits for the third, so a run meets an ordinary hazard on
+// the main line before it ever meets one worked into the gold route itself.
+const FORK_WIDE_MULT=1.45, FORK_PINCH_MULT=.3, FORK_WIDE_CHANCE=.35, FORK_PINCH_CHANCE=.3, FORK_GUARDED_CHANCE=.3;
+const FORK_VARIETY_FROM=1, FORK_GUARDED_FROM=2;
+// A fork's route style rides its own stream, keyed to the region alone, so every row of the same fork
+// agrees on it before the chart exists to carry it, and asking again mid-fork costs nothing: the
+// answer is a pure function of the seed and the region, not a draw off a stream that could be read
+// out of order. A pinched fork pulls its middle star sharply back toward the spine while its outer two
+// keep their ordinary reach, so the gold route has to double back hard between captures instead of
+// sweeping one easy curve — an hourglass waist worked into the route itself.
+function forkStyle(seed,region) {
+  const r=seeded((seed*2654435761>>>0)^Math.imul(region+1,0x9e3779b1));
+  return {wide:region>=FORK_VARIETY_FROM&&r()<FORK_WIDE_CHANCE,pinched:region>=FORK_VARIETY_FROM&&r()<FORK_PINCH_CHANCE,guarded:region>=FORK_GUARDED_FROM&&r()<FORK_GUARDED_CHANCE};
+}
 
 class OrbitWorld {
   // offerDifficulty spawns three parallel opening targets — relaxed, classic, hardcore internally,
@@ -382,6 +403,7 @@ class OrbitWorld {
     const k = ++this.row, prev = this.lastMain, rng = this.random;
     const region=Math.floor(k/8),local=k%8,fork=local>=3&&local<=7;
     const side=((this.seed>>region)&1)?1:-1;
+    const style=forkStyle(this.seed,region),wide=style.wide,pinched=style.pinched,guarded=style.guarded;
     const grow = chartGrowth(k);
     // The orbits open with the chart, up to half as wide again. A wider ring is swept more slowly at
     // the same pace and presents a larger rim from further off, which is what keeps the release
@@ -435,12 +457,18 @@ class OrbitWorld {
         else{
           chart.main.push(n);
           const i=local-4,shape=CONSTELLATIONS[chart.catalogueIndex].shape;
-          const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size,this.inboard(starR));
+          const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size*(wide?FORK_WIDE_MULT:1)*(pinched&&i===1?FORK_PINCH_MULT:1),this.inboard(starR));
           const star=this.makeNode(side*reach,y+[24,42,18][i]*grow,starR,k,'gold');
           const profile=renaissanceStarProfile(star.seed,i);
           star.cap=(star.r+9*grow)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;
           star.brightness=profile.brightness;star.magnitude=profile.magnitude;star.uncertain=profile.uncertain;
           chart.stars.push(star);orderRenaissanceStars(chart);
+          // A guarded fork earns one hazard of its own, worked into its last leg rather than left
+          // beside the chart: kept clear of every tangent across it exactly as the ordinary placement
+          // below keeps its hazards clear before a route is ever allowed to close. A fork runs two
+          // routes through the same rows at once, the wide orbits and the gold one, so both of the
+          // last leg's forms are kept clear together rather than only whichever one is named first.
+          if(guarded&&i===2)this.tryPlaceHazard(chart.stars[1],chart.stars[2],k,false,slingOrigin,[chart.main[1],chart.main[2]]);
         }
       }
     }
@@ -490,44 +518,7 @@ class OrbitWorld {
     // side you cross on becomes a decision instead of a formality. What is never allowed is closing
     // the last way through — at least one smooth tangent, the route a perfect transfer is flown on,
     // is always left open, and the slingshot's own shortcut is never touched.
-    if (!fork && k >= 6 && k%3 !== 1) {
-      const r = 18+rng()*11+Math.min(8,k*.14);
-      const direct=tangentPaths(prev,n),smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
-      // Two margins, because a hazard reaches further than it kills. A route closer than `kill` is
-      // shut; the route left open has to be clear of the whole gravity field, or it would be bent
-      // into the hazard it was supposed to avoid.
-      const kill=r+prev.amp+n.amp+25,free=gravityRadius({r})+prev.amp+n.amp+10;
-      const mayClose=k>=HAZARD_CLOSES_ROUTE&&k%3===2;
-      let chosen=null,clearOf=null;
-      for (let tries=0;tries<12&&!chosen;tries++) {
-        const hx=(rng()-.5)*Math.min(this.width-72,380), hy=(prev.y+n.y)/2+(rng()-.5)*55;
-        if (this.nodes.some(q=>Math.hypot(hx-q.baseX,hy-q.baseY)<q.r+q.amp+r+30)) continue;
-        if(slingOrigin&&tangentPaths(slingOrigin,slingOrigin.shortcut).some(p=>pointSegment(hx,hy,p.x,p.y,slingOrigin.shortcut.x,slingOrigin.shortcut.y)<r+25))continue;
-        if(slingOrigin&&[...orbitTangents(slingOrigin,slingOrigin.shortcut,1),...orbitTangents(slingOrigin,slingOrigin.shortcut,-1)].some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+25))continue;
-        const toSmooth=smooth.map(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by));
-        const toDirect=direct.map(p=>pointSegment(hx,hy,p.x,p.y,n.x,n.y));
-        const openSmooth=toSmooth.filter(d=>d>=kill).length,openDirect=toDirect.filter(d=>d>=kill).length;
-        // The way left open has to be flyable both ways it can be flown: a smooth tangent for a
-        // perfect transfer, and a centre-directed line for a player not yet flying them. A hazard
-        // closes one side of the crossing, never one style of play.
-        const flyable=toSmooth.filter(d=>d>=free).length&&toDirect.filter(d=>d>=free).length;
-        if(openSmooth===smooth.length&&openDirect===direct.length){
-          // Clear of everything: the old placement, kept as the fallback and used outright until
-          // the chart is deep enough for a hazard to be allowed to close a route.
-          if(!clearOf)clearOf={hx,hy};
-          if(!mayClose)break;
-          continue;
-        }
-        if(mayClose&&flyable>0)chosen={hx,hy};
-      }
-      const place=chosen||clearOf;
-      if(place){
-        // From the third region, sunspot flares alternate with vortices under the
-        // same placement rules: they repel instead of pulling and only their core kills.
-        const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
-        this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
-      }
-    }
+    if (!fork && k >= 6 && k%3 !== 1) this.tryPlaceHazard(prev,n,k,k>=HAZARD_CLOSES_ROUTE&&k%3===2,slingOrigin);
     // A wind-head sits across one of the tangent routes between the last two main nodes and blows
     // one steady way over it. It is placed the way a nebula is rather than through the lethal
     // placement above, because it is the one hazard that cannot shut a route: it kills nothing, so
@@ -579,6 +570,54 @@ class OrbitWorld {
         this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(90,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
       }
     }
+  }
+  // One hazard, tried between two orbit-like endpoints and placed clear of every route across them
+  // until mayClose allows one of the two ways to be shut, never the last one. Pulled out of the
+  // ordinary placement below so a guarded fork's own main-line edge answers to the identical rule
+  // rather than a hand-rolled cousin of it — the same code, asked about a different pair of orbits.
+  // A guarded fork runs two routes through the same rows at once, so it passes its gold leg as also:
+  // a second crossing that must stay wholly clear whatever mayClose permits for the first, since a
+  // route the search was never asked about is never safe to assume clear of on its own account.
+  tryPlaceHazard(a,b,k,mayClose,slingOrigin,also) {
+    const rng=this.random;
+    const r = 18+rng()*11+Math.min(8,k*.14);
+    const direct=tangentPaths(a,b),smooth=[...orbitTangents(a,b,1),...orbitTangents(a,b,-1)];
+    // Two margins, because a hazard reaches further than it kills. A route closer than `kill` is
+    // shut; the route left open has to be clear of the whole gravity field, or it would be bent
+    // into the hazard it was supposed to avoid.
+    const kill=r+a.amp+b.amp+25,free=gravityRadius({r})+a.amp+b.amp+10;
+    const alsoKill=also&&r+also[0].amp+also[1].amp+25;
+    const alsoRoutes=also&&[...tangentPaths(also[0],also[1]).map(p=>({x:p.x,y:p.y,bx:also[1].x,by:also[1].y})),...orbitTangents(also[0],also[1],1),...orbitTangents(also[0],also[1],-1)];
+    let chosen=null,clearOf=null;
+    for (let tries=0;tries<12&&!chosen;tries++) {
+      const hx=(rng()-.5)*Math.min(this.width-72,380), hy=(a.y+b.y)/2+(rng()-.5)*55;
+      if (this.nodes.some(q=>Math.hypot(hx-q.baseX,hy-q.baseY)<q.r+q.amp+r+30)) continue;
+      if(slingOrigin&&tangentPaths(slingOrigin,slingOrigin.shortcut).some(p=>pointSegment(hx,hy,p.x,p.y,slingOrigin.shortcut.x,slingOrigin.shortcut.y)<r+25))continue;
+      if(slingOrigin&&[...orbitTangents(slingOrigin,slingOrigin.shortcut,1),...orbitTangents(slingOrigin,slingOrigin.shortcut,-1)].some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<r+25))continue;
+      if(alsoRoutes&&alsoRoutes.some(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by)<alsoKill))continue;
+      const toSmooth=smooth.map(p=>pointSegment(hx,hy,p.x,p.y,p.bx,p.by));
+      const toDirect=direct.map(p=>pointSegment(hx,hy,p.x,p.y,b.x,b.y));
+      const openSmooth=toSmooth.filter(d=>d>=kill).length,openDirect=toDirect.filter(d=>d>=kill).length;
+      // The way left open has to be flyable both ways it can be flown: a smooth tangent for a
+      // perfect transfer, and a centre-directed line for a player not yet flying them. A hazard
+      // closes one side of the crossing, never one style of play.
+      const flyable=toSmooth.filter(d=>d>=free).length&&toDirect.filter(d=>d>=free).length;
+      if(openSmooth===smooth.length&&openDirect===direct.length){
+        // Clear of everything: the old placement, kept as the fallback and used outright until
+        // the chart is deep enough for a hazard to be allowed to close a route.
+        if(!clearOf)clearOf={hx,hy};
+        if(!mayClose)break;
+        continue;
+      }
+      if(mayClose&&flyable>0)chosen={hx,hy};
+    }
+    const place=chosen||clearOf;
+    if(!place)return false;
+    // From the third region, sunspot flares alternate with vortices under the
+    // same placement rules: they repel instead of pulling and only their core kills.
+    const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
+    this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
+    return true;
   }
   catalogueFor(region) { return this.varyOpening?this.catalogueOrder[region%CONSTELLATIONS.length]:region<4?region:this.catalogueOrder[(region-4)%CONSTELLATIONS.length]; }
   // A named feat, reported and recorded once per run.
