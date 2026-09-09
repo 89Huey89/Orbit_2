@@ -101,7 +101,11 @@ const revealSpan=(t,from,to)=>clamp((t-from)/(to-from),0,1);
 const NODE_PEN={t:1,d:1,taken:1,done:true,age:Infinity,ring:1,keyline:1,hatch:1,wash:1,survey:1};
 // The crossing from looked-at to known happens on exactly one frame of one orbit, and each age will want
 // to mark it in its own hand. Finding the crossing is the same problem eight times, so it is solved once
-// here and `revealFlourish.fire` is the hook an era replaces; the atlas as shipped does nothing with it.
+// here. An era names its own mark at the `flourish` hook, exactly as `rockFlourish` does in src/rock.js;
+// the printed atlas cannot name one there — `HANDS.atlas` stays the empty hand every call site's own
+// fallback code answers for, never a registered painter, so night and paper read as undeclared exactly
+// like every other hand that has nothing to say — so it is answered for below at `atlasFlourish` instead,
+// and `revealFlourish.fire` is the silence left for a hand that names neither, as Era II does not.
 const revealFlourish={fire(){}};
 let flourishFor=null,flourishAt=0;
 // A body is watched only while it is the one being orbited. Coming to a different body arms the watch at
@@ -109,8 +113,10 @@ let flourishFor=null,flourishAt=0;
 // and never reported for an observation this orbit did not make.
 function watchCompletion(n,d){
   if(n!==flourishFor){flourishFor=n;flourishAt=d;return;}
-  // Each age marks the crossing in its own hand; the atlas, having nothing to say at it, does nothing.
-  if(d>=1&&flourishAt<1)(handFor('flourish')||revealFlourish.fire)(n);
+  if(d>=1&&flourishAt<1){
+    const own=handFor('flourish');
+    if(own)own(n);else if(renaissanceAtlas())atlasFlourish(n);else revealFlourish.fire(n);
+  }
   flourishAt=d;
 }
 // Two clocks run over one body and they answer different questions. `t` is the pen reaching the page: the
@@ -269,9 +275,10 @@ function punchedMark(g,core,rng,alpha,progress,seed){
 }
 // ---------- Planets: the stages a colourist works in ----------
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
-// composite is drawn exactly as before, at no extra cost.
+// composite is drawn exactly as before, at no extra cost, plus whatever brief flourish `drawAtlasFlourish`
+// (below) is still marking the crossing into a full observation with.
 function revealPlanet(art,r,time,pen,seed,impression=null){
-  if(!pen||pen.done){drawPlanet(art,r,time,impression);return;}
+  if(!pen||pen.done){drawPlanet(art,r,time,impression);drawAtlasFlourish(art,r,seed);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
   // (0) A body no orbit has ever taken is still only a phenomenon. Night keeps that as a light; paper
@@ -338,6 +345,35 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.beginPath();ctx.rect(-core*1.7,-core*1.7,core*3.4*pen.hatch,core*3.4);ctx.clip();
     ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
   }
+  ctx.restore();
+}
+// The broken survey arcs just drawn are already the atlas's answer to "has this been mapped": they fade
+// in as `pen.survey` climbs, so a body let go at 95% observed dries to very nearly the same faint hairline
+// as one held to 100% — exactly the crossing a player most wants to see and can least tell happened.
+// `atlasFlourish` is what the printed atlas answers `watchCompletion`'s hook with above, called directly
+// rather than registered through `defineHand()`: night and paper carry no painters of their own in that
+// registry at all (see `renaissanceAtlas()` in src/plates.js), so this is reached the same way every other
+// atlas-drawn mark is, as the code a call site runs when it finds nothing named. The instant an orbit
+// actually reaches a full observation, those same arcs are struck whole in one bright ring — in the gold
+// that already marks a landing squared, ochre on paper — then left to fade back into the ordinary hairline
+// the cached plate carries underneath. The birth time is kept per seed rather than per node, exactly as
+// `rockFlourishAt` is kept in src/rock.js, and pruned the same way once the map outgrows a small bound, so
+// a run that documents many bodies never grows this without limit.
+const ATLAS_FLOURISH_DUR=.6;
+const atlasFlourishAt=new Map();
+function atlasFlourish(n){
+  atlasFlourishAt.set(n.seed,world.time);
+  if(atlasFlourishAt.size>40)for(const [key,at] of atlasFlourishAt)if(world.time-at>ATLAS_FLOURISH_DUR)atlasFlourishAt.delete(key);
+}
+// Pickups carry no survey furniture to close — paintSurvey never ran for them — so they are left alone.
+function drawAtlasFlourish(art,r,seed){
+  if(PICKUP_FAMILIES.has(art.family))return;
+  const at=atlasFlourishAt.get(seed);if(at===undefined)return;
+  const seal=clamp(1-(world.time-at)/ATLAS_FLOURISH_DUR,0,1);if(seal<=0)return;
+  const radius=art.family==='ringed'?art.core*1.98:art.core+6,glow=seal*seal;
+  ctx.save();ctx.scale(r/60,r/60);
+  ctx.strokeStyle=`rgba(${ink.base.gold},${.85*glow})`;ctx.lineWidth=1+1.8*glow;
+  ctx.beginPath();ctx.arc(0,0,radius,0,TAU);ctx.stroke();
   ctx.restore();
 }
 // ---------- Retiring marks ----------

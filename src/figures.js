@@ -17,7 +17,6 @@ definePlate('figures',{
 // classification arrives after roughly 160 degrees, while an occasional faint and uncertain point needs
 // almost the whole observation before the quill will commit a Greek letter to the plate.
 const RENAISSANCE_STAR_CLASSIFIED=.68,RENAISSANCE_STAR_CERTAIN=.94;
-const renaissanceAtlas=()=>!modernPlate()&&eraId()===0;
 function renaissanceStarObservation(n){
   const p=world&&world.player;
   return clamp(p&&p.node===n?p.orbitSweep/SWEEP_FULL:n.documented||0,0,1);

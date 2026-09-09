@@ -187,7 +187,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
@@ -371,8 +371,13 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   }
   // The completion flourish fires exactly once on the <1→1 crossing of an orbit's own documented
   // fraction, and never for a body let go before it gets there. A counting spy on revealFlourish.fire
-  // stands in for an era's own mark without changing what triggers it.
+  // stands in for an era's own mark without changing what triggers it. The printed atlas now answers
+  // this hook itself (see the block just below) rather than through the bare fallback, so the generic
+  // mechanism is exercised here under a plate that still falls through to it — the Ceiling names no
+  // flourish of its own either, and never reaches this code from its own independent render() at all,
+  // but a direct call to revealNode, as this test makes, still runs the one shared crossing-detector.
   {
+    context.test.setPlate('ceiling');
     const fresh=context.test.world,p=fresh.player,origNode=p.node,origSweep=p.orbitSweep;
     let fires=0;context.test.revealFlourish.fire=()=>{fires++;};
     const probeA={row:-3};
@@ -392,6 +397,21 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(let i=0;i<3;i++)context.test.revealNode(probeB);
     assert.equal(fires,1,'A body released before completion never fires the flourish, however often it is drawn afterwards');
     context.test.revealFlourish.fire=()=>{};
+    p.node=origNode;p.orbitSweep=origSweep;
+    context.test.setPlate('night');
+  }
+  // On the atlas's own two plates the same crossing is answered by atlasFlourish, called directly rather
+  // than through a registered painter — night and paper name nothing at the flourish hook, exactly as
+  // they name nothing at any other, and are still owed the mark this whole mechanism exists for.
+  {
+    assert.equal(context.test.handFor('flourish'),undefined,'The printed atlas must be drawn by the atlas hand alone: flourish');
+    const fresh=context.test.world,p=fresh.player,origNode=p.node,origSweep=p.orbitSweep;
+    const probe={row:-5,seed:424242};
+    p.node=probe;p.orbitSweep=0;
+    context.test.revealNode(probe);assert(!context.test.atlasFlourishAt.has(probe.seed),'Arming the watch must not itself fire on the atlas either');
+    p.orbitSweep=context.test.SWEEP_FULL*.99;context.test.revealNode(probe);assert(!context.test.atlasFlourishAt.has(probe.seed),'Still short of a full observation, still unmarked');
+    p.orbitSweep=context.test.SWEEP_FULL;context.test.revealNode(probe);
+    assert(context.test.atlasFlourishAt.has(probe.seed),'The printed atlas marks the same crossing in its own hand');
     p.node=origNode;p.orbitSweep=origSweep;
   }
   // The daily plate replaces the run seed with the UTC date's, forces Classic pressure,

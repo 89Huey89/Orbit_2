@@ -358,6 +358,10 @@ const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);
 // Whether the bodies on this plate are rendered rather than engraved. A plate that answers yes is still
 // pulled from the night plate's tokens and still answers no to onPaper(), so every existing fork stands.
 const modernPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render==='modern');
+// The printed sheet itself, as opposed to a century beside it or the hidden observatory hand: the one
+// case a call site sometimes has to name outright, because it is the one hand that answers a `handFor()`
+// question with nothing and is still owed a mark of its own rather than the shared bare fallback.
+const renaissanceAtlas=()=>!modernPlate()&&eraId()===0;
 // ---------- What a plate is, beyond its colours ----------
 // A plate was a colourway of one atlas for as long as there was one atlas. An era is not that: it
 // keeps its own record, hides furniture the atlas needs, calls the same things by other names and
