@@ -152,7 +152,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
-get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
+get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
@@ -360,6 +360,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // The daily plate replaces the run seed with the UTC date's, forces Classic pressure,
   // and is not remembered: switching it off restores an ordinary run.
   const beforeDaily=context.test.world;
+  const plateBeforeDaily=context.test.plateName,cosmeticsBeforeDaily=JSON.parse(JSON.stringify(context.test.cosmetics));
+  const plateStorageBeforeDaily=saved.get('orbit.plate.v1'),cosmeticsStorageBeforeDaily=saved.get('orbit.cosmetics.v1');
   events['daily:click']();
   assert.equal(context.test.dailyOn,true);
   assert(/^\d{4}-\d{2}-\d{2}$/.test(context.test.dailyDay),'The daily course is keyed to a UTC date');
@@ -367,9 +369,40 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   assert.equal(context.test.world.darknessMult,1,'The daily plate is always played at Classic pressure');
   assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+context.test.dailyDay));
   assert.equal(new OrbitWorld(context.test.dailySeed).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'Everyone plays the same daily chart');
+  // ---------- The daily's own showcase: a setup drawn from the same date hash ----------
+  {
+    // Array.from (called on this module's own Array, not the sandbox's) rather than .map, and JSON
+    // round-tripping below for the setup itself: the sandboxed script runs in its own vm realm, so a
+    // structural compare against one of its arrays or objects fails deepStrictEqual on prototype
+    // identity alone even when every element matches, exactly as context.test.cosmetics already has
+    // to be unwrapped this way above.
+    const kinds=Array.from(context.test.COSMETIC_KINDS,g=>g.kind);
+    const setup=JSON.parse(JSON.stringify(context.test.dailySetupFor(context.test.dailyDay)));
+    assert.deepEqual(Object.keys(setup).sort(),kinds.slice().sort(),'A daily setup names every cosmetic category');
+    for(const kind of kinds)assert(context.test.cosmeticItems(kind).some(item=>item.id===setup[kind]),'The daily draws an item the catalogue actually lists, for '+kind);
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.dailySetupFor(context.test.dailyDay))),setup,'The same day always draws the same setup');
+    assert.equal(context.test.plateName,setup.plate,'The daily puts its own drawn plate on the press');
+    for(const kind of kinds)assert.equal(context.test.activeCosmetic(kind),setup[kind],'The daily overrides '+kind+' while it is current');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),cosmeticsBeforeDaily,'The showcase never touches the ledger\'s own cosmetic choices');
+    assert.equal(saved.get('orbit.plate.v1'),plateStorageBeforeDaily,'The showcase never writes the stored plate');
+    assert.equal(saved.get('orbit.cosmetics.v1'),cosmeticsStorageBeforeDaily,'The showcase never writes the stored cosmetics');
+    // Short of a ledger that has already earned the whole catalogue, some day in a modest search draws
+    // a cosmetic nothing has unlocked yet \u2014 the whole point of a showcase \u2014 without that day unlocking it.
+    if(context.test.unlockedIds().size<context.test.UNLOCKS.length){
+      let shownLocked=null;
+      for(let y=1970;y<2070&&!shownLocked;y++){
+        const trial=context.test.dailySetupFor(y+'-01-01');
+        for(const kind of kinds)if(!context.test.isUnlocked(trial[kind])){shownLocked={kind,id:trial[kind]};break;}
+      }
+      assert(shownLocked,'Some day in a century of them shows a cosmetic nothing has unlocked yet');
+      assert.equal(context.test.isUnlocked(shownLocked.id),false,'Showing it never earns it');
+    }
+  }
   events['daily:click']();
   assert.equal(context.test.dailyOn,false);assert.equal(element('daily-date').textContent,'');
   assert(context.test.world!==beforeDaily&&context.test.world.state==='ready','Leaving the daily plate deals a fresh ordinary course');
+  assert.equal(context.test.plateName,plateBeforeDaily,'Leaving the daily restores whichever plate was actually on the press');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),cosmeticsBeforeDaily,'Leaving the daily leaves the ledger\'s own cosmetic choices exactly as they were');
   // ---------- The ephemeris: the almanac of daily plates, and drawing a past one again ----------
   // One rule holds the whole leaf up: a day is written into the log only by a run begun while it was
   // the current day, and it is the log alone that opens a plate to be drawn again.

@@ -270,11 +270,37 @@ function readCosmetics(){
 const cosmetics=readCosmetics();
 function saveCosmetics(){storage.set(COSMETICS_KEY,JSON.stringify(cosmetics));}
 const cosmetic=kind=>cosmetics[kind]||COSMETIC_FALLBACK[kind];
+// ---------- The daily setup: a showcase drawn from the day's own seed ----------
+// The daily plate is a showcase as well as a fixed course. Its look is drawn from the same date hash
+// that deals its chart — one entry per cosmetic category, in the order the catalogue itself lists
+// them — so everyone who opens today's plate is shown the same setup, and never the setup the ledger
+// has actually unlocked or the player has actually chosen for ordinary play, exactly as the daily's
+// chart is never whatever seed the traveller would otherwise have been dealt. Showing a locked item
+// for a day is not granting it: nothing here ever reads or writes a cosmetic's own storage.
+const DAILY_SETUP_SALT=0x5c17a2f;
+function dailySetupFor(day){
+  const rng=seeded((dayStamp(day)*2654435761>>>0)^DAILY_SETUP_SALT);
+  const setup={};
+  for(const group of COSMETIC_KINDS){
+    const items=cosmeticItems(group.kind);
+    setup[group.kind]=items[Math.floor(rng()*items.length)].id;
+  }
+  return setup;
+}
+const dailySetupCache={day:'',setup:null};
+function dailySetup(){
+  if(dailySetupCache.day!==dailyDay||!dailySetupCache.setup){dailySetupCache.day=dailyDay;dailySetupCache.setup=dailySetupFor(dailyDay);}
+  return dailySetupCache.setup;
+}
+// What the atlas actually paints with: the daily's own showcase while it is current, the ledger's
+// chosen cosmetic otherwise. cosmetic() itself is untouched, so the catalogue leaf's own EQUIPPED
+// marks keep reading exactly what the player picked even while the daily overrides the press.
+const activeCosmetic=kind=>dailyOn?dailySetup()[kind]:cosmetic(kind);
 // The two the painters ask for by name every frame: which figure the captures are constructing
 // (src/frame.js) and what the distance behind the chart is dressed with (src/celestial.js). `none`
 // on either is a real answer — the sheet is left unruled, or left bare — not a missing selection.
-const sphereStyle=()=>cosmetic('sphere');
-const sceneryStyle=()=>cosmetic('scenery');
+const sphereStyle=()=>activeCosmetic('sphere');
+const sceneryStyle=()=>activeCosmetic('scenery');
 // Whether anything at all is printed behind the chart at the ascent's own slower rate: the chapter
 // plate, its channel wash and both dust plates stand or fall together, so one question answers for
 // all of them wherever the distance is drawn.

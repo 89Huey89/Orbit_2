@@ -218,10 +218,14 @@ function enterEra(name){
 }
 function leaveEra(){
   if(!plateOwns('mode'))return;
-  const keep=eraReturn||{},kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
-  const restore=kept?keep.plate:'night';
+  const keep=eraReturn||{};
   difficulty=keep.difficulty&&DARKNESS_MULT[keep.difficulty]?keep.difficulty:difficulty;
   dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
+  // A daily returned to asks its own showcase again — freshly, in case the day turned over while the
+  // era held the press — rather than trusting the plate snapshotted on the way in; anything else puts
+  // back whatever plate was standing before the era, or night if that was itself another mode's own.
+  const kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
+  const restore=dailyPressPlate()||(kept?keep.plate:'night');
   applyPlate(restore);eraReturn=null;invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
 }
 function setPlaying(){

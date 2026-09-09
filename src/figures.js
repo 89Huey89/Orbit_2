@@ -213,7 +213,7 @@ const HAND_COLOUR_STYLES={
   // Bode's heavier cut gets a dry, uneven pass: darker islands and more unpainted paper between them.
   dry:{coverage:.58,skip:.36,alpha:.68,brush:1.12,grain:.5}
 };
-const figureStyle=()=>FIGURE_STYLES[cosmetic('figures')]||FIGURE_STYLES.hevelius;
+const figureStyle=()=>FIGURE_STYLES[activeCosmetic('figures')]||FIGURE_STYLES.hevelius;
 let figStyle=FIGURE_STYLES.hevelius;
 // The pen the figure is cut with: every line weight set on it, by the primitives below or by a figure
 // reaching for the context directly, is scaled by the style's weight.
@@ -732,7 +732,7 @@ function drawConstellationFigure(chart){
   if(chart.stars.length<3)return;
   if(sy(chart.entry.y)<-190||sy(chart.stars[2].y)>H+210)return;
   const frame=figFrame(chart),count=chart.stars.filter(n=>n.visited).length;
-  const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+cosmetic('figures')+':'+frame.side+':'+bucket;
+  const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+activeCosmetic('figures')+':'+frame.side+':'+bucket;
   let layer=figureLayers.get(key);
   if(!layer||layer.count!==count||layer.completed!==chart.completed||layer.expired!==chart.expired){
     if(figureLayers.size>10)figureLayers.clear();

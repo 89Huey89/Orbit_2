@@ -96,7 +96,7 @@ definePlate('inks',{
 // The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen. The
 // catalogue itself asks for an ink by name rather than for the one in hand, so a card can be printed in
 // the very ink it offers; every other caller wants whatever is loaded and passes nothing.
-function trailInk(id=cosmetic('trail')){
+function trailInk(id=activeCosmetic('trail')){
   const chosen=ink.inks[id];
   if(chosen)return chosen;
   return {wet:ink.dark.trailWet,dry:ink.dark.trailDry,wash:ink.dark.trailWash,edge:ink.dark.trailEdge,
@@ -146,7 +146,7 @@ const MATERIALS={
 // A catalogue ink brings its own substance; the plate's own ink is whatever medium the plate writes
 // in, which is the one thing about the trail an era gets to name for itself.
 function trailMaterial(){
-  const chosen=cosmetic('trail');
+  const chosen=activeCosmetic('trail');
   if(ink.inks[chosen])return MATERIALS[chosen]||MATERIALS.quill;
   return MATERIALS[ink.dark.trailMedium]||MATERIALS.quill;
 }
@@ -911,7 +911,7 @@ const OBSERVER_MARKS={
   // A mark that cuts its own point — the quill's nib is the moving point — says so and keeps it;
   // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
   // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
-  const mark=OBSERVER_MARKS[cosmetic('mark')]||OBSERVER_MARKS.quill;
+  const mark=OBSERVER_MARKS[activeCosmetic('mark')]||OBSERVER_MARKS.quill;
   if(!mark(length,boost,breath,charge,inkHeld))markHead(boost,charge,inkHeld);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
@@ -1228,7 +1228,7 @@ function drawTransferMark(r,t){
   const sectors=r.perfect?8:5;
   ctx.save();ctx.translate(sx(x),sy(y));ctx.scale(scale,scale);ctx.rotate(r.angle);
   const burin=r.seed||1;
-  const chosen=CAPTURE_MARKS[cosmetic('capture')];
+  const chosen=CAPTURE_MARKS[activeCosmetic('capture')];
   if(chosen){chosen(r,t,radius,alpha,burin);ctx.restore();return;}
   for(let j=0;j<sectors;j++){
     const a=j*TAU/sectors,gap=r.perfect?.055:.11;

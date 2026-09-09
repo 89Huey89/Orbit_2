@@ -188,7 +188,7 @@ function frameRosette(g,cx,cy,rgb,alpha,size,seed){
 // the two lower corners are unchanged, since nothing is set over them.
 const TOP_HEAD=.45,TOP_BREATH=.5;
 function frameOrnaments(g,wide,innerR){
-  const style=cosmetic('frame'),head=wide?14:9;
+  const style=activeCosmetic('frame'),head=wide?14:9;
   const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
   const inset=innerR+head*.9+(wide?3:2),topHead=head*TOP_HEAD,topInset=innerR+topHead*.9+(wide?3:2);
   const corners=[[topInset,topInset,1,1],[W-topInset,topInset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
