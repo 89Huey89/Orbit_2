@@ -1157,16 +1157,24 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // pilot logs afterward is stamped well past zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
   {
-    context.test.newWorld();frames(300);context.test.handleInput();
-    let guard=0;
-    while(context.test.world.state==='playing'&&guard++<20000){
-      const w=context.test.world;
-      if(w.player.node){const aim=w.aim();if(aim&&!aim.steep)context.test.handleInput();}
-      frames(1);
-    }
-    const live=context.test.world;
-    assert.equal(live.state,'dead','The replay fixture must actually finish a run to be worth replaying: '+width+'x'+height);
-    const log=context.test.replayLog;
+    // newWorld() deals from the live runSeed counter (src/plates.js), seeded off Date.now()^Math.random()
+    // so a real game never replays the same chart — which means an unlucky draw here can occasionally die
+    // within a release or two of nothing but a rough opening. Redraw a fresh chart when that happens
+    // rather than let the wall clock's luck fail a suite that has nothing wrong with it; a real bug still
+    // fails loudly, since it would keep failing across every seed this redraws into.
+    let live,log,attempts=0;
+    do{
+      context.test.newWorld();frames(300);context.test.handleInput();
+      let guard=0;
+      while(context.test.world.state==='playing'&&guard++<20000){
+        const w=context.test.world;
+        if(w.player.node){const aim=w.aim();if(aim&&!aim.steep)context.test.handleInput();}
+        frames(1);
+      }
+      live=context.test.world;
+      assert.equal(live.state,'dead','The replay fixture must actually finish a run to be worth replaying: '+width+'x'+height);
+      log=context.test.replayLog;
+    }while(log.releases.length<4&&++attempts<20);
     assert(log.releases.length>=4,'The fixture must record a real handful of releases: '+width+'x'+height);
     const replayed=context.test.replayRun(log);
     assert.equal(replayed.state,'dead','A replayed run must reach the same end the live one did: '+width+'x'+height);
