@@ -4,7 +4,12 @@
 // ---------- Canvas artwork: an engraved celestial atlas ----------
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
-const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
+// Seeded from the OS accessibility signal, but a reader who wants a lighter, faster plate without
+// asking the whole system for it can say so directly (see the pause menu's REDUCE MOTION button in
+// ui.js); once they have, that explicit choice is what's kept, in either direction.
+const reducedMotionStored=storage.get('orbit.reducedMotion.v1','');
+let reducedMotion=reducedMotionStored?reducedMotionStored==='on':window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // A second, unrelated reason for the pen to skip its own stroke-by-stroke drawing: reviewing a
 // finished plate wants every mark already standing, exactly as it stands after the run, never a
 // live accessibility signal (reducedMotion stays about motion, this stays about which world is on
@@ -39,7 +44,6 @@ function footerBand(){return Math.min(H*.42,(H<=530&&W>H?58:70)+safeAreaBottom()
 function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
 let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,lastScore=-1;
 let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
-const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
