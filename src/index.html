@@ -239,6 +239,15 @@
     .daily-group{pointer-events:auto;display:flex;flex-wrap:wrap;gap:9px 11px;align-items:center;justify-content:center;margin-top:11px}
     .daily-note{color:var(--muted);letter-spacing:.2em;font-size:10px;min-height:12px}
     #game.daily #daily{color:var(--gold);border-color:var(--gold)}
+    /* A second disclosure, folded the way HOW TO PLAY already folds its own paragraph: the ephemeris,
+       both era doors and the last plate wait behind it, so the sheet a hand first meets offers only
+       the day's two live choices. .daily-group sets display:flex on #more-menu, and an author rule
+       always outranks the hidden attribute's own user-agent display:none, whatever either one's
+       specificity — so the override is restated below for the one element that needs it. */
+    .more-toggle{pointer-events:auto;background:none;border:0;padding:8px 6px;color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;cursor:pointer;transition:color .2s}
+    .more-toggle:hover,.more-toggle:focus-visible{color:var(--gold)}
+    .more-toggle:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
+    #more-menu[hidden]{display:none}
     #end .end-stats{flex-wrap:nowrap;gap:0;min-width:0}
     #end .stat{padding:0 clamp(5px,3vw,22px)}
     #end-row-note{color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.2em;min-height:12px;margin-top:3px}
@@ -540,12 +549,15 @@
       <div class="daily-group">
         <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
         <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
-        <button id="ephemeris-open" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
-        <button id="ceiling-open" class="diff-btn era-entry atlas-only" type="button">ERA II · THE CEILING</button>
-        <button id="rock-open" class="diff-btn era-entry atlas-only" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
-        <button id="review-last" class="diff-btn atlas-only" type="button" hidden>REVIEW LAST PLATE</button>
-        <span id="review-last-note" class="small daily-note atlas-only"></span>
         <span id="daily-date" class="small daily-note atlas-only"></span>
+        <button id="more-toggle" class="more-toggle atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
+      </div>
+      <div id="more-menu" class="daily-group atlas-only" hidden>
+        <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+        <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
+        <button id="rock-open" class="diff-btn era-entry" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
+        <button id="review-last" class="diff-btn" type="button" hidden>REVIEW LAST PLATE</button>
+        <span id="review-last-note" class="small daily-note"></span>
       </div>
       <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
       <p class="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Deir el-Bahri · c. 1473–1458 BCE</span></p>

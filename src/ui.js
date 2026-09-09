@@ -1077,6 +1077,18 @@ $('instructions-toggle').addEventListener('click',()=>{
   $('instructions').hidden=!$('instructions').hidden;syncInstructions();
   if(audio.enabled)audio.brush(1400,.1);
 });
+// A second disclosure in the same shape: the ephemeris, both era doors and the last plate stay off
+// the frontispiece until this is opened, so the sheet first shown offers only the day's two live
+// choices — HOW TO PLAY and DAILY PLATE.
+function syncMoreMenu(){
+  const open=!$('more-menu').hidden;
+  $('more-toggle').textContent=open?'HIDE':'MORE';
+  $('more-toggle').setAttribute('aria-expanded',String(open));
+}
+$('more-toggle').addEventListener('click',()=>{
+  $('more-menu').hidden=!$('more-menu').hidden;syncMoreMenu();
+  if(audio.enabled)audio.brush(1400,.1);
+});
 $('fullscreen').addEventListener('click',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){try{const exit=document.exitFullscreen||document.webkitExitFullscreen;const p=exit.call(document);if(p&&p.catch)p.catch(()=>{});}catch(_){}}
   else enterFullscreen();
@@ -1137,4 +1149,4 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
-syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncMoreMenu();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
