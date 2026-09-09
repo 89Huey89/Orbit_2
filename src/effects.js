@@ -301,7 +301,10 @@ function recordLanding(e){
   const speed=Math.hypot(e.vx,e.vy)||1;
   const record={kind:'landing',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
     angle:e.angle,square:!!e.square,squareBonus:e.squareBonus||0,gain:e.gain,
-    mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING};
+    mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING,
+    // A rough impression cannot be joined, only arrested; the skid it leaves needs its own seed, kept
+    // deterministic off the node's own so a replayed run scuffs the sheet exactly where the live one did.
+    rough:!!e.steep,seed:(n.seed^0x5c1d9b)>>>0||1};
   world.surveys.push(record);pruneInkPath();return record;
 }
 // A hairline drawn on from one end to the other, with the wet bead and the nib riding the moving end.
@@ -398,6 +401,27 @@ function drawDepartureSurvey(s,t,rgb,base){
   surveyLetter('b',px+ax*off-s.ux*2*scale,py+ay*off-s.uy*2*scale,ls,rgb,base*.9,revealSpan(t,.3,.43));
   surveyLetter('c',ex+s.dx*9*scale,ey+s.dy*9*scale,ls,rgb,base*.9,revealSpan(t,.6,.74));
 }
+// A rough impression cannot glide onto the ring the way a tangent does: the incoming line is arrested
+// rather than joined, so the nib scuffs sideways at the contact instead of lifting clean, and pools
+// where it caught. Cut in the trail's own ink — the same ink the landing earned no dividend back from —
+// and never redrawn once it is dry, exactly as the rest of the construction is not. The scuff is set to
+// the side of the contact letter (b) below does not use, so a bad landing never blots out its own label.
+function drawSkidMark(s,t,rgb,base){
+  const drag=revealSpan(t,.4,.72);if(drag<=0)return;
+  const px=sx(s.x),py=sy(s.y),pen=trailInk(),hard=1-clamp(s.angle/GRAZE_MINIMUM,0,1);
+  const rng=seeded(s.seed),[tx,ty]=surveyAside(s.dx,s.dy,s.ux,s.uy),tang=Math.atan2(ty,tx);
+  const bx=px-s.dx*6*scale,by=py-s.dy*6*scale;
+  ctx.save();ctx.lineCap='round';
+  for(let i=0;i<3;i++){
+    const a=tang+(rng()-.5)*1.1,len=(5+rng()*7+hard*5)*scale,off=(i-1)*2*scale;
+    const x0=bx+tx*off,y0=by+ty*off;
+    burinSegment(ctx,x0,y0,x0+Math.cos(a)*len,y0+Math.sin(a)*len,rgb,base*(.6-i*.1)*drag,(.4+rng()*.35)*scale,s.seed+i*23+1,{segments:4,wobble:1.6,hair:false});
+  }
+  const stain=Math.max(1.4,2.2*scale)*(.65+hard*.6)*drag;
+  landContour(ctx,px,py,stain,stain*.82,seeded(s.seed+11));
+  ctx.fillStyle=`rgba(${mixRgb(pen.blotWet,pen.blotDry,.7)},${base*.62*drag})`;ctx.fill();
+  ctx.restore();
+}
 function drawLandingSurvey(s,t,rgb,gold,base){
   const cx=sx(s.cx),cy=sy(s.cy),px=sx(s.x),py=sy(s.y);
   // (a) The radius from the planet's centre out to the contact.
@@ -405,6 +429,7 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   // (b) The incoming line, carried a little past the contact so the angle has two full arms.
   const back=34*scale,past=11*scale;
   surveyLine(px-s.dx*back,py-s.dy*back,px+s.dx*past,py+s.dy*past,revealSpan(t,.22,.55),rgb,base,.55*scale);
+  if(s.rough)drawSkidMark(s,t,rgb,base);
   // (c) Between them the arrival angle: an arc with two tick ends and its numeral outside, or — where the
   // line met the ring square — the geometer's right angle, a small square with a dot inside it, in gold.
   const mark=revealSpan(t,.5,.82),reach=Math.max(9,11*scale);
