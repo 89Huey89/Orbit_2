@@ -78,7 +78,15 @@ definePlate('inks',{
     woad:{wet:[176,196,224],dry:[92,112,148],wash:'140,160,196',edge:'108,128,164',bleed:'156,176,210',blotWet:[174,194,222],blotDry:[94,114,150],path:'104,124,158'},
     vermilion:{wet:[248,138,96],dry:[186,84,58],wash:'214,110,76',edge:'182,88,60',bleed:'228,124,86',blotWet:[246,136,94],blotDry:[188,86,60],path:'176,84,56'},
     malachite:{wet:[168,224,196],dry:[70,132,102],wash:'120,182,152',edge:'92,152,120',bleed:'142,202,172',blotWet:[166,222,194],blotDry:[72,134,104],path:'84,146,114'},
-    ultramarine:{wet:[150,178,240],dry:[64,86,168],wash:'104,132,206',edge:'78,102,178',bleed:'126,154,224',blotWet:[148,176,238],blotDry:[66,88,170],path:'72,96,176'}
+    ultramarine:{wet:[150,178,240],dry:[64,86,168],wash:'104,132,206',edge:'78,102,178',bleed:'126,154,224',blotWet:[148,176,238],blotDry:[66,88,170],path:'72,96,176'},
+    // Never dries: wet and dry are the same colour on purpose, so the mix drawTrail runs between them
+    // is a no-op and the last second of trail stays glassy-bright instead of settling like every other
+    // liquid ink on the sheet.
+    quicksilver:{wet:[214,220,222],dry:[214,220,222],wash:'150,158,162',edge:'170,178,182',bleed:'198,204,208',blotWet:[214,220,222],blotDry:[190,196,200],path:'168,174,178'},
+    // Calcined baryte: a dull grey-violet mineral by daylight (`dry`/`path`, below), and see drawTrail
+    // for the `glow` it gives back for a moment after dark — the one ink in the catalogue that holds
+    // any light at all, and only for as long as it is still wet.
+    phosphor:{wet:[176,168,196],dry:[132,128,150],wash:'150,144,168',edge:'120,116,136',bleed:'160,154,180',blotWet:[176,168,196],blotDry:[134,130,152],glow:'224,232,255',path:'128,124,146'}
   },
   paper:{
     sanguine:{wet:[168,74,56],dry:[184,108,84],wash:'176,92,68',edge:'150,80,60',bleed:'176,96,72',blotWet:[166,72,54],blotDry:[186,112,88],path:'168,92,70'},
@@ -90,7 +98,9 @@ definePlate('inks',{
     woad:{wet:[36,46,84],dry:[100,116,158],wash:'64,78,120',edge:'48,60,100',bleed:'76,92,134',blotWet:[34,44,82],blotDry:[102,118,160],path:'72,86,126'},
     vermilion:{wet:[142,38,20],dry:[198,96,60],wash:'168,64,36',edge:'134,42,22',bleed:'176,72,40',blotWet:[140,36,18],blotDry:[200,98,62],path:'158,58,32'},
     malachite:{wet:[16,64,44],dry:[86,142,108],wash:'40,96,68',edge:'28,78,52',bleed:'52,108,78',blotWet:[14,62,42],blotDry:[88,144,110],path:'60,116,84'},
-    ultramarine:{wet:[20,30,110],dry:[76,96,180],wash:'40,56,140',edge:'28,42,120',bleed:'52,70,156',blotWet:[18,28,108],blotDry:[78,98,182],path:'48,64,150'}
+    ultramarine:{wet:[20,30,110],dry:[76,96,180],wash:'40,56,140',edge:'28,42,120',bleed:'52,70,156',blotWet:[18,28,108],blotDry:[78,98,182],path:'48,64,150'},
+    quicksilver:{wet:[150,156,160],dry:[150,156,160],wash:'120,126,130',edge:'100,106,110',bleed:'132,138,142',blotWet:[150,156,160],blotDry:[128,134,138],path:'110,116,120'},
+    phosphor:{wet:[120,112,138],dry:[104,98,118],wash:'108,100,124',edge:'88,82,102',bleed:'116,108,134',blotWet:[120,112,138],blotDry:[106,100,120],glow:'214,224,255',path:'100,94,114'}
   }
 });
 // The ink in the pen: the plate's own by default, one of the catalogue's once it has been chosen. The
@@ -141,7 +151,15 @@ const MATERIALS={
   ultramarine:{nib:.45,swell:.95,body:1.1,tooth:.3,feather:.26,settle:.9,halo:1.2,bloom:1.12,wet:1},
   // Soot in gum: a transparent wash rather than a body colour, so it lays light and wicks freely.
   bistre:{nib:.7,swell:1.15,body:.95,tooth:.1,feather:.9,settle:.12,halo:1.35,bloom:1.2,wet:1},
-  orpiment:{nib:.5,swell:.9,body:1.1,tooth:.38,feather:.2,settle:.8,halo:1.2,bloom:1.12,wet:1}
+  orpiment:{nib:.5,swell:.9,body:1.1,tooth:.38,feather:.2,settle:.8,halo:1.2,bloom:1.12,wet:1},
+  // Mercury: it beads rather than blends. `settle` is doing something different here than it does for
+  // a ground mineral — those flecks are beads of the metal itself rather than pigment dropped out of a
+  // wash — and nothing about never drying is written into these nine numbers at all: that is the plate's
+  // own `wet`/`dry` tones above, deliberately the same colour.
+  quicksilver:{nib:0,swell:.4,body:.85,tooth:0,feather:0,settle:.9,halo:.35,bloom:.55,wet:1},
+  // Baryte holds no light of its own in these nine numbers either — see `glow` beside its colours above
+  // and drawTrail below for the second or so it actually spends it.
+  phosphor:{nib:.5,swell:.9,body:1,tooth:.28,feather:.15,settle:.55,halo:1.1,bloom:1.05,wet:1}
 };
 // A catalogue ink brings its own substance; the plate's own ink is whatever medium the plate writes
 // in, which is the one thing about the trail an era gets to name for itself.
@@ -573,6 +591,19 @@ function drawTrail(){
       if(pen.shimmer){
         const glint=Math.max(0,Math.sin(world.time*3.1-i*.35));
         if(glint>.55)line(x1,y1,x2,y2,`rgba(${pen.shimmer},${t*t*(glint-.55)*.9})`,(.15+.5*weight)*scale);
+      }
+      // Calcined baryte drinks whatever light the flight crosses and gives a little back after dark: a
+      // burst of afterglow at the instant it is laid, brighter the faster the pen was moving, burned off
+      // within a second — well before this same stretch has dried into the record the sheet keeps, which
+      // never carries the glow at all. A plate still has no lamp in it; only the wet ink, briefly,
+      // remembers holding one.
+      if(pen.glow){
+        const afterglow=Math.exp(-age*2.1)*(.5+boost*.6);
+        if(afterglow>.02){
+          ctx.save();ctx.globalCompositeOperation='lighter';
+          line(x1,y1,x2,y2,`rgba(${pen.glow},${afterglow*.4})`,(1.6+2.4*weight)*gauge*m.bloom);
+          ctx.restore();
+        }
       }
       // Ground mineral does not dissolve: it drops into the hollows of the sheet and stays there as
       // visible grain. Malachite, ground coarse to keep its green, is the worst of them; a dye like

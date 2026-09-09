@@ -283,6 +283,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['sanguine',{maxSpeedSlings:9},false],['sanguine',{maxSpeedSlings:10},true],
       ['silverpoint',{maxSpeedSlings:49},false],['silverpoint',{maxSpeedSlings:50},true],
       ['goldleaf',{maxSpeedSlings:199},false],['goldleaf',{maxSpeedSlings:200},true],
+      ['quicksilver',{maxSpeedSlings:499},false],['quicksilver',{maxSpeedSlings:500},true],
       ['umber',{badAngles:9},false],['umber',{badAngles:10},true],
       ['woad',{badAngles:24},false],['woad',{badAngles:25},true],
       ['vermilion',{badAngles:74},false],['vermilion',{badAngles:75},true],
@@ -290,6 +291,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['ultramarine',{badAngles:499},false],['ultramarine',{badAngles:500},true],
       ['bistre',{inkwellsFound:2},false],['bistre',{inkwellsFound:3},true],
       ['orpiment',{inkwellsFound:9},false],['orpiment',{inkwellsFound:10},true],
+      ['phosphor',{grazes:49},false],['phosphor',{grazes:50},true],
       ['rose',{captures:249},false],['rose',{captures:250},true],
       ['seal',{captures:999},false],['seal',{captures:1000},true],
       ['manicule',{captures:4999},false],['manicule',{captures:5000},true],
@@ -320,9 +322,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,49,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,51,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
-    const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:200,runs:{classic:100},grazes:25,
+    const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:500,runs:{classic:100},grazes:50,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestChapter:4,deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
       shieldsSpent:15,reflectorsSpent:15,
       observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});
