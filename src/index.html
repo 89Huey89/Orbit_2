@@ -12,17 +12,17 @@
     /* The three faces the plate letters in, so a plate cut for another century overrides them
        beside its colours; the canvas reads the same values through plateFace() in plates.js. */
     :root{--face-text:'IM Fell English',Georgia,serif;--face-sc:'IM Fell English SC','IM Fell English',Georgia,serif;--face-body:'IM Fell English',Georgia,'Times New Roman',serif}
-    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
-    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--dawn:#f2c79a;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
+    #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--dawn:#a5622a;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
     /* The derived plates keep their base plate's palette and re-ink only the accents. */
     #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091}
-    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--shield:#8fc0c4}
+    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--shield:#8fc0c4;--dawn:#c6d9b4}
     #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a}
     #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22}
-    #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--shield:#5c4832;--reflector:#5c3f5c;--line:rgba(74,52,30,.34);--veil:226,213,184}
-    #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--line:rgba(240,236,224,.34);--veil:100,116,132}
-    #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
+    #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--shield:#5c4832;--reflector:#5c3f5c;--dawn:#6e4c28;--line:rgba(74,52,30,.34);--veil:226,213,184}
+    #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--dawn:#f2ece0;--line:rgba(240,236,224,.34);--veil:100,116,132}
+    #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--dawn:#fac482;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
     .era-exit{display:none!important}
@@ -31,10 +31,10 @@
        and the four pigments — the reddest ochre standing in for a gold this era does not have, and the
        blacks standing in for a blue it does not have either. It reads light on dark because the HUD sits
        at the top of the sheet, which is where the torch has already stopped reaching. */
-    #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
+    #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--dawn:#c98b46;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
     #game[data-era="1"] .footer{color:#c7bc9e}
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
-    #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
+    #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--dawn:#c4932e;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     #game[data-era="2"] .ceiling-only{display:revert!important}
     #game[data-era="1"] .rock-only{display:revert!important}
@@ -116,6 +116,7 @@
     #ink.dry{animation:breathe 1s ease-in-out infinite}
     #shield{color:var(--shield)}
     #reflector{color:var(--reflector)}
+    #dawn{color:var(--dawn)}
     /* A halt is not the end of a run, so it is not pulled on the colophon's full leaf: the same paper and
        the same double engraved rule, cut to a slip, and the plate left legible around it rather than
        flooded — the press has stopped with the sheet still on it. */
@@ -490,7 +491,7 @@
   <canvas id="sky" tabindex="0" role="application" aria-label="Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node. Captures are automatic, but a rim turns away a flight that falls at a planet rather than crossing it; the guide marks such a course before you release. Your nib carries a charge of ink that every flight spends by distance: holding an orbit re-charges it and a slingshot star fills it, and the guide marks a course the ink cannot reach the end of. Nearby vortices and sunspots bend your flight, and a wind-head blows it off the line; follow the curved guide."></canvas>
   <header class="hud" aria-label="Score">
     <div class="brand" id="brand">ORBIT</div>
-    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="ink" class="small" aria-hidden="true"></div><div id="shield" class="small"></div><div id="reflector" class="small"></div></div>
+    <div class="score-block"><span id="score">0</span><div id="pace" class="small">SPEED ×1.0</div><div id="flow" class="small"></div><div id="ink" class="small" aria-hidden="true"></div><div id="shield" class="small"></div><div id="reflector" class="small"></div><div id="dawn" class="small"></div></div>
     <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">

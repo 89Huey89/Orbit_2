@@ -10,7 +10,7 @@
 const LEDGER_KEY='orbit.ledger.v1',COSMETICS_KEY='orbit.cosmetics.v1',INITIALS_KEY='orbit.initials.v1';
 function emptyLedger(){
   return {captures:0,perfects:0,bestFlow:0,constellations:{},bestRow:0,deepestChapter:0,deepestHardcoreChapter:0,
-    grazes:0,shieldsSpent:0,reflectorsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,runs:{},playSeconds:0,personalBests:{},observations:{},allFourInOneRun:false};
+    grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,runs:{},playSeconds:0,personalBests:{},observations:{},allFourInOneRun:false};
 }
 const countOf=value=>{const n=Number(value);return Number.isFinite(n)&&n>0?Math.floor(n):0;};
 function cleanCounts(raw){
@@ -24,7 +24,7 @@ function readLedger(){
   try{raw=JSON.parse(storage.get(LEDGER_KEY,'null'));}catch(_){raw=null;}
   if(!raw||typeof raw!=='object'||Array.isArray(raw))return empty;
   const out=empty;
-  for(const key of ['captures','perfects','bestFlow','bestRow','deepestChapter','deepestHardcoreChapter','grazes','shieldsSpent','reflectorsSpent','maxSpeedSlings','inkwellsFound','badAngles'])out[key]=countOf(raw[key]);
+  for(const key of ['captures','perfects','bestFlow','bestRow','deepestChapter','deepestHardcoreChapter','grazes','shieldsSpent','reflectorsSpent','dawnsSpent','maxSpeedSlings','inkwellsFound','badAngles'])out[key]=countOf(raw[key]);
   out.playSeconds=Math.max(0,Number(raw.playSeconds)||0);
   out.constellations=cleanCounts(raw.constellations);out.runs=cleanCounts(raw.runs);
   out.observations=cleanCounts(raw.observations);out.personalBests=cleanCounts(raw.personalBests);
@@ -49,14 +49,14 @@ function ledgerStat(name,l=ledger){
   if(name==='runs')return ledgerRuns(l);
   if(name==='topConstellation')return ledgerTopChart(l);
   if(name==='constellations')return ledgerCharts(l);
-  if(name==='rescues')return (Number(l.shieldsSpent)||0)+(Number(l.reflectorsSpent)||0);
+  if(name==='rescues')return (Number(l.shieldsSpent)||0)+(Number(l.reflectorsSpent)||0)+(Number(l.dawnsSpent)||0);
   return Number(l[name])||0;
 }
 // ---------- The run's own tally ----------
 // Counted from the simulation's events, zeroed whenever it is folded in, so a second fold after a
 // page has been hidden and resumed adds only what happened since the first.
 let runTally=freshTally(),runCounted=false,runSeconds=0;
-function freshTally(){return {captures:0,perfects:0,grazes:0,shieldsSpent:0,reflectorsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,constellations:{},observations:{}};}
+function freshTally(){return {captures:0,perfects:0,grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,constellations:{},observations:{}};}
 function resetRunTally(){runTally=freshTally();runCounted=false;runSeconds=0;}
 function tally(key,by=1){runTally[key]+=by;}
 function tallyMap(map,key){if(!key)return;runTally[map][key]=(runTally[map][key]||0)+1;}
@@ -67,6 +67,7 @@ function ledgerCommit(){
   const before=unlockedIds();
   ledger.captures+=runTally.captures;ledger.perfects+=runTally.perfects;
   ledger.grazes+=runTally.grazes;ledger.shieldsSpent+=runTally.shieldsSpent;ledger.reflectorsSpent+=runTally.reflectorsSpent;
+  ledger.dawnsSpent+=runTally.dawnsSpent;
   ledger.maxSpeedSlings+=runTally.maxSpeedSlings;ledger.inkwellsFound+=runTally.inkwellsFound;ledger.badAngles+=runTally.badAngles;
   foldCounts(ledger.constellations,runTally.constellations);foldCounts(ledger.observations,runTally.observations);
   const key=dailyOn?'daily':difficulty;

@@ -103,7 +103,7 @@ defineVoice('ceiling',{
   opening:'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.',
   ended:'Preview run complete. Score {score}. Tap to try again or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
-  hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD'},
+  hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
   chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.'},
   tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.'},
   chapters:CEILING_HOURS,
@@ -1215,6 +1215,17 @@ function ceilingNodeIcon(n,r,stage){
   if(n.type==='reflector'){
     ctx.save();ctx.globalAlpha=stage;ctx.fillStyle=CEILING_PALETTE.white;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,-r*.05,r*.18,0,TAU);ctx.fill();ctx.stroke();ceilingBrush(ctx,[[0,r*.13],[0,r*.3]],CEILING_PALETTE.carbon,1,.9,seed);ctx.restore();return;
   }
+  if(n.type==='dawn'){
+    // The one body on this wall that needs no invention: the night voyage is sailing toward sunrise, so
+    // the charge that turns back the dark is painted as the sun's own disc — the red round, with the
+    // first light struck off its upper limb in short carbon strokes.
+    ceilingPolygon(ctx,ceilingArcPoints(0,r*.04,r*.2,0,TAU*13/14,13),CEILING_PALETTE.red,stage,seed,1.2);
+    if(stage>.6)for(let i=0;i<5;i++){
+      const a=Math.PI+.3+i*(Math.PI-.6)/4;
+      ceilingBrush(ctx,[[Math.cos(a)*r*.26,r*.04+Math.sin(a)*r*.26],[Math.cos(a)*r*.42,r*.04+Math.sin(a)*r*.42]],CEILING_PALETTE.carbon,1,.85*clamp((stage-.6)/.4,0,1),seed+i*17);
+    }
+    return;
+  }
   if(n.type==='inkwell'){
     ceilingPolygon(ctx,[[-r*.27,-r*.12],[r*.27,-r*.12],[r*.24,r*.14],[-r*.24,r*.14]],CEILING_PALETTE.yellow,stage,seed,1.1);
     if(stage>.72){ctx.fillStyle=CEILING_PALETTE.carbon;ctx.beginPath();ctx.arc(-r*.1,0,r*.06,0,TAU);ctx.fill();ctx.fillStyle=CEILING_PALETTE.red;ctx.beginPath();ctx.arc(r*.1,0,r*.06,0,TAU);ctx.fill();}return;
@@ -1481,6 +1492,17 @@ function ceilingDrawPlayer(dt){
   if(p.reflectorArmed){
     const segs=14,gap=.32;ctx.strokeStyle='rgba(157,55,36,.8)';ctx.lineWidth=1.4;ctx.lineCap='butt';
     for(let i=0;i<segs;i++){const a0=i/segs*TAU,a1=a0+(1-gap)/segs*TAU;ctx.beginPath();ctx.arc(0,0,21,a0,a1);ctx.stroke();}
+  }
+  // The third charge is no ring at all but light thrown off the barque, which is also the one thing on
+  // this wall the yellow ochre is actually for: the sun the whole night is rowed toward. Struck outward
+  // in alternating lengths, it is told from the other two by its kind of mark before its radius.
+  if(p.dawnArmed){
+    ctx.strokeStyle='rgba(196,147,46,.85)';ctx.lineWidth=1.5;ctx.lineCap='round';ctx.beginPath();
+    for(let i=0;i<12;i++){
+      const a=i*TAU/12,to=i%2===0?29:26;
+      ctx.moveTo(Math.cos(a)*24,Math.sin(a)*24);ctx.lineTo(Math.cos(a)*to,Math.sin(a)*to);
+    }
+    ctx.stroke();
   }
   ctx.restore();
 }

@@ -591,7 +591,11 @@ function drawHudLeaf(){
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('hudLeaf');if(own)return own();
   if(!world||world.state==='ready'||world.state==='dead')return;
-  const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=band*.64;
+  // The block is one line taller for every charge in hand, and those lines are the ones that come and go,
+  // so the pass is drawn to reach whatever is actually set on it rather than to a fixed depth: a charge
+  // the player is carrying is printed on its own ground like every other figure, not straight onto the chart.
+  const p=world.player,carried=(p.shielded?1:0)+(p.reflectorArmed?1:0)+(p.dawnArmed?1:0);
+  const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=Math.max(band*.64,band+carried*15-cy);
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
   ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
 }

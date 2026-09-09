@@ -855,6 +855,91 @@ function nodeGlow(rgb,active,paper){
   if(glowSprites.size>24)glowSprites.delete(glowSprites.keys().next().value);
   return c;
 }
+// ---------- The device a body off the main line is engraved with ----------
+// A charge is not read by its colour. A pale blue disc and a violet one are the same mark at arm's length,
+// and by the time the caption lettered beside one is legible the fork it hangs off is already behind the
+// traveller — so each of them wears the device of the thing it actually does, cut in the same burin as
+// everything else on the sheet. Sobieski's shield for the charge that turns a lethal hazard aside; the
+// geometer's own figure of a line thrown back from a bound for the one that turns the traveller in from
+// the margin; a sun coming up out of the flood for the one that drives the rising dark back down the
+// sheet; and, for the inkwell, the pot itself with a nib dipped into it.
+// Every one of them rides the pen reaching the page rather than the observation clock, exactly as the
+// slingshot's charge band and every caption do: what a body will give the run is the whole reason to leave
+// the main line for it, so it is owed to the player before the orbit is taken rather than after.
+// The devices are cut once each into a small sprite — the geometry is fixed against the orbit's own radius,
+// so one impression is blitted at whatever size the node is drawn at, exactly as the halo behind it is.
+const DEVICE_UNITS=64,DEVICE_PX=160,deviceSprites=new Map();
+function deviceLine(g,pts,rgb,alpha,weight,seed,closed){
+  for(let i=0;i<pts.length-(closed?0:1);i++){
+    const a=pts[i],b=pts[(i+1)%pts.length];
+    burinSegment(g,a[0],a[1],b[0],b[1],rgb,alpha,weight,(seed+i*7919)>>>0,{segments:5,hair:false,wobble:.45});
+  }
+}
+// Hatching, as this plate always lays it: parallel strokes running down and to the right, never crossed.
+function deviceHatch(g,x,y,count,step,length,rgb,alpha,seed){
+  for(let i=0;i<count;i++)burinSegment(g,x+i*step,y+i*step*.5,x+i*step+length*.62,y+i*step*.5+length,rgb,alpha,1,(seed+i*104729)>>>0,{segments:3,hair:false,wobble:.3});
+}
+function chargeDevice(kind,rgb){
+  const key=plateName+'|'+kind+'|'+rgb;
+  const held=deviceSprites.get(key);if(held!==undefined)return held;
+  const c=makeCanvas(DEVICE_PX,DEVICE_PX),g=c&&c.getContext?c.getContext('2d'):null;
+  if(!g){deviceSprites.set(key,null);return null;}
+  const unit=DEVICE_PX/(DEVICE_UNITS*2);g.setTransform(unit,0,0,unit,DEVICE_PX/2,DEVICE_PX/2);
+  const strong=onPaper()?.86:.72,faint=onPaper()?.4:.32;
+  if(kind==='shield'){
+    // The escutcheon Hevelius cut for Scutum Sobiescianum: flat across the chief, the flanks falling to
+    // a point, and the second, fainter pass inside it where the hand went round twice.
+    const face=[[-29,-27],[0,-31],[29,-27],[30,-6],[26,12],[14,29],[0,41],[-14,29],[-26,12],[-30,-6]];
+    deviceLine(g,face,rgb,strong,2.4,0x5c07,true);
+    deviceLine(g,face.map(([x,y])=>[x*.8,y*.8]),rgb,faint,1,0x5c31,true);
+    deviceHatch(g,13,-2,4,4.4,13,rgb,faint,0x5c59);
+  }else if(kind==='reflector'){
+    // The bound at the right, ruled twice and hatched outward as the plate rules its own margin, and a
+    // line coming in at it, turning, and leaving again.
+    deviceLine(g,[[34,-33],[34,33]],rgb,strong,2.2,0x7a11);
+    deviceLine(g,[[38,-27],[38,27]],rgb,faint,1,0x7a29);
+    for(let i=0;i<5;i++)burinSegment(g,39,-22+i*11,46,-18+i*11,rgb,faint,1,(0x7a41+i*7919)>>>0,{segments:3,hair:false,wobble:.3});
+    // The two lines are laid to straddle the body rather than to run over it: the specimen stands in the
+    // mouth of the V, which is also where the flight it stands for would actually have been turned.
+    deviceLine(g,[[-40,38],[31,10]],rgb,strong,2.2,0x7a53);
+    deviceLine(g,[[31,10],[-40,-32]],rgb,strong,2.2,0x7a67);
+    // The head of the departing line, cut as an open chevron rather than filled: the plate has no solid
+    // arrowheads on it anywhere else.
+    deviceLine(g,[[-27,-31],[-40,-32],[-33,-22]],rgb,strong,1.8,0x7a79);
+  }else if(kind==='inkwell'){
+    // The pot in profile, cut wide enough that the specimen stands inside the belly rather than over the
+    // line of it: the body is the ink, and the rim it is filled to is the mouth. A nib dips in from the
+    // right, since a well is only a well because something is dipped into it.
+    burinArc(g,0,-19,27,0,TAU,rgb,strong,1.8,0x1b03,{flatten:.3,segments:40,skips:4});
+    burinArc(g,0,-19,21,0,TAU,rgb,faint,1,0x1b0d,{flatten:.3,segments:30,skips:5});
+    deviceLine(g,[[-27,-19],[-32,5],[-22,30],[0,37],[22,30],[32,5],[27,-19]],rgb,strong,2.4,0x1b17);
+    deviceHatch(g,15,4,4,4.4,13,rgb,faint,0x1b2f);
+    deviceLine(g,[[47,-42],[13,-23]],rgb,strong,1.8,0x1b43);
+    deviceLine(g,[[20,-32],[13,-23],[22,-21]],rgb,strong,1.4,0x1b57);
+  }else if(kind==='dawn'){
+    // A sun coming up out of the flood: the waterline ruled across the sheet with the ink standing under
+    // it, and the spokes thrown off the disc above it — long and short alternately, the way the first
+    // magnitude is punched, and struck from outside the body so the light leaves the specimen rather
+    // than being drawn on it.
+    for(let i=0;i<11;i++){
+      const a=Math.PI+.16+i*(Math.PI-.32)/10,long=i%2===0,from=22,to=long?46:34;
+      burinSegment(g,Math.cos(a)*from,Math.sin(a)*from,Math.cos(a)*to,Math.sin(a)*to,rgb,long?strong:faint+.14,long?2:1.2,(0x3d11+i*7919)>>>0,{segments:3,hair:false,wobble:.3});
+    }
+    deviceLine(g,[[-46,19],[46,19]],rgb,strong,2.4,0x3d67);
+    deviceLine(g,[[-38,25],[38,25]],rgb,faint,1,0x3d79);
+  }
+  deviceSprites.set(key,c);
+  if(deviceSprites.size>16)deviceSprites.delete(deviceSprites.keys().next().value);
+  return c;
+}
+function drawChargeDevice(kind,r,rgb,pen){
+  if(pen.ring<=0)return;
+  const sprite=chargeDevice(kind,rgb);if(!sprite)return;
+  const reach=r*DEVICE_UNITS/60;
+  ctx.save();ctx.globalAlpha*=Math.min(1,pen.ring*1.4);
+  ctx.drawImage(sprite,-reach,-reach,reach*2,reach*2);
+  ctx.restore();
+}
 function drawNode(n,aim){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -866,11 +951,11 @@ function drawNode(n,aim){
   const pen=revealNode(n),struck=used?revealRetire(n):0;
   if(pen.t<=0)return;
   const gold=n.type==='gold',renaissanceStar=n.routeRole==='star'&&renaissanceAtlas(),drift=n.type==='drift',fading=n.type==='fading',sling=n.type==='sling',shield=n.type==='shield';
-  const reflector=n.type==='reflector',inkwell=n.type==='inkwell';
+  const reflector=n.type==='reflector',inkwell=n.type==='inkwell',dawn=n.type==='dawn';
   // The two outer pressures carry their own coloured ink — a verdant, friendly accent for the
   // gentlest choice and a rubrication red for the fiercest — while the middle target keeps the
   // plate's ordinary ink, reading as the plain, unmarked choice between the two.
-  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:sling?ink.marks.slingFill:ink.marks.node;
+  const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:dawn?ink.marks.nodeDawn:sling?ink.marks.slingFill:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
   if(used)ctx.globalAlpha=lerp(.62,.2,struck);
@@ -912,6 +997,7 @@ function drawNode(n,aim){
       writeText(ctx,caption,0,dy,revealLabel(pen,caption),{size:13});
     }
   }
+  if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
   const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
   {
     const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed,!active&&!n.visited);
@@ -937,7 +1023,7 @@ function drawNode(n,aim){
   // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
   // player is not holding, so it can never cross the release marks, the perfect window, or the fading
   // ring, which are drawn on the current orbit alone.
-  if(!active&&!sling&&!gold&&!shield&&!reflector&&!inkwell&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
+  if(!active&&!sling&&!gold&&!shield&&!reflector&&!inkwell&&!dawn&&n.row>0&&n.row%4===0&&r>15&&!captionsHeld()){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
     ctx.font=plateFace(size,'sc');
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
@@ -966,7 +1052,7 @@ function drawNode(n,aim){
   }
   if(!used&&!captionsHeld()&&!renaissanceStar){
     ctx.font=plateFace(Math.max(9,10*scale));ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
-    const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
+    const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:dawn?POWERUP_LABELS.dawn:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either

@@ -424,7 +424,7 @@ const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px 
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
-  glowSprites.clear();regionInkCache.clear();
+  glowSprites.clear();deviceSprites.clear();regionInkCache.clear();
   grain=grainTexture();laidTiles.clear();laidSheets.clear();backdrops.clear();grainSheetCanvas=null;if(W&&H)backdrop=paintBackdrop();
   frameLayer=null;
   if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();

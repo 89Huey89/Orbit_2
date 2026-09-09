@@ -21,7 +21,7 @@ defineVoice('atlas',{
   opening:'Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.',
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
-  hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED'},
+  hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
@@ -109,6 +109,17 @@ function event(type,e){
     audio.tone(210,.5,0,.3,'triangle',105);audio.brush(900,.3);
     burst(e.x,e.y,20,'violet',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
     say(POWERUP_LABELS.reflector+' THREW YOU BACK',{x:e.x,y:e.y});
+  }else if(type==='dawn'){
+    audio.tone(587.33,.45,0,.2,'sine',784);audio.tone(880,.45,.13,.14);burst(e.x,e.y,10,'gold',.5);
+    rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
+    say(POWERUP_LABELS.dawn+' ARMED · TURNS BACK THE DARK',{x:e.x,y:e.y});
+  }else if(type==='dawnBreak'){
+    tally('dawnsSpent');
+    // The flood going back down the sheet is the constellation reprieve's own event, so it is answered in
+    // the same register: a rising pair rather than the dull note a spent shield or reflector takes.
+    audio.tone(392,.6,0,.22);audio.tone(659.25,.6,.14,.18);audio.brush(1200,.25);
+    burst(e.x,e.y,24,'gold',1);rings.push({x:e.x,y:e.y,start:4,distance:70,age:0,life:.7,alpha:.6,seed:ringSeed()});
+    say(POWERUP_LABELS.dawn+' DROVE THE DARK BACK',{x:e.x,y:e.y});
   }else if(type==='inkwell'){
     tally('inkwellsFound');
     audio.tone(523.25,.5,0,.16);audio.tone(659.25,.5,.12,.14);
@@ -339,6 +350,7 @@ function catalogueRecord(){
     ['Vortices grazed',commas(ledger.grazes)],
     [POWERUP_LABELS.shield+' spent',commas(ledger.shieldsSpent)],
     [POWERUP_LABELS.reflector+' spent',commas(ledger.reflectorsSpent)],
+    [POWERUP_LABELS.dawn+' spent',commas(ledger.dawnsSpent)],
     ['Slingshots left at full charge',commas(ledger.maxSpeedSlings)],
     ['Inkwells filled on a streak',commas(ledger.inkwellsFound)],
     ['Rough impressions',commas(ledger.badAngles)],
@@ -892,6 +904,7 @@ function updateUI(dt){
   inked('flow',world.combo>1&&world.captures>0?words.flow+world.combo:'');
   inked('shield',world.player.shielded?words.shield:'');
   inked('reflector',world.player.reflectorArmed?words.reflector:'');
+  inked('dawn',world.player.dawnArmed?words.dawn:'');
   // The nib's reservoir. The rule drains with the ink in hand and takes the copper of a warning
   // once what is left will not carry an ordinary transfer.
   // The reservoir is a CSS gradient on a DOM element laid over the chart. Assigning one makes the
