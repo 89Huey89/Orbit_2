@@ -161,7 +161,14 @@ function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn);
-  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
+  // The four pressure multipliers are left at OrbitWorld's own defaults here, not set from the last
+  // remembered pressure: an ordinary run's own pressure is not yet chosen at this point, only decided
+  // once one of the three opening targets is captured, and that capture already sets all four itself
+  // through the same 'difficulty' event replayRun() answers the same way. Setting them here too raced
+  // that event — a run remembered at Tiro or Magister flew its opening leg, before the choice, on the
+  // wrong ink cost, a discrepancy replayRun() never reproduces, since it always starts a plate at these
+  // same defaults and waits for the identical event. The daily plate loses nothing: it offers no choice,
+  // and activeDifficulty() already reads 'classic' for it, the same values these defaults already hold.
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
   // A chart's whole course reduces to one thing repeated: when the traveller released. Kept here as
