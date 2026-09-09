@@ -4,8 +4,10 @@
    its seed and when the traveller released, so the finished chart can be read back long after the
    run that drew it, without a frame of it ever having played again. */
 // ---------- Replaying a run from its own log ----------
-// A log is {seed, width, height, offerDifficulty, releases, resizes}: releases and resizes are
-// ordered lists of the world.time each one happened at (see replayLog in ui.js, where one is kept).
+// A log is {seed, width, height, offerDifficulty, varyOpening, releases, resizes}: releases and
+// resizes are ordered lists of the world.time each one happened at (see replayLog in ui.js, where one
+// is kept). varyOpening is read the same permissive way an older saved log already reads a field it
+// predates — undefined falls through to OrbitWorld's own default of an ordinary, unvaried opening.
 // Capturing one of the three opening bodies fires a 'difficulty' event that the live game answers
 // by setting the pressure multipliers on the world (setDifficulty()/syncDifficulty() in plates.js).
 // A replay has no game listening for that, so it answers the event itself, the same way, with
@@ -22,7 +24,7 @@ function replayRun(log){
     // reviewed plate carries the same release bearings and arrival angles the run itself was drawn with.
     else if(type==='release')recordDeparture(e);
     else if(type==='capture')recordLanding(e);
-  },log.offerDifficulty);
+  },log.offerDifficulty,log.varyOpening);
   world=w;w.keepAll=true;
   const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
   let ri=0,zi=0,guard=0,started=false;
