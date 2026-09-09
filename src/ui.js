@@ -1034,6 +1034,7 @@ $('pause-open').addEventListener('click',()=>{
 });
 $('pause-resume').addEventListener('click',()=>{if(world&&world.state==='paused'){resume();if(audio.enabled)audio.brush(1600,.1);}});
 $('pause-leave').addEventListener('click',()=>{if(world&&world.state==='paused'){leaveRun();if(audio.enabled)audio.tone(392,.35,0,.15);}});
+$('reduce-motion').addEventListener('click',()=>{reducedMotion=!reducedMotion;storage.set('orbit.reducedMotion.v1',reducedMotion?'on':'off');syncEffects();});
 $('sound').addEventListener('click',()=>{audio.toggle();storage.set('orbit.sound.v1',audio.enabled?'on':'off');syncSound();if(audio.enabled)audio.tone(440,.25,0,.2);});
 $('plate').addEventListener('click',()=>{setPlate(onPaper()?'night':'paper');if(audio.enabled)audio.brush(1500,.12);});
 $('catalogue-open').addEventListener('click',()=>{if(catalogueOpen)closeCatalogue();else openCatalogue();});
@@ -1066,6 +1067,7 @@ $('ceiling-exit-end').addEventListener('click',leaveEra);
 $('ceiling-exit').addEventListener('click',leaveEra);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
+function syncEffects(){$('reduce-motion').setAttribute('aria-pressed',String(reducedMotion));}
 // The full instruction paragraph prints on its own the first time the frontispiece is ever seen;
 // after that it stays off the page unless this toggle calls it back, same as any other standing text.
 function syncInstructions(){
@@ -1149,4 +1151,4 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
-syncPlate();resize();newWorld();syncSound();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncMoreMenu();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncEffects();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncMoreMenu();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
