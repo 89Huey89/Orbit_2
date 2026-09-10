@@ -481,7 +481,7 @@ function drawPlateCaptions(index,weight,place,style){
   ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
   ctx.font=plateFace(11*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
   ctx.fillText(figures
-    ?['Fig. I · Luna, Galilæo delin.','Fig. II · Saturnus, Galilæo delin.','Fig. III · Sol maculosus, Galilæo delin.','Fig. IV · Jupiter et satellites, Galilæo delin.'][index]
+    ?['Fig. I · Luna, Galilæus delin.','Fig. II · Saturnus, Galilæus delin.','Fig. III · Sol maculosus, Galilæus delin.','Fig. IV · Iuppiter et satellites, Galilæus delin.'][index]
     :'Scala leucarum · XXV ad partem',x,y+45*fit);
   if(!figures){ctx.restore();return;}
   if(index===1){
