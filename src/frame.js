@@ -517,7 +517,11 @@ function drawPlateFrame(){
   const own=handFor('plateFrame');if(own)return own();
   if(!W||!H)return;
   const legend=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
-  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+legend;
+  // The legend mask only ever reaches the sheet through the wide flank's MAGNITUDINES key
+  // (buildFrameLayer's `if(wide)` block below); on a narrow sheet nothing drawn reads it, so folding
+  // the width test into the key itself stops a phone from re-cutting its whole frame layer every time
+  // a class is classified, which is a change the narrow sheet was never going to draw in the first place.
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+(frameWide()?legend:0);
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
   const framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
