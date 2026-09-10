@@ -231,7 +231,7 @@ function frameScaleBar(g,x,y,colors){
   g.lineWidth=1;g.strokeStyle=colors.rule;g.strokeRect(x+.5,y+.5,w,h);
   g.fillStyle=colors.orn;for(let i=0;i<4;i+=2)g.fillRect(x+i*w/4,y,w/4,h);
   if(plainPlate())return;
-  g.font=plateFace(7,'text','italic');g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
+  g.font=plateFace(Math.max(6.4,7*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
 }
 function buildFrameLayer(){
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
@@ -253,7 +253,7 @@ function buildFrameLayer(){
     g.beginPath();g.moveTo(x,outerR);g.lineTo(x,outerR+len);g.stroke();
     g.beginPath();g.moveTo(x,H-outerR);g.lineTo(x,H-outerR-len);g.stroke();
     if(numbered&&!plainPlate()){
-      g.font=plateFace(wide?8:6.5);g.textAlign='center';g.fillStyle=colors.text;
+      g.font=plateFace(wide?Math.max(7,8*scale):Math.max(6,6.5*scale));g.textAlign='center';g.fillStyle=colors.text;
       g.fillText(String(i),x,outerR+tickLen*.72+2);g.fillText(String(i),x,H-outerR-tickLen*.72+5);
     }
   }
@@ -280,16 +280,16 @@ function buildFrameLayer(){
     frameScaleBar(g,rightX,oy-2,colors);
     if(plainPlate())return c;
     // The engraver's line, which carries the player's initials once the catalogue has granted them.
-    g.font=plateFace(6.5,'text','italic');g.fillStyle=colors.text;g.textAlign='left';
+    g.font=plateFace(Math.max(6,6.5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText(engraverCredit(),rightX,oy+10);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     // Its ghost rows are printed with the first proof; a row becomes dark only after a player has held
     // a matching star long enough to classify it, so the margin records the atlas's actual knowledge.
     const keyX=rightX,keyTop=Math.max(H*.28,band+70);
-    g.font=plateFace(8,'sc');g.fillStyle=colors.text;g.textAlign='left';
+    g.font=plateFace(Math.max(7,8*scale),'sc');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('MAGNITUDINES',keyX,keyTop);
     g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+66,keyTop+3.5);g.stroke();
-    g.font=plateFace(7.5,'text','italic');
+    g.font=plateFace(Math.max(6.8,7.5*scale),'text','italic');
     const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
     for(let m=5;m>=0;m--){
       const row=keyTop+17+(5-m)*12;
@@ -303,7 +303,7 @@ function buildFrameLayer(){
   }else if(!plainPlate()){
     // No flank to carry it in, but the credit still belongs on the plate: set along the inside of the
     // bottom inner rule, where the sheet has a clear run the whole width of the play field.
-    g.font=plateFace(5.6,'text','italic');g.fillStyle=colors.text;g.textAlign='center';
+    g.font=plateFace(Math.max(5.2,5.6*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='center';
     g.fillText(engraverCredit(),W*.5,H-innerR-4);
   }
   return c;
@@ -381,7 +381,7 @@ function drawPlateFrame(){
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
   if(framePen<.8||plainPlate())return;
   const {n,step}=frameEdgeTicks(Math.max(1,H-band*2)),scroll=Math.round(-world.cameraY*.015);
-  ctx.font=plateFace(frameWide()?8:6.5);ctx.fillStyle=colors.text;
+  ctx.font=plateFace(frameWide()?Math.max(7,8*scale):Math.max(6,6.5*scale));ctx.fillStyle=colors.text;
   for(let i=0;i<=n;i+=10){
     const y=band+i*step,value=(((i+scroll)%90)+90)%90;
     ctx.textAlign='left';ctx.fillText(String(value),outerR+tickLen*.72-2,y+2.5);
@@ -634,13 +634,13 @@ function drawPauseMagnitudeKey(){
   if(frameWide()||plainPlate()||!world)return;
   const colors=ink.frame,cx=W*.5,top=Math.min(H*.68,H-186);
   ctx.save();
-  ctx.font=plateFace(7.5,'sc');ctx.fillStyle=colors.text;ctx.textAlign='center';
+  ctx.font=plateFace(Math.max(6.8,7.5*scale),'sc');ctx.fillStyle=colors.text;ctx.textAlign='center';
   ctx.fillText('MAGNITUDINES',cx,top);
   ctx.lineWidth=.6;ctx.strokeStyle=colors.tickMinor;
   ctx.beginPath();ctx.moveTo(cx-40,top+5.5);ctx.lineTo(cx+40,top+5.5);ctx.stroke();
   const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
   const cols=6,spacing=Math.min(52,(W-60)/cols),startX=cx-spacing*(cols-1)/2,glyphY=top+27;
-  ctx.font=plateFace(7,'text','italic');
+  ctx.font=plateFace(Math.max(6.4,7*scale),'text','italic');
   for(let i=0;i<cols;i++){
     const magnitude=i+1,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.78:.16,x=startX+i*spacing;
     renaissanceStarGlyph(ctx,x,glyphY,magnitude,ink.atmosphere.starGlyph,alpha,.5,0x1603+magnitude);
