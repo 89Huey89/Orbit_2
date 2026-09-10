@@ -366,14 +366,17 @@ function buildFrameLayer(){
   // Anchored a fixed distance off the bottom edge so the whole cluster (rose, bar, its label, the credit
   // line below) always lands inside the band regardless of how band scales.
   if(wide){
-    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,oy=H-15,roseR=13;
+    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,roseR=13;
     // The rose is set in the left flank, clear of the play channel, where its cardinal names have room.
     frameCompassRose(g,leftCx,Math.min(H-roseR*3-band,H*.63),roseR,colors);
-    frameScaleBar(g,rightX,oy-2,colors);
+    // Lifted well clear of the bottom graduation's own hour ticks and numerals, which the bar and its
+    // "Scala" label used to sit right on top of; the credit line keeps its own place hard against the
+    // rule, in the same narrow strip between it and the sheet's true edge.
+    frameScaleBar(g,rightX,H-70,colors);
     if(plainPlate())return c;
     // The engraver's line, which carries the player's initials once the catalogue has granted them.
     g.font=plateFace(Math.max(6,6.5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';
-    g.fillText(engraverCredit(),rightX,oy+10);
+    g.fillText(engraverCredit(),rightX,H-5);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     // Its ghost rows are printed with the first proof; a row becomes dark only after a player has held
     // a matching star long enough to classify it, so the margin records the atlas's actual knowledge.
