@@ -64,6 +64,10 @@ const PERFECT_MULT={relaxed:1.35,classic:1,hardcore:1};
 const CAP_MULT={relaxed:1.3,classic:1,hardcore:1};
 let difficulty=storage.get('orbit.difficulty.v1','classic');
 if(!(difficulty in DARKNESS_MULT))difficulty='classic';
+// Newton mode: a standing preference like the pressure choice rather than a one-visit special like
+// the daily plate, so it is remembered between visits — but only ever honoured once earned; see
+// setNewton() below and isUnlocked('newton') in src/ledger.js.
+let newtonOn=storage.get('orbit.newton.v1','off')==='on';
 // The daily plate: one shared course a day, drawn from the UTC date, always at Classic
 // pressure, with its own record. The choice itself is never remembered between visits.
 function utcDay(){try{return new Date().toISOString().slice(0,10);}catch(_){return '1970-01-01';}}
@@ -146,6 +150,29 @@ function syncDaily(){
   $('best').textContent=currentBest();
   if(typeof syncImpressumScreen==='function')syncImpressumScreen();
   syncDifficulty();
+}
+// Newton mode is a frontispiece switch rather than an in-run choice, since gravity has to be known
+// before the chart's first flight rather than settled by which opening target is captured (contrast
+// setDifficulty, which the 'difficulty' event calls mid-run). It stacks with whichever pressure is
+// chosen, but never applies under the daily plate, which keeps its own fixed setup exactly as the
+// pressure choice already does; newWorld() re-checks isUnlocked('newton') itself before honouring it.
+function setNewton(on){
+  newtonOn=!!on&&isUnlocked('newton');
+  storage.set('orbit.newton.v1',newtonOn?'on':'off');
+  syncNewton();
+  if(world&&world.state==='ready'){newWorld();if(W&&H)render(0);}
+}
+function toggleNewton(){setNewton(!newtonOn);}
+// Also the one place a stored 'on' left over from before a cleared or copied-between-browsers ledger
+// is caught: a selection naming something the ledger has not earned is never honoured, exactly as a
+// locked cosmetic in readCosmetics() falls back rather than staying selected.
+function syncNewton(){
+  const unlocked=isUnlocked('newton');
+  if(newtonOn&&!unlocked){newtonOn=false;storage.set('orbit.newton.v1','off');}
+  for(const id of ['newton','newton-end']){
+    const button=$(id);if(!button)continue;
+    button.hidden=!unlocked;button.setAttribute('aria-pressed',String(newtonOn));
+  }
 }
 // The plate the daily's own showcase asks for right now, drawn from dailySetup() in src/ledger.js \u2014
 // which this file loads before, hence the guard already used the same way by setPlate() below \u2014 or

@@ -308,6 +308,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['counterproof',{deepestChapter:3},false],['counterproof',{deepestChapter:4},true],
       ['delineavit',{runs:{classic:49}},false],['delineavit',{runs:{classic:30,relaxed:20}},true],
       ['exlibris',{personalBests:{relaxed:10,classic:10}},false],['exlibris',{personalBests:{relaxed:10,classic:10,hardcore:10}},true],
+      ['newton',{perfects:500,grazes:24},false],['newton',{perfects:499,grazes:25},false],['newton',{perfects:500,grazes:25},true],
       ['perfecti',{observations:{}},false],['perfecti',{observations:{perfectThree:1}},true],
       ['quinque',{observations:{}},false],['quinque',{observations:{skipFive:1}},true],
       ['summa',{observations:{}},false],['summa',{observations:{maxSpeed:1}},true],
@@ -322,7 +323,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,51,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,52,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
     const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:500,runs:{classic:100},grazes:50,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestChapter:4,deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
@@ -1372,6 +1373,38 @@ assert(Math.abs(flareFar.turn)<1e-10,'The flare field ends cleanly at its drawn 
 assert(Math.abs(flareMirror.turn+flareSlow.turn)<1e-10,'The flare field is symmetric around its core');
 assert(slowClose.turn>0&&flareSlow.turn<0,'A hole and a flare of the same size turn a flight opposite ways');
 assert(Math.abs(flareSlow.turn+slowClose.turn)<.16,'Both fields bend a matched flyby by a comparable amount');
+
+// Newton mode: a main body's own pull bends a free flight the way a hazard's field does, but with one
+// deliberate difference — it is a real acceleration rather than a direction-only steer. Over a full
+// symmetric pass the field gives back on the way out almost exactly what it took on the way in (the
+// same conservative-field behaviour that lets a real slingshot trade a course for speed rather than
+// create it), so what actually tells a Newtonian body apart from a hazard is the traveller's transient
+// speed at closest approach, not its speed once clear of the field again. newtonOn is otherwise inert:
+// none of the flybys above pass it, and it does nothing without it (see the false case below).
+function newtonFlyby(offset,speed,newtonOn=true){
+  const n={x:0,y:0,r:50,cap:1,amp:0,vx:0,vy:0,visited:false,type:'still',seed:1,phase:0};
+  const p={x:offset,y:180,vx:0,vy:-speed};let minDistance=Infinity,hit=null,speedAtClosest=speed;
+  for(let i=0;i<120*6&&p.y>-180&&!hit;i++){
+    const result=flightStep(p,[n],[],i*step,step,180,4000,1,newtonOn);
+    const d=Math.hypot(p.x,p.y);if(d<minDistance){minDistance=d;speedAtClosest=Math.hypot(p.vx,p.vy);}
+    hit=result.hit;
+  }
+  return {p,hit,minDistance,speedAtClosest,speed:Math.hypot(p.vx,p.vy),turn:Math.atan2(-p.vx,-p.vy)};
+}
+for(const speed of [150,240,360])for(const offset of [20,45,60,110]){
+  const result=newtonFlyby(offset,speed);assert(Number.isFinite(result.p.x)&&Number.isFinite(result.p.y)&&Number.isFinite(result.speed));
+}
+assert.equal(Math.abs(newtonFlyby(45,150,false).turn),0,'newtonOn defaults off: flightStep’s existing callers see no node pull');
+const newtonSlow=newtonFlyby(45,150),newtonFast=newtonFlyby(45,360),newtonFar=newtonFlyby(110,150),newtonMirror=newtonFlyby(-45,150);
+assert(newtonSlow.turn>.45&&newtonSlow.turn<.8,'A pass halfway into the field at opening speed should visibly turn the flight toward the body');
+assert(newtonSlow.speedAtClosest-150>10,'Unlike a hazard, gravity speeds the traveller up on the way past');
+assert(Math.abs(newtonSlow.speed-150)<.5,'A full symmetric pass gives back on the way out almost exactly what it took on the way in');
+assert(newtonFast.turn>0&&newtonFast.turn<newtonSlow.turn,'Faster flybys get less time to bend');
+assert(newtonFast.speedAtClosest-360>0&&newtonFast.speedAtClosest-360<newtonSlow.speedAtClosest-150,'Faster flybys also get less time to speed up');
+assert(Math.abs(newtonFar.turn)<1e-9&&Math.abs(newtonFar.speedAtClosest-150)<1e-7,'The field ends cleanly at its drawn reach');
+assert(Math.abs(newtonMirror.turn+newtonSlow.turn)<1e-9,'The field is symmetric around the body');
+assert(Math.abs(newtonMirror.speedAtClosest-newtonSlow.speedAtClosest)<1e-9,'A mirrored pass speeds the traveller up by the same amount');
+
 // A head-on approach feels no turning force, so it reaches the lethal core directly:
 // a vortex is lethal to its drawn edge, a flare only inside a core of 0.6 r.
 function headOn(kind){

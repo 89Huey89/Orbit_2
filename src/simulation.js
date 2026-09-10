@@ -251,9 +251,41 @@ function bendVelocity(p,hazards,dt) {
   if(turn){const c=Math.cos(turn),s=Math.sin(turn),vx=p.vx;p.vx=vx*c-p.vy*s;p.vy=vx*s+p.vy*c;}
   return turn;
 }
+// Newton mode: an optional harder plate where the main bodies pull the traveller in free flight with
+// a real acceleration, rather than a hazard's direction-only steer — the one difference being that
+// this changes speed at all, falling in on the approach and giving most of it back on the way out.
+// Capture and the orbit itself are untouched, so the instrument stays exactly what it has always
+// been; only the flight between two orbits now answers to gravity as well as to the tangent it left
+// on. Pickups, fork stars and the opening's own three pressure targets stay inert, so the field is
+// only ever the chart's own planets, not its rewards.
+const NEWTON_PULL = 800, NEWTON_REACH = 1.8;
+function newtonReach(n) { return n.r*NEWTON_REACH; }
+function newtonAttracts(n) { return !n.visited&&!n.difficultyChoice&&(n.type==='still'||n.type==='drift'||n.type==='fading'||n.type==='sling'); }
+function applyNewtonGravity(p,nodes,dt,time) {
+  let ax=0,ay=0;
+  for(const n of nodes){
+    if(!newtonAttracts(n))continue;
+    // A drifting node's stored x/y is only synced once per frame (see update()'s top-of-frame loop);
+    // nodeMotion re-derives its true position at this exact instant instead, exactly as transferContact
+    // already reads it for capture, so the curved guide's prediction and the live flight it predicts
+    // pull toward the same point rather than one lagging a frame behind the other.
+    const m=nodeMotion(n,time),dx=m.x-p.x,dy=m.y-p.y,d2=dx*dx+dy*dy,reach=newtonReach(n);
+    if(d2>=reach*reach||d2<1e-10)continue;
+    const d=Math.sqrt(d2),edge=1-d/reach,pull=NEWTON_PULL*n.r*n.r/(d2+n.r*n.r*.36)*edge*edge;
+    ax+=dx/d*pull;ay+=dy/d*pull;
+  }
+  // Reported back in the same units bendVelocity's own turn is, purely so the guide's "curved" flag
+  // (see curvedAim) also lights up for a bend gravity alone caused — the actual physics below is a
+  // real vector add, not a rotation.
+  const speed2=p.vx*p.vx+p.vy*p.vy,turn=speed2<1e-10?0:clamp((p.vx*ay-p.vy*ax)/speed2,-2.4,2.4)*dt;
+  p.vx+=ax*dt;p.vy+=ay*dt;
+  return turn;
+}
 // Real flight and prediction share the same steering and swept contacts.
-function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1) {
-  const turn=bendVelocity(p,hazards,dt),x=p.x,y=p.y,bx=x+p.vx*dt,by=y+p.vy*dt;
+function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1,newtonOn=false) {
+  let turn=bendVelocity(p,hazards,dt);
+  if(newtonOn)turn+=applyNewtonGravity(p,nodes,dt,time);
+  const x=p.x,y=p.y,bx=x+p.vx*dt,by=y+p.vy*dt;
   const reach=Math.hypot(p.vx,p.vy)*dt;let hit=null,first=dt+1;
   for(const n of nodes){
     if(n.visited||n.y>launchY+90||Math.abs(n.y-y)>reach+n.cap)continue;
@@ -273,10 +305,15 @@ function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1) {
   const used=hit?first:dt;p.x=x+p.vx*used;p.y=y+p.vy*used;
   return {hit,dt:used,turn};
 }
-function freeFlightStep(p,hazards,remaining) {
+function freeFlightStep(p,hazards,remaining,nodes,newtonOn) {
   let entry=remaining;
   for(const h of hazards){
     const t=segmentCircle(p.x,p.y,p.x+p.vx*remaining,p.y+p.vy*remaining,h.x,h.y,gravityRadius(h));
+    if(t!==null)entry=Math.min(entry,t*remaining);
+  }
+  if(newtonOn)for(const n of nodes){
+    if(!newtonAttracts(n))continue;
+    const t=segmentCircle(p.x,p.y,p.x+p.vx*remaining,p.y+p.vy*remaining,n.x,n.y,newtonReach(n));
     if(t!==null)entry=Math.min(entry,t*remaining);
   }
   // Skip force-free sections on the same 120 Hz grid as real flight.
@@ -326,8 +363,8 @@ class OrbitWorld {
   // same two points). Off by default, so an existing fixture, a fixed layout or an ordinary run reads
   // exactly as it always has; the daily plate is the one course dealt with it on, since a showcase of
   // its own is the whole point of a plate everyone is handed the same seed for.
-  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false) {
-    this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening;
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false) {
+    this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening; this.newtonOn = !!newtonOn;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
@@ -802,8 +839,8 @@ class OrbitWorld {
     }else{
       let remaining=dt,time=this.time-dt;
       while(remaining>1e-9&&this.state==='playing'&&!p.node){
-        const step=this.hazards.length?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
-        const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width,this.perfectMult);
+        const step=(this.hazards.length||this.newtonOn)?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
+        const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width,this.perfectMult,this.newtonOn);
         p.flightTime+=result.dt;remaining-=step;time+=step;
         // The line costs ink by its length. What the step drew is spent before anything else is
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
@@ -869,7 +906,7 @@ class OrbitWorld {
     // The opening targets never cost a landing its credit, so the guide must not warn that this one will.
     if(best&&this.difficultyPending)best.steep=false;
     const until=best?best.distance:reach;
-    const gravity=this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
+    const gravity=this.newtonOn||this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
     if(best&&this.hazards.some(h=>{if(!hazardKind(h).lethal)return false;const t=segmentCircle(p.x,p.y,bx,by,h.x,h.y,hazardCore(h)+3);return t!==null&&t<=hitAt;}))return null;
     const length=best?best.distance:p.node.type==='sling'?speed*1.9:83;
@@ -932,8 +969,8 @@ class OrbitWorld {
     const preview={points:previewPoints,aim:null,curved:false,blocked:false,steps:0};
     let time=0,distance=0,bend=0;
     while(time<duration-1e-9&&preview.steps<4096){
-      const dt=freeFlightStep(p,this.hazards,duration-time),x=p.x,y=p.y;
-      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width,this.perfectMult);
+      const dt=freeFlightStep(p,this.hazards,duration-time,this.nodes,this.newtonOn),x=p.x,y=p.y;
+      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width,this.perfectMult,this.newtonOn);
       time+=result.dt;distance+=Math.hypot(p.x-x,p.y-y);bend+=Math.abs(result.turn);preview.steps++;
       const last=preview.points[preview.points.length-1];
       if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push(pooledPoint(preview.points.length,p.x,p.y,time,distance));

@@ -160,7 +160,9 @@ function event(type,e){
 function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn);
+  // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
+  // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'));
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='COPY SCORE';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -256,6 +258,7 @@ function showEnd(){
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
+  syncNewton();
   syncImpressumScreen();
   // Saved regardless of preview: the plate itself was really drawn, whether or not its score was
   // the kind the ledger keeps. Eras I and II are their own doors, outside review entirely.
@@ -337,6 +340,10 @@ function recordOverview(){
 function pressureTable(){
   const rows=[['relaxed',DIFFICULTY_LABELS.relaxed],['classic',DIFFICULTY_LABELS.classic],
     ['hardcore',DIFFICULTY_LABELS.hardcore],['daily','Tabula diei']];
+  // Vis Gravitatis stays off this table until it is earned, exactly as its own catalogue row stays a
+  // locked rule rather than a selectable one: an always-present zero row would read as played rather
+  // than as not yet unlocked.
+  if(isUnlocked('newton'))rows.push(['newton',UNLOCK_BY_ID.newton.latin]);
   return '<table class="ledger-table"><tbody>'+
     rows.map(([key,label])=>`<tr><th scope="row">${plainText(label)}</th><td>${commas(ledger.personalBests[key]||0)} best · ${commas(ledger.runs[key]||0)} runs</td></tr>`).join('')+
     '</tbody></table>';
@@ -831,6 +838,11 @@ function catalogueInsignia(){
   html+='<section class="cat-group"><h3>Named feats<span class="cat-latin">Insignia</span></h3><ul class="cat-grid">';
   for(const entry of UNLOCKS)if(entry.kind==='medal')html+=catalogueRow(entry,null);
   html+='</ul></section>';
+  // A harder plate rather than a selection, so it earns a card here beside the feats and the engraver
+  // rather than a slot among the eight chosen cosmetic categories in Catalogue.
+  html+='<section class="cat-group"><h3>Natural philosophy<span class="cat-latin">Philosophia naturalis</span></h3><ul class="cat-grid">';
+  for(const entry of UNLOCKS)if(entry.kind==='mode')html+=catalogueRow(entry,null);
+  html+='</ul></section>';
   html+='<section class="cat-group"><h3>The engraver<span class="cat-latin">Sculptor</span></h3><ul class="cat-grid">';
   for(const id of ['delineavit','exlibris'])html+=catalogueRow(UNLOCK_BY_ID[id],null);
   html+='</ul>';
@@ -1059,6 +1071,9 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
+function toggleNewtonSwitch(){toggleNewton();if(audio.enabled)audio.tone(newtonOn?659.25:392,.3,0,.16);}
+$('newton').addEventListener('click',toggleNewtonSwitch);
+$('newton-end').addEventListener('click',toggleNewtonSwitch);
 for(const id in PLATE_STYLES){
   const door=PLATE_STYLES[id].door;if(!door)continue;
   const button=$(door.button);if(button)button.addEventListener('click',()=>enterEra(id));
@@ -1151,4 +1166,4 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 if(!tutorialSeen){$('instructions').hidden=false;markTutorialSeen();}
-syncPlate();resize();newWorld();syncSound();syncEffects();syncDifficulty();syncDaily();syncCatalogueMarks();syncInstructions();syncMoreMenu();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);
+syncPlate();resize();newWorld();syncSound();syncEffects();syncDifficulty();syncDaily();syncNewton();syncCatalogueMarks();syncInstructions();syncMoreMenu();syncEraChrome();syncLastReviewButton();$('best').textContent=currentBest();render(0);requestAnimationFrame(tick);

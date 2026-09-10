@@ -36,6 +36,9 @@
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--dawn:#c4932e;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
+    /* Newton mode never rides under the daily plate's own fixed setup (see newWorld() in ui.js), so
+       its switch hides alongside it rather than sitting there, visible but inert. */
+    #game.daily .no-daily{display:none}
     #game[data-era="2"] .ceiling-only{display:revert!important}
     #game[data-era="1"] .rock-only{display:revert!important}
     #game[data-era] .era-exit{display:revert!important}
@@ -550,6 +553,7 @@
         <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
         <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
         <span id="daily-date" class="small daily-note atlas-only"></span>
+        <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>NEWTON</button>
         <button id="more-toggle" class="more-toggle atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
       </div>
       <div id="more-menu" class="daily-group atlas-only" hidden>
@@ -577,7 +581,7 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
+      <div class="end-plate-line"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" hidden>NEWTON</button><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
     </div>
   </section>
   <button id="review-close" class="diff-btn" type="button">CLOSE</button>
