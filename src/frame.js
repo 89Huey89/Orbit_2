@@ -599,11 +599,18 @@ function sphereMeasure(g,progress){
     g.beginPath();g.moveTo(cx-4,cy);g.lineTo(cx+4,cy);g.moveTo(cx,cy-4);g.lineTo(cx,cy+4);g.stroke();
     g.fillStyle=`rgba(${rgb},${.5*p})`;g.beginPath();g.arc(cx,cy,1.15,0,TAU);g.fill();
   };
-  // Lettering a construction names its parts with: one line, set where the part it names actually is.
+  // Lettering a construction names its parts with: one line, set where the part it names actually is,
+  // on a small leaf of the sheet's own ground rather than bare over the construction's own lines — the
+  // same clearing `drawRunningHead()` cuts for itself, sized to the caption rather than to a fixed band.
   const label=(p,text,x,y,rotation=0)=>{
     if(p<=0)return;
-    g.save();g.globalAlpha=.42*p;g.fillStyle=ink.frame.text;g.font=plateFace(frameWide()?8:6.5,'sc');g.textAlign='center';
-    g.translate(x,y);if(rotation)g.rotate(rotation);g.fillText(text,0,0);g.restore();
+    const size=frameWide()?8:6.5;
+    g.save();g.font=plateFace(size,'sc');g.textAlign='center';
+    g.translate(x,y);if(rotation)g.rotate(rotation);
+    const half=g.measureText(text).width*.5+3;
+    g.globalAlpha=.32*p;g.fillStyle=`rgba(${ink.base.paperRgb},1)`;g.fillRect(-half,-size*.78,half*2,size*1.12);
+    g.globalAlpha=.42*p;g.fillStyle=ink.frame.text;g.fillText(text,0,0);
+    g.restore();
   };
   return {stage:n=>clamp(progress-n,0,1),cx,cy,rx,ry,rgb,colors:ink.frame,arc,prick,label};
 }
@@ -617,7 +624,14 @@ function sphereGraduation(g,m,p,ax,ay,numbered=true){
   for(let i=0;i<120*p;i++){
     const a=i/120*TAU,major=i%10===0,len=major?8:i%5===0?5:2.5,x=Math.cos(a)*ax,y=Math.sin(a)*ay,nx=Math.cos(a),ny=Math.sin(a);
     g.globalAlpha=major?.52:.3;g.lineWidth=major?.8:.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+nx*len,y+ny*len*.62);g.stroke();
-    if(major&&numbered){g.globalAlpha=.48;g.fillText(ROMAN_HOURS[i/10],x+nx*18,y+ny*12+3);}
+    if(major&&numbered){
+      // A body drifts through this fixed construction independently of it, and a numeral is cheaper to
+      // skip than to leaf: with twelve struck round the limb, losing the rare one a body sits on reads
+      // as an interrupted rim rather than a missing hour.
+      const nlx=x+nx*18,nly=y+ny*12+3,nsx=cx+nlx,nsy=cy+nly;
+      const onBody=world.nodes.some(n=>Math.hypot(sx(n.x)-nsx,sy(n.y)-nsy)<(n.cap||n.r)*scale+6);
+      if(!onBody){g.globalAlpha=.48;g.fillText(ROMAN_HOURS[i/10],nlx,nly);}
+    }
   }
   g.restore();
 }
