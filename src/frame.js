@@ -682,6 +682,15 @@ function drawRunningHead(){
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
+  // While the chapter title is still freshly written and sitting close to this line, it already names
+  // the plate; running the head under it too would set the same name twice within a hand's breadth.
+  // The title yields the ground back once it has settled or drifted well clear of the foot.
+  if(chapterReveal.age<4.2){
+    const band=revealBand();
+    // 60px is the audit's own estimate; measured against the reference viewport, the title's own clamp
+    // (revealPoint) never lets it drift closer than about 66px, so the threshold is set just past that.
+    if(band&&Math.abs((band.top+band.bottom)/2-y)<70)return;
+  }
   const size=frameWide()?9.5:8.5,head='TAB. '+numerals[index]+'  \u00b7  '+chapters[index];
   ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
   ctx.font=plateFace(size,'sc');
