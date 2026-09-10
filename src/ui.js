@@ -70,7 +70,7 @@ function event(type,e){
       audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
       if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
     }
-    floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.angleBonus?'  ·  ANGLE +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
+    floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.angleBonus?'  ·  ANGULUS +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
     const at={node:e.n};
@@ -80,7 +80,7 @@ function event(type,e){
     else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
     else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
     else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
-    else if(e.square)say('RIGHT ANGLE · +'+e.squareBonus,at);
+    else if(e.square)say('ANGULUS RECTUS · +'+e.squareBonus,at);
     else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
     else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
     recordBest(world.score);
@@ -256,7 +256,7 @@ function showEnd(){
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
   // words for nothing rather than as that figure.
   $('end-constellations').textContent=charts?charts+' '+plateWords().chartNoun+(charts===1?'':'s')+' traced':'no '+plateWords().chartNoun+'s traced';
-  $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(', ');
+  $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(' · ');
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.

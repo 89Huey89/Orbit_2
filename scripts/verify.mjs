@@ -1003,11 +1003,11 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(landing.kind,'landing','The landing lays an arrival construction');
     assert.equal(landing.square,true,'An exact tangent lands square');
     assert(landing.squareBonus>0&&Math.abs(landing.angle-90)<1e-6,'The right-angle mark carries the square bonus');
-    assert(inscribed().includes('RIGHT ANGLE · +'+landing.squareBonus),inscribed());
+    assert(inscribed().includes('ANGULUS RECTUS · +'+landing.squareBonus),inscribed());
     // It is written beside the orbit it was landed on, and rides with it: the note keeps its place on the
     // sheet as the chart scrolls, and never prints into the frame's margin, the score band or the footer.
     {
-      const square=written().find(g=>g.text.includes('RIGHT ANGLE'));
+      const square=written().find(g=>g.text.includes('ANGULUS RECTUS'));
       assert.equal(square.node,w.player.node,'A landing is announced on the orbit it was made on');
       const before=context.test.inscriptionBox(square),offset=before.cx-before.ax;
       w.cameraY-=40;
