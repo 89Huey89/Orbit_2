@@ -1434,7 +1434,7 @@ function drawEffects(dt){
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}
     const alpha=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
-    const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale);
+    const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale);
     // A note beside the chart can be slid round its subject until it is clear; a marginal note is set in
     // one of two fixed gutters and has only its own margin to move in. Its line is settled once, on the
     // frame it is first printed, and the side with it, so neither jumps while the note is still standing;
@@ -1445,9 +1445,9 @@ function drawEffects(dt){
       f.left=sx(f.x)<W*.5;
       f.lift=floaterLine(f,f.left,size*1.5)-sy(f.y);
     }
-    const left=f.left;
-    const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
-    const x=left?inner+hand*2.4:W-inner-hand*2.4;
+    // floaterBox (inscriptions.js) is the one place this geometry is worked out; placeInscription reads
+    // the same box to keep a brand-new note off a floater still standing where it would be set.
+    const {x,y,left}=floaterBox(f);
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);

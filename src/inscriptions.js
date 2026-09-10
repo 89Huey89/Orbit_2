@@ -82,6 +82,19 @@ function inscriptionClash(box,sway,q){
   const o=inscriptionBox(q),r=inscriptionRest(q),s=sway+inscriptionSway(q)+3*scale,v=2*scale;
   return inscriptionSpan(box.left-s,box.right+s,o.left+r,o.right+r)*inscriptionSpan(box.top-v,box.bottom+v,o.top,o.bottom)/100;
 }
+// The screen box a score floater currently occupies, or null before it has settled a side and a line
+// (the first frame it exists) — a note judged against an unsettled floater would only chase a target
+// that has not actually been fixed yet. Both placeInscription below and effects.js's own floater draw
+// loop read this one function, so the two systems agree on where a floater stands rather than each
+// keeping its own copy of the same geometry.
+function floaterBox(f){
+  if(f.lift===undefined)return null;
+  const size=Math.max(11,13*scale),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
+  const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
+  const left=f.left,x=left?inner+hand*2.4:W-inner-hand*2.4;
+  ctx.save();ctx.font=plateFace(size,'text','italic');const width=ctx.measureText(f.text).width;ctx.restore();
+  return {x,y,left,l:left?x:x-width,r:left?x+width:x,t:y-size*.8,b:y+size*.3};
+}
 // Wherever a place is chosen, the lettering is slid back onto the sheet before it is judged, so a note
 // beside a planet at the very edge of the plate is set inside the frame rather than into its margin.
 function ontoSheet(cx,cy,w,h){
@@ -125,6 +138,11 @@ function placeInscription(g){
     // it exactly as it keeps off another note's ground, not just off the chart underneath it.
     const rb=revealBand();if(rb)cost+=inscriptionSpan(box.top,box.bottom,rb.top,rb.bottom)*inscriptionSpan(box.left,box.right,0,W)/100*2;
     for(const q of others)clash+=inscriptionClash(box,sway,q);
+    // A score floater is gone in 1.15s and an inscription is permanent, so the floater is always the one
+    // that yields once both exist — floaterLine (effects.js) already keeps a floater off inscriptions on
+    // its own side. What is still missing is this direction: a brand-new note should not be set directly
+    // over a floater that happens to be standing exactly where it is chosen.
+    for(const f of floaters){const fb=floaterBox(f);if(fb)clash+=inscriptionSpan(box.left,box.right,fb.l,fb.r)*inscriptionSpan(box.top,box.bottom,fb.t,fb.b)/100;}
     cost+=clash*40;
     if(!best||cost<best.cost)best={cost,clash,cx,cy,box};
     return cost;
