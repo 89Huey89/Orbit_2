@@ -813,10 +813,15 @@ const OBSERVER_MARKS={
       ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},.24)`;
       ctx.beginPath();ctx.ellipse(side*reach,0,3.2,4.2,side*.12,0,TAU);ctx.fill();
       markStroke(.8,.85);ctx.beginPath();ctx.ellipse(side*reach,0,3.2,4.2,side*.12,0,TAU);ctx.stroke();
+      // Hatched as the rest of the plate is hatched — down and to the right, one slant for the whole
+      // sheet — rather than with the flat chords this handle used to carry. The slant is a property of
+      // the hand holding the burin, so it does not turn with the body it is laid on, and the two handles
+      // therefore take the same stroke rather than mirroring into each other.
       ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.5)`;ctx.lineWidth=.4;
+      ctx.save();ctx.translate(side*reach,0);ctx.rotate(.55);
       ctx.beginPath();
-      for(let i=0;i<4;i++){const y=-2.4+i*1.6,w=2.6*Math.sqrt(Math.max(0,1-(y/4.2)*(y/4.2)));ctx.moveTo(side*(reach-w),y);ctx.lineTo(side*(reach+w),y);}
-      ctx.stroke();
+      for(let i=0;i<4;i++){const y=-2.4+i*1.6,w=2.4*Math.sqrt(Math.max(0,1-(y/3.9)*(y/3.9)));ctx.moveTo(-w,y);ctx.lineTo(w,y);}
+      ctx.stroke();ctx.restore();
     }
     // The observation's own wake: two hatched strokes rather than one ruled line, since a ruled line
     // through three separate bodies reads as a skewer holding them together.
@@ -1124,7 +1129,43 @@ function glossClearance(x,y,w,h){
   const near=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-(x+w*.5))-w*.5),dy=Math.max(0,Math.abs(py-(y+h*.5))-h*.5);return Math.hypot(dx,dy)-r;};
   for(const n of world.nodes){const ny=sy(n.y);if(ny<y-220||ny>y+h+220)continue;clear=Math.min(clear,near(sx(n.x),ny,(n.cap||n.r)*scale+6*scale)/(16*scale));}
   for(const hz of world.hazards){const hy=sy(hz.y);if(hy<y-320||hy>y+h+320)continue;clear=Math.min(clear,near(sx(hz.x),hy,hz.r*scale+14*scale)/(16*scale));}
+  // The gloss keeps off lettering as carefully as it keeps off the chart. The chapter plate is set in the
+  // same lower half of the sheet the flood is climbing into, and the whole point of the drifting gloss is
+  // that it eventually reaches wherever the title has come to rest; left uncounted it parked across it.
+  // Notes set beside the chart are counted the same way, since the solver that places them cannot see a
+  // sprite drifting in from the margin.
+  const box=(t,b,l,r)=>{
+    const dx=Math.max(0,Math.max(l-(x+w),x-r)),dy=Math.max(0,Math.max(t-(y+h),y-b));
+    clear=Math.min(clear,Math.hypot(dx,dy)/(14*scale));
+  };
+  const band=typeof revealBand==='function'?revealBand():null;
+  if(band)box(band.top,band.bottom,0,W);
+  if(typeof inscriptions!=='undefined')for(const g of inscriptions){const q=inscriptionBox(g);box(q.top,q.bottom,q.left,q.right);}
   return clamp(clear,0,1);
+}
+// The line a marginal note is set on: its subject's own, slid up or down its margin until the note
+// stands clear of everything already lettered there. Only lettering that actually reaches into this
+// gutter is counted, so a note on the left margin is never pushed about by one on the right.
+function floaterLine(f,left,h){
+  const top=hudBand()+16,bottom=H-frameBand()*.92-21,boxes=[];
+  const band=typeof revealBand==='function'?revealBand():null;
+  if(band)boxes.push([band.top,band.bottom]);
+  if(typeof inscriptions!=='undefined')for(const g of inscriptions){
+    const b=inscriptionBox(g);
+    if(left?b.left>W*.5:b.right<W*.5)continue;
+    boxes.push([b.top,b.bottom]);
+  }
+  for(const q of floaters)if(q!==f&&q.lift!==undefined&&q.left===left){
+    const qy=sy(q.y)+q.lift;boxes.push([qy-h*.55,qy+h*.55]);
+  }
+  const clash=y=>{let worst=0;for(const [t,b] of boxes){const o=Math.min(y+h*.55,b)-Math.max(y-h*.55,t);if(o>worst)worst=o;}return worst;};
+  const home=clamp(sy(f.y),top,bottom);
+  let best=home,cost=clash(home);
+  for(let step=1;step<=12&&cost>0;step++)for(const dir of [1,-1]){
+    const y=clamp(home+dir*step*h*.85,top,bottom),c=clash(y);
+    if(c<cost){best=y;cost=c;}
+  }
+  return best;
 }
 function drawDarkMarginalia(fy,time,alpha){
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
@@ -1145,7 +1186,13 @@ function drawDarkMarginalia(fy,time,alpha){
   const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
   const gy=marginaliaGloss(fy,gloss).y;
   if(gy+gloss.h<=0)return;
-  const clear=glossClearance(gx,gy,gloss.w,gloss.h);if(clear<=0)return;
+  // The Leviathan below is clipped to the sheet; the gloss was not, so it drifted out over the plate
+  // mark and was cut off mid-letter by the edge of the canvas. It is held to the same copper as every
+  // other mark, and rather than be guillotined there it is inked in and out over the last few
+  // millimetres of the margin — which is what a mark carried by the flood would do anyway.
+  const rule=frameBand()*.92+6,fade=Math.max(18,26*scale);
+  const edge=clamp(Math.min(gx-rule,W-rule-(gx+gloss.w))/fade+1,0,1);
+  const clear=glossClearance(gx,gy,gloss.w,gloss.h)*edge;if(clear<=0)return;
   ctx.save();ctx.globalAlpha=alpha*.5*clear;
   ctx.drawImage(gloss.canvas,gx,gy,gloss.w,gloss.h);
   if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief*clear;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
@@ -1360,11 +1407,22 @@ function drawEffects(dt){
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}
     const alpha=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
-    const inner=frameBand()*.92+7,left=sx(f.x)<W*.5,hand=Math.max(4.5,6*scale);
-    const y=clamp(sy(f.y)-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
+    const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale);
+    // A note beside the chart can be slid round its subject until it is clear; a marginal note is set in
+    // one of two fixed gutters and has only its own margin to move in. Its line is settled once, on the
+    // frame it is first printed, and the side with it, so neither jumps while the note is still standing;
+    // what it is settled clear of is the chapter lettering, whatever the placement solver has already set
+    // within reach of the gutter, and the notes still in it. The line is kept as a lift off the sheet
+    // rather than a screen position, so the note goes on riding the ascent exactly as it did.
+    if(f.lift===undefined){
+      f.left=sx(f.x)<W*.5;
+      f.lift=floaterLine(f,f.left,size*1.5)-sy(f.y);
+    }
+    const left=f.left;
+    const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
     const x=left?inner+hand*2.4:W-inner-hand*2.4;
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
-    ctx.font=plateFace(Math.max(11,13*scale),'text','italic');ctx.textAlign=left?'left':'right';
+    ctx.font=plateFace(size,'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);
     manicule(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left?1:-1,hand,ink.dark.floaterText,alpha*.85);
     ctx.restore();

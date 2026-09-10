@@ -15,11 +15,15 @@
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--dawn:#f2c79a;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--dawn:#a5622a;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:#d9ccb0}
-    /* The derived plates keep their base plate's palette and re-ink only the accents. */
-    #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091}
-    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--shield:#8fc0c4;--dawn:#c6d9b4}
-    #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a}
-    #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22}
+    /* The derived plates re-ink the accents by hand — a gold-on-blue sheet wants a brighter gold than
+       its own press would give it — but the sheet's own inks are not an accent: the wordmark, the score,
+       the labels and the rules are the plate speaking in its own voice, and left at the base plate's
+       values they printed the night plate's warm cream over a green sheet. Those follow the press, at
+       the values each plate's own transform in plates.js returns for them. */
+    #game[data-plate-id="cellarius"]{--gold:#e3c583;--best:#d8c091;--ink:#13193a;--ivory:#e1ca91;--muted:#907f5a;--copy:#a9966b;--line:rgba(182,162,116,.24);--veil:19,25,58}
+    #game[data-plate-id="verdigris"]{--gold:#9ccdb2;--best:#b6cfc0;--shield:#8fc0c4;--dawn:#c6d9b4;--ink:#0b1b17;--ivory:#a9d0b7;--muted:#589178;--copy:#71a58c;--line:rgba(126,175,150,.24);--veil:11,27,23}
+    #game[data-plate-id="foxed"]{--gold:#7c5218;--muted:#5d4a36;--copy:#40331f;--best:#33281a;--ink:#978367;--ivory:#312315;--line:rgba(70,48,26,.34);--veil:149,129,101}
+    #game[data-plate-id="proof"]{--gold:#4a4034;--muted:#5b5346;--copy:#3b342a;--best:#2e2a22;--ink:#d6ccb4;--ivory:#373129;--line:rgba(77,70,59,.34);--veil:211,201,176}
     #game[data-plate-id="sepia"]{--ink:#e4d5b5;--gold:#6e4c28;--muted:#6f5a44;--copy:#4c3a28;--best:#3c2e20;--shield:#5c4832;--reflector:#5c3f5c;--dawn:#6e4c28;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--dawn:#f2ece0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--dawn:#fac482;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
@@ -564,7 +568,7 @@
         <span id="review-last-note" class="small daily-note"></span>
       </div>
       <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
-      <p class="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Deir el-Bahri · c. 1473–1458 BCE</span></p>
+      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Deir el-Bahri · c. 1473–1458 BCE</span></p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">

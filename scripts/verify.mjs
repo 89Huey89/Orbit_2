@@ -240,7 +240,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     const rows=context.test.impressumRows();
     assert.equal(rows.length,9,'The impressum reserves every line before achievements are earned');
     assert.equal(rows[0].text,'AUGUSTA VINDELICORUM');
-    assert.equal(rows[1].text,'EX OFFICINA ORBIS TABULAE');
+    assert.equal(rows[1].text,'EX OFFICINA ORBIS TABULÆ','The house sets its own name with the digraph the rest of the cartouche uses');
     assert.equal(rows[2].text,'TAB. V · I  /  A1');
   }
   // ---------- The ledger and the catalogue ----------

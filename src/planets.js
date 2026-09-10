@@ -128,9 +128,13 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
 function paintPlanetRings(g,core,tilt,flatten,front,rgb){
   const paper=onPaper();
   g.save();g.rotate(tilt);
-  // The far half disappears behind the globe; the near half crosses its face.
+  // The far half disappears behind the globe; the near half crosses its face. The ring is drawn as one
+  // body rather than two: the division through it is Cassini's, and he did not split it until 1675 —
+  // seventy-two years after the date this sheet prints in its own cartouche, and by a long way the
+  // latest thing the atlas was quoting. At the size a body is actually engraved on the reference sheet
+  // the gap never resolved anyway, so closing it costs the plate nothing it could show and returns it
+  // to a century it can defend.
   for(let i=0;i<68;i++){
-    if(i>44&&i<50)continue;
     const r=core*(1.28+i*.0107),a=((i<13?.25:i<44?.55:.36)+(i%5)*.025)*(paper?.7:1);
     g.strokeStyle=`rgba(${rgb},${a})`;g.lineWidth=i%8===0?.75:.4;
     g.beginPath();g.ellipse(0,0,r,r*flatten,0,front?0:Math.PI,front?Math.PI:TAU);g.stroke();

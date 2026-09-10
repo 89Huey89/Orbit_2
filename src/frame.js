@@ -687,7 +687,7 @@ function impressumRows(){
   const engraver=typeof engraverCredit==='function'?engraverCredit().toUpperCase():'DELINEAVIT ET SCULPSIT · ORBIS TABULA';
   return [
     {key:'place',text:'AUGUSTA VINDELICORUM'},
-    {key:'printer',text:'EX OFFICINA ORBIS TABULAE'},
+    {key:'printer',text:'EX OFFICINA ORBIS TABULÆ'},
     {key:'plate',text:'TAB. V · I  /  A1'},
     {key:'year',text:impressumHasCapture()?'ANNO MDCIII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
@@ -715,8 +715,15 @@ function impressumScreenLine(){
   if(dailyOn)line+=' · TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':'');
   return line;
 }
+// The imprint belongs to the sheet, and where the burin actually cuts it there is nothing for the
+// screen to add: the engraved cartouche and this line carry the same place, the same house and the
+// same plate number, and the leaf sets them in the same lower margin, so the italic ran straight
+// across the rows the cartouche had already put there. The line is kept only for the plates that
+// have no cartouche of their own to read — a proof pulled before the letters were cut, and the eras
+// whose imprint is not an atlas imprint at all.
 function syncImpressumScreen(){
   const line=$('atlas-impressum');if(line)line.textContent=impressumScreenLine();
+  const leaf=$('printer-line');if(leaf)leaf.hidden=eraId()===0&&!plainPlate();
 }
 function drawImpressum(){
   if(!world||eraId()!==0||plainPlate()||!W||!H)return;
