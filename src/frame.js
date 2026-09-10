@@ -606,7 +606,10 @@ function hudLeafGradient(){
   let g=hudLeafGradients.get(plateName);
   if(!g){
     g=ctx.createRadialGradient(0,0,0,0,0,1);
-    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.8:.62})`);g.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.6:.46})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    // A reserved patch of the sheet's own stock, not a light: the centre and the .85 stop share one
+    // alpha, so the ground reads flat out to there, and only the last sliver feathers to nothing.
+    const centre=onPaper()?.5:.62;
+    g.addColorStop(0,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(.85,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
     hudLeafGradients.set(plateName,g);
   }
   return g;
@@ -652,16 +655,6 @@ function drawPauseMagnitudeKey(){
 // The running head: the plate's own number and name, engraved at the foot of the sheet where a printer
 // sets one, in the frame's ink rather than in the DOM. It names the chapter the ascent has reached, and
 // the page turn writes the same name large across the chart as the sheet changes.
-const runningHeadGradients=new Map();
-function runningHeadGradient(){
-  let g=runningHeadGradients.get(plateName);
-  if(!g){
-    g=ctx.createRadialGradient(0,0,0,0,0,1);
-    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.72:.6})`);g.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-    runningHeadGradients.set(plateName,g);
-  }
-  return g;
-}
 function drawRunningHead(){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -671,11 +664,14 @@ function drawRunningHead(){
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
   const size=frameWide()?9.5:8.5,head='TAB. '+numerals[index]+'  \u00b7  '+chapters[index];
   ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
-  // The running head keeps a soft leaf of the sheet's own ground under it, feathered to nothing, so it is
-  // still read once the spilled ink has risen past the foot of the plate.
-  ctx.save();ctx.translate(W*.5,y-size*.35);ctx.scale(Math.min(W*.34,116),size*1.9);
-  ctx.fillStyle=runningHeadGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
   ctx.font=plateFace(size,'sc');
+  // Cleared the way a printer actually clears a running head: a plain band of the sheet's own stock,
+  // ruled top and bottom in the plate's own burin, rather than a glow that fades to nothing on every side.
+  const half=Math.min(ctx.measureText(head).width*.5+18,W*.42),midY=y-size*.35,halfH=size*.95;
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.5:.6})`;
+  ctx.fillRect(W*.5-half,midY-halfH,half*2,halfH*2);
+  burinSegment(ctx,W*.5-half,midY-halfH,W*.5+half,midY-halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81301,{segments:10,skips:1,hair:false,wobble:.15});
+  burinSegment(ctx,W*.5-half,midY+halfH,W*.5+half,midY+halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81307,{segments:10,skips:1,hair:false,wobble:.15});
   ctx.fillStyle=colors.text;
   ctx.fillText(head,W*.5,y);
   ctx.restore();

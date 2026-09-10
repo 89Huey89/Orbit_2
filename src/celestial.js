@@ -681,7 +681,10 @@ function chapterRevealLeaf(){
   let g=chapterRevealLeaves.get(plateName);
   if(!g){
     g=ctx.createRadialGradient(0,0,0,0,0,1);
-    g.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.66:.56})`);g.addColorStop(.5,`rgba(${ink.base.paperRgb},${onPaper()?.5:.42})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    // A reserved patch of the sheet's own stock, not a light: the centre and the .85 stop share one
+    // alpha, so the ground reads flat out to there, and only the last sliver feathers to nothing.
+    const centre=onPaper()?.5:.56;
+    g.addColorStop(0,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(.85,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
     chapterRevealLeaves.set(plateName,g);
   }
   return g;
@@ -707,17 +710,17 @@ function drawChapterReveal(dt){
     ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
     ctx.fillStyle=chapterRevealLeaf();ctx.fillRect(-1,-1,2,2);ctx.restore();
   }
-  ctx.shadowColor=ink.dark.chapterShadow;ctx.shadowBlur=12;
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
-  // done — and always under reduced motion — the ordinary lettering below is the finished state.
+  // done — and always under reduced motion — the ordinary lettering below is the finished state. The
+  // reserved leaf above is what keeps this readable over the chart; a second glow on top of it was ink
+  // spent twice for the one job.
   const plate='P L A T E   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
   const size=compact?24:Math.min(36,Math.max(24,W*.062));
   ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');
   if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center'))ctx.fillText(plate,x,y-22+rise);
   ctx.fillStyle=ink.base.text;ctx.font=plateFace(size);
   if(!penLettering(name,x,y+12+rise,size,'text',t,'center'))ctx.fillText(name,x,y+12+rise);
-  ctx.shadowBlur=0;
   const reach=Math.min(95,W*.21),ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
   if(ruled>=1){
     line(x-reach,y+27+rise,x-9,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27+rise,x+reach,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);

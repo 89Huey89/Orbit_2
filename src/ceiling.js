@@ -1708,10 +1708,10 @@ function ceilingDrawRunningHead(dt){
   ctx.save();ctx.textAlign='left';ctx.font=plateFace(size,'sc');
   const width=ctx.measureText(label).width,figures=ceilingNumWidth(index+1,size*1.05),left=W*.5-(width+figures+size*.75)/2;
   // By mid-run the risen darkness sits directly behind this line — dark brown ink on the atlas's own
-  // dark-brown floor, unreadable. The atlas answers with a soft paper gradient under its running head
-  // (runningHeadGradient(), src/frame.js); a painted wall carries no such glow, so this is a flat patch
-  // of the wall's own plaster laid fresh under the label instead — a repair the palette already
-  // accounts for (Plaster loss/wear-and-repairs), not an added UI device, and cheaper than a gradient.
+  // dark-brown floor, unreadable. The atlas answers with a ruled band of its own paper under its running
+  // head (drawRunningHead(), src/frame.js); a painted wall carries no printer's rule, so this is a flat
+  // patch of the wall's own plaster laid fresh under the label instead — a repair the palette already
+  // accounts for (Plaster loss/wear-and-repairs), not an added UI device, and cheaper than ruling it.
   const pad=size*.55;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.globalAlpha=.95;
   ctx.fillRect(left-pad,y-size*1.5,width+figures+size*.75+pad*2,size*1.85);
   ctx.globalAlpha=.72;ceilingNumber(ctx,index+1,left,y-size*.78,size*1.05,CEILING_PALETTE.carbon);

@@ -4,7 +4,7 @@
 // ---------- Rising darkness, player comet, and effects: spilled ink on paper, starlight ink at night ----------
 definePlate('dark',{
   night:{
-    chapterShadow:'#080f18',chapterLabel:'#baa57b',chapterRule:'202,180,137',chapterDiamond:'216,195,154',
+    chapterLabel:'#baa57b',chapterRule:'202,180,137',chapterDiamond:'216,195,154',
     playerHeadWash:'222,199,151',playerFilamentA:'195,178,138',playerFilamentB:'236,218,178',
     playerHalo:'#0c1519',playerKeyline:'#0c1519',playerMid:'#dcc394',playerHighlight:'#fff3ce',playerNib:'246,227,181',playerShield:'150,205,224',playerReflector:'196,172,224',playerDawn:'247,203,152',
     trailWash:'204,181,133',trailStroke:'242,225,186',trailEdge:'165,154,123',trailBleed:'214,193,151',
@@ -24,7 +24,7 @@ definePlate('dark',{
     floaterText:'238,224,185',screenFlash:'238,212,157'
   },
   paper:{
-    chapterShadow:'transparent',chapterLabel:'#5c4630',chapterRule:'58,42,28',chapterDiamond:'34,24,16',
+    chapterLabel:'#5c4630',chapterRule:'58,42,28',chapterDiamond:'34,24,16',
     playerHeadWash:'96,74,52',playerFilamentA:'96,74,52',playerFilamentB:'58,42,28',
     playerHalo:'#e7dabd',playerKeyline:'#221810',playerMid:'#3a2a1c',playerHighlight:'#604a34',playerNib:'58,42,28',playerShield:'52,84,120',playerReflector:'92,58,120',playerDawn:'186,102,40',
     trailWash:'96,74,52',trailStroke:'34,24,16',trailEdge:'120,92,60',trailBleed:'80,55,34',

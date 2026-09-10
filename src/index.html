@@ -61,7 +61,7 @@
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
     .small{font-family:var(--face-sc);font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
-    #score{display:block;font-family:var(--face-text);font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums;text-shadow:0 2px 18px var(--ink)}
+    #score{display:block;font-family:var(--face-text);font-size:46px;font-weight:400;line-height:1.04;font-variant-numeric:tabular-nums}
     #flow{height:23px;margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.18em;transition:opacity .3s}
     #pace{margin-top:6px;font-size:12px;letter-spacing:.09em;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
     .best-block{text-align:right;padding-top:7px}
@@ -70,7 +70,7 @@
     .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
     .title-group{position:absolute;top:19%;left:20px;right:20px}
     .eyebrow{margin:0 0 13px;color:var(--gold);font-family:var(--face-sc);font-size:11px;letter-spacing:.37em}
-    h1{margin:0;font-family:var(--face-sc);font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1;text-shadow:0 4px 30px var(--ink)}
+    h1{margin:0;font-family:var(--face-sc);font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1}
     .title-rule{width:100px;margin:24px auto 0;display:flex;align-items:center;gap:11px;color:var(--gold)}
     .title-rule::before,.title-rule::after{content:'';height:1px;background:linear-gradient(90deg,transparent,var(--gold));flex:1;opacity:.5}
     .title-rule::after{transform:rotate(180deg)}
@@ -84,7 +84,7 @@
     .utility:focus-visible{outline:1px solid var(--gold);outline-offset:-4px;border-radius:50%}
     /* Keylined light-on-dark like the pen's own nib, rather than a flat button chip: a doubled soft-edge
        shadow of the sheet's own ground (--veil) so the ink reads over whatever the plate draws behind it. */
-    .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1.5px rgba(var(--veil),1)) drop-shadow(0 0 1.5px rgba(var(--veil),1))}
+    .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1.5px rgba(var(--veil),1))}
     .utility .mute-mark{display:none}
     .utility.muted .mute-mark{display:block}
     .utility.muted .sound-wave{display:none}
@@ -156,7 +156,7 @@
     #game[data-era="2"] #end{background:rgba(221,207,173,.48)}
     #game[data-era="2"] #pause{background:rgba(221,207,173,.6)}
     #game[data-era="2"] .colophon{background:rgba(221,207,173,.97);border-left:1.4px solid #241d16;border-right:1.4px solid #241d16;padding:36px 26px 34px}
-    #game[data-era="2"] h1,#game[data-era="2"] #score{font-family:'Zilla Slab',Georgia,serif;text-shadow:none}
+    #game[data-era="2"] h1,#game[data-era="2"] #score{font-family:'Zilla Slab',Georgia,serif}
     /* The cartouche, shenu — "that which encircles": a loop of doubled rope tied off at one end, and
        the one piece of this room's furniture that is already the shape of a readout. A figure inside
        it is held apart from the wall around it, which is what the ring was for. */
