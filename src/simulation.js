@@ -161,19 +161,23 @@ function transferContact(p,v,n,time,limit,windowMult=1) {
 // fork, in the fixed bottom-to-top generation order. Catalogue entries 0-3 belong to
 // regions 0-3 and are unchanged; later regions draw from the whole catalogue in a
 // seeded order that does not repeat until every figure has been used.
+// `latin` is the name the plate actually letters round each chart's entry star (figures.js) — the
+// vernacular in `name` is what the catalogue, the ledger and every lifetime record still key on, so it
+// is never renamed; see the era-fidelity finding this closes in ART-AUDIT-TODO.md for why the two are
+// kept apart rather than swapped.
 const CONSTELLATIONS = [
-  {name:'THE NEEDLE',shape:[112,151,105]},
-  {name:'THE SAIL',shape:[143,91,144]},
-  {name:'THE LYRE',shape:[100,152,117]},
-  {name:'THE CROWN',shape:[139,92,143]},
-  {name:'THE COMPASS',shape:[106,148,128]},
-  {name:'THE HOURGLASS',shape:[146,97,140]},
-  {name:'THE SERPENT',shape:[99,147,119]},
-  {name:'THE ARGO',shape:[134,102,146]},
-  {name:'THE ASTROLABE',shape:[121,149,101]},
-  {name:'THE QUILL',shape:[148,105,135]},
-  {name:'THE LANTERN',shape:[103,141,124]},
-  {name:'THE MOTH',shape:[140,100,150]}
+  {name:'THE NEEDLE',latin:'ACUS',shape:[112,151,105]},
+  {name:'THE SAIL',latin:'VELUM',shape:[143,91,144]},
+  {name:'THE LYRE',latin:'LYRA',shape:[100,152,117]},
+  {name:'THE CROWN',latin:'CORONA',shape:[139,92,143]},
+  {name:'THE COMPASS',latin:'CIRCINUS',shape:[106,148,128]},
+  {name:'THE HOURGLASS',latin:'HOROLOGIUM',shape:[146,97,140]},
+  {name:'THE SERPENT',latin:'SERPENS',shape:[99,147,119]},
+  {name:'THE ARGO',latin:'ARGO',shape:[134,102,146]},
+  {name:'THE ASTROLABE',latin:'ASTROLABIUM',shape:[121,149,101]},
+  {name:'THE QUILL',latin:'PENNA',shape:[148,105,135]},
+  {name:'THE LANTERN',latin:'LATERNA',shape:[103,141,124]},
+  {name:'THE MOTH',latin:'PHALÆNA',shape:[140,100,150]}
 ];
 // Renaissance stars are not discovered by their order in the generated fork. Their assumed brightness
 // is a separate, deterministic observation of the point itself: class I is brightest, class VI faintest.

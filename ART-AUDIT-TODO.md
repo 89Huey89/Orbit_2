@@ -6,7 +6,7 @@ Eight defects the audit also raised were fixed directly in the working tree the 
 
 Severity is the atlas's own magnitude class (Magnitude I = brightest/most important, down to V). Effort is the audit's own estimate. Each item's proposal is the audit's suggested fix.
 
-**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 6 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, the double-set impressum/button-row collision, and the rising dark's treeline/flat-fill edge.**
+**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 7 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, the double-set impressum/button-row collision, the rising dark's treeline/flat-fill edge, and the constellations' Latin entry-star lettering.**
 
 ## Contents
 
@@ -46,7 +46,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   Two changes in darknessPlate(). Cap the paper voidLayers at about .82 (effects.js:39) and let the laid-paper tile and the 2,400-fleck stipple pass (effects.js:1027-1031) continue to read through the flood, so the sheet is visibly still under the ink. Then rebuild the leading edge from the era's own failure rather than a shoreline: shorter, blunter feathering at 0.6-1.2px with occasional near-opaque pools breaking forward of the edge, which is what a spreading stain does and what a treeline does not. Losing the hard horizontal wash band at effects.js:981-983 matters as much as the alpha.
 
-- [ ] **Twelve constellations lettered in English on a page headed ASTERISMI, against the era doc's own rule** `Magnitude I · inconsistency · small effort`
+- [x] **Twelve constellations lettered in English on a page headed ASTERISMI, against the era doc's own rule** `Magnitude I · inconsistency · small effort` — *Done: each `CONSTELLATIONS` entry (simulation.js) now carries a `latin` field (ACUS, VELUM, LYRA, CORONA, CIRCINUS, HOROLOGIUM, SERPENS, ARGO, ASTROLABIUM, PENNA, LATERNA, PHALÆNA — standard-U spelling, since the V-for-U convention is its own separate, not-yet-adopted editorial decision per the Æ-ligature finding below), lettered as the primary arc round the entry star (figures.js), with the English name demoted to a smaller italic gloss arcing just outside it. `name` itself is untouched — the ledger still keys on it. The completion caption (a separate site) is intentionally left English, unchanged. Verified at 430×932.*
 
   Take only the cheap half, and take it carefully. Add a `latin` field to each entry in simulation.js:164-177 and letter that round the entry star (ACVS, VELVM, LYRA, CORONA, CIRCINVS, HOROLOGIVM, SERPENS, ARGO, ASTROLABIVM, PENNA, LANTERNA, PHALÆNA), demoting the English to the smaller gloss the catalogue already pairs beneath a name. Do NOT change the existing `name` strings: ledger.js keys lifetime records by them (ui.js:378 reads ledger.constellations[c.name]) and CONSTELLATIONS is one of the named globals verify.mjs pulls out of the simulation slice, so renaming needs an orbit.ledger.v1 → v2 migration per CLAUDE.md's own convention. Adding a field costs neither.
 

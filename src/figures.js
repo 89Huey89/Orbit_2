@@ -777,7 +777,10 @@ function drawConstellations(){
       for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2,r=(i%2?1.4:4.8)*scale;const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
       ctx.closePath();ctx.fill();ctx.stroke();
     }
-    // The chart's name is engraved round the rim of its entry star for as long as the route is live.
+    // The chart's name is engraved round the rim of its entry star for as long as the route is live —
+    // in the atlas's own Latin, the way every other name on the plate is set (see CONSTELLATIONS in
+    // simulation.js), with the vernacular kept only as the smaller gloss a two-register name always
+    // gets on this sheet. `name` itself is never relettered here: it is still the ledger's own key.
     if(!chart.expired){
       const e=chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
       if(ey>-80&&ey<H+80&&!captionsHeld()){
@@ -785,10 +788,18 @@ function drawConstellations(){
         // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
         const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
         const guard=Math.abs(ex-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner,below=ey-ring-size<guard;
+        const dir=below?Math.PI/2:-Math.PI/2,latin=CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
+        const alpha=chart.completed?.34:.52;
         ctx.save();ctx.translate(ex,ey);
         ctx.font=plateFace(size,'sc');
-        ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${chart.completed?.34:.52})`;
-        textAlongArc(ctx,chart.name,0,0,ring,below?Math.PI/2:-Math.PI/2,{align:'center',size,spacing:size*.24,inward:below});
+        ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${alpha})`;
+        textAlongArc(ctx,latin||chart.name,0,0,ring,dir,{align:'center',size,spacing:size*.24,inward:below});
+        if(latin){
+          const glossSize=size*.64,glossRing=ring+size*1.05;
+          ctx.font=plateFace(glossSize,'text','italic');
+          ctx.fillStyle=`rgba(${ink.marks.constellationCaption},${alpha*.85})`;
+          textAlongArc(ctx,chart.name,0,0,glossRing,dir,{align:'center',size:glossSize,spacing:glossSize*.22,inward:below});
+        }
         ctx.restore();
       }
     }
