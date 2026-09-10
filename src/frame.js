@@ -236,9 +236,27 @@ function frameScaleBar(g,x,y,colors){
 function buildFrameLayer(){
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
   const colors=ink.frame,wide=frameWide(),band=frameBand();
-  const pm1=band*.2,pm2=band*.42;
-  g.lineWidth=1;g.strokeStyle=colors.markEdge;g.strokeRect(pm1+.5,pm1+.5,Math.max(1,W-pm1*2-1),Math.max(1,H-pm1*2-1));
-  if(onPaper()){g.lineWidth=.6;g.strokeStyle=colors.mark;g.strokeRect(pm2+.5,pm2+.5,Math.max(1,W-pm2*2-1),Math.max(1,H-pm2*2-1));}
+  const pm1=band*.2,pm2=band*.42,pmR=band*.25;
+  // The plate mark is the paper's own scar, not a printer's rule: the metal plate's edge bit into the
+  // sheet under the press, so it reads as a shallow groove rather than an inked line. Corners are
+  // rounded (a filed edge, never sharp) and each rect is stroked twice a half-pixel either side of its
+  // true line — a fainter pass outward standing for the light catching the near lip, the full tone
+  // inward standing for the shadow the groove throws — rather than the one flat vector line a screen
+  // draws by default.
+  const groove=(x,y,w,h,rgba)=>{
+    const r=Math.max(0,Math.min(pmR,w*.5,h*.5));
+    g.strokeStyle=rgba;g.lineWidth=1;
+    g.globalAlpha=.55;g.beginPath();g.roundRect(x-.6,y-.6,w+1.2,h+1.2,r+.6);g.stroke();
+    g.globalAlpha=1;g.beginPath();g.roundRect(x+.6,y+.6,Math.max(1,w-1.2),Math.max(1,h-1.2),Math.max(0,r-.6));g.stroke();
+  };
+  groove(pm1,pm1,Math.max(1,W-pm1*2),Math.max(1,H-pm1*2),colors.markEdge);
+  if(onPaper()){
+    groove(pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),colors.mark);
+    // The plate's own edge was filed by hand and never ran perfectly true either — one very faint
+    // burin pass over the mechanical groove, at the same low weight the shoreline's finer marks use.
+    burinRect(g,pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),ink.base.inkSoft,.07,.4,90233);
+  }
+  g.globalAlpha=1;
   // The double rule is cut with the same burin as the orbit rings: it swells, wobbles and lifts a little.
   const outerR=band*.56,innerR=band*.92;
   const ruleRgb=ink.base.inkStrong,faintRgb=ink.base.inkSoft;
