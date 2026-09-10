@@ -80,7 +80,7 @@ function event(type,e){
     else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
     else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
     else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
-    else if(e.square)say('ANGULUS RECTUS · +'+e.squareBonus,at);
+    else if(e.square)say(OBSERVATIONS.rightAngle.latin+' · +'+e.squareBonus,at);
     else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
     else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
     recordBest(world.score);
@@ -305,10 +305,9 @@ function chapterLabel(value){
   return n?numerals[n-1]+' · '+chapters[n-1]:'—';
 }
 // The atlas's eight named feats, in the order src/simulation.js's OBSERVATIONS lists them, paired with
-// the Latin caption the sheet inscribes when each first fires — must keep matching the medal entries
-// of the same name in src/ledger.js's UNLOCKS.
-const OBSERVATION_LABELS=[['perfectThree','Tres Perfecti'],['skipFive','Saltus Quinque'],['maxSpeed','Velocitas Summa'],
-  ['graze','Periculum'],['pureChart','Linea Pura'],['fortyRows','Altitudo'],['threeMinutes','Vigilia'],['rightAngle','Angulus Rectus']];
+// the same Latin caption the sheet inscribes when each first fires — read off OBSERVATIONS rather than
+// restated here, so this table and src/ledger.js's UNLOCKS medals can never drift out of the one name.
+const OBSERVATION_LABELS=Object.keys(OBSERVATIONS).map(key=>[key,OBSERVATIONS[key].latin]);
 // Every ledger table sits on its own .ledger-wrap so paintLedgerRules() (below) can back it with a
 // canvas of engraved row rules cut to its actual measured height — the straight CSS border-bottom a
 // ruled register carried before read as forty identical strokes from one hand that owns none of them.

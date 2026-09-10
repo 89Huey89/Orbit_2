@@ -196,15 +196,18 @@ function orderRenaissanceStars(chart){
   for(let i=0;i<ordered.length;i++){ordered[i].greekIndex=i;ordered[i].greek=RENAISSANCE_GREEK_LETTERS[i]||'';}
 }
 // Named feats. Each is recorded at most once per run and reported as it happens.
+// The canonical Latin caption for each: kept here alone, in the sentence case the small-caps face
+// actually shows as small caps, and read by src/ledger.js's medal entries and src/ui.js's own table
+// rather than restated by either — the same eight names living in one place instead of three.
 const OBSERVATIONS = {
-  perfectThree:{name:'THREE PERFECT TRANSFERS',latin:'TRES PERFECTI'},
-  skipFive:{name:'FIVE ORBITS SKIPPED',latin:'SALTUS QUINQUE'},
-  maxSpeed:{name:'THE FULL PACE OF THE CHART',latin:'VELOCITAS SUMMA'},
-  graze:{name:'A VORTEX GRAZED AT FULL SPEED',latin:'PERICULUM'},
-  pureChart:{name:'A CONSTELLATION IN PERFECT TRANSFERS',latin:'LINEA PURA'},
-  fortyRows:{name:'THE FORTIETH ROW',latin:'ALTITUDO'},
-  threeMinutes:{name:'THREE MINUTES ALOFT',latin:'VIGILIA'},
-  rightAngle:{name:'A RIGHT ANGLE OF ARRIVAL',latin:'ANGULUS RECTUS'}
+  perfectThree:{name:'THREE PERFECT TRANSFERS',latin:'Tres perfecti'},
+  skipFive:{name:'FIVE ORBITS SKIPPED',latin:'Saltus quinque'},
+  maxSpeed:{name:'THE FULL PACE OF THE CHART',latin:'Velocitas summa'},
+  graze:{name:'A VORTEX GRAZED AT FULL SPEED',latin:'Periculum'},
+  pureChart:{name:'A CONSTELLATION IN PERFECT TRANSFERS',latin:'Linea pura'},
+  fortyRows:{name:'THE FORTIETH ROW',latin:'Altitudo'},
+  threeMinutes:{name:'THREE MINUTES ALOFT',latin:'Vigilia'},
+  rightAngle:{name:'A RIGHT ANGLE OF ARRIVAL',latin:'Angulus rectus'}
 };
 // An arrival whose incoming line meets the orbit's radius this close to a right angle is a square.
 const SQUARE_TOLERANCE = 1.5;

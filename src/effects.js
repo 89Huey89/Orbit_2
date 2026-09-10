@@ -488,7 +488,9 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
   const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
   const lines=[];
-  if(s.square)lines.push(['ANGULUS RECTUS · +'+s.squareBonus,gold]);
+  // This note is set in the sheet's own italic text face, not the small-caps one, so the name is raised
+  // to caps here rather than restated — OBSERVATIONS stays the one place the name itself is spelled.
+  if(s.square)lines.push([OBSERVATIONS.rightAngle.latin.toUpperCase()+' · +'+s.squareBonus,gold]);
   lines.push(['×'+s.mult.toFixed(1)+'  ·  +'+s.gain,rgb]);
   if(s.skipped>0)lines.push(['SKIP '+s.skipped,rgb]);
   // The node prints its own row numeral a little east of the ring, so a contact that landed due east
