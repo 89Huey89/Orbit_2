@@ -116,10 +116,14 @@
     .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
     .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
     .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
-    /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and
-       turns copper when what is left will not carry a long transfer. */
+    /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and turns copper
+       when what is left will not carry a long transfer. On the atlas it is cut on the canvas instead
+       (drawInkGauge(), src/frame.js, drawn under the score in drawHudLeaf's pass) — this DOM slip stays
+       only to hold the score-block's own rhythm, so nothing below it shifts, and to carry era II's own
+       reed-shaped bar, which keeps the CSS treatment. */
     #ink{height:3px;margin:7px auto 0;width:54px;padding:0;background:var(--line);opacity:0;transition:opacity .4s}
     #game.playing #ink{opacity:.85}
+    #game:not([data-era]):not([data-plate-id="modern"]).playing #ink{opacity:0;transition:none}
     #ink.dry{animation:breathe 1s ease-in-out infinite}
     #shield{color:var(--shield)}
     #reflector{color:var(--reflector)}

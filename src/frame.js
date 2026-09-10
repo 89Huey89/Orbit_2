@@ -626,6 +626,26 @@ function drawHudLeaf(){
   const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=Math.max(band*.64,band+carried*15-cy);
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
   ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
+  drawInkGauge();
+}
+// The nib's reservoir, cut as an engraved rule rather than a browser's progress bar: the wet length in
+// the plate's gold (copper once it is too short to carry an ordinary transfer), a bead of wet ink at its
+// end, and the spent length left as a bare score in the copper — a mark a burin left, not a grey
+// remainder. Positioned off the DOM slip's own rect (#ink, kept invisible on the atlas — see index.html)
+// so it sits exactly where the score-block's own rhythm already puts it, without this file having to
+// reason about that layout itself. The fixed seeds keep the wobble steady frame to frame; only the split
+// between wet and spent moves.
+function drawInkGauge(){
+  if(!renaissanceAtlas())return;
+  const el=$('ink');if(!el)return;
+  const rect=el.getBoundingClientRect();
+  if(!(rect.width>0)||!Number.isFinite(rect.left)||!Number.isFinite(rect.top)||!Number.isFinite(rect.height))return;
+  const level=clamp(world.inkLevel(),0,1),x0=rect.left,x1=rect.left+rect.width,y=rect.top+rect.height*.5,xh=x0+rect.width*level;
+  if(level<1)burinSegment(ctx,xh,y,x1,y,ink.base.copper,.3,.5,81403,{segments:6,skips:1,hair:false,wobble:.18});
+  if(level>0){
+    burinSegment(ctx,x0,y,xh,y,level<=.34?ink.base.copper:ink.base.gold,.92,.9,81401,{segments:6,skips:1,hair:false,wobble:.18});
+    penBead(xh,y,0,1.1*scale,.85);
+  }
 }
 // The MAGNITUDINES key: on a wide sheet it stands permanently in the right flank (buildFrameLayer's
 // `if(wide)` block above), but a narrow one has no flank to carry it in, and the play field is kept
