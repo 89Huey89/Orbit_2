@@ -1121,7 +1121,11 @@ function glossSprite(relief){
   const cached=darkMarginalia.get(key);if(cached)return cached;
   const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment;
   const text='HIC SUNT DRACONES',font=plateFace(size,'sc');
-  const w=Math.ceil(size*text.length*.72)+8,h=Math.ceil(size*1.9);
+  // Measured, not guessed: the canvas used to be sized from an estimate of the text's width, and
+  // whenever the real, rendered string ran wider than that guess the last letters were clipped clean
+  // off by the canvas's own edge rather than by anything to do with where the sprite is drawn.
+  const measure=makeCanvas(1,1).getContext('2d');measure.font=font;
+  const w=Math.ceil(measure.measureText(text).width)+8,h=Math.ceil(size*1.9);
   const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.font=font;g.textAlign='left';g.textBaseline='alphabetic';
   g.fillStyle=`rgba(${rgb},.9)`;
