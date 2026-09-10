@@ -253,7 +253,9 @@ function showEnd(){
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
-  $('end-constellations').textContent=charts+' '+plateWords().chartNoun+(charts===1?'':'s')+' traced';
+  // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
+  // words for nothing rather than as that figure.
+  $('end-constellations').textContent=charts?charts+' '+plateWords().chartNoun+(charts===1?'':'s')+' traced':'no '+plateWords().chartNoun+'s traced';
   $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(', ');
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
@@ -286,6 +288,9 @@ function showEnd(){
 // button that opens it is only on the plate when no run is in progress.
 let pendingUnlocks=[],catalogueOpen=false,catalogueTab='record';
 const commas=n=>Math.round(Number(n)||0).toLocaleString('en-US');
+// A count of nothing is ruled off rather than lettered as Fell's old-style zero, which sets as a
+// lowercase o at table size — the same convention roman() already declares for a bare figure.
+const countMark=n=>{const v=Math.round(Number(n)||0);return v?commas(v):'—';};
 function chartTime(seconds){
   const total=Math.max(0,Math.round(Number(seconds)||0)),h=Math.floor(total/3600),m=Math.floor(total%3600/60);
   return h?h+'h '+m+'m':m?m+'m':total+'s';
@@ -355,7 +360,7 @@ function pressureTable(){
   // locked rule rather than a selectable one: an always-present zero row would read as played rather
   // than as not yet unlocked.
   if(isUnlocked('newton'))rows.push(['newton',UNLOCK_BY_ID.newton.latin]);
-  return ledgerTable(rows.map(([key,label])=>[plainText(label),`${commas(ledger.personalBests[key]||0)} best · ${commas(ledger.runs[key]||0)} runs`]));
+  return ledgerTable(rows.map(([key,label])=>[plainText(label),`${countMark(ledger.personalBests[key])} best · ${countMark(ledger.runs[key])} runs`]));
 }
 // The fuller record: the original six lifetime figures the catalogue has always shown, then every
 // other stat the ledger keeps that otherwise never surfaces anywhere in the UI on its own — some of
@@ -379,9 +384,9 @@ function catalogueRecord(){
   let html=recordOverview()+catalogueTable()+ledgerTable(rows);
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
-    ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),commas(ledger.observations[key]||0)]))+'</section>';
+    ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
   html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3>'+
-    ledgerTable(CONSTELLATIONS.map(c=>[plainText(c.name),commas(ledger.constellations[c.name]||0)]))+'</section>';
+    ledgerTable(CONSTELLATIONS.map(c=>[plainText(c.name),countMark(ledger.constellations[c.name])]))+'</section>';
   return html;
 }
 // ---------- The catalogue's engraved previews ----------
@@ -958,7 +963,10 @@ function nearestHazard(){
 function updateUI(dt){
   if(lastScore!==world.score){lastScore=world.score;inked('score',String(world.score));inked('best',String(currentBest()));}
   const words=plateWords().hud;
-  inked('pace',words.pace+world.speedMultiplier().toFixed(1));
+  // Fell's old-style zero is a lowercase o at this size, and a trailing '.0' set it on every frame of
+  // every run: dropped whenever the multiple is whole, so the opening reads 'SPEED ×1' rather than
+  // '×1.0'.
+  const m=world.speedMultiplier();inked('pace',words.pace+(m%1?m.toFixed(1):m));
   inked('flow',world.combo>1&&world.captures>0?words.flow+world.combo:'');
   inked('shield',world.player.shielded?words.shield:'');
   inked('reflector',world.player.reflectorArmed?words.reflector:'');
