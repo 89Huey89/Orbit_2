@@ -14,19 +14,34 @@ let frameLayer=null,frameKey='',frameInset=Infinity;
 function frameWide(){return W>780;}
 function frameBand(){return frameWide()?26:14;}
 function frameEdgeTicks(len){const unitPx=frameWide()?7:5,n=Math.max(20,Math.round(len/unitPx));return {n,step:len/n};}
+// A frame-layer token is a pre-mixed rgba() string, colour and alpha baked together the way every
+// other plate token is; the burin primitives instead take a bare "r,g,b" triple and its alpha apart,
+// the way ink.base's tokens already are. This pulls the two back apart without a second, parallel set
+// of tokens just for the marks this file now cuts with a burin instead of a ruling pen.
+function rgbaSplit(str){
+  const m=/rgba?\(([^)]+)\)/.exec(str);
+  if(!m)return {rgb:str,alpha:1};
+  const parts=m[1].split(',').map(s=>s.trim());
+  return {rgb:parts.slice(0,3).join(','),alpha:parts[3]!==undefined?Number(parts[3]):1};
+}
+// The Roman hours sphereGraduation's own limb counts by, shared here so the plate frame's own hour
+// ladder is provably the same vocabulary rather than a second, independently-spelled one.
+const ROMAN_HOURS=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 function frameCorner(g,x,y,dirX,dirY,color){
-  const len=frameWide()?11:7;
-  g.strokeStyle=color;g.lineWidth=1;
-  g.beginPath();g.moveTo(x,y+len*dirY);g.lineTo(x,y);g.lineTo(x+len*dirX,y);g.stroke();
-  g.beginPath();g.arc(x+4*dirX,y+4*dirY,1.3,0,TAU);g.strokeStyle=color;g.lineWidth=.7;g.stroke();
+  const len=frameWide()?11:7,{rgb,alpha}=rgbaSplit(color),seed=Math.round(x*3+y*5)+1;
+  burinSegment(g,x,y+len*dirY,x,y,rgb,alpha,.85,seed,{segments:3,skips:0,hair:false,wobble:.22});
+  burinSegment(g,x,y,x+len*dirX,y,rgb,alpha,.85,seed+1,{segments:3,skips:0,hair:false,wobble:.22});
+  burinArc(g,x+4*dirX,y+4*dirY,1.3,0,TAU,rgb,alpha,.6,seed+2,{segments:8,skips:0});
 }
 function frameCompassRose(g,cx,cy,r,colors){
   // The ornament and its four cardinal names stay within 3r of cx,cy, so callers can budget the footprint.
-  g.save();g.translate(cx,cy);g.strokeStyle=colors.orn;g.lineWidth=.8;
-  g.beginPath();g.arc(0,0,r,0,TAU);g.stroke();g.beginPath();g.arc(0,0,r*.5,0,TAU);g.stroke();
+  const {rgb,alpha}=rgbaSplit(colors.orn),seed=Math.round(cx*5+cy*7);
+  g.save();g.translate(cx,cy);
+  burinArc(g,0,0,r,0,TAU,rgb,alpha,.8,seed+1,{segments:40,skips:2,wobble:.22});
+  burinArc(g,0,0,r*.5,0,TAU,rgb,alpha,.8,seed+2,{segments:28,skips:2,wobble:.22});
   for(let i=0;i<8;i++){
     const a=i/8*TAU-Math.PI/2,long=i%2===0,rr=long?r:r*.6;
-    g.lineWidth=long?.9:.6;g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);g.stroke();
+    burinSegment(g,0,0,Math.cos(a)*rr,Math.sin(a)*rr,rgb,alpha,long?.9:.6,seed+10+i,{segments:3,skips:0,hair:false,wobble:.2});
   }
   g.fillStyle=colors.orn;g.beginPath();g.moveTo(0,-r-3);g.lineTo(-2,-r+1.2);g.lineTo(0,-r-.5);g.lineTo(2,-r+1.2);g.closePath();g.fill();
   g.restore();
@@ -293,25 +308,45 @@ function buildFrameLayer(){
   const ruleRgb=ink.base.inkStrong,faintRgb=ink.base.inkSoft;
   burinRect(g,outerR+.5,outerR+.5,Math.max(1,W-outerR*2-1),Math.max(1,H-outerR*2-1),ruleRgb,onPaper()?.62:.46,wide?1.4:1,90211);
   burinRect(g,innerR+.5,innerR+.5,Math.max(1,W-innerR*2-1),Math.max(1,H-innerR*2-1),faintRgb,onPaper()?.34:.26,wide?1:.7,44127);
-  // Graduated scale between the two rules: fine ticks every unit, heavier every 5th, numbered every 10th.
   const tickLen=Math.max(1,innerR-outerR);
-  const hLen=Math.max(1,W-band*2),{n:hn,step:hStep}=frameEdgeTicks(hLen);
-  for(let i=0;i<=hn;i++){
-    const x=band+i*hStep,major=i%5===0,numbered=i%10===0,len=tickLen*(major?.9:.45);
-    g.lineWidth=major?.9:.5;g.strokeStyle=major?colors.tick:colors.tickMinor;
-    g.beginPath();g.moveTo(x,outerR);g.lineTo(x,outerR+len);g.stroke();
-    g.beginPath();g.moveTo(x,H-outerR);g.lineTo(x,H-outerR-len);g.stroke();
-    if(numbered&&!plainPlate()){
-      g.font=plateFace(wide?Math.max(7,8*scale):Math.max(6,6.5*scale));g.textAlign='center';g.fillStyle=colors.text;
-      g.fillText(String(i),x,outerR+tickLen*.72+2);g.fillText(String(i),x,H-outerR-tickLen*.72+5);
+  // Top and bottom read right ascension, not a pixel count: 24 hour ticks span the sheet at every
+  // width, each cut into six ten-minute divisions, so the count is 24 wherever the plate is played and
+  // only the spacing changes with it. Numbered in the same Roman hours sphereGraduation's own limb
+  // already counts by, going round twice — a 24-hour dial unrolled flat rather than run as a circle.
+  // Majors are cut short of the inner rule on purpose, leaving the numeral its own lane rather than
+  // the tick's own ink.
+  const hLen=Math.max(1,W-band*2),HOUR_STEP=hLen/24,MIN_STEP=HOUR_STEP/6,hourLen=tickLen*.5,minLen=tickLen*.3;
+  const numFont=wide?Math.max(7,8*scale):Math.max(6,6.5*scale);
+  for(let i=0;i<=144;i++){
+    const x=band+i*MIN_STEP,onHour=i%6===0,len=onHour?hourLen:minLen;
+    const {rgb,alpha}=rgbaSplit(onHour?colors.tick:colors.tickMinor);
+    burinSegment(g,x,outerR,x,outerR+len,rgb,alpha,onHour?.9:.5,90301+i*3,{segments:3,skips:0,hair:false,wobble:.22});
+    burinSegment(g,x,H-outerR,x,H-outerR-len,rgb,alpha,onHour?.9:.5,90401+i*3,{segments:3,skips:0,hair:false,wobble:.22});
+    if(onHour&&!plainPlate()){
+      const label=ROMAN_HOURS[(i/6)%12];
+      g.font=plateFace(numFont,'sc');g.textAlign='center';g.fillStyle=colors.text;g.textBaseline='middle';
+      g.fillText(label,x,(outerR+innerR)/2);g.fillText(label,x,H-(outerR+innerR)/2);
     }
   }
+  g.textBaseline='alphabetic';
+  // The sides read declination in degrees, cut the same short-of-the-rule way; the live pass in
+  // drawPlateFrame below carries the signed values, the equator's own heavier mark and the unit head,
+  // since only that pass knows how far the ascent has scrolled the ladder.
   const vLen=Math.max(1,H-band*2),{n:vn,step:vStep}=frameEdgeTicks(vLen);
   for(let i=0;i<=vn;i++){
-    const y=band+i*vStep,major=i%5===0,len=tickLen*(major?.9:.45);
-    g.lineWidth=major?.9:.5;g.strokeStyle=major?colors.tick:colors.tickMinor;
-    g.beginPath();g.moveTo(outerR,y);g.lineTo(outerR+len,y);g.stroke();
-    g.beginPath();g.moveTo(W-outerR,y);g.lineTo(W-outerR-len,y);g.stroke();
+    const y=band+i*vStep,major=i%5===0,len=tickLen*(major?.5:.3);
+    const {rgb,alpha}=rgbaSplit(major?colors.tick:colors.tickMinor);
+    burinSegment(g,outerR,y,outerR+len,y,rgb,alpha,major?.9:.5,90501+i*3,{segments:3,skips:0,hair:false,wobble:.22});
+    burinSegment(g,W-outerR,y,W-outerR-len,y,rgb,alpha,major?.9:.5,90601+i*3,{segments:3,skips:0,hair:false,wobble:.22});
+  }
+  // A single ° at the head of each flank, once, naming the unit the whole side scale counts in — set
+  // clear of the top corners' own ornament (the needle and the simplified wind-head on a narrow sheet,
+  // the full wind-head on a wide one) rather than crowding into the same few pixels they already claim.
+  if(!plainPlate()){
+    const unitY=band+(wide?22:34);
+    g.font=plateFace(Math.max(6,6.5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';
+    g.fillText('°',outerR+tickLen*.5+2,unitY);
+    g.textAlign='right';g.fillText('°',W-outerR-tickLen*.5-2,unitY);
   }
   // Restrained corner brackets at the inner rule.
   frameCorner(g,innerR,innerR,1,1,colors.orn);frameCorner(g,W-innerR,innerR,-1,1,colors.orn);
@@ -429,12 +464,26 @@ function drawPlateFrame(){
   // ascending with the player; everything else in the frame stays perfectly still.
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
   if(framePen<.8||plainPlate())return;
+  // Declination, not a wrapping pixel count: the scroll reflects off each pole at ±90° rather than
+  // silently restarting at 90, so the reading is signed and matches a real limb; the equator, wherever
+  // it currently falls, is always the heaviest mark on the ladder rather than a tick like any other.
   const {n,step}=frameEdgeTicks(Math.max(1,H-band*2)),scroll=Math.round(-world.cameraY*.015);
-  ctx.font=plateFace(frameWide()?Math.max(7,8*scale):Math.max(6,6.5*scale));ctx.fillStyle=colors.text;
+  const declAt=i=>{const m=(((i+scroll)%360)+360)%360;return m<=90?m:m<=270?180-m:m-360;};
+  const declText=v=>v===0?'0':(v>0?'+':'−')+Math.abs(v);
+  ctx.font=plateFace(frameWide()?Math.max(7,8*scale):Math.max(6,6.5*scale));ctx.fillStyle=colors.text;ctx.textBaseline='middle';
+  const labelIn=outerR+tickLen*.5+1,labelOut=W-outerR-tickLen*.5-1;
   for(let i=0;i<=n;i+=10){
-    const y=band+i*step,value=(((i+scroll)%90)+90)%90;
-    ctx.textAlign='left';ctx.fillText(String(value),outerR+tickLen*.72-2,y+2.5);
-    ctx.textAlign='right';ctx.fillText(String(value),W-outerR-tickLen*.72+2,y+2.5);
+    const y=band+i*step,text=declText(declAt(i));
+    ctx.textAlign='left';ctx.fillText(text,labelIn,y);
+    ctx.textAlign='right';ctx.fillText(text,labelOut,y);
+  }
+  ctx.textBaseline='alphabetic';
+  const eqBase=((-scroll)%180+180)%180;
+  ctx.strokeStyle=colors.tick;ctx.lineWidth=1.3;
+  for(let e=eqBase;e<=n;e+=180){
+    const y=band+e*step;
+    ctx.beginPath();ctx.moveTo(outerR,y);ctx.lineTo(innerR,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W-outerR,y);ctx.lineTo(W-innerR,y);ctx.stroke();
   }
 }
 // The atlas earns its geometry one capture at a time. What begins as a compass prick grows through
@@ -480,11 +529,10 @@ function sphereGraduation(g,m,p,ax,ay,numbered=true){
   if(p<=0)return;
   const {cx,cy,colors}=m;
   g.save();g.translate(cx,cy);g.strokeStyle=colors.tick;g.fillStyle=colors.text;g.textAlign='center';g.font=plateFace(frameWide()?8:6.5,'text','italic');
-  const romans=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
   for(let i=0;i<120*p;i++){
     const a=i/120*TAU,major=i%10===0,len=major?8:i%5===0?5:2.5,x=Math.cos(a)*ax,y=Math.sin(a)*ay,nx=Math.cos(a),ny=Math.sin(a);
     g.globalAlpha=major?.52:.3;g.lineWidth=major?.8:.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+nx*len,y+ny*len*.62);g.stroke();
-    if(major&&numbered){g.globalAlpha=.48;g.fillText(romans[i/10],x+nx*18,y+ny*12+3);}
+    if(major&&numbered){g.globalAlpha=.48;g.fillText(ROMAN_HOURS[i/10],x+nx*18,y+ny*12+3);}
   }
   g.restore();
 }
