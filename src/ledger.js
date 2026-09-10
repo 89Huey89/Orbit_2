@@ -127,6 +127,8 @@ const UNLOCKS=[
     describe:()=>'Leave 50 slingshot stars at full speed'},
   {id:'goldleaf',kind:'trail',name:'Gold leaf',latin:'Aurum foliatum',stat:'maxSpeedSlings',threshold:200,
     describe:()=>'Leave 200 slingshot stars at full speed'},
+  {id:'quicksilver',kind:'trail',name:'Quicksilver',latin:'Argentum vivum',stat:'maxSpeedSlings',threshold:500,
+    describe:()=>'Leave 500 slingshot stars at full speed'},
   // Five inks earned by recklessness rather than skill: a lifetime count of rough impressions,
   // each one a common-to-precious pigment the way the slingshot ladder runs chalk to
   // gold leaf. Bistre and Orpiment, below, stay the two hardest trail inks in the catalogue: they
@@ -145,6 +147,11 @@ const UNLOCKS=[
     describe:()=>'Fill 3 inkwells on a reckless streak'},
   {id:'orpiment',kind:'trail',name:'Orpiment',latin:'Auripigmentum',stat:'inkwellsFound',threshold:10,
     describe:()=>'Fill 10 inkwells on a reckless streak'},
+  // Calcined baryte out of Bologna rather than any court workshop, and the one ink in the catalogue
+  // earned by proximity rather than by patience or by nerve: catch enough of a vortex's own light
+  // grazing past it and some of it rides home in the pen.
+  {id:'phosphor',kind:'trail',name:'Bologna stone',latin:'Lapis Bononiensis',stat:'grazes',threshold:50,
+    describe:()=>'Graze 50 vortices'},
   {id:'rose',kind:'capture',name:'Compass rose',latin:'Rosa ventorum',stat:'captures',threshold:250,
     describe:()=>'Capture 250 orbits in all'},
   {id:'seal',kind:'capture',name:'Wax seal',latin:'Sigillum',stat:'captures',threshold:1000,
