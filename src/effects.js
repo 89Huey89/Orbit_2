@@ -36,7 +36,10 @@ definePlate('dark',{
     pigment:'166,58,40',pigmentRelief:'176,118,38',shorelineRelief:'176,118,38',
     // Spilled indigo-black ink, #14121f family, pooling and feathering into the paper fibres.
     washTop:'20,18,31',washMid:'24,20,34',washSolid:'#14121f',bodyTop:'20,18,31',bodyMid:'20,18,31',
-    voidLayers:['rgba(28,24,38,.34)','rgba(24,20,34,.58)','rgba(20,18,31,.78)','rgba(16,14,26,.9)','rgba(14,12,22,.97)'],
+    // Capped at .82 rather than running to near-opaque: the paper sheet — its grain, the laid tile
+    // multiplied over it — has to still be legible even at the deepest reach of the flood, or the ink
+    // stops reading as ink on a sheet and becomes a flat printed field, the one thing no burin cuts.
+    voidLayers:['rgba(28,24,38,.3)','rgba(24,20,34,.48)','rgba(20,18,31,.62)','rgba(16,14,26,.73)','rgba(14,12,22,.82)'],
     landFillWash:'rgba(20,18,31,.09)',landFillPool:'rgba(14,12,22,.34)',fleckDark:'14,12,22',
     burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',burstViolet:'92,58,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
@@ -982,20 +985,36 @@ function darknessPlate(relief){
   if(darknessPlates.has(key))return darknessPlates.get(key);
   const c=makeCanvas(640,180),g=c.getContext('2d'),rng=seeded(620173),w=c.width,h=c.height;
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
-  // Seamless pools of dilute ink, growing opaque below the leading edge.
+  // Seamless pools of dilute ink, growing opaque below the leading edge — clipped to the same wavy
+  // front the void layers below draw, not a flat rect: a dead-straight gradient under a wavy coastline
+  // read as a ruled horizon peeking out from under it, which is the one thing an engraved sheet with no
+  // flat fill anywhere on it cannot afford at the edge that matters most.
+  g.save();g.beginPath();g.moveTo(0,h);
+  for(let x=0;x<=w;x+=4){const a=x/w*TAU;g.lineTo(x,28+Math.sin(a*3)*6+Math.sin(a*11)*2.5);}
+  g.lineTo(w,h);g.closePath();g.clip();
   const wash=g.createLinearGradient(0,24,0,140);
   wash.addColorStop(0,`rgba(${ink.dark.washTop},0)`);wash.addColorStop(.22,`rgba(${ink.dark.washMid},${onPaper()?.94:.78})`);wash.addColorStop(1,ink.dark.washSolid);
-  g.fillStyle=wash;g.fillRect(0,24,w,h-24);
+  g.fillStyle=wash;g.fillRect(0,0,w,h);
+  g.restore();
   if(onPaper()){
-    // Spilled ink on paper: the flood bleeds upward along the fibres in dark feathered threads, with a few
-    // near-opaque pools where the pigment settled, so the edge reads as a stain rather than a horizon.
+    // Spilled ink on paper: the flood bleeds upward along the fibres in short, blunt feathered threads
+    // — a spreading stain's own failure, not a shoreline's — with the odd near-opaque pool pushing
+    // ahead of the front where the pigment has already settled, breaking the line rather than fringing it.
     const bleed=seeded(311977);
-    for(let i=0;i<260;i++){
-      const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5,reach=2+bleed()*bleed()*16,bend=(bleed()-.5)*6;
+    for(let i=0;i<110;i++){
+      const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5,reach=1+bleed()*bleed()*7,bend=(bleed()-.5)*10,start=edge+3+bleed()*5;
       for(const wrap of [-w,0,w]){
-        g.strokeStyle=`rgba(${ink.dark.fleckDark},${.08+bleed()*.22})`;g.lineWidth=.35+bleed()*.7;
-        g.beginPath();g.moveTo(x+wrap,edge+6);g.bezierCurveTo(x+wrap+bend,edge+2,x+wrap-bend,edge-reach*.5,x+wrap+bend*.4,edge-reach);g.stroke();
+        g.strokeStyle=`rgba(${ink.dark.fleckDark},${.1+bleed()*.24})`;g.lineWidth=.65+bleed()*.65;
+        g.beginPath();g.moveTo(x+wrap,start);g.bezierCurveTo(x+wrap+bend*.6,start-4,x+wrap-bend,edge-reach*.5,x+wrap+bend*.5,edge-reach);g.stroke();
       }
+    }
+    // The pools a spreading stain actually leaves: irregular blots breaking ahead of the front, not the
+    // even comb a shoreline's tree line would be. Enough of them, and large enough, to read as the front
+    // itself rather than as flecks caught in it.
+    for(let i=0;i<16;i++){
+      const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5;
+      const y=edge-1-bleed()*bleed()*13,rx=3+bleed()*bleed()*11,ry=2+bleed()*5,seed=Math.floor(bleed()*1e7);
+      for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},${.38+bleed()*.32})`;g.fill();}
     }
     for(let i=0;i<14;i++){
       const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);

@@ -6,7 +6,7 @@ Eight defects the audit also raised were fixed directly in the working tree the 
 
 Severity is the atlas's own magnitude class (Magnitude I = brightest/most important, down to V). Effort is the audit's own estimate. Each item's proposal is the audit's suggested fix.
 
-**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 5 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, and the double-set impressum/button-row collision.**
+**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 6 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, the double-set impressum/button-row collision, and the rising dark's treeline/flat-fill edge.**
 
 ## Contents
 
@@ -42,7 +42,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   The auditor's placement will not fit and should not be attempted: at narrow width frameBand() is 14 (frame.js:15), so outerR≈7.8 and innerR≈12.9 leave about 5px between the rules — nothing near the 14px a punch-and-numeral strip needs. Put the key where the phone actually has room instead: (a) a horizontal six-punch strip with Roman I-VI, at ~0.55 scale, set inside the play field just under the running head's own leaf at the foot of the sheet, reusing renaissanceStarGlyph() and renaissanceLegendMask() unchanged; or (b) if the play channel must stay clear, set it on the pause leaf, which has whole empty columns in 14-pause-night-phone.png and is exactly where a reader stops to consult a legend. Then add a bare north needle (a single arrow plus SEPT.) to the upper-left corner-ornament slot at narrow width, and set the engraver's line as a hairline italic along the bottom inner rule.
 
-- [ ] **The rising dark is the only flat opaque field on the sheet and at phone size it reads as hills with a treeline** `Magnitude I · era-error · medium effort`
+- [x] **The rising dark is the only flat opaque field on the sheet and at phone size it reads as hills with a treeline** `Magnitude I · era-error · medium effort` — *Done: the paper `voidLayers` ramp is capped at .82 rather than .97, the wash gradient is now clipped to the same wavy front the void layers draw instead of a flat rect, and the bleed-thread fringe is sparser (260→110), shorter (reach capped ~8 vs 18) and blunter (0.65-1.3px vs .35-1.05), with a new pass of 16 irregular near-opaque pools breaking forward of the edge. Verified at 430×932 on paper (edge and deep zones) and night (unaffected by the paper-only thread/pool changes, unregressed by the shared wash-clip change).*
 
   Two changes in darknessPlate(). Cap the paper voidLayers at about .82 (effects.js:39) and let the laid-paper tile and the 2,400-fleck stipple pass (effects.js:1027-1031) continue to read through the flood, so the sheet is visibly still under the ink. Then rebuild the leading edge from the era's own failure rather than a shoreline: shorter, blunter feathering at 0.6-1.2px with occasional near-opaque pools breaking forward of the edge, which is what a spreading stain does and what a treeline does not. Losing the hard horizontal wash band at effects.js:981-983 matters as much as the alpha.
 
