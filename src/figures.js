@@ -1003,11 +1003,11 @@ function drawNode(n,aim){
   if(sling&&pen.ring>0){
     // A graduated limb, not a dial that lights: eighteen radial ticks off a faint guide ring, each
     // growing in length and weight as the charge reaches it, the way a real instrument's rim is read.
-    const charge=active?world.charge():0,band=r*.73,wMax=1.4*scale;
-    ctx.strokeStyle=`rgba(${ink.marks.slingRing},.2)`;ctx.lineWidth=Math.min(.5*scale,wMax);ctx.beginPath();ctx.arc(0,0,band,0,TAU);ctx.stroke();
+    const charge=active?world.charge():0,band=r*.73,wMax=cut('bold');
+    ctx.strokeStyle=`rgba(${ink.marks.slingRing},.2)`;ctx.lineWidth=cut('fine');ctx.beginPath();ctx.arc(0,0,band,0,TAU);ctx.stroke();
     for(let i=0;i<18;i++){
       const a=-Math.PI/2+i*TAU/18,cx=Math.cos(a),sn=Math.sin(a),fill=clamp(charge*18-i,0,1);
-      ctx.strokeStyle=`rgba(${ink.marks.slingRing},.4)`;ctx.lineWidth=Math.min(.5*scale,wMax);
+      ctx.strokeStyle=`rgba(${ink.marks.slingRing},.4)`;ctx.lineWidth=cut('fine');
       ctx.beginPath();ctx.moveTo(cx*band,sn*band);ctx.lineTo(cx*(band+2.2*scale),sn*(band+2.2*scale));ctx.stroke();
       if(fill>0){
         const len=lerp(2.2,6.4,fill)*scale;
@@ -1016,7 +1016,7 @@ function drawNode(n,aim){
       }
     }
     for(const a of [0,Math.PI]){
-      ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=Math.min(.8,wMax);ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
+      ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=cut('line');ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
     }
     if(!used&&!captionsHeld()){
       ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
@@ -1033,13 +1033,13 @@ function drawNode(n,aim){
   if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
   const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
   {
-    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,.7,n.seed,!active&&!n.visited);
+    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,cut('line'),n.seed,!active&&!n.visited);
     const fit=ring.size*(ring.radius>0?r/ring.radius:1);
     ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
   }
-  ctx.lineWidth=.45;ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
+  ctx.lineWidth=cut('fine');ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
   ctx.strokeStyle=`rgba(${rgb},${target?.36:.11})`;ctx.setLineDash([1*scale,5*scale]);ctx.beginPath();ctx.arc(0,0,n.cap*scale,0,TAU);ctx.stroke();ctx.setLineDash([]);
-  ctx.lineWidth=.5;ctx.strokeStyle=paper?`rgba(${ink.base.ink},.4)`:`rgba(${rgb},.16)`;ctx.beginPath();
+  ctx.lineWidth=cut('fine');ctx.strokeStyle=paper?`rgba(${ink.base.ink},.4)`:`rgba(${rgb},.16)`;ctx.beginPath();
   for(let i=0;i<48;i++){
     if(i%4===0)continue;
     const a=i/48*TAU;ctx.moveTo(Math.cos(a)*(r+3*scale),Math.sin(a)*(r+3*scale));ctx.lineTo(Math.cos(a)*(r+4.2*scale),Math.sin(a)*(r+4.2*scale));
@@ -1065,7 +1065,7 @@ function drawNode(n,aim){
   if(active){
     for(const next of releaseTargets(n)){
       const d=Math.hypot(next.x-n.x,next.y-n.y),a=Math.atan2(next.y-n.y,next.x-n.x)-p.dir*Math.acos(clamp(p.rad/d,-1,1)),window=Math.asin(clamp(next.cap/d,0,.8));
-      ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
+      ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
       for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
         if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
         registerMark(Math.cos(path.angle)*r,Math.sin(path.angle)*r,ink.marks.releaseMark,.85,false);
@@ -1075,22 +1075,22 @@ function drawNode(n,aim){
       registerMark(Math.cos(p.angle)*r,Math.sin(p.angle)*r,ink.marks.perfectPreview,.98,true);
     }
     // A fading orbit visibly unravels in less than two revolutions.
-    if(fading){const left=clamp(1-p.orbitTime/4.5,0,1);ctx.strokeStyle=left<.3?ink.marks.fadingCritical:ink.marks.fadingWarn;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r+9*scale,-Math.PI/2,-Math.PI/2+TAU*left);ctx.stroke();}
+    if(fading){const left=clamp(1-p.orbitTime/4.5,0,1);ctx.strokeStyle=left<.3?ink.marks.fadingCritical:ink.marks.fadingWarn;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,r+9*scale,-Math.PI/2,-Math.PI/2+TAU*left);ctx.stroke();}
   }
   if(target){
     // Fixed on the entry bearing rather than spinning: the arc's alpha carries the arrival quality
     // the player is actually flying toward, the same continuous read arrivalQuality gives the score.
     const quality=clamp((aim.angle-GRAZE_MINIMUM)/(90-GRAZE_MINIMUM),0,1);
-    ctx.strokeStyle=`rgba(${rgb},${lerp(.3,.76,quality)})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,n.cap*scale+4,aim.entryAngle-.42,aim.entryAngle+.42);ctx.stroke();
+    ctx.strokeStyle=`rgba(${rgb},${lerp(.3,.76,quality)})`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,n.cap*scale+4,aim.entryAngle-.42,aim.entryAngle+.42);ctx.stroke();
     if(aim.perfect){
-      ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
+      ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
     }
   }
   if(!used&&!captionsHeld()&&!renaissanceStar){
     ctx.font=plateFace(Math.max(9,10*scale));ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
     const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:dawn?POWERUP_LABELS.dawn:inkwell?'INK':String(Math.floor(n.row)+1).padStart(2,'0');
     writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
-    if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=.65;ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
+    if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=cut('line');ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either
     // edge, and names the pressure it sets instead of just marking the node as reachable. A
     // sling star keeps its own name in that same spot instead (see above): the first main-line
@@ -1517,11 +1517,11 @@ function drawAim(aim){
       const index=points.findIndex(q=>q.time>=seconds);if(index<1)break;
       const a=points[index-1],b=points[index],t=(seconds-a.time)/(b.time-a.time),length=Math.hypot(b.x-a.x,b.y-a.y)||1;
       const x=sx(lerp(a.x,b.x,t)),y=sy(lerp(a.y,b.y,t)),nx=-(b.y-a.y)/length,ny=(b.x-a.x)/length;
-      line(x+nx*2.5*scale,y+ny*2.5*scale,x-nx*2.5*scale,y-ny*2.5*scale,`rgba(${ink.marks.slingAimTick},.45)`,.7);
+      line(x+nx*2.5*scale,y+ny*2.5*scale,x-nx*2.5*scale,y-ny*2.5*scale,`rgba(${ink.marks.slingAimTick},.45)`,cut('line'));
     }
   }
   if(aim?.perfect&&!preview.fogged){
-    ctx.strokeStyle=`rgba(${ink.marks.aimPerfectArc},.65)`;ctx.lineWidth=1.2*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();
+    ctx.strokeStyle=`rgba(${ink.marks.aimPerfectArc},.65)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();
   }
   // A transfer the nib cannot pay for is still aimed and still drawn: the course is barred with a
   // copper stroke where the ink gives out, so the decision to fly it is made in full knowledge.
@@ -1530,20 +1530,20 @@ function drawAim(aim){
     while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
     const l=legs[leg],along=clamp(d-walked,0,l.len);
     const x=l.x+l.ux*along,y=l.y+l.uy*along,bar=4.6*scale;
-    line(x-l.uy*bar,y+l.ux*bar,x+l.uy*bar,y-l.ux*bar,`rgba(${ink.marks.aimMarkBlocked},.8)`,1.1);
-    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.55)`;ctx.lineWidth=.75;
+    line(x-l.uy*bar,y+l.ux*bar,x+l.uy*bar,y-l.ux*bar,`rgba(${ink.marks.aimMarkBlocked},.8)`,cut('bold'));
+    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.55)`;ctx.lineWidth=cut('line');
     ctx.beginPath();ctx.arc(x,y,2.4*scale,0,TAU);ctx.stroke();
   }
-  if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
+  if(preview.fogged){ctx.setLineDash([]);ctx.strokeStyle=`rgba(${ink.field.fogEdge},.5)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(bx,by,3.2,0,TAU);ctx.stroke();}
   // A course below the bonus threshold is marked with an open chevron: it still earns the base
   // impression, but the player can read before release that no angle bonus will be added.
   else if(aim?.steep){
     const l=legs[legs.length-1]||{ux:1,uy:0},w2=4.2*scale;
-    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.8)`;ctx.lineWidth=1;ctx.beginPath();
+    ctx.strokeStyle=`rgba(${ink.marks.aimMarkBlocked},.8)`;ctx.lineWidth=cut('bold');ctx.beginPath();
     ctx.moveTo(bx-l.uy*w2-l.ux*w2,by+l.ux*w2-l.uy*w2);ctx.lineTo(bx,by);
     ctx.lineTo(bx+l.uy*w2-l.ux*w2,by-l.ux*w2-l.uy*w2);ctx.stroke();
   }
-  else if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=.8;ctx.strokeRect(-2.5,-2.5,5,5);}
-  else if(blocked){line(bx-3,by-3,bx+3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);line(bx+3,by-3,bx-3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,.9);}
+  else if(aim){ctx.translate(bx,by);ctx.rotate(Math.PI/4);ctx.strokeStyle=aim.perfect?`rgba(${ink.marks.aimMarkPerfect},.9)`:`rgba(${ink.marks.aimMarkNormal},.49)`;ctx.lineWidth=cut('line');ctx.strokeRect(-2.5,-2.5,5,5);}
+  else if(blocked){line(bx-3,by-3,bx+3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,cut('bold'));line(bx+3,by-3,bx-3,by+3,`rgba(${ink.marks.aimMarkBlocked},.7)`,cut('bold'));}
   ctx.restore();
 }

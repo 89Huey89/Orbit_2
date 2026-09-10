@@ -140,6 +140,18 @@ function burinSegment(g,x1,y1,x2,y2,rgb,alpha,weight,seed,opts={}){
   }
   g.restore();
 }
+// A named weight ladder for every mark drawn live onto the chart, so a stroke's weight says what kind
+// of mark it is rather than being whatever number a caller happened to reach for. Five rungs, cut()
+// answering each in the current scale: hair for a construction's finest reference line, fine for an
+// ordinary guide or release mark, line for the ring a body is actually drawn with, bold for the
+// heaviest a chart mark may go, and rule reserved for the plate frame alone — nothing on the chart may
+// reach it, which is the rule the frame's own weight (buildFrameLayer, frame.js) depends on to still
+// read as the heaviest thing on the sheet. Sprite interiors (glossSprite, flareSprite, leviathanSprite,
+// the planet glyph cache, engravedRing's own bake) are untouched: each draws into a canvas cut once at
+// its own resolution and blitted scaled afterward, so multiplying their weights by scale a second time
+// would be wrong.
+const BURIN={hair:.34,fine:.5,line:.72,bold:1.05,rule:1.5};
+function cut(step){return BURIN[step]*scale;}
 // Four burin sides make an engraved rectangle; used for the plate frame's rules.
 function burinRect(g,x,y,w,h,rgb,alpha,weight,seed){
   const long=Math.max(w,h),segs=clamp(Math.round(long/26),8,48);
