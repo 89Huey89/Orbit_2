@@ -715,7 +715,11 @@ function drawChapterReveal(dt){
   // done — and always under reduced motion — the ordinary lettering below is the finished state. The
   // reserved leaf above is what keeps this readable over the chart; a second glow on top of it was ink
   // spent twice for the one job.
-  const plate='P L A T E   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
+  // Matches the running head's own abbreviation (frame.js) rather than a second, English name for the
+  // same plate: TAB. IV on the reveal and TAB. IV six inches below it, not PLATE IV and TAB. IV. The
+  // manual letterspacing is left exactly as it was — a wider tracking is the typography section's own
+  // finding, not this one's — so only the word itself changes.
+  const plate='T A B .   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
   const size=compact?24:Math.min(36,Math.max(24,W*.062));
   ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');
   if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center'))ctx.fillText(plate,x,y-22+rise);
