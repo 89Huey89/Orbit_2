@@ -1087,9 +1087,15 @@ function drawNode(n,aim){
     }
   }
   if(!used&&!captionsHeld()&&!renaissanceStar){
-    ctx.font=plateFace(Math.max(9,10*scale));ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
-    const mark=gold?'+15':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:dawn?POWERUP_LABELS.dawn:inkwell?'INK':String(Math.floor(n.row)+1);
-    writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size:Math.max(9,10*scale)});
+    // The slot is split by kind, not left to one face for all four: a named thing (a power-up, or the
+    // gold node's own Aurum) is set the way every other proper name on the plate is, in small caps; a
+    // plain row number stays in the sheet's ordinary text face; and the one deliberate English word on
+    // the chart, INK, is set in the same italic gloss every other aside on the sheet uses.
+    const size=Math.max(9,10*scale),named=gold||shield||reflector||dawn;
+    ctx.font=inkwell?plateFace(size,'text','italic'):named?plateFace(size,'sc'):plateFace(size);
+    ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
+    const mark=gold?'AURUM':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:dawn?POWERUP_LABELS.dawn:inkwell?'INK':String(Math.floor(n.row)+1);
+    writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size});
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=cut('line');ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either
     // edge, and names the pressure it sets instead of just marking the node as reachable. A
