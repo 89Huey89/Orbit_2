@@ -386,7 +386,7 @@ function catalogueRecord(){
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
   html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3>'+
-    ledgerTable(CONSTELLATIONS.map(c=>[plainText(c.name),countMark(ledger.constellations[c.name])]))+'</section>';
+    ledgerTable(CONSTELLATIONS.map(c=>[`<span class="cat-name">${plainText(c.name)}</span><span class="cat-latin">${plainText(c.latin)}</span>`,countMark(ledger.constellations[c.name])]))+'</section>';
   return html;
 }
 // ---------- The catalogue's engraved previews ----------
