@@ -9,7 +9,7 @@
 // here reaches the simulation: choosing a day only names the plate the next run is dealt from.
 const MONTHS_LATIN=['Ianuarius','Februarius','Martius','Aprilis','Maius','Iunius','Iulius','Augustus','September','October','November','December'];
 // The planetary week, as an almanac heads its columns: dies Solis through dies Saturni.
-const WEEKDAYS_LATIN=['Solis','Lunae','Martis','Mercurii','Iovis','Veneris','Saturni'];
+const WEEKDAYS_LATIN=['Solis','Lunæ','Martis','Mercurii','Iovis','Veneris','Saturni'];
 const ROMAN_SIGNS=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
 function roman(value){
   let left=Math.max(0,Math.floor(Number(value)||0)),out='';
