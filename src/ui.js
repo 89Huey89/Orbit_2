@@ -55,6 +55,11 @@ function event(type,e){
     audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');if(e.steep)tally('badAngles');
+    // The bodies README:56 hand-colours as worlds — every 'still'/'drift'/'fading'/'sling' capture,
+    // never a pickup — are all cut from planetFamilies (see src/backdrop.js), and every one of those
+    // seven families is a surface only a lens could have resolved: this is what lets the impressum
+    // admit its own anachronism (see impressumHasTelescopicBody() in src/frame.js).
+    if(planetFamilies.includes(planetFamilyFor(e.n.type,e.n.row,world.seed,e.n.difficultyChoice)))tally('telescopicCaptures');
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
     if(e.steep){

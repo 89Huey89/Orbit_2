@@ -238,7 +238,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(w.impressumY,markY,'Camera motion never re-anchors the impressum');
     w.cameraY=cameraBefore;
     const rows=context.test.impressumRows();
-    assert.equal(rows.length,9,'The impressum reserves every line before achievements are earned');
+    assert.equal(rows.length,10,'The impressum reserves every line before achievements are earned');
     assert.equal(rows[0].text,'AUGUSTA VINDELICORUM');
     assert.equal(rows[1].text,'EX OFFICINA ORBIS TABULÆ','The house sets its own name with the digraph the rest of the cartouche uses');
     assert.equal(rows[2].text,'TAB. V · I  /  A1');
@@ -512,7 +512,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // A daily run begun today writes that day into the log, which is what opens it ever after.
     context.test.setDaily(true);
     assert.equal(context.test.dailyReplay,false);
-    assert.equal(context.test.impressumRows()[8].text,'TABULA DIEI · '+today,'The impressum records the exact current daily date');
+    assert.equal(context.test.impressumRows()[9].text,'TABULA DIEI · '+today,'The impressum records the exact current daily date');
     context.test.setPlaying();
     assert(context.test.dailyLog[today].plays>=1,'A daily run begun today enters that day in the log');
     assert.equal(context.test.dailyOpen(today),true);

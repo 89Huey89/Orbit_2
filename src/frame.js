@@ -182,6 +182,19 @@ function frameRosette(g,cx,cy,rgb,alpha,size,seed){
   }
   g.closePath();g.stroke();
 }
+// The full compass rose only fits a wide sheet's flank (frameCompassRose, drawn below). A narrow one
+// still gets a north reference: a bare needle in the corner the wind-heads would otherwise take, with
+// nothing but its own point and SEPTENTRIO's abbreviation to name what it points at.
+function frameNorthNeedle(g,cx,cy,rgb,alpha,size){
+  g.save();g.translate(cx,cy);
+  g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineWidth=.8;
+  g.beginPath();g.moveTo(0,size*.15);g.lineTo(0,-size*.92);g.stroke();
+  g.fillStyle=`rgba(${rgb},${alpha})`;
+  g.beginPath();g.moveTo(0,-size*1.15);g.lineTo(-size*.28,-size*.5);g.lineTo(0,-size*.72);g.lineTo(size*.28,-size*.5);g.closePath();g.fill();
+  g.font=plateFace(size*.46,'sc');g.textAlign='center';g.fillStyle=`rgba(${rgb},${alpha*.85})`;
+  g.fillText('SEPT.',0,size*.5);
+  g.restore();
+}
 // The DOM HUD prints ORBIT, the score and BEST across the top of the plate, and the two upper corners of
 // the margin have to keep out of its way. They are cut at 45% of the head and half the breath there, and
 // tucked further into the corner, so the whole ornament finishes above and outside the HUD's text boxes;
@@ -194,6 +207,13 @@ function frameOrnaments(g,wide,innerR){
   const corners=[[topInset,topInset,1,1],[W-topInset,topInset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
   for(const [x,y,dx,dy] of corners){
     const seed=51001+Math.round(x*7+y*13),top=dy>0,size=top?topHead:head;
+    // A narrow sheet has no flank for the compass rose (see buildFrameLayer's `if(wide)` block below),
+    // so the upper-left corner — otherwise the same wind-head or cosmetic ornament as the other three —
+    // takes a bare needle instead, the one piece of the rose a phone actually has room for. Given its
+    // own inset rather than the shrunken topInset: a thin needle and shaft read at a size the wind-head's
+    // face cannot, without reaching the HUD's brand text, so it earns back some of the room TOP_HEAD
+    // gives up.
+    if(!wide&&dx>0&&dy>0){frameNorthNeedle(g,innerR+11,innerR+11,rgb,alpha,10);continue;}
     if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,size,seed);
     else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,size*.9,seed);
     else if(style==='seamonsters'){
@@ -280,6 +300,11 @@ function buildFrameLayer(){
       renaissanceStarGlyph(g,keyX+7,row-4.5,magnitude,ink.atmosphere.starGlyph,alpha,.72,0x1603+magnitude);
       g.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;g.fillText(MAGNITUDES[5-m],keyX+24,row);
     }
+  }else if(!plainPlate()){
+    // No flank to carry it in, but the credit still belongs on the plate: set along the inside of the
+    // bottom inner rule, where the sheet has a clear run the whole width of the play field.
+    g.font=plateFace(5.6,'text','italic');g.fillStyle=colors.text;g.textAlign='center';
+    g.fillText(engraverCredit(),W*.5,H-innerR-4);
   }
   return c;
 }
@@ -599,6 +624,31 @@ function drawHudLeaf(){
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
   ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
+// The MAGNITUDINES key: on a wide sheet it stands permanently in the right flank (buildFrameLayer's
+// `if(wide)` block above), but a narrow one has no flank to carry it in, and the play field is kept
+// clear rather than crowded with a sixth line of furniture. It is drawn here instead, live, only while
+// the run is paused — the one moment a phone actually has the screen free, and a reader has stopped to
+// consult a legend rather than fly past it. Laid horizontally rather than as the wide key's column, in
+// the open sheet below the pause leaf's own card.
+function drawPauseMagnitudeKey(){
+  if(frameWide()||plainPlate()||!world)return;
+  const colors=ink.frame,cx=W*.5,top=Math.min(H*.68,H-186);
+  ctx.save();
+  ctx.font=plateFace(7.5,'sc');ctx.fillStyle=colors.text;ctx.textAlign='center';
+  ctx.fillText('MAGNITUDINES',cx,top);
+  ctx.lineWidth=.6;ctx.strokeStyle=colors.tickMinor;
+  ctx.beginPath();ctx.moveTo(cx-40,top+5.5);ctx.lineTo(cx+40,top+5.5);ctx.stroke();
+  const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
+  const cols=6,spacing=Math.min(52,(W-60)/cols),startX=cx-spacing*(cols-1)/2,glyphY=top+27;
+  ctx.font=plateFace(7,'text','italic');
+  for(let i=0;i<cols;i++){
+    const magnitude=i+1,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.78:.16,x=startX+i*spacing;
+    renaissanceStarGlyph(ctx,x,glyphY,magnitude,ink.atmosphere.starGlyph,alpha,.5,0x1603+magnitude);
+    ctx.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;
+    ctx.fillText(MAGNITUDES[magnitude-1],x,glyphY+18);
+  }
+  ctx.restore();
+}
 // The running head: the plate's own number and name, engraved at the foot of the sheet where a printer
 // sets one, in the frame's ink rather than in the DOM. It names the chapter the ascent has reached, and
 // the page turn writes the same name large across the chart as the sheet changes.
@@ -634,7 +684,7 @@ function drawRunningHead(){
 // world once, in the lower part of the opening sheet. From then on it is always transformed through
 // sx()/sy(), so a rising camera carries the already engraved cartouche downward with the rest of the
 // sheet. It is never re-created at the viewport edge and never follows the traveller.
-const IMPRESSUM_ROWS=9,IMPRESSUM_REVEAL=.52;
+const IMPRESSUM_ROWS=10,IMPRESSUM_REVEAL=.52;
 function impressumMetrics(){
   const inner=frameBand()*.92+8,size=frameWide()?7.4:6.4,lineH=size*1.48,padY=9;
   const width=Math.min(frameWide()?392:320,Math.max(100,W-inner*2-10));
@@ -678,6 +728,16 @@ function impressumHasRoughImpression(){
   const current=typeof runTally!=='undefined'&&runTally&&runTally.badAngles>0;
   return lifetime||current;
 }
+// Every world the plate hand-colours — every family in planetFamilies, src/backdrop.js — is a
+// surface a 1603 eye had no glass to resolve: a crater field, a ring, a belted giant. Rather than
+// move the plate's own dated year, the cartouche admits a second pull: this answers true the first
+// time a run captures one of those bodies, lifetime or this run, exactly as the other impressum
+// conditions do.
+function impressumHasTelescopicBody(){
+  const lifetime=!!(ledger&&ledger.telescopicCaptures>0);
+  const current=typeof runTally!=='undefined'&&runTally&&runTally.telescopicCaptures>0;
+  return lifetime||current;
+}
 function impressumHasCompleteAtlas(){
   const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
   return lifetime>=12||!!(world&&lifetime+world.constellationsCompleted>=12);
@@ -690,6 +750,7 @@ function impressumRows(){
     {key:'printer',text:'EX OFFICINA ORBIS TABULÆ'},
     {key:'plate',text:'TAB. V · I  /  A1'},
     {key:'year',text:impressumHasCapture()?'ANNO MDCIII':''},
+    {key:'state',text:impressumHasTelescopicBody()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
     {key:'engraver',text:perfect?engraver:'',device:perfect},
     {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},
@@ -759,6 +820,7 @@ function render(dt){
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();drawRunningHead();drawHudLeaf();
+  if(world.state==='paused')drawPauseMagnitudeKey();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
   drawLaidPaper();
