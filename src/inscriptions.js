@@ -121,6 +121,9 @@ function placeInscription(g){
     // sheet, so the lettering keeps off them as well.
     for(let k=Math.max(0,world.surveys.length-3);k<world.surveys.length;k++)cost+=inscriptionOverDisc(box,sx(world.surveys[k].x),sy(world.surveys[k].y),30*scale);
     cost+=inscriptionOverDisc(box,sx(p.x),sy(p.y),16*scale)*3;
+    // The chapter title is lettering too, even though it is set by a hand of its own: a note keeps off
+    // it exactly as it keeps off another note's ground, not just off the chart underneath it.
+    const rb=revealBand();if(rb)cost+=inscriptionSpan(box.top,box.bottom,rb.top,rb.bottom)*inscriptionSpan(box.left,box.right,0,W)/100*2;
     for(const q of others)clash+=inscriptionClash(box,sway,q);
     cost+=clash*40;
     if(!best||cost<best.cost)best={cost,clash,cx,cy,box};
@@ -156,6 +159,18 @@ function placeInscription(g){
     }
   }
   g.dx=(best.cx-ax)/scale;g.dy=(best.cy-ay)/scale;g.placedX=a.x;g.placedY=a.y;
+  // Whether the sheet actually had clear ground for it: overlapping lettering is never an acceptable
+  // place, only the least-bad one tried, so the caller decides what to do when even that still clashes.
+  return best.clash<=0;
+}
+// Repositions a standing instruction only if the new place is clear of every other note: `mutate` makes
+// whatever change (a new subject, say) prompted the attempt, and is rolled back along with the geometry
+// if no clear ground was found, so the instruction is left exactly as it stood and tried again next frame
+// rather than committed to a place lettering already stands on.
+function repositionHeld(g,mutate){
+  const before={node:g.node,dx:g.dx,dy:g.dy,placedX:g.placedX,placedY:g.placedY};
+  mutate();
+  if(!placeInscription(g))Object.assign(g,before);
 }
 // Write one inscription onto the chart. `node` follows a planet or a star wherever it drifts; `x`/`y` pin
 // it to the point on the sheet where the thing happened; with neither, it is set beside the traveller.
@@ -172,7 +187,9 @@ function inscribe(text,options={}){
     age:0,write:reducedMotion?0:.22+String(text).length*.017,held:false,touched:false,
     seed:(++inscriptionSeq*2654435761)>>>0,dx:0,dy:0,placedX:0,placedY:0
   };
-  placeInscription(g);
+  // A note is never set over lettering already on the sheet: if no clear ground was found anywhere on
+  // the plate, it goes unwritten rather than printed illegibly. The run has plenty more to say.
+  if(!placeInscription(g))return null;
   // A note that held this key before is not struck out: it is ink already, and stays where it was written
   // until the sheet carries it off. It simply stops being kept on the plate.
   if(g.key)for(const q of inscriptions)if(q.key===g.key)q.held=false;
@@ -203,10 +220,10 @@ function inscribeHeld(key,text,options={}){
     // An instruction is re-set when its subject changes, when the subject has drifted away from where the
     // lettering was placed, and whenever the sheet has carried the lettering itself off the plate: what is
     // still being asked for is kept legible rather than left to run off the edge.
-    if(options.node&&options.node!==live.node){live.node=options.node;placeInscription(live);}
+    if(options.node&&options.node!==live.node)repositionHeld(live,()=>{live.node=options.node;});
     else{
       const a=inscriptionAnchor(live);
-      if(Math.hypot(a.x-live.placedX,a.y-live.placedY)>46||inscriptionRoom(inscriptionBox(live))<0)placeInscription(live);
+      if(Math.hypot(a.x-live.placedX,a.y-live.placedY)>46||inscriptionRoom(inscriptionBox(live))<0)repositionHeld(live,()=>{});
     }
     return live;
   }

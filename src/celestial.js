@@ -650,6 +650,9 @@ function revealAnchor(){
     // A live constellation's name is lettered round its entry star's rim, well past the star's own
     // radius: keep the chapter lettering off that ring too, not just off the planet itself.
     for(const c of world.constellations)if(!c.expired&&c.entry)cost+=cover(sx(c.entry.x),sy(c.entry.y),c.entry.r*scale+40*scale);
+    // A note already written keeps its ground as firmly as a planet does: the title looks for a line
+    // clear of whatever is already lettered on the sheet, not only of what is drawn on it.
+    if(typeof inscriptions!=='undefined')for(const g of inscriptions){const b=inscriptionBox(g);cost+=Math.max(0,Math.min(y+38,b.bottom)-Math.max(y-38,b.top));}
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }
