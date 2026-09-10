@@ -717,12 +717,14 @@ function drawChapterReveal(dt){
   // spent twice for the one job.
   // Matches the running head's own abbreviation (frame.js) rather than a second, English name for the
   // same plate: TAB. IV on the reveal and TAB. IV six inches below it, not PLATE IV and TAB. IV. The
-  // manual letterspacing is left exactly as it was — a wider tracking is the typography section's own
-  // finding, not this one's — so only the word itself changes.
-  const plate='T A B .   '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
+  // wide tracking is real letterspacing now, not literal space characters typed in between the letters —
+  // those timed and drew as glyphs of their own under penLettering, which is why the plain string carries
+  // no gaps and the same tracking value is handed to both the pen and the settled ctx.letterSpacing.
+  const plate='TAB. '+numerals[chapterReveal.index],name=chapters[chapterReveal.index],plateTrack=2;
   const size=compact?24:Math.min(36,Math.max(24,W*.062));
-  ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');
-  if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center'))ctx.fillText(plate,x,y-22+rise);
+  ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');ctx.letterSpacing=plateTrack+'px';
+  if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center',plateTrack))ctx.fillText(plate,x,y-22+rise);
+  ctx.letterSpacing='0px';
   ctx.fillStyle=ink.base.text;ctx.font=plateFace(size);
   if(!penLettering(name,x,y+12+rise,size,'text',t,'center'))ctx.fillText(name,x,y+12+rise);
   const reach=Math.min(95,W*.21),ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);

@@ -600,11 +600,14 @@ function fellAdvance(face,char){
 }
 function letteringTime(text){return text.length*LETTER_STAGGER+LETTER_STROKE+LETTER_FLOOD;}
 // Returns false when the writing is over (or impossible), and the caller prints the text as it always has.
-function penLettering(text,x,y,size,face,age,align){
+// `tracking` is extra space held between glyphs, in the same px the size itself is given in — the way
+// the caller asks for a wide-set abbreviation without typing the gaps in as literal space characters,
+// which would otherwise be timed and drawn as glyphs of their own.
+function penLettering(text,x,y,size,face,age,align,tracking=0){
   if(reducedMotion||typeof FELL_GLYPHS==='undefined'||!FELL_GLYPHS.faces[face])return false;
   if(age>=letteringTime(text))return false;
   const unit=size/FELL_GLYPHS.unitsPerEm;
-  let width=0;for(let i=0;i<text.length;i++)width+=fellAdvance(face,text[i])*unit;
+  let width=Math.max(0,text.length-1)*tracking;for(let i=0;i<text.length;i++)width+=fellAdvance(face,text[i])*unit;
   let pen=align==='center'?x-width/2:align==='right'?x-width:x;
   const style=ctx.fillStyle,base=ctx.globalAlpha,wall=ink.reveal.mode==='wall';
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
@@ -667,7 +670,7 @@ function penLettering(text,x,y,size,face,age,align){
         ctx.globalAlpha=base;penBead(gx,gy,angle,Math.max(1,size*.05),.8);penNib(gx,gy,angle,.85);
       }
     }
-    pen+=advance;
+    pen+=advance+(i<text.length-1?tracking:0);
   }
   ctx.restore();ctx.globalAlpha=base;ctx.fillStyle=style;
   return true;
