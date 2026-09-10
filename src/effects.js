@@ -1189,27 +1189,32 @@ function floaterLine(f,left,h){
 function drawDarkMarginalia(fy,time,alpha){
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
   const floor=marginaliaFloor(),line=Math.min(fy,floor);
+  // Both marks below are held to the same copper as every other one on the sheet: rather than be
+  // guillotined at the plate mark, each is inked in and out over the last reach of the margin — which
+  // is what a mark carried by the flood would do anyway. The vertical clip on the Leviathan (the rect
+  // below) only ever kept it inside the canvas, not inside the frame's own inner rule, so on its own it
+  // let the monster surface clean through the tick ladder and the corner ornaments; this edge fade is
+  // what actually holds it to the plate, the same fade the gloss earned first.
+  const rule=frameBand()*.92+6,fade=Math.max(18,26*scale);
   const monster=leviathanSprite(false),phase=((time+7)%cycle)/cycle;
   if(phase<window/cycle&&line>monster.h*.25){
     const u=phase*cycle/window,rise=Math.sin(Math.PI*u);
     const span=W+monster.w*2,x=((.34*span-drift*.62)%span+span)%span-monster.w;
     const y=line-monster.h+(1-rise)*monster.h*1.05;
-    ctx.save();ctx.beginPath();ctx.rect(0,0,W,Math.max(0,line+1));ctx.clip();
-    ctx.globalAlpha=alpha*rise*.9;
-    ctx.drawImage(monster.canvas,x,y,monster.w,monster.h);
-    if(darknessRelief>.001){const r=leviathanSprite(true);ctx.globalAlpha=alpha*rise*.9*darknessRelief;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
-    ctx.restore();
+    const edge=clamp(Math.min(x-rule,W-rule-(x+monster.w))/fade+1,0,1);
+    if(edge>0){
+      ctx.save();ctx.beginPath();ctx.rect(0,0,W,Math.max(0,line+1));ctx.clip();
+      ctx.globalAlpha=alpha*rise*.9*edge;
+      ctx.drawImage(monster.canvas,x,y,monster.w,monster.h);
+      if(darknessRelief>.001){const r=leviathanSprite(true);ctx.globalAlpha=alpha*rise*.9*darknessRelief*edge;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
+      ctx.restore();
+    }
   }
   if(plainPlate())return;
   const gloss=glossSprite(false),span=W+gloss.w*2;
   const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
   const gy=marginaliaGloss(fy,gloss).y;
   if(gy+gloss.h<=0)return;
-  // The Leviathan below is clipped to the sheet; the gloss was not, so it drifted out over the plate
-  // mark and was cut off mid-letter by the edge of the canvas. It is held to the same copper as every
-  // other mark, and rather than be guillotined there it is inked in and out over the last few
-  // millimetres of the margin — which is what a mark carried by the flood would do anyway.
-  const rule=frameBand()*.92+6,fade=Math.max(18,26*scale);
   const edge=clamp(Math.min(gx-rule,W-rule-(gx+gloss.w))/fade+1,0,1);
   const clear=glossClearance(gx,gy,gloss.w,gloss.h)*edge;if(clear<=0)return;
   ctx.save();ctx.globalAlpha=alpha*.5*clear;
