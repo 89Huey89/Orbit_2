@@ -70,7 +70,9 @@ function ledgerCommit(){
   ledger.dawnsSpent+=runTally.dawnsSpent;
   ledger.maxSpeedSlings+=runTally.maxSpeedSlings;ledger.inkwellsFound+=runTally.inkwellsFound;ledger.badAngles+=runTally.badAngles;
   foldCounts(ledger.constellations,runTally.constellations);foldCounts(ledger.observations,runTally.observations);
-  const key=dailyOn?'daily':difficulty;
+  // A Newtonian run keeps its own bucket regardless of which pressure rode under it, exactly as the
+  // daily plate keeps its own regardless of always riding at Adeptus.
+  const key=dailyOn?'daily':world.newtonOn?'newton':difficulty;
   const elapsed=Math.max(0,world.elapsed||0);
   ledger.playSeconds=Math.round((ledger.playSeconds+Math.max(0,elapsed-runSeconds))*100)/100;
   runSeconds=elapsed;
@@ -189,6 +191,12 @@ const UNLOCKS=[
     describe:()=>'Play 50 runs'},
   {id:'exlibris',kind:'stamp',name:'Ex libris stamp',latin:'Ex libris',test:l=>Object.keys(DARKNESS_MULT).every(key=>(l.personalBests[key]||0)>0),
     describe:()=>`Score on ${DIFFICULTY_LABELS.relaxed}, ${DIFFICULTY_LABELS.classic} and ${DIFFICULTY_LABELS.hardcore}`},
+  // A harder plate rather than another cosmetic: gravity itself now acts on the traveller in free
+  // flight, on top of whichever pressure is chosen (see OrbitWorld.newtonOn). Earned by two measures
+  // at once, patient precision and nerve near a bending field, so it cannot be ground out on either
+  // alone; see isUnlocked('newton') in src/plates.js for where that gates the frontispiece switch.
+  {id:'newton',kind:'mode',name:'Newtonian gravity',latin:'Vis Gravitatis',test:l=>l.perfects>=500&&l.grazes>=25,
+    describe:()=>'Make 500 perfect transfers and graze 25 vortices'},
   // The atlas's eight named feats, struck as medals: each is earned the first time the ledger has ever
   // recorded that observation, lifetime, keyed to the same OBSERVATIONS entry the sheet inscribes.
   {id:'perfecti',kind:'medal',name:'Three perfect transfers',latin:'Tres Perfecti',test:l=>(l.observations.perfectThree||0)>0,
