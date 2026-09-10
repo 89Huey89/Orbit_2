@@ -827,7 +827,7 @@ function drawSheetEdge(y,strength){
   const shade=ctx.createLinearGradient(0,y-lift,0,y);
   shade.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);shade.addColorStop(1,`rgba(${onPaper()?'58,42,28':'2,5,10'},${.3*strength})`);
   ctx.fillStyle=shade;ctx.fillRect(0,y-lift,W,lift);
-  line(0,y,W,y,colors.rule,Math.max(.7,scale*.9));
+  line(0,y,W,y,`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,Math.max(.7,scale*.9));
   const inset=band*.2;
   ctx.save();ctx.globalAlpha=strength;ctx.strokeStyle=colors.markEdge;ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(inset+.5,H);ctx.lineTo(inset+.5,y+inset+.5);ctx.lineTo(W-inset-.5,y+inset+.5);ctx.lineTo(W-inset-.5,H);ctx.stroke();

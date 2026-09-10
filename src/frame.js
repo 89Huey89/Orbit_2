@@ -7,8 +7,8 @@
 // its key (size, pixel ratio, plate) changes. The one moving part, the declination numbers on the side
 // scales, is cheap enough to redraw live each frame straight onto ctx after the cached layer is blitted.
 definePlate('frame',{
-  night:{markEdge:'rgba(155,174,171,.14)',mark:'rgba(198,187,155,.08)',rule:'rgba(198,187,155,.4)',ruleFaint:'rgba(155,174,171,.22)',tick:'rgba(198,187,155,.32)',tickMinor:'rgba(155,174,171,.16)',text:'rgba(198,187,155,.42)',orn:'rgba(198,187,155,.26)'},
-  paper:{markEdge:'rgba(96,74,52,.18)',mark:'rgba(58,42,28,.1)',rule:'rgba(58,42,28,.52)',ruleFaint:'rgba(96,74,52,.3)',tick:'rgba(58,42,28,.42)',tickMinor:'rgba(96,74,52,.24)',text:'rgba(58,42,28,.48)',orn:'rgba(58,42,28,.36)'}
+  night:{markEdge:'rgba(155,174,171,.14)',mark:'rgba(198,187,155,.08)',tick:'rgba(198,187,155,.32)',tickMinor:'rgba(155,174,171,.16)',text:'rgba(198,187,155,.42)',orn:'rgba(198,187,155,.26)'},
+  paper:{markEdge:'rgba(96,74,52,.18)',mark:'rgba(58,42,28,.1)',tick:'rgba(58,42,28,.42)',tickMinor:'rgba(96,74,52,.24)',text:'rgba(58,42,28,.48)',orn:'rgba(58,42,28,.36)'}
 });
 let frameLayer=null,frameKey='',frameInset=Infinity;
 function frameWide(){return W>780;}
@@ -282,7 +282,9 @@ function frameOrnaments(g,wide,innerR){
 }
 function frameScaleBar(g,x,y,colors){
   const w=30,h=3;
-  g.lineWidth=1;g.strokeStyle=colors.rule;g.strokeRect(x+.5,y+.5,w,h);
+  // The rule's own ink, not a second, separately-tuned rule token: the printed double rule and the bar
+  // that stands beside it are provably the same colour rather than two that happen to look close.
+  g.lineWidth=1;g.strokeStyle=`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`;g.strokeRect(x+.5,y+.5,w,h);
   g.fillStyle=colors.orn;for(let i=0;i<4;i+=2)g.fillRect(x+i*w/4,y,w/4,h);
   if(plainPlate())return;
   g.font=plateFace(Math.max(6.4,7*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
