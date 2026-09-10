@@ -908,7 +908,10 @@ function catalogueInsignia(){
 // tab is showing.
 function renderCatalogue(){
   const body=$('catalogue-body');if(!body)return;
-  const tabs=[['record','RECORD','CHRONICLE'],['catalogue','CATALOGUE','STUDIOLO'],['insignia','INSIGNIA','FEATS']];
+  // One rule for all three: the vernacular label on the button, the learned caption beneath it, set
+  // mixed case (the tab's own CSS already reads data-sub with text-transform:none) so a borrowed word
+  // like Studiolo reads as one rather than as a third capitalisation convention.
+  const tabs=[['record','RECORD','Chronicon'],['catalogue','CATALOGUE','Studiolo'],['insignia','FEATS','Insignia']];
   let html='<div class="cat-tabs">'+
     tabs.map(([id,label,sub])=>`<button type="button" class="diff-btn cat-tab-btn" data-tab="${id}" data-sub="${sub}" aria-pressed="${catalogueTab===id}">${label}</button>`).join('')+
     '</div>';
