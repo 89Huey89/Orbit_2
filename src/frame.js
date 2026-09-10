@@ -289,14 +289,31 @@ function frameOrnaments(g,wide,innerR){
     else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed,1);
   }
 }
+// A scale bar that scales nothing on a sheet with no distances reads as a mile-scale sitting on a
+// chart that never states a mile. Cut to the same unit the border ladder itself counts by — ten
+// degrees, in two five-degree panels — the bar agrees with the graduation instead of contradicting
+// it, and a small pair of open dividers stepping off one panel is the period's own cheap, standard
+// way of saying an angle was measured here rather than a length.
 function frameScaleBar(g,x,y,colors){
   const w=30,h=3;
   // The rule's own ink, not a second, separately-tuned rule token: the printed double rule and the bar
   // that stands beside it are provably the same colour rather than two that happen to look close.
   g.lineWidth=1;g.strokeStyle=`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`;g.strokeRect(x+.5,y+.5,w,h);
-  g.fillStyle=colors.orn;for(let i=0;i<4;i+=2)g.fillRect(x+i*w/4,y,w/4,h);
+  g.fillStyle=colors.orn;g.fillRect(x,y,w*.5,h);
+  g.strokeStyle=colors.tickMinor;g.lineWidth=.5;
+  for(const t of [0,.5,1]){g.beginPath();g.moveTo(x+t*w,y-1);g.lineTo(x+t*w,y+h+2);g.stroke();}
+  // The dividers: two legs off one pivot, their tips set exactly on the bar's own end and mid tick, so
+  // the mark reads as the instrument caught mid-step rather than a stray decoration beside the scale.
+  // Kept small and close to the bar — this flank's own furniture (the frontispiece action row's own
+  // rule sits just above it) leaves little headroom to spare.
+  const px=x+w*.25,py=y-5;
+  g.strokeStyle=`rgba(${ink.base.inkStrong},${onPaper()?.55:.4})`;g.lineWidth=.6;
+  g.beginPath();g.moveTo(px,py);g.lineTo(x,y-1);g.moveTo(px,py);g.lineTo(x+w*.5,y-1);g.stroke();
+  g.beginPath();g.arc(px,py,.7,0,TAU);g.fill();
   if(plainPlate())return;
-  g.font=plateFace(Math.max(6.4,7*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';g.fillText('Scala',x+w+5,y+h+1);
+  g.font=plateFace(Math.max(4.6,5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='center';
+  g.fillText('0',x,y+h+8);g.fillText('5',x+w*.5,y+h+8);g.fillText('10',x+w,y+h+8);
+  g.font=plateFace(Math.max(6.4,7*scale),'sc');g.textAlign='left';g.fillText('SCALA GRADUUM',x+w+5,y+h+1);
 }
 function buildFrameLayer(){
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
