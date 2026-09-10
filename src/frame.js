@@ -358,8 +358,12 @@ function buildFrameLayer(){
     g.fillText('°',outerR+tickLen*.5+2,unitY);
     g.textAlign='right';g.fillText('°',W-outerR-tickLen*.5-2,unitY);
   }
-  // Restrained corner brackets at the inner rule.
-  frameCorner(g,innerR,innerR,1,1,colors.orn);frameCorner(g,W-innerR,innerR,-1,1,colors.orn);
+  // Restrained corner brackets at the inner rule — the two lower corners only. Their own ornament sits
+  // well clear of the bracket's reach (frameOrnaments' `inset` pushes it out by the ornament's own size
+  // plus a gap), so the two read as separate marks; the two upper corners tuck their ornament in close
+  // to the literal corner on purpose (needle, simplified head or knot, all sized for HUD clearance by
+  // placement rather than by distance), which puts it on top of a bracket cut here, so the bracket is
+  // dropped there rather than fighting the ornament for the same few pixels.
   frameCorner(g,innerR,H-innerR,1,-1,colors.orn);frameCorner(g,W-innerR,H-innerR,-1,-1,colors.orn);
   // The marginal ornament in each corner — the wind-heads blowing along the diagonal into the chart by
   // default, or whichever of the catalogue's ornaments is chosen — kept in the margin's own tone.
