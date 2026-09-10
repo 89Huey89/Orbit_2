@@ -543,18 +543,23 @@ const laidTiles=new Map(),laidSheets=new Map();
 function laidPaper(){
   const key=plateName+':'+DPR,held=laidTiles.get(key);
   if(held)return held;
-  const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=108,th=96;
+  // Wires every 4 CSS px and chain lines every 120 — the same reduction the rest of the sheet is judged
+  // at (see "Target viewport" in CLAUDE.md), rather than the 1.5px/27px mould the tile used to carry,
+  // which packed seven-odd grey levels of banding into a texture too fine for the mark to read as wires
+  // at all and left the chain lines close enough to lose the real rhythm a laid sheet has. The tile is
+  // widened to 120 so one chain line per tile is the new 120px pitch exactly, with no seam at the repeat.
+  const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=120,th=96;
   const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
   g.scale(unit,unit);
   g.fillStyle=paper?'#ffffff':'#000000';g.fillRect(0,0,tw,th);
   const dark=a=>paper?`rgba(70,50,26,${a})`:`rgba(206,222,226,${a})`;
   const light=a=>paper?`rgba(255,252,242,${a})`:`rgba(0,0,0,${a})`;
-  g.lineWidth=.55;
-  for(let y=0;y<th;y+=1.5){
+  g.lineWidth=.45;
+  for(let y=0;y<th;y+=4){
     g.strokeStyle=dark(paper?.2:.14);g.beginPath();g.moveTo(0,y+.3);g.lineTo(tw,y+.3);g.stroke();
     if(paper){g.strokeStyle=light(.5);g.beginPath();g.moveTo(0,y+1.05);g.lineTo(tw,y+1.05);g.stroke();}
   }
-  for(let x=0;x<tw;x+=27){
+  for(let x=0;x<tw;x+=120){
     if(paper){g.strokeStyle=light(.4);g.lineWidth=2.4;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();}
     g.strokeStyle=dark(paper?.11:.07);g.lineWidth=.9;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();
   }
