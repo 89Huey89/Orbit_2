@@ -256,7 +256,12 @@ const SIMPLE_INSET=2,SIMPLE_ANGLE=Math.PI/2;
 function frameOrnaments(g,wide,innerR){
   const style=activeCosmetic('frame'),head=wide?14:9,simpleHead=head*.8,inset=SIMPLE_INSET+(wide?1:0);
   const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
-  const fullInset=innerR+head*.9+(wide?3:2);
+  // Budgeted from the wind-head's own outermost stroke rather than its face circle: the hair curls
+  // (frameWindHead below) reach out to R*1.02 plus their own radius of up to R*.42, or 1.44R from the
+  // centre at the worst case, so anchoring the inset at R*.9 let that hair print across the inner rule
+  // and into the tick ladder it should clear. Anchoring it at R*1.44 instead, plus the same clearance
+  // gap the old formula already carried, clears the rule by that gap rather than missing it by one.
+  const fullInset=innerR+head*1.44+(wide?3:2);
   // Top corners carry only their direction: every top mark now sits at its own fixed inset (below)
   // rather than at the shrunken-head inset the old single corners array placed it at.
   const topCorners=[[1],[-1]],bottomCorners=[[fullInset,H-fullInset,1,-1],[W-fullInset,H-fullInset,-1,-1]];
