@@ -942,6 +942,22 @@ function chargeDevice(kind,rgb){
   if(deviceSprites.size>16)deviceSprites.delete(deviceSprites.keys().next().value);
   return c;
 }
+// An engraver's register mark — the small cross-struck-through-a-circle punched at a plate's rim so a
+// second pull lines up against the first — standing in for a release point, at a third of the ink a
+// plain arc took. A perfect release doubles it: a smaller inner circle and a diagonal cross laid over
+// the first, cut at a heavier weight, the way a printer struck the one mark that really mattered twice.
+function registerMark(px,py,rgb,alpha,doubled){
+  const rad=(doubled?3.2:2.6)*scale,arm=rad+1.6*scale,weight=Math.min((doubled?1.3:.75)*scale,1.4*scale);
+  ctx.save();ctx.translate(px,py);ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineWidth=weight;
+  ctx.beginPath();ctx.arc(0,0,rad,0,TAU);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-arm,0);ctx.lineTo(arm,0);ctx.moveTo(0,-arm);ctx.lineTo(0,arm);ctx.stroke();
+  if(doubled){
+    ctx.beginPath();ctx.arc(0,0,rad*.55,0,TAU);ctx.stroke();
+    const d=arm*.7;
+    ctx.beginPath();ctx.moveTo(-d,-d);ctx.lineTo(d,d);ctx.moveTo(-d,d);ctx.lineTo(d,-d);ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawChargeDevice(kind,r,rgb,pen){
   if(pen.ring<=0)return;
   const sprite=chargeDevice(kind,rgb);if(!sprite)return;
@@ -985,15 +1001,22 @@ function drawNode(n,aim){
   // know when the lap is paid for. It therefore rides the pen reaching the page, as it always did, and
   // not the observation clock, which would hold back the first two fifths of a fill the release depends on.
   if(sling&&pen.ring>0){
-    const charge=active?world.charge():0,band=r*.73;
+    // A graduated limb, not a dial that lights: eighteen radial ticks off a faint guide ring, each
+    // growing in length and weight as the charge reaches it, the way a real instrument's rim is read.
+    const charge=active?world.charge():0,band=r*.73,wMax=1.4*scale;
+    ctx.strokeStyle=`rgba(${ink.marks.slingRing},.2)`;ctx.lineWidth=Math.min(.5*scale,wMax);ctx.beginPath();ctx.arc(0,0,band,0,TAU);ctx.stroke();
     for(let i=0;i<18;i++){
-      const a=-Math.PI/2+i*TAU/18;
-      ctx.strokeStyle=`rgba(${ink.marks.slingRing},.27)`;ctx.lineWidth=2.2*scale;ctx.beginPath();ctx.arc(0,0,band,a+.026,a+TAU/18-.026);ctx.stroke();
-      const fill=clamp(charge*18-i,0,1);
-      if(fill>0){ctx.strokeStyle=`rgba(${ink.marks.slingFill},.9)`;ctx.beginPath();ctx.arc(0,0,band,a+.026,a+.026+(TAU/18-.052)*fill);ctx.stroke();}
+      const a=-Math.PI/2+i*TAU/18,cx=Math.cos(a),sn=Math.sin(a),fill=clamp(charge*18-i,0,1);
+      ctx.strokeStyle=`rgba(${ink.marks.slingRing},.4)`;ctx.lineWidth=Math.min(.5*scale,wMax);
+      ctx.beginPath();ctx.moveTo(cx*band,sn*band);ctx.lineTo(cx*(band+2.2*scale),sn*(band+2.2*scale));ctx.stroke();
+      if(fill>0){
+        const len=lerp(2.2,6.4,fill)*scale;
+        ctx.strokeStyle=`rgba(${ink.marks.slingFill},.92)`;ctx.lineWidth=Math.min(lerp(.55,1.3,fill)*scale,wMax);
+        ctx.beginPath();ctx.moveTo(cx*band,sn*band);ctx.lineTo(cx*(band+len),sn*(band+len));ctx.stroke();
+      }
     }
     for(const a of [0,Math.PI]){
-      ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
+      ctx.save();ctx.rotate(a);ctx.strokeStyle=`rgba(${ink.marks.slingNotch},.6)`;ctx.lineWidth=Math.min(.8,wMax);ctx.beginPath();ctx.moveTo(band-3,-3);ctx.lineTo(band,1);ctx.lineTo(band+3,-3);ctx.stroke();ctx.restore();
     }
     if(!used&&!captionsHeld()){
       ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.slingLabel},.82)`;
@@ -1042,22 +1065,25 @@ function drawNode(n,aim){
   if(active){
     for(const next of releaseTargets(n)){
       const d=Math.hypot(next.x-n.x,next.y-n.y),a=Math.atan2(next.y-n.y,next.x-n.x)-p.dir*Math.acos(clamp(p.rad/d,-1,1)),window=Math.asin(clamp(next.cap/d,0,.8));
-      ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
+      ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
       for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
         if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
-        ctx.strokeStyle=`rgba(${ink.marks.releaseMark},.92)`;ctx.lineWidth=2.2*scale;ctx.beginPath();ctx.arc(0,0,r,path.angle-.023,path.angle+.023);ctx.stroke();
+        registerMark(Math.cos(path.angle)*r,Math.sin(path.angle)*r,ink.marks.releaseMark,.85,false);
       }
     }
     if(world.flightPreview?.curved&&aim?.perfect){
-      ctx.strokeStyle=`rgba(${ink.marks.perfectPreview},.98)`;ctx.lineWidth=2.6*scale;ctx.beginPath();ctx.arc(0,0,r,p.angle-.038,p.angle+.038);ctx.stroke();
+      registerMark(Math.cos(p.angle)*r,Math.sin(p.angle)*r,ink.marks.perfectPreview,.98,true);
     }
     // A fading orbit visibly unravels in less than two revolutions.
-    if(fading){const left=clamp(1-p.orbitTime/4.5,0,1);ctx.strokeStyle=left<.3?ink.marks.fadingCritical:ink.marks.fadingWarn;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,r+9*scale,-Math.PI/2,-Math.PI/2+TAU*left);ctx.stroke();}
+    if(fading){const left=clamp(1-p.orbitTime/4.5,0,1);ctx.strokeStyle=left<.3?ink.marks.fadingCritical:ink.marks.fadingWarn;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r+9*scale,-Math.PI/2,-Math.PI/2+TAU*left);ctx.stroke();}
   }
   if(target){
-    ctx.strokeStyle=`rgba(${rgb},${aim.perfect?.78:.34})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,n.cap*scale+4,world.time*.3,world.time*.3+TAU*.72);ctx.stroke();
+    // Fixed on the entry bearing rather than spinning: the arc's alpha carries the arrival quality
+    // the player is actually flying toward, the same continuous read arrivalQuality gives the score.
+    const quality=clamp((aim.angle-GRAZE_MINIMUM)/(90-GRAZE_MINIMUM),0,1);
+    ctx.strokeStyle=`rgba(${rgb},${lerp(.3,.76,quality)})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,n.cap*scale+4,aim.entryAngle-.42,aim.entryAngle+.42);ctx.stroke();
     if(aim.perfect){
-      ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
+      ctx.strokeStyle=`rgba(${ink.marks.perfectTarget},.8)`;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(0,0,r,aim.entryAngle-.18,aim.entryAngle+.18);ctx.stroke();
     }
   }
   if(!used&&!captionsHeld()&&!renaissanceStar){
