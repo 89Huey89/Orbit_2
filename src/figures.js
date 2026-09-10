@@ -1189,13 +1189,24 @@ function flareSprite(seed,radius,core){
   // The body: a burst rather than a disc, its points reaching out toward the drawn radius and its
   // notches cut back near the old umbra's edge, each wobbled its own amount so it reads engraved
   // rather than stamped. The rim is struck along the same jagged path, not a circle around it.
-  const tip=Math.max(u*1.3,r*.85),notch=u*.62;
-  g.beginPath();
+  const tip=Math.max(u*1.3,r*.85),notch=u*.62,verts=[];
   for(let i=0;i<FLARE_SPIKES*2;i++){
     const a=i/(FLARE_SPIKES*2)*TAU+rng()*.02,spike=i%2===0;
     const jr=spike?tip*(.9+rng()*.22):notch*(.75+rng()*.3);
-    const x=Math.cos(a)*jr,y=Math.sin(a)*jr;
-    if(i)g.lineTo(x,y);else g.moveTo(x,y);
+    verts.push([Math.cos(a)*jr,Math.sin(a)*jr]);
+  }
+  // Each edge is walked in a few sub-steps with a small perpendicular wobble rather than cut dead
+  // straight, so the burst reads as an engraved outline rather than a bare polygon; the last sub-step
+  // of every edge lands exactly on the vertex, so neighbouring edges still close without a seam.
+  g.beginPath();
+  for(let i=0;i<verts.length;i++){
+    const [x0,y0]=verts[i],[x1,y1]=verts[(i+1)%verts.length];
+    if(i===0)g.moveTo(x0,y0);
+    const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,steps=3+(i%2);
+    for(let s=1;s<=steps;s++){
+      const t=s/steps,wob=s<steps?(rng()-.5)*len*.09:0;
+      g.lineTo(x0+dx*t+nx*wob,y0+dy*t+ny*wob);
+    }
   }
   g.closePath();g.fillStyle=`rgba(${p.flareUmbra},${onPaper()?.92:.96})`;g.fill();
   g.strokeStyle=`rgba(${p.flareRim},.75)`;g.lineWidth=.9;g.stroke();
