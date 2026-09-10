@@ -330,7 +330,7 @@ spaces until the corresponding achievement has happened:
 
 | Proof state | What the cartouche sets |
 |---|---|
-| Every pull | `AUGUSTA VINDELICORUM` as the print place, `EX OFFICINA ORBIS TABULAE` as the printer or publisher, `TAB. V · I` as the plate number, and `A1` as the sheet signature at lower right. The workshop name is deliberate game fiction; Augsburg is inherited from Bayer's signature sheet, not a claim about a historical printer. |
+| Every pull | `AUGUSTÆ VINDELICORUM` as the print place, `EX OFFICINA ORBIS TABULAE` as the printer or publisher, `TAB. V · I` as the plate number, and `A1` as the sheet signature at lower right. The workshop name is deliberate game fiction; Augsburg is inherited from Bayer's signature sheet, not a claim about a historical printer. |
 | First documented star | `ANNO MDCIII`, the year of the atlas convention now being set on the sheet. It is the first proof that the page has begun to document itself rather than merely carry blank furniture. |
 | First constellation | `URANOMETRIA`, the title line, set as the plate's own name rather than as a modern level label. |
 | First rough impression | A small setter's correction sign — `* CORR.` beside the relevant rule — admits that the compositor had to mark an imperfect setting instead of pretending that every proof came out clean. |
@@ -340,7 +340,7 @@ spaces until the corresponding achievement has happened:
 
 The completed form can therefore read:
 
-`AUGUSTA VINDELICORUM · EX OFFICINA ORBIS TABULAE · TAB. V · I · A1`
+`AUGUSTÆ VINDELICORUM · EX OFFICINA ORBIS TABULAE · TAB. V · I · A1`
 
 `ANNO MDCIII · URANOMETRIA · DELINEAVIT ET SCULPSIT · A.B.C.`
 

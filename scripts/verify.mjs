@@ -243,7 +243,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     w.cameraY=cameraBefore;
     const rows=context.test.impressumRows();
     assert.equal(rows.length,10,'The impressum reserves every line before achievements are earned');
-    assert.equal(rows[0].text,'AUGUSTA VINDELICORUM');
+    assert.equal(rows[0].text,'AUGUSTÆ VINDELICORUM');
     assert.equal(rows[1].text,'Ex officina Orbis Tabulæ','The house sets its own name with the digraph the rest of the cartouche uses, in the small-caps face\'s own mixed case');
     assert.equal(rows[2].text,'TAB. V · I  /  A1');
   }

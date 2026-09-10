@@ -964,7 +964,7 @@ function impressumRows(){
   const perfect=impressumHasPerfectChain(),complete=impressumHasCompleteAtlas();
   const engraver=typeof engraverCredit==='function'?engraverCredit().toUpperCase():'DELINEAVIT ET SCULPSIT · ORBIS TABULA';
   return [
-    {key:'place',text:'AUGUSTA VINDELICORUM'},
+    {key:'place',text:'AUGUSTÆ VINDELICORUM'},
     {key:'printer',text:'Ex officina Orbis Tabulæ'},
     {key:'plate',text:'TAB. V · I  /  A1'},
     {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
@@ -990,7 +990,7 @@ function impressumDevice(g,x,y,size,alpha,seed){
 }
 function impressumScreenLine(){
   if(plainPlate())return 'Impressum · ANTE LITTERAS';
-  let line='Impressum · AUGUSTA VINDELICORUM · TAB. V · I';
+  let line='Impressum · AUGUSTÆ VINDELICORUM · TAB. V · I';
   if(dailyOn)line+=' · TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':'');
   return line;
 }
