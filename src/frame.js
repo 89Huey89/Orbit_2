@@ -394,18 +394,32 @@ function buildFrameLayer(){
     const keyX=rightX,keyTop=Math.max(H*.28,band+70);
     g.font=plateFace(Math.max(7,8*scale),'sc');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('MAGNITUDINES',keyX,keyTop);
-    g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+66,keyTop+3.5);g.stroke();
+    // Ruled to the heading's own measured width rather than a hard 66, so a wider or narrower face
+    // never leaves the underline short of the word or trailing past it.
+    const headingWidth=g.measureText('MAGNITUDINES').width;
+    g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+headingWidth,keyTop+3.5);g.stroke();
     g.font=plateFace(Math.max(6.8,7.5*scale),'text','italic');
     const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
+    // The .72 gauge is the chart's own — kept — but a uniform 12px pitch assumed every class the same
+    // height, and class I's actual reach at that gauge is nearly three of them. Each row is stacked by
+    // its own magnitude's real span (renaissanceStarSpan, figures.js) plus a fixed 4px gutter instead,
+    // so the key reads as a real descending column of unequal signs rather than a smear at the top.
+    const KEY_GAUGE=.72,KEY_GUTTER=4;
+    let rowTop=keyTop+13;
     for(let m=5;m>=0;m--){
-      const row=keyTop+17+(5-m)*12;
-      const magnitude=6-m,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.72:.12;
-      // The key is set to its twelve-pixel rule, not to the gauge the chart itself is punched at: the
-      // sign on the plate is cut for a hand-held sheet, and printed at that size the first class alone
-      // would run into the row above it. This factor holds the six forms at the size the margin has room for.
-      renaissanceStarGlyph(g,keyX+7,row-4.5,magnitude,ink.atmosphere.starGlyph,alpha,.72,0x1603+magnitude);
-      g.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;g.fillText(MAGNITUDES[5-m],keyX+24,row);
+      const magnitude=6-m,classified=!!(known&(1<<(magnitude-1)));
+      // A row not yet classified is a ghost: the punch alone survived at .12, but its rays and rings
+      // are further scaled down inside renaissanceStarGlyph (to as little as .38 of that), which left
+      // classes I-IV reading as a bare dot with no sign at all. Raised to .22 for exactly those classes.
+      const hasRays=magnitude<=4,alpha=classified?.72:hasRays?.22:.12;
+      const half=renaissanceStarSpan(magnitude)*KEY_GAUGE,rowCenter=rowTop+half;
+      renaissanceStarGlyph(g,keyX+7,rowCenter,magnitude,ink.atmosphere.starGlyph,alpha,KEY_GAUGE,0x1603+magnitude);
+      g.textBaseline='middle';
+      g.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;
+      g.fillText(MAGNITUDES[5-m],keyX+24,rowCenter);
+      rowTop=rowCenter+half+KEY_GUTTER;
     }
+    g.textBaseline='alphabetic';
   }else if(!plainPlate()){
     // No flank to carry it in, but the credit still belongs on the plate: set along the inside of the
     // bottom inner rule, where the sheet has a clear run the whole width of the play field.
