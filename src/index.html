@@ -493,6 +493,10 @@
     @keyframes ink-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
     @keyframes letter-settle{from{opacity:0;transform:translateY(8px) rotate(-3deg)}70%{opacity:1}to{opacity:1;transform:none}}
     .inked{animation:ink-wipe .34s ease-out}
+    /* The nib itself, travelling with the wipe above rather than a bare clip-path with nothing cutting
+       it: a small wedge cut to match penNib (reveal.js:160), fading as it crosses. */
+    .score-block>*{position:relative}
+    .inked::after{content:'';position:absolute;top:0;bottom:0;width:2px;background:currentColor;clip-path:polygon(0 0,100% 12%,100% 88%,0 100%);animation:ink-nib .34s ease-out}
     #intro h1 span{display:inline-block;animation:letter-settle .85s cubic-bezier(.2,.7,.3,1) backwards;animation-delay:calc(var(--i)*.11s + .2s)}
     #intro .subtitle-latin{animation:ink-rise .8s ease-out .1s backwards}
     #intro .cartouche-frame{animation:ink-wipe .9s ease-out .5s backwards}
