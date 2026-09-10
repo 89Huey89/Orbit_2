@@ -474,13 +474,16 @@ function drawLandingSurvey(s,t,rgb,gold,base){
     const size=Math.max(8,9.5*scale),labelR=reach+Math.max(9,10*scale);
     surveyNumeral(Math.round(s.angle)+'°',px+Math.cos(bis)*labelR,py+Math.sin(bis)*labelR,size,rgb,base*.95,revealSpan(t,.62,.88));
   }
-  // (d) The letters: a at the centre, across the radius on the side away from the incoming line; b at the
-  // contact, across the incoming line on the outward side; c at the far end of the incoming line.
+  // (d) The letters: continued from the departure construction's a, b, c rather than restarting, since
+  // a node landed on can be the same one a later flight departs from, and the two figures are one
+  // continuous piece of surveying work. d at the centre, across the radius on the side away from the
+  // incoming line; e at the contact, across the incoming line on the outward side; f at the far end of
+  // the incoming line.
   {
     const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),[bx,by]=surveyAside(s.dx,s.dy,-s.ux,-s.uy),off=8*scale,ls=Math.max(7.5,8.5*scale);
-    surveyLetter('a',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
-    surveyLetter('b',px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
-    surveyLetter('c',px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
+    surveyLetter('d',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
+    surveyLetter('e',px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
+    surveyLetter('f',px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
   }
   // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
   const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
