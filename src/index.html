@@ -247,7 +247,19 @@
     .footer{bottom:max(20px,calc(env(safe-area-inset-bottom) + 10px));left:max(17px,calc(env(safe-area-inset-left) + 3px));right:max(17px,calc(env(safe-area-inset-right) + 3px))}
     @media(min-width:800px){.hud{left:46px;right:46px;top:40px}.footer{left:35px;right:35px;bottom:27px}}
     /* — Daily plate, the ascent record, and the run's observations — */
-    .daily-group{pointer-events:auto;display:flex;flex-wrap:wrap;gap:9px 11px;align-items:center;justify-content:center;margin-top:11px}
+    .daily-group{pointer-events:auto;display:flex;flex-direction:column;gap:7px;margin-top:11px}
+    .daily-group .daily-note{align-self:center}
+    /* One flat measure rather than a scatter of bordered chips: every action in a row claims an equal
+       share of it and the group reads as one strip, hairline-divided like a ruled table rather than
+       boxed piece by piece — the pause slip's own 'equal-width entries' rule, generalised. A row that
+       sits directly on the open plate (the frontispiece) carries no CSS box of its own: frame.js cuts
+       its frame on the canvas instead, in the plate's own burin (drawActionFrames()), keyed to this
+       div's own measured rect. A row already resting on an opaque leaf (the colophon) keeps the plain
+       ruled border, since there the CSS box is the leaf's own furniture, not a chip laid over the art. */
+    .action-row{display:flex;align-items:stretch;justify-content:center;border:1px solid var(--line)}
+    .action-row .diff-btn{flex:1 1 0;min-width:0;border:0;border-right:1px solid var(--line);padding:9px 6px;line-height:1.4}
+    .action-row .diff-btn:last-child{border-right:0}
+    #intro .action-row{border-color:transparent}
     .daily-note{color:var(--muted);letter-spacing:.2em;font-size:10px;min-height:12px}
     #game.daily #daily{color:var(--gold);border-color:var(--gold)}
     /* A second disclosure, folded the way HOW TO PLAY already folds its own paragraph: the ephemeris,
@@ -255,16 +267,14 @@
        the day's two live choices. .daily-group sets display:flex on #more-menu, and an author rule
        always outranks the hidden attribute's own user-agent display:none, whatever either one's
        specificity — so the override is restated below for the one element that needs it. */
-    .more-toggle{pointer-events:auto;background:none;border:0;padding:8px 6px;color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;cursor:pointer;transition:color .2s}
-    .more-toggle:hover,.more-toggle:focus-visible{color:var(--gold)}
-    .more-toggle:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
     #more-menu[hidden]{display:none}
     #end .end-stats{flex-wrap:nowrap;gap:0;min-width:0}
     #end .stat{padding:0 clamp(5px,3vw,22px)}
     #end-row-note{color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.2em;min-height:12px;margin-top:3px}
     #end-observations{margin:-15px 0 19px;font-family:var(--face-sc);font-size:10px;letter-spacing:.17em;color:var(--muted);line-height:1.7;max-width:30em}
     #end-observations:empty{display:none}
-    .end-plate-line{display:flex;gap:13px;align-items:center;justify-content:center;margin-top:13px;min-height:1px}
+    .end-plate-line{display:flex;flex-direction:column;gap:7px;margin-top:13px;min-height:1px}
+    .end-plate-line .daily-note{align-self:center}
     #end-daily{margin:0}
     #copy-score{margin:0;display:none}
     #game.daily #copy-score{display:inline-block}
@@ -573,17 +583,21 @@
     </div>
     <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span></p><p class="instruction" id="instructions" hidden><span class="atlas-only">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</span><span class="ceiling-only">Tap to release the flat night barque.<br>Skim an hour-circle; hold it to restore the reed.<br>Follow the painted dabs around Apep, the Eye, Shu and Nun.<br>The first landing sets the course.</span></p>
       <div class="daily-group">
-        <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
-        <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
+        <div class="action-row" id="daily-actions">
+          <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
+          <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
+          <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>NEWTON</button>
+          <button id="more-toggle" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
+        </div>
         <span id="daily-date" class="small daily-note atlas-only"></span>
-        <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>NEWTON</button>
-        <button id="more-toggle" class="more-toggle atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
       </div>
       <div id="more-menu" class="daily-group atlas-only" hidden>
-        <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
-        <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
-        <button id="rock-open" class="diff-btn era-entry" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
-        <button id="review-last" class="diff-btn" type="button" hidden>REVIEW LAST PLATE</button>
+        <div class="action-row" id="more-actions">
+          <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+          <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
+          <button id="rock-open" class="diff-btn era-entry" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
+          <button id="review-last" class="diff-btn" type="button" hidden>REVIEW LAST PLATE</button>
+        </div>
         <span id="review-last-note" class="small daily-note"></span>
       </div>
       <p class="ceiling-context ceiling-only">TT353 supplies the painted ceiling. The night barque and dangers are a marked gameplay translation from wider Egyptian funerary art.</p>
@@ -604,7 +618,7 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><span id="end-daily" class="small daily-note atlas-only"></span><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" hidden>NEWTON</button><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div>
+      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" hidden>NEWTON</button><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>
   </section>
   <button id="review-close" class="diff-btn" type="button">CLOSE</button>

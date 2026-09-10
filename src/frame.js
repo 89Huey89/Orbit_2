@@ -843,6 +843,22 @@ function drawImpressum(){
   }
   ctx.restore();
 }
+// The frontispiece's two action rows (see .action-row, index.html) stand directly on the open plate,
+// with no CSS box of their own — a group boxed in CSS there would be a chip laid over the drawing, the
+// very thing this cut is meant to stop. The frame around each is cut here instead, in the plate's own
+// burin, measured live off the DOM row exactly as drawInkGauge() measures #ink: the row decides its own
+// width and wrap, this only draws the rule around whatever it settled on.
+function drawActionRowFrame(el){
+  if(!el)return;
+  const rect=el.getBoundingClientRect();
+  if(!(rect.width>0)||!(rect.height>0)||!Number.isFinite(rect.left)||!Number.isFinite(rect.top))return;
+  burinRect(ctx,rect.left,rect.top,rect.width,rect.height,ink.frame.tickMinor,onPaper()?.55:.4,.75,80601);
+}
+function drawActionFrames(){
+  if(!world||world.state!=='ready'||eraId()!==0||plainPlate())return;
+  drawActionRowFrame($('daily-actions'));
+  drawActionRowFrame($('more-actions'));
+}
 function render(dt){
   // A plate that draws its whole frame in its own hand names one painter here (see defineHand() in
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
@@ -855,7 +871,7 @@ function render(dt){
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
-  drawPlateFrame();drawRunningHead();drawHudLeaf();
+  drawPlateFrame();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(world.state==='paused')drawPauseMagnitudeKey();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   drawChapterReveal(dt);
