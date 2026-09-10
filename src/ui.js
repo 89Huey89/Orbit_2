@@ -246,7 +246,7 @@ function setPlaying(){
 }
 function showEnd(){
   const preview=plateOwns('score');deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
-  $('end-score').textContent=world.score;$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
+  $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;

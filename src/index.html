@@ -106,7 +106,11 @@
     .colophon::after{inset:5px;opacity:.6}
     #end .eyebrow{margin:0 0 15px;font-size:10px}
     #end h2{font-style:italic;font-family:var(--face-text);font-weight:400;font-size:clamp(24px,6vw,30px);margin:0;letter-spacing:.02em;opacity:.82}
-    #end-score{font-family:var(--face-text);font-size:clamp(84px,20vw,120px);font-weight:400;line-height:1.2;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+    #end-score{font-family:var(--face-text);font-size:clamp(58px,14vw,80px);font-weight:400;line-height:1.2;letter-spacing:.02em;margin:10px 0 3px;font-variant-numeric:tabular-nums}
+    /* An early book gives its date twice, Arabic then Roman, the second carrying the display weight the
+       first can no longer bear at this size on its own — set beneath the score exactly the way the
+       frontispiece's own impressum already sets ANNO MDCIII beneath its Arabic year. */
+    #end-score-roman{font-family:var(--face-sc);font-size:13px;letter-spacing:.15em;color:var(--muted);margin:0 0 9px;opacity:.85}
     #record{color:var(--gold);height:23px;font-family:var(--face-sc);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
     .end-stats{display:flex;gap:28px;justify-content:center;margin:25px 0 37px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);min-width:220px}
     .stat{position:relative;display:flex;flex-direction:column;gap:7px;padding:0 22px;font-size:19px;font-variant-numeric:tabular-nums}
@@ -226,6 +230,7 @@
       #game .colophon::after{inset:3px}
       #game #end h2{font-size:19px}
       #game #end-score{font-size:44px}
+      #game #end-score-roman{display:none}
       .score-frame{margin:0;padding:3px 20px 2px}
       #end .end-stats{margin:4px 0 8px;padding:6px 0}
       .stat{padding:0 14px}
@@ -240,7 +245,7 @@
       #game .pause-leaf{padding:14px 18px 15px;max-width:min(322px,100%)}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
-    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}.end-stats{margin:9px 0 15px;padding-top:10px}}
+    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}#end-score-roman{display:none}.end-stats{margin:9px 0 15px;padding-top:10px}}
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
     /* Plate frame clearance: nudge the HUD chrome a few px inside the engraved margin drawn on #sky. */
     .hud{left:max(26px,calc(env(safe-area-inset-left) + 4px));right:max(26px,calc(env(safe-area-inset-right) + 4px));top:max(26px,calc(env(safe-area-inset-top) + 14px))}
@@ -290,7 +295,8 @@
       #end #copy-score{padding:6px 12px}
       #end .action-copy{font-size:17px;margin-bottom:8px}
       #end h2{font-size:clamp(19px,5vw,24px)}
-      #end #end-score{font-size:clamp(52px,15vw,78px);margin:7px 0 3px}
+      #end #end-score{font-size:clamp(48px,13vw,68px);margin:7px 0 2px}
+      #end #end-score-roman{font-size:11px;margin:0 0 6px}
       #end .score-frame{margin:6px 0 4px;padding:9px 26px 6px}
     }
     @media(max-height:600px) and (orientation:portrait){
@@ -611,7 +617,7 @@
       <svg class="ceiling-column left ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
       <svg class="ceiling-column right ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
-      <div class="score-frame"><div id="end-score">0</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
+      <div class="score-frame"><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>
