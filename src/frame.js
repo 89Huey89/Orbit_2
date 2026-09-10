@@ -310,12 +310,36 @@ function buildFrameLayer(){
     g.globalAlpha=.55;g.beginPath();g.roundRect(x-.6,y-.6,w+1.2,h+1.2,r+.6);g.stroke();
     g.globalAlpha=1;g.beginPath();g.roundRect(x+.6,y+.6,Math.max(1,w-1.2),Math.max(1,h-1.2),Math.max(0,r-.6));g.stroke();
   };
-  groove(pm1,pm1,Math.max(1,W-pm1*2),Math.max(1,H-pm1*2),colors.markEdge);
+  // A plate is never wiped perfectly clean: a very faint film of its own ink stands across everything
+  // it printed, one flat fill with no gradient so it stops dead at the mark instead of fading toward
+  // it — which is what actually proves an edge was cut there rather than merely ruled. Reading
+  // ink.base.ink rather than a literal keeps the film honest per plate: the same film that reads as a
+  // dark plate tone on paper reads as a pale one on night, since that token is already the sheet's
+  // own dark-on-light/light-on-dark ink, so the mark wants a lip raised into the light rather than a
+  // stain sunk into shadow without a second, plate-specific branch.
+  const markW=Math.max(1,W-pm1*2),markH=Math.max(1,H-pm1*2),markR=Math.max(0,Math.min(pmR,markW*.5,markH*.5));
+  g.beginPath();g.roundRect(pm1,pm1,markW,markH,markR);
+  g.fillStyle=`rgba(${ink.base.ink},${onPaper()?.05:.045})`;g.fill();
+  groove(pm1,pm1,markW,markH,colors.markEdge);
   if(onPaper()){
     groove(pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),colors.mark);
     // The plate's own edge was filed by hand and never ran perfectly true either — one very faint
     // burin pass over the mechanical groove, at the same low weight the shoreline's finer marks use.
     burinRect(g,pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),ink.base.inkSoft,.07,.4,90233);
+    // The plate's corners were filed once, by hand, at one angle, and the burr that left snags the
+    // sheet the same way on every pull: a couple of short streaks drag in from each corner along one
+    // shared direction (mirrored corner to corner, the way frameCorner's own bracket already is)
+    // rather than radiating outward from each corner on its own, which is what one consistent file
+    // mark looks like and a scatter of dirt does not.
+    const rx=.55,ry=.95,rl=Math.hypot(rx,ry),rux=rx/rl,ruy=ry/rl;
+    const ragCorners=[[pm1,pm1,1,1],[W-pm1,pm1,-1,1],[pm1,H-pm1,1,-1],[W-pm1,H-pm1,-1,-1]];
+    for(let ci=0;ci<ragCorners.length;ci++){
+      const [cx0,cy0,sx,sy]=ragCorners[ci],rdx=rux*sx,rdy=ruy*sy;
+      for(let k=0;k<2;k++){
+        const start=1+k*2.6,len=2.6+k*1.4,x1=cx0+rdx*start,y1=cy0+rdy*start;
+        burinSegment(g,x1,y1,x1+rdx*len,y1+rdy*len,ink.base.inkSoft,.12-k*.03,.35,90270+ci*10+k,{segments:2,skips:0,hair:false,wobble:.3});
+      }
+    }
   }
   g.globalAlpha=1;
   // The double rule is cut with the same burin as the orbit rings: it swells, wobbles and lifts a little.
