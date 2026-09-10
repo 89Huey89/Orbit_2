@@ -166,18 +166,18 @@ function transferContact(p,v,n,time,limit,windowMult=1) {
 // is never renamed; see the era-fidelity finding this closes in ART-AUDIT-TODO.md for why the two are
 // kept apart rather than swapped.
 const CONSTELLATIONS = [
-  {name:'THE NEEDLE',latin:'ACUS',shape:[112,151,105]},
-  {name:'THE SAIL',latin:'VELUM',shape:[143,91,144]},
-  {name:'THE LYRE',latin:'LYRA',shape:[100,152,117]},
-  {name:'THE CROWN',latin:'CORONA',shape:[139,92,143]},
-  {name:'THE COMPASS',latin:'CIRCINUS',shape:[106,148,128]},
-  {name:'THE HOURGLASS',latin:'HOROLOGIUM',shape:[146,97,140]},
-  {name:'THE SERPENT',latin:'SERPENS',shape:[99,147,119]},
-  {name:'THE ARGO',latin:'ARGO',shape:[134,102,146]},
-  {name:'THE ASTROLABE',latin:'ASTROLABIUM',shape:[121,149,101]},
-  {name:'THE QUILL',latin:'PENNA',shape:[148,105,135]},
-  {name:'THE LANTERN',latin:'LATERNA',shape:[103,141,124]},
-  {name:'THE MOTH',latin:'PHALÆNA',shape:[140,100,150]}
+  {name:'THE NEEDLE',latin:'Acus',shape:[112,151,105]},
+  {name:'THE SAIL',latin:'Velum',shape:[143,91,144]},
+  {name:'THE LYRE',latin:'Lyra',shape:[100,152,117]},
+  {name:'THE CROWN',latin:'Corona',shape:[139,92,143]},
+  {name:'THE COMPASS',latin:'Circinus',shape:[106,148,128]},
+  {name:'THE HOURGLASS',latin:'Horologium',shape:[146,97,140]},
+  {name:'THE SERPENT',latin:'Serpens',shape:[99,147,119]},
+  {name:'THE ARGO',latin:'Argo',shape:[134,102,146]},
+  {name:'THE ASTROLABE',latin:'Astrolabium',shape:[121,149,101]},
+  {name:'THE QUILL',latin:'Penna',shape:[148,105,135]},
+  {name:'THE LANTERN',latin:'Laterna',shape:[103,141,124]},
+  {name:'THE MOTH',latin:'Phalæna',shape:[140,100,150]}
 ];
 // Renaissance stars are not discovered by their order in the generated fork. Their assumed brightness
 // is a separate, deterministic observation of the point itself: class I is brightest, class VI faintest.

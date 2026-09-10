@@ -354,8 +354,10 @@ function recordOverview(){
 // The score and the run count the ledger holds for each pressure, TIRO through MAGISTER, beside the
 // daily plate's own tally under its own name.
 function pressureTable(){
+  // Named alongside TIRO through MAGISTER, which are a shared display constant kept in full caps, this
+  // row's own label matches them here rather than the sentence case 'Tabula diei' reads as elsewhere.
   const rows=[['relaxed',DIFFICULTY_LABELS.relaxed],['classic',DIFFICULTY_LABELS.classic],
-    ['hardcore',DIFFICULTY_LABELS.hardcore],['daily','Tabula diei']];
+    ['hardcore',DIFFICULTY_LABELS.hardcore],['daily','TABULA DIEI']];
   // Vis Gravitatis stays off this table until it is earned, exactly as its own catalogue row stays a
   // locked rule rather than a selectable one: an always-present zero row would read as played rather
   // than as not yet unlocked.

@@ -634,7 +634,7 @@ function paintGraticuleSphere(g,m){
   for(let i=0;i<6;i++)arc(stage(5.4+i*.42),cx,cy,rx*(.16+i*.14),ry,0,.1,.5); // meridians
   sphereGraduation(g,m,stage(8),rx,ry);
   const names=stage(9);
-  m.label(names,'ÆQUATOR CÆLESTIS',cx,cy+ry+15);m.label(names,'ECLIPTICA',cx+rx*.58,cy-ry*.54,-.31);
+  m.label(names,'Æquator cælestis',cx,cy+ry+15);m.label(names,'Ecliptica',cx+rx*.58,cy-ry*.54,-.31);
 }
 // The pierced plate that turns over an astrolabe's tympan: the limb, the two tropics between which the
 // whole zodiac lies, and the eccentric ecliptic ring laid tangent to both of them — which is the one
@@ -672,7 +672,7 @@ function paintReteSphere(g,m){
   const names=stage(9);
   // An instrument is named on its own limb, inside the graduation, rather than under it: the band below
   // the construction is where the sheet's standing instructions are written.
-  m.label(names,'RETE',cx,cy+R-13);m.label(names,'ZODIACUS',ex,ey-er-7);
+  m.label(names,'Rete',cx,cy+R-13);m.label(names,'Zodiacus',ex,ey-er-7);
 }
 // The spheres as Sacrobosco's readers were taught them: the earth at the centre, seven orbs round it
 // carrying their planets on epicycles, and the firmament outside them all. It is the one construction
@@ -711,7 +711,7 @@ function paintOrbSphere(g,m){
     g.restore();
   }
   const names=stage(9);
-  m.label(names,'TERRA',cx,cy+R*.055+13);m.label(names,'PRIMUM MOBILE',cx,cy-R-9);
+  m.label(names,'Terra',cx,cy+R*.055+13);m.label(names,'Primum mobile',cx,cy-R-9);
 }
 // Apian's paper instrument: dials cut one inside another on a common pin, with an index arm swung over
 // them and a thread hanging off it. A volvelle is read rather than looked at, so it is built outward —
@@ -755,7 +755,7 @@ function paintVolvelleSphere(g,m){
   }
   sphereGraduation(g,m,stage(8),R,R,false);
   const names=stage(9);
-  m.label(names,'VOLVELLA',cx,cy+R-13);m.label(names,'INDEX',cx+Math.cos(-1.09)*R*.78+16,cy+Math.sin(-1.09)*R*.78);
+  m.label(names,'Volvella',cx,cy+R-13);m.label(names,'Index',cx+Math.cos(-1.09)*R*.78+16,cy+Math.sin(-1.09)*R*.78);
 }
 const SPHERE_HANDS={graticule:paintGraticuleSphere,rete:paintReteSphere,orbs:paintOrbSphere,volvelle:paintVolvelleSphere};
 function paintRenaissanceGrid(g,progress,style){
@@ -965,14 +965,14 @@ function impressumRows(){
   const engraver=typeof engraverCredit==='function'?engraverCredit().toUpperCase():'DELINEAVIT ET SCULPSIT · ORBIS TABULA';
   return [
     {key:'place',text:'AUGUSTA VINDELICORUM'},
-    {key:'printer',text:'EX OFFICINA ORBIS TABULÆ'},
+    {key:'printer',text:'Ex officina Orbis Tabulæ'},
     {key:'plate',text:'TAB. V · I  /  A1'},
-    {key:'year',text:impressumHasCapture()?'ANNO MDCIII':''},
+    {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
     {key:'state',text:impressumHasTelescopicBody()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
     {key:'engraver',text:perfect?engraver:'',device:perfect},
     {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},
-    {key:'privilege',text:complete?'SERENISSIMO PRINCIPI · PATRONO ASTRONOMIÆ · CUM PRIVILEGIO':''},
+    {key:'privilege',text:complete?'Serenissimo principi · patrono astronomiæ · cum privilegio':''},
     {key:'daily',text:dailyOn?'TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':''):''}
   ];
 }
