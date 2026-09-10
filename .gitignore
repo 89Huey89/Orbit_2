@@ -3,3 +3,9 @@ node_modules/
 *.tar.gz
 .claude/worktrees/
 .DS_Store
+.playwright-mcp/
+front-sepia.png
+grid-night.png
+grid-night.txt
+hazards-night.png
+plate-tokens.json
