@@ -6,7 +6,7 @@ Eight defects the audit also raised were fixed directly in the working tree the 
 
 Severity is the atlas's own magnitude class (Magnitude I = brightest/most important, down to V). Effort is the audit's own estimate. Each item's proposal is the audit's suggested fix.
 
-**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 4 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, and the narrow-width compass needle/engraver's line/MAGNITUDINES key.**
+**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 5 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, and the double-set impressum/button-row collision.**
 
 ## Contents
 
@@ -30,7 +30,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
 *20 findings.*
 
-- [ ] **The imprint is set twice in the same 60px of margin, in two hands, and collides with the button row as well** `Magnitude I · bug · trivial effort`
+- [x] **The imprint is set twice in the same 60px of margin, in two hands, and collides with the button row as well** `Magnitude I · bug · trivial effort` — *Done: part (1) was already fixed 2026-09-10 (`syncImpressumScreen()` hides `#printer-line` once the cartouche draws). Part (2) now lands too — `impressumAnchor()` no longer commits to a permanent position while `world.state==='ready'`: it measures live against `#start-copy`'s actual `getBoundingClientRect().top` (the MORE disclosure included) and clamps above it, only settling for good — the original one-time anchor — once a run actually begins and the intro leaf hides. Verified at 430×932 with MORE collapsed and expanded, and once a run starts.*
 
   Two parts, both small. (1) The canvas cartouche is the better artefact — it is plate furniture, it scrolls with the sheet, it reveals row by row — so hide #atlas-impressum whenever drawImpressum() will draw (eraId()===0 && !plainPlate()), keeping the DOM span only for the ceiling/rock doors and the reduced layout at index.html:208. (2) That alone does not fix desktop: while the frontispiece leaf is up, the cartouche still prints through the button block. Give impressumAnchor() (frame.js:646) a second clamp while world.state==='ready' that keeps the cartouche's top above the intro overlay's occupied band, so it settles into place only once the run starts and the leaf lifts — which is also what README:68's 'nothing prints through a leaf' already asks for.
 

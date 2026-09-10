@@ -192,7 +192,7 @@ get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCos
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
-get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,\
+get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
@@ -228,10 +228,14 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.document.getElementById('intro').classList.contains('hidden'),false,'Closing a review opened from the frontispiece must return to it, not to the colophon: '+width+'x'+height);
     }else assert.equal(btn.hidden,true,'With nothing saved yet, the frontispiece must not offer to review it: '+width+'x'+height);
   }
-  // The impressum is engraved on the sheet, not attached to the viewport. The same stored world
-  // coordinate must therefore move downward when the camera rises, with no second anchor created.
+  // The impressum is engraved on the sheet, not attached to the viewport — but nothing is stamped yet
+  // while the frontispiece leaf is still up (it is measured live against the leaf instead, so the MORE
+  // disclosure never runs the cartouche under it), so the one-time world anchor is checked once a run
+  // has actually begun, the same moment the real anchor first commits.
   {
-    const w=context.test.world,markY=w.impressumY,screenBefore=context.test.sy(markY),cameraBefore=w.cameraY;
+    const w=context.test.world;
+    w.state='playing';context.test.impressumAnchor(context.test.impressumMetrics());w.state='ready';
+    const markY=w.impressumY,screenBefore=context.test.sy(markY),cameraBefore=w.cameraY;
     assert(Number.isFinite(markY),'The impressum receives one finite world anchor');
     w.cameraY=cameraBefore-100;
     assert(context.test.sy(markY)>screenBefore,'A rising camera carries the engraved impressum downward');
