@@ -71,6 +71,24 @@ function frameWindHead(g,cx,cy,angle,rgb,alpha,radius,seed,breath=1){
   }
   g.restore();
 }
+// The full wind-head's twenty-odd strokes read as a face at the lower corners' size; shrunk small
+// enough to clear the HUD's text at the top of a narrow sheet, they read as dirt instead. Six marks
+// only, cut heavier so the reduction reads as a simplification rather than a fainter version of the
+// same noise: the outline, one cheek's swell standing for the whole face, the pursed mouth, and three
+// breath strokes rather than five.
+function frameWindHeadSimple(g,cx,cy,angle,rgb,alpha,radius,seed){
+  const rng=seeded(seed>>>0||1),R=radius;
+  g.save();g.translate(cx,cy);g.rotate(angle);
+  burinArc(g,0,0,R,0,TAU,rgb,alpha,1.1,seed+3,{segments:16,skips:1});
+  burinArc(g,R*.1,R*.34,R*.42,-1.15,.55,rgb,alpha*.85,.8,seed+31,{segments:6,skips:0});
+  burinArc(g,R*.74,0,R*.2,0,TAU,rgb,alpha,.9,seed+61,{segments:8,skips:0});
+  for(let i=0;i<3;i++){
+    const spread=(i-1)*.4,len=R*(1.3+rng());
+    const x0=R*.98,y0=Math.sin(spread)*R*.28;
+    burinSegment(g,x0,y0,x0+Math.cos(spread)*len,y0+Math.sin(spread)*len,rgb,alpha*(.6-Math.abs(spread)*.5),.7,seed+71+i*7,{segments:5,skips:1,hair:false,wobble:1.1});
+  }
+  g.restore();
+}
 // ---------- The catalogue's marginal ornaments ----------
 // Alternatives to the wind-heads, cut into the same four corners with the same burin at the margin's
 // own tone, and baked into the same cached frame layer. Each takes the corner point, the diagonal
@@ -196,10 +214,19 @@ function frameNorthNeedle(g,cx,cy,rgb,alpha,size){
   g.restore();
 }
 // The DOM HUD prints ORBIT, the score and BEST across the top of the plate, and the two upper corners of
-// the margin have to keep out of its way. They are cut at 45% of the head and half the breath there, and
-// tucked further into the corner, so the whole ornament finishes above and outside the HUD's text boxes;
-// the two lower corners are unchanged, since nothing is set over them.
-const TOP_HEAD=.45,TOP_BREATH=.5;
+// the margin have to keep out of its way. On a wide sheet they are cut at 45% of the head and half the
+// breath, tucked further into the corner, so the whole ornament finishes above and outside the HUD's
+// text boxes; the two lower corners are unchanged, since nothing is set over them. That shrink reads
+// fine at a wide sheet's 14px head; at a narrow sheet's 9px it reduced the reference wind-head to a
+// smudge of noise the eye cannot resolve as a face at all — see frameWindHeadSimple below, which a
+// narrow sheet's top-right corner takes instead, at close to full size and cleared by sitting close to
+// the literal corner rather than by shrinking (the top-left corner keeps its own needle, below).
+// The simplified head's own placement: tucked close to the literal corner (a small inset, not the
+// shrunken head's own deeper one) and turned to blow straight down the margin rather than along the
+// corner's 45° diagonal — the diagonal points straight at the HUD's best-score block, where a
+// horizontal breath would run into it; blowing down the vertical edge instead clears it by a few
+// pixels at every breath length the seed can draw, measured against the HUD's own live layout.
+const TOP_HEAD=.45,TOP_BREATH=.5,SIMPLE_HEAD=7.5,SIMPLE_INSET=2,SIMPLE_ANGLE=Math.PI/2;
 function frameOrnaments(g,wide,innerR){
   const style=activeCosmetic('frame'),head=wide?14:9;
   const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
@@ -214,6 +241,10 @@ function frameOrnaments(g,wide,innerR){
     // face cannot, without reaching the HUD's brand text, so it earns back some of the room TOP_HEAD
     // gives up.
     if(!wide&&dx>0&&dy>0){frameNorthNeedle(g,innerR+11,innerR+11,rgb,alpha,10);continue;}
+    if(!wide&&top&&style!=='strapwork'&&style!=='acanthus'&&style!=='seamonsters'){
+      frameWindHeadSimple(g,W-(innerR+SIMPLE_INSET),innerR+SIMPLE_INSET,SIMPLE_ANGLE,rgb,alpha,SIMPLE_HEAD,seed);
+      continue;
+    }
     if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,size,seed);
     else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,size*.9,seed);
     else if(style==='seamonsters'){
