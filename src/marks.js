@@ -55,25 +55,31 @@ definePlate('marks',{
 // (cached by quantised radius/rgb/alpha/weight/plate/scale/seed so it is painted once and blitted per
 // frame); `engravedLine` draws a short constellation segment straight onto ctx.
 function burinArc(g,cx,cy,radius,from,to,rgb,alpha,weight,seed,opts={}){
-  const span=to-from,flatten=opts.flatten??1,rng=seeded(seed>>>0||1);
+  const span=to-from,flatten=opts.flatten??1,rng=seeded(seed>>>0||1),open=Math.abs(span)<TAU-.01;
   const segCount=opts.segments??clamp(Math.round(Math.abs(span)*Math.max(radius,2)/2.6),6,84);
   const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
   const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
   const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=(opts.wobble??.3)*(1+rng());
   const skipCount=Math.min(opts.skips??Math.round(segCount*.06),segCount-1),skips=new Set();
   while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
-  g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
+  g.save();g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
   for(let i=0;i<segCount;i++){
     if(skips.has(i))continue;
     const a0=from+span*i/segCount,a1=from+span*(i+1)/segCount,mid=(a0+a1)/2;
     const wob=Math.sin(wobFreq*mid+wobPhase)*wobAmp;
     const s=Math.sin(f1*mid+ph1)*.5+Math.sin(f2*mid+ph2)*.3+Math.sin(f3*mid+ph3)*.2;
     const r=Math.max(.05,radius+wob);
-    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45));
+    // An open stroke lifts the burin at its trailing edge rather than setting it down flat: the last
+    // segment tapers and, above a hairline, squares its cap so the hand-lift reads as a lift, not a
+    // second hemisphere. A closed ring never tapers — every point on it is mid-stroke.
+    const tapered=open&&i===segCount-1;
+    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45)*(tapered?.3:1));
+    if(tapered&&weight>.8)g.lineCap='butt';
     g.beginPath();
     if(flatten===1)g.arc(cx,cy,r,a0,a1);else g.ellipse(cx,cy,r,Math.max(.05,r*flatten),0,a0,a1);
     g.stroke();
   }
+  g.restore();
 }
 // A spiral cut the way burinArc cuts a ring, and with the same wobbling, swelling, occasionally
 // skipping burin segments: the difference is only that the radius runs from one value to another
@@ -81,14 +87,14 @@ function burinArc(g,cx,cy,radius,from,to,rgb,alpha,weight,seed,opts={}){
 // as a quadratic through its own midpoint, which keeps a coarse sweep smooth without a second
 // stroke, so a whole turn of a whirlpool costs about what a turn of a ring costs.
 function burinSpiral(g,cx,cy,rFrom,rTo,from,to,rgb,alpha,weight,seed,opts={}){
-  const span=to-from,rng=seeded(seed>>>0||1);
+  const span=to-from,rng=seeded(seed>>>0||1),open=Math.abs(span)<TAU-.01;
   const segCount=opts.segments??clamp(Math.round(Math.abs(span)*Math.max((rFrom+rTo)/2,2)/2.6),6,84);
   const ph1=rng()*TAU,ph2=rng()*TAU,ph3=rng()*TAU;
   const f1=2+Math.floor(rng()*2),f2=5+Math.floor(rng()*3),f3=9+Math.floor(rng()*4);
   const wobPhase=rng()*TAU,wobFreq=3+Math.floor(rng()*2),wobAmp=(opts.wobble??.3)*(1+rng());
   const skipCount=Math.min(opts.skips??Math.round(segCount*.06),segCount-1),skips=new Set();
   while(skips.size<skipCount)skips.add(Math.floor(rng()*segCount));
-  g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
+  g.save();g.lineCap='round';g.strokeStyle=`rgba(${rgb},${alpha})`;
   for(let i=0;i<segCount;i++){
     if(skips.has(i))continue;
     const t0=i/segCount,t1=(i+1)/segCount,a0=from+span*t0,a1=from+span*t1,mid=(a0+a1)/2;
@@ -99,12 +105,17 @@ function burinSpiral(g,cx,cy,rFrom,rTo,from,to,rgb,alpha,weight,seed,opts={}){
     // arc rather than cutting the chord, which is what keeps a two-segment turn from reading as a
     // polygon at the rim, where the segments are longest.
     const rm=(r0+r1)/2/Math.max(.2,Math.cos((a1-a0)/2));
-    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45));
+    // Same lifted trailing edge as burinArc: a spiral always has a genuine open end (it cannot close
+    // on itself), so it always tapers.
+    const tapered=open&&i===segCount-1;
+    g.lineWidth=Math.max(.05,weight*(1+clamp(s,-1,1)*.45)*(tapered?.3:1));
+    if(tapered&&weight>.8)g.lineCap='butt';
     g.beginPath();
     g.moveTo(cx+Math.cos(a0)*r0,cy+Math.sin(a0)*r0);
     g.quadraticCurveTo(cx+Math.cos(mid)*rm,cy+Math.sin(mid)*rm,cx+Math.cos(a1)*r1,cy+Math.sin(a1)*r1);
     g.stroke();
   }
+  g.restore();
 }
 function burinSegment(g,x1,y1,x2,y2,rgb,alpha,weight,seed,opts={}){
   const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,rng=seeded(seed>>>0||1);
