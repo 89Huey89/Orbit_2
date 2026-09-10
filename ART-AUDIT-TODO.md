@@ -6,7 +6,7 @@ Eight defects the audit also raised were fixed directly in the working tree the 
 
 Severity is the atlas's own magnitude class (Magnitude I = brightest/most important, down to V). Effort is the audit's own estimate. Each item's proposal is the audit's suggested fix.
 
-**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 7 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, the double-set impressum/button-row collision, the rising dark's treeline/flat-fill edge, and the constellations' Latin entry-star lettering.**
+**Totals: 177 findings, 53 new-art gaps, 45 source-fetch items. 8 findings checked off since extraction (2026-09-10): the inscription-collision floor, the chapter-title/inscription symmetry fix, the telescopic-families/imprint-date second state, the narrow-width compass needle/engraver's line/MAGNITUDINES key, the double-set impressum/button-row collision, the rising dark's treeline/flat-fill edge, the constellations' Latin entry-star lettering, and the stale inscription carried through the footer band.**
 
 ## Contents
 
@@ -127,7 +127,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   Stage it. (1) Two CSS values: drop the ground to about `.90` and lay the canvas's own laid-paper/foxing tile behind it so the sheet's stock reads through — this alone buys most of the reading. (2) Cut a leaf-sized frame into one cached canvas layer behind the DOM: reuse `buildFrameLayer`'s plate-mark `strokeRect` plus one `burinRect` inner rule and one corner ornament — a book page, not a chart, so no tick ladder. (3) Replace the `border-bottom` row rules with a repeating strip of `burinSegment` rules drawn once at the row pitch into that same layer. Do not extend this to the ephemeris.
 
-- [ ] **An inscription the run has stopped asking for is carried through the footer band and prints across the running head and the DOM icons** `Magnitude I · bug · trivial effort`
+- [x] **An inscription the run has stopped asking for is carried through the footer band and prints across the running head and the DOM icons** `Magnitude I · bug · trivial effort` — *Done: the strike test in `drawInscriptions()` (inscriptions.js) now reads `box.top>H-footerBand()` rather than `box.top>H-rule`. Confirmed by placing a note at box.top≈882 (between the two thresholds, 862 and 919 at 430×932) — struck under the new test, would have survived under the old one.*
 
   One line: change the strike test at inscriptions.js:265 from `box.top>H-rule` to `box.top>H-footerBand()` for any note that is not currently held, so it leaves the sheet at the footer rather than at the inner rule — the same floor `marginaliaFloor()` (effects.js:1110) already uses for the gloss. Held instructions keep their existing re-set path.
 

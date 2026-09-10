@@ -280,7 +280,10 @@ function drawInscriptions(dt){
     const g=inscriptions[i];
     if(running)g.age+=dt;
     const box=inscriptionBox(g);
-    if(box.top>H-rule&&!(g.held&&g.touched)){inscriptions.splice(i,1);continue;}
+    // Struck at the footer band, not the inner rule: the two are far apart at the target viewport
+    // (frameBand()*.92 is a handful of px; footerBand() is the running head and the DOM icon row), and a
+    // note between them was already carried under the plate's own furniture, not merely toward the edge.
+    if(box.top>H-footerBand()&&!(g.held&&g.touched)){inscriptions.splice(i,1);continue;}
     if(onPage)drawInscription(g);
     if(running)g.touched=false;
   }
