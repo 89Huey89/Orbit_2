@@ -304,6 +304,14 @@ function chapterLabel(value){
 // of the same name in src/ledger.js's UNLOCKS.
 const OBSERVATION_LABELS=[['perfectThree','Tres Perfecti'],['skipFive','Saltus Quinque'],['maxSpeed','Velocitas Summa'],
   ['graze','Periculum'],['pureChart','Linea Pura'],['fortyRows','Altitudo'],['threeMinutes','Vigilia'],['rightAngle','Angulus Rectus']];
+// Every ledger table sits on its own .ledger-wrap so paintLedgerRules() (below) can back it with a
+// canvas of engraved row rules cut to its actual measured height — the straight CSS border-bottom a
+// ruled register carried before read as forty identical strokes from one hand that owns none of them.
+function ledgerTable(rows){
+  return '<div class="ledger-wrap"><canvas class="ledger-rule" aria-hidden="true"></canvas><table class="ledger-table"><tbody>'+
+    rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
+    '</tbody></table></div>';
+}
 function catalogueTable(){
   const rows=[
     ['Orbits captured',commas(ledger.captures)],
@@ -313,9 +321,7 @@ function catalogueTable(){
     ['Runs',commas(ledgerStat('runs'))],
     ['Time in the chart',chartTime(ledger.playSeconds)]
   ];
-  return '<table class="ledger-table"><tbody>'+
-    rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
-    '</tbody></table>';
+  return ledgerTable(rows);
 }
 function catalogueOverview(){
   const total=UNLOCKS.length,earned=unlockedIds().size,percent=total?Math.round(earned/total*100):100;
@@ -349,9 +355,7 @@ function pressureTable(){
   // locked rule rather than a selectable one: an always-present zero row would read as played rather
   // than as not yet unlocked.
   if(isUnlocked('newton'))rows.push(['newton',UNLOCK_BY_ID.newton.latin]);
-  return '<table class="ledger-table"><tbody>'+
-    rows.map(([key,label])=>`<tr><th scope="row">${plainText(label)}</th><td>${commas(ledger.personalBests[key]||0)} best · ${commas(ledger.runs[key]||0)} runs</td></tr>`).join('')+
-    '</tbody></table>';
+  return ledgerTable(rows.map(([key,label])=>[plainText(label),`${commas(ledger.personalBests[key]||0)} best · ${commas(ledger.runs[key]||0)} runs`]));
 }
 // The fuller record: the original six lifetime figures the catalogue has always shown, then every
 // other stat the ledger keeps that otherwise never surfaces anywhere in the UI on its own — some of
@@ -372,16 +376,12 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=recordOverview()+catalogueTable()+'<table class="ledger-table"><tbody>'+
-    rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
-    '</tbody></table>';
+  let html=recordOverview()+catalogueTable()+ledgerTable(rows);
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
-  html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3><table class="ledger-table"><tbody>'+
-    OBSERVATION_LABELS.map(([key,latin])=>`<tr><th scope="row">${plainText(latin)}</th><td>${commas(ledger.observations[key]||0)}</td></tr>`).join('')+
-    '</tbody></table></section>';
-  html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3><table class="ledger-table"><tbody>'+
-    CONSTELLATIONS.map(c=>`<tr><th scope="row">${plainText(c.name)}</th><td>${commas(ledger.constellations[c.name]||0)}</td></tr>`).join('')+
-    '</tbody></table></section>';
+  html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
+    ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),commas(ledger.observations[key]||0)]))+'</section>';
+  html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3>'+
+    ledgerTable(CONSTELLATIONS.map(c=>[plainText(c.name),commas(ledger.constellations[c.name]||0)]))+'</section>';
   return html;
 }
 // ---------- The catalogue's engraved previews ----------
@@ -482,6 +482,41 @@ function paintCatalogueSplats(body){
     g.lineCap='round';g.lineJoin='round';
     inkSplat(g,trailInk(c.getAttribute('data-ink')),SPLAT_LIFE,splatSeed(c.getAttribute('data-ink')||''),SPLAT_SIZE,.72,Math.PI,true);
   }
+}
+// One engraved rule per row, cut at the table's own measured height rather than assumed: the row
+// pitch is exact (canvas height / row count), so the strip never drifts out of register the way a
+// guessed CSS tile would over a long scrolling table. See the art audit's cohesion section.
+function paintLedgerRules(body){
+  if(!body||!body.querySelectorAll)return;
+  for(const wrap of body.querySelectorAll('.ledger-wrap')){
+    const c=wrap.querySelector('canvas.ledger-rule'),table=wrap.querySelector('table.ledger-table');
+    const w=c&&c.clientWidth,h=c&&c.clientHeight,rows=table&&table.rows.length;
+    if(!c||!table||!(w>0&&h>0&&rows>0)||!c.getContext)continue;
+    c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+    const g=c.getContext('2d');if(!g)continue;
+    g.setTransform(DPR,0,0,DPR,0,0);
+    const pitch=h/rows,rgb=ink.base.inkSoft,alpha=onPaper()?.3:.2;
+    for(let i=0;i<rows;i++){
+      const y=pitch*(i+1);
+      burinSegment(g,1,y,w-1,y,rgb,alpha,.55,(i+1)*97+31,{segments:Math.max(6,Math.round(w/22)),hair:false,wobble:.22});
+    }
+  }
+}
+// The catalogue leaf's own edge, cut on the canvas behind the DOM rather than ruled with a straight
+// CSS border: the plate-mark rect buildFrameLayer opens the chart's own frame with, one faint inner
+// rule, and a single corner rosette — a book page, not a chart, so no tick ladder. See the art audit.
+function paintCatalogueLeafFrame(){
+  const c=$('cat-leaf-frame');if(!c)return;
+  const w=c.clientWidth,h=c.clientHeight;
+  if(!(w>0&&h>0)||!c.getContext)return;
+  c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+  const g=c.getContext('2d');if(!g)return;
+  g.setTransform(DPR,0,0,DPR,0,0);
+  const rgb=ink.base.inkSoft;
+  g.lineWidth=1;g.strokeStyle=`rgba(${rgb},${onPaper()?.3:.2})`;
+  g.strokeRect(3.5,3.5,Math.max(1,w-7),Math.max(1,h-7));
+  burinRect(g,10.5,10.5,Math.max(1,w-21),Math.max(1,h-21),rgb,onPaper()?.34:.24,.7,58113);
+  frameRosette(g,24,24,rgb,onPaper()?.34:.24,9,58119);
 }
 // The eight observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
 // Five of them are walked out of a loop here rather than typed as path data — the feather's vane off
@@ -875,6 +910,8 @@ function renderCatalogue(){
   html+=`<div class="cat-pane${catalogueTab==='insignia'?'':' hidden'}" data-pane="insignia">${catalogueInsignia()}</div>`;
   body.innerHTML=html;
   paintCatalogueSplats(body);
+  paintLedgerRules(body);
+  paintCatalogueLeafFrame();
   const field=$('initials');
   if(field&&field.addEventListener&&!field.wired){
     field.wired=true;

@@ -292,10 +292,16 @@
     }
     /* — The catalogue: a ruled library page laid over the plate — */
     #catalogue{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
-    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:rgba(var(--veil),.975);text-align:left}
+    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:rgba(var(--veil),.9);text-align:left}
     .catalogue-leaf::before,.catalogue-leaf::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
     .catalogue-leaf::before{inset:0;border-width:1.5px}
     .catalogue-leaf::after{inset:5px;opacity:.6}
+    /* The catalogue leaf cuts its own edge on the canvas, in the plate's own hand — the engraved plate-mark
+       and one inner rule, painted by paintCatalogueLeafFrame() in src/ui.js — so its plain CSS border steps
+       aside here. The ephemeris keeps the CSS border above: this is not its fix (see the art audit). */
+    #catalogue .catalogue-leaf{z-index:0}
+    #catalogue .catalogue-leaf::before,#catalogue .catalogue-leaf::after{display:none}
+    .cat-leaf-frame{position:absolute;inset:0;z-index:-1;pointer-events:none;display:block;width:100%;height:100%}
     .catalogue-head{flex:0 0 auto;text-align:center}
     #catalogue h2{margin:0;font-family:var(--face-sc);font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
     #catalogue .eyebrow{margin:0 0 6px;font-size:9px}
@@ -306,9 +312,14 @@
        both are always in the DOM (see renderCatalogue in src/ui.js). */
     .cat-tabs{display:flex;gap:9px;justify-content:center;margin:0 0 13px}
     .cat-pane.hidden{display:none}
+    /* A ledger table's row rules are cut by the same burin as everything else on the sheet, not ruled
+       with a straight CSS border: .ledger-rule is a canvas painted by paintLedgerRules() in src/ui.js,
+       one wobbled line per row, sized to the table it backs and held behind it at a negative z-index. */
+    .ledger-wrap{position:relative;z-index:0}
+    .ledger-rule{position:absolute;inset:0;z-index:-1;pointer-events:none;display:block;width:100%;height:100%}
     .ledger-table{width:100%;border-collapse:collapse}
-    .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--line)}
-    .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;border-bottom:1px solid var(--line);color:var(--best)}
+    .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;padding:6px 0}
+    .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;color:var(--best)}
     .cat-group{margin-top:17px}
     .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-weight:400;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
     .cat-group ul{margin:0;padding:0;list-style:none}
@@ -604,6 +615,7 @@
   </section>
   <section id="catalogue" class="screen hidden" aria-label="Catalogue" aria-hidden="true">
     <div class="catalogue-leaf">
+      <canvas id="cat-leaf-frame" class="cat-leaf-frame" aria-hidden="true"></canvas>
       <div class="catalogue-head">
         <p class="eyebrow">ORBIS TABULA</p>
         <h2>CATALOGUS</h2>
