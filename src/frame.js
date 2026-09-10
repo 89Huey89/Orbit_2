@@ -104,6 +104,21 @@ function frameWindHeadSimple(g,cx,cy,angle,rgb,alpha,radius,seed){
   }
   g.restore();
 }
+// A small pierced trefoil, standing in at the top two corners for whichever cosmetic ornament is
+// otherwise active there: strapwork's interlace, the acanthus scroll and the sea-monster corner's own
+// rosette all pack their identity into a reach that reads only at the lower corners' full size, the same
+// floor the default wind-head was rescued from above. Three overlapping rings and a pierced centre read
+// at any size a corner mark actually gets, so one small mark stands in for all three catalogue styles
+// rather than three bespoke reductions.
+function frameCornerKnot(g,cx,cy,rgb,alpha,size,seed){
+  g.save();g.translate(cx,cy);
+  for(let i=0;i<3;i++){
+    const a=i/3*TAU-Math.PI/2;
+    burinArc(g,Math.cos(a)*size*.5,Math.sin(a)*size*.5,size*.5,0,TAU,rgb,alpha,.8,seed+i*13,{segments:14,skips:1,wobble:.25});
+  }
+  burinArc(g,0,0,size*.22,0,TAU,rgb,alpha*.9,.6,seed+41,{segments:8,skips:0});
+  g.restore();
+}
 // ---------- The catalogue's marginal ornaments ----------
 // Alternatives to the wind-heads, cut into the same four corners with the same burin at the margin's
 // own tone, and baked into the same cached frame layer. Each takes the corner point, the diagonal
@@ -229,47 +244,40 @@ function frameNorthNeedle(g,cx,cy,rgb,alpha,size){
   g.restore();
 }
 // The DOM HUD prints ORBIT, the score and BEST across the top of the plate, and the two upper corners of
-// the margin have to keep out of its way. On a wide sheet they are cut at 45% of the head and half the
-// breath, tucked further into the corner, so the whole ornament finishes above and outside the HUD's
-// text boxes; the two lower corners are unchanged, since nothing is set over them. That shrink reads
-// fine at a wide sheet's 14px head; at a narrow sheet's 9px it reduced the reference wind-head to a
-// smudge of noise the eye cannot resolve as a face at all — see frameWindHeadSimple below, which a
-// narrow sheet's top-right corner takes instead, at close to full size and cleared by sitting close to
-// the literal corner rather than by shrinking (the top-left corner keeps its own needle, below).
-// The simplified head's own placement: tucked close to the literal corner (a small inset, not the
-// shrunken head's own deeper one) and turned to blow straight down the margin rather than along the
-// corner's 45° diagonal — the diagonal points straight at the HUD's best-score block, where a
-// horizontal breath would run into it; blowing down the vertical edge instead clears it by a few
-// pixels at every breath length the seed can draw, measured against the HUD's own live layout.
-const TOP_HEAD=.45,TOP_BREATH=.5,SIMPLE_HEAD=7.5,SIMPLE_INSET=2,SIMPLE_ANGLE=Math.PI/2;
+// the margin have to keep out of its way. Shrinking whichever ornament is active there to clear it —
+// the documented 45%-of-the-head reduction — read fine at a wide sheet's 14px head but reduced the
+// reference wind-head to a smudge of noise at a narrow sheet's 9px, and every cosmetic corner (the
+// strapwork interlace, the acanthus scroll, the sea-monster corner's own rosette) packs the same kind of
+// fine detail into its own reach, so the same floor catches all four at some width. The two upper corners
+// keep the *reduction*, not the shrink: a mark cut lean enough to read at any width instead, tucked close
+// to the literal corner and blown or knotted so it clears the HUD by where it sits rather than by how
+// small it has been made. The two lower corners, which nothing is set over, are unchanged.
+const SIMPLE_INSET=2,SIMPLE_ANGLE=Math.PI/2;
 function frameOrnaments(g,wide,innerR){
-  const style=activeCosmetic('frame'),head=wide?14:9;
+  const style=activeCosmetic('frame'),head=wide?14:9,simpleHead=head*.8,inset=SIMPLE_INSET+(wide?1:0);
   const rgb=ink.base.inkSoft,alpha=onPaper()?.34:.24;
-  const inset=innerR+head*.9+(wide?3:2),topHead=head*TOP_HEAD,topInset=innerR+topHead*.9+(wide?3:2);
-  const corners=[[topInset,topInset,1,1],[W-topInset,topInset,-1,1],[inset,H-inset,1,-1],[W-inset,H-inset,-1,-1]];
-  for(const [x,y,dx,dy] of corners){
-    const seed=51001+Math.round(x*7+y*13),top=dy>0,size=top?topHead:head;
+  const fullInset=innerR+head*.9+(wide?3:2);
+  // Top corners carry only their direction: every top mark now sits at its own fixed inset (below)
+  // rather than at the shrunken-head inset the old single corners array placed it at.
+  const topCorners=[[1],[-1]],bottomCorners=[[fullInset,H-fullInset,1,-1],[W-fullInset,H-fullInset,-1,-1]];
+  for(const [dirX] of topCorners){
+    const cx=dirX>0?innerR+inset:W-(innerR+inset),cy=innerR+inset,seed=51001+Math.round(cx*7+cy*13);
     // A narrow sheet has no flank for the compass rose (see buildFrameLayer's `if(wide)` block below),
     // so the upper-left corner — otherwise the same wind-head or cosmetic ornament as the other three —
-    // takes a bare needle instead, the one piece of the rose a phone actually has room for. Given its
-    // own inset rather than the shrunken topInset: a thin needle and shaft read at a size the wind-head's
-    // face cannot, without reaching the HUD's brand text, so it earns back some of the room TOP_HEAD
-    // gives up.
-    if(!wide&&dx>0&&dy>0){frameNorthNeedle(g,innerR+11,innerR+11,rgb,alpha,10);continue;}
-    if(!wide&&top&&style!=='strapwork'&&style!=='acanthus'&&style!=='seamonsters'){
-      frameWindHeadSimple(g,W-(innerR+SIMPLE_INSET),innerR+SIMPLE_INSET,SIMPLE_ANGLE,rgb,alpha,SIMPLE_HEAD,seed);
-      continue;
-    }
-    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,size,seed);
-    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,size*.9,seed);
-    else if(style==='seamonsters'){
-      // The monsters swim in the two lower corners, where the rising ink reaches: they are cut in the
-      // flood's own pigment, at the weight the shoreline marginalia is printed at, so they still read
-      // once the page is half drowned. The upper corners take a small star instead.
-      if(dy<0)frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
-      else frameRosette(g,x,y,rgb,alpha*.85,size*.5,seed);
-    }
-    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,size,seed,top?TOP_BREATH:1);
+    // takes a bare needle instead, the one piece of the rose a phone actually has room for.
+    if(!wide&&dirX>0){frameNorthNeedle(g,innerR+11,innerR+11,rgb,alpha,10);continue;}
+    if(style==='strapwork'||style==='acanthus'||style==='seamonsters')frameCornerKnot(g,cx,cy,rgb,alpha,simpleHead*.72,seed);
+    else frameWindHeadSimple(g,cx,cy,SIMPLE_ANGLE,rgb,alpha,simpleHead,seed);
+  }
+  for(const [x,y,dx,dy] of bottomCorners){
+    const seed=51001+Math.round(x*7+y*13);
+    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,head,seed);
+    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,head*.9,seed);
+    // The monsters swim in the two lower corners, where the rising ink reaches: they are cut in the
+    // flood's own pigment, at the weight the shoreline marginalia is printed at, so they still read
+    // once the page is half drowned.
+    else if(style==='seamonsters')frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
+    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed,1);
   }
 }
 function frameScaleBar(g,x,y,colors){
