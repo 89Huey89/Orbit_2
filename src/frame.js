@@ -45,17 +45,21 @@ function frameCompassRose(g,cx,cy,r,colors){
   }
   g.fillStyle=colors.orn;g.beginPath();g.moveTo(0,-r-3);g.lineTo(-2,-r+1.2);g.lineTo(0,-r-.5);g.lineTo(2,-r+1.2);g.closePath();g.fill();
   g.restore();
-  // The four winds named round the rose, each set on its own quarter of the ring.
+  // The four winds named round the rose, each set on its own quarter of the ring, all four at the
+  // same radius: MERIDIES reads upright at the foot the same way a printed rose actually sets its
+  // bottom name, by walking the arc backward rather than by standing on a smaller circle than its
+  // three neighbours. The faint ring moves out to just past the lettering, so it reads as the band
+  // the four names stand on rather than a stray mark closer to the rose than any of them.
   if(plainPlate())return;
   const size=Math.max(4.6,r*.42),ring=r*1.9;
-  g.strokeStyle=colors.tickMinor;g.lineWidth=.5;g.beginPath();g.arc(cx,cy,ring-1.5,0,TAU);g.stroke();
+  g.strokeStyle=colors.tickMinor;g.lineWidth=.5;g.beginPath();g.arc(cx,cy,ring+size*1.5,0,TAU);g.stroke();
   g.font=plateFace(size,'sc');
   g.fillStyle=colors.text;
   const opts={align:'center',size,spacing:size*.14};
   textAlongArc(g,'SEPTENTRIO',cx,cy,ring+size,-Math.PI/2,opts);
   textAlongArc(g,'ORIENS',cx,cy,ring+size,0,opts);
   textAlongArc(g,'OCCIDENS',cx,cy,ring+size,Math.PI,opts);
-  textAlongArc(g,'MERIDIES',cx,cy,ring,Math.PI/2,{...opts,inward:true});
+  textAlongArc(g,'MERIDIES',cx,cy,ring+size,Math.PI/2,{...opts,inward:true});
 }
 // A cherubic wind-head, cut for the corner of the plate: a puffing face turned into the chart with its
 // breath streaming away from the mouth. Seeded so no two corners are the same head.
