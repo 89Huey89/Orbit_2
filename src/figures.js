@@ -1240,11 +1240,20 @@ function flareSprite(seed,radius,core){
     burinSegment(g,x0,y0,x1,y1,p.flareRim,.75,.9,seed+31+i,{wobble:.5,hair:false});
   }
   for(let i=0;i<14;i++){const a=rng()*TAU,d=u*(1.05+rng()*.5);g.fillStyle=`rgba(${p.flarePenumbra},${.14+rng()*.3})`;g.fillRect(Math.cos(a)*d,Math.sin(a)*d,.8,.8);}
-  // Two lesser spots of the same group, as the sunspot plates always show.
+  // Two lesser spots of the same group, as the sunspot plates always show — set clear of the burst's
+  // own jagged rim rather than landing on it, each cut by hand like everything else on the sheet: a
+  // jittered landContour fill instead of a bare arc(), and a burin-struck penumbra ring instead of a
+  // plain stroke.
+  const burstRadiusAt=ang=>{
+    const idx=((Math.round(ang/TAU*verts.length)%verts.length)+verts.length)%verts.length,[vx,vy]=verts[idx];
+    return Math.hypot(vx,vy);
+  };
   for(let i=0;i<2;i++){
-    const a=rng()*TAU,d=r*(.62+rng()*.3),sr=u*(.2+rng()*.16);
-    g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d,sr,0,TAU);g.fillStyle=`rgba(${p.flareUmbra},.75)`;g.fill();
-    g.strokeStyle=`rgba(${p.flarePenumbra},.35)`;g.lineWidth=.5;g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d,sr*2.1,0,TAU);g.stroke();
+    let a,d,tries=0;
+    do{a=rng()*TAU;d=r*(1.05+rng()*.35);tries++;}while(d<burstRadiusAt(a)*1.15&&tries<8);
+    const sr=u*(.14+rng()*.1),cx=Math.cos(a)*d,cy=Math.sin(a)*d;
+    landContour(g,cx,cy,sr,sr,seeded(seed+61+i*7));g.fillStyle=`rgba(${p.flareUmbra},.75)`;g.fill();
+    burinArc(g,cx,cy,sr*2.1,0,TAU,p.flarePenumbra,.35,.4,seed+71+i*7,{segments:12,skips:2});
   }
   const sprite={canvas:c,size};
   flareSprites.set(key,sprite);
