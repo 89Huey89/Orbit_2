@@ -200,6 +200,10 @@ function pigmentHueDistance(rgbStr){
 }
 function paintPigment(g,core,rng,rgb=null){
   const paper=onPaper(),wash=paper?.7:1,cool=paper&&rgb&&pigmentHueDistance(rgb)>60;
+  // Every mark below is cut for a body of the reference size (core 26); scaling the count by its area
+  // ratio keeps the ink per unit of disc constant instead of flat per body, which is what let a pickup —
+  // barely half a world's area — carry a world's whole stipple and read as the darkest mark on the sheet.
+  const k=(core/26)**2;
   // Uneven transparent washes, pooled edges and exposed paper, cached once. A cool pigment is raised
   // toward .12-.2 rather than left at .06-.11, carrying a little more of its own hue into these blots
   // rather than the flat warm shadow every family was landing here before.
@@ -210,14 +214,14 @@ function paintPigment(g,core,rng,rgb=null){
     g.fill();
     g.strokeStyle='rgba(63,52,34,.07)';g.lineWidth=.45;g.stroke();
   }
-  for(let i=0;i<950;i++){
+  for(let i=0,n=Math.round(950*k);i<n;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2,light=i%3!==0;
     g.fillStyle=light?`rgba(239,226,192,${.24*wash})`:(paper?'rgba(45,39,27,.19)':'rgba(45,39,27,.22)');
     g.fillRect(x,y,.18+rng()*.55,.2+rng()*.42);
   }
   // Short broken strokes suggest dry brush catching the paper grain.
   g.strokeStyle='rgba(238,225,193,.16)';g.lineWidth=.35;
-  for(let i=0;i<65;i++){
+  for(let i=0,n=Math.round(65*k);i<n;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2;
     g.beginPath();g.moveTo(x,y);g.lineTo(x+1+rng()*3,y-.25-rng()*.45);g.stroke();
   }
@@ -262,11 +266,15 @@ function paintEngraving(g,core,palette,rng,family='ocean'){
   const hatchInk=paper?'26,18,11':'38,34,26';
   // The hatching is laid as a left hand lays it — each stroke runs down and to the right — and it darkens
   // toward the limb on the right, where the light falls away. On the moon it begins at the terminator, so the
-  // lit hemisphere is left as clean as Galileo left his.
-  const x0=moon?core*.16:-core*.62,step=(core-x0)/34;
-  for(let i=0;i<34;i++){
+  // lit hemisphere is left as clean as Galileo left his. The pitch between strokes is held fixed — a burin
+  // does not widen its stroke spacing for a smaller plate — and the count derived from it, rather than a
+  // flat 34 strokes stretched or crowded to fit whatever span this body happens to have: at a fixed count
+  // the moon's own shorter span (it starts at the terminator, not the limb) was cut at half the pitch of
+  // every other body's hatch.
+  const x0=moon?core*.16:-core*.62,step=1.4,count=Math.max(1,Math.round((core-x0)/step));
+  for(let i=0;i<count;i++){
     const x=x0+i*step;
-    g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/34*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
+    g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/count*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
     g.beginPath();g.moveTo(x,-core*1.14);
     g.bezierCurveTo(x-core*.22,-core*.3,x+core*.36,core*.65,x+core*.48,core*1.1);g.stroke();
   }
@@ -284,7 +292,9 @@ function paintEngraving(g,core,palette,rng,family='ocean'){
       g.beginPath();g.arc(0,0,rr,-reach+rng()*.08,reach-rng()*.08);g.stroke();
     }
   }
-  for(let i=0;i<440;i++){
+  // Scaled by the disc's own area ratio to the reference body (core 26), the same fix paintPigment's
+  // stipple gets, and for the same reason: flat per body, this was the densest mark a pickup carried.
+  for(let i=0,n=Math.round(440*(core/26)**2);i<n;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2;
     if(rng()>(x+y+core)/(core*3))continue;
     g.fillStyle=paper?'rgba(26,18,11,.44)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.4,.38);
