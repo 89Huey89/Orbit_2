@@ -1312,7 +1312,9 @@ function drawNode(n,aim){
     const word=RIM_CAPTIONS[(n.seed+n.row)%RIM_CAPTIONS.length],size=Math.max(6.5,7.4*scale);
     ctx.font=plateFace(size,'sc');
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
-    textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true});
+    const written=revealLabel(pen,word);
+    const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
+    if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6);
   }
   if(active){
     for(const next of releaseTargets(n)){

@@ -205,11 +205,15 @@ function burinRect(g,x,y,w,h,rgb,alpha,weight,seed){
 // placed at its own angle and turned tangent to the arc. Advances come from `measureText` where
 // the context provides one and from an average advance where it does not, so the routine works
 // on a bare stand-in as well as a browser canvas. The caller owns the font, fill and alpha.
-// options: {size, spacing, align:'start'|'center'|'end', inward, direction}
-// Returns {start,end,span} in radians so a caller can keep two captions from meeting.
+// options: {size, spacing, align:'start'|'center'|'end', inward, direction, progress}. `progress`
+// (0..1, defaulting to fully written) lets a rim caption be written glyph by glyph like every
+// other caption on the sheet instead of arriving whole; the layout (start/end/span) is computed
+// from the full text regardless, so a caption's placement never shifts as it writes.
+// Returns {start,end,span,tangent,tx,ty,angle} in radians/plate units — tangent/tx/ty/angle are
+// the last glyph actually drawn, so a caller mid-write can claim the nib there.
 function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
   const chars=Array.from(String(text??''));
-  if(!chars.length||!(r>.001))return {start:startAngle,end:startAngle,span:0};
+  if(!chars.length||!(r>.001))return {start:startAngle,end:startAngle,span:0,tangent:startAngle,tx:cx,ty:cy,angle:startAngle};
   const size=options.size??12,spacing=options.spacing??0,inward=!!options.inward;
   const dir=options.direction??(inward?-1:1);
   const measured=ch=>{
@@ -224,11 +228,14 @@ function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
   const span=length/r;
   const align=options.align||'start';
   const start=startAngle-dir*(align==='center'?span/2:align==='end'?span:0);
-  let walked=0;
+  const limit=options.progress===undefined?chars.length:Math.ceil(clamp(options.progress,0,1)*chars.length);
+  let walked=0,tangent=start;
   for(let i=0;i<chars.length;i++){
     walked+=(i?spacing:0)+widths[i]/2;
     const a=start+dir*walked/r;
     walked+=widths[i]/2;
+    if(i>=limit)continue;
+    tangent=a;
     if(chars[i]===' '||plainPlate())continue;
     g.save();
     g.textAlign='center';g.textBaseline='alphabetic';
@@ -237,7 +244,8 @@ function textAlongArc(g,text,cx,cy,r,startAngle,options={}){
     g.fillText(chars[i],0,0);
     g.restore();
   }
-  return {start,end:start+dir*span,span};
+  const angle=tangent+(inward?-Math.PI/2:Math.PI/2);
+  return {start,end:start+dir*span,span,tangent,tx:cx+Math.cos(tangent)*r,ty:cy+Math.sin(tangent)*r,angle};
 }
 // The small seeded vocabulary the plate letters round its orbits.
 const RIM_CAPTIONS=['ORBITA','TABULA','MOTUS','SILENTIUM','ASCENSUS','VIGILIA'];
