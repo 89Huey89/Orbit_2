@@ -293,7 +293,11 @@ function drawInscriptions(dt){
   if(!world||!inscriptions.length)return;
   const running=world.state!=='paused',onPage=world.state!=='ready'&&world.state!=='dead';
   const rule=frameBand()*.92;
-  ctx.save();ctx.beginPath();ctx.rect(rule,rule,Math.max(0,W-rule*2),Math.max(0,H-rule*2));ctx.clip();
+  // Clipped to the same lower edge the strike test below uses, not the inner rule: the two used to sit
+  // far apart at the target viewport (frameBand()*.92 is a handful of px; footerBand() is the running
+  // head and the DOM icon row), which let a note straddling the footer band print through it — under the
+  // inner-rule clip but not yet struck — for however long its top edge took to cross the strike line.
+  ctx.save();ctx.beginPath();ctx.rect(rule,rule,Math.max(0,W-rule*2),Math.max(0,H-footerBand()-rule));ctx.clip();
   for(let i=inscriptions.length-1;i>=0;i--){
     const g=inscriptions[i];
     if(running)g.age+=dt;
