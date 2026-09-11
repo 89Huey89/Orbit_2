@@ -1411,11 +1411,16 @@ function hazardCoreSprite(seed,radius){
   g.scale(DPR,DPR);g.translate(size/2,size/2);
   const rng=seeded(seed),r=rBucket;
   if(onPaper()){
-    // A pooled ink blot with a slightly ragged, hand-drawn edge rather than a clean printed circle.
-    g.fillStyle=ink.marks.hazardCore;g.beginPath();
-    const edges=20;
-    for(let i=0;i<=edges;i++){const a=i/edges*TAU,jr=r*(1+(rng()-.5)*.14);const px=Math.cos(a)*jr,py=Math.sin(a)*jr;if(i===0)g.moveTo(px,py);else g.lineTo(px,py);}
-    g.closePath();g.fill();
+    // A pooled ink blot, not a clean printed circle: the same wobbling quadratic contour the pools and
+    // splats elsewhere are cut with (landContour, planets.js), filled short of opaque so the laid tile
+    // still reads through it, with a coffee-ring struck twice more near its own rim — what a pool of
+    // ink actually dries down to, the pigment deepest where the liquid last stood.
+    landContour(g,0,0,r,r,rng);g.fillStyle=ink.marks.hazardCore;g.globalAlpha=.86;g.fill();g.globalAlpha=1;
+    for(const [rr,rseed,a] of [[r*.94,seed+53,.7],[r,seed+59,.5]]){
+      landContour(g,0,0,rr,rr,seeded(rseed));
+      g.strokeStyle=ink.marks.hazardCore;g.globalAlpha=a;g.lineWidth=Math.max(.5,r*.05);g.stroke();
+    }
+    g.globalAlpha=1;
   }else{
     g.fillStyle=ink.marks.hazardCore;g.beginPath();g.arc(0,0,r,0,TAU);g.fill();
   }
@@ -1455,8 +1460,8 @@ function hazardHatchGeometry(seed,radius){
 function vortexWhirl(g,radius,alpha,seed){
   for(let i=0;i<3;i++){
     const a=i/3*TAU;
-    burinSpiral(g,0,0,radius*1.88,radius*1.03,a,a+TAU*.72,ink.marks.hazardAccretion,.26*alpha,.85*scale,seed+i*29,{segments:24,skips:2});
-    burinSpiral(g,0,0,radius*1.52,radius*1.08,a+.46,a+.46+TAU*.55,ink.marks.hazardAccretion,.13*alpha,.45*scale,seed+i*37,{segments:18,skips:3});
+    burinSpiral(g,0,0,radius*1.88,radius*.6,a,a+TAU*.72,ink.marks.hazardAccretion,.5*alpha,.85*scale,seed+i*29,{segments:24,skips:2});
+    burinSpiral(g,0,0,radius*1.52,radius*.7,a+.46,a+.46+TAU*.55,ink.marks.hazardAccretion,.26*alpha,.45*scale,seed+i*37,{segments:18,skips:3});
   }
 }
 // The whirl's shape depends only on h.seed, the plate and the viewport scale; its alpha is scaled
