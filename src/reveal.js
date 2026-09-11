@@ -26,6 +26,10 @@ definePlate('reveal',{
 });
 // How long each kind of mark takes, and how far above the top of the view the cartographer works ahead.
 const REVEAL_MARGIN=-24,REVEAL_CAP=3;
+// The hatch's own tilt off vertical: paintEngraving's strokes (planets.js) run from (x,-core*1.14) to
+// (x+core*.48,core*1.1), down and to the right by a fixed ratio regardless of body size, so the hatch
+// reveal band below is cut on that same angle rather than a bare vertical edge.
+const HATCH_TILT=Math.atan2(.48,1.14+1.1);
 const NODE_REVEAL=1.25,HAZARD_REVEAL=1.1,CHART_REVEAL=1.4;
 const reveal=(function(){
   const born=new Map(),drawing=new Set();
@@ -345,18 +349,25 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.restore();
   }
   // (a) The keyline is cut around the disc by angle — a genuine hairline band, not the wide annulus this
-  // used to clip to.
-  if(pen.keyline>0){
+  // used to clip to — and it reveals `art.key` alone: the colourist's correction (the keyline circle, its
+  // off-register colour circle, the chalk underdrawing, the rim arcs) is a different raster from the
+  // hatch's own `art.front`, so the two stages never composite the same layer twice over whatever ground
+  // both their masks have already crossed.
+  if(pen.keyline>0&&art.key){
     const a0=art.phase,a1=a0+TAU*pen.keyline;
     ctx.save();ctx.beginPath();
-    ctx.arc(0,0,core*1.1,a0,a1);ctx.arc(0,0,core*.94,a1,a0,true);ctx.closePath();ctx.clip();
-    ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
+    ctx.arc(0,0,core+2,a0,a1);ctx.arc(0,0,core-2,a1,a0,true);ctx.closePath();ctx.clip();
+    ctx.drawImage(art.key,-72,-72,144,144);ctx.restore();
   }
-  // (b) The hatching is revealed by a band travelling across the disc along the direction of the strokes.
+  // (b) The hatching is revealed by a band travelling across the disc along the direction of the strokes:
+  // the clip is rotated to HATCH_TILT so its leading edge runs parallel to a stroke and the sweep is
+  // perpendicular to the set, uncovering one whole stroke at a time rather than slicing across the tilt.
   if(pen.hatch>0){
     ctx.save();
     ctx.beginPath();ctx.arc(0,0,core*1.5,0,TAU);ctx.clip();
-    ctx.beginPath();ctx.rect(-core*1.7,-core*1.7,core*3.4*pen.hatch,core*3.4);ctx.clip();
+    ctx.rotate(-HATCH_TILT);
+    ctx.beginPath();ctx.rect(-core*1.9,-core*2.3,core*3.8*pen.hatch,core*4.6);ctx.clip();
+    ctx.rotate(HATCH_TILT);
     ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
   }
   ctx.restore();

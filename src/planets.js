@@ -623,7 +623,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   if(glyphs.has(key)){const held=glyphs.get(key);glyphs.delete(key);glyphs.set(key,held);return held;}
   if(modernPlate())return cacheGlyph(key,renderedSpecimen(family,seed));
   const paper=onPaper();
-  const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
+  const back=planetLayer(),surface=planetLayer(160),front=planetLayer(),keyLayer=planetLayer(),rng=seeded(seed),palette=planetPalettes[family];
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
   if(!PICKUP_FAMILIES.has(family))paintSurvey(g,core,family,tilt);
@@ -673,7 +673,12 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   g.restore();
   // Slightly misregistered outlines retain the character of a printed plate. On paper the hand colouring is
   // laid first and overruns the plate by a pixel or two in the off-register direction, then the burin keyline
-  // is printed over it, so the black line always reads on top of the wash.
+  // is printed over it, so the black line always reads on top of the wash. These marks are cut onto their
+  // own raster rather than appended to `front`: `front` carries only paintEngraving's output, and a colourist's
+  // correction is a different act of drawing from a hatch, one reveal.js's keyline stage reveals on its own
+  // through a tight annulus rather than compositing `front` a second time for whatever the hatch sweep has
+  // already uncovered.
+  g=keyLayer.ink;
   if(paper){
     g.strokeStyle=`rgba(${rgb},.3)`;g.lineWidth=1.9;g.beginPath();g.arc(-1.05,-.75,core+.2,0,TAU);g.stroke();
     // The circle was first tried in red chalk, a little off and broken where the chalk skipped, and the pen
@@ -693,6 +698,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     const a=i/11*TAU;g.strokeStyle=paper?'rgba(58,42,28,.3)':'rgba(226,211,174,.38)';g.lineWidth=.35;
     g.beginPath();g.arc(.15,-.1,core+.85,a+.06,a+.16+rng()*.25);g.stroke();
   }
+  g=front.ink;
   // The ring's front half is baked onto its own layer rather than into `front`, so it can be revealed
   // by `pen.survey` alongside its far half (already carried by `back`) instead of by the keyline/hatch
   // stages that only ever expose a narrow band of `front` — stranding a ring that reaches out to
@@ -716,8 +722,8 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     }
   }
   const weather=planetWeather(family,core,seed);
-  for(const layer of [back.image,surface.image,front.image,weather,embers,ringFront])pressPixels(layer);
-  const art={back:back.image,surface:surface.image,front:front.image,weather,embers,ringFront,core,tilt,family,spin:palette.spin,phase:seed*.017};
+  for(const layer of [back.image,surface.image,front.image,keyLayer.image,weather,embers,ringFront])pressPixels(layer);
+  const art={back:back.image,surface:surface.image,front:front.image,key:keyLayer.image,weather,embers,ringFront,core,tilt,family,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
   return cacheGlyph(key,art);
 }
@@ -791,6 +797,7 @@ function drawPlanet(art,r,time,impression=null){
     ctx.restore();
   }
   ctx.drawImage(art.front,-72,-72,144,144);
+  if(art.key)ctx.drawImage(art.key,-72,-72,144,144);
   if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
   ctx.restore();
 }
