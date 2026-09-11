@@ -1264,11 +1264,29 @@ function drawNode(n,aim){
     }
   }
   if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
-  const wedged=penWedgeBegin(pen,n,Math.max(r,n.cap*scale)*2+30);
+  const reach=Math.max(r,n.cap*scale)*2+30,wedged=penWedgeBegin(pen,n,reach);
   {
-    const ring=engravedRing(r,rgb,active?.59:target?.57:.25,cut('line'),n.seed,!active&&!n.visited);
-    const fit=ring.size*(ring.radius>0?r/ring.radius:1);
-    ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
+    const ringAlpha=active?.59:target?.57:.25;
+    if(pen.taken<1){
+      // The capture is an act of drawing, not a swap: the sketch — broken, doubled, off true, exactly
+      // as an orbit no traveller has taken is cut elsewhere — is laid down whole first, then the cut
+      // ring is drawn over it clipped to the burin's own wedge, opening from the orbit's start angle as
+      // the first lap is taken. The sketch's own wobble does not coincide with the true circle, so a
+      // hairline of it keeps showing past the cut edge even inside the wedge, which is what a corrected
+      // setting-out actually looks like.
+      const sketch=engravedRing(r,rgb,ringAlpha,cut('line'),n.seed,true);
+      const sfit=sketch.size*(sketch.radius>0?r/sketch.radius:1);
+      ctx.drawImage(sketch.canvas,-sfit/2,-sfit/2,sfit,sfit);
+      const taken=engravedRing(r,rgb,ringAlpha,cut('line'),n.seed,false);
+      const tfit=taken.size*(taken.radius>0?r/taken.radius:1);
+      const tw=penWedgeBegin(pen,n,reach,pen.taken);
+      ctx.drawImage(taken.canvas,-tfit/2,-tfit/2,tfit,tfit);
+      if(tw)penWedgeEnd(pen,n,r,pen.taken);
+    }else{
+      const ring=engravedRing(r,rgb,ringAlpha,cut('line'),n.seed,false);
+      const fit=ring.size*(ring.radius>0?r/ring.radius:1);
+      ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
+    }
   }
   ctx.lineWidth=cut('fine');ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
   ctx.strokeStyle=`rgba(${rgb},${target?.36:.11})`;ctx.setLineDash([1*scale,5*scale]);ctx.beginPath();ctx.arc(0,0,n.cap*scale,0,TAU);ctx.stroke();ctx.setLineDash([]);

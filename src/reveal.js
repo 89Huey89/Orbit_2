@@ -197,17 +197,20 @@ function penBead(x,y,angle,size,alpha=1){
 }
 // ---------- Orbit rings: a wedge from the ring's own start angle to the pen ----------
 // The burin sprite is never touched. The ring, its capture band and its ticks are simply clipped to the
-// wedge the pen has covered so far, so the ticks appear as it passes them.
-function penWedgeBegin(pen,n,reach){
-  if(pen.ring>=1)return false;
+// wedge the pen has covered so far, so the ticks appear as it passes them. `clock` defaults to the ring's
+// own reveal (`pen.ring`, the node's first arrival on the page) but takes any other 0..1 field on `pen` —
+// the capture ring reuses this same mask on `pen.taken` to cut its sketch into a closed line as the orbit
+// is taken, rather than swapping the two sprites whole in a single frame.
+function penWedgeBegin(pen,n,reach,clock=pen.ring){
+  if(clock>=1)return false;
   ctx.save();
-  ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,reach,n.phase,n.phase+TAU*pen.ring);ctx.closePath();ctx.clip();
+  ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,reach,n.phase,n.phase+TAU*clock);ctx.closePath();ctx.clip();
   return true;
 }
-function penWedgeEnd(pen,n,r){
+function penWedgeEnd(pen,n,r,clock=pen.ring){
   ctx.restore();
-  if(pen.ring<=0||pen.ring>=1)return;
-  const a=n.phase+TAU*pen.ring,x=Math.cos(a)*r,y=Math.sin(a)*r;
+  if(clock<=0||clock>=1)return;
+  const a=n.phase+TAU*clock,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.globalAlpha=1;
   penBead(x,y,a+Math.PI/2,1.5*scale,.9);
   penNib(x,y,a+Math.PI/2,.9);
