@@ -1353,8 +1353,8 @@ definePlate('field',{
   verdigris:{flareUmbra:sink('6,9,15','verdigris')},
   azzurra:{flareUmbra:sink('6,9,15','azzurra')}
 });
-// A sunspot in the Galileo manner: a dark body, a penumbra of fine radial strokes, and rays cut
-// live. The body itself is not the round pool it once was: a vortex's void is a circle no matter
+// A flare star cut as a burst, not a sunspot: a dark body, a penumbra of fine radial strokes, and
+// rays cut live. The body itself is not the round pool it once was: a vortex's void is a circle no matter
 // how it is broken up, so a disc drawn the same way for the flare read as the same hazard at any
 // distance the strokes around it are too faint to save. Cutting the body as a nine-point burst
 // instead gives the two hazards a silhouette apart, readable in the same instant the eye would
