@@ -46,6 +46,39 @@ definePlate('marks',{
     hazardHalo0:'183,104,77',hazardHaloMid:'155,86,66',hazardHaloEdge:'130,60,53',
     hazardAccretion:'166,58,40',hazardHatch:'34,24,16',hazardCore:'#170f08',hazardEdge:'34,24,16',
     hazardRim:'34,24,16',hazardArcFaint:'58,42,28',hazardOuter:'58,42,28'
+  },
+  // A luminance-only duotone clumps these nine role tokens together — night's own literals sit within
+  // one another's shouting distance in luminance (.52-.77), so on a single-hue derived plate they land
+  // within a few units of the same ramp position and stop reading as different things. Each derived
+  // plate below states them instead of inheriting them through the automatic transform.
+  cellarius:{
+    // Gold on deep blue only (05-engraving.md:365): every one of these stays on that one ramp, spread
+    // by value rather than given a second hue.
+    nodeDrift:'214,192,146',nodeGold:'252,228,164',nodeFading:'196,168,118',nodeRelaxed:'224,206,158',
+    nodeHardcore:'158,124,74',hazardAccretion:'236,204,138',aimBlockedStart:'206,164,102',aimBlockedEnd:'176,132,80',
+    fadingCritical:'250,236,196'
+  },
+  verdigris:{
+    // The sheet stays green; only the danger reads are rubricated into iron red, as the plate's own
+    // difficulty-choice comment above already puts it (figures.js:980-982).
+    nodeDrift:'150,206,182',nodeGold:'196,230,204',nodeFading:'108,168,138',nodeRelaxed:'176,218,190',
+    nodeHardcore:'196,78,58',hazardAccretion:'212,104,74',aimBlockedStart:'204,92,66',aimBlockedEnd:'176,64,48',
+    fadingCritical:'224,116,86'
+  },
+  azzurra:{
+    // White heightening only (05-engraving.md:366): every one of these stays on the pale end of the
+    // ramp, never the dark ink the frame furniture takes in the separate azzurra finding below.
+    nodeDrift:'200,210,220',nodeGold:'244,240,230',nodeFading:'186,196,206',nodeRelaxed:'214,222,224',
+    nodeHardcore:'168,180,188',hazardAccretion:'228,224,208',aimBlockedStart:'206,206,200',aimBlockedEnd:'180,188,194',
+    fadingCritical:'250,248,240'
+  },
+  // The one plate where a false-colour role palette is period-honest: real, distinct hues rather than
+  // one ramp read by value, matching the DOM instrument colours the modern plate already declares
+  // (index.html's --gold/--shield/--reflector/--dawn).
+  modern:{
+    nodeDrift:'186,228,240',nodeGold:'246,206,116',nodeFading:'255,158,110',nodeRelaxed:'140,224,164',
+    nodeHardcore:'255,74,62',hazardAccretion:'255,168,84',aimBlockedStart:'255,124,90',aimBlockedEnd:'255,86,66',
+    fadingCritical:'255,58,54'
   }
 });
 // ---------- Engraved line quality: a burin line swells and tapers, wobbles slightly, doubles where the
