@@ -12,7 +12,10 @@
 // black, flood the colour, close the line in black, and that order is what the Ceiling animates,
 // both in the large hand below and in the small one that writes captions.
 definePlate('reveal',{
-  night:{mode:'pen',nib:'242,232,205',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
+  // night's own nib sits at or below the frame's own inkSoft (plates.js): a near-white nib used to read
+  // as the brightest mark on the plate, ahead of the ink it was supposedly laying — the tool must sit
+  // under the ink it carries, not over it.
+  night:{mode:'pen',nib:'177,192,183',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
     strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178'},
   paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
     strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
@@ -163,19 +166,29 @@ function revealLabel(pen,text){
   return clamp((pen.age-.62)/Math.max(.04,text.length*.04),0,1);
 }
 // ---------- The nib itself ----------
-// A small dark wedge on a hairline shaft rides the leading end of whichever stroke is being drawn, with a
-// bead of wet ink under the point and the occasional fleck of spatter. The flecks are seeded from the nib's
-// own position so they sit still on the page instead of boiling, and reduced motion has none of it.
+// The traveller's own nib silhouette (markHead, effects.js) rides the leading end of whichever stroke is
+// being drawn, scaled to this stroke's own reach: a small round ink point cut in two shades, not the bare
+// arrowhead this used to be — the same hand the player's own quill is cut in, not a different tool. A bead
+// of wet ink sits under the point (a bead IS ink, so it keeps its own full brightness on both plates), the
+// shaft runs collinear off the frame edge instead of stopping at a visible stub — a hand's pen has no
+// visible end — fading out well before it actually gets there, and the occasional fleck of spatter lands
+// nearby. The flecks are seeded from the nib's own position so they sit still on the page instead of
+// boiling, and reduced motion has none of it.
 function penNib(x,y,angle,alpha=1,rgb){
   if(reducedMotion||alpha<=.02)return;
-  const c=ink.reveal,tone=rgb||c.nib,reach=Math.max(6,7*scale);
+  const c=ink.reveal,tone=rgb||c.nib,reach=Math.max(6,7*scale),k=reach/7;
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);
   ctx.fillStyle=`rgba(${c.bead},${.5*alpha})`;
   ctx.beginPath();ctx.ellipse(0,0,reach*.26,reach*.19,0,0,TAU);ctx.fill();
-  ctx.fillStyle=`rgba(${tone},${.9*alpha})`;
-  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-reach*.66,-reach*.28);ctx.lineTo(-reach*.44,0);ctx.lineTo(-reach*.66,reach*.28);ctx.closePath();ctx.fill();
-  ctx.strokeStyle=`rgba(${tone},${.45*alpha})`;ctx.lineWidth=.6;
-  ctx.beginPath();ctx.moveTo(-reach*.5,0);ctx.lineTo(-reach*1.9,-reach*.42);ctx.stroke();
+  ctx.fillStyle=`rgba(${tone},${.55*alpha})`;
+  ctx.beginPath();ctx.ellipse(0,0,5.3*k,4.4*k,0,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgba(${tone},${.72*alpha})`;
+  ctx.beginPath();ctx.ellipse(-.25*k,.2*k,4.1*k,3.3*k,0,0,TAU);ctx.fill();
+  const sx0=-reach*.5,sdx=-1.9,sdy=-.42,sl=Math.hypot(sdx,sdy),sux=sdx/sl,suy=sdy/sl,far=reach*.5+W+H;
+  const ex=sux*far,ey=suy*far,shaft=ctx.createLinearGradient(sx0,0,ex,ey);
+  shaft.addColorStop(0,`rgba(${tone},${.45*alpha})`);shaft.addColorStop(1,`rgba(${tone},0)`);
+  ctx.strokeStyle=shaft;ctx.lineWidth=.6;
+  ctx.beginPath();ctx.moveTo(sx0,0);ctx.lineTo(ex,ey);ctx.stroke();
   ctx.restore();
   const grid=(Math.floor(x/7)*73856093^Math.floor(y/7)*19349663)>>>0;
   if((grid&7)===0){
@@ -214,6 +227,22 @@ function penWedgeEnd(pen,n,r,clock=pen.ring){
   ctx.save();ctx.globalAlpha=1;
   penBead(x,y,a+Math.PI/2,1.5*scale,.9);
   penNib(x,y,a+Math.PI/2,.9);
+  ctx.restore();
+}
+// A pen lifts off the page rather than blinking out: for NIB_LIFT_DUR after a wedge has closed (`key`
+// the same identity and `span` the same duration its own clock was registered with — `n` for the ring's
+// own arrival, `'taken:'+n.id` for the capture ring), the nib is drawn once more at the point the stroke
+// closed, growing a little and fading to nothing rather than vanishing the instant `clock` reaches 1.
+// Called unconditionally once the wedge itself stops calling penWedgeEnd; cheap to call every frame after,
+// since reveal.age(key) keeps climbing and the early return below fires for the rest of that mark's life.
+const NIB_LIFT_DUR=.12;
+function penNibLift(key,span,n,r){
+  if(reducedMotion)return;
+  const since=reveal.age(key)-span;
+  if(since<0||since>=NIB_LIFT_DUR)return;
+  const u=since/NIB_LIFT_DUR,a=n.phase,x=Math.cos(a)*r,y=Math.sin(a)*r;
+  ctx.save();ctx.translate(x,y);ctx.scale(1+u*.12,1+u*.12);ctx.translate(-x,-y);
+  penNib(x,y,a+Math.PI/2,.9*(1-u));
   ctx.restore();
 }
 // A circle gone round once by a hand that was not being careful: the radius breathes by a few per cent

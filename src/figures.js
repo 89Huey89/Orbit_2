@@ -1279,13 +1279,14 @@ function drawNode(n,aim){
       ctx.drawImage(sketch.canvas,-sfit/2,-sfit/2,sfit,sfit);
       const taken=engravedRing(r,rgb,ringAlpha,cut('line'),n.seed,false);
       const tfit=taken.size*(taken.radius>0?r/taken.radius:1);
-      const tw=penWedgeBegin(pen,n,reach,pen.taken);
+      penWedgeBegin(pen,n,reach,pen.taken);
       ctx.drawImage(taken.canvas,-tfit/2,-tfit/2,tfit,tfit);
-      if(tw)penWedgeEnd(pen,n,r,pen.taken);
+      penWedgeEnd(pen,n,r,pen.taken);
     }else{
       const ring=engravedRing(r,rgb,ringAlpha,cut('line'),n.seed,false);
       const fit=ring.size*(ring.radius>0?r/ring.radius:1);
       ctx.drawImage(ring.canvas,-fit/2,-fit/2,fit,fit);
+      penNibLift('taken:'+n.id,.35,n,r);
     }
   }
   ctx.lineWidth=cut('fine');ctx.strokeStyle=`rgba(${rgb},.19)`;ctx.beginPath();ctx.arc(0,0,r-2.5*scale,n.phase,n.phase+TAU*.78);ctx.stroke();
@@ -1301,7 +1302,7 @@ function drawNode(n,aim){
     const a=i/48*TAU;ctx.moveTo(Math.cos(a)*(r+3*scale),Math.sin(a)*(r+3*scale));ctx.lineTo(Math.cos(a)*(r+6.2*scale),Math.sin(a)*(r+6.2*scale));
   }
   ctx.stroke();
-  if(wedged)penWedgeEnd(pen,n,r);
+  if(wedged)penWedgeEnd(pen,n,r);else penNibLift(n,NODE_REVEAL,n,r);
   if(used)penStrike(n,r,struck,rgb);
   // A Latin caption engraved round the outer rim of every fourth main orbit, set in small caps at a
   // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
