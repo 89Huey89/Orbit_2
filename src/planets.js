@@ -32,8 +32,6 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       g.strokeStyle=paper?`rgba(96,74,52,${.14+rng()*.18})`:`rgba(218,218,196,${.1+rng()*.15})`;g.lineWidth=.6+rng()*1.25;g.lineCap='round';
       g.beginPath();g.moveTo(x-core*.28,y);g.bezierCurveTo(x-core*.12,y-3,x+core*.18,y+3,x+core*.4,y-1);g.stroke();
     }
-    if(paper){g.fillStyle='rgba(231,218,189,.6)';g.strokeStyle='rgba(58,42,28,.28)';g.lineWidth=.4;g.beginPath();g.ellipse(-core*.16,-core*.97,core*.42,core*.16,0,0,TAU);g.fill();g.stroke();}
-    else{g.fillStyle='rgba(207,213,193,.42)';g.beginPath();g.ellipse(-core*.16,-core*.97,core*.42,core*.16,0,0,TAU);g.fill();}
   }else if(family==='crater'){
     for(let i=0;i<5;i++){
       landContour(g,(rng()-.5)*core*1.5,(rng()-.5)*core*1.5,core*.55,core*.35,rng);
@@ -236,7 +234,7 @@ function paintPigment(g,core,rng,rgb=null){
     g.beginPath();g.moveTo(x,y);g.lineTo(x+1+rng()*3,y-.25-rng()*.45);g.stroke();
   }
 }
-function paintEngraving(g,core,palette,rng,family='ocean'){
+function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
   const paper=onPaper(),moon=family==='crater';
   g.fillStyle=palette.light+'22';g.fillRect(-core,-core,core*2,core*2);
   // On paper the dark side is first laid in as a dilute wash, before a single stroke goes on: sepia deepening
@@ -311,8 +309,9 @@ function paintEngraving(g,core,palette,rng,family='ocean'){
     if(rng()>(x+y+core)/(core*3))continue;
     g.fillStyle=paper?'rgba(26,18,11,.44)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.4,.38);
   }
-  // Fine meridians make each globe read as a hand-coloured atlas specimen.
-  g.save();g.rotate(-.28);g.strokeStyle=paper?'rgba(58,42,28,.36)':'rgba(47,44,33,.19)';g.lineWidth=paper?.44:.38;g.setLineDash([1.4,1.6]);
+  // Fine meridians make each globe read as a hand-coloured atlas specimen, cut on the same axis as the
+  // poles and the ice fringe rather than a fixed tilt none of them shared.
+  g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(58,42,28,.36)':'rgba(47,44,33,.19)';g.lineWidth=paper?.44:.38;g.setLineDash([1.4,1.6]);
   for(const width of [.35,.72]){g.beginPath();g.ellipse(0,0,core*width,core,0,0,TAU);g.stroke();}
   for(const y of [-.48,0,.48]){g.beginPath();g.ellipse(0,core*y,core*Math.sqrt(1-y*y),core*.17,0,0,TAU);g.stroke();}
   g.restore();
@@ -628,7 +627,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;
-  paintEngraving(g,core,palette,rng,family);
+  paintEngraving(g,core,palette,rng,family,tilt);
   if(family==='dune'){
     // The dominant rift's colour lives on the wash (paintPlanetSurface, above); this narrower scar,
     // struck to match after the hatching, keeps the rift a visible mark rather than letting the hatch
@@ -720,6 +719,18 @@ function drawPlanet(art,r,time,impression=null){
       ctx.strokeStyle=paper?`rgba(58,42,28,${.045+.02*Math.sin(t*.38+art.phase+i*.6)})`:`rgba(184,198,179,${.055+.025*Math.sin(t*.38+art.phase+i*.6)})`;
       ctx.lineWidth=.65;
       ctx.beginPath();ctx.ellipse(-2,-art.core*.66,art.core*.59,art.core*.3+height,-.1,Math.PI*1.05,Math.PI*1.86);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  if(art.family==='ocean'){
+    // Both poles, still and rotated by the spin axis alone: a cap baked into the turning surface would
+    // swing round the disc as the globe spins, which is the one thing a cartographer's pole never does.
+    const paper=onPaper();
+    ctx.save();ctx.rotate(art.tilt);
+    for(const pole of [-1,1]){
+      ctx.beginPath();ctx.ellipse(pole*-art.core*.16,pole*-art.core*.97,art.core*.42,art.core*.16,0,0,TAU);
+      if(paper){ctx.fillStyle='rgba(231,218,189,.6)';ctx.fill();ctx.strokeStyle='rgba(58,42,28,.28)';ctx.lineWidth=.4;ctx.stroke();}
+      else{ctx.fillStyle='rgba(207,213,193,.42)';ctx.fill();}
     }
     ctx.restore();
   }
