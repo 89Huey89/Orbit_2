@@ -286,12 +286,25 @@ function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
   // flat 34 strokes stretched or crowded to fit whatever span this body happens to have: at a fixed count
   // the moon's own shorter span (it starts at the terminator, not the limb) was cut at half the pitch of
   // every other body's hatch.
+  // Cut with the same burin primitive as everything else on the sheet rather than a bespoke taper: each
+  // stroke's own bezier is sampled into short chords and struck with burinSegment's three-harmonic width
+  // modulation, so a planet's hatching finally matches the rest of the plate's line quality instead of
+  // introducing a third one. A few strokes skip outright, and the pitch is jittered stroke to stroke
+  // around the fixed average step above — evenly spaced lines are the giveaway of a ruler, not a hand.
   const x0=moon?core*.16:-core*.62,step=1.4,count=Math.max(1,Math.round((core-x0)/step));
+  let x=x0;
   for(let i=0;i<count;i++){
-    const x=x0+i*step;
-    g.strokeStyle=`rgba(${hatchInk},${(paper?.24:.21)+i/count*(paper?.58:.37)})`;g.lineWidth=(paper?.5:.35)+rng()*(paper?.4:.28);
-    g.beginPath();g.moveTo(x,-core*1.14);
-    g.bezierCurveTo(x-core*.22,-core*.3,x+core*.36,core*.65,x+core*.48,core*1.1);g.stroke();
+    if(i>0)x+=step*(.82+rng()*.36);
+    if(rng()<.07)continue;
+    const alpha=(paper?.24:.21)+i/count*(paper?.58:.37),weight=(paper?.5:.35)+rng()*(paper?.4:.28);
+    const x1=x,y1=-core*1.14,c1x=x-core*.22,c1y=-core*.3,c2x=x+core*.36,c2y=core*.65,x2=x+core*.48,y2=core*1.1;
+    let px=x1,py=y1;const hseed=(rng()*4294967296)>>>0||1;
+    for(let k=1;k<=5;k++){
+      const u=k/5,mu=1-u;
+      const qx=mu*mu*mu*x1+3*mu*mu*u*c1x+3*mu*u*u*c2x+u*u*u*x2,qy=mu*mu*mu*y1+3*mu*mu*u*c1y+3*mu*u*u*c2y+u*u*u*y2;
+      burinSegment(g,px,py,qx,qy,hatchInk,alpha,weight,hseed+k,{segments:2,skips:0,wobble:.5,hair:false});
+      px=qx;py=qy;
+    }
   }
   g.strokeStyle=paper?'rgba(26,18,11,.42)':'rgba(37,33,25,.32)';g.lineWidth=paper?.5:.38;
   for(let i=0;i<19;i++){
