@@ -1049,21 +1049,28 @@ function darknessPlate(relief){
   g.fillStyle=wash;g.fillRect(0,0,w,h);
   g.restore();
   }
-  if(!relief&&onPaper()){
-    // Spilled ink on paper: the flood bleeds upward along the fibres in short, blunt feathered threads
-    // — a spreading stain's own failure, not a shoreline's — with the odd near-opaque pool pushing
-    // ahead of the front where the pigment has already settled, breaking the line rather than fringing it.
-    const bleed=seeded(311977);
+  if(!relief){
+    // The flood bleeds upward along the fibres in short, blunt feathered threads on both plates —
+    // a spreading stain's own failure, not a shoreline's — but the two read it in opposite hands, as
+    // every other mark on the sheet already does: paper is dark ink climbing a light sheet, so the
+    // threads are fleckDark at their own stain alpha; night is a light sheet drawn in reverse, so the
+    // threads are the flood's own pigment, lighter still, standing off a dark flood instead of
+    // climbing it. Fine enough that they need the flood's own device-resolution bake (see the 1x-bake
+    // fix above) to survive to the screen at all.
+    const bleed=seeded(311977),paper=onPaper();
     for(let i=0;i<110;i++){
       const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5,reach=1+bleed()*bleed()*7,bend=(bleed()-.5)*10,start=edge+3+bleed()*5;
       for(const wrap of [-w,0,w]){
-        g.strokeStyle=`rgba(${ink.dark.fleckDark},${.1+bleed()*.24})`;g.lineWidth=.65+bleed()*.65;
+        g.strokeStyle=paper?`rgba(${ink.dark.fleckDark},${.1+bleed()*.24})`:`rgba(${ink.dark.pigment},${.06+bleed()*.12})`;
+        g.lineWidth=.65+bleed()*.65;
         g.beginPath();g.moveTo(x+wrap,start);g.bezierCurveTo(x+wrap+bend*.6,start-4,x+wrap-bend,edge-reach*.5,x+wrap+bend*.5,edge-reach);g.stroke();
       }
     }
+    if(paper){
     // The pools a spreading stain actually leaves: irregular blots breaking ahead of the front, not the
     // even comb a shoreline's tree line would be. Enough of them, and large enough, to read as the front
-    // itself rather than as flecks caught in it.
+    // itself rather than as flecks caught in it. Paper-only: night already carries this reach in its own
+    // five void layers, so it does not also need paper's own stain-pool device.
     for(let i=0;i<16;i++){
       const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5;
       const y=edge-1-bleed()*bleed()*13,rx=3+bleed()*bleed()*11,ry=2+bleed()*5,seed=Math.floor(bleed()*1e7);
@@ -1072,6 +1079,7 @@ function darknessPlate(relief){
     for(let i=0;i<14;i++){
       const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);
       for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.55)`;g.fill();}
+    }
     }
   }
   if(!relief)for(let layer=0;layer<5;layer++){
