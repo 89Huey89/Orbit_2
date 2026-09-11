@@ -96,9 +96,10 @@
     #game[data-plate="paper"] #plate .plate-night{display:none}
     #intro{background:radial-gradient(ellipse at center,rgba(var(--veil),.4),rgba(var(--veil),.12) 70%,transparent)}
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
-    /* The colophon is pulled on its own leaf: a near-opaque paper panel inside a double engraved rule, so
-       every line stays legible however far the spilled ink has risen behind it. */
-    .colophon{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;max-width:min(430px,100%);padding:26px 26px 28px;background:rgba(var(--veil),.965)}
+    /* The colophon is pulled on its own leaf: the sheet itself (--leaf-paper, set by syncLeafAssets() in
+       plates.js) behind a near-opaque veil, inside a double engraved rule, so every line stays legible
+       however far the spilled ink has risen behind it — a page of the same book rather than a flat panel. */
+    .colophon{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;max-width:min(430px,100%);padding:26px 26px 28px;background:linear-gradient(rgba(var(--veil),.86),rgba(var(--veil),.86)),var(--leaf-paper,none) center/cover no-repeat,rgba(var(--veil),.965)}
     .colophon::before,.colophon::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
     .colophon::before{inset:0;border-width:1.5px}
     .colophon::after{inset:5px;opacity:.6}
@@ -310,15 +311,16 @@
     }
     /* — The catalogue: a ruled library page laid over the plate — */
     #catalogue{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
-    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:rgba(var(--veil),.9);text-align:left}
+    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:linear-gradient(rgba(var(--veil),.78),rgba(var(--veil),.78)),var(--leaf-paper,none) center/cover no-repeat,rgba(var(--veil),.9);text-align:left}
     .catalogue-leaf::before,.catalogue-leaf::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
     .catalogue-leaf::before{inset:0;border-width:1.5px}
     .catalogue-leaf::after{inset:5px;opacity:.6}
-    /* The catalogue leaf cuts its own edge on the canvas, in the plate's own hand — the engraved plate-mark
-       and one inner rule, painted by paintCatalogueLeafFrame() in src/ui.js — so its plain CSS border steps
-       aside here. The ephemeris keeps the CSS border above: this is not its fix (see the art audit). */
-    #catalogue .catalogue-leaf{z-index:0}
-    #catalogue .catalogue-leaf::before,#catalogue .catalogue-leaf::after{display:none}
+    /* Both leaves cut their own edge on the canvas, in the plate's own hand — the engraved plate-mark
+       and one inner rule, painted by paintLeafFrame() in src/ui.js — so their plain CSS border steps
+       aside for it once the canvas is actually present. */
+    #catalogue .catalogue-leaf,#ephemeris .catalogue-leaf{z-index:0}
+    #catalogue .catalogue-leaf::before,#catalogue .catalogue-leaf::after,
+    #ephemeris .catalogue-leaf::before,#ephemeris .catalogue-leaf::after{display:none}
     .cat-leaf-frame{position:absolute;inset:0;z-index:-1;pointer-events:none;display:block;width:100%;height:100%}
     .catalogue-head{flex:0 0 auto;text-align:center}
     #catalogue h2{margin:0;font-family:var(--face-sc);font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
@@ -614,6 +616,7 @@
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
     <div class="colophon">
+      <canvas id="end-leaf-frame" class="cat-leaf-frame" aria-hidden="true"></canvas>
       <svg class="ceiling-corner cc-tl ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
       <svg class="ceiling-corner cc-tr ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
       <svg class="ceiling-column left ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#241d16" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#241d16" stroke-width="1.5"/><path d="M5 27h10" stroke="#526f59" stroke-width="1.6"/><path d="M2 69h16" stroke="#241d16" stroke-width="2"/></svg>
@@ -657,6 +660,7 @@
   </section>
   <section id="ephemeris" class="screen hidden" aria-label="Ephemeris of the daily plates" aria-hidden="true">
     <div class="catalogue-leaf eph-leaf">
+      <canvas id="eph-leaf-frame" class="cat-leaf-frame" aria-hidden="true"></canvas>
       <div class="catalogue-head">
         <p class="eyebrow">TABUL&AElig; DIEI</p>
         <h2>EPHEMERIS</h2>

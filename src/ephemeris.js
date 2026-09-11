@@ -72,6 +72,7 @@ function renderEphemeris(){
   for(let i=(lead+days)%7;i&&i<7;i++)html+='<span class="eph-cell eph-void" aria-hidden="true"></span>';
   html+='</div>';
   body.innerHTML=html;
+  paintLeafFrame('eph-leaf-frame');
   const title=$('eph-title');if(title)title.textContent=MONTHS_LATIN[ephMonth.m]+' · '+roman(ephMonth.y);
   const span=ephemerisSpan(),here=monthIndex(ephMonth);
   for(const [id,spent] of [['eph-prev',here<=monthIndex(span.first)],['eph-next',here>=monthIndex(span.last)]]){

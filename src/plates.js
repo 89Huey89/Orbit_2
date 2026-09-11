@@ -507,11 +507,36 @@ function syncDomPalette(){
     if(value)game.style.setProperty('--'+name,value);else game.style.removeProperty('--'+name);
   }
 }
+// The catalogue, colophon and ephemeris are the game's own book pages, so they are owed the plate's own
+// sheet rather than a flat panel colour: a 256x256 crop of paintBackdrop() composited with laidPaper(),
+// centred on the sheet, goes into --leaf-paper as a data URL every leaf panel's CSS background reads
+// behind its own lower-opacity veil. Rebuilt only when the plate or the screen size actually changes.
+let leafAssetsKey='';
+function syncLeafAssets(){
+  if(!W||!H||!game.style||typeof game.style.setProperty!=='function')return;
+  const key=plateName+':'+Math.round(W)+'x'+Math.round(H);
+  if(key===leafAssetsKey)return;
+  leafAssetsKey=key;
+  const bg=backdrop;
+  if(!bg||!bg.width||!bg.height)return;
+  const size=256,c=makeCanvas(size,size),g=c.getContext('2d');
+  const crop=Math.min(bg.width,bg.height);
+  g.drawImage(bg,(bg.width-crop)/2,(bg.height-crop)/2,crop,crop,0,0,size,size);
+  const sheet=laidSheetFor();
+  if(sheet&&sheet.width&&sheet.height){
+    const sc=Math.min(sheet.width,sheet.height,crop);
+    g.save();g.globalCompositeOperation=onPaper()?'multiply':'screen';g.globalAlpha=onPaper()?.35:.055;
+    g.drawImage(sheet,(sheet.width-sc)/2,(sheet.height-sc)/2,sc,sc,0,0,size,size);
+    g.restore();
+  }
+  try{game.style.setProperty('--leaf-paper',`url(${c.toDataURL('image/png')})`);}catch(_){}
+}
 function syncPlate(){
   // The stylesheet switches its variables on the base plate; the exact plate is named beside it so a
   // derived plate can adjust a line or two of chrome without repeating the whole palette.
   game.setAttribute('data-plate',plateBase(plateName));
   game.setAttribute('data-plate-id',plateName);
+  syncLeafAssets();
   syncDomPalette();
   const era=eraId();if(era)game.setAttribute('data-era',String(era));else game.removeAttribute('data-era');
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);

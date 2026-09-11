@@ -246,6 +246,7 @@ function setPlaying(){
 }
 function showEnd(){
   const preview=plateOwns('score');deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
+  paintLeafFrame('end-leaf-frame',{noRosette:true});
   $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
@@ -508,11 +509,14 @@ function paintLedgerRules(body){
     }
   }
 }
-// The catalogue leaf's own edge, cut on the canvas behind the DOM rather than ruled with a straight
-// CSS border: the plate-mark rect buildFrameLayer opens the chart's own frame with, one faint inner
-// rule, and a single corner rosette — a book page, not a chart, so no tick ladder. See the art audit.
-function paintCatalogueLeafFrame(){
-  const c=$('cat-leaf-frame');if(!c)return;
+// A leaf's own edge, cut on the canvas behind the DOM rather than ruled with a straight CSS border: the
+// plate-mark rect buildFrameLayer opens the chart's own frame with, one faint inner rule, and (unless
+// asked to skip it) a single corner rosette — a book page, not a chart, so no tick ladder. Shared by the
+// catalogue and ephemeris leaves, which hide their own CSS border once this is drawn (see index.html);
+// the colophon keeps its own double CSS rule and the ink-wipe reveal it carries, so it draws this
+// underneath as one more layer rather than in place of it, and skips the rosette to stay out of its way.
+function paintLeafFrame(id,opts={}){
+  const c=$(id);if(!c)return;
   const w=c.clientWidth,h=c.clientHeight;
   if(!(w>0&&h>0)||!c.getContext)return;
   c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
@@ -522,8 +526,9 @@ function paintCatalogueLeafFrame(){
   g.lineWidth=1;g.strokeStyle=`rgba(${rgb},${onPaper()?.3:.2})`;
   g.strokeRect(3.5,3.5,Math.max(1,w-7),Math.max(1,h-7));
   burinRect(g,10.5,10.5,Math.max(1,w-21),Math.max(1,h-21),rgb,onPaper()?.34:.24,.7,58113);
-  frameRosette(g,24,24,rgb,onPaper()?.34:.24,9,58119);
+  if(!opts.noRosette)frameRosette(g,24,24,rgb,onPaper()?.34:.24,9,58119);
 }
+function paintCatalogueLeafFrame(){paintLeafFrame('cat-leaf-frame');}
 // The eight observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
 // Five of them are walked out of a loop here rather than typed as path data — the feather's vane off
 // the very `vaneProfile` the flight lays it with, and the comet's rays, Saturn's hatching, the
@@ -1020,6 +1025,7 @@ function resize(){
   // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
   ctx.imageSmoothingQuality='high';
   backdrop=paintBackdrop();if(!grain)grain=grainTexture();
+  syncLeafAssets();
   if(world){
     world.resize(W/scale,H/scale);
     // A resize mid-run pulls already-drawn nodes inboard (see OrbitWorld.resize), which the seed alone
