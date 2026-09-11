@@ -901,7 +901,9 @@ function drawAtmosphere(dt=0,aim=null){
   // Quiet atlas annotations stay outside the central play path on wide screens.
   if(W>780&&!plainPlate()){
     ctx.font=plateFace(10);ctx.fillStyle=`rgba(${ink.atmosphere.annotation},.23)`;ctx.textAlign='left';
-    ctx.fillText('ASCENDENS',W*.115,H*.45);ctx.fillText('Δ  /  '+String(Math.floor(world.progress)).padStart(3,'0'),W*.115,H*.45+17);
+    // The atlas's own word for the climb (marks.js's RIM_CAPTIONS already sets it), and a plain unpadded
+    // figure under it — no 1603 hand set a Leibniz delta or a zero-padded counter.
+    ctx.fillText('ASCENSUS',W*.115,H*.45);ctx.fillText(String(Math.floor(world.progress)),W*.115,H*.45+17);
     line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);
     ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
   }
