@@ -1284,7 +1284,9 @@ function floaterLine(f,left,h){
     const y=clamp(home+dir*step*h*.85,top,bottom),c=clash(y);
     if(c<cost){best=y;cost=c;}
   }
-  return best;
+  // A gutter this crowded has nowhere left to set the note clear: it is suppressed rather than printed
+  // over whatever is already there, the same call placeInscription makes when no clear ground is found.
+  return cost>0?null:best;
 }
 function drawDarkMarginalia(fy,time,alpha){
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
@@ -1550,11 +1552,16 @@ function drawEffects(dt){
     // frame it is first printed, and the side with it, so neither jumps while the note is still standing;
     // what it is settled clear of is the chapter lettering, whatever the placement solver has already set
     // within reach of the gutter, and the notes still in it. The line is kept as a lift off the sheet
-    // rather than a screen position, so the note goes on riding the ascent exactly as it did.
+    // rather than a screen position, so the note goes on riding the ascent exactly as it did. A gutter
+    // with no clear line left anywhere leaves `f.lift` null rather than forcing the note onto ground
+    // already spoken for — checked once here, exactly as the settle itself is, rather than retried every
+    // frame, which would let an already-standing note jump about as the ground around it changes.
     if(f.lift===undefined){
       f.left=sx(f.x)<W*.5;
-      f.lift=floaterLine(f,f.left,size*1.5)-sy(f.y);
+      const line=floaterLine(f,f.left,size*1.5);
+      f.lift=line===null?null:line-sy(f.y);
     }
+    if(f.lift===null)continue;
     // floaterBox (inscriptions.js) is the one place this geometry is worked out; placeInscription reads
     // the same box to keep a brand-new note off a floater still standing where it would be set.
     const {x,y,left}=floaterBox(f);

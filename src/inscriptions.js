@@ -88,7 +88,7 @@ function inscriptionClash(box,sway,q){
 // loop read this one function, so the two systems agree on where a floater stands rather than each
 // keeping its own copy of the same geometry.
 function floaterBox(f){
-  if(f.lift===undefined)return null;
+  if(f.lift==null)return null;
   const size=Math.max(11,13*scale),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
   const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
   const left=f.left,x=left?inner+hand*2.4:W-inner-hand*2.4;
