@@ -18,14 +18,15 @@ function landContour(g,x,y,rx,ry,rng){
 function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
   const rgb=palette.rgb,paper=onPaper();
   if(family==='ocean'){
-    // Broad, irregular shorelines and islands beneath wisps of cloud.
-    for(let i=0;i<4;i++){
-      const x=(rng()-.5)*core*1.5,y=(rng()-.5)*core*1.6;
-      landContour(g,x,y,core*(i===0?.52:.22+rng()*.2),core*(.3+rng()*.32),rng);
-      if(paper){g.fillStyle=i%2?'rgba(62,104,84,.3)':'rgba(98,140,116,.24)';g.strokeStyle='rgba(58,42,28,.55)';}
-      else{g.fillStyle=i%2?'#b8b292':'#cbc4a4';g.strokeStyle='rgba(51,60,45,.7)';}
-      g.fill();g.lineWidth=.65;g.stroke();
-    }
+    // One large landmass with a real coast, not four small islands: the shape a duotone keeps, where
+    // four scattered blobs would collapse into an indistinct speckle. A second, smaller contour is bitten
+    // into it as a peninsula, drawn in the same tone so the two read as one coastline rather than a second
+    // island.
+    const lx=(rng()-.5)*core*.3,ly=(rng()-.5)*core*.3;
+    if(paper){g.fillStyle='rgba(98,140,116,.28)';g.strokeStyle='rgba(58,42,28,.55)';}
+    else{g.fillStyle='#cbc4a4';g.strokeStyle='rgba(51,60,45,.7)';}
+    landContour(g,lx,ly,core*.72,core*.6,rng);g.fill();g.lineWidth=.9;g.stroke();
+    landContour(g,lx+core*.52,ly-core*.22,core*.3,core*.25,rng);g.fill();g.lineWidth=.7;g.stroke();
     for(let i=0;i<9;i++){
       const x=(rng()-.5)*core*1.8,y=(rng()-.5)*core*1.9;
       g.strokeStyle=paper?`rgba(96,74,52,${.14+rng()*.18})`:`rgba(218,218,196,${.1+rng()*.15})`;g.lineWidth=.6+rng()*1.25;g.lineCap='round';
@@ -60,13 +61,20 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     }
   }else if(family==='ringed'||family==='storm'){
     const phase=rng()*TAU,storm=family==='storm';
-    const stormMajor=paper?'rgba(224,220,206,.42)':'rgba(200,194,202,.38)',stormMinor=paper?'rgba(52,84,120,.5)':'rgba(75,71,87,.45)';
-    const ringMajor=paper?'rgba(234,222,190,.42)':'rgba(215,197,161,.42)',ringMinor=paper?'rgba(120,90,58,.42)':'rgba(111,86,66,.4)';
-    for(let i=-22;i<23;i++){
-      const y=i*core/21,bend=Math.sin(i*.65+phase)*(storm?3.7:1.5);
-      g.strokeStyle=i%4===0?(storm?stormMajor:ringMajor):i%3===0?(storm?stormMinor:ringMinor):`rgba(${rgb},.22)`;
-      g.lineWidth=.65+rng()*1.45;g.beginPath();g.moveTo(-core-3,y);g.bezierCurveTo(-core*.35,y-3+bend,core*.32,y+4-bend,core+3,y-1);g.stroke();
+    // Pushed to near-white and near-black rather than a mid grey-blue: a duotone maps by luminance alone,
+    // so only a band already at one extreme or the other is guaranteed to survive it as a band.
+    const stormMajor='rgba(250,244,224,.78)',stormMinor='rgba(16,14,18,.72)';
+    if(storm){
+      // A hard equatorial band pair, reaching the limb: two bold bands rather than the loose belt hatch
+      // the ringed body used to share, so a duotone and a small size no longer read them as one drawing.
+      for(const band of [{y:-core*.34,w:core*.4,c:stormMajor},{y:core*.22,w:core*.48,c:stormMinor}]){
+        const bend=Math.sin(phase)*2.4;
+        g.strokeStyle=band.c;g.lineWidth=band.w;g.lineCap='butt';
+        g.beginPath();g.moveTo(-core*1.2,band.y);g.bezierCurveTo(-core*.3,band.y-2.4+bend,core*.3,band.y+2.4-bend,core*1.2,band.y-.5);g.stroke();
+      }
     }
+    // The atmospheric eye: a stack of concentric ellipses, kept for both bodies — a gas giant carries one
+    // whether or not it is banded — but the ring system alone now carries the ringed body's silhouette.
     const x=-core*.24,y=core*.12,w=core*(storm?.43:.25),h=w*.53;
     const spotA=storm?(paper?'rgba(220,214,198,.4)':'rgba(207,201,208,.4)'):(paper?'rgba(224,206,166,.44)':'rgba(212,190,150,.44)');
     const spotB=storm?(paper?'rgba(52,84,120,.55)':'rgba(76,71,89,.52)'):(paper?'rgba(120,90,58,.48)':'rgba(115,85,64,.45)');
@@ -79,17 +87,29 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       landContour(g,(rng()-.5)*core*1.7,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.25+rng()*.3),rng);
       g.fillStyle=paper?(i%2?'rgba(236,228,204,.42)':'rgba(100,118,128,.2)'):(i%2?'rgba(210,216,206,.3)':'rgba(95,119,128,.22)');g.fill();
     }
-    // Long fractured plates, each with smaller branches and a pale raised rim. Cut on the still front
-    // layer, with the hatching, rather than the shifting wash: an engraved fracture does not misregister.
-    for(let i=0;i<7;i++){
-      let x=(rng()-.5)*core*1.9,y=-core-rng()*5;
-      front.beginPath();front.moveTo(x,y);
-      for(let j=0;j<8;j++){
-        x+=(rng()-.5)*core*.5;y+=core*.29;front.lineTo(x,y);
-        if(j===3||j===5){front.lineTo(x+core*(rng()-.5)*.7,y-core*.22);front.moveTo(x,y);}
+    // An angular fracture web, not the loose parallel hairlines this used to be: two hubs throw off
+    // straight, sharply bent cracks past the limb, and short cross-links lace them together, the way ice
+    // actually shatters. Cut on the still front layer, with the hatching, rather than the shifting wash:
+    // an engraved fracture does not misregister.
+    const hubs=[{x:-core*.3+rng()*core*.3,y:-core*.2+rng()*core*.3},{x:core*.1+rng()*core*.3,y:core*.15+rng()*core*.3}];
+    const spokes=[];
+    for(const hub of hubs){
+      const arms=4+Math.floor(rng()*2);
+      for(let k=0;k<arms;k++){
+        const a=k/arms*TAU+rng()*.6,bend=(rng()-.5)*.7;
+        const mx=hub.x+Math.cos(a)*core*.55,my=hub.y+Math.sin(a)*core*.55;
+        const ex=hub.x+Math.cos(a+bend)*core*1.25,ey=hub.y+Math.sin(a+bend)*core*1.25;
+        front.beginPath();front.moveTo(hub.x,hub.y);front.lineTo(mx,my);front.lineTo(ex,ey);
+        front.strokeStyle=paper?'rgba(58,42,28,.55)':'rgba(61,89,104,.48)';front.lineWidth=1.2;front.stroke();
+        front.strokeStyle=paper?'rgba(238,228,200,.45)':'rgba(220,226,214,.4)';front.lineWidth=.45;front.stroke();
+        spokes.push({mx,my});
       }
-      front.strokeStyle=paper?'rgba(58,42,28,.5)':'rgba(61,89,104,.43)';front.lineWidth=1.1;front.stroke();
-      front.save();front.translate(-.5,-.45);front.strokeStyle=paper?'rgba(238,228,200,.55)':'rgba(220,226,214,.5)';front.lineWidth=.4;front.stroke();front.restore();
+    }
+    for(let i=0;i<5;i++){
+      const a=spokes[Math.floor(rng()*spokes.length)],b=spokes[Math.floor(rng()*spokes.length)];
+      if(!a||!b||a===b)continue;
+      front.strokeStyle=paper?'rgba(58,42,28,.32)':'rgba(61,89,104,.3)';front.lineWidth=.6;
+      front.beginPath();front.moveTo(a.mx,a.my);front.lineTo(b.mx,b.my);front.stroke();
     }
   }else if(family==='dune'){
     // The ripples are cut on the still front layer, with the hatching, rather than the shifting wash: an
@@ -103,8 +123,13 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       }
       front.strokeStyle=i%3===0?'rgba(92,68,48,.32)':'rgba(217,190,146,.36)';front.lineWidth=i%3===0?1.5:.65;front.stroke();
     }
-    g.beginPath();g.moveTo(-core*.75,-core*.1);g.bezierCurveTo(-core*.12,-core*.4,-core*.1,core*.5,core*.6,core*.25);
-    g.strokeStyle='rgba(95,65,49,.48)';g.lineWidth=2.2;g.stroke();g.strokeStyle='rgba(210,176,128,.4)';g.lineWidth=.55;g.stroke();
+    // One dominant dark rift crossing the whole disc, limb to limb — the mark that survives a duotone —
+    // rather than the modest crack this used to be. A wide colour band on the wash carries its width; a
+    // narrower scar is struck to match on the still front layer in `glyph()`, after the hatching, so the
+    // hatch does not simply bury it the way it would a mark left on the wash alone.
+    g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);
+    g.strokeStyle='rgba(78,52,38,.58)';g.lineWidth=4.4;g.lineCap='round';g.stroke();
+    g.strokeStyle='rgba(215,182,132,.46)';g.lineWidth=.9;g.stroke();
     g.fillStyle='rgba(215,198,164,.47)';g.beginPath();g.ellipse(core*.08,-core*.99,core*.44,core*.18,.2,0,TAU);g.fill();
   }else if(family==='volcanic'){
     for(let i=0;i<10;i++){
@@ -122,6 +147,13 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       g.strokeStyle='rgba(155,100,69,.17)';g.lineWidth=2.4;g.stroke();
       g.strokeStyle='rgba(199,151,98,.62)';g.lineWidth=.8;g.stroke();g.strokeStyle='rgba(222,191,137,.55)';g.lineWidth=.3;g.stroke();
       fissures.push(path);
+    }
+    // A broken, spotted limb: dark irregular blotches straddling the very edge, so the silhouette itself
+    // reads as battered rather than a clean circle, where the mottled surface above is lost to a duotone.
+    for(let i=0;i<10;i++){
+      const a=rng()*TAU,rr=core*(.86+rng()*.18),bx=Math.cos(a)*rr,by=Math.sin(a)*rr,br=core*(.08+rng()*.09);
+      landContour(g,bx,by,br,br*(.7+rng()*.4),rng);
+      g.fillStyle=paper?'rgba(58,42,28,.4)':'rgba(10,14,24,.42)';g.fill();
     }
   }else{
     for(let i=-6;i<=6;i++){
@@ -553,6 +585,13 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;
   paintEngraving(g,core,palette,rng,family);
+  if(family==='dune'){
+    // The dominant rift's colour lives on the wash (paintPlanetSurface, above); this narrower scar,
+    // struck to match after the hatching, keeps the rift a visible mark rather than letting the hatch
+    // bury the wash-only version of it.
+    g.strokeStyle=paper?'rgba(26,18,11,.55)':'rgba(30,26,20,.5)';g.lineWidth=1.6;g.lineCap='round';
+    g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);g.stroke();
+  }
   if(family==='ringed'){
     g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
   }
