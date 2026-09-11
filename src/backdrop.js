@@ -86,6 +86,16 @@ function dressSheet(sheet){
     const edge=g.createRadialGradient(W*.5,H*.5,Math.min(W,H)*.22,W*.5,H*.5,Math.max(W,H)*.72);
     edge.addColorStop(0,'rgba(74,46,18,0)');edge.addColorStop(1,'rgba(74,46,18,.42)');
     g.fillStyle=edge;g.fillRect(0,0,W,H);
+  }else if(plateName==='proof'){
+    // Not another century's damage but this morning's own pull: a crisper bevel where the plate's edge
+    // bit the sheet, just inside the frame's own plate-mark groove, and the faint diagonal sheen a
+    // burnisher's pass leaves wiping the ink clean before the impression was struck.
+    const bevel=Math.min(W,H)*.05;
+    g.strokeStyle='rgba(255,251,238,.09)';g.lineWidth=1.3;
+    g.strokeRect(bevel,bevel,Math.max(1,W-bevel*2),Math.max(1,H-bevel*2));
+    const sheen=g.createLinearGradient(0,0,W*.65,H*.65);
+    sheen.addColorStop(0,'rgba(255,251,238,.05)');sheen.addColorStop(.5,'rgba(255,251,238,0)');sheen.addColorStop(1,'rgba(255,251,238,.045)');
+    g.fillStyle=sheen;g.fillRect(0,0,W,H);
   }
   g.restore();
   return sheet;

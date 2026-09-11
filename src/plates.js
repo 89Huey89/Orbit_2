@@ -293,8 +293,10 @@ const PLATE_STYLES={
   // The whole chart in one brown ink, as Galileo washed his moons: no hand-colouring, no rubrication, no
   // Prussian blue — every body a sepia wash under a sepia line on the cream of the sheet.
   sepia:{base:'paper',wash:.3,pixels:true,tint:topped(duotone([40,28,18],[138,104,70],[231,218,189]),.86)},
-  // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it.
-  proof:{base:'paper',wash:.22,plain:true,tint:duotone([20,17,14],[150,138,116],[240,231,205])},
+  // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it — the
+  // opposite of a dulled swatch, so its own ramp is darkened at the mid stop and lifted at the light one
+  // and topped the way sepia's is, so the sheet actually reaches its light stop rather than stopping short.
+  proof:{base:'paper',wash:.22,plain:true,tint:topped(duotone([14,12,10],[86,78,66],[250,245,233]),.9)},
   // The observatory plate: the same chart as a modern survey would publish it. The sheet goes to the
   // black of a sensor rather than the blue of a night sky and every engraved line is re-inked as a cool
   // instrument hairline, but the bodies themselves are no longer printed — they are rendered, lit from
