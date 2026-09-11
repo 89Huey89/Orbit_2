@@ -984,7 +984,10 @@ function drawNode(n,aim){
   const rgb=n.difficultyChoice==='relaxed'?ink.marks.nodeRelaxed:n.difficultyChoice==='hardcore'?ink.marks.nodeHardcore:drift?ink.marks.nodeDrift:fading?ink.marks.nodeFading:gold?ink.marks.nodeGold:shield?ink.marks.nodeShield:reflector?ink.marks.nodeReflector:inkwell?ink.marks.nodeInkwell:dawn?ink.marks.nodeDawn:sling?ink.marks.slingFill:ink.marks.node;
   ctx.save();ctx.translate(x,y);
   if(world.state==='ready'&&n.row>1)ctx.globalAlpha=.35;
-  if(used)ctx.globalAlpha=lerp(.62,.2,struck);
+  // A used orbit is struck through, not simply dimmed (README's own line on it): floored at .75 rather
+  // than .2, so the diagonal strike below carries the spent reading on its own instead of the whole
+  // composite being crushed down to a fifth of its ink, against the sheet's own rule that ink never fades.
+  if(used)ctx.globalAlpha=lerp(.62,.75,struck);
   const paper=onPaper();
   const halo=nodeGlow(rgb,active,paper);
   if(halo)ctx.drawImage(halo,-r*2.1,-r*2.1,r*4.2,r*4.2);
