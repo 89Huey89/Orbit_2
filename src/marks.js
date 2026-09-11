@@ -56,21 +56,26 @@ definePlate('marks',{
     // by value rather than given a second hue.
     nodeDrift:'214,192,146',nodeGold:'252,228,164',nodeFading:'196,168,118',nodeRelaxed:'224,206,158',
     nodeHardcore:'158,124,74',hazardAccretion:'236,204,138',aimBlockedStart:'206,164,102',aimBlockedEnd:'176,132,80',
-    fadingCritical:'250,236,196'
+    fadingCritical:'250,236,196',
+    // The void family declared in definePlate('dark') (effects.js), read here too: hazardCore is one of
+    // the eight "this means black" tokens a luminance-only duotone was lightening past reading as void.
+    hazardCore:'#060814'
   },
   verdigris:{
     // The sheet stays green; only the danger reads are rubricated into iron red, as the plate's own
     // difficulty-choice comment above already puts it (figures.js:980-982).
     nodeDrift:'150,206,182',nodeGold:'196,230,204',nodeFading:'108,168,138',nodeRelaxed:'176,218,190',
     nodeHardcore:'196,78,58',hazardAccretion:'212,104,74',aimBlockedStart:'204,92,66',aimBlockedEnd:'176,64,48',
-    fadingCritical:'224,116,86'
+    fadingCritical:'224,116,86',
+    hazardCore:'#080e0c'
   },
   azzurra:{
     // White heightening only (05-engraving.md:366): every one of these stays on the pale end of the
     // ramp, never the dark ink the frame furniture takes in the separate azzurra finding below.
     nodeDrift:'200,210,220',nodeGold:'244,240,230',nodeFading:'186,196,206',nodeRelaxed:'214,222,224',
     nodeHardcore:'168,180,188',hazardAccretion:'228,224,208',aimBlockedStart:'206,206,200',aimBlockedEnd:'180,188,194',
-    fadingCritical:'250,248,240'
+    fadingCritical:'250,248,240',
+    hazardCore:'#262228'
   },
   // The one plate where a false-colour role palette is period-honest: real, distinct hues rather than
   // one ramp read by value, matching the DOM instrument colours the modern plate already declares

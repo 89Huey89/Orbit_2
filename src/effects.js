@@ -45,6 +45,16 @@ definePlate('dark',{
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
     floaterText:'34,24,16',screenFlash:'255,248,222'
   },
+  // A void family that never goes through the tint: azzurra's own duotone dark stop is a mid-value
+  // blue-grey and cellarius's and verdigris's sit only a little below their own sheet, so the rising
+  // darkness these six tokens paint would land close to — on azzurra, lighter than — the plate's own
+  // ground instead of reading as an encroaching black. Each plate states its own ink-black directly.
+  cellarius:{washTop:'6,8,20',washMid:'6,8,20',washSolid:'#060814',bodyTop:'6,8,20',bodyMid:'6,8,20',
+    voidLayers:['rgba(6,8,20,.23)','rgba(6,8,20,.44)','rgba(6,8,20,.57)','rgba(6,8,20,.63)','rgba(6,8,20,.72)']},
+  verdigris:{washTop:'8,14,12',washMid:'8,14,12',washSolid:'#080e0c',bodyTop:'8,14,12',bodyMid:'8,14,12',
+    voidLayers:['rgba(8,14,12,.23)','rgba(8,14,12,.44)','rgba(8,14,12,.57)','rgba(8,14,12,.63)','rgba(8,14,12,.72)']},
+  azzurra:{washTop:'38,34,40',washMid:'38,34,40',washSolid:'#262228',bodyTop:'38,34,40',bodyMid:'38,34,40',
+    voidLayers:['rgba(38,34,40,.23)','rgba(38,34,40,.44)','rgba(38,34,40,.57)','rgba(38,34,40,.63)','rgba(38,34,40,.72)']},
   // Era I states only what it cannot inherit. A crayon leaves no wet ink and dries to nothing, so the
   // wake behind the traveller is ochre dust rather than iron gall going from glossy blue-black to
   // sepia; the burst colours lose the atlas's blue and violet, which this era has no pigment for, and

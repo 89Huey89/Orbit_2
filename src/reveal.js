@@ -17,7 +17,12 @@ definePlate('reveal',{
   paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
     strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
   ceiling:{mode:'wall',sketch:'157,55,36',nib:'36,29,22',bead:'36,29,22',dry:'92,75,53',
-    spatter:'157,55,36',strike:'157,55,36',washRim:'36,29,22',blot:'157,55,36',rule:'36,29,22'}
+    spatter:'157,55,36',strike:'157,55,36',washRim:'36,29,22',blot:'157,55,36',rule:'36,29,22'},
+  // blot is the eighth "this means black" token the void-family finding names (see definePlate('dark')
+  // in effects.js): the same three plates' own ink-black, not the automatic duotone's lighter reach.
+  cellarius:{blot:'6,8,20'},
+  verdigris:{blot:'8,14,12'},
+  azzurra:{blot:'38,34,40'}
 });
 // How long each kind of mark takes, and how far above the top of the view the cartographer works ahead.
 const REVEAL_MARGIN=-24,REVEAL_CAP=3;
