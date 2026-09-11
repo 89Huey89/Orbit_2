@@ -1722,7 +1722,7 @@ function drawAim(aim){
   // reduced motion is requested, in which case the pricking stands still.
   const warn=blocked||aim?.steep;
   const guideRgb=warn?ink.marks.aimBlockedStart:aim?ink.marks.aimLocked:ink.marks.aimDefault;
-  const nearAlpha=warn?.72:aim?.78:.5,farAlpha=warn?.5:aim?.34:.12,weight=aim?1.15:.92;
+  const guideAlpha=warn?.72:aim?.78:.5,weight=aim?1.15:.92;
   const legs=[];let total=0,px=ax,py=ay;
   for(let i=1;i<points.length;i++){
     if(points[i].distance<12)continue;
@@ -1739,14 +1739,21 @@ function drawAim(aim){
     while(d<total&&leg<legs.length){
       while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
       const l=legs[leg],along=clamp(d-walked,0,l.len),f=d/total;
-      const x=l.x+l.ux*along,y=l.y+l.uy*along,size=(1.8+f*2.2)*scale*weight;
-      const starved=f>dryFrom?.16:1;
-      ctx.fillStyle=`rgba(${guideRgb},${lerp(nearAlpha,farAlpha,f)*starved})`;
-      ctx.beginPath();
-      ctx.moveTo(x-l.ux*size,y-l.uy*size);
-      ctx.lineTo(x+l.ux*size*.6-l.uy*size*.5,y+l.uy*size*.6+l.ux*size*.5);
-      ctx.lineTo(x+l.ux*size*.6+l.uy*size*.5,y+l.uy*size*.6-l.ux*size*.5);
-      ctx.closePath();ctx.fill();
+      const x=l.x+l.ux*along,y=l.y+l.uy*along;
+      // The size ramp runs the other way from a filled arrowhead's: the mark shrinks as the course
+      // runs on, and the starved factor now collapses it further once the nib would actually be dry
+      // there, carrying the running-out-of-ink story in the mark's own size. Alpha stays close to
+      // constant along the whole course instead of also fading toward the far end, so the pricking
+      // reads as one line rather than a gradient.
+      const starved=f>dryFrom?.3:1,size=(1.8+(1-f)*2.2)*scale*weight*starved;
+      // An open burin wedge — two converging cuts, not a filled arrowhead, which this plate's own
+      // devices already forgo — seeded off the mark's own position so consecutive pricks differ.
+      const seed=Math.floor(l.x*13+d)>>>0;
+      const back={x:x-l.ux*size,y:y-l.uy*size};
+      const cA={x:x+l.ux*size*.6-l.uy*size*.5,y:y+l.uy*size*.6+l.ux*size*.5};
+      const cB={x:x+l.ux*size*.6+l.uy*size*.5,y:y+l.uy*size*.6-l.ux*size*.5};
+      burinSegment(ctx,back.x,back.y,cA.x,cA.y,guideRgb,guideAlpha,.6*scale,seed,{segments:2,wobble:.3,hair:false});
+      burinSegment(ctx,back.x,back.y,cB.x,cB.y,guideRgb,guideAlpha,.6*scale,seed^0x5b,{segments:2,wobble:.3,hair:false});
       d+=gap*(1+f*.65);
     }
   }
