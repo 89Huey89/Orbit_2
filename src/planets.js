@@ -15,7 +15,7 @@ function landContour(g,x,y,rx,ry,rng){
   for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length];g.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2);}
   g.closePath();
 }
-function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
+function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
   const rgb=palette.rgb,paper=onPaper();
   if(family==='ocean'){
     // Broad, irregular shorelines and islands beneath wisps of cloud.
@@ -40,22 +40,23 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
     }
     // Craters as Galileo drew them in 1610, with the sun on the left: a rim, a crescent of shadow lying on the
     // floor against the wall nearest the sun, the far wall catching the light, and no rays — nothing an eye at
-    // the telescope ever saw. The larger floors take a few strokes of hatching in their shadow.
+    // the telescope ever saw. The larger floors take a few strokes of hatching in their shadow. Struck on the
+    // still front layer, with the hatching, rather than the shifting wash: an engraved rim does not misregister.
     const shadow=paper?'rgba(58,42,28,.4)':'rgba(34,38,42,.48)',wall=paper?'rgba(48,36,24,.62)':'rgba(48,43,34,.66)',lit='rgba(239,222,184,.72)';
     for(let i=0;i<25;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.94,x=Math.cos(a)*d,y=Math.sin(a)*d;
       const r=core*(i<3?.15+rng()*.055:.035+rng()*.07),flatten=.72+rng()*.24;
-      g.fillStyle=paper?'rgba(58,42,28,.08)':'rgba(60,52,39,.14)';g.beginPath();g.ellipse(x,y,r,r*flatten,0,0,TAU);g.fill();
-      g.strokeStyle=wall;g.lineWidth=.55;g.stroke();
-      g.fillStyle=shadow;g.beginPath();
-      g.ellipse(x,y,r*.94,r*flatten*.94,0,Math.PI*.5,Math.PI*1.5);
-      g.ellipse(x+r*.5,y,r*.86,r*flatten*.86,0,Math.PI*1.5,Math.PI*.5,true);
-      g.closePath();g.fill();
+      front.fillStyle=paper?'rgba(58,42,28,.08)':'rgba(60,52,39,.14)';front.beginPath();front.ellipse(x,y,r,r*flatten,0,0,TAU);front.fill();
+      front.strokeStyle=wall;front.lineWidth=.55;front.stroke();
+      front.fillStyle=shadow;front.beginPath();
+      front.ellipse(x,y,r*.94,r*flatten*.94,0,Math.PI*.5,Math.PI*1.5);
+      front.ellipse(x+r*.5,y,r*.86,r*flatten*.86,0,Math.PI*1.5,Math.PI*.5,true);
+      front.closePath();front.fill();
       if(i<3){
-        g.strokeStyle=paper?'rgba(26,18,11,.32)':'rgba(30,28,24,.3)';g.lineWidth=.3;
-        for(let j=0;j<4;j++){const yy=y-r*flatten*.6+j*r*flatten*.4;g.beginPath();g.moveTo(x-r*.86,yy);g.lineTo(x-r*.38,yy+r*.3);g.stroke();}
+        front.strokeStyle=paper?'rgba(26,18,11,.32)':'rgba(30,28,24,.3)';front.lineWidth=.3;
+        for(let j=0;j<4;j++){const yy=y-r*flatten*.6+j*r*flatten*.4;front.beginPath();front.moveTo(x-r*.86,yy);front.lineTo(x-r*.38,yy+r*.3);front.stroke();}
       }
-      g.strokeStyle=lit;g.lineWidth=.7;g.beginPath();g.ellipse(x+.15,y,r*.9,r*flatten*.9,0,-Math.PI*.42,Math.PI*.42);g.stroke();
+      front.strokeStyle=lit;front.lineWidth=.7;front.beginPath();front.ellipse(x+.15,y,r*.9,r*flatten*.9,0,-Math.PI*.42,Math.PI*.42);front.stroke();
     }
   }else if(family==='ringed'||family==='storm'){
     const phase=rng()*TAU,storm=family==='storm';
@@ -78,26 +79,29 @@ function paintPlanetSurface(g,core,family,palette,rng,fissures=[]){
       landContour(g,(rng()-.5)*core*1.7,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.25+rng()*.3),rng);
       g.fillStyle=paper?(i%2?'rgba(236,228,204,.42)':'rgba(100,118,128,.2)'):(i%2?'rgba(210,216,206,.3)':'rgba(95,119,128,.22)');g.fill();
     }
-    // Long fractured plates, each with smaller branches and a pale raised rim.
+    // Long fractured plates, each with smaller branches and a pale raised rim. Cut on the still front
+    // layer, with the hatching, rather than the shifting wash: an engraved fracture does not misregister.
     for(let i=0;i<7;i++){
       let x=(rng()-.5)*core*1.9,y=-core-rng()*5;
-      g.beginPath();g.moveTo(x,y);
+      front.beginPath();front.moveTo(x,y);
       for(let j=0;j<8;j++){
-        x+=(rng()-.5)*core*.5;y+=core*.29;g.lineTo(x,y);
-        if(j===3||j===5){g.lineTo(x+core*(rng()-.5)*.7,y-core*.22);g.moveTo(x,y);}
+        x+=(rng()-.5)*core*.5;y+=core*.29;front.lineTo(x,y);
+        if(j===3||j===5){front.lineTo(x+core*(rng()-.5)*.7,y-core*.22);front.moveTo(x,y);}
       }
-      g.strokeStyle=paper?'rgba(58,42,28,.5)':'rgba(61,89,104,.43)';g.lineWidth=1.1;g.stroke();
-      g.save();g.translate(-.5,-.45);g.strokeStyle=paper?'rgba(238,228,200,.55)':'rgba(220,226,214,.5)';g.lineWidth=.4;g.stroke();g.restore();
+      front.strokeStyle=paper?'rgba(58,42,28,.5)':'rgba(61,89,104,.43)';front.lineWidth=1.1;front.stroke();
+      front.save();front.translate(-.5,-.45);front.strokeStyle=paper?'rgba(238,228,200,.55)':'rgba(220,226,214,.5)';front.lineWidth=.4;front.stroke();front.restore();
     }
   }else if(family==='dune'){
+    // The ripples are cut on the still front layer, with the hatching, rather than the shifting wash: an
+    // engraved ripple does not misregister. The rift and the crest below stay on the wash.
     const phase=rng()*TAU;
     for(let i=-20;i<=20;i++){
-      const y=i*core/17;g.beginPath();
+      const y=i*core/17;front.beginPath();
       for(let x=-core-3;x<=core+4;x+=2){
         const yy=y+Math.sin(x*.1+phase+i*.22)*3.4+Math.sin(x*.22-i*.34)*.85;
-        if(x===-core-3)g.moveTo(x,yy);else g.lineTo(x,yy);
+        if(x===-core-3)front.moveTo(x,yy);else front.lineTo(x,yy);
       }
-      g.strokeStyle=i%3===0?'rgba(92,68,48,.32)':'rgba(217,190,146,.36)';g.lineWidth=i%3===0?1.5:.65;g.stroke();
+      front.strokeStyle=i%3===0?'rgba(92,68,48,.32)':'rgba(217,190,146,.36)';front.lineWidth=i%3===0?1.5:.65;front.stroke();
     }
     g.beginPath();g.moveTo(-core*.75,-core*.1);g.bezierCurveTo(-core*.12,-core*.4,-core*.1,core*.5,core*.6,core*.25);
     g.strokeStyle='rgba(95,65,49,.48)';g.lineWidth=2.2;g.stroke();g.strokeStyle='rgba(210,176,128,.4)';g.lineWidth=.55;g.stroke();
@@ -539,11 +543,15 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   if(paper){g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=ink.base.paper;g.fill();g.globalAlpha=.62;g.fillStyle=palette.body;g.fill();g.globalAlpha=1;}
   else{g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
   g.save();g.beginPath();g.arc(0,0,core-.2,0,TAU);g.clip();
-  const fissures=[];paintPlanetSurface(g,core,family,palette,rng,fissures);
+  // The front layer's clip opens here, before the surface is painted, because paintPlanetSurface strikes
+  // a few burin marks — crater rims, ice fractures, dune ripples — straight onto it: engraved lines that
+  // must stay put while the wash beneath them drifts by a misregistered pixel or two.
+  front.ink.save();front.ink.beginPath();front.ink.arc(0,0,core,0,TAU);front.ink.clip();
+  const fissures=[];paintPlanetSurface(g,front.ink,core,family,palette,rng,fissures);
   paintPigment(g,core,rng,rgb);
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
-  g=front.ink;g.save();g.beginPath();g.arc(0,0,core,0,TAU);g.clip();
+  g=front.ink;
   paintEngraving(g,core,palette,rng,family);
   if(family==='ringed'){
     g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
@@ -609,8 +617,8 @@ function drawPlanet(art,r,time,impression=null){
   // things a canvas can be asked for, paid once per planet per frame.
   const spills=!!(art.weather||art.embers);
   ctx.save();
-  if(spills){ctx.beginPath();ctx.arc(0,0,art.core,0,TAU);ctx.clip();}
   if(onPaper()&&impression){ctx.translate(impression.x||0,impression.y||0);ctx.rotate(impression.rotation||0);}
+  if(spills){ctx.beginPath();ctx.arc(0,0,art.core,0,TAU);ctx.clip();}
   ctx.rotate(angle);
   ctx.drawImage(art.surface,-40,-40,80,80);
   if(art.embers){

@@ -325,9 +325,10 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     const rng=seeded((seed^0x9e3779)>>>0||1),ox=(rng()-.5)*core*.8,oy=(rng()-.5)*core*.8;
     const grow=core*2.2*pen.wash,dry=revealSpan(pen.wash,.66,1);
     ctx.save();
+    if(onPaper()&&impression){ctx.translate(impression.x||0,impression.y||0);ctx.rotate(impression.rotation||0);}
     ctx.beginPath();ctx.arc(0,0,core,0,TAU);ctx.clip();
     landContour(ctx,ox,oy,grow,grow*.88,rng);
-    ctx.save();ctx.clip();if(onPaper()&&impression){ctx.translate(impression.x||0,impression.y||0);ctx.rotate(impression.rotation||0);}ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
+    ctx.save();ctx.clip();ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
     ctx.strokeStyle=`rgba(${ink.reveal.washRim},${.42*(1-dry)+.06})`;ctx.lineWidth=1.2;ctx.stroke();
     ctx.restore();
   }

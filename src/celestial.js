@@ -48,7 +48,7 @@ function distantGlobe(g,x,y,r,family,seed){
   g.save();g.translate(x,y);g.beginPath();g.arc(0,0,r,0,TAU);g.clip();
   if(!paper){
     g.fillStyle=palette.body;g.fillRect(-r,-r,r*2,r*2);
-    paintPlanetSurface(g,r,family,palette,rng);paintPigment(g,r,rng);
+    paintPlanetSurface(g,g,r,family,palette,rng);paintPigment(g,r,rng);
     // Dense curved engraving holds up at the scale of a whole atlas page.
     for(let i=0;i<150;i++){
       const xx=-r+i*r/65;
@@ -82,7 +82,7 @@ function distantGlobe(g,x,y,r,family,seed){
       g.restore();
     }
   }else{
-    paintPlanetSurface(g,r,family,palette,rng);paintPigment(g,r,rng);
+    paintPlanetSurface(g,g,r,family,palette,rng);paintPigment(g,r,rng);
   }
   if(paper){
     // Paper: the shaded hemisphere is crosshatched ink, never a flat dark fill — an independent
