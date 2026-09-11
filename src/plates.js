@@ -539,16 +539,26 @@ let chapterReveal={index:0,age:5};
 let ambience={random:seeded(7419),wait:7,event:null,sequence:0};
 const darknessPlates=new Map();
 const inkRng=seeded(741593),inkMotes=Array.from({length:40},()=>({x:inkRng(),phase:inkRng(),speed:.045+inkRng()*.045,length:.5+inkRng()*1.6,drift:inkRng()*TAU}));
+// The four chapters' own wash widened so the run's four-act structure actually reaches the sheet once
+// composited at the alphas drawRegion (celestial.js) lays them with — night .25, paper a bare .042 — rather
+// than the 5-9-unit drift the four used to sit at, which came out barely distinguishable once composited.
+// Cool grey-green, warm brown, mauve, indigo: night's own four; paper's run a parallel warm progression so
+// each chapter still reads as its own gathering rather than a uniform wash of one plate's whole run.
 const atlasRegions=[
-  {wash:'29,40,40',pigment:'149,157,143',star:[183,190,175],density:1,seed:3197,
-    paper:{wash:'80,68,50',pigment:'92,78,58',star:[70,54,38]}},
-  {wash:'51,39,30',pigment:'175,146,111',star:[202,182,151],density:.82,seed:7321,
-    paper:{wash:'100,74,42',pigment:'112,84,48',star:[76,52,28]}},
-  {wash:'34,27,34',pigment:'143,116,111',star:[179,163,159],density:.62,seed:9481,
-    paper:{wash:'96,58,46',pigment:'104,66,50',star:[68,40,32]}},
-  {wash:'24,34,47',pigment:'126,145,159',star:[172,185,196],density:.46,seed:5107,
-    paper:{wash:'64,76,92',pigment:'70,84,98',star:[42,54,70]}}
+  {wash:'38,56,52',pigment:'149,157,143',star:[183,190,175],density:1,seed:3197,
+    paper:{wash:'96,86,58',pigment:'92,78,58',star:[70,54,38]}},
+  {wash:'68,48,32',pigment:'175,146,111',star:[202,182,151],density:.82,seed:7321,
+    paper:{wash:'124,84,42',pigment:'112,84,48',star:[76,52,28]}},
+  {wash:'46,34,52',pigment:'143,116,111',star:[179,163,159],density:.62,seed:9481,
+    paper:{wash:'112,58,50',pigment:'104,66,50',star:[68,40,32]}},
+  {wash:'22,36,64',pigment:'126,145,159',star:[172,185,196],density:.46,seed:5107,
+    paper:{wash:'58,74,104',pigment:'70,84,98',star:[42,54,70]}}
 ];
+// A faint change in the laid-paper blend strength across the four chapters, so the gathering reads as a
+// slightly different stock as well as a different wash — period-true twice over, since both a hand-coloured
+// atlas's gatherings and a colourist's palette genuinely drift through a book. Multiplies drawLaidPaper's
+// own base alpha; kept small enough that no single chapter reads as a visible jump on its own.
+const CHAPTER_LAID_STRENGTH=[.92,1,1.07,1.15];
 // Reads whichever colour set (night literals or paper.*) is active for a region, passed through the
 // derived plate's transform like every registered token, and cached because it is read per frame.
 const regionInkCache=new Map();
@@ -619,7 +629,8 @@ function drawLaidPaper(){
   // the grain over it stands alone and reads as the sensor's own noise.
   if(modernPlate())return;
   const sheet=laidSheetFor();if(!sheet||!W||!H)return;
-  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=onPaper()?.35:.055;
+  const chapter=world?clamp(Math.floor(world.progress/8),0,3):0;
+  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=(onPaper()?.35:.055)*CHAPTER_LAID_STRENGTH[chapter];
   ctx.drawImage(sheet,0,0,W,H);ctx.restore();
 }
 function grainTexture(){
