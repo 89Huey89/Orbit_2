@@ -1195,13 +1195,20 @@ function flareSprite(seed,radius,core){
     g.quadraticCurveTo(Math.cos(a+bow)*(from+to)/2,Math.sin(a+bow)*(from+to)/2,Math.cos(a+bow*2)*to,Math.sin(a+bow*2)*to);
     g.stroke();
   }
+  // Two broken contours, restored: the outer limb of the penumbra and the edge of the old round
+  // umbra, both still true of the burst's own drawn radius r even though the body itself is no
+  // longer a disc — these are the only marks that draw r, which the pricked field ring out in
+  // drawFlare is measured from.
+  burinArc(g,0,0,r,0,TAU,p.flareEdge,.34,.6,seed+7,{segments:34,skips:4});
+  burinArc(g,0,0,r*.82,0,TAU,p.flareEdge,.2,.45,seed+13,{segments:26,skips:5});
   // The body: a burst rather than a disc, its points reaching out toward the drawn radius and its
-  // notches cut back near the old umbra's edge, each wobbled its own amount so it reads engraved
-  // rather than stamped. The rim is struck along the same jagged path, not a circle around it.
-  const tip=Math.max(u*1.3,r*.85),notch=u*.62,verts=[];
+  // notches held at (or just past) the lethal core radius u, each wobbled its own amount so it
+  // reads engraved rather than stamped, and so the ink drawn never retreats inside the radius that
+  // actually kills. The rim is struck along the same jagged path, not a circle around it.
+  const tip=Math.max(u*1.45,r*.85),notch=u,verts=[];
   for(let i=0;i<FLARE_SPIKES*2;i++){
     const a=i/(FLARE_SPIKES*2)*TAU+rng()*.02,spike=i%2===0;
-    const jr=spike?tip*(.9+rng()*.22):notch*(.75+rng()*.3);
+    const jr=spike?tip*(.9+rng()*.22):notch*(1+rng()*.08);
     verts.push([Math.cos(a)*jr,Math.sin(a)*jr]);
   }
   // Each edge is walked in a few sub-steps with a small perpendicular wobble rather than cut dead
@@ -1218,7 +1225,13 @@ function flareSprite(seed,radius,core){
     }
   }
   g.closePath();g.fillStyle=`rgba(${p.flareUmbra},${onPaper()?.92:.96})`;g.fill();
-  g.strokeStyle=`rgba(${p.flareRim},.75)`;g.lineWidth=.9;g.stroke();
+  // The rim is not a smooth stroke: it is the one mark in the atlas that was, so it is cut the same
+  // way as everything else, piece by piece along the burst's own 18 vertices, letting it skip and
+  // swell exactly as a hand-engraved outline would.
+  for(let i=0;i<verts.length;i++){
+    const [x0,y0]=verts[i],[x1,y1]=verts[(i+1)%verts.length];
+    burinSegment(g,x0,y0,x1,y1,p.flareRim,.75,.9,seed+31+i,{wobble:.5,hair:false});
+  }
   for(let i=0;i<14;i++){const a=rng()*TAU,d=u*(1.05+rng()*.5);g.fillStyle=`rgba(${p.flarePenumbra},${.14+rng()*.3})`;g.fillRect(Math.cos(a)*d,Math.sin(a)*d,.8,.8);}
   // Two lesser spots of the same group, as the sunspot plates always show.
   for(let i=0;i<2;i++){
