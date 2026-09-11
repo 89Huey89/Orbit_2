@@ -906,10 +906,20 @@ function drawRunningHead(){
 // sx()/sy(), so a rising camera carries the already engraved cartouche downward with the rest of the
 // sheet. It is never re-created at the viewport edge and never follows the traveller.
 const IMPRESSUM_ROWS=10,IMPRESSUM_REVEAL=.52;
+// The nine — now ten, with the second state — rows read as one flat list before this: a real setter
+// would never give a princely dedication and a place-line the same weight. Place and printer carry the
+// cartouche's headline size; plate, year, the second state and the title stand at the plate's ordinary
+// size; correction and privilege step down; and the engraver's credit and the daily date are set in the
+// same italic gloss every other aside on the sheet is, in the plain text face rather than small caps,
+// since they read as notes appended to the plate rather than proper names cut into it.
+const IMPRESSUM_TIERS={place:1.25,printer:1.25,plate:1,year:1,state:1,title:1,correction:.85,privilege:.85,engraver:.85,daily:.85};
+const IMPRESSUM_ITALIC=new Set(['engraver','daily']);
+function impressumRowSize(key,size){return size*(IMPRESSUM_TIERS[key]||1);}
 function impressumMetrics(){
-  const inner=frameBand()*.92+8,size=frameWide()?7.4:6.4,lineH=size*1.48,padY=9;
+  const inner=frameBand()*.92+8,size=frameWide()?7.4:6.4,padY=9;
   const width=Math.min(frameWide()?392:320,Math.max(100,W-inner*2-10));
-  return {inner,size,lineH,padY,width,height:padY*2+lineH*IMPRESSUM_ROWS};
+  let rowsHeight=0;for(const key in IMPRESSUM_TIERS)rowsHeight+=impressumRowSize(key,size)*1.48;
+  return {inner,size,padY,width,height:padY*2+rowsHeight};
 }
 function impressumAnchor(metrics){
   if(!world)return null;
@@ -1027,15 +1037,18 @@ function drawImpressum(){
   ctx.beginPath();ctx.rect(m.inner,m.inner,Math.max(0,W-m.inner*2),Math.max(0,H-m.inner*2));ctx.clip();
   burinRect(ctx,left,top,m.width,m.height,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70211);
   burinRect(ctx,left+4,top+4,m.width-8,m.height-8,ink.base.inkSoft,onPaper()?.36:.25,.6,70217);
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=plateFace(m.size,'sc');
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  let ry=top+m.padY;
   for(let i=0;i<rows.length;i++){
-    const row=rows[i],ry=top+m.padY+m.lineH*(i+.5),progress=impressumRowProgress(row);
+    const row=rows[i],rowSize=impressumRowSize(row.key,m.size),rowLineH=rowSize*1.48,cy=ry+rowLineH*.5,progress=impressumRowProgress(row);
+    ctx.font=IMPRESSUM_ITALIC.has(row.key)?plateFace(rowSize,'text','italic'):plateFace(rowSize,'sc');
     if(!row.text){
-      burinSegment(ctx,left+m.width*.25,ry,left+m.width*.75,ry,ink.base.inkSoft,onPaper()?.16:.1,.35,70231+i,{segments:6,skips:1,hair:false,wobble:.16});
-      continue;
+      burinSegment(ctx,left+m.width*.25,cy,left+m.width*.75,cy,ink.base.inkSoft,onPaper()?.16:.1,.35,70231+i,{segments:6,skips:1,hair:false,wobble:.16});
+      ry+=rowLineH;continue;
     }
-    ctx.fillStyle=colors.text;writeText(ctx,row.text,x,ry,progress,{size:m.size,nib:true});
-    if(row.device&&progress>=1)impressumDevice(ctx,left+m.width*.86,ry,m.size*.9,onPaper()?.55:.4,70267);
+    ctx.fillStyle=colors.text;writeText(ctx,row.text,x,cy,progress,{size:rowSize,nib:true});
+    if(row.device&&progress>=1)impressumDevice(ctx,left+m.width*.86,cy,rowSize*.9,onPaper()?.55:.4,70267);
+    ry+=rowLineH;
   }
   ctx.restore();
 }
