@@ -738,9 +738,11 @@ function drawChapterReveal(dt){
 // Night literals below are the original artwork's exact values; only the paper column is new.
 definePlate('atmosphere',{
   night:{eclipseShadow:'3,6,12',starBright:'218,205,176',starGlyph:'220,204,164',annotation:'155,174,171',
-    cometTrail:'187,195,177',cometHead:'222,211,179',cometDot:'224,216,190',glintBlue:'187,204,213',glintWarm:'222,204,159'},
+    cometTrail:'187,195,177',cometHead:'222,211,179',cometDot:'224,216,190',glintBlue:'187,204,213',glintWarm:'222,204,159',
+    sheetEdgeShade:'2,5,10'},
   paper:{eclipseShadow:PLATES.paper.base.inkSoft,starBright:PLATES.paper.base.inkStrong,starGlyph:PLATES.paper.base.inkStrong,annotation:PLATES.paper.base.inkSoft,
-    cometTrail:PLATES.paper.base.inkSoft,cometHead:PLATES.paper.base.ink,cometDot:PLATES.paper.base.inkStrong,glintBlue:'52,84,120',glintWarm:'150,100,32'}
+    cometTrail:PLATES.paper.base.inkSoft,cometHead:PLATES.paper.base.ink,cometDot:PLATES.paper.base.inkStrong,glintBlue:'52,84,120',glintWarm:'150,100,32',
+    sheetEdgeShade:'58,42,28'}
 });
 function regionPlate(index,near){
   const key=plateName+':'+index+':'+near+(onPaper()?'p':'');if(regionPlates.has(key))return regionPlates.get(key);
@@ -831,7 +833,7 @@ function drawSheetEdge(y,strength){
   if(y<=0||y>=H||strength<=.002)return;
   const colors=ink.frame,band=frameBand(),lift=Math.max(6,14*scale);
   const shade=ctx.createLinearGradient(0,y-lift,0,y);
-  shade.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);shade.addColorStop(1,`rgba(${onPaper()?'58,42,28':'2,5,10'},${.3*strength})`);
+  shade.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);shade.addColorStop(1,`rgba(${ink.atmosphere.sheetEdgeShade},${.3*strength})`);
   ctx.fillStyle=shade;ctx.fillRect(0,y-lift,W,lift);
   line(0,y,W,y,`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,Math.max(.7,scale*.9));
   const inset=band*.2;

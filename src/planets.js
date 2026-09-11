@@ -668,7 +668,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);g.stroke();
   }
   if(family==='ringed'){
-    g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(34,24,16,.32)':'rgba(23,22,30,.3)';g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
+    g.save();g.rotate(tilt);g.strokeStyle=`rgba(${ink.surface.ringShade},${paper?.32:.3})`;g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
   }
   g.restore();
   // Slightly misregistered outlines retain the character of a printed plate. On paper the hand colouring is
@@ -682,6 +682,10 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     burinArc(g,-.4,.8,core+.4,1.1,2.6,ink.underdrawing.chalk,.22,.8,seed^0x1a5b,{segments:14,skips:2,wobble:.6});
     burinArc(g,0,0,core-.25,0,TAU,'26,18,11',.96,1.15,seed^0x51f3,{segments:76,skips:3});
   }else{
+    // The same sanguine trial arc paper shows beside its keyline, at half the alpha: night's own
+    // registered chalk token used to sit unread by any drawing path, an orphan a plate never reached.
+    burinArc(g,.9,-.6,core+1.1,0,TAU,ink.underdrawing.chalk,.17,1,seed^0x2c71,{segments:60,skips:9,wobble:.9});
+    burinArc(g,-.4,.8,core+.4,1.1,2.6,ink.underdrawing.chalk,.11,.8,seed^0x1a5b,{segments:14,skips:2,wobble:.6});
     burinArc(g,0,0,core-.25,0,TAU,'31,29,23',.85,.85,seed^0x51f3,{segments:76,skips:4});
     g.strokeStyle=`rgba(${rgb},.65)`;g.lineWidth=.4;g.beginPath();g.arc(-.28,-.2,core+.5,0,TAU);g.stroke();
   }

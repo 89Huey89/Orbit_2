@@ -43,7 +43,8 @@ definePlate('marks',{
     aimDefault:'96,74,52',aimLocked:'150,100,32',aimBlockedStart:'166,58,40',aimBlockedEnd:'140,42,28',
     aimPerfectArc:'34,24,16',aimMarkPerfect:'34,24,16',aimMarkNormal:'96,74,52',aimMarkBlocked:'166,58,40',
     slingAimTick:'58,42,28',
-    hazardHalo0:'183,104,77',hazardHaloMid:'155,86,66',hazardHaloEdge:'130,60,53',
+    // No hazardHalo0/Mid/Edge here: drawHazard's `if(!paper)` guard never reads them on this plate — the
+    // ink does not glow, and the paper row's own copy of night's values was a dead, misleading duplicate.
     hazardAccretion:'166,58,40',hazardHatch:'34,24,16',hazardCore:'#170f08',hazardEdge:'34,24,16',
     hazardRim:'34,24,16',hazardArcFaint:'58,42,28',hazardOuter:'58,42,28'
   },

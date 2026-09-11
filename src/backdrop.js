@@ -317,7 +317,11 @@ definePlate('surface',{
     iceFracture:'61,89,104',iceFringe:'184,198,179',
     duneRift:'rgba(95,65,49,.5)',
     volcanicFissureOuter:'rgba(155,100,69,.17)',volcanicFissureInner:'rgba(199,151,98,.62)',
-    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.22)'
+    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.22)',
+    // The band the ring casts across the globe's own front, cut in the engraved layer alongside the
+    // keyline rather than lit as a physical shadow — so it takes a registered literal of its own instead
+    // of ink.base.inkStrong, which on this plate is the pale engraving ink, not a shading tone.
+    ringShade:'23,22,30'
   },
   paper:{
     shorelineFill:'rgba(98,140,116,.28)',shorelineStroke:'rgba(58,42,28,.55)',
@@ -327,7 +331,8 @@ definePlate('surface',{
     iceFracture:'58,42,28',iceFringe:'58,42,28',
     duneRift:'rgba(78,52,38,.58)',
     volcanicFissureOuter:'rgba(155,100,69,.17)',volcanicFissureInner:'rgba(199,151,98,.62)',
-    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.19)'
+    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.19)',
+    ringShade:'34,24,16'
   }
 });
 // The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived
