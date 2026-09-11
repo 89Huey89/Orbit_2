@@ -1030,6 +1030,13 @@ function darknessPlate(relief){
   const w=640,h=180,c=makeCanvas(Math.round(w*DPR),Math.round(h*DPR)),g=c.getContext('2d'),rng=seeded(620173);
   g.scale(DPR,DPR);
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
+  // relief is never baked as a standalone body — drawDark() only ever lays it as a re-inking overlay
+  // over the normal bake, faded in by a constellation reprieve. A reprieve is the gold replacing the
+  // copper, not stacking a second full wash on top of the first: everything below that would double
+  // the body (the wash gradient, the void-layer fills, the coastline's own fill, paper's bleed-stain
+  // fills) is skipped here, leaving only the marks that actually carry pigment — the coastline's own
+  // stroke, the tide marks, the stipples and the fringe strokes — re-struck in the relief's own tone.
+  if(!relief){
   // Seamless pools of dilute ink, growing opaque below the leading edge — clipped to the same wavy
   // front the void layers below draw, not a flat rect: a dead-straight gradient under a wavy coastline
   // read as a ruled horizon peeking out from under it, which is the one thing an engraved sheet with no
@@ -1041,7 +1048,8 @@ function darknessPlate(relief){
   wash.addColorStop(0,`rgba(${ink.dark.washTop},0)`);wash.addColorStop(.22,`rgba(${ink.dark.washMid},${onPaper()?.94:.78})`);wash.addColorStop(1,ink.dark.washSolid);
   g.fillStyle=wash;g.fillRect(0,0,w,h);
   g.restore();
-  if(onPaper()){
+  }
+  if(!relief&&onPaper()){
     // Spilled ink on paper: the flood bleeds upward along the fibres in short, blunt feathered threads
     // — a spreading stain's own failure, not a shoreline's — with the odd near-opaque pool pushing
     // ahead of the front where the pigment has already settled, breaking the line rather than fringing it.
@@ -1066,7 +1074,7 @@ function darknessPlate(relief){
       for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.55)`;g.fill();}
     }
   }
-  for(let layer=0;layer<5;layer++){
+  if(!relief)for(let layer=0;layer<5;layer++){
     g.beginPath();g.moveTo(0,h);
     for(let x=0;x<=w;x+=4){
       const a=x/w*TAU,y=28+layer*13+Math.sin(a*3+layer*.6)*6+Math.sin(a*11-layer*.4)*2.5;
@@ -1078,7 +1086,8 @@ function darknessPlate(relief){
   for(let i=0;i<24;i++){
     const x=rng()*w,y=36+rng()*100,rx=14+rng()*52,ry=6+rng()*18,seed=Math.floor(rng()*1e7);
     for(const wrap of [-w,0,w]){
-      landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=i%3?ink.dark.landFillWash:ink.dark.landFillPool;g.fill();
+      landContour(g,x+wrap,y,rx,ry,seeded(seed));
+      if(!relief){g.fillStyle=i%3?ink.dark.landFillWash:ink.dark.landFillPool;g.fill();}
       g.strokeStyle=`rgba(${pigment},.055)`;g.lineWidth=.6;g.stroke();
     }
   }
@@ -1094,7 +1103,9 @@ function darknessPlate(relief){
   }
   for(let i=0;i<2400;i++){
     const x=rng()*w,y=28+rng()*(h-28),fade=Math.pow(1-(y-28)/(h-28),1.5);
-    g.fillStyle=i%3?`rgba(${pigment},${fade*(.02+rng()*.09)})`:`rgba(${ink.dark.fleckDark},${fade*.18})`;
+    if(i%3)g.fillStyle=`rgba(${pigment},${fade*(.02+rng()*.09)})`;
+    else if(!relief)g.fillStyle=`rgba(${ink.dark.fleckDark},${fade*.18})`;
+    else continue;
     g.fillRect(x,y,.3+rng()*.65,.35+rng()*.6);
   }
   g.restore();
