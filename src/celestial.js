@@ -746,10 +746,27 @@ function drawChapterReveal(dt){
   {
     // The lettering is pulled on a small leaf of its own: one soft pass of the sheet's ground, feathered to
     // nothing, so the chapter name reads over whatever the chart has scrolled beneath it — the Eclipse's dark
-    // disc included — without a hard edge anywhere on the page.
-    const spread=Math.min(95,W*.21)+72;
-    ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
-    ctx.fillStyle=chapterRevealLeaf();ctx.fillRect(-1,-1,2,2);ctx.restore();
+    // disc included — without a hard edge anywhere on the page. That feathering is what a soft pass over an
+    // ordinary chart calls for; laid over the flood's own solid ink it reads as a glow rather than a reserve.
+    // Once the rising dark has actually covered the reveal point, the leaf takes its other form instead: a
+    // hard-edged panel of the sheet's own ground, boundaried the way the impressum's own cartouche is (see
+    // drawImpressum, frame.js), so the name sits in unprinted sheet rather than airbrushed over solid ink —
+    // and, once it is a rectangle, glossClearance (effects.js) has the same one to keep the drifting gloss
+    // clear of, pairing this with the HIC SUNT DRACONES fix.
+    const band=typeof revealBand==='function'?revealBand():null;
+    const fy=sy(world.floorY-4);
+    if(band&&fy<=band.bottom){
+      const rw=Math.min(95,W*.21)+72,rh=(band.bottom-band.top)/2,cy=(band.top+band.bottom)/2;
+      ctx.save();ctx.translate(x,cy);
+      ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.92:.94})`;ctx.fillRect(-rw,-rh,rw*2,rh*2);
+      burinRect(ctx,-rw,-rh,rw*2,rh*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,90701+chapterReveal.index*7);
+      burinRect(ctx,-rw+4,-rh+4,rw*2-8,rh*2-8,ink.base.inkSoft,onPaper()?.36:.25,.6,90711+chapterReveal.index*7);
+      ctx.restore();
+    }else{
+      const spread=Math.min(95,W*.21)+72;
+      ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
+      ctx.fillStyle=chapterRevealLeaf();ctx.fillRect(-1,-1,2,2);ctx.restore();
+    }
   }
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
