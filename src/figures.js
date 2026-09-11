@@ -114,16 +114,25 @@ function drawRenaissanceStarLetter(n,observation,rgb){
 // throw long spokes off it, ring it in corona, and fleck the ground beyond with sparks — and the atlas
 // spends more of all four the fuller the lap runs. The old ember was a three-pixel dot adrift in a
 // forty-pixel instrument ring, so the specimen read as fainter than the gauge measuring it.
-function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
+// The burst is sequenced, not faded: `reveal` (0..1) is spent in order on the reserve, then the spokes
+// one by one, then the coronas outward a third of the remaining window each, then the sparks, exactly
+// the order a real burst — and a real engraving of one — lays down. `alpha` stays what it always was,
+// the charge-derived ceiling each element ramps up to once its own turn comes; at reveal=1 every element
+// is at that ceiling, so a finished star reads exactly as it always did.
+function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0,reveal=1){
+  if(reveal<=0)return 0;
   const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(8.4+charge*8.4)*size,core=Math.max(1.2,radius*.4),paper=onPaper();
   g.save();g.lineCap='round';
+  const reserveT=revealSpan(reveal,0,.15);
   // Two coronas at the most, spread from the inner charge band out to 2.6 radii — spaced so that even
   // the outermost stays inside the charge band the instrument draws at r*.73: the burst is the
-  // specimen's, and it never reaches across the gauge.
+  // specimen's, and it never reaches across the gauge. Outward one ring per third of the corona's own
+  // window, inner ring first, rather than both popping in together.
   const rings=Math.min(2,1+Math.round(charge*2));
   for(let i=0;i<rings;i++){
     const ringR=radius*(rings>1?lerp(1.5,2.6,i/(rings-1)):1.5),ringAlpha=alpha*(.34+charge*.2-i*.07);
-    if(ringAlpha>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha,Math.max(.38,.5*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
+    const ringT=revealSpan(reveal,.55+i/3*.3,.55+(i+1)/3*.3);
+    if(ringAlpha>0&&ringT>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha*ringT,Math.max(.38,.5*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
   }
   // Long primary spokes alternating with short ticks, as a printer's radiant star is cut rather than a
   // spider of equal legs, the primaries lengthened so the rays outrun the rings above and the whole
@@ -131,41 +140,48 @@ function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
   // takes their inner ends off on paper, and they are cut heavy: a thin spoke beside a bold instrument
   // ring reads as a scratch, not as light. The reserve of bare sheet only exists on paper — a night
   // plate has no ground to reserve — so a night-based spoke springs from close to the point (core*1.15)
-  // rather than leaving a gap where paper's own reserve disc would have sat (core*1.55).
+  // rather than leaving a gap where paper's own reserve disc would have sat (core*1.55). Each spoke
+  // springs in by its own index across the shared window, so the burst throws its rays one at a time
+  // rather than all catching light at once.
   const rays=8+2*Math.round(charge*4),rayAlpha=alpha*(.62+.38*charge),weight=Math.max(.6,(.72+charge*.5)*size);
   const rayStart=paper?core*1.55:core*1.15;
   for(let i=0;i<rays;i++){
+    const spokeT=revealSpan(reveal,.15+i/rays*.4,.15+(i+1)/rays*.4);
+    if(spokeT<=0)continue;
     const a=i*TAU/rays-Math.PI/2+(rng()-.5)*.1,primary=i%2===0;
     const len=radius*(primary?1.8+charge:.96+charge*.44)*(.88+rng()*.16);
     const x1=cx+Math.cos(a)*rayStart,y1=cy+Math.sin(a)*rayStart;
     const x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;
-    burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha*(primary?1:.72),weight,seed^(i*733+53),{segments:len>radius?3:2,wobble:.2,hair:false});
+    burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha*(primary?1:.72)*spokeT,weight,seed^(i*733+53),{segments:len>radius?3:2,wobble:.2,hair:false});
   }
   // The sparks a nova throws past its own corona, stippled onto the ground as the lap fills. They stay
-  // well inside the charge band outside them, so the specimen never crowds the instrument.
-  const flecks=charge>.5?Math.round((charge-.5)*44):0;
+  // well inside the charge band outside them, so the specimen never crowds the instrument, and they are
+  // the last thing to land, once the reserve, the spokes and the coronas are already cut.
+  const sparksT=revealSpan(reveal,.85,1);
+  const flecks=sparksT>0&&charge>.5?Math.round((charge-.5)*44):0;
   for(let i=0;i<flecks;i++){
     const a=rng()*TAU,d=radius*(1.4+rng()*.75);
-    g.fillStyle=`rgba(${rgb},${alpha*(.28+charge*.34)*(.4+rng()*.6)})`;
+    g.fillStyle=`rgba(${rgb},${alpha*(.28+charge*.34)*(.4+rng()*.6)*sparksT})`;
     g.beginPath();g.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,Math.max(.4,.55*size),0,TAU);g.fill();
   }
   // A reserve of bare sheet around the point: the engraver's own way of printing light is to cut nothing
   // at all there. It crops the spokes back so they spring from a clear halo instead of out of the ink —
   // paper only, since night's own ground is already dark behind the point and painting paper's own pale
-  // tone over it printed as a hard washer rather than reading as light.
-  if(paper){g.fillStyle=`rgba(${ink.base.paperRgb},${.74*alpha})`;g.beginPath();g.arc(cx,cy,core*1.42,0,TAU);g.fill();}
+  // tone over it printed as a hard washer rather than reading as light. It is the burst's first mark,
+  // laid — with the point itself — before a single spoke springs from it.
+  if(paper){g.fillStyle=`rgba(${ink.base.paperRgb},${.74*alpha*reserveT})`;g.beginPath();g.arc(cx,cy,core*1.42,0,TAU);g.fill();}
   // On the pale sheet the warm ink of the point is laid over a dark keyline first, the way the gilder
   // cuts his line before the leaf goes into it; at night the ground is already the dark behind it.
-  if(paper){g.fillStyle=`rgba(${ink.base.inkStrong},${.58*alpha})`;g.beginPath();g.arc(cx,cy,core*1.15,0,TAU);g.fill();}
-  g.fillStyle=`rgba(${rgb},${Math.min(1,alpha*(.86+.28*charge))})`;g.beginPath();g.arc(cx,cy,core,0,TAU);g.fill();
+  if(paper){g.fillStyle=`rgba(${ink.base.inkStrong},${.58*alpha*reserveT})`;g.beginPath();g.arc(cx,cy,core*1.15,0,TAU);g.fill();}
+  g.fillStyle=`rgba(${rgb},${Math.min(1,alpha*(.86+.28*charge))*reserveT})`;g.beginPath();g.arc(cx,cy,core,0,TAU);g.fill();
   g.restore();
   return radius;
 }
 function revealNova(n,pen,rgb){
   const p=world&&world.player,active=p&&p.node===n,charge=active?world.charge():0;
   const faint=pen.taken<1?pen.ring:0;
-  if(faint>0)novaGlyph(ctx,0,0,0,rgb,.72*faint,scale*.9,n.seed^0x17);
-  if(pen.taken>0)novaGlyph(ctx,0,0,charge,rgb,pen.taken*(.58+.42*pen.d),scale,n.seed);
+  if(faint>0)novaGlyph(ctx,0,0,0,rgb,.72,scale*.9,n.seed^0x17,faint);
+  if(pen.taken>0)novaGlyph(ctx,0,0,charge,rgb,.58+.42*pen.d,scale,n.seed,pen.taken);
 }
 const figureLayers=new Map();
 // The lateral room a figure actually has, and the two numbers that say so. Outward — away from the

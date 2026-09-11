@@ -399,9 +399,13 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     }
   }
   // (d) The survey arcs and both halves of a ring system are the last marks laid down, so the ring
-  // closes in one motion rather than its near half snapping in early with the keyline and hatch.
+  // closes in one motion rather than its near half snapping in early with the keyline and hatch. They
+  // are already arcs, so they are swept round by angle from the body's own seeded phase, the same start
+  // point the keyline sweeps from below, rather than the whole baked layer simply fading up in place.
   if(pen.survey>0){
-    ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);
+    const a0=art.phase,a1=a0+TAU*pen.survey;
+    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,100,a0,a1);ctx.closePath();ctx.clip();
+    ctx.drawImage(art.back,-72,-72,144,144);
     if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
     ctx.restore();
   }
@@ -442,18 +446,19 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
   }
   ctx.restore();
 }
-// The broken survey arcs just drawn are already the atlas's answer to "has this been mapped": they fade
-// in as `pen.survey` climbs, so a body let go at 95% observed dries to very nearly the same faint hairline
-// as one held to 100% — exactly the crossing a player most wants to see and can least tell happened.
-// `atlasFlourish` is what the printed atlas answers `watchCompletion`'s hook with above, called directly
-// rather than registered through `defineHand()`: night and paper carry no painters of their own in that
-// registry at all (see `renaissanceAtlas()` in src/plates.js), so this is reached the same way every other
-// atlas-drawn mark is, as the code a call site runs when it finds nothing named. The instant an orbit
-// actually reaches a full observation, those same arcs are struck whole in one bright ring — in the gold
-// that already marks a landing squared, ochre on paper — then left to fade back into the ordinary hairline
-// the cached plate carries underneath. The birth time is kept per seed rather than per node, exactly as
-// `rockFlourishAt` is kept in src/rock.js, and pruned the same way once the map outgrows a small bound, so
-// a run that documents many bodies never grows this without limit.
+// The broken survey arcs just drawn are already the atlas's answer to "has this been mapped": they sweep
+// round as `pen.survey` climbs, so a body let go at 95% observed reads visibly short of the full circle a
+// body held to 100% closes — exactly the crossing a player most wants to see. `atlasFlourish` is what the
+// printed atlas answers `watchCompletion`'s hook with above, called directly rather than registered
+// through `defineHand()`: night and paper carry no painters of their own in that registry at all (see
+// `renaissanceAtlas()` in src/plates.js), so this is reached the same way every other atlas-drawn mark is,
+// as the code a call site runs when it finds nothing named. The instant an orbit actually reaches a full
+// observation, the sweep above has already closed the circle on its own; what marks the crossing is the
+// bead a finished stroke always leaves at its own end — struck in the gold that already marks a landing
+// squared, ochre on paper — left at the seeded phase the sweep closed on, then fading. The birth time is
+// kept per seed rather than per node, exactly as `rockFlourishAt` is kept in src/rock.js, and pruned the
+// same way once the map outgrows a small bound, so a run that documents many bodies never grows this
+// without limit.
 const ATLAS_FLOURISH_DUR=.6;
 const atlasFlourishAt=new Map();
 function atlasFlourish(n){
@@ -466,9 +471,12 @@ function drawAtlasFlourish(art,r,seed){
   const at=atlasFlourishAt.get(seed);if(at===undefined)return;
   const seal=clamp(1-(world.time-at)/ATLAS_FLOURISH_DUR,0,1);if(seal<=0)return;
   const radius=art.family==='ringed'?art.core*1.98:art.core+6,glow=seal*seal;
+  const angle=art.phase,bx=Math.cos(angle)*radius,by=Math.sin(angle)*radius,travel=angle+Math.PI/2,size=Math.max(1,1.5+1.5*glow);
   ctx.save();ctx.scale(r/60,r/60);
-  ctx.strokeStyle=`rgba(${ink.base.gold},${.85*glow})`;ctx.lineWidth=1+1.8*glow;
-  ctx.beginPath();ctx.arc(0,0,radius,0,TAU);ctx.stroke();
+  ctx.fillStyle=`rgba(${ink.base.gold},${.4*glow})`;
+  ctx.beginPath();ctx.ellipse(bx-Math.cos(travel)*size*1.4,by-Math.sin(travel)*size*1.4,size*.8,size*.55,travel,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgba(${ink.base.gold},${.92*glow})`;
+  ctx.beginPath();ctx.ellipse(bx,by,size*1.25,size*.85,travel,0,TAU);ctx.fill();
   ctx.restore();
 }
 // The observatory plate's own answer to the same completion: it has no pen to ring a keyline in gold
