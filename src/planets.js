@@ -134,16 +134,21 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
         const yy=y-dome+Math.sin(x*.1+phase+i*.22)*3.4+Math.sin(x*.22-i*.34)*.85;
         if(x===-core-3)front.moveTo(x,yy);else front.lineTo(x,yy);
       }
-      front.strokeStyle=i%3===0?'rgba(92,68,48,.32)':'rgba(217,190,146,.36)';front.lineWidth=i%3===0?1.5:.65;front.stroke();
+      // Paper: a darker sepia contour for the troughs, a pale dilute wash for the crests — the last of
+      // the seven families to get a paper fork at all; every colour here used to be flat regardless of
+      // plate.
+      front.strokeStyle=i%3===0?(paper?'rgba(58,42,28,.36)':'rgba(74,58,38,.34)'):(paper?'rgba(238,228,200,.4)':'rgba(217,190,146,.36)');
+      front.lineWidth=i%3===0?1.5:.65;front.stroke();
     }
     // One dominant dark rift crossing the whole disc, limb to limb — the mark that survives a duotone —
     // rather than the modest crack this used to be. A wide colour band on the wash carries its width; a
     // narrower scar is struck to match on the still front layer in `glyph()`, after the hatching, so the
     // hatch does not simply bury it the way it would a mark left on the wash alone.
     g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);
-    g.strokeStyle='rgba(78,52,38,.58)';g.lineWidth=4.4;g.lineCap='round';g.stroke();
-    g.strokeStyle='rgba(215,182,132,.46)';g.lineWidth=.9;g.stroke();
-    g.fillStyle='rgba(215,198,164,.47)';g.beginPath();g.ellipse(core*.08,-core*.99,core*.44,core*.18,.2,0,TAU);g.fill();
+    g.strokeStyle=paper?'rgba(78,52,38,.58)':'rgba(95,65,49,.5)';g.lineWidth=4.4;g.lineCap='round';g.stroke();
+    g.strokeStyle=paper?'rgba(215,182,132,.4)':'rgba(217,190,146,.46)';g.lineWidth=.9;g.stroke();
+    // The crest, like the ocean world's ice cap, is struck on the still front layer in drawPlanet() —
+    // see the polar-cap finding — rather than baked into this spin-rotated wash.
   }else if(family==='volcanic'){
     for(let i=0;i<10;i++){
       landContour(g,(rng()-.5)*core*1.8,(rng()-.5)*core*1.8,core*.38,core*.3,rng);
@@ -761,6 +766,15 @@ function drawPlanet(art,r,time,impression=null){
       if(paper){ctx.fillStyle='rgba(231,218,189,.6)';ctx.fill();ctx.strokeStyle='rgba(58,42,28,.28)';ctx.lineWidth=.4;ctx.stroke();}
       else{ctx.fillStyle='rgba(207,213,193,.42)';ctx.fill();}
     }
+    ctx.restore();
+  }
+  if(art.family==='dune'){
+    // The crest, still and rotated by the spin axis alone, for the same reason the ocean world's poles
+    // are: baked into the turning surface it would swing round the disc as the body spins.
+    const paper=onPaper();
+    ctx.save();ctx.rotate(art.tilt);
+    ctx.beginPath();ctx.ellipse(art.core*.08,-art.core*.99,art.core*.44,art.core*.18,.2,0,TAU);
+    ctx.fillStyle=paper?'rgba(231,218,189,.5)':'rgba(215,198,164,.47)';ctx.fill();
     ctx.restore();
   }
   ctx.drawImage(art.front,-72,-72,144,144);
