@@ -278,7 +278,7 @@ function punchedMark(g,core,rng,alpha,progress,seed){
 // composite is drawn exactly as before, at no extra cost, plus whatever brief flourish `drawAtlasFlourish`
 // (below) is still marking the crossing into a full observation with.
 function revealPlanet(art,r,time,pen,seed,impression=null){
-  if(!pen||pen.done){drawPlanet(art,r,time,impression);drawAtlasFlourish(art,r,seed);return;}
+  if(!pen||pen.done){drawPlanet(art,r,time,impression);drawAtlasFlourish(art,r,seed);drawModernFlourish(art,r,seed);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
   ctx.save();ctx.scale(r/60,r/60);
   // (0) A body no orbit has ever taken is still only a phenomenon. Night keeps that as a light; paper
@@ -385,6 +385,33 @@ function drawAtlasFlourish(art,r,seed){
   ctx.beginPath();ctx.arc(0,0,radius,0,TAU);ctx.stroke();
   ctx.restore();
 }
+// The observatory plate's own answer to the same completion: it has no pen to ring a keyline in gold
+// with, so it has had no completion mark at all — `watchCompletion`'s `handFor('flourish')` found
+// nothing registered for `render:'modern'` and fell through to the silent default. A focus-lock bracket
+// snaps in at the four corners of the specimen's own observed radius instead, the way a telescope's own
+// autoguider marks a lock, and fades the same way the atlas's ring does.
+const MODERN_FLOURISH_DUR=.6;
+const modernFlourishAt=new Map();
+function modernFlourish(n){
+  modernFlourishAt.set(n.seed,world.time);
+  if(modernFlourishAt.size>40)for(const [key,at] of modernFlourishAt)if(world.time-at>MODERN_FLOURISH_DUR)modernFlourishAt.delete(key);
+}
+function drawModernFlourish(art,r,seed){
+  if(PICKUP_FAMILIES.has(art.family))return;
+  const at=modernFlourishAt.get(seed);if(at===undefined)return;
+  const seal=clamp(1-(world.time-at)/MODERN_FLOURISH_DUR,0,1);if(seal<=0)return;
+  const radius=art.core*1.2,glow=seal*seal,arm=radius*.22;
+  ctx.save();ctx.scale(r/60,r/60);
+  ctx.strokeStyle=`rgba(214,232,240,${.85*glow})`;ctx.lineWidth=1+1.4*glow;ctx.lineCap='round';
+  for(let i=0;i<4;i++){
+    const a=i*Math.PI/2+Math.PI/4,cx=Math.cos(a)*radius,cy=Math.sin(a)*radius,tx=-Math.sin(a),ty=Math.cos(a);
+    ctx.beginPath();
+    ctx.moveTo(cx-Math.cos(a)*arm,cy-Math.sin(a)*arm);ctx.lineTo(cx,cy);ctx.lineTo(cx-tx*arm,cy-ty*arm);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+defineHand('modern',{flourish:modernFlourish});
 // ---------- Retiring marks ----------
 // A used orbit is not simply dimmed: the pen strikes it through with one diagonal hairline over 300 ms,
 // and the ring then dries to a hairline behind it.
