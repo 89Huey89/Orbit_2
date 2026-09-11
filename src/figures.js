@@ -115,23 +115,29 @@ function drawRenaissanceStarLetter(n,observation,rgb){
 // spends more of all four the fuller the lap runs. The old ember was a three-pixel dot adrift in a
 // forty-pixel instrument ring, so the specimen read as fainter than the gauge measuring it.
 function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
-  const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(8.4+charge*8.4)*size,core=Math.max(1.2,radius*.4);
+  const rng=seeded((seed^0x51e2b7)>>>0||1),radius=(8.4+charge*8.4)*size,core=Math.max(1.2,radius*.4),paper=onPaper();
   g.save();g.lineCap='round';
-  // Three coronas at the most, and spaced so that even the outermost stays inside the charge band the
-  // instrument draws at r*.73: the burst is the specimen's, and it never reaches across the gauge.
-  const rings=1+Math.round(charge*2);
+  // Two coronas at the most, spread from the inner charge band out to 2.6 radii — spaced so that even
+  // the outermost stays inside the charge band the instrument draws at r*.73: the burst is the
+  // specimen's, and it never reaches across the gauge.
+  const rings=Math.min(2,1+Math.round(charge*2));
   for(let i=0;i<rings;i++){
-    const ringR=radius*(1.5+i*.42),ringAlpha=alpha*(.34+charge*.2-i*.07);
+    const ringR=radius*(rings>1?lerp(1.5,2.6,i/(rings-1)):1.5),ringAlpha=alpha*(.34+charge*.2-i*.07);
     if(ringAlpha>0)burinArc(g,cx,cy,ringR,0,TAU,rgb,ringAlpha,Math.max(.38,.5*size),seed^(0x2c40+i*131),{wobble:.15,skips:1});
   }
   // Long primary spokes alternating with short ticks, as a printer's radiant star is cut rather than a
-  // spider of equal legs. They are laid before the reserve below, which then takes their inner ends off,
-  // and they are cut heavy: a thin spoke beside a bold instrument ring reads as a scratch, not as light.
+  // spider of equal legs, the primaries lengthened so the rays outrun the rings above and the whole
+  // mark reads as light rather than as a gauge. They are laid before the reserve below, which then
+  // takes their inner ends off on paper, and they are cut heavy: a thin spoke beside a bold instrument
+  // ring reads as a scratch, not as light. The reserve of bare sheet only exists on paper — a night
+  // plate has no ground to reserve — so a night-based spoke springs from close to the point (core*1.15)
+  // rather than leaving a gap where paper's own reserve disc would have sat (core*1.55).
   const rays=8+2*Math.round(charge*4),rayAlpha=alpha*(.62+.38*charge),weight=Math.max(.6,(.72+charge*.5)*size);
+  const rayStart=paper?core*1.55:core*1.15;
   for(let i=0;i<rays;i++){
     const a=i*TAU/rays-Math.PI/2+(rng()-.5)*.1,primary=i%2===0;
-    const len=radius*(primary?1.3+charge*.75:.96+charge*.44)*(.88+rng()*.16);
-    const x1=cx+Math.cos(a)*core*1.55,y1=cy+Math.sin(a)*core*1.55;
+    const len=radius*(primary?1.8+charge:.96+charge*.44)*(.88+rng()*.16);
+    const x1=cx+Math.cos(a)*rayStart,y1=cy+Math.sin(a)*rayStart;
     const x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;
     burinSegment(g,x1,y1,x2,y2,rgb,rayAlpha*(primary?1:.72),weight,seed^(i*733+53),{segments:len>radius?3:2,wobble:.2,hair:false});
   }
@@ -144,11 +150,13 @@ function novaGlyph(g,cx,cy,charge,rgb,alpha,size,seed=0){
     g.beginPath();g.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,Math.max(.4,.55*size),0,TAU);g.fill();
   }
   // A reserve of bare sheet around the point: the engraver's own way of printing light is to cut nothing
-  // at all there. It crops the spokes back so they spring from a clear halo instead of out of the ink.
-  g.fillStyle=`rgba(${ink.base.paperRgb},${.74*alpha})`;g.beginPath();g.arc(cx,cy,core*1.42,0,TAU);g.fill();
+  // at all there. It crops the spokes back so they spring from a clear halo instead of out of the ink —
+  // paper only, since night's own ground is already dark behind the point and painting paper's own pale
+  // tone over it printed as a hard washer rather than reading as light.
+  if(paper){g.fillStyle=`rgba(${ink.base.paperRgb},${.74*alpha})`;g.beginPath();g.arc(cx,cy,core*1.42,0,TAU);g.fill();}
   // On the pale sheet the warm ink of the point is laid over a dark keyline first, the way the gilder
   // cuts his line before the leaf goes into it; at night the ground is already the dark behind it.
-  if(onPaper()){g.fillStyle=`rgba(${ink.base.inkStrong},${.58*alpha})`;g.beginPath();g.arc(cx,cy,core*1.15,0,TAU);g.fill();}
+  if(paper){g.fillStyle=`rgba(${ink.base.inkStrong},${.58*alpha})`;g.beginPath();g.arc(cx,cy,core*1.15,0,TAU);g.fill();}
   g.fillStyle=`rgba(${rgb},${Math.min(1,alpha*(.86+.28*charge))})`;g.beginPath();g.arc(cx,cy,core,0,TAU);g.fill();
   g.restore();
   return radius;
