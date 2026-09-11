@@ -16,7 +16,7 @@ function landContour(g,x,y,rx,ry,rng){
   g.closePath();
 }
 function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
-  const rgb=palette.rgb,paper=onPaper();
+  const paper=onPaper();
   if(family==='ocean'){
     // One large landmass with a real coast, not four small islands: the shape a duotone keeps, where
     // four scattered blobs would collapse into an indistinct speckle. A second, smaller contour is bitten
@@ -168,11 +168,11 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       landContour(g,bx,by,br,br*(.7+rng()*.4),rng);
       g.fillStyle=paper?'rgba(58,42,28,.4)':'rgba(10,14,24,.42)';g.fill();
     }
-  }else{
-    for(let i=-6;i<=6;i++){
-      g.strokeStyle=`rgba(${rgb},.4)`;g.lineWidth=.5;g.beginPath();g.ellipse(0,i*2.5,core,core*.2,0,0,TAU);g.stroke();
-    }
   }
+  // Reached only by the pickups (none of the seven worlds above): no latitude bands here — a gold
+  // detour and the three carried charges are offers, not geology, and code elsewhere already says so
+  // (PICKUP_FAMILIES skips paintSurvey for them). The wash and the keyline carry the disc; each
+  // pickup's own device, engraved around it in figures.js, does the rest of the identifying work.
 }
 function paintPlanetRings(g,core,tilt,flatten,front,rgb){
   const paper=onPaper();
@@ -315,11 +315,14 @@ function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
     g.fillStyle=paper?'rgba(26,18,11,.44)':'rgba(36,32,24,.35)';g.fillRect(x,y,.32+rng()*.4,.38);
   }
   // Fine meridians make each globe read as a hand-coloured atlas specimen, cut on the same axis as the
-  // poles and the ice fringe rather than a fixed tilt none of them shared.
-  g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(58,42,28,.36)':'rgba(47,44,33,.19)';g.lineWidth=paper?.44:.38;g.setLineDash([1.4,1.6]);
-  for(const width of [.35,.72]){g.beginPath();g.ellipse(0,0,core*width,core,0,0,TAU);g.stroke();}
-  for(const y of [-.48,0,.48]){g.beginPath();g.ellipse(0,core*y,core*Math.sqrt(1-y*y),core*.17,0,0,TAU);g.stroke();}
-  g.restore();
+  // poles and the ice fringe rather than a fixed tilt none of them shared — skipped for a pickup, which
+  // the code elsewhere already treats as an offer rather than a mapped world (PICKUP_FAMILIES).
+  if(!PICKUP_FAMILIES.has(family)){
+    g.save();g.rotate(tilt);g.strokeStyle=paper?'rgba(58,42,28,.36)':'rgba(47,44,33,.19)';g.lineWidth=paper?.44:.38;g.setLineDash([1.4,1.6]);
+    for(const width of [.35,.72]){g.beginPath();g.ellipse(0,0,core*width,core,0,0,TAU);g.stroke();}
+    for(const y of [-.48,0,.48]){g.beginPath();g.ellipse(0,core*y,core*Math.sqrt(1-y*y),core*.17,0,0,TAU);g.stroke();}
+    g.restore();
+  }
 }
 function paintSurvey(g,core,family,tilt){
   // Broken survey arcs sit inside the functional orbit, with a distinct style.
