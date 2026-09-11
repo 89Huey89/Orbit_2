@@ -953,13 +953,18 @@ function drawConstellationFigure(chart){
   ctx.drawImage(layer.canvas,x,y);
 }
 
-function drawConstellations(){
-  // The figure and the route through it are two different things, and only one of them is the atlas's
-  // taste: an age that draws no constellation-figures at all still owes the player the line its stars
-  // are strung along. So the seam is around the figure alone, and the route below is drawn either way.
+// The figure and the route through it are two different things, and only one of them is the atlas's
+// taste: an age that draws no constellation-figures at all still owes the player the line its stars
+// are strung along. So the seam is around the figure alone, and the route below is drawn either way —
+// and the figure is drawn in its own earlier pass (below drawGravitationalLenses in frame.js's own
+// render order) so the vortex's whirl catches the figure the same way it already catches the grid,
+// without also warping the navigable route lines, stars and captions the player actually flies by.
+function drawConstellationFigures(){
   const figure=handFor('figure')||drawConstellationFigure;
+  for(const chart of world.constellations)revealFigure(chart,figure);
+}
+function drawConstellations(){
   for(const chart of world.constellations){
-    revealFigure(chart,figure);
     if(!chart.stars.length||sy(chart.entry.y)<-150||sy(chart.stars[chart.stars.length-1].y)>H+170)continue;
     const count=chart.stars.filter(n=>n.visited).length,points=[chart.entry,...chart.stars];if(chart.exit)points.push(chart.exit);
     ctx.save();revealChartClip(chart);ctx.lineWidth=.8*scale;

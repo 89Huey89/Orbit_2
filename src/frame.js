@@ -1090,7 +1090,7 @@ function render(dt){
   const own=handFor('frame');
   if(own){own(dt,world.aim());updateUI(dt);return;}
   reveal.prime();prewarmGlyph();
-  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawGravitationalLenses();
+  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawConstellationFigures();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);

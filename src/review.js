@@ -57,7 +57,7 @@ function renderReview(){
   const b=reviewBounds(w);reviewCameraY=clamp(reviewCameraY,b.min,b.max);
   const savedWorld=world;world=w;world.cameraY=reviewCameraY;
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  drawAtmosphere(0,null);drawRenaissanceGrid();drawGravitationalLenses();
+  drawAtmosphere(0,null);drawRenaissanceGrid();drawConstellationFigures();drawGravitationalLenses();
   ctx.save();
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   revealConnections(drawConnections);drawConstellations();
