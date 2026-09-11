@@ -57,7 +57,7 @@ function renderEphemeris(){
   const body=$('ephemeris-body');if(!body)return;
   const today=utcDay(),lead=monthLead(ephMonth),days=monthDays(ephMonth);
   let html='<div class="eph-grid">';
-  for(const name of WEEKDAYS_LATIN)html+=`<span class="eph-head" title="dies ${name}">${name.slice(0,3)}</span>`;
+  for(const name of WEEKDAYS_LATIN)html+=`<span class="eph-head" title="dies ${name}">${name.slice(0,3)}.</span>`;
   for(let i=0;i<lead;i++)html+='<span class="eph-cell eph-void" aria-hidden="true"></span>';
   for(let d=1;d<=days;d++){
     const date=dayKey(ephMonth.y,ephMonth.m,d),entry=dailyLog[date],numeral=`<span class="eph-num">${d}</span>`;
