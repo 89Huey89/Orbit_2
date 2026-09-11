@@ -684,10 +684,13 @@ function writeText(context,text,x,y,progress,options){
   if(progress>=1||reducedMotion){context.fillText(text,x,y);return;}
   if(progress<=0||!text)return;
   if(ink.reveal.mode==='wall'){wallText(context,text,x,y,progress);return;}
-  const shownGlyphs=Math.max(1,Math.ceil(progress*text.length));
-  if(shownGlyphs>=text.length){context.fillText(text,x,y);return;}
   const size=(options&&options.size)||12,align=context.textAlign||'left';
-  const width=context.measureText(text).width,shown=context.measureText(text.slice(0,shownGlyphs)).width;
+  // The clip edge lerps continuously between the glyph boundaries either side of it, rather than
+  // jumping a whole glyph width at a time, so a letter uncovers left to right as the nib crosses it
+  // instead of teleporting in whole the instant progress reaches its boundary.
+  const raw=progress*text.length,n=Math.floor(raw),frac=raw-n;
+  const width=context.measureText(text).width;
+  const shown=lerp(context.measureText(text.slice(0,n)).width,context.measureText(text.slice(0,n+1)).width,frac);
   const left=align==='center'?x-width/2:align==='right'?x-width:x;
   context.save();
   context.beginPath();context.rect(left-size,y-size*1.4,shown+size,size*2.1);context.clip();
