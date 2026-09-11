@@ -322,9 +322,13 @@ function figNeedle(g,p0,p1,p2,side,rng,state){
   const halfW=t=>t<.05?4.2:t>.9?Math.max(.4,5.6*(1-(t-.9)/.1)):5.6;
   const left=figRibbon(spine,t=>-halfW(t),steps),right=figRibbon(spine,t=>halfW(t),steps);
   g.strokeStyle=state.contour;figInk(g,left,rng,.7,.08,1.3);figInk(g,right,rng,.7,.08,1.3);
-  const eye=spine.at(.04);g.save();g.translate(eye.x+eye.px*8,eye.y+eye.py*8);g.rotate(Math.atan2(eye.ty,eye.tx));
-  g.lineWidth=1.3;g.beginPath();g.ellipse(0,0,7,3.6,0,0,TAU);g.stroke();
-  g.beginPath();g.ellipse(0,0,3.2,1.4,0,0,TAU);g.stroke();g.restore();
+  // Set clear of the star punch (buildFigureLayer's own destination-out pass erases every figure mark
+  // within p0.r+8), which used to take the eye out with it: pushed out to p0.r+18 on the spine's own
+  // outward side, with its long axis turned across the spine rather than along it.
+  const eyeDir=spine.at(0),eye=figAt(spine,0,p0.r+18);
+  g.save();g.translate(eye.x,eye.y);g.rotate(Math.atan2(eyeDir.ty,eyeDir.tx)+Math.PI/2);
+  g.lineWidth=1.3;g.beginPath();g.ellipse(0,0,3.6,7,0,0,TAU);g.stroke();
+  g.beginPath();g.ellipse(0,0,1.4,3.2,0,0,TAU);g.stroke();g.restore();
   const thread=[];for(let i=0;i<=60;i++){const t=.08+i/60*.86,s=spine.at(t),amp=20*Math.sin(t*Math.PI),o=Math.sin(t*11+side)*amp;thread.push({x:s.x+s.px*o,y:s.y+s.py*o});}
   g.lineWidth=1;figInk(g,thread,rng,.7,.1,1);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng);}
@@ -354,8 +358,11 @@ function figLyre(g,p0,p1,p2,side,rng,state){
   g.strokeStyle=state.contour;
   figInk(g,leftOut,rng,.7,.07,1.3);figInk(g,leftIn,rng,.7,.09,1);
   figInk(g,rightIn,rng,.7,.09,1);figInk(g,rightOut,rng,.7,.07,1.3);
-  const box=spine.at(.06);g.save();g.translate(box.x,box.y);g.rotate(Math.atan2(box.ty,box.tx));
-  g.lineWidth=1.4;g.beginPath();g.ellipse(0,0,19,10,0,0,TAU);g.stroke();g.restore();
+  // Moved clear of the star punch (see figNeedle's eye, above) rather than shrunk: set in on the
+  // spine's inward side at p0.r+16, and given the full mass of a real soundbox now that there is room.
+  const boxDir=spine.at(0),box=figAt(spine,0,-(p0.r+16));
+  g.save();g.translate(box.x,box.y);g.rotate(Math.atan2(boxDir.ty,boxDir.tx));
+  g.lineWidth=1.4;g.beginPath();g.ellipse(0,0,34,12,0,0,TAU);g.stroke();g.restore();
   const i92=Math.round(steps*.92),yl=leftIn[i92],yr=rightIn[i92];
   g.lineWidth=1.5;g.beginPath();g.moveTo(yl.x,yl.y);g.lineTo(yr.x,yr.y);g.stroke();
   for(let i=0;i<7;i++){
