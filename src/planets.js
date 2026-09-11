@@ -639,17 +639,24 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   // and blending a cool hue into it at any alpha short of nearly opaque passes through a muddy middle
   // rather than climbing steadily toward the pigment's own colour.
   const cool=paper&&pigmentHueDistance(rgb)>60;
-  if(paper){
+  // A proof before letters is pulled uncoloured: no hand-colourist has touched it yet, so the body wash
+  // and the pigment texture it carries are both skipped, leaving pure line and hatch on bare sheet.
+  if(paper&&!plainPlate()){
     g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=ink.base.paper;g.fill();g.globalAlpha=.62;
     g.fillStyle=cool?`rgb(${rgb})`:palette.body;g.fill();g.globalAlpha=1;
-  }else{g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
+  }else if(!paper){g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
   g.save();g.beginPath();g.arc(0,0,core-.2,0,TAU);g.clip();
   // The front layer's clip opens here, before the surface is painted, because paintPlanetSurface strikes
   // a few burin marks — crater rims, ice fractures, dune ripples — straight onto it: engraved lines that
   // must stay put while the wash beneath them drifts by a misregistered pixel or two.
   front.ink.save();front.ink.beginPath();front.ink.arc(0,0,core,0,TAU);front.ink.clip();
+  // A proof's surface marks — a landmass, a ring giant's atmospheric eye, a mottled volcanic limb — are
+  // themselves colourist's work, no less than the wash; desaturating the layer they land on is cheaper
+  // and more complete than chasing every literal fill through seven families' branches by hand.
+  if(plainPlate())g.filter='grayscale(1)';
   const fissures=[];paintPlanetSurface(g,front.ink,core,family,palette,rng,fissures);
-  paintPigment(g,core,rng,rgb);
+  g.filter='none';
+  if(!plainPlate())paintPigment(g,core,rng,rgb);
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;
@@ -697,7 +704,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     for(let i=0;i<6;i++){g.save();g.rotate(i*TAU/6);g.beginPath();g.moveTo(12,0);g.bezierCurveTo(24,-9,35,-7,44,0);g.bezierCurveTo(32,7,22,10,12,0);g.stroke();g.restore();}
   }
   let embers=null;
-  if(fissures.length){
+  if(fissures.length&&!plainPlate()){
     const layer=planetLayer(160),ink=layer.ink;embers=layer.image;
     for(const path of fissures){
       ink.beginPath();for(const p of path){if(p.move)ink.moveTo(p.x,p.y);else ink.lineTo(p.x,p.y);}
