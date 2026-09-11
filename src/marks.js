@@ -296,8 +296,15 @@ function drawConnections(){
   const main=world.nodes.filter(n=>n.type!=='gold'&&n.y>world.cameraY-160&&n.y<world.cameraY+world.height+160).sort((a,b)=>a.row-b.row);
   ctx.save();ctx.setLineDash([1,9]);ctx.lineWidth=.55;ctx.strokeStyle=`rgba(${ink.marks.connection},.12)`;
   for(let i=1;i<main.length;i++){
-    const a=main[i-1],b=main[i],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;
-    ctx.beginPath();ctx.moveTo(sx(a.x+ux*(a.cap+13)),sy(a.y+uy*(a.cap+13)));ctx.lineTo(sx(b.x-ux*(b.cap+13)),sy(b.y-uy*(b.cap+13)));ctx.stroke();
+    const a=main[i-1],b=main[i];
+    // A route line is held back by its own destination's reveal, not by one shared horizontal line
+    // for the whole sheet: b<0 means b has not begun drawing at all, and 0<=b<1 shortens the line to
+    // a point along its own length instead of clipping every other segment on the sheet to match it.
+    const t=reveal.peek(b);
+    if(t<0)continue;
+    const end=t>=1?b:{x:lerp(a.x,b.x,revealSpan(t,0,.7)),y:lerp(a.y,b.y,revealSpan(t,0,.7)),cap:0};
+    const dx=end.x-a.x,dy=end.y-a.y,d=Math.hypot(dx,dy),ux=d?dx/d:0,uy=d?dy/d:0;
+    ctx.beginPath();ctx.moveTo(sx(a.x+ux*(a.cap+13)),sy(a.y+uy*(a.cap+13)));ctx.lineTo(sx(end.x-ux*(end.cap+13)),sy(end.y-uy*(end.cap+13)));ctx.stroke();
   }
   ctx.restore();
 }

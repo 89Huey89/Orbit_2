@@ -575,30 +575,6 @@ function revealFigure(chart,draw){
   draw(chart);
   ctx.restore();
 }
-// ---------- Route lines ----------
-// The pricked line into a planet is drawn on as that planet is: everything above the pen's reach on the
-// least advanced of the marks currently being drawn is held back.
-function revealConnections(draw){
-  if(reducedMotion||reviewing||!world){draw();return;}
-  let frontier=-1;
-  for(const n of world.nodes){
-    if(n.type==='gold')continue;
-    const t=reveal.peek(n);
-    if(t<0||t>=1)continue;
-    let previous=null;
-    for(const q of world.nodes){
-      if(q.type==='gold'||q.row>=n.row)continue;
-      if(!previous||q.row>previous.row)previous=q;
-    }
-    const reach=previous?lerp(sy(previous.y),sy(n.y),revealSpan(t,0,.7)):sy(n.y);
-    if(reach>frontier)frontier=reach;
-  }
-  if(frontier<=0){draw();return;}
-  if(frontier>=H)return;
-  ctx.save();ctx.beginPath();ctx.rect(0,frontier,W,H-frontier);ctx.clip();
-  draw();
-  ctx.restore();
-}
 // ---------- The plate frame ----------
 // Once per run: the double rule draws itself round by dash offset, the graduated ticks follow the pen
 // around the perimeter, and the marginal ornaments come up last. A restart redraws it briskly.

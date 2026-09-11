@@ -60,7 +60,7 @@ function renderReview(){
   drawAtmosphere(0,null);drawRenaissanceGrid();drawConstellationFigures();drawGravitationalLenses();
   ctx.save();
   for(const g of world.nebulas)revealHazard(g,drawHazard);
-  revealConnections(drawConnections);drawConstellations();
+  drawConnections();drawConstellations();
   for(const n of world.nodes)drawNode(n,null);
   for(const h of world.hazards)revealHazard(h,drawHazard);
   // The route actually flown, and the angle every departure and landing was measured at — see
