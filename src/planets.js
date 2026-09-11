@@ -662,7 +662,15 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     const a=i/11*TAU;g.strokeStyle=paper?'rgba(58,42,28,.3)':'rgba(226,211,174,.38)';g.lineWidth=.35;
     g.beginPath();g.arc(.15,-.1,core+.85,a+.06,a+.16+rng()*.25);g.stroke();
   }
-  if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,true,rgb);
+  // The ring's front half is baked onto its own layer rather than into `front`, so it can be revealed
+  // by `pen.survey` alongside its far half (already carried by `back`) instead of by the keyline/hatch
+  // stages that only ever expose a narrow band of `front` — stranding a ring that reaches out to
+  // core*2 until the reveal was almost finished.
+  let ringFront=null;
+  if(family==='ringed'){
+    const layer=planetLayer();ringFront=layer.image;
+    paintPlanetRings(layer.ink,core,tilt,flatten,true,rgb);
+  }
   if(family==='gold'){
     g.strokeStyle=`rgba(${rgb},.65)`;g.lineWidth=.7;
     for(let i=0;i<6;i++){g.save();g.rotate(i*TAU/6);g.beginPath();g.moveTo(12,0);g.bezierCurveTo(24,-9,35,-7,44,0);g.bezierCurveTo(32,7,22,10,12,0);g.stroke();g.restore();}
@@ -677,8 +685,8 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     }
   }
   const weather=planetWeather(family,core,seed);
-  for(const layer of [back.image,surface.image,front.image,weather,embers])pressPixels(layer);
-  const art={back:back.image,surface:surface.image,front:front.image,weather,embers,core,tilt,family,spin:palette.spin,phase:seed*.017};
+  for(const layer of [back.image,surface.image,front.image,weather,embers,ringFront])pressPixels(layer);
+  const art={back:back.image,surface:surface.image,front:front.image,weather,embers,ringFront,core,tilt,family,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
   return cacheGlyph(key,art);
 }
@@ -739,7 +747,9 @@ function drawPlanet(art,r,time,impression=null){
     }
     ctx.restore();
   }
-  ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
+  ctx.drawImage(art.front,-72,-72,144,144);
+  if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
+  ctx.restore();
 }
 // World to plate. The chart carries the active sheet's registration offset; the frame and the
 // scenery behind it do not, so a page turn shifts the printed chart very slightly against them.

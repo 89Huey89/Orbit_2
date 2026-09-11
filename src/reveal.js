@@ -297,7 +297,9 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
       ctx.beginPath();ctx.arc(0,0,Math.max(1.1,core*.12),0,TAU);ctx.fill();
     }
   }
-  const laid=pen.taken*(1-revealSpan(pen.d,.08,.68));
+  // Faded out by .36, just ahead of the keyline's own close at .4: once the contour is a closed line the
+  // centre reads as bare sheet inside it, not a punched hole the specimen still has to fill.
+  const laid=pen.taken*(1-revealSpan(pen.d,.08,.36));
   if(laid>.012){
     const rng=seeded((seed^0x5bd1e9)>>>0||1);
     if(onPaper())punchedMark(ctx,core,rng,laid,pen.taken,seed);
@@ -317,8 +319,13 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
       ctx.restore();
     }
   }
-  // (d) The survey arcs and the far half of a ring system are the last marks laid down.
-  if(pen.survey>0){ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);ctx.restore();}
+  // (d) The survey arcs and both halves of a ring system are the last marks laid down, so the ring
+  // closes in one motion rather than its near half snapping in early with the keyline and hatch.
+  if(pen.survey>0){
+    ctx.save();ctx.globalAlpha*=pen.survey;ctx.drawImage(art.back,-72,-72,144,144);
+    if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
+    ctx.restore();
+  }
   // (c) The wash blooms as an irregular blot from a seeded point off the centre, its wet rim drying lighter
   // over the last third of the stage.
   if(pen.wash>0){
@@ -332,11 +339,12 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.strokeStyle=`rgba(${ink.reveal.washRim},${.42*(1-dry)+.06})`;ctx.lineWidth=1.2;ctx.stroke();
     ctx.restore();
   }
-  // (a) The keyline is cut around the disc by angle.
+  // (a) The keyline is cut around the disc by angle — a genuine hairline band, not the wide annulus this
+  // used to clip to.
   if(pen.keyline>0){
     const a0=art.phase,a1=a0+TAU*pen.keyline;
     ctx.save();ctx.beginPath();
-    ctx.arc(0,0,core*1.34,a0,a1);ctx.arc(0,0,core*.78,a1,a0,true);ctx.closePath();ctx.clip();
+    ctx.arc(0,0,core*1.1,a0,a1);ctx.arc(0,0,core*.94,a1,a0,true);ctx.closePath();ctx.clip();
     ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
   }
   // (b) The hatching is revealed by a band travelling across the disc along the direction of the strokes.
