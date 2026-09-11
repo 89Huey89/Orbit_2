@@ -523,10 +523,12 @@ function figCompass(g,p0,p1,p2,side,rng,state){
   const bIn=figRibbonRange(spine,t=>legB(t)-wB(t),steps,0,hinge),bOut=figRibbonRange(spine,t=>legB(t)+wB(t),steps,0,hinge);
   figInk(g,aIn,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);figInk(g,aOut,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);
   figInk(g,bIn,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);figInk(g,bOut,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);
-  // The hinge: a knuckle ring round the top star with two rivet ticks.
-  figInk(g,figArcPts(p2.x,p2.y,p2.r+12,0,TAU,30),rng,.5,.06,1.3,state.contourRgb,state.contourAlpha);
-  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,-2.5,-.6,10),rng,.5,0,.9,state.contourRgb,state.contourAlpha);
-  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,.5,2.4,10),rng,.5,0,.9,state.contourRgb,state.contourAlpha);
+  // The hinge: a knuckle ring round the top star with two rivet ticks, pushed clear of the node's own
+  // capture ring (the reserved r..r+16 annulus) and cut as continuous burin arcs rather than the
+  // chart's own pricked or dashed character, so the two furnitures read apart.
+  burinArc(g,p2.x,p2.y,p2.r+20,0,TAU,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:24,skips:3,wobble:.2});
+  burinArc(g,p2.x,p2.y,p2.r+25,-2.5,-.6,state.contourRgb,state.contourAlpha,1,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:0,wobble:.2});
+  burinArc(g,p2.x,p2.y,p2.r+25,.5,2.4,state.contourRgb,state.contourAlpha,1,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:0,wobble:.2});
   // The socket that grips the lead, on the middle star.
   figInk(g,figArcPts(p1.x,p1.y,p1.r+11,0,TAU,26),rng,.6,.1,1.1,state.contourRgb,state.contourAlpha);
   for(let i=0;i<6;i++){
@@ -681,10 +683,11 @@ function figAstrolabe(g,p0,p1,p2,side,rng,state){
     const a=i/48*TAU,inner=i%4===0?limbInner:limbOuter-3.5;
     figInk(g,[{x:mother.x+Math.cos(a)*inner,y:mother.y+Math.sin(a)*inner},{x:mother.x+Math.cos(a)*limbOuter,y:mother.y+Math.sin(a)*limbOuter}],rng,.25,0,i%4===0?.75:.45,state.contourRgb,state.contourAlpha);
   }
-  // Sighting vanes on the outer stars.
+  // Sighting vanes on the outer stars, pushed clear of the node's own capture ring and cut as
+  // continuous burin arcs rather than the chart's own pricked or dashed character.
   for(const q of [p0,p2]){
-    figInk(g,figArcPts(q.x,q.y,q.r+10,0,TAU,22),rng,.5,.12,.9,state.contourRgb,state.contourAlpha);
-    for(const o of [-1,1])figInk(g,[{x:q.x+o*(q.r+16),y:q.y-5},{x:q.x+o*(q.r+16),y:q.y+5}],rng,.3,0,1.1,state.contourRgb,state.contourAlpha);
+    burinArc(g,q.x,q.y,q.r+20,0,TAU,state.contourRgb,state.contourAlpha,1,Math.floor(rng()*4294967296)>>>0,{segments:22,skips:3,wobble:.2});
+    for(const o of [-1,1])figInk(g,[{x:q.x+o*(q.r+26),y:q.y-5},{x:q.x+o*(q.r+26),y:q.y+5}],rng,.3,0,1.1,state.contourRgb,state.contourAlpha);
   }
   // Throne and suspension ring above the instrument.
   const crown=spine.at(clamp(t2+(1-t2)*.42,0,1)),ring=spine.at(clamp(t2+(1-t2)*.78,0,1));
@@ -762,9 +765,10 @@ function figLantern(g,p0,p1,p2,side,rng,state){
   const hook=spine.at(clamp(t2+(1-t2)*.82,0,1));
   figInk(g,figArcPts(hook.x,hook.y,11,0,TAU,20),rng,.6,.06,1.3,state.contourRgb,state.contourAlpha);
   figInk(g,[figAt(spine,t2+(1-t2)*.62,0),figAt(spine,t2+(1-t2)*.72,0)],rng,.4,0,1.4,state.contourRgb,state.contourAlpha);
-  // The flame at the middle star, and the light it throws beyond the glass.
+  // The flame at the middle star, and the light it throws beyond the glass — its own rays sprung
+  // from clear of the node's own capture ring rather than from inside it.
   for(let i=0;i<30;i++){
-    const a=i/30*TAU,long=i%3===0,r0=p1.r+9,r1=r0+(long?26:13)+rng()*6;
+    const a=i/30*TAU,long=i%3===0,r0=p1.r+18,r1=r0+(long?26:13)+rng()*6;
     figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45,state.contourRgb,state.contourAlpha);
   }
   if(state.hatchFrac>0){figHatch(g,spine,glassIn,glassOut,Math.round(56*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
