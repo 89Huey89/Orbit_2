@@ -254,11 +254,29 @@ function figHatch(g,spine,leftFn,rightFn,count,rng){
 // small bristle-loaded start at the beginning of a stroke. A perfect landing has no offset; rougher
 // arrivals carry the frozen `n.impression` offset made by simulation.js.
 function figWash(g,left,right,state){
-  if(state&&state.handColour){state.colourRegions.push({left,right});return;}
-  g.beginPath();g.moveTo(left[0].x,left[0].y);
-  for(const p of left)g.lineTo(p.x,p.y);
-  for(let i=right.length-1;i>=0;i--)g.lineTo(right[i].x,right[i].y);
-  g.closePath();g.fill();
+  if(state&&state.handColour)state.colourRegions.push({left,right});
+  else{
+    g.beginPath();g.moveTo(left[0].x,left[0].y);
+    for(const p of left)g.lineTo(p.x,p.y);
+    for(let i=right.length-1;i>=0;i--)g.lineTo(right[i].x,right[i].y);
+    g.closePath();g.fill();
+  }
+  // A completed chart has been struck a second time, the way the shield device's own escutcheon
+  // carries a fainter inner echo of its outer line (chargeDevice, 'shield'): the outer edge of each
+  // washed region is gone over once more, at half the contour's own ink.
+  if(state&&state.completed){
+    const seed=(state.colourSeed^Math.round(left[0].x*131+left[0].y*17))>>>0;
+    figRestrike(g,left,state.contourRgb,state.contourAlpha*.5,seed);
+    figRestrike(g,right,state.contourRgb,state.contourAlpha*.5,seed^0x9e37);
+  }
+}
+// The second pass of a doubled line: the same span, cut again rather than merely redrawn, so the
+// echo reads as a hand going back over its own work rather than a duplicated vector.
+function figRestrike(g,pts,rgb,alpha,seed){
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1];
+    burinSegment(g,a.x,a.y,b.x,b.y,rgb,alpha,1,(seed+i*7919)>>>0,{segments:2,hair:false,wobble:.3});
+  }
 }
 function colourPoint(p,c,dx,dy,rotation){
   const x=p.x-c.x,y=p.y-c.y,cos=Math.cos(rotation),sin=Math.sin(rotation);
@@ -704,17 +722,22 @@ function buildFigureLayer(chart,frame,count,curScale){
   const figureSeed=48200+((chart.catalogueIndex??chart.id)+chart.id*13)*104729,
     rng=seeded(figureSeed),pal=ink.figures,expired=chart.expired,fade=expired?.24:1;
   figStyle=figureStyle();
-  const contourA=(onPaper()?.4:.3)*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07,
+  // The contour earns its strength the way an engraver's own plate does: a first light cut, then the
+  // same line gone over. An untouched chart is a faint construction line; a completed one has had its
+  // outer edge struck a second time (see the completion re-strike in figWash, below).
+  const contourA=((onPaper()?.34:.26)+(onPaper()?.20:.16)*(count/3))*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07,
     handColour=renaissanceAtlas(),seen=chart.stars.filter(star=>star.visited&&star.impression),
     colourOffset=seen.length?seen.reduce((out,star)=>({x:out.x+star.impression.x/seen.length,y:out.y+star.impression.y/seen.length,rotation:out.rotation+star.impression.rotation/seen.length}),{x:0,y:0,rotation:0}):{x:0,y:0,rotation:0},
     colourRough=seen.length?seen.reduce((total,star)=>total+(star.impression.perfect?0:1-(star.impression.quality??1)),0)/seen.length:0;
   const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,style:figStyle,
+    contourRgb:pal.contour,contourAlpha:contourA,
     hatchFrac:expired?0:count/3,
     // Partial colour is earned by each visited star; completion permits the colourist to make one
     // final pass over all the figure's parts. The unprinted star signs and coordinate furniture
     // never enter this region list and remain black ink.
     handColour,colourRegions:[],colourStyle:figStyle.wash,colourSeed:(figureSeed^0x4c4f52)>>>0,
     colourOffset,colourRough,colourFrac:expired?0:Math.min(1,count/3),colourFull:!expired&&chart.completed,colourFade:fade,
+    completed:!expired&&chart.completed,
     wash:handColour&&count>0||(!handColour&&!expired&&chart.completed)?`rgba(${pal.wash},${washA})`:null};
   const [p0,p1,p2]=chart.stars;
   figureFor(chart)(figPen(g,figStyle),p0,p1,p2,frame.side,rng,state);
