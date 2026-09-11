@@ -478,11 +478,39 @@ function invalidateArt(){
   if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();
   if(typeof invalidateRockArt==='function')invalidateRockArt();
 }
+// The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
+// is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own
+// --gold #d5b779 is not base.gold #e2c385). Night's and paper's values are cut by hand and stay that way;
+// every other derived plate is owed the same tint its canvas already gets rather than a third hand-tuned
+// palette to keep in step. `footer` is `.footer`'s colour, currently only authored for the paper plate
+// (index.html:17); a plate with no reason of its own to depart states nothing here.
+const DOM_BASE_VARS={
+  night:{ink:'#080f18',ivory:'#ece5d3',gold:'#d5b779',muted:'#8d9ca5',copy:'#a9b3b6',best:'#d1c8b6',shield:'#9fc9d8',reflector:'#c4a8d6',dawn:'#f2c79a',copper:'#cd9f7a',line:'rgba(207,188,141,.24)',veil:'8,15,24'},
+  paper:{ink:'#e7dabd',ivory:'#2a2016',gold:'#8f5f1e',muted:'#6d5a45',copy:'#4d3d2d',best:'#3d3022',shield:'#3f6f8a',reflector:'#6a406e',dawn:'#a5622a',copper:'#a05434',line:'rgba(74,52,30,.34)',veil:'226,213,184',footer:'#d9ccb0'}
+};
+const DOM_VAR_NAMES=['ink','ivory','gold','muted','copy','best','shield','reflector','dawn','copper','line','veil','footer'];
+// Plates whose CSS rule in index.html genuinely departs from what its own tint would produce (azzurra's
+// white heightening, modern's real instrument hues) keep that rule instead of a computed one. An era
+// (ceiling, rock) is not a colourway of this palette at all — it carries its own `[data-era]` chrome —
+// so it is skipped here the same way, rather than have a computed value at inline specificity clobber it.
+const DOM_EXPLICIT_PLATES=new Set(['azzurra','modern']);
+function syncDomPalette(){
+  // A real CSSStyleDeclaration only outside the test harness, whose lightweight DOM stub has no CSS
+  // object of its own; skipped there the same way every other DOM-only sync already guards itself.
+  if(!game.style||typeof game.style.setProperty!=='function')return;
+  const style=PLATE_STYLES[plateName];
+  const computed=style&&!style.era&&!DOM_EXPLICIT_PLATES.has(plateName)?tintValue(DOM_BASE_VARS[style.base],style.tint):null;
+  for(const name of DOM_VAR_NAMES){
+    const value=computed&&computed[name];
+    if(value)game.style.setProperty('--'+name,value);else game.style.removeProperty('--'+name);
+  }
+}
 function syncPlate(){
   // The stylesheet switches its variables on the base plate; the exact plate is named beside it so a
   // derived plate can adjust a line or two of chrome without repeating the whole palette.
   game.setAttribute('data-plate',plateBase(plateName));
   game.setAttribute('data-plate-id',plateName);
+  syncDomPalette();
   const era=eraId();if(era)game.setAttribute('data-era',String(era));else game.removeAttribute('data-era');
   const meta=document.querySelector?document.querySelector('meta[name="theme-color"]'):null;if(meta)meta.setAttribute('content',ink.base.paper);
   const button=$('plate');if(button){button.setAttribute('aria-label',onPaper()?'Switch to night plate':'Switch to paper plate');button.setAttribute('aria-pressed',String(onPaper()));}
