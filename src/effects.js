@@ -1076,19 +1076,40 @@ function darknessPlate(relief){
       const y=edge-1-bleed()*bleed()*13,rx=3+bleed()*bleed()*11,ry=2+bleed()*5,seed=Math.floor(bleed()*1e7);
       for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},${.38+bleed()*.32})`;g.fill();}
     }
-    for(let i=0;i<14;i++){
-      const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);
-      for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.55)`;g.fill();}
-    }
     }
   }
-  if(!relief)for(let layer=0;layer<5;layer++){
+  // One shared shape for a void layer, since the fourteen settled pools below are now interleaved
+  // between them rather than drawn (and immediately painted out by) all five at once.
+  const voidLayer=layer=>{
     g.beginPath();g.moveTo(0,h);
     for(let x=0;x<=w;x+=4){
       const a=x/w*TAU,y=28+layer*13+Math.sin(a*3+layer*.6)*6+Math.sin(a*11-layer*.4)*2.5;
       g.lineTo(x,y);
     }
     g.lineTo(w,h);g.closePath();g.fillStyle=ink.dark.voidLayers[layer];g.fill();
+  };
+  // The pools a spreading stain leaves once it has settled, not painted flat over the instant they
+  // dry: seven sink into the mid-tones after the third void layer, seven more sit on the deepest wash
+  // after the fifth, so some read through the flood and some ride on top of it. Their own alpha is
+  // lighter than the paper-only pools above, now that they are read against ink rather than composited
+  // under an opaque overlay a moment later.
+  if(!relief){
+    for(let layer=0;layer<3;layer++)voidLayer(layer);
+    if(onPaper()){
+      const bleed=seeded(311977+97);
+      for(let i=0;i<7;i++){
+        const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);
+        for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.35)`;g.fill();}
+      }
+    }
+    for(let layer=3;layer<5;layer++)voidLayer(layer);
+    if(onPaper()){
+      const bleed=seeded(311977+193);
+      for(let i=0;i<7;i++){
+        const x=bleed()*w,y=44+bleed()*90,rx=10+bleed()*34,ry=4+bleed()*11,seed=Math.floor(bleed()*1e7);
+        for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.35)`;g.fill();}
+      }
+    }
   }
   g.save();g.beginPath();g.rect(0,27,w,h-27);g.clip();
   for(let i=0;i<24;i++){
