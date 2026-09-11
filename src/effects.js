@@ -1289,13 +1289,16 @@ function drawDark(dt=0){
     ctx.drawImage(normal,x,fy-24*s,tileWidth,tileHeight);
     if(darknessRelief>.001){ctx.globalAlpha=darknessRelief;ctx.drawImage(relief,x,fy-24*s,tileWidth,tileHeight);ctx.globalAlpha=1;}
   }
-  // One fine shoreline communicates danger; softer sediment lines stay below it.
-  line(0,fy,W,fy,`rgba(${rgb},${.38+near*.24+darknessRelief*.12})`,Math.max(.65,s*.75));
+  // One fine shoreline communicates danger; softer sediment lines stay below it. Both are cut with the
+  // same burin as every other mark on the sheet rather than ruled straight — the waterline is the one
+  // line in the atlas that kills you, and it reads as ink, not a ruler. Seeded off the floor's own
+  // rounded position so the cut is stable frame to frame instead of crawling as the flood rises.
+  burinSegment(ctx,0,fy,W,fy,rgb,.38+near*.24+darknessRelief*.12,Math.max(.65,s*.75),Math.round(world.floorY),{segments:10,wobble:.5,hair:false});
   for(let layer=0;layer<3;layer++){
     ctx.strokeStyle=`rgba(${rgb},${(.18-layer*.04)*(1+darknessRelief*.45)})`;ctx.lineWidth=.45*s;
     ctx.beginPath();
     for(let x=-8;x<W+9;x+=8){
-      const y=fy+(3+layer*5+(Math.sin(x/(48*s)+time*.19+layer)*.5+.5)*(2+layer))*s;
+      const y=fy+(3+layer*5+(Math.sin(x/(48*s)+time*.19+layer)*.5+.5)*(4+layer))*s;
       if(x===-8)ctx.moveTo(x,y);else ctx.lineTo(x,y);
     }
     ctx.stroke();
