@@ -35,7 +35,10 @@ const REVEAL_MARGIN=-24,REVEAL_CAP=3;
 const HATCH_TILT=Math.atan2(.48,1.14+1.1);
 const NODE_REVEAL=1.25,HAZARD_REVEAL=1.1,CHART_REVEAL=1.4;
 const reveal=(function(){
-  const born=new Map(),drawing=new Set();
+  // `drawing` is every mark still in progress, urgent or not — the pruning and reporting below both
+  // want that whole set. `queued` is narrower: only the throttled marks REVEAL_CAP is actually a bound
+  // on, since an urgent registration bypasses the cap and so must not eat into its budget either.
+  const born=new Map(),drawing=new Set(),queued=new Set();
   let runs=-1,lastScratch=-9;
   const clock=()=>world?world.time:0;
   // Finished marks are kept so nothing is ever drawn twice, but the map cannot grow without bound.
@@ -51,20 +54,20 @@ const reveal=(function(){
   }
   return {
     get runs(){return runs;},
-    reset(){born.clear();drawing.clear();runs++;lastScratch=-9;},
-    // 0..1 for a key, registering it on first sight. While three other marks are still being drawn a new
-    // one waits at 0, unless it is urgent — anything already inside the view draws at once, so a mark can
-    // never be invisible where it matters.
+    reset(){born.clear();drawing.clear();queued.clear();runs++;lastScratch=-9;},
+    // 0..1 for a key, registering it on first sight. While three other throttled marks are still being
+    // drawn a new one waits at 0, unless it is urgent — anything already inside the view draws at once,
+    // so a mark can never be invisible where it matters, and never counts against the three either.
     progress(key,duration,urgent){
       if(reducedMotion||reviewing)return 1;
       let mark=born.get(key);
       if(!mark){
-        if(!urgent&&drawing.size>=REVEAL_CAP)return 0;
+        if(!urgent&&queued.size>=REVEAL_CAP)return 0;
         mark={birth:clock(),span:Math.max(.001,duration||NODE_REVEAL)};
-        born.set(key,mark);drawing.add(key);prune();scratch();
+        born.set(key,mark);drawing.add(key);if(!urgent)queued.add(key);prune();scratch();
       }
       const t=(clock()-mark.birth)/mark.span;
-      if(t>=1){drawing.delete(key);return 1;}
+      if(t>=1){drawing.delete(key);queued.delete(key);return 1;}
       return t>0?t:0;
     },
     // Seconds since a mark was begun, or -1 when it has never been asked for.
