@@ -1168,7 +1168,14 @@ definePlate('field',{
   paper:{flareCore:'176,118,38',flareRim:'150,100,32',flareRay:'160,84,52',flareEdge:'150,100,32',
     flareUmbra:'26,18,12',flarePenumbra:'140,86,44',fieldRing:'166,58,40',
     windLine:'70,54,38',windHead:'46,34,24',windShade:'96,78,56',
-    fog:'116,94,66',fogEdge:'58,42,28'}
+    fog:'116,94,66',fogEdge:'58,42,28'},
+  // flareUmbra is not a colour, it is the absence of the sheet — the same reading hazardCore and the
+  // rising dark's own void family already carry — but the automatic duotone lands night's near-black
+  // raw value within three or four levels of these three plates' own tinted ground, since both sit at
+  // the same dark end of the same luminance-only ramp. sink() reads it well clear of the ground instead.
+  cellarius:{flareUmbra:sink('6,9,15','cellarius')},
+  verdigris:{flareUmbra:sink('6,9,15','verdigris')},
+  azzurra:{flareUmbra:sink('6,9,15','azzurra')}
 });
 // A sunspot in the Galileo manner: a dark body, a penumbra of fine radial strokes, and rays cut
 // live. The body itself is not the round pool it once was: a vortex's void is a circle no matter

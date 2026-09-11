@@ -283,6 +283,22 @@ const aged=(r,g,b)=>{
 // A ramp read so that its light stop is reached at the sheet's own tone rather than at pure white, so a
 // duotone pulled over the paper plate keeps the paper's ground where it is.
 const topped=(tint,top)=>(r,g,b)=>{const L=luminance(r,g,b),k=L>0?Math.min(1,L/top)/L:1;return tint(r*k,g*k,b*k);};
+// A token whose whole meaning is "this is the absence of the sheet", not a colour of it — a hazard's
+// lethal body, the flood's own solid wash — must always read as ink well clear of the ground it sits
+// on. A duotone's own luminance-only ramp does not know that: it can land two tokens within a few
+// levels of each other if their raw values happened to sit close on the ramp it reads. sink(raw,plate,
+// floor) derives `raw` through `plate`'s own tint exactly as the automatic pipeline would, then, only
+// if the result lands within `floor` luminance levels (0-255) of that plate's own already-tinted
+// ground (`PLATES[plate].base.paperRgb`, registered by definePlate('base',...) above), scales it
+// darker until it clears the floor. Called once per plate at plate-definition time, beside duotone().
+function sink(raw,plate,floor=22){
+  const [r,g,b]=raw.split(',').map(Number),[dr,dg,db]=PLATE_STYLES[plate].tint(r,g,b);
+  const [gr,gg,gb]=PLATES[plate].base.paperRgb.split(',').map(Number);
+  const ground=luminance(gr,gg,gb)*255,L=luminance(dr,dg,db)*255,target=Math.max(0,ground-floor);
+  if(L<=target)return `${dr},${dg},${db}`;
+  const t=L>0?target/L:0;
+  return [rgbClamp(dr*t),rgbClamp(dg*t),rgbClamp(db*t)].join(',');
+}
 const PLATE_STYLES={
   cellarius:{base:'night',wash:.7,tint:duotone([7,16,56],[118,102,72],[252,228,164])},
   verdigris:{base:'night',wash:.52,tint:duotone([5,15,13],[62,124,100],[196,230,204])},
