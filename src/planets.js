@@ -189,12 +189,23 @@ function paintPlanetRings(g,core,tilt,flatten,front,rgb){
 function planetLayer(size=288){
   const image=makeCanvas(size,size),ink=image.getContext('2d');ink.translate(size/2,size/2);ink.scale(2,2);return {image,ink};
 }
+// Circular distance, in degrees, from a registered pigment's hue to the sheet's own hue (a warm 41°):
+// the paper plate's warm pigments sit near that hue and barely need help reaching the sheet, while a
+// cool one — verdigris, slate, indigo — is fighting the ground it is laid on and is owed more of both.
+function pigmentHueDistance(rgbStr){
+  const [r,g,b]=rgbStr.split(',').map(n=>Number(n)/255),max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  if(d===0)return 180;
+  let h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360;
+  const dist=Math.abs(h-41);return Math.min(dist,360-dist);
+}
 function paintPigment(g,core,rng,rgb=null){
-  const paper=onPaper(),wash=paper?.7:1;
-  // Uneven transparent washes, pooled edges and exposed paper, cached once.
+  const paper=onPaper(),wash=paper?.7:1,cool=paper&&rgb&&pigmentHueDistance(rgb)>60;
+  // Uneven transparent washes, pooled edges and exposed paper, cached once. A cool pigment is raised
+  // toward .12-.2 rather than left at .06-.11, carrying a little more of its own hue into these blots
+  // rather than the flat warm shadow every family was landing here before.
   for(let i=0;i<16;i++){
     landContour(g,(rng()-.5)*core*2,(rng()-.5)*core*2,core*(.2+rng()*.6),core*(.16+rng()*.4),rng);
-    if(paper&&rgb)g.fillStyle=i%3===0?'rgba(58,42,28,.05)':`rgba(${rgb},${(.06+rng()*.05)*wash})`;
+    if(paper&&rgb)g.fillStyle=i%3===0?'rgba(58,42,28,.05)':`rgba(${rgb},${(cool?.12+rng()*.08:.06+rng()*.05)*wash})`;
     else g.fillStyle=i%3===0?'rgba(52,43,30,.065)':'rgba(229,213,172,.075)';
     g.fill();
     g.strokeStyle='rgba(63,52,34,.07)';g.lineWidth=.45;g.stroke();
@@ -571,9 +582,18 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
   g=surface.ink;
   // Paper: the body colour is a dilute wash on the sheet, not a printed flat, so the engraving above it
-  // carries the form. Night keeps the original solid body tone.
-  if(paper){g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=ink.base.paper;g.fill();g.globalAlpha=.62;g.fillStyle=palette.body;g.fill();g.globalAlpha=1;}
-  else{g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
+  // carries the form. Night keeps the original solid body tone. A cool pigment (verdigris, slate,
+  // indigo) is laid from its own registered rgb rather than the desaturated `body` swatch other
+  // families use, so the sheet at least carries the right pigment identity rather than a warm khaki
+  // every family was landing on. A dilute wash this translucent, over paper this warm, cannot be pushed
+  // much further without stopping being a dilute wash: the ground itself reads at a high raw saturation,
+  // and blending a cool hue into it at any alpha short of nearly opaque passes through a muddy middle
+  // rather than climbing steadily toward the pigment's own colour.
+  const cool=paper&&pigmentHueDistance(rgb)>60;
+  if(paper){
+    g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=ink.base.paper;g.fill();g.globalAlpha=.62;
+    g.fillStyle=cool?`rgb(${rgb})`:palette.body;g.fill();g.globalAlpha=1;
+  }else{g.beginPath();g.arc(0,0,core,0,TAU);g.fillStyle=palette.body;g.fill();}
   g.save();g.beginPath();g.arc(0,0,core-.2,0,TAU);g.clip();
   // The front layer's clip opens here, before the surface is painted, because paintPlanetSurface strikes
   // a few burin marks — crater rims, ice fractures, dune ripples — straight onto it: engraved lines that
