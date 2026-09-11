@@ -988,12 +988,15 @@ function drawConstellations(){
       for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2,r=(i%2?1.4:4.8)*scale;const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
       ctx.closePath();ctx.fill();ctx.stroke();
     }
-    // The chart's name is engraved round the rim of its entry star for as long as the route is live —
-    // in the atlas's own Latin, the way every other name on the plate is set (see CONSTELLATIONS in
-    // simulation.js), with the vernacular kept only as the smaller gloss a two-register name always
-    // gets on this sheet. `name` itself is never relettered here: it is still the ledger's own key.
+    // The chart's name is engraved round the rim of its own middle star for as long as the route is
+    // live — in the atlas's own Latin, the way every other name on the plate is set (see
+    // CONSTELLATIONS in simulation.js), with the vernacular kept only as the smaller gloss a
+    // two-register name always gets on this sheet. `name` itself is never relettered here: it is
+    // still the ledger's own key. Anchored to the middle star rather than the entry node — the entry
+    // can scroll well clear of the fork's own three stars, which is where the figure the name belongs
+    // to is actually drawn, and used to leave the caption naming a figure off the sheet.
     if(!chart.expired){
-      const e=chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
+      const e=chart.stars[1]||chart.stars[0]||chart.entry,ex=sx(e.x),ey=sy(e.y),size=Math.max(8,9.5*scale);
       if(ey>-80&&ey<H+80&&!captionsHeld()){
         // The name is set round the top of the rim, and turns to the bottom of it — the same flip the node
         // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
@@ -1012,6 +1015,17 @@ function drawConstellations(){
           textAlongArc(ctx,chart.name,0,0,glossRing,dir,{align:'center',size:glossSize,spacing:glossSize*.22,inward:below});
         }
         ctx.restore();
+      }
+      // The entry still announces that a route begins there, at a bare pricked arc well clear of the
+      // node's own tick fence and dashed capture ring — a coarser, wider prick than either, so it
+      // reads as its own mark rather than blending into furniture every node already carries — rather
+      // than by spending the figure's own name a second time.
+      const entry=chart.entry,enx=sx(entry.x),eny=sy(entry.y);
+      if(entry!==e&&eny>-80&&eny<H+80&&!captionsHeld()){
+        ctx.save();ctx.translate(enx,eny);ctx.setLineDash([2.2*scale,6.5*scale]);
+        ctx.strokeStyle=`rgba(${ink.marks.constellationLabel},.28)`;ctx.lineWidth=.7*scale;
+        ctx.beginPath();ctx.arc(0,0,(entry.r+24)*scale,0,TAU);ctx.stroke();
+        ctx.setLineDash([]);ctx.restore();
       }
     }
     // Progress toward the constellation is announced once, as permanent ink, by the "chartProgress" and
