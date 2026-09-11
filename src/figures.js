@@ -1325,7 +1325,7 @@ function drawNode(n,aim){
     ctx.fillStyle=paper?`rgba(${ink.base.ink},.22)`:`rgba(${rgb},.15)`;
     const written=revealLabel(pen,word);
     const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
-    if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6);
+    if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
   }
   if(active){
     for(const next of releaseTargets(n)){

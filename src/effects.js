@@ -358,7 +358,7 @@ function surveyLine(x0,y0,x1,y1,t,rgb,alpha,weight,head){
   const x=lerp(x0,x1,t),y=lerp(y0,y1,t);
   ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineWidth=Math.max(.35,weight);
   ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke();
-  if(t<1&&head!==false){const a=Math.atan2(y1-y0,x1-x0);penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8);}
+  if(t<1&&head!==false){const a=Math.atan2(y1-y0,x1-x0);penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8,undefined,nibRecency(t));}
 }
 // The same stroke swept round an arc, from one angle to another.
 function surveyArc(cx,cy,r,from,to,t,rgb,alpha,weight){
@@ -368,7 +368,7 @@ function surveyArc(cx,cy,r,from,to,t,rgb,alpha,weight){
   ctx.beginPath();ctx.arc(cx,cy,r,Math.min(from,end),Math.max(from,end));ctx.stroke();
   if(t<1){
     const x=cx+Math.cos(end)*r,y=cy+Math.sin(end)*r,a=end+(to>=from?Math.PI/2:-Math.PI/2);
-    penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8);
+    penBead(x,y,a,1.1*scale,.75);penNib(x,y,a,.8,undefined,nibRecency(t));
   }
 }
 // A short tick across the arc at one of its ends, the way a geometer closes an angle.

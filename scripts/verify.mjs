@@ -172,7 +172,10 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
   const gradient={addColorStop(){}};
   // measureText is the one text metric the lettering routines ask for; the stand-in answers with a
   // plausible advance so textAlongArc exercises its measured path rather than its fallback.
-  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({}),measureText:t=>({width:Math.max(1,String(t).length*5.5)})},{
+  // getTransform stands in as the identity: the stub never actually composes a transform stack, so the
+  // single-nib claim system (reveal.js's penNib) reading it to place its candidate in absolute space
+  // gets a well-formed, if not truly tracked, matrix rather than undefined.
+  const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({}),measureText:t=>({width:Math.max(1,String(t).length*5.5)}),getTransform:()=>({a:1,b:0,c:0,d:1,e:0,f:0})},{
     get(target,key){return key in target?target[key]:(...args)=>{
       for(const a of args)if(typeof a==='number')assert(Number.isFinite(a),'Non-finite canvas argument in '+String(key));
       if(key==='drawImage'&&args[0]?.id==='sky'&&args.length===9){

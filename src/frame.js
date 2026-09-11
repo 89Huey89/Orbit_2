@@ -1084,6 +1084,10 @@ function drawActionFrames(){
   drawActionRowFrame($('more-actions'));
 }
 function render(dt){
+  // However many strokes are in progress this frame, only one hand cuts the plate: the claim every
+  // penNib call registers instead of drawing (reveal.js) is cleared here, at the very top, and whichever
+  // candidate is still standing is cut once, at the very bottom, after everything else this frame draws.
+  nibClaimReset();
   // A plate that draws its whole frame in its own hand names one painter here (see defineHand() in
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
   // instead is still the atlas's own, since every other painter in this file is unchanged.
@@ -1103,6 +1107,10 @@ function render(dt){
   // so it can never linger into a second frame or survive a pause.
   if(darkFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.pigment},${darkFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}darkFlash=0;}
   drawChapterReveal(dt);
+  // Whichever candidate this frame's marks claimed, drawn once, here, after every one of them has had
+  // its turn to register (drawChapterReveal's own letter-stroke nib included) and before the laid
+  // paper's own grain goes over the whole sheet last, the way every other mark's ink already sits under it.
+  nibClaimDraw();
   drawLaidPaper();
   updateUI(dt);
 }

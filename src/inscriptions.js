@@ -264,7 +264,7 @@ function drawInscription(g){
   if(to>from+1&&lead>0){
     const ex=box.ax+ux*(from+(to-from)*lead),ey=box.ay+uy*(from+(to-from)*lead),angle=Math.atan2(uy,ux);
     line(box.ax+ux*from,box.ay+uy*from,ex,ey,`rgba(${ink.inscription.leader},.4)`,.5);
-    if(lead<1){penBead(ex,ey,angle,1.1*scale,.7);penNib(ex,ey,angle,.7);}
+    if(lead<1){penBead(ex,ey,angle,1.1*scale,.7);penNib(ex,ey,angle,.7,undefined,nibRecency(lead));}
     else{
       const tick=2.4*scale;
       line(box.ax+ux*from+uy*tick,box.ay+uy*from-ux*tick,box.ax+ux*from-uy*tick,box.ay+uy*from+ux*tick,`rgba(${ink.inscription.leader},.5)`,.5);

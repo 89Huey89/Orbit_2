@@ -169,6 +169,22 @@ function revealLabel(pen,text){
   return clamp((pen.age-.62)/Math.max(.04,text.length*.04),0,1);
 }
 // ---------- The nib itself ----------
+// However many strokes are in progress, the plate is cut by one hand at a time. `penNib` no longer draws:
+// it registers a candidate, and only the highest-priority one still standing at the end of the frame is
+// actually cut (`nibClaimDraw`, called from render() in frame.js, which also clears the claim at the top
+// of every frame via `nibClaimReset`). Priority is explicit rather than 'nearest the traveller': the ring
+// or capture wedge of the node actually being orbited (NIB_TIER_ORBIT) outranks every other in-progress
+// stroke (NIB_TIER_STROKE), which outranks the frame's own reveal (NIB_TIER_FRAME), the plate's least
+// urgent mark. Within the stroke tier, `nibRecency(t)` ranks by how recently a stroke began — the local
+// 0..1 clock every call site already reads to decide whether to claim at all — so the most recently
+// begun stroke wins over one nearer its own finish. A candidate's x/y/angle are read off the canvas's own
+// current transform at claim time (`ctx.getTransform()`), not off whatever local, often-rotated frame the
+// call site happens to be drawing in, so the one winning nib can be cut in plain, unrotated screen space
+// long after every local `ctx.save()`/`ctx.restore()` around it has already unwound.
+const NIB_TIER_FRAME=0,NIB_TIER_STROKE=1,NIB_TIER_ORBIT=2;
+const nibRecency=t=>NIB_TIER_STROKE-clamp(t,0,1)*.9;
+let nibClaim=null;
+function nibClaimReset(){nibClaim=null;}
 // The traveller's own nib silhouette (markHead, effects.js) rides the leading end of whichever stroke is
 // being drawn, scaled to this stroke's own reach: a small round ink point cut in two shades, not the bare
 // arrowhead this used to be — the same hand the player's own quill is cut in, not a different tool. A bead
@@ -177,8 +193,7 @@ function revealLabel(pen,text){
 // visible end — fading out well before it actually gets there, and the occasional fleck of spatter lands
 // nearby. The flecks are seeded from the nib's own position so they sit still on the page instead of
 // boiling, and reduced motion has none of it.
-function penNib(x,y,angle,alpha=1,rgb){
-  if(reducedMotion||alpha<=.02)return;
+function penNibDraw(x,y,angle,alpha,rgb){
   const c=ink.reveal,tone=rgb||c.nib,reach=Math.max(6,7*scale),k=reach/7;
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);
   ctx.fillStyle=`rgba(${c.bead},${.5*alpha})`;
@@ -205,6 +220,17 @@ function penNib(x,y,angle,alpha=1,rgb){
       ctx.fillRect(gx+Math.cos(a)*d,gy+Math.sin(a)*d,.8,.8);
     }
   }
+}
+function nibClaimDraw(){
+  if(!nibClaim)return;
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+  penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
+  ctx.restore();
+}
+function penNib(x,y,angle,alpha=1,rgb,priority=NIB_TIER_STROKE){
+  if(reducedMotion||alpha<=.02||(nibClaim&&priority<=nibClaim.priority))return;
+  const m=ctx.getTransform();
+  nibClaim={x:(m.a*x+m.c*y+m.e)/DPR,y:(m.b*x+m.d*y+m.f)/DPR,angle:angle+Math.atan2(m.b,m.a),alpha,rgb,priority};
 }
 // A bead of wet ink at the end of a stroke, drying back to the line's own colour behind the point.
 function penBead(x,y,angle,size,alpha=1){
@@ -233,7 +259,11 @@ function penWedgeEnd(pen,n,r,clock=pen.ring){
   const a=n.phase+TAU*clock,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.globalAlpha=1;
   penBead(x,y,a+Math.PI/2,1.5*scale,.9);
-  penNib(x,y,a+Math.PI/2,.9);
+  // The node actually being orbited outranks every other stroke on the sheet, however recent — the pilot's
+  // own hand is always the one on the page. Any other node still cutting its ring or capture line is an
+  // ordinary stroke, ranked by how far into its own clock it is like every other candidate.
+  const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(clock);
+  penNib(x,y,a+Math.PI/2,.9,undefined,priority);
   ctx.restore();
 }
 // A pen lifts off the page rather than blinking out: for NIB_LIFT_DUR after a wedge has closed (`key`
@@ -249,7 +279,8 @@ function penNibLift(key,span,n,r){
   if(since<0||since>=NIB_LIFT_DUR)return;
   const u=since/NIB_LIFT_DUR,a=n.phase,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.translate(x,y);ctx.scale(1+u*.12,1+u*.12);ctx.translate(-x,-y);
-  penNib(x,y,a+Math.PI/2,.9*(1-u));
+  const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(u);
+  penNib(x,y,a+Math.PI/2,.9*(1-u),undefined,priority);
   ctx.restore();
 }
 // A circle gone round once by a hand that was not being careful: the radius breathes by a few per cent
@@ -478,7 +509,7 @@ function penStrike(n,r,t,rgb){
   ctx.save();ctx.globalAlpha=1;
   ctx.strokeStyle=`rgba(${rgb||ink.reveal.strike},${lerp(.5,.22,t)})`;ctx.lineWidth=lerp(1.15,.45,t)*scale;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
-  if(t<1){penBead(x1,y1,a,1.1*scale,.8);penNib(x1,y1,a,.85);}
+  if(t<1){penBead(x1,y1,a,1.1*scale,.8);penNib(x1,y1,a,.85,undefined,nibRecency(t));}
   ctx.restore();
 }
 // ---------- Hazards: a drop of ink lands, spreads, darkens, and the rings are scratched in ----------
@@ -504,7 +535,7 @@ function revealHazard(h,draw){
   }
   if(cut>0&&cut<1){
     const a=(h.phase||0)+TAU*cut,rr=r*1.8;
-    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8);
+    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8,undefined,nibRecency(cut));
   }
 }
 // ---------- Cached rasters swept along their own axis ----------
@@ -540,7 +571,7 @@ function revealFigure(chart,draw){
   const head=chartSweep(chart,t);
   draw(chart);
   ctx.restore();
-  if(head)penNib(head.x,head.y,head.angle,.75);
+  if(head)penNib(head.x,head.y,head.angle,.75,undefined,nibRecency(t));
 }
 // ---------- Route lines ----------
 // The pricked line into a planet is drawn on as that planet is: everything above the pen's reach on the
@@ -606,7 +637,9 @@ function revealFrame(layer){
   if(sweep>0){ctx.save();framePerimeterClip(sweep,band*1.5);ctx.drawImage(layer,0,0,W,H);ctx.restore();}
   const settle=revealSpan(t,.72,1);
   if(settle>0){ctx.save();ctx.globalAlpha=settle;blitFrameLayer(layer);ctx.restore();}
-  if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8);}
+  // The frame is the plate's own least urgent mark: it claims the nib only when nothing else on the
+  // sheet wants it.
+  if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8,undefined,NIB_TIER_FRAME);}
   return t;
 }
 // ---------- Canvas captions, a glyph at a time ----------
@@ -647,7 +680,7 @@ function writeText(context,text,x,y,progress,options){
   context.beginPath();context.rect(left-size,y-size*1.4,shown+size,size*2.1);context.clip();
   context.fillText(text,x,y);
   context.restore();
-  if(context===ctx&&(!options||options.nib!==false))penNib(left+shown+1,y-size*.28,-.6,.75);
+  if(context===ctx&&(!options||options.nib!==false))penNib(left+shown+1,y-size*.28,-.6,.75,undefined,nibRecency(progress));
 }
 // ---------- Large lettering: true stroke order ----------
 // The chapter name is written letter by letter from the outlines of the Fell faces themselves (see
@@ -758,7 +791,7 @@ function penLettering(text,x,y,size,face,age,align,tracking=0){
         const seg=Math.max(1e-6,spans[index]-spans[index-1]),along=clamp((target-spans[index-1])/seg,0,1);
         const gx=pen+lerp(points[back],points[ahead],along)*unit,gy=y-lerp(points[back+1],points[ahead+1],along)*unit;
         const angle=Math.atan2(-(points[ahead+1]-points[back+1]),points[ahead]-points[back]);
-        ctx.globalAlpha=base;penBead(gx,gy,angle,Math.max(1,size*.05),.8);penNib(gx,gy,angle,.85);
+        ctx.globalAlpha=base;penBead(gx,gy,angle,Math.max(1,size*.05),.8);penNib(gx,gy,angle,.85,undefined,nibRecency(stroke));
       }
     }
     pen+=advance+(i<text.length-1?tracking:0);
@@ -773,5 +806,8 @@ function penRule(x,y,reach,color,weight,t){
   ctx.save();ctx.strokeStyle=color;ctx.lineWidth=weight;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(x-9,y);ctx.lineTo(x-9-run,y);ctx.moveTo(x+9,y);ctx.lineTo(x+9+run,y);ctx.stroke();
   ctx.restore();
-  if(t<1){penNib(x-9-run,y,Math.PI,.7);penNib(x+9+run,y,0,.7);}
+  // One nib, not two: a rule is one hand's stroke, cut from its own centre outward, not two hands
+  // working outward from the middle at once. It rides the arm the rule is considered to have started
+  // from — the left one, kept as the fixed, deterministic choice a symmetric rule has no other basis to make.
+  if(t<1)penNib(x-9-run,y,Math.PI,.7,undefined,nibRecency(t));
 }
