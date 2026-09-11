@@ -905,14 +905,15 @@ function drawRunningHead(){
 // world once, in the lower part of the opening sheet. From then on it is always transformed through
 // sx()/sy(), so a rising camera carries the already engraved cartouche downward with the rest of the
 // sheet. It is never re-created at the viewport edge and never follows the traveller.
-const IMPRESSUM_ROWS=10,IMPRESSUM_REVEAL=.52;
-// The nine — now ten, with the second state — rows read as one flat list before this: a real setter
-// would never give a princely dedication and a place-line the same weight. Place and printer carry the
-// cartouche's headline size; plate, year, the second state and the title stand at the plate's ordinary
-// size; correction and privilege step down; and the engraver's credit and the daily date are set in the
-// same italic gloss every other aside on the sheet is, in the plain text face rather than small caps,
-// since they read as notes appended to the plate rather than proper names cut into it.
-const IMPRESSUM_TIERS={place:1.25,printer:1.25,plate:1,year:1,state:1,title:1,correction:.85,privilege:.85,engraver:.85,daily:.85};
+const IMPRESSUM_ROWS=11,IMPRESSUM_REVEAL=.52;
+// The nine — now eleven, with the second state and the edition row — rows read as one flat list before
+// this: a real setter would never give a princely dedication and a place-line the same weight. Place
+// and printer carry the cartouche's headline size; plate, year, the second state and the title stand at
+// the plate's ordinary size; the edition number, correction and privilege step down; and the engraver's
+// credit and the daily date are set in the same italic gloss every other aside on the sheet is, in the
+// plain text face rather than small caps, since they read as notes appended to the plate rather than
+// proper names cut into it.
+const IMPRESSUM_TIERS={place:1.25,printer:1.25,plate:1,edition:.85,year:1,state:1,title:1,correction:.85,privilege:.85,engraver:.85,daily:.85};
 const IMPRESSUM_ITALIC=new Set(['engraver','daily']);
 function impressumRowSize(key,size){return size*(IMPRESSUM_TIERS[key]||1);}
 function impressumMetrics(){
@@ -990,7 +991,12 @@ function impressumRows(){
   return [
     {key:'place',text:'AUGUSTÆ VINDELICORUM'},
     {key:'printer',text:'Ex officina Orbis Tabulæ'},
-    {key:'plate',text:'TAB. V · I  /  A1'},
+    // TAB. names the plate itself here — the sheet's own number, matching what the running head calls
+    // it at the foot of the same chart — with the atlas's edition number moved to its own smaller row
+    // rather than sharing the same abbreviation, which used to read as a second, contradictory plate
+    // number six inches from the first.
+    {key:'plate',text:'TAB. I · A1'},
+    {key:'edition',text:'EDITIO V'},
     {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
     {key:'state',text:impressumHasTelescopicBody()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
