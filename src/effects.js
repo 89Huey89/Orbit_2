@@ -304,6 +304,15 @@ function surveyProgress(s){
   if(reducedMotion)return 1;
   return clamp((world.time-s.birth)/Math.max(.001,s.span),0,1);
 }
+// One continuing alphabet for the whole run rather than a fresh a/b/c for every construction: the index
+// is kept on the world itself, not read off world.surveys.length, since that array is pruned from the
+// front as old constructions dry off the sheet and would otherwise make the count run backward. Past z
+// the letters double — aa, bb, cc — the way a surveyor reaches for a second mark rather than a new one.
+function surveyLetterName(n){const letter=String.fromCharCode(97+n%26);return letter.repeat(Math.floor(n/26)+1);}
+function nextSurveyLetters(){
+  const base=(world.surveyLetterSeq=(world.surveyLetterSeq||0)+3)-3;
+  return [surveyLetterName(base),surveyLetterName(base+1),surveyLetterName(base+2)];
+}
 // The moment of release: the orbit just left is the node the flight is ignoring, and the release velocity
 // is the tangent it left along. The bearing is read clockwise from the sheet's north, 0 to 359.
 function recordDeparture(e){
@@ -312,7 +321,8 @@ function recordDeparture(e){
   const rx=e.x-n.x,ry=e.y-n.y,r=Math.hypot(rx,ry);if(!(r>1))return null;
   const speed=Math.hypot(e.vx,e.vy)||1;
   const record={kind:'departure',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
-    bearing:Math.round(((Math.atan2(rx,-ry)*180/Math.PI)%360+360)%360)%360,birth:world.time,span:SURVEY_DEPARTURE};
+    bearing:Math.round(((Math.atan2(rx,-ry)*180/Math.PI)%360+360)%360)%360,birth:world.time,span:SURVEY_DEPARTURE,
+    letters:nextSurveyLetters()};
   world.surveys.push(record);pruneInkPath();return record;
 }
 // The landing: only a flight that was launched is surveyed, so the orbit the run opens on is not.
@@ -325,7 +335,7 @@ function recordLanding(e){
     mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING,
     // A rough impression cannot be joined, only arrested; the skid it leaves needs its own seed, kept
     // deterministic off the node's own so a replayed run scuffs the sheet exactly where the live one did.
-    rough:!!e.steep,seed:(n.seed^0x5c1d9b)>>>0||1};
+    rough:!!e.steep,seed:(n.seed^0x5c1d9b)>>>0||1,letters:nextSurveyLetters()};
   world.surveys.push(record);pruneInkPath();return record;
 }
 // A hairline drawn on from one end to the other, with the wet bead and the nib riding the moving end.
@@ -364,8 +374,12 @@ function surveyNumeral(text,x,y,size,rgb,alpha,t){
 // on the ring, c at the far end of the line — in the same italic hand the note beside it is written in.
 function surveyLetter(text,x,y,size,rgb,alpha,t){
   if(t<=0)return;
-  ctx.save();ctx.textAlign='center';ctx.fillStyle=`rgba(${rgb},${alpha})`;
-  ctx.font=plateFace(size,'text','italic');
+  ctx.save();ctx.textAlign='center';ctx.font=plateFace(size,'text','italic');
+  // A small leaf of the sheet's own ground behind the letter — the same clearing the construction
+  // labels cut for themselves — since on a crater's own hatching a bare letter simply vanishes into it.
+  const half=ctx.measureText(text).width*.5+2;
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},${alpha*t*.7})`;ctx.fillRect(x-half,y-size*.65,half*2,size*1.2);
+  ctx.fillStyle=`rgba(${rgb},${alpha})`;
   writeText(ctx,text,x,y+size*.35,t,{size,nib:false});
   ctx.restore();
 }
@@ -415,12 +429,14 @@ function drawDepartureSurvey(s,t,rgb,base){
   }
   const mid=(from+to)/2,size=Math.max(8,9*scale),labelR=arcR+Math.max(8,9*scale);
   surveyNumeral(s.bearing+'°',cx+Math.cos(mid)*labelR,cy+Math.sin(mid)*labelR,size,rgb,base*.95,revealSpan(t,.72,1));
-  // (d) The letters: a at the centre and b at the release point, set across the radius on the side away
-  // from the departure line, and c beyond the arrowhead — each written as the pen reaches its point.
+  // (d) The letters: the centre, then the release point, set across the radius on the side away from
+  // the departure line, and the third beyond the arrowhead — each written as the pen reaches its point.
+  // They continue the run's own single alphabet (s.letters, assigned once at recordDeparture) rather
+  // than restarting at a/b/c for every flight.
   const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),off=8*scale,ls=Math.max(7.5,8.5*scale);
-  surveyLetter('a',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.25,.38));
-  surveyLetter('b',px+ax*off-s.ux*2*scale,py+ay*off-s.uy*2*scale,ls,rgb,base*.9,revealSpan(t,.3,.43));
-  surveyLetter('c',ex+s.dx*9*scale,ey+s.dy*9*scale,ls,rgb,base*.9,revealSpan(t,.6,.74));
+  surveyLetter(s.letters[0],cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.25,.38));
+  surveyLetter(s.letters[1],px+ax*off-s.ux*2*scale,py+ay*off-s.uy*2*scale,ls,rgb,base*.9,revealSpan(t,.3,.43));
+  surveyLetter(s.letters[2],ex+s.dx*9*scale,ey+s.dy*9*scale,ls,rgb,base*.9,revealSpan(t,.6,.74));
 }
 // A rough impression cannot glide onto the ring the way a tangent does: the incoming line is arrested
 // rather than joined, so the nib scuffs sideways at the contact instead of lifting clean, and pools
@@ -474,16 +490,16 @@ function drawLandingSurvey(s,t,rgb,gold,base){
     const size=Math.max(8,9.5*scale),labelR=reach+Math.max(9,10*scale);
     surveyNumeral(Math.round(s.angle)+'°',px+Math.cos(bis)*labelR,py+Math.sin(bis)*labelR,size,rgb,base*.95,revealSpan(t,.62,.88));
   }
-  // (d) The letters: continued from the departure construction's a, b, c rather than restarting, since
-  // a node landed on can be the same one a later flight departs from, and the two figures are one
-  // continuous piece of surveying work. d at the centre, across the radius on the side away from the
-  // incoming line; e at the contact, across the incoming line on the outward side; f at the far end of
-  // the incoming line.
+  // (d) The letters: continued from the run's own single alphabet (s.letters) rather than restarting at
+  // a/b/c for every construction, since a node landed on can be the same one a later flight departs
+  // from, and every construction on the sheet is one long piece of surveying work. The first letter at
+  // the centre, across the radius on the side away from the incoming line; the second at the contact,
+  // across the incoming line on the outward side; the third at the far end of the incoming line.
   {
     const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),[bx,by]=surveyAside(s.dx,s.dy,-s.ux,-s.uy),off=8*scale,ls=Math.max(7.5,8.5*scale);
-    surveyLetter('d',cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
-    surveyLetter('e',px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
-    surveyLetter('f',px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
+    surveyLetter(s.letters[0],cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
+    surveyLetter(s.letters[1],px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
+    surveyLetter(s.letters[2],px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
   }
   // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
   const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
