@@ -79,10 +79,12 @@ definePlate('marks',{
   },
   // The one plate where a false-colour role palette is period-honest: real, distinct hues rather than
   // one ramp read by value, matching the DOM instrument colours the modern plate already declares
-  // (index.html's --gold/--shield/--reflector/--dawn).
+  // (index.html's --gold/--shield/--reflector/--dawn) digit for digit, so the canvas states the truth
+  // the CSS rule only repeats.
   modern:{
     nodeDrift:'186,228,240',nodeGold:'246,206,116',nodeFading:'255,158,110',nodeRelaxed:'140,224,164',
-    nodeHardcore:'255,74,62',hazardAccretion:'255,168,84',aimBlockedStart:'255,124,90',aimBlockedEnd:'255,86,66',
+    nodeHardcore:'255,74,62',nodeShield:'128,208,242',nodeReflector:'196,164,246',nodeDawn:'250,196,130',
+    hazardAccretion:'255,168,84',aimBlockedStart:'255,124,90',aimBlockedEnd:'255,86,66',
     fadingCritical:'255,58,54'
   }
 });
