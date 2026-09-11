@@ -68,17 +68,18 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       front.restore();
     }
   }else if(family==='ringed'||family==='storm'){
-    const phase=rng()*TAU,storm=family==='storm';
+    const storm=family==='storm';
     // Pushed to near-white and near-black rather than a mid grey-blue: a duotone maps by luminance alone,
     // so only a band already at one extreme or the other is guaranteed to survive it as a band.
     const stormMajor='rgba(250,244,224,.78)',stormMinor='rgba(16,14,18,.72)';
     if(storm){
-      // A hard equatorial band pair, reaching the limb: two bold bands rather than the loose belt hatch
-      // the ringed body used to share, so a duotone and a small size no longer read them as one drawing.
-      for(const band of [{y:-core*.34,w:core*.4,c:stormMajor},{y:core*.22,w:core*.48,c:stormMinor}]){
-        const bend=Math.sin(phase)*2.4;
-        g.strokeStyle=band.c;g.lineWidth=band.w;g.lineCap='butt';
-        g.beginPath();g.moveTo(-core*1.2,band.y);g.bezierCurveTo(-core*.3,band.y-2.4+bend,core*.3,band.y+2.4-bend,core*1.2,band.y-.5);g.stroke();
+      // A hard equatorial band pair, reaching the limb: two bold bands, but curved as true latitude
+      // lines — the same ellipse geometry the meridian graticule below draws, narrowing toward the poles
+      // exactly as a circle of latitude does — rather than a near-straight line crossing the diagonal
+      // hatch at a right angle. The two still meet the limb at each end, since a latitude line does too.
+      for(const band of [{lat:-.34,h:core*.09,c:stormMajor},{lat:.22,h:core*.11,c:stormMinor}]){
+        const rx=core*Math.sqrt(Math.max(0,1-band.lat*band.lat));
+        g.fillStyle=band.c;g.beginPath();g.ellipse(0,core*band.lat,rx,band.h,0,0,TAU);g.fill();
       }
     }
     // The atmospheric eye: a stack of concentric ellipses, kept for both bodies — a gas giant carries one
@@ -121,12 +122,16 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     }
   }else if(family==='dune'){
     // The ripples are cut on the still front layer, with the hatching, rather than the shifting wash: an
-    // engraved ripple does not misregister. The rift and the crest below stay on the wash.
-    const phase=rng()*TAU;
+    // engraved ripple does not misregister. The rift and the crest below stay on the wash. Each row is
+    // given a shallow common dome, concentric with the limb, on top of its own wave — a burin follows the
+    // roundness of a sphere rather than ruling straight lines across it, exactly as the limb-shading
+    // arcs below do — so ripple and hatch run in sympathy instead of crossing at a right angle.
+    const phase=rng()*TAU,domeR=core*2.2;
     for(let i=-20;i<=20;i++){
       const y=i*core/17;front.beginPath();
       for(let x=-core-3;x<=core+4;x+=2){
-        const yy=y+Math.sin(x*.1+phase+i*.22)*3.4+Math.sin(x*.22-i*.34)*.85;
+        const dome=domeR-Math.sqrt(Math.max(0,domeR*domeR-x*x));
+        const yy=y-dome+Math.sin(x*.1+phase+i*.22)*3.4+Math.sin(x*.22-i*.34)*.85;
         if(x===-core-3)front.moveTo(x,yy);else front.lineTo(x,yy);
       }
       front.strokeStyle=i%3===0?'rgba(92,68,48,.32)':'rgba(217,190,146,.36)';front.lineWidth=i%3===0?1.5:.65;front.stroke();
