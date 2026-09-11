@@ -193,12 +193,16 @@ function penNib(x,y,angle,alpha=1,rgb){
   ctx.strokeStyle=shaft;ctx.lineWidth=.6;
   ctx.beginPath();ctx.moveTo(sx0,0);ctx.lineTo(ex,ey);ctx.stroke();
   ctx.restore();
-  const grid=(Math.floor(x/7)*73856093^Math.floor(y/7)*19349663)>>>0;
+  // Flecks are placed at the cell's own quantised origin, not the nib's live x,y: seeding the decision
+  // and the offsets off the cell already meant a fleck held still while the nib stayed inside one, but
+  // drawing it relative to x,y let it drift with the nib the whole time regardless — a spatter that
+  // never actually landed. Quantising the draw position too is what makes it land and stay landed.
+  const gx=Math.floor(x/7)*7,gy=Math.floor(y/7)*7,grid=(Math.floor(x/7)*73856093^Math.floor(y/7)*19349663)>>>0;
   if((grid&7)===0){
     ctx.fillStyle=`rgba(${c.spatter},${.3*alpha})`;
     for(let i=0;i<2;i++){
       const a=((grid>>>(3+i*5))&31)/32*TAU,d=reach*(.7+((grid>>>(8+i*5))&15)/15);
-      ctx.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,.8,.8);
+      ctx.fillRect(gx+Math.cos(a)*d,gy+Math.sin(a)*d,.8,.8);
     }
   }
 }
