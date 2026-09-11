@@ -425,8 +425,15 @@ function figSail(g,p0,p1,p2,side,rng,state){
   // half of the sheet and is fullest at the middle star, which is where a lateen sail draws.
   const inner=t=>2.4+box.lat(t,.05),outer=t=>-2.4+box.lat(t,-.95);
   const left=figRibbon(spine,inner,steps),right=figRibbon(spine,outer,steps);
+  // The spar: a taut, nearly straight timber the luff is hauled to, cut with almost none of the
+  // cloth's own jag so it reads as rigid beside the belly of the leech — the one mark that turns the
+  // shape from a generic lens into a sail set on a mast.
+  const mast=figRibbon(spine,()=>0,steps);
+  figInk(g,[mast[3],mast[steps-3]],rng,.1,0,1.7,state.contourRgb,state.contourAlpha);
   figInk(g,left,rng,.6,.06,1.5,state.contourRgb,state.contourAlpha);figInk(g,right,rng,1,.05,1.2,state.contourRgb,state.contourAlpha);
-  figInk(g,[left[2],right[2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);
+  // The foot and head: a real closing line at full weight rather than the incidental stroke a shared
+  // seed used to leave behind, so the belly reads as cloth bent between two named edges.
+  figInk(g,[left[2],right[2]],rng,.3,0,1.3,state.contourRgb,state.contourAlpha);figInk(g,[left[steps-2],right[steps-2]],rng,.3,0,1.3,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,inner,outer,30,rng,.9);
@@ -464,19 +471,31 @@ function figLyre(g,p0,p1,p2,side,rng,state){
   if(state.wash){g.fillStyle=state.wash;figWash(g,leftOut,leftIn,state);figWash(g,rightIn,rightOut,state);}
   g.fillStyle=state.contour;figStipple(g,spine,bowOut,armOut,22,rng,.7);
 }
-// A pointed diadem: a thin band that arcs past the stars with occasional spikes, and a jewel collar
-// set clear of each star's rim.
+// A pointed diadem: a smooth hoop with five discrete points rising off it, and a jewel collar set
+// clear of each star's rim.
 function figCrown(g,p0,p1,p2,side,rng,state){
-  const spine=figSpine(p0,p1,p2,side,34),steps=48,box=figBox(spine,p1);
-  // The hoop keeps close to the spine and the points rise off it into the open half of the sheet,
-  // tallest at the middle star and shortening to little more than the hoop by the outer two.
-  const point=t=>Math.abs(Math.sin(t*Math.PI*2.4))>.8?.82:.13;
-  const band=t=>-2+box.lat(t,-point(t)),hoop=t=>2.4+box.lat(t,.1);
+  const spine=figSpine(p0,p1,p2,side,34),steps=48,[t0,,t2]=spine.stops,box=figBox(spine,p1);
+  // The hoop keeps close to the spine on both sides; a band this thin sampled at 48 steps is smooth
+  // whatever bumps ride on it, unlike the square wave the points used to be built into, which cut as
+  // a jagged polygon rather than a crown.
+  const band=t=>-2+box.lat(t,-.13),hoop=t=>2.4+box.lat(t,.1);
   const left=figRibbon(spine,band,steps),right=figRibbon(spine,hoop,steps);
   figInk(g,left,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);
+  // Five points, rooted at fixed stations across the hoop rather than sampled into its own boundary:
+  // each a pair of burin cuts converging from the band to an apex a flat 26 units past it, closed with
+  // a small bead at the tip, the way a real diadem's points are struck apart from its rim.
+  for(const u of [.12,.32,.5,.68,.88]){
+    const t=lerp(t0,t2,u),ta=t-.02,tb=t+.02;
+    const a=figAt(spine,ta,band(ta)),b=figAt(spine,tb,band(tb)),apex=figAt(spine,t,band(t)-26);
+    const seed=Math.floor(rng()*4294967296)>>>0;
+    burinSegment(g,a.x,a.y,apex.x,apex.y,state.contourRgb,state.contourAlpha,1.1,seed,{segments:2,wobble:.22,hair:false});
+    burinSegment(g,b.x,b.y,apex.x,apex.y,state.contourRgb,state.contourAlpha,1.1,seed^0x5b,{segments:2,wobble:.22,hair:false});
+    burinArc(g,apex.x,apex.y,1.6,0,TAU,state.contourRgb,state.contourAlpha,1,seed^0x91,{segments:8,skips:1,wobble:.2});
+  }
+  // Collars pushed clear of the node's own capture ring (see the figure-furniture finding).
   for(const p of [p0,p1,p2]){
-    burinArc(g,p.x,p.y,p.r+14,0,TAU,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:24,skips:3,wobble:.2});
-    burinArc(g,p.x,p.y,p.r+21,-.65,.65,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:1,wobble:.2});
+    burinArc(g,p.x,p.y,p.r+22,0,TAU,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:24,skips:3,wobble:.2});
+    burinArc(g,p.x,p.y,p.r+30,-.65,.65,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:1,wobble:.2});
   }
   if(state.hatchFrac>0){figHatch(g,spine,band,hoop,Math.round(40*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
@@ -755,12 +774,13 @@ function figLantern(g,p0,p1,p2,side,rng,state){
 // A moth. The wings open either side of the middle star, the head and its feathered antennae are
 // set on the top star, and the abdomen tapers away below the bottom one.
 function figMoth(g,p0,p1,p2,side,rng,state){
-  const spine=figSpine(p0,p1,p2,side,48),steps=72,[t0,t1,t2]=spine.stops,box=figBox(spine,p1),reach=Math.max(.001,Math.max(t1-t0,t2-t1));
+  const spine=figSpine(p0,p1,p2,side,48),steps=72,[t0,t1,t2]=spine.stops,box=figBox(spine,p1);
   // The thorax stays on the spine, so the stars still run down the moth's back; it is the wings that
-  // take the budget, each pair as wide as its own half of the sheet allows and each pinched halfway
-  // out to part fore wing from hind.
-  const cut=t=>1-.17*Math.pow(Math.sin(clamp((t-t1)/reach,-1,1)*Math.PI),2);
-  const wingOut=t=>box.lat(t,.95)*cut(t),wingIn=t=>box.lat(t,-.95)*cut(t);
+  // take the budget, each pair a single lobe centred on the middle star — the budget's own mass curve
+  // already peaks at t1 and falls to the body by t0 and t2 — cut as a broad triangle across the spine
+  // rather than two pods up it. The fore/hind seam below is carried by the interior vein lines alone,
+  // not by a notch pinched into the silhouette's own edge.
+  const wingOut=t=>box.lat(t,.95),wingIn=t=>box.lat(t,-.95);
   const body=t=>t>t2?Math.max(1,7-(t-t2)*46):t<t0?Math.max(1,6.5-(t0-t)*30):6.5;
   const spanOut=t=>wingOut(t)+body(t),spanIn=t=>wingIn(t)-body(t);
   const left=figRibbon(spine,spanIn,steps),right=figRibbon(spine,spanOut,steps);
@@ -786,13 +806,24 @@ function figMoth(g,p0,p1,p2,side,rng,state){
     figInk(g,figArcPts(c.x,c.y,7.5,0,TAU,16),rng,.5,.08,.9,state.contourRgb,state.contourAlpha);
     figInk(g,figArcPts(c.x,c.y,3.4,0,TAU,12),rng,.4,.12,.6,state.contourRgb,state.contourAlpha);
   }
-  // Body segments, then the head and its combed antennae on the top star.
+  // Body segments, then a real head disc on the top star, with the combed antennae springing from
+  // its own rim rather than from a bare point on the spine.
   for(let i=0;i<12;i++){
     const t=lerp(t0-.05,t2-.01,i/12);
     figInk(g,[figAt(spine,t,-body(t)),figAt(spine,t,body(t))],rng,.35,.18,.5,state.contourRgb,state.contourAlpha);
   }
+  // The head and its antennae are extrapolated straight on past the spine's own clamped tip (t=1)
+  // rather than sampled inside it, since the star punch (p2.r+8) reaches well past that tip on a
+  // real fork and would otherwise erase a head placed anywhere the t-parametrization can still reach.
+  const tip=spine.at(1),headD=Math.max(50,p2.r+22),headR=6.5;
+  const along=d=>({x:p2.x+tip.tx*d,y:p2.y+tip.ty*d});
+  const head=along(headD);
+  // A short neck bridges the abdomen's own tapered end (the spine's clamped tip) to the head, so the
+  // two read as one continuous body rather than a disc stranded past a gap.
+  burinSegment(g,tip.x,tip.y,head.x,head.y,state.contourRgb,state.contourAlpha,.8,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.2,hair:false});
+  burinArc(g,head.x,head.y,headR,0,TAU,state.contourRgb,state.contourAlpha,1,Math.floor(rng()*4294967296)>>>0,{segments:16,skips:2,wobble:.2});
   for(const o of [-1,1]){
-    const feel=[];for(let i=0;i<=12;i++){const u=i/12;feel.push(figAt(spine,lerp(t2+.005,1,u),o*(3+u*u*26)));}
+    const feel=[];for(let i=0;i<=12;i++){const u=i/12,base=along(headD+u*40),off=o*(headR*.9+u*u*26);feel.push({x:base.x+tip.px*off,y:base.y+tip.py*off});}
     figInk(g,feel,rng,.5,.04,.85,state.contourRgb,state.contourAlpha);
     for(let i=2;i<12;i+=1){
       const p=feel[i],q=feel[i-1],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy)||1;
