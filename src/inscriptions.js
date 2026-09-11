@@ -62,6 +62,9 @@ function inscriptionAnchor(g){
   if(n&&Number.isFinite(n.x))return {x:n.x,y:n.y,r:n.cap||n.r||6};
   return {x:g.x,y:g.y,r:g.r};
 }
+// Whether two {node,x,y} anchors are the same subject, so a note already pointed at it is not pointed
+// at it twice.
+const inscriptionSameAnchor=(a,b)=>a.node||b.node?a.node===b.node:a.x===b.x&&a.y===b.y;
 function inscriptionBox(g){
   const a=inscriptionAnchor(g),ax=sx(a.x),ay=sy(a.y),w=g.w*scale,h=g.h*scale;
   const cx=ax+g.dx*scale,cy=ay+g.dy*scale;
@@ -194,16 +197,31 @@ function repositionHeld(g,mutate){
 // it to the point on the sheet where the thing happened; with neither, it is set beside the traveller.
 function inscribe(text,options={}){
   if(!world||!text)return null;
-  const tone=options.tone||'caps',size=inscriptionSize(tone);
-  const {lines,width}=wrapInscription(text,tone,size);
-  const step=size*1.34,p=world.player;
-  const g={
-    key:options.key||'',text:String(text),tone,lines,
-    size:size/scale,w:(width+3)/scale,h:lines.length*step/scale,
+  const tone=options.tone||'caps',size=inscriptionSize(tone),p=world.player;
+  const str=String(text);
+  const anchor={
     node:options.node||(options.x===undefined?p.node:null)||null,
-    x:options.x===undefined?p.x:options.x,y:options.y===undefined?p.y:options.y,r:options.r||6,
-    age:0,write:reducedMotion?0:.22+String(text).length*.017,held:false,touched:false,
-    seed:(++inscriptionSeq*2654435761)>>>0,dx:0,dy:0,placedX:0,placedY:0
+    x:options.x===undefined?p.x:options.x,y:options.y===undefined?p.y:options.y,r:options.r||6
+  };
+  // The same words are never set twice on the sheet: a note already standing for this exact text, close
+  // enough to be about the same business, gains a second leader to the new subject instead of a second
+  // copy of itself — what a working plate does when one note serves two things.
+  for(const q of inscriptions){
+    if(q.text!==str)continue;
+    const box=inscriptionBox(q),a=inscriptionAnchor(anchor),ax=sx(a.x),ay=sy(a.y);
+    if(Math.hypot(box.cx-ax,box.cy-ay)>120*scale)continue;
+    if(inscriptionSameAnchor(q,anchor)||q.extraAnchors.some(e=>inscriptionSameAnchor(e,anchor)))return q;
+    q.extraAnchors.push(anchor);
+    return q;
+  }
+  const {lines,width}=wrapInscription(text,tone,size);
+  const step=size*1.34;
+  const g={
+    key:options.key||'',text:str,tone,lines,
+    size:size/scale,w:(width+3)/scale,h:lines.length*step/scale,
+    node:anchor.node,x:anchor.x,y:anchor.y,r:anchor.r,
+    age:0,write:reducedMotion?0:.22+str.length*.017,held:false,touched:false,
+    seed:(++inscriptionSeq*2654435761)>>>0,dx:0,dy:0,placedX:0,placedY:0,extraAnchors:[]
   };
   // A note is never set over lettering already on the sheet: if no clear ground was found anywhere on
   // the plate, it goes unwritten rather than printed illegibly. The run has plenty more to say.
@@ -257,19 +275,25 @@ function drawInscription(g){
   const caps=g.tone!=='note',size=g.size*scale,step=size*1.34;
   ctx.save();ctx.textBaseline='alphabetic';
   // The leader is drawn first, from the subject's rim out to the lettering, with the nib riding its end and
-  // a small tick left where it started — the way a plate points a note at the thing it describes.
-  const dx=box.cx-box.ax,dy=box.cy-box.ay,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
-  const half=Math.min(Math.abs(ux)>.001?(box.right-box.left)/2/Math.abs(ux):Infinity,Math.abs(uy)>.001?(box.bottom-box.top)/2/Math.abs(uy):Infinity);
-  const from=box.rad+3*scale,to=d-half-3*scale,lead=revealSpan(t,0,.22);
-  if(to>from+1&&lead>0){
-    const ex=box.ax+ux*(from+(to-from)*lead),ey=box.ay+uy*(from+(to-from)*lead),angle=Math.atan2(uy,ux);
-    line(box.ax+ux*from,box.ay+uy*from,ex,ey,`rgba(${ink.inscription.leader},.4)`,.5);
-    if(lead<1){penBead(ex,ey,angle,1.1*scale,.7);penNib(ex,ey,angle,.7,undefined,nibRecency(lead));}
-    else{
-      const tick=2.4*scale;
-      line(box.ax+ux*from+uy*tick,box.ay+uy*from-ux*tick,box.ax+ux*from-uy*tick,box.ay+uy*from+ux*tick,`rgba(${ink.inscription.leader},.5)`,.5);
+  // a small tick left where it started — the way a plate points a note at the thing it describes. A note
+  // standing for two subjects at once (see inscribe's own dedup) draws one such leader per subject, all
+  // from the one box.
+  const drawLeader=(ax,ay,rad)=>{
+    const dx=box.cx-ax,dy=box.cy-ay,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+    const half=Math.min(Math.abs(ux)>.001?(box.right-box.left)/2/Math.abs(ux):Infinity,Math.abs(uy)>.001?(box.bottom-box.top)/2/Math.abs(uy):Infinity);
+    const from=rad+3*scale,to=d-half-3*scale,lead=revealSpan(t,0,.22);
+    if(to>from+1&&lead>0){
+      const ex=ax+ux*(from+(to-from)*lead),ey=ay+uy*(from+(to-from)*lead),angle=Math.atan2(uy,ux);
+      line(ax+ux*from,ay+uy*from,ex,ey,`rgba(${ink.inscription.leader},.4)`,.5);
+      if(lead<1){penBead(ex,ey,angle,1.1*scale,.7);penNib(ex,ey,angle,.7,undefined,nibRecency(lead));}
+      else{
+        const tick=2.4*scale;
+        line(ax+ux*from+uy*tick,ay+uy*from-ux*tick,ax+ux*from-uy*tick,ay+uy*from+ux*tick,`rgba(${ink.inscription.leader},.5)`,.5);
+      }
     }
-  }
+  };
+  drawLeader(box.ax,box.ay,box.rad);
+  if(g.extraAnchors)for(const e of g.extraAnchors){const a=inscriptionAnchor(e);drawLeader(sx(a.x),sy(a.y),a.r*scale);}
   ctx.textAlign='center';ctx.font=inscriptionFont(g.tone,size);
   ctx.fillStyle=`rgba(${caps?ink.inscription.caps:ink.inscription.note},${caps?.94:.82})`;
   for(let i=0;i<g.lines.length;i++){
