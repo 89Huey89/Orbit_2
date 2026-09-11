@@ -1317,6 +1317,13 @@ function windSprite(seed,radius,reach,dir){
     const a=Math.PI*.45+i/9*Math.PI*1.1;
     burinSpiral(g,hx+Math.cos(a)*head*.96,Math.sin(a)*head*.96,head*.3,head*.06,a-1.1,a+2.1,p.windHead,.34,.6*scale,seed+i*13,{segments:7,skips:0});
   }
+  // Closed eyes under heavy brows, ported from the frame's own wind-head (frameWindHead, frame.js) so
+  // the two are cut by one engraver's hand rather than the frame's carrying a face this one goes without.
+  for(const s of [-1,1]){
+    burinArc(g,hx+head*.06,s*head*.3,head*.24,-1,.7,p.windHead,.6,.8*scale,seed+31+(s>0?1:0),{segments:5,skips:0});
+    burinArc(g,hx+head*.02,s*head*.32,head*.34,-.8,.35,p.windHead,.39,.6*scale,seed+41+(s>0?1:0),{segments:4,skips:0});
+    burinArc(g,hx+head*.34,s*head*.46,head*.42,-2.5,-.15,p.windHead,.48,.7*scale,seed+51+(s>0?1:0),{segments:6,skips:0});
+  }
   // The shaded side is the one the light does not reach. The head is the one mark on the plate that
   // is turned to point somewhere, so its hatch is laid in turned back by the same angle: on the
   // sheet the strokes still run down and to the right, with the light still coming from the left,
@@ -1330,6 +1337,7 @@ function windSprite(seed,radius,reach,dir){
   g.restore();
   g.strokeStyle=`rgba(${p.windHead},.6)`;g.lineWidth=.9*scale;
   g.beginPath();g.arc(hx+head*1.02,0,head*.17,0,TAU);g.stroke();
+  g.fillStyle=`rgba(${p.windHead},.42)`;g.beginPath();g.arc(hx+head*1.02,0,head*.08,0,TAU);g.fill();
   const sprite={canvas:c,size,head,hx};
   windSprites.set(key,sprite);
   if(windSprites.size>16)windSprites.delete(windSprites.keys().next().value);
