@@ -764,26 +764,38 @@ function penLettering(text,x,y,size,face,age,align,tracking=0){
       }
       if(stroke<1){
         ctx.globalAlpha=base;ctx.strokeStyle=style;ctx.lineWidth=Math.max(.6,size*.035);
+        // A letter's contours are cut one at a time, not all together: the glyph's own LETTER_STROKE
+        // window is allocated across them by arc length, so a counter only starts once the contour
+        // ahead of it has actually closed, and the bead below sits on whichever one is genuinely in
+        // hand rather than always the longest.
+        const totalLen=outline.lengths.reduce((s,spans)=>s+spans[spans.length-1],0)||1;
+        let acc=0,active=null;
         for(let c=0;c<outline.contours.length;c++){
-          const points=outline.contours[c],spans=outline.lengths[c],length=spans[spans.length-1]*unit;
-          if(length<=0)continue;
-          ctx.setLineDash([length,length]);ctx.lineDashOffset=length*(1-stroke);
+          const points=outline.contours[c],spans=outline.lengths[c],len=spans[spans.length-1];
+          const from=acc/totalLen;acc+=len;const to=acc/totalLen;
+          const local=clamp((stroke-from)/((to-from)||1e-6),0,1);
+          if(local<=0||len<=0)continue;
+          const lengthPx=len*unit;
+          ctx.setLineDash([lengthPx,lengthPx]);ctx.lineDashOffset=lengthPx*(1-local);
           ctx.beginPath();
           for(let p=0;p<points.length;p+=2){
             const px=pen+points[p]*unit,py=y-points[p+1]*unit;
             if(p===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
           }
           ctx.closePath();ctx.stroke();
+          if(local<1)active={points,spans,local};
         }
         ctx.setLineDash([]);
-        // The wet bead sits where the nib is, on the longest contour of the glyph.
-        const points=outline.contours[0],spans=outline.lengths[0],target=spans[spans.length-1]*stroke;
-        let index=1;while(index<spans.length-1&&spans[index]<target)index++;
-        const back=(index-1)%(points.length/2)*2,ahead=(index%(points.length/2))*2;
-        const seg=Math.max(1e-6,spans[index]-spans[index-1]),along=clamp((target-spans[index-1])/seg,0,1);
-        const gx=pen+lerp(points[back],points[ahead],along)*unit,gy=y-lerp(points[back+1],points[ahead+1],along)*unit;
-        const angle=Math.atan2(-(points[ahead+1]-points[back+1]),points[ahead]-points[back]);
-        ctx.globalAlpha=base;penBead(gx,gy,angle,Math.max(1,size*.05),.8);penNib(gx,gy,angle,.85,undefined,nibRecency(stroke));
+        // The wet bead sits where the nib is, on the contour the loop above just left mid-stroke.
+        if(active){
+          const{points,spans,local}=active,target=spans[spans.length-1]*local;
+          let index=1;while(index<spans.length-1&&spans[index]<target)index++;
+          const back=(index-1)%(points.length/2)*2,ahead=(index%(points.length/2))*2;
+          const seg=Math.max(1e-6,spans[index]-spans[index-1]),along=clamp((target-spans[index-1])/seg,0,1);
+          const gx=pen+lerp(points[back],points[ahead],along)*unit,gy=y-lerp(points[back+1],points[ahead+1],along)*unit;
+          const angle=Math.atan2(-(points[ahead+1]-points[back+1]),points[ahead]-points[back]);
+          ctx.globalAlpha=base;penBead(gx,gy,angle,Math.max(1,size*.05),.8);penNib(gx,gy,angle,.85,undefined,nibRecency(stroke));
+        }
       }
     }
     pen+=advance+(i<text.length-1?tracking:0);
