@@ -1186,8 +1186,8 @@ definePlate('field',{
 // baked into a sprite; only the flare's rays are cut live.
 const FLARE_SPIKES=9;
 const flareSprites=new Map();
-function flareSprite(seed,radius,core){
-  const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+Math.round(core)+':'+plateName+':'+DPR.toFixed(2);
+function flareSprite(seed,radius,core,phase){
+  const rBucket=Math.round(radius),key=seed+':'+rBucket+':'+Math.round(core)+':'+(phase||0).toFixed(3)+':'+plateName+':'+DPR.toFixed(2);
   const cached=flareSprites.get(key);if(cached)return cached;
   const pad=Math.max(6,rBucket*.45),size=Math.max(4,Math.ceil((rBucket+pad)*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
@@ -1214,7 +1214,7 @@ function flareSprite(seed,radius,core){
   // actually kills. The rim is struck along the same jagged path, not a circle around it.
   const tip=Math.max(u*1.45,r*.85),notch=u,verts=[];
   for(let i=0;i<FLARE_SPIKES*2;i++){
-    const a=i/(FLARE_SPIKES*2)*TAU+rng()*.02,spike=i%2===0;
+    const a=i/(FLARE_SPIKES*2)*TAU+rng()*.02+(phase||0)*.1,spike=i%2===0;
     const jr=spike?tip*(.9+rng()*.22):notch*(1+rng()*.08);
     verts.push([Math.cos(a)*jr,Math.sin(a)*jr]);
   }
@@ -1281,13 +1281,17 @@ function drawFlare(h){
   }
   // The flare: a breathing extension struck outward from each of the burst's own points, so the
   // one part of this mark cut live lines up with the jagged body baked into the sprite instead of
-  // scattering a different rhythm of rays against it.
+  // scattering a different rhythm of rays against it. The phase term that turns the burst's own
+  // points is baked into the sprite itself (flareSprite) rather than reapplied here, so the two
+  // agree exactly rather than drifting apart as h.phase differs hazard to hazard; the rays start at
+  // the same tip radius the points themselves reach, extending them rather than piercing through.
+  const u=Math.max(1.5,core),tip=Math.max(u*1.45,r*.85);
   for(let i=0;i<FLARE_SPIKES;i++){
     const a=i/FLARE_SPIKES*TAU+(h.phase||0)*.1,len=r*(.35+rng()*.45)*pulse;
     ctx.strokeStyle=`rgba(${c.flareRay},${(.22+rng()*.3)*pulse})`;ctx.lineWidth=(i%2?.7:1.1)*scale;
-    ctx.beginPath();ctx.moveTo(Math.cos(a)*(r*.8),Math.sin(a)*(r*.8));ctx.lineTo(Math.cos(a)*(r*.8+len),Math.sin(a)*(r*.8+len));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*tip,Math.sin(a)*tip);ctx.lineTo(Math.cos(a)*(tip+len),Math.sin(a)*(tip+len));ctx.stroke();
   }
-  const sprite=flareSprite(h.seed,r,core);
+  const sprite=flareSprite(h.seed,r,core,h.phase);
   ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
   ctx.restore();
 }
