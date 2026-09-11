@@ -320,7 +320,7 @@ function recordDeparture(e){
   const n=world.nodes.find(q=>q.id===world.player.ignore);if(!n)return null;
   const rx=e.x-n.x,ry=e.y-n.y,r=Math.hypot(rx,ry);if(!(r>1))return null;
   const speed=Math.hypot(e.vx,e.vy)||1;
-  const record={kind:'departure',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
+  const record={kind:'departure',cx:n.x,cy:n.y,nr:n.r,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
     bearing:Math.round(((Math.atan2(rx,-ry)*180/Math.PI)%360+360)%360)%360,birth:world.time,span:SURVEY_DEPARTURE,
     letters:nextSurveyLetters()};
   world.surveys.push(record);pruneInkPath();return record;
@@ -330,7 +330,7 @@ function recordLanding(e){
   if(!world||!e.launch)return null;
   const n=e.n,rx=e.x-n.x,ry=e.y-n.y,r=Math.hypot(rx,ry)||n.r||1;
   const speed=Math.hypot(e.vx,e.vy)||1;
-  const record={kind:'landing',cx:n.x,cy:n.y,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
+  const record={kind:'landing',cx:n.x,cy:n.y,nr:n.r,x:e.x,y:e.y,r,ux:rx/r,uy:ry/r,dx:e.vx/speed,dy:e.vy/speed,
     angle:e.angle,square:!!e.square,squareBonus:e.squareBonus||0,gain:e.gain,
     mult:e.scoreMultiplier||1,skipped:e.skipped||0,birth:world.time,span:SURVEY_LANDING,
     // A rough impression cannot be joined, only arrested; the skid it leaves needs its own seed, kept
@@ -433,8 +433,11 @@ function drawDepartureSurvey(s,t,rgb,base){
   // the departure line, and the third beyond the arrowhead — each written as the pen reaches its point.
   // They continue the run's own single alphabet (s.letters, assigned once at recordDeparture) rather
   // than restarting at a/b/c for every flight.
-  const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),off=8*scale,ls=Math.max(7.5,8.5*scale);
-  surveyLetter(s.letters[0],cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.25,.38));
+  // The first letter sits outside the specimen rather than on it: its offset from centre is derived from
+  // the node's own drawn radius, not the flat clearance the other two (already set off the ring, clear
+  // of the disc) still use.
+  const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),off=8*scale,centerOff=Math.max(off,(s.nr||0)*scale+6*scale),ls=Math.max(7.5,8.5*scale);
+  surveyLetter(s.letters[0],cx+ax*centerOff,cy+ay*centerOff,ls,rgb,base*.9,revealSpan(t,.25,.38));
   surveyLetter(s.letters[1],px+ax*off-s.ux*2*scale,py+ay*off-s.uy*2*scale,ls,rgb,base*.9,revealSpan(t,.3,.43));
   surveyLetter(s.letters[2],ex+s.dx*9*scale,ey+s.dy*9*scale,ls,rgb,base*.9,revealSpan(t,.6,.74));
 }
@@ -496,8 +499,11 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   // the centre, across the radius on the side away from the incoming line; the second at the contact,
   // across the incoming line on the outward side; the third at the far end of the incoming line.
   {
-    const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),[bx,by]=surveyAside(s.dx,s.dy,-s.ux,-s.uy),off=8*scale,ls=Math.max(7.5,8.5*scale);
-    surveyLetter(s.letters[0],cx+ax*off,cy+ay*off,ls,rgb,base*.9,revealSpan(t,.26,.4));
+    // The first letter sits outside the specimen rather than on it: its offset from centre is derived
+    // from the node's own drawn radius, not the flat clearance the other two (already clear of the disc)
+    // still use.
+    const [ax,ay]=surveyAside(s.ux,s.uy,s.dx,s.dy),[bx,by]=surveyAside(s.dx,s.dy,-s.ux,-s.uy),off=8*scale,centerOff=Math.max(off,(s.nr||0)*scale+6*scale),ls=Math.max(7.5,8.5*scale);
+    surveyLetter(s.letters[0],cx+ax*centerOff,cy+ay*centerOff,ls,rgb,base*.9,revealSpan(t,.26,.4));
     surveyLetter(s.letters[1],px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
     surveyLetter(s.letters[2],px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
   }
