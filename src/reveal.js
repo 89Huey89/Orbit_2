@@ -601,19 +601,22 @@ function revealConnections(draw){
 // Once per run: the double rule draws itself round by dash offset, the graduated ticks follow the pen
 // around the perimeter, and the marginal ornaments come up last. A restart redraws it briskly.
 function penDashRect(x,y,w,h,color,weight,t){
-  if(t<=0||w<=0||h<=0)return;
+  if(t<=0||t>=1||w<=0||h<=0)return;
   const length=(w+h)*2;
   ctx.save();ctx.strokeStyle=color;ctx.lineWidth=weight;
   ctx.setLineDash([length,length]);ctx.lineDashOffset=length*(1-t);
   ctx.strokeRect(x,y,w,h);ctx.restore();
 }
-function framePerimeterClip(t,depth){
+function framePerimeterPath(t,depth){
   const perimeter=(W+H)*2,run=perimeter*t;
-  ctx.beginPath();
   if(run>0)ctx.rect(0,0,Math.min(W,run),depth);
   if(run>W)ctx.rect(W-depth,0,depth,Math.min(H,run-W));
   if(run>W+H){const across=Math.min(W,run-W-H);ctx.rect(W-across,H-depth,across,depth);}
   if(run>W*2+H){const down=Math.min(H,run-W*2-H);ctx.rect(0,H-down,depth,down);}
+}
+function framePerimeterClip(t,depth){
+  ctx.beginPath();
+  framePerimeterPath(t,depth);
   ctx.clip();
 }
 function penPerimeterPoint(t){
@@ -636,7 +639,15 @@ function revealFrame(layer){
   const sweep=revealSpan(t,.25,.85);
   if(sweep>0){ctx.save();framePerimeterClip(sweep,band*1.5);ctx.drawImage(layer,0,0,W,H);ctx.restore();}
   const settle=revealSpan(t,.72,1);
-  if(settle>0){ctx.save();ctx.globalAlpha=settle;blitFrameLayer(layer);ctx.restore();}
+  if(settle>0){
+    ctx.save();ctx.globalAlpha=settle;
+    // The sweep above has already cut the perimeter band opaque; settle only ever needs to lay the
+    // rest of the layer (the corner ornaments reaching past that band), so its blit is clipped to the
+    // band's own complement rather than composited over ground the sweep already finished.
+    if(sweep>0){ctx.beginPath();ctx.rect(0,0,W,H);framePerimeterPath(sweep,band*1.5);ctx.clip('evenodd');}
+    blitFrameLayer(layer);
+    ctx.restore();
+  }
   // The frame is the plate's own least urgent mark: it claims the nib only when nothing else on the
   // sheet wants it.
   if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8,undefined,NIB_TIER_FRAME);}
