@@ -228,9 +228,9 @@ function figBox(spine,p1){
 const FIGURE_STYLES={
   // The cut and the colourist are one cosmetic hand: the same selected manner changes how the
   // figure is engraved and how its wash is brushed over the finished line.
-  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1,wash:'mineral'},
-  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65,wash:'rubricated'},
-  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7,wash:'dry'}
+  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1,hatchWeight:.45,wash:'mineral'},
+  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65,hatchWeight:.45,wash:'rubricated'},
+  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7,hatchWeight:.45,wash:'dry'}
 };
 const HAND_COLOUR_STYLES={
   // A dilute mineral wash: broken coverage and soft pigment, with short bristle marks at each start.
@@ -270,12 +270,24 @@ function figStipple(g,spine,leftFn,rightFn,count,rng,size){
     g.fillRect(s.x+s.px*o,s.y+s.py*o,size,size);
   }
 }
-function figHatch(g,spine,leftFn,rightFn,count,rng){
-  const n=Math.round(count*figStyle.hatch);
+// Every hatch on the plate is laid in the sheet's own hand — down and to the right, one fixed slant
+// for the whole atlas, the same rule Saturn's handles and every planet's own terminator hatch already
+// keep — never turning to face whatever axis the mark it shades happens to sit on. A figure's own
+// spine used to set that axis instead, which is why the moth's wings and the needle's shaft shaded in
+// two different directions on the same sheet. Strokes now walk the spine at a fixed pitch rather than
+// landing at n random points, each sized to the ribbon's own local width rather than a flat 2-5 units,
+// and set darker the further outward across the ribbon they fall — the same darkening-toward-the-limb
+// reading a planet's own terminator hatch gives a sphere.
+const FIG_HATCH_ANGLE=.95;
+function figHatch(g,spine,leftFn,rightFn,count,rng,rgb,alpha,width){
+  const n=Math.max(1,Math.round(count*figStyle.hatch)),step=1/n;
+  const ca=Math.cos(FIG_HATCH_ANGLE),sa=Math.sin(FIG_HATCH_ANGLE);
   for(let i=0;i<n;i++){
-    const t=rng(),s=spine.at(t),o=lerp(leftFn(t),rightFn(t),rng()),len=2+rng()*3;
-    const x=s.x+s.px*o,y=s.y+s.py*o,a=Math.atan2(s.ty,s.tx)+Math.PI/2+(rng()-.5)*.6;
-    g.beginPath();g.moveTo(x-Math.cos(a)*len,y-Math.sin(a)*len);g.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.stroke();
+    const t=clamp((i+.5)*step+(rng()-.5)*step*.7,0,1),s=spine.at(t);
+    const lo=Math.min(leftFn(t),rightFn(t)),hi=Math.max(leftFn(t),rightFn(t)),span=Math.max(.5,hi-lo);
+    const frac=rng(),o=lerp(lo,hi,frac),len=Math.max(1.2,span*.26)*(.75+rng()*.5);
+    const x=s.x+s.px*o,y=s.y+s.py*o,tone=alpha*(.4+frac*.7);
+    burinSegment(g,x-ca*len,y-sa*len,x+ca*len,y+sa*len,rgb,tone,width,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.35,hair:false});
   }
 }
 // A colourist's pass is collected while the black plate is being cut, then painted after the figure
@@ -389,7 +401,7 @@ function figNeedle(g,p0,p1,p2,side,rng,state){
   g.restore();
   const thread=[];for(let i=0;i<=76;i++){const t=.08+i/76*.86,s=spine.at(t),o=box.lat(t,Math.sin(t*9+side)*.95);thread.push({x:s.x+s.px*o,y:s.y+s.py*o});}
   figInk(g,thread,rng,.7,.1,1,state.contourRgb,state.contourAlpha);
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-halfW(t)-2,t=>halfW(t)+2,26,rng,.9);
 }
@@ -403,7 +415,7 @@ function figSail(g,p0,p1,p2,side,rng,state){
   const left=figRibbon(spine,inner,steps),right=figRibbon(spine,outer,steps);
   figInk(g,left,rng,.6,.06,1.5,state.contourRgb,state.contourAlpha);figInk(g,right,rng,1,.05,1.2,state.contourRgb,state.contourAlpha);
   figInk(g,[left[2],right[2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,inner,outer,30,rng,.9);
 }
@@ -434,9 +446,8 @@ function figLyre(g,p0,p1,p2,side,rng,state){
     burinSegment(g,x0,y0,x1,y1,state.contourRgb,state.contourAlpha,.7,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.2,hair:false});
   }
   if(state.hatchFrac>0){
-    g.strokeStyle=state.hatch;
-    figHatch(g,spine,bowOut,bowInner,Math.round(20*state.hatchFrac),rng);
-    figHatch(g,spine,armInner,armOut,Math.round(20*state.hatchFrac),rng);
+    figHatch(g,spine,bowOut,bowInner,Math.round(20*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
+    figHatch(g,spine,armInner,armOut,Math.round(20*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
   }
   if(state.wash){g.fillStyle=state.wash;figWash(g,leftOut,leftIn,state);figWash(g,rightIn,rightOut,state);}
   g.fillStyle=state.contour;figStipple(g,spine,bowOut,armOut,22,rng,.7);
@@ -455,7 +466,7 @@ function figCrown(g,p0,p1,p2,side,rng,state){
     burinArc(g,p.x,p.y,p.r+14,0,TAU,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:24,skips:3,wobble:.2});
     burinArc(g,p.x,p.y,p.r+21,-.65,.65,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:1,wobble:.2});
   }
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,band,hoop,Math.round(40*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,band,hoop,Math.round(40*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>band(t)-2,t=>hoop(t)+2,24,rng,.9);
 }
@@ -505,8 +516,8 @@ function figCompass(g,p0,p1,p2,side,rng,state){
   }
   const inA=t=>legA(clamp(t,0,hinge))-wA(clamp(t,0,hinge)),outA=t=>legA(clamp(t,0,hinge))+wA(clamp(t,0,hinge));
   const inB=t=>legB(clamp(t,0,hinge))-wB(clamp(t,0,hinge)),outB=t=>legB(clamp(t,0,hinge))+wB(clamp(t,0,hinge));
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inA,outA,Math.round(22*state.hatchFrac),rng);
-    figHatch(g,spine,inB,outB,Math.round(26*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,inA,outA,Math.round(22*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
+    figHatch(g,spine,inB,outB,Math.round(26*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,aIn,aOut,state);figWash(g,bIn,bOut,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>inA(t)-4,t=>outB(t)+4,26,rng,.85);
 }
@@ -540,7 +551,7 @@ function figHourglass(g,p0,p1,p2,side,rng,state){
     const t=lerp(t0+.008,t1-.02,rng()*rng()),s=spine.at(t),o=lerp(glassIn(t),glassOut(t),rng())*.82;
     g.fillRect(s.x+s.px*o,s.y+s.py*o,.9,.9);
   }
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,glassIn,glassOut,Math.round(52*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,glassIn,glassOut,Math.round(52*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>glassIn(t)-3,t=>glassOut(t)+3,22,rng,.85);
 }
@@ -571,7 +582,7 @@ function figSerpent(g,p0,p1,p2,side,rng,state){
   burinSegment(g,20,-1.4,30,-4.6,state.contourRgb,state.contourAlpha,.8,headSeed^0x53,{segments:2,wobble:.25,hair:false});
   burinSegment(g,24.6,-2.9,30,.6,state.contourRgb,state.contourAlpha,.8,headSeed^0x77,{segments:2,wobble:.25,hair:false});
   g.restore();
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>mid(t)-thick(t),t=>mid(t)+thick(t),Math.round(60*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,t=>mid(t)-thick(t),t=>mid(t)+thick(t),Math.round(60*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>mid(t)-thick(t)-2,t=>mid(t)+thick(t)+2,30,rng,.8);
 }
@@ -614,7 +625,7 @@ function figArgo(g,p0,p1,p2,side,rng,state){
   for(const o of [-.3,.64])figInk(g,[figAt(spine,t2-.012,0),figAt(spine,t1+.008,o*box.out)],rng,.6,.18,.6,state.contourRgb,state.contourAlpha);
   const flag=[];for(let i=0;i<=10;i++){const u=i/10;flag.push(figAt(spine,lerp(t2+.025,t2+.014,u),u*box.out*.64+Math.sin(u*6)*4));}
   figInk(g,flag,rng,.5,.04,.85,state.contourRgb,state.contourAlpha);
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,deck,hull,Math.round(50*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,deck,hull,Math.round(50*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,sheer,keel,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>hull(t)-2,t=>deck(t)+2,26,rng,.85);
 }
@@ -651,13 +662,12 @@ function figAstrolabe(g,p0,p1,p2,side,rng,state){
   figInk(g,figArcPts(ring.x,ring.y,11,0,TAU,20),rng,.6,.06,1.3,state.contourRgb,state.contourAlpha);
   figInk(g,figArcPts(ring.x,ring.y,6.5,0,TAU,14),rng,.5,.1,.7,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){
-    g.strokeStyle=state.hatch;
     const n=Math.round(40*state.hatchFrac);
     for(let i=0;i<n;i++){
       const a=rng()*TAU,d=lerp(limbInner,limbOuter,rng()),x=mother.x+Math.cos(a)*d,y=mother.y+Math.sin(a)*d,len=1.6+rng()*2.4;
-      g.beginPath();g.moveTo(x-Math.cos(a)*len,y-Math.sin(a)*len);g.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);g.stroke();
+      burinSegment(g,x-Math.cos(a)*len,y-Math.sin(a)*len,x+Math.cos(a)*len,y+Math.sin(a)*len,state.hatchRgb,state.hatchAlpha*(.55+rng()*.55),figStyle.hatchWeight,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.3,hair:false});
     }
-    figHatch(g,spine,t=>-halfRule(t),halfRule,Math.round(14*state.hatchFrac),rng);
+    figHatch(g,spine,t=>-halfRule(t),halfRule,Math.round(14*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
   }
   if(state.wash){
     g.fillStyle=state.wash;figWash(g,left,right,state);
@@ -694,7 +704,7 @@ function figQuill(g,p0,p1,p2,side,rng,state){
   figInk(g,[figAt(spine,nib+.06,3.4),figAt(spine,nib-.012,.7)],rng,.4,0,1.1,state.contourRgb,state.contourAlpha);
   figInk(g,[figAt(spine,nib+.055,0),figAt(spine,nib-.01,0)],rng,.3,0,.6,state.contourRgb,state.contourAlpha);
   figInk(g,[figAt(spine,nib+.062,-3.6),figAt(spine,nib+.062,3.6)],rng,.3,0,.7,state.contourRgb,state.contourAlpha);
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,vane,inner,Math.round(54*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,vane,inner,Math.round(54*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>vane(t)-2,t=>inner(t)+2,26,rng,.8);
 }
@@ -726,7 +736,7 @@ function figLantern(g,p0,p1,p2,side,rng,state){
     const a=i/30*TAU,long=i%3===0,r0=p1.r+9,r1=r0+(long?26:13)+rng()*6;
     figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45,state.contourRgb,state.contourAlpha);
   }
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,glassIn,glassOut,Math.round(56*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,glassIn,glassOut,Math.round(56*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>glassIn(t)-3,t=>glassOut(t)+3,26,rng,.85);
 }
@@ -778,9 +788,8 @@ function figMoth(g,p0,p1,p2,side,rng,state){
     }
   }
   if(state.hatchFrac>0){
-    g.strokeStyle=state.hatch;
-    figHatch(g,spine,spanIn,t=>-body(t),Math.round(34*state.hatchFrac),rng);
-    figHatch(g,spine,body,spanOut,Math.round(34*state.hatchFrac),rng);
+    figHatch(g,spine,spanIn,t=>-body(t),Math.round(34*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
+    figHatch(g,spine,body,spanOut,Math.round(34*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);
   }
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,bodyL,state);figWash(g,bodyR,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>spanIn(t)-2,t=>spanOut(t)+2,34,rng,.8);
@@ -800,7 +809,7 @@ function figAsterism(g,p0,p1,p2,side,rng,state){
   g.lineWidth=1.1;g.beginPath();g.arc(0,0,6.5,0,TAU);g.stroke();
   g.beginPath();g.moveTo(-10,0);g.lineTo(10,0);g.moveTo(0,-10);g.lineTo(0,10);g.stroke();g.restore();
   for(const q of [p0,p1,p2]){g.lineWidth=.9;g.beginPath();g.arc(q.x,q.y,q.r+13,-.5,.5);g.stroke();g.beginPath();g.arc(q.x,q.y,q.r+13,Math.PI-.5,Math.PI+.5);g.stroke();}
-  if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-swell(t),swell,Math.round(34*state.hatchFrac),rng);}
+  if(state.hatchFrac>0){figHatch(g,spine,t=>-swell(t),swell,Math.round(34*state.hatchFrac),rng,state.hatchRgb,state.hatchAlpha,figStyle.hatchWeight);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-swell(t)-3,t=>swell(t)+3,22,rng,.85);
 }
@@ -826,8 +835,8 @@ function buildFigureLayer(chart,frame,count,curScale){
     handColour=renaissanceAtlas(),seen=chart.stars.filter(star=>star.visited&&star.impression),
     colourOffset=seen.length?seen.reduce((out,star)=>({x:out.x+star.impression.x/seen.length,y:out.y+star.impression.y/seen.length,rotation:out.rotation+star.impression.rotation/seen.length}),{x:0,y:0,rotation:0}):{x:0,y:0,rotation:0},
     colourRough=seen.length?seen.reduce((total,star)=>total+(star.impression.perfect?0:1-(star.impression.quality??1)),0)/seen.length:0;
-  const state={contour:`rgba(${pal.contour},${contourA})`,hatch:`rgba(${pal.hatch},${hatchA})`,style:figStyle,
-    contourRgb:pal.contour,contourAlpha:contourA,
+  const state={contour:`rgba(${pal.contour},${contourA})`,style:figStyle,
+    contourRgb:pal.contour,contourAlpha:contourA,hatchRgb:pal.hatch,hatchAlpha:hatchA,
     hatchFrac:expired?0:count/3,
     // Partial colour is earned by each visited star; completion permits the colourist to make one
     // final pass over all the figure's parts. The unprinted star signs and coordinate furniture
