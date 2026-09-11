@@ -376,8 +376,13 @@ function figNeedle(g,p0,p1,p2,side,rng,state){
   figInk(g,left,rng,.7,.08,1.3,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.7,.08,1.3,state.contourRgb,state.contourAlpha);
   // Set clear of the star punch (buildFigureLayer's own destination-out pass erases every figure mark
   // within p0.r+8), which used to take the eye out with it: pushed out to p0.r+18 on the spine's own
-  // outward side, with its long axis turned across the spine rather than along it.
-  const eyeDir=spine.at(0),eye=figAt(spine,0,p0.r+18),eyeSeed=Math.floor(rng()*4294967296)>>>0;
+  // outward side, with its long axis turned across the spine rather than along it. That reach is
+  // capped the same way figBox caps every other outward mark — by what inboard() leaves past p0's own
+  // position — since a fork whose bottom star is cut at the full inboard reach would otherwise push
+  // the eye past the sheet's own edge; the 54-unit lead-in to spine.at(0) already clears the punch on
+  // its own, so the cap can give ground there without the eye landing back inside it.
+  const eyeReach=Math.max(12,Math.min(p0.r+18,world.inboard(FIG_EDGE)-Math.abs(p0.x)));
+  const eyeDir=spine.at(0),eye=figAt(spine,0,eyeReach),eyeSeed=Math.floor(rng()*4294967296)>>>0;
   g.save();g.translate(eye.x,eye.y);g.rotate(Math.atan2(eyeDir.ty,eyeDir.tx)+Math.PI/2);
   burinArc(g,0,0,3.6,0,TAU,state.contourRgb,state.contourAlpha,1.3,eyeSeed,{flatten:7/3.6,segments:16,skips:2,wobble:.25});
   burinArc(g,0,0,1.4,0,TAU,state.contourRgb,state.contourAlpha,1,eyeSeed^0x91,{flatten:3.2/1.4,segments:12,skips:2,wobble:.25});
