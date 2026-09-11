@@ -1220,13 +1220,23 @@ function drawNode(n,aim){
   if(used)ctx.globalAlpha=lerp(.62,.75,struck);
   const paper=onPaper();
   const halo=nodeGlow(rgb,active,paper);
-  if(halo)ctx.drawImage(halo,-r*2.1,-r*2.1,r*4.2,r*4.2);
-  else{
-    const glow=ctx.createRadialGradient(0,0,r*.2,0,0,r*2.1);
-    if(paper){glow.addColorStop(0,`rgba(${ink.base.paperRgb},${active?.55:.2})`);glow.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);}
-    else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
-    ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
-  }
+  // A reserve of bare sheet only reads as a reserve once the line has started to cut round it — arriving
+  // whole before a single stroke is on the page is just light, not a reservation of it — so the glow's
+  // own alpha rides pen.ring on both plates, and on paper (night has no ground to reserve) the draw
+  // itself moves inside the ring's own wedge below, before the ring sprite, so it opens with the line
+  // instead of sitting under it complete from the first frame.
+  const drawHalo=()=>{
+    ctx.save();ctx.globalAlpha*=pen.ring;
+    if(halo)ctx.drawImage(halo,-r*2.1,-r*2.1,r*4.2,r*4.2);
+    else{
+      const glow=ctx.createRadialGradient(0,0,r*.2,0,0,r*2.1);
+      if(paper){glow.addColorStop(0,`rgba(${ink.base.paperRgb},${active?.55:.2})`);glow.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);}
+      else{glow.addColorStop(0,`rgba(${rgb},${active?.07:.026})`);glow.addColorStop(1,`rgba(${rgb},0)`);}
+      ctx.fillStyle=glow;ctx.fillRect(-r*2.1,-r*2.1,r*4.2,r*4.2);
+    }
+    ctx.restore();
+  };
+  if(!paper)drawHalo();
   if(renaissanceStar)revealRenaissanceStar(n,pen,rgb);
   else if(sling)revealNova(n,pen,rgb);
   else revealPlanet(glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice),n.r*scale,world.time,pen,n.seed,n.impression);
@@ -1265,6 +1275,7 @@ function drawNode(n,aim){
   }
   if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
   const reach=Math.max(r,n.cap*scale)*2+30,wedged=penWedgeBegin(pen,n,reach);
+  if(paper)drawHalo();
   {
     const ringAlpha=active?.59:target?.57:.25;
     if(pen.taken<1){
