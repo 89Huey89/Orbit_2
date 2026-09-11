@@ -7,8 +7,14 @@
 // its key (size, pixel ratio, plate) changes. The one moving part, the declination numbers on the side
 // scales, is cheap enough to redraw live each frame straight onto ctx after the cached layer is blitted.
 definePlate('frame',{
-  night:{markEdge:'rgba(155,174,171,.14)',mark:'rgba(198,187,155,.08)',tick:'rgba(198,187,155,.32)',tickMinor:'rgba(155,174,171,.16)',text:'rgba(198,187,155,.42)',orn:'rgba(198,187,155,.26)'},
-  paper:{markEdge:'rgba(96,74,52,.18)',mark:'rgba(58,42,28,.1)',tick:'rgba(58,42,28,.42)',tickMinor:'rgba(96,74,52,.24)',text:'rgba(58,42,28,.48)',orn:'rgba(58,42,28,.36)'}
+  night:{markEdge:'rgba(155,174,171,.14)',mark:'rgba(198,187,155,.08)',rule:'rgba(236,229,211,.46)',ruleFaint:'rgba(177,192,183,.26)',tick:'rgba(198,187,155,.32)',tickMinor:'rgba(155,174,171,.16)',text:'rgba(198,187,155,.42)',orn:'rgba(198,187,155,.26)'},
+  paper:{markEdge:'rgba(96,74,52,.18)',mark:'rgba(58,42,28,.1)',rule:'rgba(34,24,16,.62)',ruleFaint:'rgba(96,74,52,.34)',tick:'rgba(58,42,28,.42)',tickMinor:'rgba(96,74,52,.24)',text:'rgba(58,42,28,.48)',orn:'rgba(58,42,28,.36)'},
+  // Blue prepared paper is drawn white-heightened everywhere the chart's own hand appears — see
+  // 05-engraving.md:366, and definePlate('marks')/reveal.nib/bead, which stay on that pale end. But the
+  // plate's own furniture (the double rule, the graduation, the plate-mark, the running lettering) is
+  // owed the dark end azzurra is missing entirely without this block: a dark ink drawn onto the ground,
+  // the way every other plate's frame is either dark-on-light or light-on-dark rather than pale on pale.
+  azzurra:{markEdge:'rgba(44,42,50,.22)',mark:'rgba(30,28,36,.12)',rule:'rgba(44,42,50,.45)',ruleFaint:'rgba(44,42,50,.25)',tick:'rgba(44,42,50,.36)',tickMinor:'rgba(44,42,50,.2)',text:'rgba(38,36,44,.5)',orn:'rgba(44,42,50,.31)'}
 });
 let frameLayer=null,frameKey='',frameInset=Infinity;
 function frameWide(){return W>780;}
@@ -364,10 +370,13 @@ function buildFrameLayer(){
   }
   g.globalAlpha=1;
   // The double rule is cut with the same burin as the orbit rings: it swells, wobbles and lifts a little.
+  // Read from the frame's own registered rule/ruleFaint rather than ink.base.inkStrong/inkSoft directly,
+  // so a plate whose furniture departs from its drawing's own ink (azzurra's dark rule on a white-
+  // heightened chart) can say so in one place instead of the double rule silently following the chart.
   const outerR=band*.56,innerR=band*.92;
-  const ruleRgb=ink.base.inkStrong,faintRgb=ink.base.inkSoft;
-  burinRect(g,outerR+.5,outerR+.5,Math.max(1,W-outerR*2-1),Math.max(1,H-outerR*2-1),ruleRgb,onPaper()?.62:.46,wide?1.4:1,90211);
-  burinRect(g,innerR+.5,innerR+.5,Math.max(1,W-innerR*2-1),Math.max(1,H-innerR*2-1),faintRgb,onPaper()?.34:.26,wide?1:.7,44127);
+  const {rgb:ruleRgb,alpha:ruleAlpha}=rgbaSplit(colors.rule),{rgb:faintRgb,alpha:faintAlpha}=rgbaSplit(colors.ruleFaint);
+  burinRect(g,outerR+.5,outerR+.5,Math.max(1,W-outerR*2-1),Math.max(1,H-outerR*2-1),ruleRgb,ruleAlpha,wide?1.4:1,90211);
+  burinRect(g,innerR+.5,innerR+.5,Math.max(1,W-innerR*2-1),Math.max(1,H-innerR*2-1),faintRgb,faintAlpha,wide?1:.7,44127);
   const tickLen=Math.max(1,innerR-outerR);
   // Top and bottom read right ascension, not a pixel count: 24 hour ticks span the sheet at every
   // width, each cut into six ten-minute divisions, so the count is 24 wherever the plate is played and
