@@ -730,11 +730,14 @@ function figurePreview(weight,dash,hatch,stipple){
     FIGURE_STIPPLE.slice(0,stipple).map(([x,y])=>artDot(x,y,.9,.5)).join('')+
     FIGURE_STARS.map(([x,y])=>artFill(artStar(x,y,4,4.4,1.3),.95)).join('');
 }
-const FIGURE_ART={
-  hevelius:figurePreview(1.15,'4.5 2.2',4,5),
-  bayer:figurePreview(.75,'',3,3),
-  bode:figurePreview(1.9,'3 2.6',7,9)
-};
+// Drawn from FIGURE_STYLES itself (src/figures.js) rather than three hand-typed literal calls, so the
+// card can never drift from what the plate actually cuts: the dash reads the hand's own breakage, the
+// hatch and stipple counts its own density fields, scaled to the small range this preview was tuned to.
+const FIGURE_ART={};
+for(const figureId in FIGURE_STYLES){
+  const fs=FIGURE_STYLES[figureId],dash=fs.breaks>=.8?'4.5 2.2':fs.breaks>=.4?'3 2.6':'';
+  FIGURE_ART[figureId]=figurePreview(fs.weight*1.35,dash,Math.max(2,Math.round(fs.hatch*3.5)),Math.max(2,Math.round(fs.stipple*5)));
+}
 // A struck medal: a beaded rim, a plain field, and the feat's own device cut into it.
 function medalRoundel(device){
   let beads='';

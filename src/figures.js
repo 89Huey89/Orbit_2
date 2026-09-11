@@ -225,12 +225,16 @@ function figBox(spine,p1){
 // hatching, the stipple and the wash — and by the pen the layer is drawn with, whose line weight is
 // scaled as it is set. So all twelve engravings answer to the chosen hand without being rewritten:
 // Bayer's is finer, more geometric and less broken, Bode's heavier and far more shaded.
+// swell is how far the burin's own wobble is allowed to carry a line (figInk's `jag*swell`, in place
+// of the flat .6 every hand used to share); hairEvery is how often a stroke gets the fainter parallel
+// echo burinSegment can lay beside it (1 every stroke, 3 every third, 0 never); ink is the deliberate
+// alpha a hand's own contour carries, in place of the `weight>1` guess that used to stand in for it.
 const FIGURE_STYLES={
   // The cut and the colourist are one cosmetic hand: the same selected manner changes how the
   // figure is engraved and how its wash is brushed over the finished line.
-  hevelius:{weight:1,breaks:1,jag:1,hatch:1,stipple:1,hatchWeight:.45,wash:'mineral'},
-  bayer:{weight:.78,breaks:.4,jag:.3,hatch:.8,stipple:.65,hatchWeight:.45,wash:'rubricated'},
-  bode:{weight:1.4,breaks:1.35,jag:1.3,hatch:2,stipple:1.7,hatchWeight:.45,wash:'dry'}
+  hevelius:{weight:1.05,breaks:1,jag:1,hatch:1,stipple:1,hatchWeight:.45,swell:.5,hairEvery:3,ink:1,wash:'mineral'},
+  bayer:{weight:.8,breaks:.3,jag:.3,hatch:.8,stipple:.65,hatchWeight:.45,swell:.2,hairEvery:1,ink:.95,wash:'rubricated'},
+  bode:{weight:1.3,breaks:.5,jag:1.3,hatch:2.4,stipple:1.7,hatchWeight:.45,swell:.35,hairEvery:0,ink:1.1,wash:'dry'}
 };
 const HAND_COLOUR_STYLES={
   // A dilute mineral wash: broken coverage and soft pigment, with short bristle marks at each start.
@@ -260,7 +264,7 @@ function figInk(g,pts,rng,jag,gap,width,rgb,alpha){
     const a=pts[i],b=pts[i+1],j=jag*figStyle.jag;
     const ax=a.x+(rng()-.5)*j,ay=a.y+(rng()-.5)*j,bx=b.x+(rng()-.5)*j,by=b.y+(rng()-.5)*j;
     const seed=Math.floor(rng()*4294967296)>>>0;
-    burinSegment(g,ax,ay,bx,by,rgb,alpha,width,seed,{segments:2,wobble:jag*.6,hair:i%3===0});
+    burinSegment(g,ax,ay,bx,by,rgb,alpha,width,seed,{segments:2,wobble:jag*figStyle.swell,hair:figStyle.hairEvery>0&&i%figStyle.hairEvery===0});
   }
 }
 function figStipple(g,spine,leftFn,rightFn,count,rng,size){
@@ -831,7 +835,7 @@ function buildFigureLayer(chart,frame,count,curScale){
   // The contour earns its strength the way an engraver's own plate does: a first light cut, then the
   // same line gone over. An untouched chart is a faint construction line; a completed one has had its
   // outer edge struck a second time (see the completion re-strike in figWash, below).
-  const contourA=((onPaper()?.34:.26)+(onPaper()?.20:.16)*(count/3))*fade*(figStyle.weight>1?1.1:.95),hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07,
+  const contourA=((onPaper()?.34:.26)+(onPaper()?.20:.16)*(count/3))*fade*figStyle.ink,hatchA=(onPaper()?.17:.12)*fade,washA=onPaper()?.1:.07,
     handColour=renaissanceAtlas(),seen=chart.stars.filter(star=>star.visited&&star.impression),
     colourOffset=seen.length?seen.reduce((out,star)=>({x:out.x+star.impression.x/seen.length,y:out.y+star.impression.y/seen.length,rotation:out.rotation+star.impression.rotation/seen.length}),{x:0,y:0,rotation:0}):{x:0,y:0,rotation:0},
     colourRough=seen.length?seen.reduce((total,star)=>total+(star.impression.perfect?0:1-(star.impression.quality??1)),0)/seen.length:0;
