@@ -1022,9 +1022,13 @@ const OBSERVER_MARKS={
 function darknessPlate(relief){
   // The plate goes into the key beside relief, built once here, so two plates on screen at once (a
   // cross-dissolve) never share a slot — and the lookup below can't drift from the store at the end.
-  const key=plateName+':'+(relief?'r':'n');
+  // DPR is in the key too: this is the one major art layer that used to be baked at 1x and stretched
+  // to fill the tile drawImage() blits it into, the only mark in the atlas soft enough at the device
+  // pixel ratios a phone actually runs at to look stretched rather than engraved.
+  const key=plateName+':'+(relief?'r':'n')+':'+DPR.toFixed(2);
   if(darknessPlates.has(key))return darknessPlates.get(key);
-  const c=makeCanvas(640,180),g=c.getContext('2d'),rng=seeded(620173),w=c.width,h=c.height;
+  const w=640,h=180,c=makeCanvas(Math.round(w*DPR),Math.round(h*DPR)),g=c.getContext('2d'),rng=seeded(620173);
+  g.scale(DPR,DPR);
   const pigment=relief?ink.dark.pigmentRelief:ink.dark.pigment;
   // Seamless pools of dilute ink, growing opaque below the leading edge — clipped to the same wavy
   // front the void layers below draw, not a flat rect: a dead-straight gradient under a wavy coastline
