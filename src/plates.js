@@ -42,7 +42,10 @@ function footerBand(){return Math.min(H*.42,(H<=530&&W>H?58:70)+safeAreaBottom()
 // The play channel: the width down the middle of the sheet the chart itself is drawn in. The scenery is
 // held back inside it and left fuller in the margins either side, so the moving parts read first.
 function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
-let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,lastScore=-1;
+// darkFlash is screenFlash's one-frame cousin: the dark takes the traveller by drowning, not by the
+// force every hazard death answers with a fading flash for, so it gets a single frame of the flood's
+// own tone (see the death handler in ui.js) rather than a wash that lingers and decays.
+let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,darkFlash=0,lastScore=-1;
 let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);

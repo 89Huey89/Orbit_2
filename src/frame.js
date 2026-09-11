@@ -1098,6 +1098,10 @@ function render(dt){
   drawPlateFrame();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(world.state==='paused')drawPauseMagnitudeKey();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
+  // The dark's own flash is one frame of the flood's own ink rather than screenFlash's fading warm
+  // wash: it is drawn once, at whatever alpha that single frame calls for, then cleared unconditionally
+  // so it can never linger into a second frame or survive a pause.
+  if(darkFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.pigment},${darkFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}darkFlash=0;}
   drawChapterReveal(dt);
   drawLaidPaper();
   updateUI(dt);

@@ -1440,7 +1440,7 @@ function manicule(x,y,dir,size,rgb,alpha){
 // fixes how far it has spread, how far it has dried from blotWet toward blotDry, and every alpha on it
 // — `spray` flings the flicks and droplets (the chart biases them the way the flight was headed), and
 // `flung` is what reduced motion drops: without it the splat is only its pool, at full size at once.
-function inkSplat(g,pen,t,seed,size,peak,spray,flung){
+function inkSplat(g,pen,t,seed,size,peak,spray,flung,crown){
   const rng=seeded(seed),grow=flung?clamp(t*7,.3,1):1;
   const dry=clamp((t-.12)/.88,0,1),alpha=peak*clamp(1-t*t,0,1);
   const rgb=mixRgb(pen.blotWet,pen.blotDry,dry);
@@ -1459,10 +1459,20 @@ function inkSplat(g,pen,t,seed,size,peak,spray,flung){
   landContour(g,0,0,pool,pool*.86,seeded(seed));
   g.fillStyle=`rgba(${rgb},${alpha*.85})`;g.fill();
   g.strokeStyle=`rgba(${rgb},${alpha*.55})`;g.lineWidth=.5;g.stroke();
+  // The dark's own splat asks for a crown: a handful of short bleed threads climbing away from the
+  // spray direction, in the same fanned-quadratic hand as the flood's own bleed loop in
+  // darknessPlate() — the point of loss reads as ink the flood is still climbing, not a spent blot.
+  if(crown)for(let i=0;i<6;i++){
+    const a=spray+(rng()-.5)*1.8,reach=(pool*.7+rng()*pool*.9)*grow,bend=(rng()-.5)*pool*.5;
+    const x0=Math.cos(a)*pool*.3,y0=Math.sin(a)*pool*.3,x1=Math.cos(a)*(pool*.3+reach),y1=Math.sin(a)*(pool*.3+reach);
+    g.strokeStyle=`rgba(${rgb},${alpha*(.28+rng()*.24)})`;g.lineWidth=.5+rng()*.5;
+    g.beginPath();g.moveTo(x0,y0);g.quadraticCurveTo(x0+bend,(y0+y1)/2,x1,y1);g.stroke();
+  }
 }
 function drawInkSplat(r,t){
   ctx.save();ctx.translate(sx(r.x),sy(r.y));ctx.scale(scale,scale);
-  inkSplat(ctx,trailInk(),t,r.seed,r.size,r.alpha,r.dir>=0?0:Math.PI,!reducedMotion);
+  const spray=r.spray!==undefined?r.spray:(r.dir>=0?0:Math.PI);
+  inkSplat(ctx,trailInk(),t,r.seed,r.size,r.alpha,spray,!reducedMotion,r.crown);
   ctx.restore();
 }
 function drawEffects(dt){

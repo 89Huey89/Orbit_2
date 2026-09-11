@@ -150,11 +150,18 @@ function event(type,e){
       // point landed further out than the sheet ever drew.
       const dir=e.x>=0?1:-1,edgeX=dir*Math.min(Math.abs(e.x),Math.max(0,world.width/2-8));
       rings.push({kind:'splat',x:edgeX,y:e.y,dir,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
+      screenFlash=1;
+    }else if(e.reason==='THE DARK CAUGHT UP'){
+      // The dark takes the traveller by drowning, not by force, so the sheet answers in its own ink
+      // rather than the burst a hazard earns: a blot spreading up from the point of loss, with a
+      // short crown of the flood's own bleed threads climbing over the spot.
+      rings.push({kind:'splat',x:e.x,y:e.y,spray:-Math.PI/2,crown:true,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
+      darkFlash=1;
     }else{
       burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
       rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});
+      screenFlash=1;
     }
-    screenFlash=1;
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
   }else if(type==='difficulty'){
@@ -163,7 +170,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;accumulator=0;
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
