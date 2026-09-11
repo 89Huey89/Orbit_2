@@ -47,8 +47,17 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     for(let i=0;i<25;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.94,x=Math.cos(a)*d,y=Math.sin(a)*d;
       const r=core*(i<3?.15+rng()*.055:.035+rng()*.07),flatten=.72+rng()*.24;
-      front.fillStyle=paper?'rgba(58,42,28,.08)':'rgba(60,52,39,.14)';front.beginPath();front.ellipse(x,y,r,r*flatten,0,0,TAU);front.fill();
+      // A crater's true circular rim foreshortens toward the limb, the way any circle does on a turning
+      // sphere: compressed along the radius from disc centre and rotated to face it, with the existing
+      // random flatten kept as a small extra irregularity on top of that geometric term rather than in
+      // place of it. The Galilean shadow this crater throws is clipped to that same foreshortened
+      // silhouette rather than rotated with it, so the sun stays on the left for every crater on the disc.
+      const dn=Math.min(1,Math.hypot(x,y)/core),fs=Math.sqrt(Math.max(0,1-dn*dn)),rot=Math.atan2(y,x);
+      front.save();
+      front.beginPath();front.ellipse(x,y,r*fs*flatten,r,rot,0,TAU);
+      front.fillStyle=paper?'rgba(58,42,28,.08)':'rgba(60,52,39,.14)';front.fill();
       front.strokeStyle=wall;front.lineWidth=.55;front.stroke();
+      front.clip();
       front.fillStyle=shadow;front.beginPath();
       front.ellipse(x,y,r*.94,r*flatten*.94,0,Math.PI*.5,Math.PI*1.5);
       front.ellipse(x+r*.5,y,r*.86,r*flatten*.86,0,Math.PI*1.5,Math.PI*.5,true);
@@ -58,6 +67,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
         for(let j=0;j<4;j++){const yy=y-r*flatten*.6+j*r*flatten*.4;front.beginPath();front.moveTo(x-r*.86,yy);front.lineTo(x-r*.38,yy+r*.3);front.stroke();}
       }
       front.strokeStyle=lit;front.lineWidth=.7;front.beginPath();front.ellipse(x+.15,y,r*.9,r*flatten*.9,0,-Math.PI*.42,Math.PI*.42);front.stroke();
+      front.restore();
     }
   }else if(family==='ringed'||family==='storm'){
     const phase=rng()*TAU,storm=family==='storm';
@@ -257,10 +267,12 @@ function paintEngraving(g,core,palette,rng,family='ocean'){
     for(let i=0;i<9;i++){
       const t=rng(),y=-core*.85+t*core*1.7,x=termX(t)+core*.06+rng()*core*.5,r=core*(.035+rng()*.06);
       if(Math.hypot(x,y)>core*.95)continue;
+      // Foreshortened toward the limb, exactly as the lit-side rims are.
+      const dn=Math.min(1,Math.hypot(x,y)/core),fs=Math.sqrt(Math.max(0,1-dn*dn)),rot=Math.atan2(y,x);
       g.strokeStyle=paper?'rgba(239,226,192,.55)':'rgba(230,222,196,.5)';g.lineWidth=.55;
-      g.beginPath();g.arc(x,y,r,-Math.PI*.45,Math.PI*.45);g.stroke();
+      g.beginPath();g.ellipse(x,y,r*fs,r,rot,-Math.PI*.45,Math.PI*.45);g.stroke();
       g.strokeStyle=paper?'rgba(26,18,11,.35)':'rgba(30,28,24,.3)';g.lineWidth=.45;
-      g.beginPath();g.arc(x,y,r*.9,Math.PI*.55,Math.PI*1.45);g.stroke();
+      g.beginPath();g.ellipse(x,y,r*fs,r,rot,Math.PI*.55,Math.PI*1.45);g.stroke();
     }
   }
   const hatchInk=paper?'26,18,11':'38,34,26';
@@ -420,9 +432,11 @@ function modernAlbedo(g,core,family,palette,rng){
     for(let i=0;i<46;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.97,x=Math.cos(a)*d,y=Math.sin(a)*d;
       const r=core*(i<4?.11+rng()*.08:.02+rng()*.06);
-      g.fillStyle=`rgba(48,46,42,${.1+rng()*.16})`;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
-      g.strokeStyle=`rgba(224,220,208,${.14+rng()*.2})`;g.lineWidth=.5;g.beginPath();g.arc(x,y,r*.94,0,TAU);g.stroke();
-      if(i<4){g.fillStyle='rgba(230,226,214,.1)';g.beginPath();g.arc(x,y,r*2.4,0,TAU);g.fill();}
+      // Foreshortened toward the limb, exactly as the engraved plate's own craters are.
+      const dn=Math.min(1,d/core),fs=Math.sqrt(Math.max(0,1-dn*dn)),rot=Math.atan2(y,x);
+      g.fillStyle=`rgba(48,46,42,${.1+rng()*.16})`;g.beginPath();g.ellipse(x,y,r*fs,r,rot,0,TAU);g.fill();
+      g.strokeStyle=`rgba(224,220,208,${.14+rng()*.2})`;g.lineWidth=.5;g.beginPath();g.ellipse(x,y,r*.94*fs,r*.94,rot,0,TAU);g.stroke();
+      if(i<4){g.fillStyle='rgba(230,226,214,.1)';g.beginPath();g.ellipse(x,y,r*2.4*fs,r*2.4,rot,0,TAU);g.fill();}
     }
     modernNoise(g,core,rng,220,'40,38,34',.14);
   }else if(family==='ringed'||family==='storm'){
