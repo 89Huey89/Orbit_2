@@ -222,16 +222,18 @@ function figPen(g,style){
     set(target,key,value){target[key]=key==='lineWidth'?value*style.weight:value;return true;}
   });
 }
-// A hand-inked contour: short broken segments with a little jitter, never a mechanical curve.
-function figInk(g,pts,rng,jag,gap,width){
-  g.lineWidth=width;g.beginPath();
+// A hand-inked contour: short broken segments, each struck with the same burin every other mark on
+// the plate is cut with — swelling and tapering rather than holding one flat vector width — instead
+// of the constant-width jittered polyline this used to be. rgb/alpha are taken explicitly rather
+// than inherited off ctx.strokeStyle, so a caller never has to set the context up beforehand.
+function figInk(g,pts,rng,jag,gap,width,rgb,alpha){
   for(let i=0;i<pts.length-1;i++){
     if(rng()<gap*figStyle.breaks)continue;
-    const a=pts[i],b=pts[i+1];
-    const j=jag*figStyle.jag;
-    g.moveTo(a.x+(rng()-.5)*j,a.y+(rng()-.5)*j);g.lineTo(b.x+(rng()-.5)*j,b.y+(rng()-.5)*j);
+    const a=pts[i],b=pts[i+1],j=jag*figStyle.jag;
+    const ax=a.x+(rng()-.5)*j,ay=a.y+(rng()-.5)*j,bx=b.x+(rng()-.5)*j,by=b.y+(rng()-.5)*j;
+    const seed=Math.floor(rng()*4294967296)>>>0;
+    burinSegment(g,ax,ay,bx,by,rgb,alpha,width,seed,{segments:2,wobble:jag*.6,hair:i%3===0});
   }
-  g.stroke();
 }
 function figStipple(g,spine,leftFn,rightFn,count,rng,size){
   const n=Math.round(count*figStyle.stipple);
@@ -278,6 +280,25 @@ function figRestrike(g,pts,rgb,alpha,seed){
     burinSegment(g,a.x,a.y,b.x,b.y,rgb,alpha,1,(seed+i*7919)>>>0,{segments:2,hair:false,wobble:.3});
   }
 }
+// A smooth vector curve, cut by the same hand as every straight and arced mark on the figure: `pts`
+// is a chain of cubic Bezier segments in bezierCurveTo's own layout ([start, c1,c2,end, c1,c2,end,
+// ...]), sampled and struck span by span with burinSegment rather than drawn as a bare path.
+function figCurve(g,pts,rgb,alpha,width,seed,steps=14){
+  const sampled=[pts[0]];
+  for(let i=0;i+3<pts.length;i+=3){
+    const [p0x,p0y]=pts[i],[c1x,c1y]=pts[i+1],[c2x,c2y]=pts[i+2],[p1x,p1y]=pts[i+3];
+    for(let s=1;s<=steps;s++){
+      const t=s/steps,mt=1-t;
+      const x=mt*mt*mt*p0x+3*mt*mt*t*c1x+3*mt*t*t*c2x+t*t*t*p1x;
+      const y=mt*mt*mt*p0y+3*mt*mt*t*c1y+3*mt*t*t*c2y+t*t*t*p1y;
+      sampled.push([x,y]);
+    }
+  }
+  for(let i=0;i<sampled.length-1;i++){
+    const [ax,ay]=sampled[i],[bx,by]=sampled[i+1];
+    burinSegment(g,ax,ay,bx,by,rgb,alpha,width,(seed+i*7919)>>>0,{segments:1,wobble:.2,hair:false});
+  }
+}
 function colourPoint(p,c,dx,dy,rotation){
   const x=p.x-c.x,y=p.y-c.y,cos=Math.cos(rotation),sin=Math.sin(rotation);
   return {x:c.x+dx+x*cos-y*sin,y:c.y+dy+x*sin+y*cos};
@@ -321,16 +342,17 @@ function figNeedle(g,p0,p1,p2,side,rng,state){
   const spine=figSpine(p0,p1,p2,side,54),steps=48;
   const halfW=t=>t<.05?4.2:t>.9?Math.max(.4,5.6*(1-(t-.9)/.1)):5.6;
   const left=figRibbon(spine,t=>-halfW(t),steps),right=figRibbon(spine,t=>halfW(t),steps);
-  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.08,1.3);figInk(g,right,rng,.7,.08,1.3);
+  figInk(g,left,rng,.7,.08,1.3,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.7,.08,1.3,state.contourRgb,state.contourAlpha);
   // Set clear of the star punch (buildFigureLayer's own destination-out pass erases every figure mark
   // within p0.r+8), which used to take the eye out with it: pushed out to p0.r+18 on the spine's own
   // outward side, with its long axis turned across the spine rather than along it.
-  const eyeDir=spine.at(0),eye=figAt(spine,0,p0.r+18);
+  const eyeDir=spine.at(0),eye=figAt(spine,0,p0.r+18),eyeSeed=Math.floor(rng()*4294967296)>>>0;
   g.save();g.translate(eye.x,eye.y);g.rotate(Math.atan2(eyeDir.ty,eyeDir.tx)+Math.PI/2);
-  g.lineWidth=1.3;g.beginPath();g.ellipse(0,0,3.6,7,0,0,TAU);g.stroke();
-  g.beginPath();g.ellipse(0,0,1.4,3.2,0,0,TAU);g.stroke();g.restore();
+  burinArc(g,0,0,3.6,0,TAU,state.contourRgb,state.contourAlpha,1.3,eyeSeed,{flatten:7/3.6,segments:16,skips:2,wobble:.25});
+  burinArc(g,0,0,1.4,0,TAU,state.contourRgb,state.contourAlpha,1,eyeSeed^0x91,{flatten:3.2/1.4,segments:12,skips:2,wobble:.25});
+  g.restore();
   const thread=[];for(let i=0;i<=60;i++){const t=.08+i/60*.86,s=spine.at(t),amp=20*Math.sin(t*Math.PI),o=Math.sin(t*11+side)*amp;thread.push({x:s.x+s.px*o,y:s.y+s.py*o});}
-  g.lineWidth=1;figInk(g,thread,rng,.7,.1,1);
+  figInk(g,thread,rng,.7,.1,1,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-halfW(t),t=>halfW(t),Math.round(46*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>-halfW(t)-2,t=>halfW(t)+2,26,rng,.9);
@@ -341,9 +363,8 @@ function figSail(g,p0,p1,p2,side,rng,state){
   const spine=figSpine(p0,p1,p2,side,46),steps=52;
   const inner=()=>-2.6,outer=t=>6+Math.pow(Math.sin(Math.PI*clamp(t,.04,.96)),1.3)*44;
   const left=figRibbon(spine,inner,steps),right=figRibbon(spine,outer,steps);
-  g.strokeStyle=state.contour;
-  figInk(g,left,rng,.6,.06,1.5);figInk(g,right,rng,1,.05,1.2);
-  figInk(g,[left[2],right[2]],rng,.5,0,1);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1);
+  figInk(g,left,rng,.6,.06,1.5,state.contourRgb,state.contourAlpha);figInk(g,right,rng,1,.05,1.2,state.contourRgb,state.contourAlpha);
+  figInk(g,[left[2],right[2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);figInk(g,[left[steps-2],right[steps-2]],rng,.5,0,1,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,outer,Math.round(60*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,inner,outer,30,rng,.9);
@@ -355,20 +376,20 @@ function figLyre(g,p0,p1,p2,side,rng,state){
   const armOut=t=>9+Math.sin(Math.PI*clamp(t,0,1))*34,armIn=t=>5+Math.sin(Math.PI*clamp(t,0,1))*17;
   const leftOut=figRibbon(spine,t=>-armOut(t),steps),leftIn=figRibbon(spine,t=>-armIn(t),steps);
   const rightIn=figRibbon(spine,t=>armIn(t),steps),rightOut=figRibbon(spine,t=>armOut(t),steps);
-  g.strokeStyle=state.contour;
-  figInk(g,leftOut,rng,.7,.07,1.3);figInk(g,leftIn,rng,.7,.09,1);
-  figInk(g,rightIn,rng,.7,.09,1);figInk(g,rightOut,rng,.7,.07,1.3);
+  figInk(g,leftOut,rng,.7,.07,1.3,state.contourRgb,state.contourAlpha);figInk(g,leftIn,rng,.7,.09,1,state.contourRgb,state.contourAlpha);
+  figInk(g,rightIn,rng,.7,.09,1,state.contourRgb,state.contourAlpha);figInk(g,rightOut,rng,.7,.07,1.3,state.contourRgb,state.contourAlpha);
   // Moved clear of the star punch (see figNeedle's eye, above) rather than shrunk: set in on the
   // spine's inward side at p0.r+16, and given the full mass of a real soundbox now that there is room.
   const boxDir=spine.at(0),box=figAt(spine,0,-(p0.r+16));
   g.save();g.translate(box.x,box.y);g.rotate(Math.atan2(boxDir.ty,boxDir.tx));
-  g.lineWidth=1.4;g.beginPath();g.ellipse(0,0,34,12,0,0,TAU);g.stroke();g.restore();
+  burinArc(g,0,0,34,0,TAU,state.contourRgb,state.contourAlpha,1.4,Math.floor(rng()*4294967296)>>>0,{flatten:12/34,segments:28,skips:3,wobble:.2});
+  g.restore();
   const i92=Math.round(steps*.92),yl=leftIn[i92],yr=rightIn[i92];
-  g.lineWidth=1.5;g.beginPath();g.moveTo(yl.x,yl.y);g.lineTo(yr.x,yr.y);g.stroke();
+  burinSegment(g,yl.x,yl.y,yr.x,yr.y,state.contourRgb,state.contourAlpha,1.5,Math.floor(rng()*4294967296)>>>0,{segments:3,wobble:.3,hair:true});
   for(let i=0;i<7;i++){
     const u=-1+i/3,t0=.14,t1=.9,a=spine.at(t0),b=spine.at(t1);
     const x0=a.x+a.px*u*armIn(t0)*.8,y0=a.y+a.py*u*armIn(t0)*.8,x1=b.x+b.px*u*armIn(t1)*.8,y1=b.y+b.py*u*armIn(t1)*.8;
-    g.lineWidth=.7;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+    burinSegment(g,x0,y0,x1,y1,state.contourRgb,state.contourAlpha,.7,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.2,hair:false});
   }
   if(state.hatchFrac>0){
     g.strokeStyle=state.hatch;
@@ -384,10 +405,10 @@ function figCrown(g,p0,p1,p2,side,rng,state){
   const spine=figSpine(p0,p1,p2,side,34),steps=48;
   const band=t=>5+(Math.abs(Math.sin(t*Math.PI*2.4))>.8?17:0);
   const left=figRibbon(spine,t=>-band(t)*.45,steps),right=figRibbon(spine,band,steps);
-  g.strokeStyle=state.contour;g.lineWidth=1.2;figInk(g,left,rng,.6,.06,1.2);figInk(g,right,rng,.6,.06,1.2);
+  figInk(g,left,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);
   for(const p of [p0,p1,p2]){
-    g.lineWidth=1.2;g.beginPath();g.arc(p.x,p.y,p.r+14,0,TAU);g.stroke();
-    g.beginPath();g.arc(p.x,p.y,p.r+21,-.65,.65);g.stroke();
+    burinArc(g,p.x,p.y,p.r+14,0,TAU,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:24,skips:3,wobble:.2});
+    burinArc(g,p.x,p.y,p.r+21,-.65,.65,state.contourRgb,state.contourAlpha,1.2,Math.floor(rng()*4294967296)>>>0,{segments:8,skips:1,wobble:.2});
   }
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-band(t)*.45,band,Math.round(40*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
@@ -410,30 +431,29 @@ function figCompass(g,p0,p1,p2,side,rng,state){
   const wA=t=>(3.1-open(t)*1.9)*cap(t),wB=t=>(3.3-open(t)*2.1)*cap(t);
   const aIn=figRibbonRange(spine,t=>legA(t)-wA(t),steps,0,hinge),aOut=figRibbonRange(spine,t=>legA(t)+wA(t),steps,0,hinge);
   const bIn=figRibbonRange(spine,t=>legB(t)-wB(t),steps,0,hinge),bOut=figRibbonRange(spine,t=>legB(t)+wB(t),steps,0,hinge);
-  g.strokeStyle=state.contour;
-  figInk(g,aIn,rng,.7,.07,1.35);figInk(g,aOut,rng,.7,.07,1.35);
-  figInk(g,bIn,rng,.7,.07,1.35);figInk(g,bOut,rng,.7,.07,1.35);
+  figInk(g,aIn,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);figInk(g,aOut,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);
+  figInk(g,bIn,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);figInk(g,bOut,rng,.7,.07,1.35,state.contourRgb,state.contourAlpha);
   // The hinge: a knuckle ring round the top star with two rivet ticks.
-  g.lineWidth=1.3;figInk(g,figArcPts(p2.x,p2.y,p2.r+12,0,TAU,30),rng,.5,.06,1.3);
-  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,-2.5,-.6,10),rng,.5,0,.9);
-  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,.5,2.4,10),rng,.5,0,.9);
+  figInk(g,figArcPts(p2.x,p2.y,p2.r+12,0,TAU,30),rng,.5,.06,1.3,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,-2.5,-.6,10),rng,.5,0,.9,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(p2.x,p2.y,p2.r+17,.5,2.4,10),rng,.5,0,.9,state.contourRgb,state.contourAlpha);
   // The socket that grips the lead, on the middle star.
-  figInk(g,figArcPts(p1.x,p1.y,p1.r+11,0,TAU,26),rng,.6,.1,1.1);
+  figInk(g,figArcPts(p1.x,p1.y,p1.r+11,0,TAU,26),rng,.6,.1,1.1,state.contourRgb,state.contourAlpha);
   for(let i=0;i<6;i++){
     const a=i/6*TAU,q0={x:p1.x+Math.cos(a)*(p1.r+8),y:p1.y+Math.sin(a)*(p1.r+8)};
     const q1={x:p1.x+Math.cos(a)*(p1.r+15),y:p1.y+Math.sin(a)*(p1.r+15)};
-    figInk(g,[q0,q1],rng,.4,0,.8);
+    figInk(g,[q0,q1],rng,.4,0,.8,state.contourRgb,state.contourAlpha);
   }
   // The sector arc between the two points, graduated in fifths.
   const aTip=figAt(spine,0,legA(0)),bTip=figAt(spine,0,legB(0)),foot=spine.at(0);
   const sector=[];
   for(let i=0;i<=22;i++){const u=i/22,bow=Math.sin(Math.PI*u)*13;
     sector.push({x:lerp(aTip.x,bTip.x,u)-foot.tx*bow,y:lerp(aTip.y,bTip.y,u)-foot.ty*bow});}
-  figInk(g,sector,rng,.6,.08,.9);
+  figInk(g,sector,rng,.6,.08,.9,state.contourRgb,state.contourAlpha);
   for(let i=1;i<5;i++){
     const p=sector[Math.round(i/5*22)],q=sector[Math.round(i/5*22)+1]||p;
     const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1;
-    figInk(g,[p,{x:p.x-dy/d*5,y:p.y+dx/d*5}],rng,.3,0,.7);
+    figInk(g,[p,{x:p.x-dy/d*5,y:p.y+dx/d*5}],rng,.3,0,.7,state.contourRgb,state.contourAlpha);
   }
   const inA=t=>legA(clamp(t,0,hinge))-wA(clamp(t,0,hinge)),outA=t=>legA(clamp(t,0,hinge))+wA(clamp(t,0,hinge));
   const inB=t=>legB(clamp(t,0,hinge))-wB(clamp(t,0,hinge)),outB=t=>legB(clamp(t,0,hinge))+wB(clamp(t,0,hinge));
@@ -449,20 +469,20 @@ function figHourglass(g,p0,p1,p2,side,rng,state){
   const reach=Math.max(.001,Math.max(t1-t0,t2-t1));
   const waist=t=>4+Math.pow(clamp(Math.abs(clamp(t,t0,t2)-t1)/reach,0,1),1.15)*38;
   const left=figRibbonRange(spine,t=>-waist(t),steps,t0,t2),right=figRibbonRange(spine,waist,steps,t0,t2);
-  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.05,1.4);figInk(g,right,rng,.7,.05,1.4);
+  figInk(g,left,rng,.7,.05,1.4,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.7,.05,1.4,state.contourRgb,state.contourAlpha);
   // A plate on each of the outer stars, with a foot, joined by the two corner posts.
   const post=52;
   for(const t of [t0,t2]){
     const out=t===t0?-.05:.05;
-    figInk(g,[figAt(spine,t,-post),figAt(spine,t,post)],rng,.5,0,1.9);
-    figInk(g,[figAt(spine,t+out*.55,-post+5),figAt(spine,t+out*.55,post-5)],rng,.5,0,.9);
-    figInk(g,[figAt(spine,t+out,-post*.7),figAt(spine,t+out,post*.7)],rng,.5,0,1.4);
-    for(const o of [-1,1])figInk(g,[figAt(spine,t,o*post),figAt(spine,t+out,o*post*.7)],rng,.5,0,1.1);
+    figInk(g,[figAt(spine,t,-post),figAt(spine,t,post)],rng,.5,0,1.9,state.contourRgb,state.contourAlpha);
+    figInk(g,[figAt(spine,t+out*.55,-post+5),figAt(spine,t+out*.55,post-5)],rng,.5,0,.9,state.contourRgb,state.contourAlpha);
+    figInk(g,[figAt(spine,t+out,-post*.7),figAt(spine,t+out,post*.7)],rng,.5,0,1.4,state.contourRgb,state.contourAlpha);
+    for(const o of [-1,1])figInk(g,[figAt(spine,t,o*post),figAt(spine,t+out,o*post*.7)],rng,.5,0,1.1,state.contourRgb,state.contourAlpha);
   }
-  for(const o of [-1,1])figInk(g,[figAt(spine,t0,o*(post-3)),figAt(spine,t2,o*(post-3))],rng,.9,.12,1.15);
+  for(const o of [-1,1])figInk(g,[figAt(spine,t0,o*(post-3)),figAt(spine,t2,o*(post-3))],rng,.9,.12,1.15,state.contourRgb,state.contourAlpha);
   // The sand: a thread falling through the waist and a drift heaped in the lower bulb.
   const thread=[];for(let i=0;i<=14;i++){const t=lerp(t1,t0+.015,i/14);thread.push(figAt(spine,t,Math.sin(i*1.9)*1.3));}
-  figInk(g,thread,rng,.4,.18,.6);
+  figInk(g,thread,rng,.4,.18,.6,state.contourRgb,state.contourAlpha);
   g.fillStyle=state.contour;
   for(let i=0;i<110;i++){
     const t=lerp(t0+.008,t1-.02,rng()*rng()),s=spine.at(t),o=(rng()*2-1)*waist(t)*.7;
@@ -481,19 +501,20 @@ function figSerpent(g,p0,p1,p2,side,rng,state){
   const amp=t=>10+30*Math.sin(Math.PI*clamp(t,0,1)),mid=t=>Math.sin(phase(t))*amp(t);
   const thick=t=>1.4+9.5*Math.pow(Math.sin(Math.PI*clamp(t,0,1)),.65);
   const left=figRibbon(spine,t=>mid(t)-thick(t),steps),right=figRibbon(spine,t=>mid(t)+thick(t),steps);
-  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.05,1.3);figInk(g,right,rng,.7,.05,1.3);
+  figInk(g,left,rng,.7,.05,1.3,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.7,.05,1.3,state.contourRgb,state.contourAlpha);
   // Belly bands across the body, thickest where it coils past the middle star.
   for(let i=1;i<26;i++){
     const t=t0*.4+i/26*(1-t0*.4);
-    figInk(g,[figAt(spine,t,mid(t)-thick(t)),figAt(spine,t,mid(t)+thick(t))],rng,.4,.22,.55);
+    figInk(g,[figAt(spine,t,mid(t)-thick(t)),figAt(spine,t,mid(t)+thick(t))],rng,.4,.22,.55,state.contourRgb,state.contourAlpha);
   }
   // The head: a wedge with an eye and a forked tongue, set on the spine's upper extension.
   const head=spine.at(.985),hx=head.x+head.px*mid(.985),hy=head.y+head.py*mid(.985);
-  const dir=Math.atan2(head.ty,head.tx);
-  g.save();g.translate(hx,hy);g.rotate(dir);g.lineWidth=1.2;
-  g.beginPath();g.moveTo(-9,-6);g.bezierCurveTo(6,-8,14,-4,20,-1.4);g.bezierCurveTo(14,4,6,7,-9,6);g.stroke();
-  g.beginPath();g.arc(4,-1.6,1.9,0,TAU);g.stroke();
-  g.lineWidth=.8;g.beginPath();g.moveTo(20,-1.4);g.lineTo(30,-4.6);g.moveTo(24.6,-2.9);g.lineTo(30,.6);g.stroke();
+  const dir=Math.atan2(head.ty,head.tx),headSeed=Math.floor(rng()*4294967296)>>>0;
+  g.save();g.translate(hx,hy);g.rotate(dir);
+  figCurve(g,[[-9,-6],[6,-8],[14,-4],[20,-1.4],[14,4],[6,7],[-9,6]],state.contourRgb,state.contourAlpha,1.2,headSeed);
+  burinArc(g,4,-1.6,1.9,0,TAU,state.contourRgb,state.contourAlpha,1,headSeed^0x2f,{segments:10,skips:2,wobble:.25});
+  burinSegment(g,20,-1.4,30,-4.6,state.contourRgb,state.contourAlpha,.8,headSeed^0x53,{segments:2,wobble:.25,hair:false});
+  burinSegment(g,24.6,-2.9,30,.6,state.contourRgb,state.contourAlpha,.8,headSeed^0x77,{segments:2,wobble:.25,hair:false});
   g.restore();
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>mid(t)-thick(t),t=>mid(t)+thick(t),Math.round(60*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
@@ -507,34 +528,34 @@ function figArgo(g,p0,p1,p2,side,rng,state){
   const arc=t=>{const u=(t-stern)/(bow-stern);return u<=0||u>=1?0:Math.pow(Math.sin(Math.PI*u),.7);};
   const hull=t=>arc(t)*56,deck=t=>-arc(t)*9;
   const keel=figRibbonRange(spine,hull,steps,stern,bow),sheer=figRibbonRange(spine,deck,steps,stern,bow);
-  g.strokeStyle=state.contour;figInk(g,keel,rng,.8,.04,1.6);figInk(g,sheer,rng,.6,.06,1.2);
-  for(const f of [.7,.46,.24])figInk(g,figRibbonRange(spine,t=>lerp(deck(t),hull(t),f),steps,stern,bow),rng,.7,.12,.7);
+  figInk(g,keel,rng,.8,.04,1.6,state.contourRgb,state.contourAlpha);figInk(g,sheer,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);
+  for(const f of [.7,.46,.24])figInk(g,figRibbonRange(spine,t=>lerp(deck(t),hull(t),f),steps,stern,bow),rng,.7,.12,.7,state.contourRgb,state.contourAlpha);
   // Oar ports along the upper strake, and the stem and stern posts.
   for(let i=1;i<10;i++){
     const t=lerp(stern,bow,i/10),o=lerp(deck(t),hull(t),.82);
-    figInk(g,[figAt(spine,t,o-3),figAt(spine,t,o+3)],rng,.3,0,.75);
+    figInk(g,[figAt(spine,t,o-3),figAt(spine,t,o+3)],rng,.3,0,.75,state.contourRgb,state.contourAlpha);
   }
-  figInk(g,[figAt(spine,stern,0),figAt(spine,stern-.045,-16)],rng,.6,0,1.5);
-  figInk(g,[figAt(spine,stern-.045,-16),figAt(spine,stern-.03,-8)],rng,.5,0,1.1);
-  figInk(g,[figAt(spine,bow,0),figAt(spine,bow+.04,-13)],rng,.6,0,1.5);
+  figInk(g,[figAt(spine,stern,0),figAt(spine,stern-.045,-16)],rng,.6,0,1.5,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,stern-.045,-16),figAt(spine,stern-.03,-8)],rng,.5,0,1.1,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,bow,0),figAt(spine,bow+.04,-13)],rng,.6,0,1.5,state.contourRgb,state.contourAlpha);
   // The mast, stepped on the middle star and carrying its yard and square sail.
-  figInk(g,[figAt(spine,t1,-2),figAt(spine,t2+.02,-2)],rng,.5,0,1.9);
-  figInk(g,[figAt(spine,t1,2),figAt(spine,t2+.02,2)],rng,.5,0,1.5);
+  figInk(g,[figAt(spine,t1,-2),figAt(spine,t2+.02,-2)],rng,.5,0,1.9,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,t1,2),figAt(spine,t2+.02,2)],rng,.5,0,1.5,state.contourRgb,state.contourAlpha);
   const yard=lerp(t1,t2,.58);
-  figInk(g,[figAt(spine,yard,-16),figAt(spine,yard,50)],rng,.5,0,1.5);
+  figInk(g,[figAt(spine,yard,-16),figAt(spine,yard,50)],rng,.5,0,1.5,state.contourRgb,state.contourAlpha);
   const luff=[],leech=[];
   for(let i=0;i<=20;i++){
     const u=i/20,t=lerp(yard,t1+.02,u);
     luff.push(figAt(spine,t,lerp(-6,0,u)));
     leech.push(figAt(spine,t,lerp(48,10,u)+Math.sin(Math.PI*u)*14));
   }
-  figInk(g,leech,rng,.9,.04,1.25);figInk(g,luff,rng,.5,.1,.8);
-  figInk(g,[leech[20],luff[20]],rng,.5,0,.9);
-  for(let i=1;i<5;i++){const u=i/5;figInk(g,[luff[Math.round(u*20)],leech[Math.round(u*20)]],rng,.6,.42,.5);}
+  figInk(g,leech,rng,.9,.04,1.25,state.contourRgb,state.contourAlpha);figInk(g,luff,rng,.5,.1,.8,state.contourRgb,state.contourAlpha);
+  figInk(g,[leech[20],luff[20]],rng,.5,0,.9,state.contourRgb,state.contourAlpha);
+  for(let i=1;i<5;i++){const u=i/5;figInk(g,[luff[Math.round(u*20)],leech[Math.round(u*20)]],rng,.6,.42,.5,state.contourRgb,state.contourAlpha);}
   // Shrouds and a pennant streaming from the truck.
-  for(const o of [-15,32])figInk(g,[figAt(spine,t2-.012,0),figAt(spine,t1+.008,o)],rng,.6,.18,.6);
+  for(const o of [-15,32])figInk(g,[figAt(spine,t2-.012,0),figAt(spine,t1+.008,o)],rng,.6,.18,.6,state.contourRgb,state.contourAlpha);
   const flag=[];for(let i=0;i<=10;i++){const u=i/10;flag.push(figAt(spine,lerp(t2+.025,t2+.014,u),u*32+Math.sin(u*6)*4));}
-  figInk(g,flag,rng,.5,.04,.85);
+  figInk(g,flag,rng,.5,.04,.85,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,deck,hull,Math.round(50*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,sheer,keel,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>deck(t)-2,t=>hull(t)+2,26,rng,.85);
@@ -545,26 +566,25 @@ function figAstrolabe(g,p0,p1,p2,side,rng,state){
   const spine=figSpine(p0,p1,p2,side,58),steps=40,[t0,t1,t2]=spine.stops;
   const halfRule=t=>3.4-Math.abs(t-t1)*1.4;
   const left=figRibbon(spine,t=>-halfRule(t),steps),right=figRibbon(spine,halfRule,steps);
-  g.strokeStyle=state.contour;
-  figInk(g,left,rng,.6,.06,1.2);figInk(g,right,rng,.6,.06,1.2);
+  figInk(g,left,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.6,.06,1.2,state.contourRgb,state.contourAlpha);
   const limbOuter=p1.r+25,limbInner=p1.r+15;
-  figInk(g,figArcPts(p1.x,p1.y,limbOuter,0,TAU,52),rng,.7,.05,1.35);
-  figInk(g,figArcPts(p1.x,p1.y,limbInner,0,TAU,44),rng,.6,.08,.9);
+  figInk(g,figArcPts(p1.x,p1.y,limbOuter,0,TAU,52),rng,.7,.05,1.35,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(p1.x,p1.y,limbInner,0,TAU,44),rng,.6,.08,.9,state.contourRgb,state.contourAlpha);
   for(let i=0;i<48;i++){
     const a=i/48*TAU,inner=i%4===0?limbInner:limbOuter-3.5;
-    figInk(g,[{x:p1.x+Math.cos(a)*inner,y:p1.y+Math.sin(a)*inner},{x:p1.x+Math.cos(a)*limbOuter,y:p1.y+Math.sin(a)*limbOuter}],rng,.25,0,i%4===0?.75:.45);
+    figInk(g,[{x:p1.x+Math.cos(a)*inner,y:p1.y+Math.sin(a)*inner},{x:p1.x+Math.cos(a)*limbOuter,y:p1.y+Math.sin(a)*limbOuter}],rng,.25,0,i%4===0?.75:.45,state.contourRgb,state.contourAlpha);
   }
   // Sighting vanes on the outer stars.
   for(const q of [p0,p2]){
-    figInk(g,figArcPts(q.x,q.y,q.r+10,0,TAU,22),rng,.5,.12,.9);
-    for(const o of [-1,1])figInk(g,[{x:q.x+o*(q.r+16),y:q.y-5},{x:q.x+o*(q.r+16),y:q.y+5}],rng,.3,0,1.1);
+    figInk(g,figArcPts(q.x,q.y,q.r+10,0,TAU,22),rng,.5,.12,.9,state.contourRgb,state.contourAlpha);
+    for(const o of [-1,1])figInk(g,[{x:q.x+o*(q.r+16),y:q.y-5},{x:q.x+o*(q.r+16),y:q.y+5}],rng,.3,0,1.1,state.contourRgb,state.contourAlpha);
   }
   // Throne and suspension ring above the instrument.
   const crown=spine.at(clamp(t2+(1-t2)*.42,0,1)),ring=spine.at(clamp(t2+(1-t2)*.78,0,1));
-  figInk(g,[figAt(spine,t2+(1-t2)*.1,-11),figAt(spine,t2+(1-t2)*.42,-7),figAt(spine,t2+(1-t2)*.42,7),figAt(spine,t2+(1-t2)*.1,11)],rng,.5,0,1.2);
-  figInk(g,figArcPts(crown.x,crown.y,9,0,TAU,16),rng,.5,.1,.9);
-  figInk(g,figArcPts(ring.x,ring.y,11,0,TAU,20),rng,.6,.06,1.3);
-  figInk(g,figArcPts(ring.x,ring.y,6.5,0,TAU,14),rng,.5,.1,.7);
+  figInk(g,[figAt(spine,t2+(1-t2)*.1,-11),figAt(spine,t2+(1-t2)*.42,-7),figAt(spine,t2+(1-t2)*.42,7),figAt(spine,t2+(1-t2)*.1,11)],rng,.5,0,1.2,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(crown.x,crown.y,9,0,TAU,16),rng,.5,.1,.9,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(ring.x,ring.y,11,0,TAU,20),rng,.6,.06,1.3,state.contourRgb,state.contourAlpha);
+  figInk(g,figArcPts(ring.x,ring.y,6.5,0,TAU,14),rng,.5,.1,.7,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){
     g.strokeStyle=state.hatch;
     const n=Math.round(40*state.hatchFrac);
@@ -591,22 +611,21 @@ function figQuill(g,p0,p1,p2,side,rng,state){
   const inner=t=>-vane(t)*.52;
   const left=figRibbon(spine,t=>inner(t)-shaft(t),steps),right=figRibbon(spine,t=>vane(t)+shaft(t),steps);
   const shaftL=figRibbon(spine,t=>-shaft(t),steps),shaftR=figRibbon(spine,shaft,steps);
-  g.strokeStyle=state.contour;
-  figInk(g,shaftL,rng,.6,.05,1.25);figInk(g,shaftR,rng,.6,.05,1.25);
-  figInk(g,left,rng,1,.09,1);figInk(g,right,rng,1.1,.07,1.15);
+  figInk(g,shaftL,rng,.6,.05,1.25,state.contourRgb,state.contourAlpha);figInk(g,shaftR,rng,.6,.05,1.25,state.contourRgb,state.contourAlpha);
+  figInk(g,left,rng,1,.09,1,state.contourRgb,state.contourAlpha);figInk(g,right,rng,1.1,.07,1.15,state.contourRgb,state.contourAlpha);
   // Barbs, laid from the shaft out to the edge of each vane.
   for(let i=0;i<74;i++){
     const t=lerp(t1,.985,i/74),slant=.16;
     const o1=vane(t),o0=inner(t);
-    if(o1>1)figInk(g,[figAt(spine,t,shaft(t)),figAt(spine,t-slant*.04,o1*(.82+rng()*.18))],rng,.4,0,.5);
-    if(o0<-1)figInk(g,[figAt(spine,t,-shaft(t)),figAt(spine,t-slant*.04,o0*(.82+rng()*.18))],rng,.4,0,.45);
+    if(o1>1)figInk(g,[figAt(spine,t,shaft(t)),figAt(spine,t-slant*.04,o1*(.82+rng()*.18))],rng,.4,0,.5,state.contourRgb,state.contourAlpha);
+    if(o0<-1)figInk(g,[figAt(spine,t,-shaft(t)),figAt(spine,t-slant*.04,o0*(.82+rng()*.18))],rng,.4,0,.45,state.contourRgb,state.contourAlpha);
   }
   // The nib: two lines closing to a point at the bottom star, with its slit.
   const nib=t0;
-  figInk(g,[figAt(spine,nib+.06,-3.4),figAt(spine,nib-.012,-.7)],rng,.4,0,1.1);
-  figInk(g,[figAt(spine,nib+.06,3.4),figAt(spine,nib-.012,.7)],rng,.4,0,1.1);
-  figInk(g,[figAt(spine,nib+.055,0),figAt(spine,nib-.01,0)],rng,.3,0,.6);
-  figInk(g,[figAt(spine,nib+.062,-3.6),figAt(spine,nib+.062,3.6)],rng,.3,0,.7);
+  figInk(g,[figAt(spine,nib+.06,-3.4),figAt(spine,nib-.012,-.7)],rng,.4,0,1.1,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,nib+.06,3.4),figAt(spine,nib-.012,.7)],rng,.4,0,1.1,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,nib+.055,0),figAt(spine,nib-.01,0)],rng,.3,0,.6,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,nib+.062,-3.6),figAt(spine,nib+.062,3.6)],rng,.3,0,.7,state.contourRgb,state.contourAlpha);
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,inner,vane,Math.round(54*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
   g.fillStyle=state.contour;figStipple(g,spine,t=>inner(t)-2,t=>vane(t)+2,26,rng,.8);
@@ -623,21 +642,21 @@ function figLantern(g,p0,p1,p2,side,rng,state){
     return 42;
   };
   const left=figRibbon(spine,t=>-body(t),steps),right=figRibbon(spine,body,steps);
-  g.strokeStyle=state.contour;figInk(g,left,rng,.7,.06,1.4);figInk(g,right,rng,.7,.06,1.4);
+  figInk(g,left,rng,.7,.06,1.4,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.7,.06,1.4,state.contourRgb,state.contourAlpha);
   // Corner posts, glazing bars and the sills at each star.
-  for(const o of [-1,1])figInk(g,figRibbon(spine,t=>o*(body(t)-4.5),steps),rng,.6,.16,.8);
+  for(const o of [-1,1])figInk(g,figRibbon(spine,t=>o*(body(t)-4.5),steps),rng,.6,.16,.8,state.contourRgb,state.contourAlpha);
   for(const t of [t0,lerp(t0,t1,.5),t1,lerp(t1,t2,.5),t2]){
-    const w=body(t);figInk(g,[figAt(spine,t,-w),figAt(spine,t,w)],rng,.5,.06,t===t0||t===t2?1.5:.7);
+    const w=body(t);figInk(g,[figAt(spine,t,-w),figAt(spine,t,w)],rng,.5,.06,t===t0||t===t2?1.5:.7,state.contourRgb,state.contourAlpha);
   }
   // The foot below and the ring above.
-  figInk(g,[figAt(spine,Math.max(0,t0-t0*.62),-52),figAt(spine,Math.max(0,t0-t0*.62),52)],rng,.5,0,1.6);
+  figInk(g,[figAt(spine,Math.max(0,t0-t0*.62),-52),figAt(spine,Math.max(0,t0-t0*.62),52)],rng,.5,0,1.6,state.contourRgb,state.contourAlpha);
   const hook=spine.at(clamp(t2+(1-t2)*.82,0,1));
-  figInk(g,figArcPts(hook.x,hook.y,11,0,TAU,20),rng,.6,.06,1.3);
-  figInk(g,[figAt(spine,t2+(1-t2)*.62,0),figAt(spine,t2+(1-t2)*.72,0)],rng,.4,0,1.4);
+  figInk(g,figArcPts(hook.x,hook.y,11,0,TAU,20),rng,.6,.06,1.3,state.contourRgb,state.contourAlpha);
+  figInk(g,[figAt(spine,t2+(1-t2)*.62,0),figAt(spine,t2+(1-t2)*.72,0)],rng,.4,0,1.4,state.contourRgb,state.contourAlpha);
   // The flame at the middle star, and the light it throws beyond the glass.
   for(let i=0;i<30;i++){
     const a=i/30*TAU,long=i%3===0,r0=p1.r+9,r1=r0+(long?26:13)+rng()*6;
-    figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45);
+    figInk(g,[{x:p1.x+Math.cos(a)*r0,y:p1.y+Math.sin(a)*r0},{x:p1.x+Math.cos(a)*r1,y:p1.y+Math.sin(a)*r1}],rng,.4,0,long?.7:.45,state.contourRgb,state.contourAlpha);
   }
   if(state.hatchFrac>0){g.strokeStyle=state.hatch;figHatch(g,spine,t=>-body(t),body,Math.round(56*state.hatchFrac),rng);}
   if(state.wash){g.fillStyle=state.wash;figWash(g,left,right,state);}
@@ -653,38 +672,37 @@ function figMoth(g,p0,p1,p2,side,rng,state){
   const span=t=>wing(t)+body(t);
   const left=figRibbon(spine,t=>-span(t),steps),right=figRibbon(spine,span,steps);
   const bodyL=figRibbon(spine,t=>-body(t),steps),bodyR=figRibbon(spine,body,steps);
-  g.strokeStyle=state.contour;
-  figInk(g,left,rng,.9,.05,1.3);figInk(g,right,rng,.9,.05,1.3);
-  figInk(g,bodyL,rng,.5,.08,1);figInk(g,bodyR,rng,.5,.08,1);
+  figInk(g,left,rng,.9,.05,1.3,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.9,.05,1.3,state.contourRgb,state.contourAlpha);
+  figInk(g,bodyL,rng,.5,.08,1,state.contourRgb,state.contourAlpha);figInk(g,bodyR,rng,.5,.08,1,state.contourRgb,state.contourAlpha);
   // The seam between fore and hind wing, and the veins running out from the thorax.
   for(const o of [-1,1]){
-    figInk(g,[figAt(spine,t1,o*body(t1)),figAt(spine,t1-.012,o*span(t1)*.96)],rng,.5,.06,.8);
+    figInk(g,[figAt(spine,t1,o*body(t1)),figAt(spine,t1-.012,o*span(t1)*.96)],rng,.5,.06,.8,state.contourRgb,state.contourAlpha);
     for(let i=0;i<5;i++){
       const t=lerp(t1+.02,t2+.02,i/5),reach=span(t)*(.55+i*.08);
-      if(reach>body(t)+3)figInk(g,[figAt(spine,t1+.005,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.2,.5);
+      if(reach>body(t)+3)figInk(g,[figAt(spine,t1+.005,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.2,.5,state.contourRgb,state.contourAlpha);
     }
     for(let i=0;i<4;i++){
       const t=lerp(t0-.01,t1-.02,i/4),reach=span(t)*(.6+i*.07);
-      if(reach>body(t)+3)figInk(g,[figAt(spine,t1-.01,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.24,.45);
+      if(reach>body(t)+3)figInk(g,[figAt(spine,t1-.01,o*body(t1)),figAt(spine,t,o*reach)],rng,.6,.24,.45,state.contourRgb,state.contourAlpha);
     }
   }
   // An eyespot on each forewing.
   for(const o of [-1,1]){
     const t=lerp(t1,t2,.55),c=figAt(spine,t,o*span(t)*.58);
-    figInk(g,figArcPts(c.x,c.y,7.5,0,TAU,16),rng,.5,.08,.9);
-    figInk(g,figArcPts(c.x,c.y,3.4,0,TAU,12),rng,.4,.12,.6);
+    figInk(g,figArcPts(c.x,c.y,7.5,0,TAU,16),rng,.5,.08,.9,state.contourRgb,state.contourAlpha);
+    figInk(g,figArcPts(c.x,c.y,3.4,0,TAU,12),rng,.4,.12,.6,state.contourRgb,state.contourAlpha);
   }
   // Body segments, then the head and its combed antennae on the top star.
   for(let i=0;i<12;i++){
     const t=lerp(t0-.05,t2-.01,i/12);
-    figInk(g,[figAt(spine,t,-body(t)),figAt(spine,t,body(t))],rng,.35,.18,.5);
+    figInk(g,[figAt(spine,t,-body(t)),figAt(spine,t,body(t))],rng,.35,.18,.5,state.contourRgb,state.contourAlpha);
   }
   for(const o of [-1,1]){
     const feel=[];for(let i=0;i<=12;i++){const u=i/12;feel.push(figAt(spine,lerp(t2+.005,1,u),o*(3+u*u*26)));}
-    figInk(g,feel,rng,.5,.04,.85);
+    figInk(g,feel,rng,.5,.04,.85,state.contourRgb,state.contourAlpha);
     for(let i=2;i<12;i+=1){
       const p=feel[i],q=feel[i-1],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy)||1;
-      figInk(g,[p,{x:p.x-dy/d*3.4*o,y:p.y+dx/d*3.4*o}],rng,.25,0,.4);
+      figInk(g,[p,{x:p.x-dy/d*3.4*o,y:p.y+dx/d*3.4*o}],rng,.25,0,.4,state.contourRgb,state.contourAlpha);
     }
   }
   if(state.hatchFrac>0){
@@ -703,8 +721,8 @@ function figAsterism(g,p0,p1,p2,side,rng,state){
   const swell=t=>3+Math.sin(Math.PI*clamp(t,0,1))*9;
   const left=figRibbon(spine,t=>-swell(t),steps),right=figRibbon(spine,swell,steps);
   g.strokeStyle=state.contour;
-  figInk(g,left,rng,.8,.14,1.25);figInk(g,right,rng,.8,.14,1.25);
-  figInk(g,figRibbon(spine,()=>0,steps),rng,.6,.22,.7);
+  figInk(g,left,rng,.8,.14,1.25,state.contourRgb,state.contourAlpha);figInk(g,right,rng,.8,.14,1.25,state.contourRgb,state.contourAlpha);
+  figInk(g,figRibbon(spine,()=>0,steps),rng,.6,.22,.7,state.contourRgb,state.contourAlpha);
   const mid=spine.at(.5);
   g.save();g.translate(mid.x+mid.px*(swell(.5)+11),mid.y+mid.py*(swell(.5)+11));g.rotate(Math.atan2(mid.ty,mid.tx));
   g.lineWidth=1.1;g.beginPath();g.arc(0,0,6.5,0,TAU);g.stroke();
