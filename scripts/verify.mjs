@@ -261,7 +261,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       'A fresh or unreadable ledger opens empty');
     // The classic look, and — the one category that defaults to nothing rather than to something — a
     // sheet that prints no distance behind the chart at all until the catalogue earns one.
-    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'hevelius',sphere:'graticule',scenery:'none'},'Cosmetics default to the classic look, and to a bare sheet behind it');
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.cosmetics)),{plate:'night',mark:'quill',trail:'irongall',capture:'ripple',frame:'windheads',figures:'bayer',sphere:'graticule',scenery:'none'},'Cosmetics default to the classic look, and to a bare sheet behind it');
     assert.equal(context.test.isUnlocked('cellarius'),false);
     assert.equal(context.test.setCosmetic('mark','saturn'),false,'A locked cosmetic can never be selected');
     assert.equal(context.test.cosmetic('mark'),'quill','A refused selection leaves the default in place');
@@ -303,7 +303,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       ['strapwork',{bestRow:19},false],['strapwork',{bestRow:20},true],
       ['acanthus',{bestRow:39},false],['acanthus',{bestRow:40},true],
       ['seamonsters',{bestRow:59},false],['seamonsters',{bestRow:60},true],
-      ['bayer',{constellations:{'THE LYRE':9,'THE SAIL':9}},false],['bayer',{constellations:{'THE LYRE':10}},true],
+      ['hevelius',{constellations:{'THE LYRE':9,'THE SAIL':9}},false],['hevelius',{constellations:{'THE LYRE':10}},true],
       ['bode',{constellations:{'THE LYRE':24}},false],['bode',{constellations:{'THE LYRE':25}},true],
       ['rete',{captures:499},false],['rete',{captures:500},true],
       ['orbs',{bestRow:29},false],['orbs',{bestRow:30},true],

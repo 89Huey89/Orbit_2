@@ -232,9 +232,9 @@ function figBox(spine,p1){
 const FIGURE_STYLES={
   // The cut and the colourist are one cosmetic hand: the same selected manner changes how the
   // figure is engraved and how its wash is brushed over the finished line.
-  hevelius:{weight:1.05,breaks:1,jag:1,hatch:1,stipple:1,hatchWeight:.45,swell:.5,hairEvery:3,ink:1,wash:'mineral'},
+  hevelius:{weight:1.05,breaks:1.15,jag:1.1,hatch:1,stipple:1,hatchWeight:.45,swell:.5,hairEvery:3,ink:1,wash:'mineral'},
   bayer:{weight:.8,breaks:.3,jag:.3,hatch:.8,stipple:.65,hatchWeight:.45,swell:.2,hairEvery:1,ink:.95,wash:'rubricated'},
-  bode:{weight:1.3,breaks:.5,jag:1.3,hatch:2.4,stipple:1.7,hatchWeight:.45,swell:.35,hairEvery:0,ink:1.1,wash:'dry'}
+  bode:{weight:1.3,breaks:.5,jag:.4,hatch:2.4,stipple:1.7,hatchWeight:.45,swell:.35,hairEvery:0,ink:1.1,wash:'dry'}
 };
 const HAND_COLOUR_STYLES={
   // A dilute mineral wash: broken coverage and soft pigment, with short bristle marks at each start.
@@ -244,8 +244,8 @@ const HAND_COLOUR_STYLES={
   // Bode's heavier cut gets a dry, uneven pass: darker islands and more unpainted paper between them.
   dry:{coverage:.58,skip:.36,alpha:.68,brush:1.12,grain:.5}
 };
-const figureStyle=()=>FIGURE_STYLES[activeCosmetic('figures')]||FIGURE_STYLES.hevelius;
-let figStyle=FIGURE_STYLES.hevelius;
+const figureStyle=()=>FIGURE_STYLES[activeCosmetic('figures')]||FIGURE_STYLES.bayer;
+let figStyle=FIGURE_STYLES.bayer;
 // The pen the figure is cut with: every line weight set on it, by the primitives below or by a figure
 // reaching for the context directly, is scaled by the style's weight.
 function figPen(g,style){

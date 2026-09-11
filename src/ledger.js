@@ -167,7 +167,7 @@ const UNLOCKS=[
     describe:()=>'Reach row 40'},
   {id:'seamonsters',kind:'frame',name:'Sea monsters',latin:'Cete',stat:'bestRow',threshold:60,
     describe:()=>'Reach row 60'},
-  {id:'bayer',kind:'figures',name:'Bayer manner',latin:'More Bayeri',stat:'topConstellation',threshold:10,
+  {id:'hevelius',kind:'figures',name:'Hevelius manner',latin:'More Hevelii',stat:'topConstellation',threshold:10,
     describe:()=>'Complete one constellation 10 times'},
   {id:'bode',kind:'figures',name:'Bode manner',latin:'More Bodii',stat:'topConstellation',threshold:25,
     describe:()=>'Complete one constellation 25 times'},
@@ -253,8 +253,8 @@ const COSMETIC_KINDS=[
     stock:[{id:'ripple',name:'Broken ripple',latin:'Unda fracta'}]},
   {kind:'frame',title:'Frame ornaments',latin:'Ornamenta marginis',fallback:'windheads',
     stock:[{id:'windheads',name:'Wind-heads',latin:'Capita ventorum'}]},
-  {kind:'figures',title:'Figure styles',latin:'Manus figurarum',fallback:'hevelius',
-    stock:[{id:'hevelius',name:'Hevelius manner',latin:'More Hevelii'}]},
+  {kind:'figures',title:'Figure styles',latin:'Manus figurarum',fallback:'bayer',
+    stock:[{id:'bayer',name:'Bayer manner',latin:'More Bayeri'}]},
   // The figure the captures construct behind the chart, and whether they construct one at all. The
   // graticule is the atlas's own and the one a fresh sheet builds; `none` leaves the sheet unruled.
   {kind:'sphere',title:'Constructions',latin:'Sphæræ',fallback:'graticule',

@@ -859,7 +859,7 @@ const PREVIEW_ART={
   mark:id=>MARK_ART[id]||MARK_ART.quill,
   capture:id=>CAPTURE_ART[id]||CAPTURE_ART.ripple,
   frame:id=>FRAME_ART[id]||FRAME_ART.windheads,
-  figures:id=>FIGURE_ART[id]||FIGURE_ART.hevelius,
+  figures:id=>FIGURE_ART[id]||FIGURE_ART.bayer,
   medal:id=>MEDAL_ART[id]||medalRoundel(artFill(artStar(60,36,6,13,5))),
   credit:()=>CREDIT_ART,stamp:()=>STAMP_ART
 };
