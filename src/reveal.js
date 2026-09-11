@@ -568,10 +568,12 @@ function revealFigure(chart,draw){
   if(t>=1){draw(chart);return;}
   if(t<=0)return;
   ctx.save();
-  const head=chartSweep(chart,t);
+  // No nib here: the sweep's own edge runs along a chord between two stars, not along any stroke the
+  // figure actually cuts, so a tool claimed there rode a phantom spine. A figure is a plate area coming
+  // up, not a single line being drawn, and the honest reading is that the pen is elsewhere.
+  chartSweep(chart,t);
   draw(chart);
   ctx.restore();
-  if(head)penNib(head.x,head.y,head.angle,.75,undefined,nibRecency(t));
 }
 // ---------- Route lines ----------
 // The pricked line into a planet is drawn on as that planet is: everything above the pen's reach on the
