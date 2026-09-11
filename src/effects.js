@@ -1180,7 +1180,18 @@ function glossSprite(relief){
 // of the impressum's cartouche, at the start of a run when that furniture still sits in this same
 // lower margin — whichever comes first. The waterline itself goes on rising past it — only the
 // monster and the gloss are held above.
-function marginaliaFloor(){return Math.min(H-footerBand()-frameBand()*.92,impressumTop()-8);}
+// The chapter title is world-anchored ink, not a screen overlay (see revealPoint()): once the camera
+// has scrolled well past where it was written, it settles at the same clamp this floor is built from
+// and stays there, in the same lower reach the gloss is drifting into. Left alone, the gloss would
+// slowly climb up through that fixed band as the flood rose past it, fading in and out of
+// glossClearance's own test the whole time it took to cross — a systematic collision, not an
+// occasional one. Lowering the floor by the band's own height while it is on the sheet keeps the
+// gloss's own pinned rest position clear of it, so it sinks under the lettering and stays there.
+function marginaliaFloor(){
+  const floor=Math.min(H-footerBand()-frameBand()*.92,impressumTop()-8);
+  const band=typeof revealBand==='function'?revealBand():null;
+  return band?floor-(band.bottom-band.top):floor;
+}
 // Where the gloss is printed for a given waterline: it rides just under the ink until the flood would
 // carry it into the footer band, and from there it stays where it is while the ink goes on past it.
 function marginaliaGloss(fy,gloss){
