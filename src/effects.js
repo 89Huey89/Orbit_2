@@ -43,7 +43,11 @@ definePlate('dark',{
     landFillWash:'rgba(20,18,31,.09)',landFillPool:'rgba(14,12,22,.34)',fleckDark:'14,12,22',
     burstGold:'150,100,32',burstRed:'166,58,40',burstBlue:'52,84,120',burstViolet:'92,58,120',ringSimple:'58,42,28',
     transferArc:'58,42,28',transferArcSoft:'96,74,52',transferTick:'34,24,16',transferNib:'58,42,28',
-    floaterText:'34,24,16',screenFlash:'255,248,222'
+    floaterText:'34,24,16',
+    // Ink does not glow, so a flash on this plate has to be a dark shadow the press throws rather than
+    // a bright wash it never carries — otherwise a near-white fill over paper's own pale ground does
+    // almost nothing. Read at a higher alpha than night's own bright flash for the same reason.
+    screenFlash:'22,20,38'
   },
   // A void family that never goes through the tint: azzurra's own duotone dark stop is a mid-value
   // blue-grey and cellarius's and verdigris's sit only a little below their own sheet, so the rising
