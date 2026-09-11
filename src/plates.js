@@ -291,8 +291,9 @@ const PLATE_STYLES={
   // heightening on a blue-grey ground, so the drawing is carried by the lights rather than the darks.
   azzurra:{base:'night',wash:.55,tint:duotone([100,116,132],[168,180,188],[244,240,230])},
   // The whole chart in one brown ink, as Galileo washed his moons: no hand-colouring, no rubrication, no
-  // Prussian blue — every body a sepia wash under a sepia line on the cream of the sheet.
-  sepia:{base:'paper',wash:.3,pixels:true,tint:topped(duotone([40,28,18],[138,104,70],[231,218,189]),.86)},
+  // Prussian blue — every body a sepia wash under a sepia line on a cream a shade cooler than the paper
+  // plate's own, the deeper mid stop and the greyed sheet together what tell the two plates apart.
+  sepia:{base:'paper',wash:.3,pixels:true,tint:topped(duotone([34,24,15],[104,78,50],[213,205,190]),.86)},
   // A proof pulled before the letters were cut: rich ink, clean sheet, and not one caption on it — the
   // opposite of a dulled swatch, so its own ramp is darkened at the mid stop and lifted at the light one
   // and topped the way sepia's is, so the sheet actually reaches its light stop rather than stopping short.
