@@ -290,6 +290,36 @@ definePlate('planets',{
     dawn:    {light:'#ffe6c0',body:'#e0954a',dark:'#3c2410',rgb:'250,196,130'}
   }
 });
+// The literals inside paintPlanetSurface/paintPlanetRings/paintPigment/drawPlanet that carry real
+// per-plate meaning — a shoreline, a crater's shadow and lit wall, the ringed/storm bodies' own
+// atmospheric-eye bands, an ice world's fracture and fringe, a dune world's rift, a volcanic world's
+// fissure, the pigment stipple's light and dark grains — registered as tokens instead of literals, so a
+// derived plate reaches them through the same duotone as every other mark rather than drawing the exact
+// night or paper colour regardless of which plate is on the press. Values are lifted verbatim from what
+// each site already drew on night and paper; only sites with genuine per-plate meaning are here; a bare
+// decorative overstroke or cross-hatch that never varied by plate is left as it was.
+definePlate('surface',{
+  night:{
+    shorelineFill:'#cbc4a4',shorelineStroke:'rgba(51,60,45,.7)',
+    craterShadow:'rgba(34,38,42,.48)',craterWall:'rgba(48,43,34,.66)',craterLit:'rgba(239,222,184,.72)',
+    ringMajor:'rgba(212,190,150,.44)',ringMinor:'rgba(115,85,64,.45)',
+    stormMajor:'rgba(250,244,224,.78)',stormMinor:'rgba(16,14,18,.72)',
+    iceFracture:'61,89,104',iceFringe:'184,198,179',
+    duneRift:'rgba(95,65,49,.5)',
+    volcanicFissureOuter:'rgba(155,100,69,.17)',volcanicFissureInner:'rgba(199,151,98,.62)',
+    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.22)'
+  },
+  paper:{
+    shorelineFill:'rgba(98,140,116,.28)',shorelineStroke:'rgba(58,42,28,.55)',
+    craterShadow:'rgba(58,42,28,.4)',craterWall:'rgba(48,36,24,.62)',craterLit:'rgba(239,222,184,.72)',
+    ringMajor:'rgba(224,206,166,.44)',ringMinor:'rgba(120,90,58,.48)',
+    stormMajor:'rgba(250,244,224,.78)',stormMinor:'rgba(16,14,18,.72)',
+    iceFracture:'58,42,28',iceFringe:'58,42,28',
+    duneRift:'rgba(78,52,38,.58)',
+    volcanicFissureOuter:'rgba(155,100,69,.17)',volcanicFissureInner:'rgba(199,151,98,.62)',
+    pigmentLight:'239,226,192',pigmentDark:'rgba(45,39,27,.19)'
+  }
+});
 // The red chalk the paper plate's keylines are first tried in: sanguine on the sheet, and, for the derived
 // plates, whatever the press makes of it.
 definePlate('underdrawing',{night:{chalk:'214,116,88'},paper:{chalk:'168,74,56'}});

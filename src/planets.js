@@ -23,8 +23,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     // into it as a peninsula, drawn in the same tone so the two read as one coastline rather than a second
     // island.
     const lx=(rng()-.5)*core*.3,ly=(rng()-.5)*core*.3;
-    if(paper){g.fillStyle='rgba(98,140,116,.28)';g.strokeStyle='rgba(58,42,28,.55)';}
-    else{g.fillStyle='#cbc4a4';g.strokeStyle='rgba(51,60,45,.7)';}
+    g.fillStyle=ink.surface.shorelineFill;g.strokeStyle=ink.surface.shorelineStroke;
     landContour(g,lx,ly,core*.72,core*.6,rng);g.fill();g.lineWidth=.9;g.stroke();
     landContour(g,lx+core*.52,ly-core*.22,core*.3,core*.25,rng);g.fill();g.lineWidth=.7;g.stroke();
     for(let i=0;i<9;i++){
@@ -41,7 +40,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     // floor against the wall nearest the sun, the far wall catching the light, and no rays — nothing an eye at
     // the telescope ever saw. The larger floors take a few strokes of hatching in their shadow. Struck on the
     // still front layer, with the hatching, rather than the shifting wash: an engraved rim does not misregister.
-    const shadow=paper?'rgba(58,42,28,.4)':'rgba(34,38,42,.48)',wall=paper?'rgba(48,36,24,.62)':'rgba(48,43,34,.66)',lit='rgba(239,222,184,.72)';
+    const shadow=ink.surface.craterShadow,wall=ink.surface.craterWall,lit=ink.surface.craterLit;
     for(let i=0;i<25;i++){
       const a=rng()*TAU,d=Math.sqrt(rng())*core*.94,x=Math.cos(a)*d,y=Math.sin(a)*d;
       const r=core*(i<3?.15+rng()*.055:.035+rng()*.07),flatten=.72+rng()*.24;
@@ -71,7 +70,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     const storm=family==='storm';
     // Pushed to near-white and near-black rather than a mid grey-blue: a duotone maps by luminance alone,
     // so only a band already at one extreme or the other is guaranteed to survive it as a band.
-    const stormMajor='rgba(250,244,224,.78)',stormMinor='rgba(16,14,18,.72)';
+    const stormMajor=ink.surface.stormMajor,stormMinor=ink.surface.stormMinor;
     if(storm){
       // A hard equatorial band pair, reaching the limb: two bold bands, but curved as true latitude
       // lines — the same ellipse geometry the meridian graticule below draws, narrowing toward the poles
@@ -85,8 +84,8 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     // The atmospheric eye: a stack of concentric ellipses, kept for both bodies — a gas giant carries one
     // whether or not it is banded — but the ring system alone now carries the ringed body's silhouette.
     const x=-core*.24,y=core*.12,w=core*(storm?.43:.25),h=w*.53;
-    const spotA=storm?(paper?'rgba(220,214,198,.4)':'rgba(207,201,208,.4)'):(paper?'rgba(224,206,166,.44)':'rgba(212,190,150,.44)');
-    const spotB=storm?(paper?'rgba(52,84,120,.55)':'rgba(76,71,89,.52)'):(paper?'rgba(120,90,58,.48)':'rgba(115,85,64,.45)');
+    const spotA=storm?(paper?'rgba(220,214,198,.4)':'rgba(207,201,208,.4)'):ink.surface.ringMajor;
+    const spotB=storm?(paper?'rgba(52,84,120,.55)':'rgba(76,71,89,.52)'):ink.surface.ringMinor;
     for(let i=9;i>0;i--){
       g.strokeStyle=i%2===0?spotA:spotB;g.lineWidth=.8;
       g.beginPath();g.ellipse(x+Math.sin(i*.5)*.55,y,w*i/9,h*i/9,-.12,0,TAU);g.stroke();
@@ -109,7 +108,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
         const mx=hub.x+Math.cos(a)*core*.55,my=hub.y+Math.sin(a)*core*.55;
         const ex=hub.x+Math.cos(a+bend)*core*1.25,ey=hub.y+Math.sin(a+bend)*core*1.25;
         front.beginPath();front.moveTo(hub.x,hub.y);front.lineTo(mx,my);front.lineTo(ex,ey);
-        front.strokeStyle=paper?'rgba(58,42,28,.55)':'rgba(61,89,104,.48)';front.lineWidth=1.2;front.stroke();
+        front.strokeStyle=`rgba(${ink.surface.iceFracture},${paper?.55:.48})`;front.lineWidth=1.2;front.stroke();
         front.strokeStyle=paper?'rgba(238,228,200,.45)':'rgba(220,226,214,.4)';front.lineWidth=.45;front.stroke();
         spokes.push({mx,my});
       }
@@ -117,7 +116,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     for(let i=0;i<5;i++){
       const a=spokes[Math.floor(rng()*spokes.length)],b=spokes[Math.floor(rng()*spokes.length)];
       if(!a||!b||a===b)continue;
-      front.strokeStyle=paper?'rgba(58,42,28,.32)':'rgba(61,89,104,.3)';front.lineWidth=.6;
+      front.strokeStyle=`rgba(${ink.surface.iceFracture},${paper?.32:.3})`;front.lineWidth=.6;
       front.beginPath();front.moveTo(a.mx,a.my);front.lineTo(b.mx,b.my);front.stroke();
     }
   }else if(family==='dune'){
@@ -145,7 +144,7 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     // narrower scar is struck to match on the still front layer in `glyph()`, after the hatching, so the
     // hatch does not simply bury it the way it would a mark left on the wash alone.
     g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);
-    g.strokeStyle=paper?'rgba(78,52,38,.58)':'rgba(95,65,49,.5)';g.lineWidth=4.4;g.lineCap='round';g.stroke();
+    g.strokeStyle=ink.surface.duneRift;g.lineWidth=4.4;g.lineCap='round';g.stroke();
     g.strokeStyle=paper?'rgba(215,182,132,.4)':'rgba(217,190,146,.46)';g.lineWidth=.9;g.stroke();
     // The crest, like the ocean world's ice cap, is struck on the still front layer in drawPlanet() —
     // see the polar-cap finding — rather than baked into this spin-rotated wash.
@@ -162,8 +161,8 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
         x+=(rng()-.35)*core*.35;y+=core*(.08+rng()*.19);g.lineTo(x,y);path.push({x,y});
         if(j===2){g.lineTo(x-core*.25,y+core*.12);g.lineTo(x-core*.31,y+core*.31);g.moveTo(x,y);path.push({x:x-core*.25,y:y+core*.12},{x:x-core*.31,y:y+core*.31},{x,y,move:true});}
       }
-      g.strokeStyle='rgba(155,100,69,.17)';g.lineWidth=2.4;g.stroke();
-      g.strokeStyle='rgba(199,151,98,.62)';g.lineWidth=.8;g.stroke();g.strokeStyle='rgba(222,191,137,.55)';g.lineWidth=.3;g.stroke();
+      g.strokeStyle=ink.surface.volcanicFissureOuter;g.lineWidth=2.4;g.stroke();
+      g.strokeStyle=ink.surface.volcanicFissureInner;g.lineWidth=.8;g.stroke();g.strokeStyle='rgba(222,191,137,.55)';g.lineWidth=.3;g.stroke();
       fissures.push(path);
     }
     // A broken, spotted limb: dark irregular blotches straddling the very edge, so the silhouette itself
@@ -234,7 +233,7 @@ function paintPigment(g,core,rng,rgb=null){
   }
   for(let i=0,n=Math.round(950*k);i<n;i++){
     const x=(rng()-.5)*core*2,y=(rng()-.5)*core*2,light=i%3!==0;
-    g.fillStyle=light?`rgba(239,226,192,${.24*wash})`:(paper?'rgba(45,39,27,.19)':'rgba(45,39,27,.22)');
+    g.fillStyle=light?`rgba(${ink.surface.pigmentLight},${.24*wash})`:ink.surface.pigmentDark;
     g.fillRect(x,y,.18+rng()*.55,.2+rng()*.42);
   }
   // Short broken strokes suggest dry brush catching the paper grain.
@@ -757,7 +756,10 @@ function drawPlanet(art,r,time,impression=null){
     ctx.save();ctx.rotate(art.tilt);
     for(let i=0;i<4;i++){
       const height=2.2+i*.75+Math.sin(t*.32+art.phase+i*.8)*.8;
-      ctx.strokeStyle=paper?`rgba(58,42,28,${.045+.02*Math.sin(t*.38+art.phase+i*.6)})`:`rgba(184,198,179,${.055+.025*Math.sin(t*.38+art.phase+i*.6)})`;
+      // The ice fringe: the one live-drawn literal the planets-palette finding calls out separately, since
+      // it is stroked here in drawPlanet rather than baked into a pressed layer, so it escapes any pixel
+      // pass and needs its own registered token like the fracture web does.
+      ctx.strokeStyle=paper?`rgba(${ink.surface.iceFringe},${.045+.02*Math.sin(t*.38+art.phase+i*.6)})`:`rgba(${ink.surface.iceFringe},${.055+.025*Math.sin(t*.38+art.phase+i*.6)})`;
       ctx.lineWidth=.65;
       ctx.beginPath();ctx.ellipse(-2,-art.core*.66,art.core*.59,art.core*.3+height,-.1,Math.PI*1.05,Math.PI*1.86);ctx.stroke();
     }
