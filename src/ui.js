@@ -337,6 +337,18 @@ function catalogueTable(){
   ];
   return ledgerTable(rows);
 }
+// How far the studiolo has been filled, pricked rather than filled in: twelve lozenges — the same mark
+// the score frame and a chosen menu line are pricked with — of which as many are inked as the standing
+// reaches. A catalogue counts its plates in discrete marks and does not run a bar across them, and the
+// exact figure is already set in the kicker above the row, so these are a reading at a glance rather
+// than a second statement of it. The last lozenge is held back until the catalogue is actually complete,
+// since twelve marks stand in for fifty-odd plates and a rounded ninety-nine would otherwise ink a full
+// row over a studiolo still missing a sheet.
+function studioloMarks(percent){
+  const marks=12,inked=percent>=100?marks:Math.min(marks-1,Math.round(percent/100*marks));let out='';
+  for(let i=0;i<marks;i++)out+=i<inked?'<i class="inked"></i>':'<i></i>';
+  return out;
+}
 function catalogueOverview(){
   const total=UNLOCKS.length,earned=unlockedIds().size,percent=total?Math.round(earned/total*100):100;
   const locked=UNLOCKS.filter(entry=>!isUnlocked(entry.id));
@@ -349,7 +361,7 @@ function catalogueOverview(){
     '<div class="cat-overview-copy"><span class="cat-overview-kicker">THE STUDIOLO · '+percent+'%</span>'+
       '<strong>'+plainText(nextText)+'</strong>'+
       '<span class="cat-overview-progress">NEXT · '+nextProgress+'</span>'+
-      '<span class="cat-progress-rule"><i style="width:'+percent+'%"></i></span></div>'+
+      '<span class="cat-progress-rule" aria-hidden="true">'+studioloMarks(percent)+'</span></div>'+
     '</div>';
 }
 function recordOverview(){
