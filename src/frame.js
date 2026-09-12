@@ -929,6 +929,7 @@ function impressumMetrics(){
   const inner=frameBand()*.92+8,size=frameWide()?7.4:6.4,padY=9;
   const width=Math.min(frameWide()?392:320,Math.max(100,W-inner*2-10));
   let rowsHeight=0;for(const key in IMPRESSUM_TIERS)rowsHeight+=impressumRowSize(key,size)*1.48;
+  if(impressumHasCompleteAtlas())rowsHeight+=ESCUTCHEON_GAP;
   return {inner,size,padY,width,height:padY*2+rowsHeight};
 }
 function impressumAnchor(metrics){
@@ -1027,6 +1028,32 @@ function impressumDevice(g,x,y,size,alpha,seed){
   burinSegment(g,x-size*.48,y-size*.46,x+size*.28,y+size*.43,rgb,alpha*.82,.5,seed+13,{segments:4,skips:0,hair:false,wobble:.2});
   burinSegment(g,x+size*.22,y+size*.38,x+size*.7,y+size*.05,rgb,alpha*.76,.45,seed+19,{segments:3,skips:0,hair:false,wobble:.18});
 }
+// The reserved vertical gap the escutcheon takes above the privilege row, and the shield's own height
+// within it — a real arms shield rather than a bare dedication line, but small enough it never crowds
+// the row it sits over.
+const ESCUTCHEON_GAP=20,ESCUTCHEON_SIZE=14;
+// A small arms shield above the dedication, once the atlas is complete: the same Scutum Sobiescianum
+// silhouette a captured shield node already carries (chargeDevice('shield') in figures.js), cut down
+// to cartouche size, field hatched the one direction this plate ever hatches in, charged with the
+// plate's own compass-and-quill device, and flanked by a short strapwork curl on either side — the
+// ordinary furniture a princely privilege earned on a real plate, not a line of type standing alone.
+function impressumEscutcheon(g,cx,cy,alpha){
+  if(!(alpha>0))return;
+  const rgb=onPaper()?ink.base.inkStrong:ink.base.inkSoft,strong=(onPaper()?.62:.48)*alpha,faint=(onPaper()?.3:.22)*alpha;
+  const k=ESCUTCHEON_SIZE/72;
+  const face=[[-29,-27],[0,-31],[29,-27],[30,-6],[26,12],[14,29],[0,41],[-14,29],[-26,12],[-30,-6]].map(([px,py])=>[px*k,py*k]);
+  g.save();g.translate(cx,cy);
+  deviceLine(g,face,rgb,strong,.9,80311,true);
+  deviceLine(g,face.map(([px,py])=>[px*.8,py*.8]),rgb,faint,.6,80331,true);
+  deviceHatch(g,13*k,-2*k,4,4.4*k,13*k,rgb,faint,80359);
+  impressumDevice(g,0,3*k,ESCUTCHEON_SIZE*.3,(onPaper()?.55:.4)*alpha,80371);
+  for(const side of [-1,1]){
+    const hx=side*ESCUTCHEON_SIZE*.72,a0=side<0?Math.PI*.15:Math.PI*.85,a1=side<0?Math.PI*1.05:-Math.PI*.05;
+    burinArc(g,hx,-ESCUTCHEON_SIZE*.08,ESCUTCHEON_SIZE*.24,a0,a1,rgb,faint,.55,80391+side,{segments:6,skips:1});
+    burinSegment(g,side*ESCUTCHEON_SIZE*.34,-ESCUTCHEON_SIZE*.18,hx,-ESCUTCHEON_SIZE*.08,rgb,faint,.5,80401+side,{segments:2,hair:false,wobble:.3});
+  }
+  g.restore();
+}
 function impressumScreenLine(){
   if(plainPlate())return 'Impressum · ANTE LITTERAS';
   let line='Impressum · AUGUSTÆ VINDELICORUM · TAB. V · I';
@@ -1055,7 +1082,12 @@ function drawImpressum(){
   ctx.textAlign='center';ctx.textBaseline='middle';
   let ry=top+m.padY;
   for(let i=0;i<rows.length;i++){
-    const row=rows[i],rowSize=impressumRowSize(row.key,m.size),rowLineH=rowSize*1.48,cy=ry+rowLineH*.5,progress=impressumRowProgress(row);
+    const row=rows[i];
+    // The shield takes its own reserved gap right above the privilege row rather than crowding it,
+    // matching the extra height impressumMetrics() only grants once the atlas is actually complete.
+    if(row.key==='privilege'&&row.text)ry+=ESCUTCHEON_GAP;
+    const rowSize=impressumRowSize(row.key,m.size),rowLineH=rowSize*1.48,cy=ry+rowLineH*.5,progress=impressumRowProgress(row);
+    if(row.key==='privilege'&&row.text)impressumEscutcheon(ctx,x,ry-ESCUTCHEON_GAP*.5,progress);
     ctx.font=IMPRESSUM_ITALIC.has(row.key)?plateFace(rowSize,'text','italic'):plateFace(rowSize,'sc');
     if(!row.text){
       burinSegment(ctx,left+m.width*.25,cy,left+m.width*.75,cy,ink.base.inkSoft,onPaper()?.16:.1,.35,70231+i,{segments:6,skips:1,hair:false,wobble:.16});
