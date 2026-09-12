@@ -25,6 +25,10 @@
        See syncDomPalette() for the mechanism and DOM_BASE_VARS for the exact values it reads from. */
     #game[data-plate-id="azzurra"]{--ink:#66798a;--ivory:#f2eee2;--gold:#f0e9d6;--muted:#d3dbe0;--copy:#e6e8e2;--best:#ece8da;--shield:#e2ecf0;--reflector:#e6dcf0;--dawn:#f2ece0;--line:rgba(240,236,224,.34);--veil:100,116,132}
     #game[data-plate-id="modern"]{--ink:#04060b;--ivory:#e9f2fa;--gold:#f6ce74;--muted:#7c8ea3;--copy:#aab8c8;--best:#dce8f4;--shield:#80d0f2;--reflector:#c4a4f6;--dawn:#fac482;--copper:#e08e5a;--line:rgba(150,180,210,.26);--veil:4,6,11}
+    /* A proof before letters is pulled before the interface's own words are cut into the plate, so the
+       HUD's labels and readouts print blind here — a debossed ghost with no ink in it, not coloured
+       type — while the score and best figures (outside .brand/.small) stay inked so the run is playable. */
+    #game[data-plate-id="proof"] .brand,#game[data-plate-id="proof"] .small{color:transparent;text-shadow:0 1px 0 rgba(255,255,255,.45),0 -1px 0 rgba(0,0,0,.1)}
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
     .era-exit{display:none!important}

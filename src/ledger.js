@@ -125,6 +125,11 @@ const UNLOCKS=[
     describe:()=>'Graze 25 vortices'},
   {id:'sepia',kind:'plate',name:'Sepia plate',latin:'Tabula sepiæ',stat:'constellations',threshold:12,
     describe:()=>'Trace 12 constellations in all'},
+  // The one plate in the registry that admits it is modern: no Latin caption, because a present-day
+  // survey would not set one. plates.js's render:'modern' branch has stood ready since it was built;
+  // this is the only thing that ever puts it in a player's hand.
+  {id:'modern',kind:'plate',name:'Modern survey',latin:'',stat:'bestRow',threshold:100,
+    describe:()=>'Reach row 100'},
   {id:'comet',kind:'mark',name:'Comet',latin:'Cometa',stat:'runs',threshold:25,
     describe:()=>'Play 25 runs'},
   {id:'telescope',kind:'mark',name:'Galilean telescope',latin:'Perspicillum',stat:'perfects',threshold:100,

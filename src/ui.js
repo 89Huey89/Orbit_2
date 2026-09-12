@@ -256,7 +256,7 @@ function showEnd(){
   paintLeafFrame('end-leaf-frame',{noRosette:true});
   $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
-  $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent=world.maxCombo+'×';
+  $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
@@ -295,13 +295,15 @@ function showEnd(){
 // rest are blank rules with their condition beside them. Nothing here touches the simulation, and the
 // button that opens it is only on the plate when no run is in progress.
 let pendingUnlocks=[],catalogueOpen=false,catalogueTab='record';
-const commas=n=>Math.round(Number(n)||0).toLocaleString('en-US');
+// Thousands set off by a thin space, the period convention, rather than the en-US comma this used to
+// hard-code — an old-style figure was never grouped by a punctuation mark.
+const commas=n=>String(Math.round(Number(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
 // A count of nothing is ruled off rather than lettered as Fell's old-style zero, which sets as a
 // lowercase o at table size — the same convention roman() already declares for a bare figure.
 const countMark=n=>{const v=Math.round(Number(n)||0);return v?commas(v):'—';};
 function chartTime(seconds){
   const total=Math.max(0,Math.round(Number(seconds)||0)),h=Math.floor(total/3600),m=Math.floor(total%3600/60);
-  return h?h+'h '+m+'m':m?m+'m':total+'s';
+  return h?h+' hor. '+m+' min.':m?m+' min.':total+' sec.';
 }
 const plainText=value=>String(value??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 // Chapter numbers are printed the way the running head and the plate reveal already print them — a
@@ -357,7 +359,7 @@ function recordOverview(){
     '<div class="record-stat"><strong>'+commas(unlockedIds().size)+' / '+UNLOCKS.length+'</strong><span>Unlocks</span></div>'+
     '<div class="record-stat"><strong>'+commas(ledgerStat('constellations'))+'</strong><span>Routes traced</span></div>'+
     '<div class="record-stat"><strong>'+commas(ledger.bestRow)+'</strong><span>Highest row</span></div>'+
-    '<div class="record-stat"><strong>'+commas(ledger.bestFlow)+'×</strong><span>Best flow</span></div>'+
+    '<div class="record-stat"><strong>×'+commas(ledger.bestFlow)+'</strong><span>Best flow</span></div>'+
     '</div>';
 }
 // The score and the run count the ledger holds for each pressure, TIRO through MAGISTER, beside the
@@ -380,7 +382,7 @@ function pressureTable(){
 function catalogueRecord(){
   const streak=typeof dailyStreak==='function'?dailyStreak():{current:0,longest:0};
   const rows=[
-    ['Best flow',commas(ledger.bestFlow)+'×'],
+    ['Best flow','×'+commas(ledger.bestFlow)],
     ['Deepest chapter reached',chapterLabel(ledger.deepestChapter)],
     ['Deepest chapter at '+DIFFICULTY_LABELS.hardcore+' pressure',chapterLabel(ledger.deepestHardcoreChapter)],
     ['Vortices grazed',commas(ledger.grazes)],

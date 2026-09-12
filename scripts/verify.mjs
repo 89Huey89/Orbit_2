@@ -344,9 +344,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const [id,fields,expected] of cases){
       assert.equal(context.test.unlockMet(context.test.UNLOCK_BY_ID[id],at(fields)),expected,'Unlock condition for '+id+' with '+JSON.stringify(fields));
     }
-    assert.equal(context.test.UNLOCKS.length,52,'The catalogue holds every unlockable');
+    assert.equal(context.test.UNLOCKS.length,53,'The catalogue holds every unlockable');
     // Nothing is ever taken away: a ledger that meets everything unlocks everything.
-    const everything=at({captures:10000,perfects:2500,bestRow:60,maxSpeedSlings:500,runs:{classic:100},grazes:50,
+    const everything=at({captures:10000,perfects:2500,bestRow:100,maxSpeedSlings:500,runs:{classic:100},grazes:50,
       constellations:{'THE LYRE':25},personalBests:{relaxed:1,classic:1,hardcore:1},deepestChapter:4,deepestHardcoreChapter:4,allFourInOneRun:true,inkwellsFound:10,badAngles:500,
       shieldsSpent:15,reflectorsSpent:15,
       observations:{perfectThree:1,skipFive:1,maxSpeed:1,graze:1,pureChart:1,fortyRows:1,threeMinutes:1,rightAngle:1}});

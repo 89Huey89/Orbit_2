@@ -985,7 +985,12 @@ function drawAtmosphere(dt=0,aim=null){
     // figure under it — no 1603 hand set a Leibniz delta or a zero-padded counter.
     ctx.fillText('ASCENSUS',W*.115,H*.45);ctx.fillText(String(Math.floor(world.progress)),W*.115,H*.45+17);
     line(W*.115,H*.45-15,W*.115+45,H*.45-15,`rgba(${ink.atmosphere.annotation},.2)`);
-    ctx.textAlign='right';ctx.fillText('MOMENTUM',W*.88,H*.68);line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
+    // The period term for the run's own speed factor, not the modern loanword the caption used to
+    // carry — and, unlike ASCENSUS's neighbour, actually given the figure the finding asked for.
+    ctx.textAlign='right';ctx.fillText('IMPETVS',W*.88,H*.68);
+    const impetus=world.speedMultiplier();
+    ctx.fillText('×'+(impetus%1?impetus.toFixed(1):impetus),W*.88,H*.68+17);
+    line(W*.88-34,H*.68+12,W*.88,H*.68+12,`rgba(${ink.atmosphere.annotation},.16)`);
   }
   // grain itself is only rebuilt on resize (see resize()); the pattern built from it is just as
   // reusable, so it is memoized against the same canvas instead of re-wrapped every frame.
