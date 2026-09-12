@@ -416,8 +416,13 @@
     .cat-overview-kicker,.cat-overview-progress{font-family:var(--face-sc);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
     .cat-overview-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--face-text);font-size:15px;font-weight:400;color:var(--ivory)}
     .cat-overview-progress{color:var(--gold);font-size:8px}
-    .cat-progress-rule{height:2px;display:block;margin-top:4px;background:var(--line)}
-    .cat-progress-rule i{display:block;height:100%;background:var(--gold)}
+    /* The standing set out as pricked marks, not as a filled bar: twelve of the lozenge the score frame
+       carries (see .score-frame::before), inked from the left as far as the count has reached and left
+       open beyond it, in the rule ink the track was drawn in before. Cut small enough to sit under the
+       8px kicker without taking the eye off the seal, which is what the pane is really about. */
+    .cat-progress-rule{display:flex;align-items:center;gap:5px;margin-top:3px}
+    .cat-progress-rule i{width:6px;height:6px;flex:0 0 auto;border:1px solid var(--line);transform:rotate(45deg)}
+    .cat-progress-rule i.inked{border-color:var(--gold);background:var(--gold)}
     .record-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0 0 15px}
     .record-stat{min-height:70px;display:flex;flex-direction:column;justify-content:center;padding:9px 10px;border:1px solid var(--line);background:rgba(var(--veil),.26)}
     .record-stat strong{font-family:var(--face-text);font-size:22px;font-weight:400;line-height:1.05;color:var(--best);font-variant-numeric:tabular-nums}
