@@ -1066,7 +1066,9 @@ function drawConstellations(){
     // two captions would otherwise print on top of each other.
     const nextCaptioned=world.captures<2&&chart.main[0]&&chart.main[0].row===Math.floor(world.progress)+1;
     if(world.player.node===chart.entry&&chart.main[0]&&!nextCaptioned&&!plainPlate()&&!captionsHeld()){
-      const n=chart.main[0];ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;ctx.fillText('WIDE ORBITS',sx(n.x),sy(n.y)-(n.r+26)*scale);
+      const n=chart.main[0],nx=sx(n.x),ny=sy(n.y);
+      ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;
+      ctx.fillText('WIDE ORBITS',nx,ny+captionOffset(nx,ny,n.r*scale,26*scale));
     }
     ctx.restore();
   }

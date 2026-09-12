@@ -353,7 +353,7 @@ function catalogueOverview(){
 function recordOverview(){
   return '<div class="record-overview">'+
     '<div class="record-stat"><strong>'+commas(unlockedIds().size)+' / '+UNLOCKS.length+'</strong><span>Unlocks</span></div>'+
-    '<div class="record-stat"><strong>'+commas(ledgerStat('constellations'))+' / '+CONSTELLATIONS.length+'</strong><span>Routes traced</span></div>'+
+    '<div class="record-stat"><strong>'+commas(ledgerStat('constellations'))+'</strong><span>Routes traced</span></div>'+
     '<div class="record-stat"><strong>'+commas(ledger.bestRow)+'</strong><span>Highest row</span></div>'+
     '<div class="record-stat"><strong>'+commas(ledger.bestFlow)+'×</strong><span>Best flow</span></div>'+
     '</div>';
@@ -1157,7 +1157,7 @@ function syncEffects(){$('reduce-motion').setAttribute('aria-pressed',String(red
 // after that it stays off the page unless this toggle calls it back, same as any other standing text.
 function syncInstructions(){
   const open=!$('instructions').hidden;
-  $('instructions-toggle').textContent=open?'HIDE':'HOW TO PLAY';
+  $('instructions-toggle').textContent=open?'FOLD':'HOW TO PLAY';
   $('instructions-toggle').setAttribute('aria-expanded',String(open));
 }
 $('instructions-toggle').addEventListener('click',()=>{
@@ -1169,7 +1169,7 @@ $('instructions-toggle').addEventListener('click',()=>{
 // choices — HOW TO PLAY and DAILY PLATE.
 function syncMoreMenu(){
   const open=!$('more-menu').hidden;
-  $('more-toggle').textContent=open?'HIDE':'MORE';
+  $('more-toggle').textContent=open?'LESS':'MORE';
   $('more-toggle').setAttribute('aria-expanded',String(open));
 }
 $('more-toggle').addEventListener('click',()=>{

@@ -1289,6 +1289,10 @@ function floaterLine(f,left,h){
   return cost>0?null:best;
 }
 function drawDarkMarginalia(fy,time,alpha){
+  // Neither the monster nor the gloss has anything to be carried by while the run is still to be
+  // dealt: the flood is only its ready-state resting level, not a rising tide, and drawing them here
+  // is what let the gloss print through the frontispiece's own button cloud.
+  if(world.state==='ready')return;
   const s=scale,drift=time*2.3*s,cycle=27,window=9.5;
   const floor=marginaliaFloor(),line=Math.min(fy,floor);
   // Both marks below are held to the same copper as every other one on the sheet: rather than be
@@ -1313,13 +1317,19 @@ function drawDarkMarginalia(fy,time,alpha){
     }
   }
   if(plainPlate())return;
-  const gloss=glossSprite(false),span=W+gloss.w*2;
-  const gx=((.62*span-drift*.62)%span+span)%span-gloss.w;
+  // Wrapped inside the frame's own inner rule rather than across the whole viewport, and clipped to
+  // match: the gloss used to drift the full canvas width and lean on alpha alone to fade at the
+  // margin, which left it printing straight over the flank's own scale ladder and out past the rule
+  // whenever the fade lagged the sprite. Bounding the cycle to the rule and clipping the blit to the
+  // same rect means it can only ever be seen entering and leaving at the rule, never past it.
+  const gloss=glossSprite(false),inner=frameBand()*.92+8,innerSpan=Math.max(1,W-inner*2)+gloss.w*2;
+  const gx=((.62*innerSpan-drift*.62)%innerSpan+innerSpan)%innerSpan-gloss.w+inner;
   const gy=marginaliaGloss(fy,gloss).y;
   if(gy+gloss.h<=0)return;
-  const edge=clamp(Math.min(gx-rule,W-rule-(gx+gloss.w))/fade+1,0,1);
-  const clear=glossClearance(gx,gy,gloss.w,gloss.h)*edge;if(clear<=0)return;
-  ctx.save();ctx.globalAlpha=alpha*.5*clear;
+  const clear=glossClearance(gx,gy,gloss.w,gloss.h);if(clear<=0)return;
+  ctx.save();
+  ctx.beginPath();ctx.rect(inner,inner,Math.max(0,W-inner*2),Math.max(0,H-inner*2));ctx.clip();
+  ctx.globalAlpha=alpha*.5*clear;
   ctx.drawImage(gloss.canvas,gx,gy,gloss.w,gloss.h);
   if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief*clear;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
   ctx.restore();
