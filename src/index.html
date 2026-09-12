@@ -387,8 +387,8 @@
     }
     /* — Mobile-first studiolo: the atlas remains a Renaissance leaf, but the hand reaches it with
        one thumb. Cards carry the engraved preview; the old ruled register survives in the record pane. — */
-    #catalogue{align-items:stretch;justify-content:stretch;padding:0;background:rgba(var(--veil),.82)}
-    #catalogue .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom))}
+    #catalogue,#ephemeris{align-items:stretch;justify-content:stretch;padding:0;background:rgba(var(--veil),.82)}
+    #catalogue .catalogue-leaf,#ephemeris .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom))}
     #game.cataloguing .footer{visibility:hidden;pointer-events:none}
     #catalogue .catalogue-head{padding-bottom:2px}
     #catalogue .catalogue-head .eyebrow{font-size:8px;letter-spacing:.28em;margin-bottom:4px}
@@ -430,8 +430,6 @@
     .cat-item[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--gold);color:var(--ivory)}
     .cat-item[aria-pressed="true"] .cat-name::before{content:'◆ ';font-size:7px;vertical-align:middle;color:var(--gold)}
     .cat-preview{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:75px;flex:0 0 75px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.6),rgba(var(--veil),.12));color:var(--gold)}
-    .cat-preview::before,.cat-preview::after{content:'';position:absolute;inset:6px;border:1px solid var(--line);pointer-events:none}
-    .cat-preview::after{inset:12px 21%;border-top:0;border-bottom:0;opacity:.5}
     /* The drawing itself: cut as inline SVG by cataloguePreview() in src/ui.js, on a 120x72 field it
        fills, and inked in currentColor so a card takes the plate's gold without naming a colour. */
     .cat-art{position:relative;z-index:1;display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
@@ -440,7 +438,11 @@
     .cat-splat{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none}
     .cat-preview-glyph{position:relative;z-index:1;font-family:var(--face-sc);font-size:25px;line-height:1;color:var(--muted)}
     .cat-preview-rule{position:absolute;left:16%;right:16%;bottom:9px;height:1px;background:var(--line)}
-    .cat-preview.is-locked{color:var(--muted);border-style:dashed;opacity:.72}
+    .cat-preview.is-locked{color:var(--muted);opacity:.72}
+    /* A plate not yet pulled is recorded as a state, not redacted: a blank rule where the drawing would
+       be, DESIDERATUR set small in the caption ink, the way an incomplete plate book notes a missing
+       sheet rather than marking it with a placeholder question mark. */
+    .cat-preview.is-locked .cat-preview-glyph{font-size:8px;letter-spacing:.13em}
     .cat-card-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:3px}
     .cat-name{display:block;overflow:hidden;max-width:100%;font-family:var(--face-text);font-size:15px;line-height:1.1;text-overflow:ellipsis;white-space:nowrap;color:inherit}
     .cat-latin{display:block;overflow:hidden;max-width:100%;font-size:10px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
@@ -463,8 +465,7 @@
       .cat-item{min-height:162px}
     }
     /* — The ephemeris: an almanac leaf of the daily plates, ruled as a month table — */
-    #ephemeris{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
-    .eph-leaf{max-width:min(460px,100%)}
+    #ephemeris{display:flex;pointer-events:auto;z-index:5}
     #ephemeris h2{margin:0;font-family:var(--face-sc);font-weight:400;font-size:clamp(21px,5.4vw,29px);letter-spacing:.3em;text-indent:.3em}
     #ephemeris .eyebrow{margin:0 0 6px;font-size:9px}
     #ephemeris .title-rule{margin:9px auto 0;width:76px}
@@ -609,7 +610,7 @@
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
           <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
-          <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>NEWTON</button>
+          <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button>
           <button id="more-toggle" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
         </div>
         <span id="daily-date" class="small daily-note atlas-only"></span>
@@ -642,7 +643,7 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" hidden>NEWTON</button><button id="copy-score" class="diff-btn atlas-only" type="button">COPY SCORE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
+      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>
   </section>
   <button id="review-close" class="diff-btn" type="button">CLOSE</button>
@@ -655,7 +656,7 @@
       <div class="pause-menu">
         <button id="pause-resume" class="diff-btn" type="button">TAKE UP THE PEN</button>
         <button id="pause-leave" class="diff-btn" type="button">RETURN TO THE FRONTISPIECE</button>
-        <button id="reduce-motion" class="diff-btn" type="button" aria-pressed="false" aria-label="Reduce motion and effects, for a lighter, faster plate">REDUCE MOTION</button>
+        <button id="reduce-motion" class="diff-btn" type="button" aria-pressed="false" aria-label="Reduce motion and effects, for a lighter, faster plate">A STILLER PRESS</button>
       </div>
     </div>
   </section>

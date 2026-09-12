@@ -917,7 +917,11 @@ function drawRunningHead(){
     // (revealPoint) never lets it drift closer than about 66px, so the threshold is set just past that.
     if(band&&Math.abs((band.top+band.bottom)/2-y)<70)return;
   }
-  const size=frameWide()?9.5:8.5,head='TAB. '+numerals[index]+'  \u00b7  '+chapters[index];
+  // REGIO, not TAB.: the impressum's own TAB. names the plate itself, and TAB. naming the region too
+  // made one abbreviation stand for two different things on the same sheet. The region takes its own
+  // Latin name (chaptersLatin, plates.js) rather than the game's English one, matching the plate's voice
+  // everywhere else ink is actually cut into it.
+  const size=frameWide()?9.5:8.5,head='REGIO '+numerals[index]+'  \u00b7  '+chaptersLatin[index];
   ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
   ctx.font=plateFace(size,'sc');
   // Cleared the way a printer actually clears a running head: a plain band of the sheet's own stock,
@@ -1016,16 +1020,22 @@ function impressumHasCompleteAtlas(){
   const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
   return lifetime>=12||!!(world&&lifetime+world.constellationsCompleted>=12);
 }
+// 'YYYY-MM-DD' (the log's own key, dayKey()/utcDay() in ephemeris.js/plates.js) read out as the plate
+// itself would set a date: a Roman day, the month's genitive, and a Roman year, leaning on the same
+// MONTHS_LATIN_GEN/roman() the ephemeris leaf already sets its own dates with.
+function dailyDateLatin(date){
+  const y=Number(date.slice(0,4)),m=Number(date.slice(5,7))-1,d=Number(date.slice(8,10));
+  return 'DIE '+roman(d)+' '+MONTHS_LATIN_GEN[m].toUpperCase()+' · ANNO '+roman(y);
+}
 function impressumRows(){
   const perfect=impressumHasPerfectChain(),complete=impressumHasCompleteAtlas();
   const engraver=typeof engraverCredit==='function'?engraverCredit().toUpperCase():'DELINEAVIT ET SCULPSIT · ORBIS TABULA';
   return [
     {key:'place',text:'AUGUSTÆ VINDELICORUM'},
     {key:'printer',text:'Ex officina Orbis Tabulæ'},
-    // TAB. names the plate itself here — the sheet's own number, matching what the running head calls
-    // it at the foot of the same chart — with the atlas's edition number moved to its own smaller row
-    // rather than sharing the same abbreviation, which used to read as a second, contradictory plate
-    // number six inches from the first.
+    // TAB. names the plate itself here — the sheet's own number, with the atlas's edition number moved
+    // to its own smaller row rather than sharing the same abbreviation, which used to read as a second,
+    // contradictory plate number six inches from the first.
     {key:'plate',text:'TAB. I · A1'},
     {key:'edition',text:'EDITIO V'},
     {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
@@ -1034,7 +1044,10 @@ function impressumRows(){
     {key:'engraver',text:perfect?engraver:'',device:perfect},
     {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},
     {key:'privilege',text:complete?'Serenissimo principi · patrono astronomiæ · cum privilegio':''},
-    {key:'daily',text:dailyOn?'TABULA DIEI · '+dailyDay+(dailyReplay?' · ITERUM':''):''}
+    // Dated the way the sheet dates its own year, not in the ISO form the daily log keys itself by —
+    // that form stays machine-readable in the DOM line (dailyLabel(), plates.js); the cartouche carries
+    // the Latin one.
+    {key:'daily',text:dailyOn?'TABULA DIEI · '+dailyDateLatin(dailyDay)+(dailyReplay?' · ITERUM':''):''}
   ];
 }
 function impressumRowProgress(row){

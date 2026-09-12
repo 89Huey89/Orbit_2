@@ -476,12 +476,15 @@ function drawPlateCaptions(index,weight,place,style){
   // A rhumb web is not a figure of anything, so it is captioned as a chart is: by the quarter of the
   // wind its rose is oriented from, and by the ruled scale rather than by a draughtsman.
   ctx.fillText(figures
-    ?['Luna · Mare silentii','Saturnus · Annuli','Sol · Obscuratio','Nebula · Profundum'][index]
+    ?['Luna · Cava et montes','Saturnus · Ansae','Sol · Obscuratio','Nebula · Profundum · post tempus tabulae'][index]
     :['Rosa ventorum · Septentrio','Rosa ventorum · Oriens','Rosa ventorum · Meridies','Rosa ventorum · Occidens'][index],x,y);
-  ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('TAB. '+numerals[index],x,y+25*fit);
+  // FIG. rather than TAB.: this numbers the hand-drawn figure above the caption, not the plate itself —
+  // the plate's own number is the running head's REGIO and the impressum's TAB., and the three used to
+  // collide on the one abbreviation.
+  ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('FIG. '+numerals[index],x,y+25*fit);
   ctx.font=plateFace(11*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
   ctx.fillText(figures
-    ?['Fig. I · Luna, Galilæus delin.','Fig. II · Saturnus, Galilæus delin.','Fig. III · Sol maculosus, Galilæus delin.','Fig. IV · Iuppiter et satellites, Galilæus delin.'][index]
+    ?['Fig. I · Luna, Galilæus delin. MDCIX','Fig. II · Saturnus, Galilæus delin. MDCX','Fig. III · Sol maculosus, Galilæus delin. MDCXII','Fig. IV · Iuppiter et Medicea sidera, Galilæus delin. MDCX'][index]
     :'Scala leucarum · XXV ad partem',x,y+45*fit);
   if(!figures){ctx.restore();return;}
   if(index===1){
@@ -762,6 +765,21 @@ function drawChapterReveal(dt){
       burinRect(ctx,-rw,-rh,rw*2,rh*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,90701+chapterReveal.index*7);
       burinRect(ctx,-rw+4,-rh+4,rw*2-8,rh*2-8,ink.base.inkSoft,onPaper()?.36:.25,.6,90711+chapterReveal.index*7);
       ctx.restore();
+    }else if(onPaper()){
+      // A torn scrap of the sheet's own stock laid over the chart, not a light thrown onto it: paper
+      // never glows (see the no-glow rule at the top of this file), so its reserve has to be a material
+      // — an irregular, deckle-edged card, opaque, with the laid-paper tile still reading through it —
+      // rather than the soft radial fade chapterRevealLeaf() paints for night, where a glow is honest.
+      const spread=Math.min(95,W*.21)+72,rx=spread,ry=spread*.42,cx=x,cy=y+4+rise;
+      ctx.save();ctx.translate(cx,cy);
+      landContour(ctx,0,0,rx,ry,seeded(60301+chapterReveal.index*7));
+      ctx.save();ctx.clip();
+      ctx.fillStyle=`rgba(${ink.base.paperRgb},1)`;ctx.fillRect(-rx,-ry,rx*2,ry*2);
+      const sheet=laidSheetFor();
+      if(sheet){ctx.translate(-cx,-cy);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.35;ctx.drawImage(sheet,0,0,W,H);}
+      ctx.restore();
+      ctx.strokeStyle=`rgba(${ink.base.inkSoft},.4)`;ctx.lineWidth=.8;ctx.stroke();
+      ctx.restore();
     }else{
       const spread=Math.min(95,W*.21)+72;
       ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
@@ -773,12 +791,14 @@ function drawChapterReveal(dt){
   // done — and always under reduced motion — the ordinary lettering below is the finished state. The
   // reserved leaf above is what keeps this readable over the chart; a second glow on top of it was ink
   // spent twice for the one job.
-  // Matches the running head's own abbreviation (frame.js) rather than a second, English name for the
-  // same plate: TAB. IV on the reveal and TAB. IV six inches below it, not PLATE IV and TAB. IV. The
-  // wide tracking is real letterspacing now, not literal space characters typed in between the letters —
-  // those timed and drew as glyphs of their own under penLettering, which is why the plain string carries
-  // no gaps and the same tracking value is handed to both the pen and the settled ctx.letterSpacing.
-  const plate='TAB. '+numerals[chapterReveal.index],name=chapters[chapterReveal.index],plateTrack=2;
+  // Spelled out rather than abbreviated: this is the largest lettering on the sheet, so it names the
+  // plate itself in full — TABULA, matching what the impressum's own TAB. row abbreviates — while the
+  // running head six inches below it (frame.js) names the region instead, REGIO, so the two no longer
+  // collide on one abbreviation for two different things. The wide tracking is real letterspacing now,
+  // not literal space characters typed in between the letters — those timed and drew as glyphs of their
+  // own under penLettering, which is why the plain string carries no gaps and the same tracking value is
+  // handed to both the pen and the settled ctx.letterSpacing.
+  const plate='TABULA '+numerals[chapterReveal.index],name=chapters[chapterReveal.index],plateTrack=2;
   const size=compact?24:Math.min(36,Math.max(24,W*.062));
   ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');ctx.letterSpacing=plateTrack+'px';
   if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center',plateTrack))ctx.fillText(plate,x,y-22+rise);

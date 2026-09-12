@@ -176,7 +176,7 @@ function newWorld(){
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'));
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
-  $('copy-score').textContent='COPY SCORE';
+  $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
   // A chart's whole course reduces to one thing repeated: when the traveller released. Kept here as
   // world.time — the sim's own clock, immune to real time and frame jitter — so the plate can later be
@@ -310,7 +310,9 @@ const plainText=value=>String(value??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'
 // a ledger that has never yet folded in a finished run.
 function chapterLabel(value){
   const n=Math.max(0,Math.min(chapters.length,Math.round(Number(value)||0)));
-  return n?numerals[n-1]+' · '+chapters[n-1]:'—';
+  // Prefixed with TAB. so the record pane and the ephemeris agree with the chapter reveal's own TABULA,
+  // rather than the bare numeral this used to print alone.
+  return n?'TAB. '+numerals[n-1]+' · '+chapters[n-1]:'—';
 }
 // The atlas's eight named feats, in the order src/simulation.js's OBSERVATIONS lists them, paired with
 // the same Latin caption the sheet inscribes when each first fires — read off OBSERVATIONS rather than
@@ -866,7 +868,7 @@ const PREVIEW_ART={
 function cataloguePreview(item,kind,locked=false){
   const cut=PREVIEW_ART[kind],art=cut?cut(item.id):medalRoundel(artFill(artStar(60,36,6,13,5)));
   const spill=!locked&&kind==='trail'?'<canvas class="cat-splat" data-ink="'+plainText(item.id)+'" aria-hidden="true"></canvas>':'';
-  const shown=locked?'<span class="cat-preview-glyph">?</span>'
+  const shown=locked?'<span class="cat-preview-glyph">DESIDERATUR</span>'
     :'<svg class="cat-art" viewBox="'+ART_FIELD+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+art+'</svg>'+spill;
   return '<span class="cat-preview'+(locked?' is-locked':'')+'" data-kind="'+plainText(kind)+'" data-item="'+plainText(item.id)+'" aria-hidden="true">'+
     shown+'<span class="cat-preview-rule"></span></span>';
@@ -875,11 +877,11 @@ function catalogueRow(item,kind){
   const entry=UNLOCK_BY_ID[item.id];
   if(entry&&!isUnlocked(item.id)){
     const progress=unlockProgress(entry);
-    const need=entry.describe()+(progress?' · '+commas(Math.min(progress.value,progress.threshold))+' / '+commas(progress.threshold):' · SPECIAL FEAT');
-    return `<li class="cat-row cat-card locked">${cataloguePreview(item,entry.kind||kind||'medal',true)}<div class="cat-card-copy"><span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">LOCKED</span><span class="cat-cond">${plainText(need)}</span></div></li>`;
+    const need=entry.describe()+(progress?' · '+commas(Math.min(progress.value,progress.threshold))+' / '+commas(progress.threshold):' · BY FEAT ALONE');
+    return `<li class="cat-row cat-card locked">${cataloguePreview(item,entry.kind||kind||'medal',true)}<div class="cat-card-copy"><span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">NOT YET CUT</span><span class="cat-cond">${plainText(need)}</span></div></li>`;
   }
   const chosen=kind&&cosmetic(kind)===item.id;
-  const label=`<span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">${chosen?'EQUIPPED':'UNLOCKED'}</span>`;
+  const label=`<span class="cat-name">${plainText(item.name)}</span><span class="cat-latin">${plainText(item.latin)}</span><span class="cat-state">${chosen?'ON THE PRESS':'IN THE CASE'}</span>`;
   if(!kind)return `<li class="cat-row cat-card">${cataloguePreview(item,entry?.kind||'medal')}<div class="cat-card-copy">${label}</div></li>`;
   return `<li class="cat-row cat-card"><button class="cat-item" type="button" data-kind="${kind}" data-id="${item.id}" aria-pressed="${chosen}">${cataloguePreview(item,kind)}<span class="cat-card-copy">${label}</span></button></li>`;
 }

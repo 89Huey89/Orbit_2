@@ -194,7 +194,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
-openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
+openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
@@ -248,7 +248,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(rows.length,11,'The impressum reserves every line before achievements are earned');
     assert.equal(rows[0].text,'AUGUSTÆ VINDELICORUM');
     assert.equal(rows[1].text,'Ex officina Orbis Tabulæ','The house sets its own name with the digraph the rest of the cartouche uses, in the small-caps face\'s own mixed case');
-    assert.equal(rows[2].text,'TAB. I · A1','The plate\'s own number matches what the running head calls it, with the atlas\'s edition number moved to its own row');
+    assert.equal(rows[2].text,'TAB. I · A1','The plate\'s own number, with the atlas\'s edition number moved to its own row');
     assert.equal(rows[3].text,'EDITIO V');
   }
   // ---------- The ledger and the catalogue ----------
@@ -533,7 +533,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // A daily run begun today writes that day into the log, which is what opens it ever after.
     context.test.setDaily(true);
     assert.equal(context.test.dailyReplay,false);
-    assert.equal(context.test.impressumRows()[10].text,'TABULA DIEI · '+today,'The impressum records the exact current daily date');
+    const [ty,tm,td]=today.split('-').map(Number);
+    const todayLatin='DIE '+context.test.roman(td)+' '+context.test.MONTHS_LATIN_GEN[tm-1].toUpperCase()+' · ANNO '+context.test.roman(ty);
+    assert.equal(context.test.impressumRows()[10].text,'TABULA DIEI · '+todayLatin,'The impressum records the exact current daily date, in the plate\'s own Latin form');
     context.test.setPlaying();
     assert(context.test.dailyLog[today].plays>=1,'A daily run begun today enters that day in the log');
     assert.equal(context.test.dailyOpen(today),true);
@@ -904,7 +906,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   if(!storageBlocked)assert(Number(saved.get('orbit.bestRow.v1'))>=Math.floor(run.progress),'The ascent record is kept');
   const line=context.test.copyScore();
   assert(line.startsWith('Orbit \u00b7 ')&&line.includes(' points \u00b7 row ')&&line.includes('constellation'),line);
-  assert.equal(element('copy-score').textContent,'COPY SCORE','With no clipboard the button never claims to have copied');
+  assert.equal(element('copy-score').textContent,'TAKE AN IMPRESSION','With no clipboard the button never claims to have copied');
   events['copy-score:click']();
   context.test.setDaily(true);context.test.showEnd();
   assert(element('end-daily').textContent.includes('Tabula diei \u00b7 '+context.test.dailyDay));

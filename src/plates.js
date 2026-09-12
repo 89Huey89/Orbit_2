@@ -215,16 +215,22 @@ function scoreLine(){
 }
 function copyScore(){
   const line=scoreLine();
-  $('copy-score').textContent='COPIED';
+  $('copy-score').textContent='IMPRESSION TAKEN';
   try{
     if(typeof navigator!=='undefined'&&navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
-      const p=navigator.clipboard.writeText(line);if(p&&typeof p.catch==='function')p.catch(()=>{$('copy-score').textContent='COPY SCORE';});
-    }else $('copy-score').textContent='COPY SCORE';
-  }catch(_){$('copy-score').textContent='COPY SCORE';}
+      const p=navigator.clipboard.writeText(line);if(p&&typeof p.catch==='function')p.catch(()=>{$('copy-score').textContent='TAKE AN IMPRESSION';});
+    }else $('copy-score').textContent='TAKE AN IMPRESSION';
+  }catch(_){$('copy-score').textContent='TAKE AN IMPRESSION';}
   return line;
 }
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
 const numerals=['I','II','III','IV'];
+// The running head speaks the plate's own Latin rather than the game's English — REGIO, not TAB., since
+// TAB. already names two other things on the same sheet (the impressum's plate number and, until this
+// pairing landed, the illustrated figure's own caption). PROFVNDVM is the word the Deep's own nebula
+// caption already uses; the other three are chosen the same way — a real Latin word for what the region
+// actually is, not a transliteration of its English name.
+const chaptersLatin=['SILENTIUM','VAGATIO','ECLIPSIS','PROFUNDUM'];
 const starRng=seeded(763428);
 const stars=Array.from({length:210},()=>{
   const s={x:starRng(),y:starRng(),size:.3+starRng()*1.15,phase:starRng()*TAU,depth:.06+starRng()*.19,bright:starRng()};

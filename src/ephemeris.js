@@ -8,6 +8,10 @@
 // current day — are set as entries that can be drawn again, and today's square is always open. Nothing
 // here reaches the simulation: choosing a day only names the plate the next run is dealt from.
 const MONTHS_LATIN=['Ianuarius','Februarius','Martius','Aprilis','Maius','Iunius','Iulius','Augustus','September','October','November','December'];
+// The genitive the impressum's own daily row sets a date in — 'die octava Septembris', not 'die octava
+// September' — kept beside the nominative rather than derived from it, since the twelve months split
+// across three different declensions and no one regular rule covers all of them.
+const MONTHS_LATIN_GEN=['Ianuarii','Februarii','Martii','Aprilis','Maii','Iunii','Iulii','Augusti','Septembris','Octobris','Novembris','Decembris'];
 // The planetary week, as an almanac heads its columns: dies Solis through dies Saturni.
 const WEEKDAYS_LATIN=['Solis','Lunæ','Martis','Mercurii','Iovis','Veneris','Saturni'];
 const ROMAN_SIGNS=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
