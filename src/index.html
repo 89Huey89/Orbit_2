@@ -91,15 +91,15 @@
        own button stands when no run is in progress, so the row of marks keeps its count either way. */
     #pause-open{display:none}
     #game.playing #pause-open{display:grid}
-    #plate .plate-paper{display:none}
-    #game[data-plate="paper"] #plate .plate-paper{display:block}
     #game[data-plate="paper"] #plate .plate-night{display:none}
     #intro{background:radial-gradient(ellipse at center,rgba(var(--veil),.4),rgba(var(--veil),.12) 70%,transparent)}
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
-    /* The colophon is pulled on its own leaf: the sheet itself (--leaf-paper, set by syncLeafAssets() in
-       plates.js) behind a near-opaque veil, inside a double engraved rule, so every line stays legible
-       however far the spilled ink has risen behind it — a page of the same book rather than a flat panel. */
-    .colophon{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;max-width:min(430px,100%);padding:26px 26px 28px;background:linear-gradient(rgba(var(--veil),.86),rgba(var(--veil),.86)),var(--leaf-paper,none) center/cover no-repeat,rgba(var(--veil),.965)}
+    /* The colophon is pulled on its own leaf: opaque, so every line stays legible however far the spilled
+       ink has risen behind it, but not a flat panel either — laidPaper()'s own tile (--leaf-paper, set by
+       syncLeafAssets() in plates.js) repeats across it and blends into the ground colour exactly as
+       drawLaidPaper() blends the same tile into the chart, inside a double engraved rule: a page of the
+       same book rather than a sheet of card. */
+    .colophon{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;max-width:min(430px,100%);padding:26px 26px 28px;background-color:rgb(var(--veil));background-image:var(--leaf-paper,none);background-repeat:repeat;background-size:120px 96px;background-blend-mode:var(--leaf-blend,multiply)}
     .colophon::before,.colophon::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
     .colophon::before{inset:0;border-width:1.5px}
     .colophon::after{inset:5px;opacity:.6}
@@ -116,9 +116,22 @@
     .stat .small{font-size:9px}
     #end-constellations{margin:-18px 0 23px;font-size:13px;color:var(--gold)}
     #end .action-copy{font-size:19px;margin-bottom:12px}
-    .diff-btn{pointer-events:auto;background:none;border:1px solid var(--line);color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s,border-color .2s}
-    .diff-btn:hover,.diff-btn:focus-visible{color:var(--ivory);border-color:var(--gold)}
-    .diff-btn[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+    .diff-btn{pointer-events:auto;background:none;border:0;color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.16em;padding:8px 14px;border-radius:0;cursor:pointer;transition:color .2s}
+    .diff-btn:hover{color:var(--ivory)}
+    .diff-btn:focus-visible{color:var(--ivory);outline:1px solid var(--gold);outline-offset:2px}
+    .diff-btn[aria-pressed="true"]{color:var(--gold)}
+    /* A control set loose as a printed list rather than a row of boxes: one entry per line, a rule
+       between entries rather than around each, and the chosen one pricked with the same lozenge the
+       score frame carries (see .score-frame::before) in the gutter its label leaves for it. The 44px
+       hit target comes from min-height, never from a drawn border. Shared by .action-row (the
+       frontispiece's two menus and the colophon's, none of which draw a box of their own — the
+       frontispiece pair are framed live on the canvas instead, see drawActionRowFrame in frame.js)
+       and .pause-menu, which sits inside its own leaf and needs no frame at all. */
+    .action-row,.pause-menu{display:flex;flex-direction:column;width:100%;max-width:280px;margin:0 auto}
+    .action-row .diff-btn,.pause-menu .diff-btn{position:relative;display:flex;align-items:center;width:100%;min-height:44px;padding:0 4px 0 18px;text-align:left;line-height:1.3}
+    .action-row .diff-btn[hidden],.pause-menu .diff-btn[hidden]{display:none}
+    .action-row .diff-btn+.diff-btn,.pause-menu .diff-btn+.diff-btn{border-top:1px solid var(--line)}
+    .action-row .diff-btn[aria-pressed="true"]::before,.pause-menu .diff-btn[aria-pressed="true"]::before{content:'';position:absolute;left:2px;top:50%;width:6px;height:6px;margin-top:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and turns copper
        when what is left will not carry a long transfer. On the atlas it is cut on the canvas instead
        (drawInkGauge(), src/frame.js, drawn under the score in drawHudLeaf's pass) — this DOM slip stays
@@ -135,14 +148,15 @@
        the same double engraved rule, cut to a slip, and the plate left legible around it rather than
        flooded — the press has stopped with the sheet still on it. */
     #pause{background:rgba(var(--veil),.62);display:flex;align-items:center;justify-content:center;padding:30px 18px}
-    /* Laid a little short of the colophon's near-opaque paper: the slip is a region of the sheet the plate
-       has ruled off, the way it rules off its own impressum, not a hole cut through the chart. */
-    .pause-leaf{width:min(322px,100%);max-width:min(322px,100%);gap:1px;padding:23px 20px 21px;background:rgba(var(--veil),.86)}
-    .pause-menu .diff-btn{width:100%}
+    /* Laid a little short of the colophon's opaque paper: the slip is a region of the sheet the plate has
+       ruled off, the way it rules off its own impressum, not a hole cut through the chart — so unlike the
+       colophon and the catalogue it stays translucent (the plate is meant to read through it), but it is
+       cut from the same stock and carries the same tile. */
+    .pause-leaf{width:min(322px,100%);max-width:min(322px,100%);gap:1px;padding:23px 20px 21px;background-color:rgba(var(--veil),.86);background-image:var(--leaf-paper,none);background-repeat:repeat;background-size:120px 96px;background-blend-mode:var(--leaf-blend,multiply)}
     #pause .eyebrow{margin:0 0 11px;font-size:10px}
     #pause strong{font-style:italic;font-family:var(--face-text);font-size:34px;font-weight:400;letter-spacing:.04em}
     #pause .action-copy{margin:12px 0 0;font-size:17px}
-    .pause-menu{align-self:stretch;display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:19px}
+    .pause-menu{align-self:stretch;margin-top:19px}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -240,7 +254,7 @@
       #pause .title-rule{margin-top:6px}
       #pause .eyebrow{margin-bottom:5px}
       #pause .action-copy{margin-top:6px;font-size:14px}
-      #pause .pause-menu{gap:6px;margin-top:10px}
+      #pause .pause-menu{margin-top:10px}
       #game .pause-leaf{padding:14px 18px 15px;max-width:min(322px,100%)}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
@@ -253,19 +267,8 @@
     /* — Daily plate, the ascent record, and the run's observations — */
     .daily-group{pointer-events:auto;display:flex;flex-direction:column;gap:7px;margin-top:11px}
     .daily-group .daily-note{align-self:center}
-    /* One flat measure rather than a scatter of bordered chips: every action in a row claims an equal
-       share of it and the group reads as one strip, hairline-divided like a ruled table rather than
-       boxed piece by piece — the pause slip's own 'equal-width entries' rule, generalised. A row that
-       sits directly on the open plate (the frontispiece) carries no CSS box of its own: frame.js cuts
-       its frame on the canvas instead, in the plate's own burin (drawActionFrames()), keyed to this
-       div's own measured rect. A row already resting on an opaque leaf (the colophon) keeps the plain
-       ruled border, since there the CSS box is the leaf's own furniture, not a chip laid over the art. */
-    .action-row{display:flex;align-items:stretch;justify-content:center;border:1px solid var(--line)}
-    .action-row .diff-btn{flex:1 1 0;min-width:0;border:0;border-right:1px solid var(--line);padding:9px 6px;line-height:1.4}
-    .action-row .diff-btn:last-child{border-right:0}
-    #intro .action-row{border-color:transparent}
     .daily-note{color:var(--muted);letter-spacing:.2em;font-size:10px;min-height:12px}
-    #game.daily #daily{color:var(--gold);border-color:var(--gold)}
+    #game.daily #daily{color:var(--gold)}
     /* A second disclosure, folded the way HOW TO PLAY already folds its own paragraph: the ephemeris,
        both era doors and the last plate wait behind it, so the sheet a hand first meets offers only
        the day's two live choices. .daily-group sets display:flex on #more-menu, and an author rule
@@ -281,7 +284,7 @@
     .end-plate-line .daily-note{align-self:center}
     #end-daily{margin:0}
     #copy-score{margin:0;display:none}
-    #game.daily #copy-score{display:inline-block}
+    #game.daily #copy-score{display:flex}
     @media(max-height:660px) and (orientation:portrait){
       /* Two new lines on the colophon; on a short sheet the whole table tightens. */
       #end{padding:16px 18px 48px}
@@ -311,7 +314,7 @@
     }
     /* — The catalogue: a ruled library page laid over the plate — */
     #catalogue{display:flex;align-items:center;justify-content:center;padding:14px 14px 66px;pointer-events:auto;z-index:5;background:radial-gradient(ellipse at center,rgba(var(--veil),.78),rgba(var(--veil),.6))}
-    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background:linear-gradient(rgba(var(--veil),.78),rgba(var(--veil),.78)),var(--leaf-paper,none) center/cover no-repeat,rgba(var(--veil),.9);text-align:left}
+    .catalogue-leaf{position:relative;display:flex;flex-direction:column;width:100%;max-width:min(620px,100%);max-height:100%;padding:16px 16px 12px;background-color:rgb(var(--veil));background-image:var(--leaf-paper,none);background-repeat:repeat;background-size:120px 96px;background-blend-mode:var(--leaf-blend,multiply);text-align:left}
     .catalogue-leaf::before,.catalogue-leaf::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
     .catalogue-leaf::before{inset:0;border-width:1.5px}
     .catalogue-leaf::after{inset:5px;opacity:.6}
@@ -385,7 +388,7 @@
     /* — Mobile-first studiolo: the atlas remains a Renaissance leaf, but the hand reaches it with
        one thumb. Cards carry the engraved preview; the old ruled register survives in the record pane. — */
     #catalogue{align-items:stretch;justify-content:stretch;padding:0;background:rgba(var(--veil),.82)}
-    #catalogue .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom));background:rgba(var(--veil),.975)}
+    #catalogue .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom))}
     #game.cataloguing .footer{visibility:hidden;pointer-events:none}
     #catalogue .catalogue-head{padding-bottom:2px}
     #catalogue .catalogue-head .eyebrow{font-size:8px;letter-spacing:.28em;margin-bottom:4px}
@@ -690,11 +693,18 @@
   </section>
   <div class="footer">
     <button id="sound" class="utility" aria-label="Mute sound" aria-pressed="true" title="Sound">
+      <!-- A speaking-trumpet in three-quarter view, drawn as one closed outline: the cup at the lower
+           left, two edges that hold the neck narrow and then flare hard, and a bulged rim that shuts
+           the bell as an opening rather than a point. Struck level and turned into the corner, so the
+           breath that leaves the bell has the sheet's whole upper right to cross. -->
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3 12h2.3M5.3 11.6 13.4 5M5.3 12.4 13.4 19M13.4 5Q17 12 13.4 19"/>
-        <path d="M3 12h2.3M5.3 11.6 13.4 5M5.3 12.4 13.4 19M13.4 5Q17 12 13.4 19" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
-        <path class="sound-wave" d="M16.6 8.3l2.6-1.5M17.1 12h3.4M16.6 15.7l2.6 1.5"/>
-        <path class="mute-mark" d="M12.2 7Q14 12 12.2 17M11.2 12h2.4"/>
+        <g transform="rotate(-33 12 12)">
+          <path d="M16.1 7.95C13.8 10.05 9.6 10.4 3.2 10.5 2 10.5 2 13.5 3.2 13.5 9.6 13.6 13.8 13.95 16.1 16.05 18.75 16.05 18.75 7.95 16.1 7.95Z"/>
+          <path d="M9.4 10C10.5 10.7 10.5 13.3 9.4 14" stroke-width=".75"/>
+          <path class="sound-wave" d="M19.4 12 22.6 12M18.9 9.15 21.1 8.12M18.9 14.85 21.1 15.88" stroke-width=".9"/>
+          <path class="mute-mark" d="M16.5 7.1 16.5 16.9" stroke-width="1.3"/>
+        </g>
+        <path d="M16.1 7.95C13.8 10.05 9.6 10.4 3.2 10.5 2 10.5 2 13.5 3.2 13.5 9.6 13.6 13.8 13.95 16.1 16.05 18.75 16.05 18.75 7.95 16.1 7.95Z" transform="translate(.5,.4) rotate(-33 12 12)" opacity=".3" stroke-width=".45"/>
       </svg>
     </button>
     <span class="footer-tools">
@@ -721,21 +731,30 @@
       </svg>
     </button>
     <button id="plate" class="utility" aria-label="Switch to paper plate" title="Paper or night plate">
+      <!-- A leaf of hand-made paper, laid on the slant: three edges cut true and the fourth left raw,
+           the deckle the mould's felt gives it. Two chain lines stand in the sheet itself and are
+           drawn as faint as the mould left them; the printed rules cross them at right angles in a
+           darker ink, so the night plate reads printed-side-up and the paper plate simply blank. -->
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M6 3h9l4 4v14H6z"/>
-        <path d="M6 3h9l4 4v14H6z" transform="translate(.5,.4)" opacity=".3" stroke-width=".45"/>
-        <path d="M15 3v4h4"/>
-        <path class="plate-night" d="M9 12h6M9 15.5h6M9 8.5h3"/>
-        <path class="plate-paper" d="M9.6 12.5c.3-1 1.3-1.7 2.3-1.4 1.1.3 1.7 1.5 1.3 2.5-.3.9-1.2 1.7-2.6 2-.4-1-1.3-2.1-1-3.1z" fill="currentColor" stroke="none"/>
+        <g transform="rotate(-4 12 12)">
+          <path d="M5.4 3.4H18.8V20.6H5.5C5.5 19.3 4.7 19.3 4.7 18S6 16.6 6 15.2 4.8 13.6 4.8 12 5.9 10.5 5.9 9 4.8 7.6 4.8 6.2 5.4 4.8 5.4 3.4Z"/>
+          <path d="M9.9 3.9v16.2M14.3 3.85v16.3" stroke-width=".45" opacity=".35"/>
+          <path class="plate-night" d="M8.8 10.2h6.4M8.8 13.2h6.4M8.8 16.2h3.8" stroke-width=".85"/>
+        </g>
+        <path d="M5.4 3.4H18.8V20.6H5.5C5.5 19.3 4.7 19.3 4.7 18S6 16.6 6 15.2 4.8 13.6 4.8 12 5.9 10.5 5.9 9 4.8 7.6 4.8 6.2 5.4 4.8 5.4 3.4Z" transform="translate(.5,.4) rotate(-4 12 12)" opacity=".3" stroke-width=".45"/>
       </svg>
     </button>
     <button id="fullscreen" class="utility" aria-label="Enter fullscreen" title="Fullscreen">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/>
-        <circle cx="5.6" cy="5.6" r="1" fill="currentColor" stroke="none"/>
-        <circle cx="18.4" cy="5.6" r="1" fill="currentColor" stroke="none"/>
-        <circle cx="5.6" cy="18.4" r="1" fill="currentColor" stroke="none"/>
-        <circle cx="18.4" cy="18.4" r="1" fill="currentColor" stroke="none"/>
+        <g stroke-width=".95">
+          <circle cx="5.4" cy="5.4" r="2.45"/><path d="M5.4 1.9v7M1.9 5.4h7" stroke-width=".75"/>
+          <circle cx="18.6" cy="5.4" r="2.45"/><path d="M18.6 1.9v7M15.1 5.4h7" stroke-width=".75"/>
+          <circle cx="5.4" cy="18.6" r="2.45"/><path d="M5.4 15.1v7M1.9 18.6h7" stroke-width=".75"/>
+          <circle cx="18.6" cy="18.6" r="2.45"/><path d="M18.6 15.1v7M15.1 18.6h7" stroke-width=".75"/>
+        </g>
+        <g transform="translate(.5,.4)" opacity=".3" stroke-width=".5">
+          <circle cx="5.4" cy="5.4" r="2.45"/><circle cx="18.6" cy="5.4" r="2.45"/><circle cx="5.4" cy="18.6" r="2.45"/><circle cx="18.6" cy="18.6" r="2.45"/>
+        </g>
       </svg>
     </button>
     </span>

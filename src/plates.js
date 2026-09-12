@@ -527,29 +527,26 @@ function syncDomPalette(){
     if(value)game.style.setProperty('--'+name,value);else game.style.removeProperty('--'+name);
   }
 }
-// The catalogue, colophon and ephemeris are the game's own book pages, so they are owed the plate's own
-// sheet rather than a flat panel colour: a 256x256 crop of paintBackdrop() composited with laidPaper(),
-// centred on the sheet, goes into --leaf-paper as a data URL every leaf panel's CSS background reads
-// behind its own lower-opacity veil. Rebuilt only when the plate or the screen size actually changes.
+// The catalogue, colophon and pause leaves are owed the plate's own grain rather than a flat panel
+// colour: laidPaper()'s own small tile — the same one drawLaidPaper() lays over the chart — goes into
+// --leaf-paper as a repeating data-URL tile, pre-washed to the same .35 (paper) or .055 (night) strength
+// drawLaidPaper() uses, so every leaf panel's CSS background can blend it straight into an opaque ground
+// with background-blend-mode (--leaf-blend carries multiply or screen to match). Rebuilt only when the
+// plate or the pixel ratio actually changes, since the tile itself is keyed the same way laidPaper() is.
 let leafAssetsKey='';
 function syncLeafAssets(){
-  if(!W||!H||!game.style||typeof game.style.setProperty!=='function')return;
-  const key=plateName+':'+Math.round(W)+'x'+Math.round(H);
+  if(!game.style||typeof game.style.setProperty!=='function')return;
+  const key=plateName+':'+DPR;
   if(key===leafAssetsKey)return;
   leafAssetsKey=key;
-  const bg=backdrop;
-  if(!bg||!bg.width||!bg.height)return;
-  const size=256,c=makeCanvas(size,size),g=c.getContext('2d');
-  const crop=Math.min(bg.width,bg.height);
-  g.drawImage(bg,(bg.width-crop)/2,(bg.height-crop)/2,crop,crop,0,0,size,size);
-  const sheet=laidSheetFor();
-  if(sheet&&sheet.width&&sheet.height){
-    const sc=Math.min(sheet.width,sheet.height,crop);
-    g.save();g.globalCompositeOperation=onPaper()?'multiply':'screen';g.globalAlpha=onPaper()?.35:.055;
-    g.drawImage(sheet,(sheet.width-sc)/2,(sheet.height-sc)/2,sc,sc,0,0,size,size);
-    g.restore();
-  }
-  try{game.style.setProperty('--leaf-paper',`url(${c.toDataURL('image/png')})`);}catch(_){}
+  const tile=laidPaper();
+  if(!tile||!tile.width||!tile.height)return;
+  const c=makeCanvas(tile.width,tile.height),g=c.getContext('2d');
+  g.globalAlpha=onPaper()?.35:.055;g.drawImage(tile,0,0);
+  try{
+    game.style.setProperty('--leaf-paper',`url(${c.toDataURL('image/png')})`);
+    game.style.setProperty('--leaf-blend',onPaper()?'multiply':'screen');
+  }catch(_){}
 }
 function syncPlate(){
   // The stylesheet switches its variables on the base plate; the exact plate is named beside it so a
