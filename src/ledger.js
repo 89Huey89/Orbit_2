@@ -7,7 +7,7 @@
 // the page is hidden, so a run that is never finished still counts what it did. Blocked storage and a
 // malformed document are both ordinary conditions: the ledger falls back to an empty one and the game
 // plays exactly as it does with a full one.
-const LEDGER_KEY='orbit.ledger.v1',COSMETICS_KEY='orbit.cosmetics.v1',INITIALS_KEY='orbit.initials.v1';
+const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1',COSMETICS_KEY='orbit.cosmetics.v1',INITIALS_KEY='orbit.initials.v1';
 function emptyLedger(){
   return {captures:0,perfects:0,bestFlow:0,constellations:{},bestRow:0,deepestChapter:0,deepestHardcoreChapter:0,
     grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,telescopicCaptures:0,runs:{},playSeconds:0,personalBests:{},observations:{},allFourInOneRun:false};
@@ -18,17 +18,35 @@ function cleanCounts(raw){
   if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const key in raw){const n=countOf(raw[key]);if(n>0)out[String(key)]=n;}
   return out;
 }
+// The instrument-cabinet retirement (see ART-AUDIT-TODO.md, "Bayer's own dozen, as three of the
+// twelve") renamed three catalogue entries to the southern-sky figures Bayer actually added in
+// 1603. A v1 document's lifetime counts under the old names are folded onto the new ones the one
+// time such a document is read forward, rather than a real player's figures silently vanishing.
+const CONSTELLATION_RENAMES_V1={'THE COMPASS':'THE PHOENIX','THE HOURGLASS':'THE TOUCAN','THE ASTROLABE':'THE PEACOCK'};
+function remapConstellationNames(counts){
+  const out={};
+  for(const key in counts){const mapped=CONSTELLATION_RENAMES_V1[key]||key;out[mapped]=(out[mapped]||0)+counts[key];}
+  return out;
+}
 function readLedger(){
   const empty=emptyLedger();
   let raw=null;
   try{raw=JSON.parse(storage.get(LEDGER_KEY,'null'));}catch(_){raw=null;}
-  if(!raw||typeof raw!=='object'||Array.isArray(raw))return empty;
+  let legacy=null;
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)){
+    try{legacy=JSON.parse(storage.get(LEDGER_KEY_V1,'null'));}catch(_){legacy=null;}
+    if(!legacy||typeof legacy!=='object'||Array.isArray(legacy))return empty;
+    raw=legacy;raw.constellations=remapConstellationNames(cleanCounts(legacy.constellations));
+  }
   const out=empty;
   for(const key of ['captures','perfects','bestFlow','bestRow','deepestChapter','deepestHardcoreChapter','grazes','shieldsSpent','reflectorsSpent','dawnsSpent','maxSpeedSlings','inkwellsFound','badAngles','telescopicCaptures'])out[key]=countOf(raw[key]);
   out.playSeconds=Math.max(0,Number(raw.playSeconds)||0);
   out.constellations=cleanCounts(raw.constellations);out.runs=cleanCounts(raw.runs);
   out.observations=cleanCounts(raw.observations);out.personalBests=cleanCounts(raw.personalBests);
   out.allFourInOneRun=raw.allFourInOneRun===true;
+  // A lingering v1 document is promoted to v2 the moment it is read forward, so the rename is
+  // written down once rather than re-migrated (and re-saved) on every load.
+  if(legacy)storage.set(LEDGER_KEY,JSON.stringify(out));
   return out;
 }
 const ledger=readLedger();

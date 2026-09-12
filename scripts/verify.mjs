@@ -6,7 +6,7 @@ import {Worker,isMainThread,parentPort,workerData} from 'node:worker_threads';
 import {bundle} from './bundle.mjs';
 
 const step=1/120;
-const LEDGER_KEY='orbit.ledger.v1';
+const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // The heavy blocks below (taskRoute60, taskDetourDeep, taskSling60, runtime) are each an independent,
 // seeded simulation that never reads or writes another's state, so they are handed to worker threads
 // and run in parallel instead of one after another. Every one of them is written exactly as it would
@@ -166,7 +166,7 @@ function taskVariedOpening(){
   return {totalCaptures,variedOpenings:opens.length,variedFigures:firstFigures.size};
 }
 
-function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={}){
+function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},checkRename=false){
   const events={},items=new Map(),raf=[],saved=new Map(Object.entries(seed));
   let lensCopies=0;
   const gradient={addColorStop(){}};
@@ -254,7 +254,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // ---------- The ledger and the catalogue ----------
   // A browser with no ledger — or with a ledger that is not JSON at all — opens on an empty one, with
   // every cosmetic at its classic default and nothing unlocked.
-  const seededLedger=seed[LEDGER_KEY]&&seed[LEDGER_KEY].startsWith('{"captures');
+  const seededLedger=(seed[LEDGER_KEY]&&seed[LEDGER_KEY].startsWith('{"captures'))||(seed[LEDGER_KEY_V1]&&seed[LEDGER_KEY_V1].startsWith('{"captures'));
   if(!seededLedger){
     const fresh=JSON.parse(JSON.stringify(context.test.ledger));
     assert.deepEqual({captures:fresh.captures,perfects:fresh.perfects,bestFlow:fresh.bestFlow,constellations:fresh.constellations,
@@ -268,6 +268,19 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.isUnlocked('cellarius'),false);
     assert.equal(context.test.setCosmetic('mark','saturn'),false,'A locked cosmetic can never be selected');
     assert.equal(context.test.cosmetic('mark'),'quill','A refused selection leaves the default in place');
+  }
+  // A v1 document from before "Bayer's own dozen" (ART-AUDIT-TODO.md) retired three instrument
+  // figures: its lifetime counts under their old names must migrate onto the new ones the moment
+  // the page reads it forward, unprompted by a run, and the promoted document must land under the
+  // live v2 key so the migration is written down once rather than repeated on every load.
+  if(checkRename){
+    const led=context.test.ledger;
+    assert.equal(led.constellations['THE PHOENIX'],7,'THE COMPASS\'s lifetime count migrates onto THE PHOENIX');
+    assert.equal(led.constellations['THE TOUCAN'],3,'THE HOURGLASS\'s lifetime count migrates onto THE TOUCAN');
+    assert.equal(led.constellations['THE PEACOCK'],2,'THE ASTROLABE\'s lifetime count migrates onto THE PEACOCK');
+    assert.equal(led.constellations['THE LYRE'],1,'A name that was never renamed carries forward unchanged');
+    for(const retired of ['THE COMPASS','THE HOURGLASS','THE ASTROLABE'])assert(!(retired in led.constellations),retired+' must not survive the migration');
+    assert.equal(JSON.stringify(JSON.parse(saved.get(LEDGER_KEY)).constellations),JSON.stringify(led.constellations),'The migrated document is promoted to the v2 key immediately, not only after a run');
   }
   // Every condition in the catalogue is evaluated against the ledger exactly as written.
   {
@@ -864,6 +877,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.catalogueOpen,true);
     const page=element('catalogue-body').innerHTML;
     assert(page.includes('Orbits captured')&&page.includes('Time in the chart'),'The catalogue prints the ledger\'s figures');
+    assert(page.includes('THE PHOENIX')&&page.includes('Phoenix')&&page.includes('THE TOUCAN')&&page.includes('Tucana')&&page.includes('THE PEACOCK')&&page.includes('Pavo'),
+      'The Asterismi table lists Bayer\'s three added figures in place of the retired instruments');
     for(const group of context.test.COSMETIC_KINDS)assert(page.includes(group.title),'The catalogue lists '+group.title);
     assert(page.includes('Named feats')&&page.includes('Insignia'),'The catalogue lists the named feats as medals');
     assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
@@ -1254,7 +1269,7 @@ if(!isMainThread){
     else if(task==='detourDeep')result=taskDetourDeep();
     else if(task==='sling60')result=taskSling60();
     else if(task==='variedOpening')result=taskVariedOpening();
-    else if(task==='runtime')result=runtime(params.width,params.height,params.storageBlocked,params.reduceMotion,params.seed);
+    else if(task==='runtime')result=runtime(params.width,params.height,params.storageBlocked,params.reduceMotion,params.seed,params.checkRename);
     else throw new Error('Unknown worker task: '+task);
     parentPort.postMessage({ok:true,result});
   }catch(err){
@@ -1303,6 +1318,10 @@ const FULL_LEDGER=JSON.stringify({captures:10500,perfects:4000,bestFlow:9,conste
 // A plate from a previous visit, saved under its own seed and viewport rather than this layout's —
 // review has to rebuild it as it was flown, not as the frontispiece booting it happens to be sized.
 const SAVED_REPLAY=JSON.stringify({seed:1,width:440,height:860,offerDifficulty:true,releases:[],resizes:[],score:250,row:9,reason:'THE NIB RAN DRY',capturedAt:Date.now()});
+// A v1 document, seeded only under the legacy key, carrying lifetime counts under the three names
+// "Bayer's own dozen" (ART-AUDIT-TODO.md) retired — proof that the v1→v2 migration folds them
+// onto the new names rather than losing them.
+const RENAMED_LEDGER=JSON.stringify({captures:40,perfects:5,bestFlow:2,constellations:{'THE COMPASS':7,'THE HOURGLASS':3,'THE ASTROLABE':2,'THE LYRE':1},bestRow:12,runs:{classic:60},playSeconds:600,personalBests:{classic:80},observations:{},allFourInOneRun:false});
 const pLayouts=Promise.all([
   runtimeLayout({width:390,height:844}),
   runtimeLayout({width:430,height:932,storageBlocked:true,reduceMotion:true}),
@@ -1310,6 +1329,7 @@ const pLayouts=Promise.all([
   runtimeLayout({width:1440,height:900,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB','orbit.lastReplay.v1':SAVED_REPLAY,
     'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}}),
   runtimeLayout({width:844,height:390}),
+  runtimeLayout({width:400,height:800,seed:{'orbit.ledger.v1':RENAMED_LEDGER},checkRename:true}),
   // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one. The
   // ephemeris log is seeded here too, with junk among the days, beside a daily record from before the
   // log existed for the boot to fold in.
