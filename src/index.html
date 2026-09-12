@@ -341,18 +341,25 @@
     .cat-pane.hidden{display:none}
     /* A ledger table's row rules are cut by the same burin as everything else on the sheet, not ruled
        with a straight CSS border: .ledger-rule is a canvas painted by paintLedgerRules() in src/ui.js,
-       one wobbled line per row, sized to the table it backs and held behind it at a negative z-index. */
+       one wobbled line per row and one down the boundary the figures are ruled against, sized to the
+       table it backs and held behind it at a negative z-index. */
     .ledger-wrap{position:relative;z-index:0}
     .ledger-rule{position:absolute;inset:0;z-index:-1;pointer-events:none;display:block;width:100%;height:100%}
-    .ledger-table{width:100%;border-collapse:collapse}
+    /* Fixed layout, so the figure column is the same width in every table on the leaf and the vertical
+       hairline the canvas cuts down it stands in one place from the head of the register to its foot,
+       rather than wandering table by table with whatever the widest value in each happened to be. */
+    .ledger-table{width:100%;border-collapse:collapse;table-layout:fixed}
     /* Small caps, not full caps: the third register is a face cut to show mixed-case text as small
        capitals, and a blunt text-transform never let it — every string reaching these two selectors is
        already set in its own correct case (sentence case for a Latin gloss, full caps only for a
        genuine display line), so the transform is dropped rather than fought row by row. */
     .ledger-table th{font-weight:400;text-align:left;color:var(--muted);font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;padding:6px 0}
-    .ledger-table td{text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 0;color:var(--best)}
+    .ledger-table td{width:156px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;padding:6px 3px 6px 12px;color:var(--best)}
     .cat-group{margin-top:17px}
-    .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-weight:400;font-size:10.5px;letter-spacing:.2em;color:var(--gold)}
+    /* The head rule over a group is cut heavier than the rules between its entries — 1.4px against the
+       burin's own .55 — so a register grades its rules the way an engraved one does: the section head
+       carries weight, the lines under it do not. */
+    .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1.4px solid var(--line);font-family:var(--face-sc);font-weight:400;font-size:10.5px;letter-spacing:.2em;color:var(--gold)}
     .cat-group ul{margin:0;padding:0;list-style:none}
     .cat-row{border-bottom:1px solid var(--line)}
     .cat-item,.cat-granted{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;padding:7px 2px;margin:0;background:none;border:0;border-radius:0;text-align:left;font:inherit;color:var(--copy)}
@@ -392,7 +399,11 @@
     /* — Mobile-first studiolo: the atlas remains a Renaissance leaf, but the hand reaches it with
        one thumb. Cards carry the engraved preview; the old ruled register survives in the record pane. — */
     #catalogue,#ephemeris{align-items:stretch;justify-content:stretch;padding:0;background:rgba(var(--veil),.82)}
-    #catalogue .catalogue-leaf,#ephemeris .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 12px calc(9px + env(safe-area-inset-bottom))}
+    /* The sheet runs to the edge of the glass, but the engraved plate-mark and its inner rule are cut
+       3.5px and 10.5px in (paintLeafFrame, src/ui.js), so the side margin has to clear the inner one by
+       more than the 3.5px it once left it: a register ruled that tight against its own frame reads as a
+       spreadsheet with the gridlines showing rather than as a leaf with a margin. */
+    #catalogue .catalogue-leaf,#ephemeris .catalogue-leaf{width:100%;max-width:none;height:100%;max-height:none;padding:calc(13px + env(safe-area-inset-top)) 16px calc(9px + env(safe-area-inset-bottom))}
     #game.cataloguing .footer{visibility:hidden;pointer-events:none}
     #catalogue .catalogue-head{padding-bottom:2px}
     #catalogue .catalogue-head .eyebrow{font-size:8px;letter-spacing:.28em;margin-bottom:4px}
@@ -402,7 +413,10 @@
     .catalogue-body::-webkit-scrollbar{width:5px}
     .catalogue-body::-webkit-scrollbar-track{background:transparent}
     .catalogue-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:0}
-    .cat-tabs{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 -2px 10px;padding:4px 0 9px;background:linear-gradient(rgba(var(--veil),1),rgba(var(--veil),.96) 76%,transparent)}
+    /* The tabs ride over the scrolling register, so the sheet they carry has to be opaque for the whole
+       12px of clearance under them: the fade this once ran from the top left a row passing beneath it
+       half-visible through its own tail, which reads as a row guillotined rather than as a row hidden. */
+    .cat-tabs{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 -2px 10px;padding:4px 0 12px;background:linear-gradient(rgba(var(--veil),1) 0 88%,rgba(var(--veil),.72) 96%,transparent)}
     .cat-tab-btn{min-height:44px;width:100%;padding:6px 3px;font-size:9px;letter-spacing:.13em;line-height:1.2}
     .cat-tab-btn::after{content:attr(data-sub);display:block;margin-top:3px;font-family:var(--face-text);font-style:italic;font-size:10px;letter-spacing:.02em;text-transform:none;color:var(--muted)}
     .cat-tab-btn[aria-pressed="true"]::after{color:var(--gold)}
@@ -423,12 +437,14 @@
     .cat-progress-rule{display:flex;align-items:center;gap:5px;margin-top:3px}
     .cat-progress-rule i{width:6px;height:6px;flex:0 0 auto;border:1px solid var(--line);transform:rotate(45deg)}
     .cat-progress-rule i.inked{border-color:var(--gold);background:var(--gold)}
-    .record-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0 0 15px}
-    .record-stat{min-height:70px;display:flex;flex-direction:column;justify-content:center;padding:9px 10px;border:1px solid var(--line);background:rgba(var(--veil),.26)}
-    .record-stat strong{font-family:var(--face-text);font-size:22px;font-weight:400;line-height:1.05;color:var(--best);font-variant-numeric:tabular-nums}
-    .record-stat span{margin-top:6px;font-family:var(--face-sc);font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
     .ledger-table th{font-size:8.5px;letter-spacing:.14em;padding:8px 3px 8px 0}
-    .ledger-table td{font-size:14px;padding:8px 3px 8px 0}
+    .ledger-table td{font-size:14px;padding:8px 3px 8px 12px}
+    /* The register's own first four lines, in place of the block of tiles the pane opened on before
+       (see catalogueTable in src/ui.js): a headline figure at 19px against the 14px of the entries
+       under it, and its label lifted out of the muted ink the ordinary rows keep, so the group reads as
+       the opening of the register rather than as a table set in the wrong size. */
+    .ledger-table tr.ledger-lead th{font-size:9.5px;padding:11px 3px 11px 0;color:var(--copy)}
+    .ledger-table tr.ledger-lead td{font-size:19px;padding:11px 3px 11px 12px}
     .cat-group{margin-top:20px}
     .cat-group h3{min-height:30px;font-size:10px;letter-spacing:.16em;padding-bottom:6px}
     .cat-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:8px 0 0;list-style:none}

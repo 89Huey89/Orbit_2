@@ -323,21 +323,29 @@ const OBSERVATION_LABELS=Object.keys(OBSERVATIONS).map(key=>[key,OBSERVATIONS[ke
 // Every ledger table sits on its own .ledger-wrap so paintLedgerRules() (below) can back it with a
 // canvas of engraved row rules cut to its actual measured height — the straight CSS border-bottom a
 // ruled register carried before read as forty identical strokes from one hand that owns none of them.
-function ledgerTable(rows){
+// A table may open on a lead group: its first `lead` rows are marked so the register can set its
+// headline figures larger than the entries beneath them, the way a folio opens on its own first lines.
+function ledgerTable(rows,lead=0){
   return '<div class="ledger-wrap"><canvas class="ledger-rule" aria-hidden="true"></canvas><table class="ledger-table"><tbody>'+
-    rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
+    rows.map(([label,value],i)=>`<tr${i<lead?' class="ledger-lead"':''}><th scope="row">${label}</th><td>${value}</td></tr>`).join('')+
     '</tbody></table></div>';
 }
+// The register opens on the four figures the pane used to box off above it in a block of tiles — and
+// then printed a second time, two of them, as ordinary rows a screen further down, so one screen held
+// HIGHEST ROW and BEST FLOW twice over. They are the register's own first four lines now, set larger
+// than the entries under them rather than fenced off from them in a spreadsheet of cards.
 function catalogueTable(){
   const rows=[
-    ['Orbits captured',commas(ledger.captures)],
-    ['Perfect transfers',commas(ledger.perfects)],
+    ['Unlocks',commas(unlockedIds().size)+' / '+UNLOCKS.length],
     ['Constellations traced',commas(ledgerStat('constellations'))],
     ['Highest row',commas(ledger.bestRow)],
+    ['Best flow','×'+commas(ledger.bestFlow)],
+    ['Orbits captured',commas(ledger.captures)],
+    ['Perfect transfers',commas(ledger.perfects)],
     ['Runs',commas(ledgerStat('runs'))],
     ['Time in the chart',chartTime(ledger.playSeconds)]
   ];
-  return ledgerTable(rows);
+  return ledgerTable(rows,4);
 }
 // How far the studiolo has been filled, pricked rather than filled in: twelve lozenges — the same mark
 // the score frame and a chosen menu line are pricked with — of which as many are inked as the standing
@@ -366,14 +374,6 @@ function catalogueOverview(){
       '<span class="cat-progress-rule" aria-hidden="true">'+studioloMarks(percent)+'</span></div>'+
     '</div>';
 }
-function recordOverview(){
-  return '<div class="record-overview">'+
-    '<div class="record-stat"><strong>'+commas(unlockedIds().size)+' / '+UNLOCKS.length+'</strong><span>Unlocks</span></div>'+
-    '<div class="record-stat"><strong>'+commas(ledgerStat('constellations'))+'</strong><span>Routes traced</span></div>'+
-    '<div class="record-stat"><strong>'+commas(ledger.bestRow)+'</strong><span>Highest row</span></div>'+
-    '<div class="record-stat"><strong>×'+commas(ledger.bestFlow)+'</strong><span>Best flow</span></div>'+
-    '</div>';
-}
 // The score and the run count the ledger holds for each pressure, TIRO through MAGISTER, beside the
 // daily plate's own tally under its own name.
 function pressureTable(){
@@ -387,14 +387,13 @@ function pressureTable(){
   if(isUnlocked('newton'))rows.push(['newton',UNLOCK_BY_ID.newton.latin]);
   return ledgerTable(rows.map(([key,label])=>[plainText(label),`${countMark(ledger.personalBests[key])} best · ${countMark(ledger.runs[key])} runs`]));
 }
-// The fuller record: the original six lifetime figures the catalogue has always shown, then every
-// other stat the ledger keeps that otherwise never surfaces anywhere in the UI on its own — some of
-// it only ever leaking out as a locked cosmetic's "progress toward" text, and only until that rule is
-// unlocked and the text disappears for good.
+// The fuller record: the lifetime figures the catalogue has always shown, then every other stat the
+// ledger keeps that otherwise never surfaces anywhere in the UI on its own — some of it only ever
+// leaking out as a locked cosmetic's "progress toward" text, and only until that rule is unlocked and
+// the text disappears for good.
 function catalogueRecord(){
   const streak=typeof dailyStreak==='function'?dailyStreak():{current:0,longest:0};
   const rows=[
-    ['Best flow','×'+commas(ledger.bestFlow)],
     ['Deepest chapter reached',chapterLabel(ledger.deepestChapter)],
     ['Deepest chapter at '+DIFFICULTY_LABELS.hardcore+' pressure',chapterLabel(ledger.deepestHardcoreChapter)],
     ['Vortices grazed',commas(ledger.grazes)],
@@ -406,7 +405,7 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=recordOverview()+catalogueTable()+ledgerTable(rows);
+  let html=catalogueTable()+ledgerTable(rows);
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
@@ -513,9 +512,12 @@ function paintCatalogueSplats(body){
     inkSplat(g,trailInk(c.getAttribute('data-ink')),SPLAT_LIFE,splatSeed(c.getAttribute('data-ink')||''),SPLAT_SIZE,.72,Math.PI,true);
   }
 }
-// One engraved rule per row, cut at the table's own measured height rather than assumed: the row
-// pitch is exact (canvas height / row count), so the strip never drifts out of register the way a
-// guessed CSS tile would over a long scrolling table. See the art audit's cohesion section.
+// One engraved rule per row, cut at each row's own measured foot rather than at an assumed pitch: a
+// register that opens on four figures set larger than the entries under them has rows of two heights,
+// and the canvas-height-over-row-count tile this used to lay would drift out of register against them
+// the moment it did. The figures run in a ruled column of their own besides — one vertical hairline
+// down the boundary between label and value, cut by the same burin as the rows and set a touch finer,
+// so a number is read against a rule rather than flush right in open paper. See the art audit.
 function paintLedgerRules(body){
   if(!body||!body.querySelectorAll)return;
   for(const wrap of body.querySelectorAll('.ledger-wrap')){
@@ -525,11 +527,13 @@ function paintLedgerRules(body){
     c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
     const g=c.getContext('2d');if(!g)continue;
     g.setTransform(DPR,0,0,DPR,0,0);
-    const pitch=h/rows,rgb=ink.base.inkSoft,alpha=onPaper()?.3:.2;
+    const box=c.getBoundingClientRect(),rgb=ink.base.inkSoft,alpha=onPaper()?.3:.2;
     for(let i=0;i<rows;i++){
-      const y=pitch*(i+1);
+      const y=table.rows[i].getBoundingClientRect().bottom-box.top;
       burinSegment(g,1,y,w-1,y,rgb,alpha,.55,(i+1)*97+31,{segments:Math.max(6,Math.round(w/22)),hair:false,wobble:.22});
     }
+    const cell=table.rows[0].cells[1],x=cell?cell.getBoundingClientRect().left-box.left:0;
+    if(x>2&&x<w-2)burinSegment(g,x,0,x,h,rgb,alpha*.78,.42,rows*53+17,{segments:Math.max(6,Math.round(h/26)),hair:false,wobble:.18});
   }
 }
 // A leaf's own edge, cut on the canvas behind the DOM rather than ruled with a straight CSS border: the
