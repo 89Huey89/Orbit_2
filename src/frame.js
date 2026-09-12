@@ -428,16 +428,24 @@ function buildFrameLayer(){
   // default, or whichever of the catalogue's ornaments is chosen — kept in the margin's own tone.
   frameOrnaments(g,wide,innerR);
   // Marginalia in the flanks either side of the play channel — desktop only, and clear of the centre 55%.
-  // Anchored a fixed distance off the bottom edge so the whole cluster (rose, bar, its label, the credit
-  // line below) always lands inside the band regardless of how band scales.
+  // Anchored a fixed distance off the bottom edge so the whole cluster (the magnitudes key, the bar, its
+  // label, the credit line below) always lands inside the band regardless of how band scales.
   if(wide){
-    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,roseR=13;
+    const flank=W*.225,leftCx=(band+4+flank)/2,rightX=W-flank+4,roseR=13,roseCy=Math.min(H-roseR*3-band,H*.63);
     // The rose is set in the left flank, clear of the play channel, where its cardinal names have room.
-    frameCompassRose(g,leftCx,Math.min(H-roseR*3-band,H*.63),roseR,colors);
+    frameCompassRose(g,leftCx,roseCy,roseR,colors);
+    // A rose alone on a fifth of the sheet reads as an orphan rather than as marginalia, so the house's
+    // own device — the same one the impressum signs its engraver's row and charges its escutcheon with
+    // (impressumDevice, below) — is cut under the rose, on its own axis. Held to under a quarter of the
+    // rose's reach and to the margin's own ornament weight, so it reads as the signature beneath the
+    // instrument rather than as a second instrument arguing with it for the flank.
+    const deviceSize=roseR*.85;
+    impressumDevice(g,leftCx,Math.min(H-band-deviceSize,roseCy+roseR*3+18),deviceSize,rgbaSplit(colors.orn).alpha,90733);
     // Lifted well clear of the bottom graduation's own hour ticks and numerals, which the bar and its
     // "Scala" label used to sit right on top of; the credit line keeps its own place hard against the
     // rule, in the same narrow strip between it and the sheet's true edge.
-    frameScaleBar(g,rightX,H-70,colors);
+    const barY=H-70;
+    frameScaleBar(g,rightX,barY,colors);
     if(plainPlate())return c;
     // The engraver's line, which carries the player's initials once the catalogue has granted them.
     g.font=plateFace(Math.max(6,6.5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';
@@ -445,7 +453,19 @@ function buildFrameLayer(){
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     // Its ghost rows are printed with the first proof; a row becomes dark only after a player has held
     // a matching star long enough to classify it, so the margin records the atlas's actual knowledge.
-    const keyX=rightX,keyTop=Math.max(H*.28,band+70);
+    // The .72 gauge is the chart's own — kept — but a uniform 12px pitch assumed every class the same
+    // height, and class I's actual reach at that gauge is nearly three of them. Each row is stacked by
+    // its own magnitude's real span (renaissanceStarSpan, figures.js) plus a fixed 4px gutter instead,
+    // so the key reads as a real descending column of unequal signs rather than a smear at the top.
+    const KEY_GAUGE=.72,KEY_GUTTER=4,KEY_HEAD=13;
+    // The key used to be pinned a quarter of the way down the sheet while the scale bar stood at the
+    // foot of it, which left the flank reading as two orphans with a third of a plate of nothing
+    // between them. It is stood on the bar instead, so the flank carries one cluster: the column's real
+    // height is summed from the very spans that lay its rows out, so it rises off the bar by exactly
+    // what it needs rather than by a guessed offset, and the clearance takes in the dividers standing
+    // above the bar's own end.
+    let keyHeight=KEY_HEAD+KEY_GUTTER*5;for(let m=5;m>=0;m--)keyHeight+=renaissanceStarSpan(6-m)*KEY_GAUGE*2;
+    const keyX=rightX,keyTop=Math.max(band+70,barY-20-keyHeight);
     g.font=plateFace(Math.max(7,8*scale),'sc');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText('MAGNITUDINES',keyX,keyTop);
     // Ruled to the heading's own measured width rather than a hard 66, so a wider or narrower face
@@ -454,12 +474,7 @@ function buildFrameLayer(){
     g.lineWidth=.6;g.strokeStyle=colors.tickMinor;g.beginPath();g.moveTo(keyX,keyTop+3.5);g.lineTo(keyX+headingWidth,keyTop+3.5);g.stroke();
     g.font=plateFace(Math.max(6.8,7.5*scale),'text','italic');
     const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
-    // The .72 gauge is the chart's own — kept — but a uniform 12px pitch assumed every class the same
-    // height, and class I's actual reach at that gauge is nearly three of them. Each row is stacked by
-    // its own magnitude's real span (renaissanceStarSpan, figures.js) plus a fixed 4px gutter instead,
-    // so the key reads as a real descending column of unequal signs rather than a smear at the top.
-    const KEY_GAUGE=.72,KEY_GUTTER=4;
-    let rowTop=keyTop+13;
+    let rowTop=keyTop+KEY_HEAD;
     for(let m=5;m>=0;m--){
       const magnitude=6-m,classified=!!(known&(1<<(magnitude-1)));
       // A row not yet classified is a ghost: the punch alone survived at .12, but its rays and rings
