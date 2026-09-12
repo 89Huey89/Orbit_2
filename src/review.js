@@ -68,7 +68,11 @@ function renderReview(){
   drawInkPath();drawSurveys();
   drawImpressum();
   ctx.restore();
-  drawPlateFrame();
+  // The folio and the grain, in the order render() itself cuts them: a finished plate is still a page
+  // of the atlas, and a page with no number on it and no wires in its stock is not a sheet at all.
+  // drawHudLeaf() is the one pass deliberately left out — it reserves a patch of stock for a hand that
+  // is no longer playing, and over a finished plate that is a blank scraped in the chart for nothing.
+  drawPlateFrame();drawRunningHead();drawLaidPaper();
   world=savedWorld;
 }
 // ---------- Input: drag or wheel, nothing automatic ----------

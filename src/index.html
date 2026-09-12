@@ -547,7 +547,15 @@
     #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
     #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
     /* — Reviewing: the colophon steps aside and the finished plate takes the whole frame, free to drag. — */
-    #review-close{position:absolute;z-index:6;top:max(17px,calc(env(safe-area-inset-top) + 7px));right:max(15px,calc(env(safe-area-inset-right) + 7px));display:none}
+    /* The way out is set inside the chart, so it has to keep out of the plate's own furniture: the inner
+       rule and, at this corner, the wind-head whose breath streams down into the sheet (frameOrnaments(),
+       src/frame.js). At a narrow sheet that head reaches about 23px in from the edge and 39px down, so the
+       button is held a clear 30px off both; a wide sheet's frame is nearly twice as deep and its head
+       nearly twice as long, and takes the same clearance measured against its own band. That second rule
+       is cut at 781px rather than at the 800px the rest of the wide furniture uses, since what it has to
+       clear is the deeper band itself, and frameWide() (src/frame.js) begins cutting that at 780. */
+    #review-close{position:absolute;z-index:6;top:max(30px,calc(env(safe-area-inset-top) + 20px));right:max(30px,calc(env(safe-area-inset-right) + 22px));display:none}
+    @media(min-width:781px){#review-close{top:max(48px,calc(env(safe-area-inset-top) + 38px));right:max(54px,calc(env(safe-area-inset-right) + 46px))}}
     #game.reviewing #review-close{display:inline-block}
     #game.reviewing .hud{opacity:0}
     #game.reviewing .footer{visibility:hidden;pointer-events:none}
