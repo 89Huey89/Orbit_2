@@ -16,7 +16,7 @@ definePlate('frame',{
   // the way every other plate's frame is either dark-on-light or light-on-dark rather than pale on pale.
   azzurra:{markEdge:'rgba(44,42,50,.22)',mark:'rgba(30,28,36,.12)',rule:'rgba(44,42,50,.45)',ruleFaint:'rgba(44,42,50,.25)',tick:'rgba(44,42,50,.36)',tickMinor:'rgba(44,42,50,.2)',text:'rgba(38,36,44,.5)',orn:'rgba(44,42,50,.31)'}
 });
-let frameLayer=null,frameKey='',frameInset=Infinity;
+let frameLayer=null,frameKey='',frameInset=Infinity,framePen=0;
 function frameWide(){return W>780;}
 function frameBand(){return frameWide()?26:14;}
 function frameEdgeTicks(len){const unitPx=frameWide()?7:5,n=Math.max(20,Math.round(len/unitPx));return {n,step:len/n};}
@@ -553,7 +553,7 @@ function drawPlateFrame(){
   // a class is classified, which is a change the narrow sheet was never going to draw in the first place.
   const key=W+'x'+H+'x'+DPR+':'+plateName+':'+(frameWide()?legend:0);
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
-  const framePen=revealFrame(frameLayer);
+  framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
   // ascending with the player; everything else in the frame stays perfectly still.
   const colors=ink.frame,band=frameBand(),outerR=band*.56,innerR=band*.92,tickLen=Math.max(1,innerR-outerR);
@@ -579,6 +579,27 @@ function drawPlateFrame(){
     ctx.beginPath();ctx.moveTo(outerR,y);ctx.lineTo(innerR,y);ctx.stroke();
     ctx.beginPath();ctx.moveTo(W-outerR,y);ctx.lineTo(W-innerR,y);ctx.stroke();
   }
+}
+// The whole frame layer, corroded across the band the rising ink has reached (corrodeInk, effects.js).
+// On a narrow sheet that band carries only the margin — the plate mark, the double rule, the
+// graduation, the corner ornaments and whatever lettering runs along the foot — since nothing else on
+// the layer reaches in that far; a wide sheet's flank marginalia are eaten by the same pass once the
+// ink climbs past them, which is what a corroding plate would do to them anyway. The frame is cut fresh
+// over the flood every frame (see render() below), so the ink can never reach it by being drawn first:
+// this is a pass over what the frame has just laid, not something baked into the layer it laid it from.
+function frameCorrode(){
+  // A plate drawing its frame in its own hand owns whatever happens to it, and nothing is eaten until
+  // this frame has actually been pulled: the layer carries the whole margin from the first frame of a
+  // run, but the pen is still walking the rule onto the sheet, and corroding ink the plate has not
+  // printed yet prints the rot before the mark it is supposed to be rotting. Which plates corrode at
+  // all is corrodeBand()'s own question, answered there for every caller at once.
+  if(!frameLayer||framePen<1||handFor('plateFrame'))return;
+  if(frameLayer.width!==Math.max(1,Math.ceil(W*DPR))||frameLayer.height!==Math.max(1,Math.ceil(H*DPR)))return;
+  const band=corrodeBand();if(!band)return;
+  // The four abscissae the double rule runs down, which are the heaviest lines the margin carries and
+  // so the only places a bite is worth cutting.
+  const width=frameBand(),outerR=width*.56,innerR=width*.92;
+  corrodeInk(frameLayer,DPR,0,0,0,band.top,W,band.bottom-band.top,[outerR,innerR,W-innerR,W-outerR]);
 }
 // The atlas earns its geometry one capture at a time. What begins as a compass prick grows through
 // the pole, equator and ecliptic into a complete graticule; construction circles remain faintly visible
@@ -1131,7 +1152,7 @@ function render(dt){
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
-  drawPlateFrame();drawRunningHead();drawHudLeaf();drawActionFrames();
+  drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(world.state==='paused')drawPauseMagnitudeKey();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   // The dark's own flash is one frame of the flood's own ink rather than screenFlash's fading warm

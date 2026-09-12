@@ -1375,12 +1375,141 @@ function drawDarkMarginalia(fy,time,alpha){
   if(darknessRelief>.001){const r=glossSprite(true);ctx.globalAlpha=alpha*.5*darknessRelief*clear;ctx.drawImage(r.canvas,gx,gy,r.w,r.h);}
   ctx.restore();
 }
+// Where the flood stands on the sheet, and where its painted coastline actually runs across it — the
+// calibrated hairline the simulation kills on, and the two sine terms darknessPlate() cuts its own
+// shore from, read in the drifting frame the tiles are laid in. Both are shared out rather than kept
+// inside drawDark() because the corrosion the rising ink works on everything the plate has printed
+// (corrodeInk, below) has to follow the very edge it is eating out from rather than a ruled horizontal.
+const darkWaterline=()=>sy(world.floorY-4);
+function darkShoreWave(x){
+  const s=scale,tile=640*s,drift=((reducedMotion?0:world.time)*2.3*s)%tile,a=(x+drift)/tile*TAU;
+  return (Math.sin(a*3)*6+Math.sin(a*11)*2.5)*s;
+}
+// ---------- The ink eating the plate's own drawing ----------
+// The rising dark is not a curtain drawn over the sheet, it is ink, and iron-gall ink corrodes the
+// paper it is drawn on before it covers it. So what the plate has printed browns before it drowns: a
+// halo tightens a little ahead of the waterline along whatever ink stands there, darkens at the edge
+// itself to the same rust darknessPlate() above deepens toward, and a few nodes are bitten right
+// through where the burin struck heaviest.
+//
+// What corrodes is read off the cached layer the ink was cut into rather than off any list of what was
+// drawn there: the band is copied into a scratch sheet and the rust laid over the copy with
+// `source-atop`, which can only land where that layer's own ink already stands. That is the mechanism
+// bought with one composite mode — no reading back pixel by pixel, and no second, corroded copy of any
+// layer, since every layer is the same layer at every waterline and only the band's position and what
+// is left of the copy move with the flood. Both cached layers this is asked of — the frame's furniture
+// (frameCorrode, frame.js) and a constellation's figure (figureCorrode, figures.js) — therefore stay
+// keyed exactly as they were, and the pass costs one band's blending per frame however deep the run
+// has got.
+let corrodeSheet=null,corrodeKey='';
+const CORRODE_LEAD=44,CORRODE_DRAG=26,CORRODE_WAVE=9;
+// How far ahead of the waterline the halo runs, how far under it the rust goes on reading, and the
+// slack the coastline's own swell needs either side of both. Past the drag the flood's body has gone
+// opaque and nothing printed under it is legible anyway, which is what keeps the band a band.
+const corrodeSpan=()=>({lead:CORRODE_LEAD*scale,drag:CORRODE_DRAG*scale,wave:CORRODE_WAVE*scale});
+const corrodeDepth=()=>(CORRODE_LEAD+CORRODE_DRAG+CORRODE_WAVE*2)*scale+2;
+function corrodeSheetFor(w,h){
+  const key=Math.ceil(w)+'x'+Math.ceil(h)+'x'+DPR.toFixed(2);
+  if(!corrodeSheet||corrodeKey!==key){corrodeSheet=makeCanvas(Math.max(1,Math.ceil(w*DPR)),Math.max(1,Math.ceil(h*DPR)));corrodeKey=key;}
+  return corrodeSheet;
+}
+// One pass of the corrosion over a piece of ink already cut into a layer. `ratio` is how many of that
+// layer's own pixels one plate pixel is worth — the frame layer is cut at the device's resolution, a
+// figure's raster at the plate's own — so one routine serves both without resampling either; `ox,oy` is
+// where the layer itself sits on the plate, and `dx,dy,w,h` the piece of the plate to eat. `spines` are
+// the abscissae the piece's own heaviest lines run down, and a piece that names none is browned without
+// being bitten. The scratch sheet is cut once per viewport and reused by every call, in whatever corner
+// of it the piece needs, so no run ever allocates a second one.
+//
+// A piece is deliberately taken whole rather than as the two or three narrow bands that actually carry
+// ink. Every round trip through the scratch ends in a blit off it and back onto the plate, and that
+// blit is a synchronisation point: the work queued on the scratch has to finish before the plate can
+// read it. Three narrow trips cost three of those and one wide trip costs one, and the sync is worth
+// far more than the blank sheet blended in between the bands — which, after the squaring below, is
+// blank in the copy too and so costs nothing but its own fill rate.
+function corrodeInk(source,ratio,ox,oy,dx,dy,w,h,spines){
+  if(!(w>1&&h>1))return;
+  const {lead,drag}=corrodeSpan(),s=scale,fy=darkWaterline();
+  const sheet=corrodeSheetFor(W,corrodeDepth()),g=sheet.getContext&&sheet.getContext('2d');
+  const sw=w*ratio,sh=h*ratio;
+  if(!g||!(sw<=sheet.width+1e-6&&sh<=sheet.height+1e-6))return;
+  g.setTransform(ratio,0,0,ratio,0,0);
+  g.globalCompositeOperation='source-over';g.clearRect(0,0,w,h);
+  g.drawImage(source,(dx-ox)*ratio,(dy-oy)*ratio,sw,sh,0,0,w,h);
+  // The copy taken against itself, which squares every pixel's own alpha and is the whole of what makes
+  // the heaviest linework fail first: a rule pulled at .62 keeps .38 of itself and takes the rust
+  // accordingly, while the faint film a plate leaves over everything it printed (buildFrameLayer's own
+  // wiping film, .05) falls to .0025 and is gone, and a figure's hatch and wash go with it while its
+  // contour stays. Without it the tint lands in proportion to alpha rather than to density, and that
+  // flat film — which covers the whole sheet — browns as readily as the rule does, which prints the
+  // corrosion as a rectangle instead of along the marks inside it.
+  g.globalCompositeOperation='destination-in';
+  g.drawImage(source,(dx-ox)*ratio,(dy-oy)*ratio,sw,sh,0,0,w,h);
+  const base=fy-dy,halo=ink.dark.corrosion,rust=ink.dark.pigment;
+  // Laid in columns, each shifted by the flood's own coastline where it stands rather than all at one
+  // height: a stain spreading from a wavy edge has a wavy reach, and a single fill across the band
+  // would have banded the sheet along the one ruled horizontal an engraved plate cannot afford.
+  const step=Math.max(6,14*s),columns=fill=>{
+    g.fillStyle=fill;
+    for(let x=0;x<w;x+=step){
+      const shift=darkShoreWave(dx+x);
+      g.save();g.translate(0,shift);g.fillRect(x,-shift,Math.min(step,w-x),h);g.restore();
+    }
+  };
+  // How far the corrosion has gone is carried by what is left of the copy, not by how strongly it is
+  // tinted: the copy goes over to the rust at full strength first, and only then is eaten back by the
+  // veil below. Tinting weakly instead would have laid a near-ink colour back over the very ink it was
+  // taken from, which prints the line a second time — a thicker mark, not a browner one.
+  g.globalCompositeOperation='source-atop';
+  const tone=g.createLinearGradient(0,base-lead,0,base+drag);
+  tone.addColorStop(0,`rgba(${halo},1)`);tone.addColorStop(.54,`rgba(${halo},1)`);
+  tone.addColorStop(.66,`rgba(${rust},1)`);tone.addColorStop(1,`rgba(${rust},1)`);
+  columns(tone);
+  // The nodes bitten clean through, a core at the calibrated rust inside a wider browned rim. They are
+  // struck under the same `source-atop`, so a bite can only open in ink that was already there — which
+  // is the whole of what keeps them off the bare sheet beside the line they are eating. Cut only on a
+  // named spine: a bite over blank sheet is invisible and still costs its contour, so a piece whose
+  // heavy lines cannot be named in advance is browned and left unbitten rather than bitten at random.
+  const lines=spines&&spines.length?spines:null;
+  if(lines){
+    const bite=seeded(90233+Math.round(dx*7+ox*31));
+    for(let i=0;i<5;i++){
+      const bx=lines[i%lines.length]-dx+(bite()-.5)*3*s;
+      const by=base+(bite()*1.4-.3)*drag,br=(1.2+bite()*bite()*3.2)*s,seed=Math.floor(bite()*1e7)||7;
+      landContour(g,bx,by,br*1.9,br*1.35,seeded(seed));g.fillStyle=`rgba(${halo},.5)`;g.fill();
+      landContour(g,bx,by,br,br*.7,seeded(seed));g.fillStyle=`rgba(${rust},1)`;g.fill();
+    }
+  }
+  // The reach itself: the copy is eaten away to nothing well ahead of the waterline, holds almost all of
+  // itself at the edge, and is gone again a little under it, where the flood's own body has gone opaque
+  // and nothing printed beneath it is legible either way. Past both ends the gradient clamps to a full
+  // erase, so the band can only ever meet the sheet at nothing.
+  g.globalCompositeOperation='destination-out';
+  const veil=g.createLinearGradient(0,base-lead,0,base+drag);
+  veil.addColorStop(0,'rgba(0,0,0,1)');veil.addColorStop(.32,'rgba(0,0,0,.76)');
+  veil.addColorStop(.54,'rgba(0,0,0,.36)');veil.addColorStop(.66,'rgba(0,0,0,.06)');
+  veil.addColorStop(.84,'rgba(0,0,0,.26)');veil.addColorStop(1,'rgba(0,0,0,1)');
+  columns(veil);
+  g.globalCompositeOperation='source-over';
+  ctx.drawImage(sheet,0,0,sw,sh,dx,dy,w,h);
+}
+// The band of the plate the corrosion is working on right now, or null when the flood is nowhere near
+// the sheet. Clipped to the plate at both ends, and to whole device pixels, so a caller can intersect
+// its own layer with it and hand the result straight to corrodeInk without resampling anything. Paper
+// only, for the reason the flood's own corrosion above is: night's rising dark is a drowning, not an
+// acid, and it keeps its shoreline. Asked once here so no caller has to ask it again.
+function corrodeBand(){
+  if(!onPaper())return null;
+  const {lead,drag,wave}=corrodeSpan(),fy=darkWaterline(),q=v=>Math.round(v*DPR)/DPR;
+  const top=q(Math.max(0,fy-lead-wave)),bottom=q(Math.min(H,fy+drag+wave));
+  return bottom-top>2?{top,bottom}:null;
+}
 function drawDark(dt=0){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('dark');if(own)return own(dt);
   // Match the visible hairline to the simulation's exact loss threshold.
-  const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
+  const fy=darkWaterline(),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);
   if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));

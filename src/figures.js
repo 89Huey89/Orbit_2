@@ -967,6 +967,26 @@ function drawConstellationFigure(chart){
   const x=sx(frame.originX),y=sy(frame.originY);
   if(x>W||y>H||x+layer.canvas.width<0||y+layer.canvas.height<0)return;
   ctx.drawImage(layer.canvas,x,y);
+  figureCorrode(layer.canvas,x,y);
+}
+// The rising ink eats a figure's own contours the way it eats the plate's furniture, and for the same
+// reason: iron-gall browns the heaviest linework first, and a completed figure's re-struck outer edge
+// is the heaviest thing on this part of the sheet. The whole of what makes it affordable is that the
+// figure is already on its own raster with its own alpha — nothing else on the chart is, because the
+// chart is drawn onto an opaque ground, so a composite that asks "only where there is ink" has no ink
+// to find there. What the band takes is read straight off that raster (corrodeInk, effects.js), so no
+// figure is ever baked a second time and the raster cache above keeps exactly the key it had.
+//
+// The pass is laid here, with the figure, rather than after the flood: below the waterline the flood is
+// drawn over the figure and has settled the matter, and tinting up there afterwards would print the
+// figure back through the ink that had just drowned it. No bite is cut, only the browning — a figure
+// names no spine a bite could be placed on without reading its raster back pixel by pixel.
+function figureCorrode(layer,x,y){
+  const band=typeof corrodeBand==='function'&&corrodeBand();if(!band)return;
+  const left=Math.max(0,Math.ceil(-x)),right=Math.min(layer.width,Math.floor(W-x));
+  const top=Math.max(0,Math.ceil(band.top-y)),bottom=Math.min(layer.height,Math.floor(band.bottom-y));
+  if(!(right-left>1&&bottom-top>1))return;
+  corrodeInk(layer,1,x,y,x+left,y+top,right-left,bottom-top);
 }
 
 // The figure and the route through it are two different things, and only one of them is the atlas's
