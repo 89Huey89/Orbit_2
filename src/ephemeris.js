@@ -19,6 +19,14 @@ function roman(value){
 const pad2=n=>String(n).padStart(2,'0');
 const dayKey=(y,m,d)=>y+'-'+pad2(m+1)+'-'+pad2(d);
 const monthOf=date=>({y:Number(date.slice(0,4)),m:Number(date.slice(5,7))-1});
+// Augsburg — the city the imprint claims — is the one place the Gregorian reform actually produced a
+// riot: the city's Protestant half refused the new calendar in 1583 and kept the old one running
+// alongside it, through lawsuits and an imperial standoff, until 1700. Ten days is the whole of the
+// difference for the span this atlas is dated in; the leaf states both rather than picking a side.
+function julianOf(y,m,d){
+  const j=new Date(Date.UTC(y,m,d-10));
+  return {y:j.getUTCFullYear(),m:j.getUTCMonth(),d:j.getUTCDate()};
+}
 // A streak read at the stroke of midnight would look broken before the player has had any chance to
 // draw today's plate, so a blank today counts from yesterday instead; a blank yesterday too is a real
 // break, and reads as zero. Longest scans every run the log holds, not only the one still open, since
@@ -60,12 +68,13 @@ function renderEphemeris(){
   for(const name of WEEKDAYS_LATIN)html+=`<span class="eph-head" title="dies ${name}">${name.slice(0,3)}.</span>`;
   for(let i=0;i<lead;i++)html+='<span class="eph-cell eph-void" aria-hidden="true"></span>';
   for(let d=1;d<=days;d++){
-    const date=dayKey(ephMonth.y,ephMonth.m,d),entry=dailyLog[date],numeral=`<span class="eph-num">${d}</span>`;
+    const date=dayKey(ephMonth.y,ephMonth.m,d),entry=dailyLog[date],jul=julianOf(ephMonth.y,ephMonth.m,d);
+    const numeral=`<span class="eph-num">${d}</span><span class="eph-julian">${jul.d}</span>`,julLabel=`stylo veteri ${jul.d} ${MONTHS_LATIN[jul.m].slice(0,3)}.`;
     if(date>today){html+=`<span class="eph-cell eph-hence">${numeral}</span>`;continue;}
     if(!entry&&date!==today){html+=`<span class="eph-cell eph-blank">${numeral}<span class="eph-rule" aria-hidden="true"></span></span>`;continue;}
     const chosen=dailyOn&&dailyDay===date;
     const foot=entry?`<span class="eph-best">${entry.best}</span>`:'<span class="eph-best eph-hodie">hodie</span>';
-    const label=entry?`Draw the plate of ${date} again, best ${entry.best}`:`Draw today’s plate, ${date}`;
+    const label=(entry?`Draw the plate of ${date} again, best ${entry.best}`:`Draw today’s plate, ${date}`)+`, ${julLabel}`;
     html+=`<button class="eph-cell eph-drawn${date===today?' eph-today':''}" type="button" data-date="${date}" aria-pressed="${chosen}" aria-label="${label}">${numeral}${foot}</button>`;
   }
   // The table is ruled square: the squares either side of the month are printed empty rather than left off.
@@ -74,6 +83,11 @@ function renderEphemeris(){
   body.innerHTML=html;
   paintLeafFrame('eph-leaf-frame');
   const title=$('eph-title');if(title)title.textContent=MONTHS_LATIN[ephMonth.m]+' · '+roman(ephMonth.y);
+  // The grid's own first ten squares always fall stylo veteri in the month before — ten days never
+  // reaches back further than that, since no month this calendar keeps is shorter than twenty-eight —
+  // so the header names it too, the same two-column reckoning every square in the body already keeps.
+  const oldMonth=julianOf(ephMonth.y,ephMonth.m,1),titleOld=$('eph-title-old');
+  if(titleOld)titleOld.textContent=MONTHS_LATIN[oldMonth.m]+' · '+roman(oldMonth.y);
   const span=ephemerisSpan(),here=monthIndex(ephMonth);
   for(const [id,spent] of [['eph-prev',here<=monthIndex(span.first)],['eph-next',here>=monthIndex(span.last)]]){
     const arrow=$(id);if(!arrow)continue;

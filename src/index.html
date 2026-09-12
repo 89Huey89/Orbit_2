@@ -467,6 +467,11 @@
     #ephemeris .title-rule{margin:9px auto 0;width:76px}
     .eph-month{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px}
     .eph-title{min-width:11em;font-family:var(--face-sc);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+    /* Augsburg kept both calendars at once, through the reform's own imperial standoff, so the leaf
+       states both months rather than committing to one: the Gregorian title stands as it always has,
+       and this second, smaller hand names the Julian month bleeding into the grid's own first ten days. */
+    .eph-title-old{font-family:var(--face-text);font-style:italic;font-size:8.5px;letter-spacing:.06em;color:var(--muted);opacity:.62;margin-left:-2px}
+    .eph-title-old::before{content:'/ '}
     .eph-arrow{pointer-events:auto;padding:2px 11px;background:none;border:0;border-radius:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;transition:color .2s,opacity .2s}
     .eph-arrow:hover,.eph-arrow:focus-visible{color:var(--gold)}
     .eph-arrow:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
@@ -479,6 +484,9 @@
     .eph-head{padding:5px 1px;font-family:var(--face-sc);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
     .eph-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;margin:0;padding:5px 2px;background:none;border-radius:0;font:inherit;color:inherit;text-align:center}
     .eph-num{font-family:var(--face-text);font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
+    /* The day cell's second, paler numeral: the same date read stylo veteri, ten days behind the one
+       set large above it — the plate's own gloss on which calendar an Augsburg reader actually kept. */
+    .eph-julian{font-family:var(--face-text);font-style:italic;font-size:9px;line-height:1;font-variant-numeric:tabular-nums;color:var(--muted);opacity:.58}
     .eph-best{font-family:var(--face-sc);font-size:8px;letter-spacing:.09em;color:var(--muted);font-variant-numeric:tabular-nums}
     .eph-rule{width:15px;height:1px;background:var(--line)}
     .eph-blank .eph-num{opacity:.34}
@@ -493,6 +501,7 @@
     /* Today keeps a second rule inside its square; the plate now chosen is pricked with a lozenge. */
     .eph-today::after{content:'';position:absolute;inset:2px;border:1px solid var(--line);pointer-events:none}
     .eph-cell[aria-pressed="true"]::before{content:'';position:absolute;top:3px;left:50%;width:4px;height:4px;margin-left:-2px;border:1px solid var(--gold);transform:rotate(45deg)}
+    .eph-stylo{flex:0 0 auto;margin:9px 0 0;font-family:var(--face-sc);font-size:8px;letter-spacing:.2em;text-align:center;color:var(--muted);opacity:.5}
     .eph-note{flex:0 0 auto;margin:10px 0 0;font-style:italic;font-size:10.5px;line-height:1.5;text-align:center;color:var(--muted);opacity:.75}
     #ephemeris-close{flex:0 0 auto;margin:11px auto 0}
     @media(max-height:530px) and (orientation:landscape){
@@ -501,6 +510,7 @@
       #ephemeris .title-rule{margin-top:5px}
       #game .eph-month{margin-top:7px}
       #game .eph-body{margin-top:7px}
+      #game .eph-title-old,#game .eph-stylo,#game .eph-julian{display:none}
       #game .eph-cell{min-height:34px;gap:1px}
       #game .eph-num{font-size:13px}
       #game .eph-note{display:none}
@@ -669,9 +679,11 @@
       <div class="eph-month">
         <button id="eph-prev" class="eph-arrow" type="button" aria-label="The month before">&lsaquo;</button>
         <span id="eph-title" class="eph-title"></span>
+        <span id="eph-title-old" class="eph-title-old"></span>
         <button id="eph-next" class="eph-arrow" type="button" aria-label="The month after">&rsaquo;</button>
       </div>
       <div id="ephemeris-body" class="eph-body"></div>
+      <p class="eph-stylo">STYLO NOVO &middot; STYLO VETERI</p>
       <p id="eph-note" class="eph-note"></p>
       <button id="ephemeris-close" class="diff-btn" type="button">CLOSE</button>
     </div>
