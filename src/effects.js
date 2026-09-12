@@ -34,6 +34,11 @@ definePlate('dark',{
     trailWet:[24,26,46],trailDry:[122,88,52],blotWet:[20,22,42],blotDry:[130,98,58],
     // The calibrated shoreline is rubrication red-brown on paper, turning ochre/gold during a reprieve.
     pigment:'166,58,40',pigmentRelief:'176,118,38',shorelineRelief:'176,118,38',
+    // Not fire: the ink burning its own drawing out of the page it is drawn on. Iron-gall is acidic and
+    // mildly self-catalytic, so a damp sheet browns along its own heaviest strokes before it fails —
+    // this is that halo's own colour, paler and warmer than the rubrication pigment it deepens toward
+    // as the corrosion goes on to foxing and then to a puncture the sheet shows through.
+    corrosion:'176,108,54',
     // Spilled indigo-black ink, #14121f family, pooling and feathering into the paper fibres.
     washTop:'20,18,31',washMid:'24,20,34',washSolid:'#14121f',bodyTop:'20,18,31',bodyMid:'20,18,31',
     // Capped at .82 rather than running to near-opaque: the paper sheet — its grain, the laid tile
@@ -1110,6 +1115,27 @@ function darknessPlate(relief){
         for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},.35)`;g.fill();}
       }
     }
+    // Not a shoreline drowning the sheet: the ink burning its own drawing out of it. A browning halo
+    // tightens where the void layers are already thickest, darkens toward the calibrated rust as it
+    // goes, and foxing spreads in behind it — both concentrated in the same reach the void layers
+    // occupy, since past it the body gradient in drawDark() is already solid regardless of anything
+    // painted here. Paper only: night's flood is drowning, not corrosion, and keeps its own shoreline.
+    if(onPaper()){
+      const brown=seeded(311977+281);
+      for(let i=0;i<13;i++){
+        const x=brown()*w,y=38+brown()*brown()*30,rx=6+brown()*22,ry=3+brown()*7,seed=Math.floor(brown()*1e7);
+        for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.corrosion},${.1+brown()*.16})`;g.fill();}
+      }
+      const fox=seeded(311977+367);
+      for(let i=0;i<34;i++){
+        const x=fox()*w,y=54+fox()*34,r=.8+fox()*fox()*4.5,alpha=.16+fox()*.16;
+        for(const wrap of [-w,0,w]){
+          const spot=g.createRadialGradient(x+wrap,y,0,x+wrap,y,r);
+          spot.addColorStop(0,`rgba(${pigment},${alpha})`);spot.addColorStop(1,`rgba(${pigment},0)`);
+          g.fillStyle=spot;g.fillRect(x+wrap-r,y-r,r*2,r*2);
+        }
+      }
+    }
   }
   g.save();g.beginPath();g.rect(0,27,w,h-27);g.clip();
   for(let i=0;i<24;i++){
@@ -1143,6 +1169,21 @@ function darknessPlate(relief){
     const x=rng()*w,top=7+rng()*15,length=1+rng()*4;
     g.strokeStyle=`rgba(${pigment},${.035+rng()*.055})`;g.lineWidth=.45;
     g.beginPath();g.moveTo(x,25);g.bezierCurveTo(x+length,21,x-length,top+4,x+.7,top);g.stroke();
+  }
+  // Where the corrosion above has gone furthest, a small ragged puncture opens: a browned rim standing
+  // around a core struck at the calibrated rust itself, since the flood's own body fill (drawDark())
+  // already sits solid under this tile at this depth — a hole cut into the tile alone would only bare
+  // that solid fill, not the sheet, so the failure is read the way foxed paper actually shows it: a
+  // stained ring round a small worn-through core, not a clean cut.
+  if(!relief&&onPaper()){
+    const bite=seeded(311977+419);
+    for(let i=0;i<9;i++){
+      const x=bite()*w,y=58+bite()*28,rx=1.6+bite()*bite()*4.5,ry=1.1+bite()*bite()*2.8,seed=Math.floor(bite()*1e7);
+      for(const wrap of [-w,0,w]){
+        landContour(g,x+wrap,y,rx*1.7,ry*1.7,seeded(seed+1));g.fillStyle=`rgba(${ink.dark.corrosion},${.26+bite()*.2})`;g.fill();
+        landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${pigment},${.4+bite()*.3})`;g.fill();
+      }
+    }
   }
   darknessPlates.set(key,c);return c;
 }
