@@ -770,7 +770,11 @@ function drawChapterReveal(dt){
       // never glows (see the no-glow rule at the top of this file), so its reserve has to be a material
       // — an irregular, deckle-edged card, opaque, with the laid-paper tile still reading through it —
       // rather than the soft radial fade chapterRevealLeaf() paints for night, where a glow is honest.
-      const spread=Math.min(95,W*.21)+72,rx=spread,ry=spread*.42,cx=x,cy=y+4+rise;
+      // Its height reserves the same band the flood-covered rectangle above does, not a wide, shallow
+      // .42 aspect carried over from the old feathered gradient: that ellipse was mostly transparent, so
+      // its extra height never read as a shape, but opaque and deckle-edged at that height it swallowed
+      // the planet ring the title sits over and the player flying near it, not just the lettering.
+      const spread=Math.min(95,W*.21)+72,rx=spread,ry=band?(band.bottom-band.top)/2:36,cx=x,cy=y+4+rise;
       ctx.save();ctx.translate(cx,cy);
       landContour(ctx,0,0,rx,ry,seeded(60301+chapterReveal.index*7));
       ctx.save();ctx.clip();
