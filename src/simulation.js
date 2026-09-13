@@ -289,13 +289,13 @@ function applyNewtonGravity(p,nodes,dt,time) {
   return turn;
 }
 // Real flight and prediction share the same steering and swept contacts.
-function flightStep(p,nodes,hazards,time,dt,launchY,width,windowMult=1,newtonOn=false) {
+function flightStep(p,nodes,hazards,time,dt,width,windowMult=1,newtonOn=false) {
   let turn=bendVelocity(p,hazards,dt);
   if(newtonOn)turn+=applyNewtonGravity(p,nodes,dt,time);
   const x=p.x,y=p.y,bx=x+p.vx*dt,by=y+p.vy*dt;
   const reach=Math.hypot(p.vx,p.vy)*dt;let hit=null,first=dt+1;
   for(const n of nodes){
-    if(n.visited||n.y>launchY+90||Math.abs(n.y-y)>reach+n.cap)continue;
+    if(n.visited||Math.abs(n.y-y)>reach+n.cap)continue;
     const contact=transferContact({x,y},p,n,time,dt,windowMult);
     if(contact&&contact.time<first){first=contact.time;hit={kind:'node',n,contact};}
   }
@@ -847,7 +847,7 @@ class OrbitWorld {
       let remaining=dt,time=this.time-dt;
       while(remaining>1e-9&&this.state==='playing'&&!p.node){
         const step=(this.hazards.length||this.newtonOn)?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
-        const result=flightStep(p,this.nodes,this.hazards,time,step,p.launch?.y??p.y,this.width,this.perfectMult,this.newtonOn);
+        const result=flightStep(p,this.nodes,this.hazards,time,step,this.width,this.perfectMult,this.newtonOn);
         p.flightTime+=result.dt;remaining-=step;time+=step;
         // The line costs ink by its length. What the step drew is spent before anything else is
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
@@ -905,7 +905,7 @@ class OrbitWorld {
     const bx=p.x+dx*reach,by=p.y+dy*reach;
     let best=null,hitAt=2;
     for(const n of this.nodes){
-      if(n.visited||n.y>p.y+90)continue;
+      if(n.visited)continue;
       const hit=transferContact(p,launch,n,this.time,reach/speed,this.perfectMult);if(!hit)continue;
       const t=hit.time*speed/reach;if(t>=hitAt)continue;
       hitAt=t;best=arrivalAim(n,hit,hit.time*speed,launch.vx,launch.vy);
@@ -977,7 +977,7 @@ class OrbitWorld {
     let time=0,distance=0,bend=0;
     while(time<duration-1e-9&&preview.steps<4096){
       const dt=freeFlightStep(p,this.hazards,duration-time,this.nodes,this.newtonOn),x=p.x,y=p.y;
-      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,source.y,this.width,this.perfectMult,this.newtonOn);
+      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,this.width,this.perfectMult,this.newtonOn);
       time+=result.dt;distance+=Math.hypot(p.x-x,p.y-y);bend+=Math.abs(result.turn);preview.steps++;
       const last=preview.points[preview.points.length-1];
       if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push(pooledPoint(preview.points.length,p.x,p.y,time,distance));

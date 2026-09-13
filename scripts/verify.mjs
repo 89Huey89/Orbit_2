@@ -1370,7 +1370,7 @@ assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
 function flyby(offset,speed){
   const h={x:0,y:0,r:24,seed:1,phase:0},p={x:offset,y:180,vx:0,vy:-speed};let minDistance=Infinity,hit=null;
   for(let i=0;i<120*6&&p.y>-180&&!hit;i++){
-    const result=flightStep(p,[],[h],i*step,step,180,4000);minDistance=Math.min(minDistance,Math.hypot(p.x,p.y));hit=result.hit;
+    const result=flightStep(p,[],[h],i*step,step,4000);minDistance=Math.min(minDistance,Math.hypot(p.x,p.y));hit=result.hit;
   }
   return {p,hit,minDistance,turn:Math.atan2(-p.vx,-p.vy)};
 }
@@ -1388,7 +1388,7 @@ assert(Math.abs(farPass.turn)<1e-10);assert(Math.abs(mirror.turn+slowClose.turn)
 function flareFlyby(offset,speed){
   const h={x:0,y:0,r:24,kind:'flare',seed:2,phase:0},p={x:offset,y:180,vx:0,vy:-speed};let minDistance=Infinity,hit=null;
   for(let i=0;i<120*6&&p.y>-180&&!hit;i++){
-    const result=flightStep(p,[],[h],i*step,step,180,4000);minDistance=Math.min(minDistance,Math.hypot(p.x,p.y));hit=result.hit;
+    const result=flightStep(p,[],[h],i*step,step,4000);minDistance=Math.min(minDistance,Math.hypot(p.x,p.y));hit=result.hit;
   }
   return {p,hit,minDistance,turn:Math.atan2(-p.vx,-p.vy)};
 }
@@ -1415,7 +1415,7 @@ function newtonFlyby(offset,speed,newtonOn=true){
   const n={x:0,y:0,r:50,cap:1,amp:0,vx:0,vy:0,visited:false,type:'still',seed:1,phase:0};
   const p={x:offset,y:180,vx:0,vy:-speed};let minDistance=Infinity,hit=null,speedAtClosest=speed;
   for(let i=0;i<120*6&&p.y>-180&&!hit;i++){
-    const result=flightStep(p,[n],[],i*step,step,180,4000,1,newtonOn);
+    const result=flightStep(p,[n],[],i*step,step,4000,1,newtonOn);
     const d=Math.hypot(p.x,p.y);if(d<minDistance){minDistance=d;speedAtClosest=Math.hypot(p.vx,p.vy);}
     hit=result.hit;
   }
@@ -1439,7 +1439,7 @@ assert(Math.abs(newtonMirror.speedAtClosest-newtonSlow.speedAtClosest)<1e-9,'A m
 // a vortex is lethal to its drawn edge, a flare only inside a core of 0.6 r.
 function headOn(kind){
   const h={x:0,y:0,r:24,kind,seed:5,phase:0},p={x:0,y:180,vx:0,vy:-300};let hit=null;
-  for(let i=0;i<120*3&&p.y>-180&&!hit;i++)hit=flightStep(p,[],[h],i*step,step,180,4000).hit;
+  for(let i=0;i<120*3&&p.y>-180&&!hit;i++)hit=flightStep(p,[],[h],i*step,step,4000).hit;
   return {hit,y:p.y};
 }
 const holeHead=headOn('vortex'),flareHead=headOn('flare');
