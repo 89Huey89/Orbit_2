@@ -1201,6 +1201,13 @@ function render(dt){
   // so it can never linger into a second frame or survive a pause.
   if(darkFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.pigment},${darkFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}darkFlash=0;}
   drawChapterReveal(dt);
+  // The reveal's own leaf is a reserve of the sheet, opaque wherever it stands (paper's torn scrap and the
+  // flood-covered panel both are) so its lettering stays legible over whatever the chart has scrolled
+  // beneath it — the traveller and the pricked aim line it is charging included, since the leaf is chosen
+  // once and does not step aside for what flies through it later. Struck a second time here, over the
+  // reserve rather than under it, so a flight the leaf happens to stand on is never actually hidden by it.
+  ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
+  drawAim(aim);drawPlayer();ctx.restore();
   // Whichever candidate this frame's marks claimed, drawn once, here, after every one of them has had
   // its turn to register (drawChapterReveal's own letter-stroke nib included) and before the laid
   // paper's own grain goes over the whole sheet last, the way every other mark's ink already sits under it.
