@@ -196,6 +196,7 @@ get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFra
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
+groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
@@ -1157,6 +1158,58 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(let i=0;i<120*3&&control.w.state==='playing'&&!control.w.player.node;i++)control.w.update(step);
     assert.equal(context.test.surveys.at(-1).rough,false,'An ordinary landing carries no skid mark');
     context.test.render(step);
+    context.test.newWorld();
+  }
+  // The plate's register of lettered ground (src/ground.js): one place that knows what type is standing
+  // where, and one question every solver that has to letter something asks of it.
+  {
+    const test=context.test;
+    context.test.newWorld();context.test.world.start();context.test.setPlaying();
+    // A proof plate is pulled before the letters were cut: it sets no type at all, so it holds no ground
+    // and there is nothing here for it to answer.
+    if(!test.plainPlate()){
+    // The chapter title is cut into the plate and does not move again: two seconds of climbing, and it is
+    // exactly where it was struck. It used to ride the sheet, which is what this is here to stop.
+    test.render(step);test.render(step);
+    const struck=test.revealPoint();
+    for(let i=0;i<120*2;i++)test.render(step);
+    const held=test.revealPoint();
+    assert(Math.abs(held.x-struck.x)<1e-6&&Math.abs(held.y-struck.y)<1e-6,'The chapter title stays where it was cut: '+JSON.stringify(struck)+' vs '+JSON.stringify(held));
+    // A short landscape screen sets the title out beside the play area and claims no band for it at all,
+    // which is the one layout with nothing here to check.
+    const band=test.revealBand();
+    assert(struck.compact?band===null:band&&band.right>band.left&&band.bottom>band.top,'The chapter title holds ground while the plate is open at '+width+'x'+height);
+    if(band){
+    // A caption whose planet stands square on the title's own line is set clear of it — and it gets there
+    // by asking the register what is already lettered, not by knowing what a chapter title is.
+    {
+      const cx=(band.left+band.right)/2,cy=(band.top+band.bottom)/2;
+      const dy=test.captionOffset(cx,cy,10,20,60),top=cy+dy-9,bottom=cy+dy+4;
+      assert(bottom<=band.top||top>=band.bottom,'A caption is set clear of the chapter title: '+top+'-'+bottom+' against '+band.top+'-'+band.bottom);
+    }
+    // And a note asked for on that same ground is set somewhere else entirely, by the same one question.
+    {
+      test.clearInscriptions();
+      const w=context.test.world;
+      const note=test.inscribe('A NOTE ASKED FOR EXACTLY WHERE THE PLATE IS ALREADY TITLED',{x:(band.left+band.right)/2/test.scale,y:w.cameraY,life:6});
+      const box=test.inscriptionBox(note);
+      const overlap=Math.max(0,Math.min(box.right,band.right)-Math.max(box.left,band.left))*Math.max(0,Math.min(box.bottom,band.bottom)-Math.max(box.top,band.top));
+      assert.equal(overlap,0,'A note is set over the chapter title');
+      test.clearInscriptions();
+    }
+    }
+    // The register itself: a mark declared on one frame is what the next frame's solvers read, and it is
+    // cleared by the turn after that rather than accumulating for the life of the run.
+    {
+      const box={left:10,top:10,right:60,bottom:40};
+      test.markGround('note',box.left,box.top,box.right,box.bottom);
+      test.groundTurn();
+      assert(test.groundTaken(box)>0,'A declared mark is read by the next frame');
+      assert.equal(test.groundTaken(box,'note'),0,'A solver excuses its own kind');
+      test.groundTurn();test.groundTurn();
+      assert.equal(test.groundTaken(box),0,'The register is cleared with the frame');
+    }
+    }
     context.test.newWorld();
   }
   // A nebula patch is baked into a sprite of its own, whatever the plate.

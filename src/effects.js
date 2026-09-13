@@ -1293,9 +1293,10 @@ function glossClearance(x,y,w,h){
     const dx=Math.max(0,Math.max(l-(x+w),x-r)),dy=Math.max(0,Math.max(t-(y+h),y-b));
     clear=Math.min(clear,Math.hypot(dx,dy)/(14*scale));
   };
-  const band=typeof revealBand==='function'?revealBand():null;
-  if(band)box(band.top,band.bottom,band.left,band.right);
-  if(typeof inscriptions!=='undefined')for(const g of inscriptions){const q=inscriptionBox(g);box(q.top,q.bottom,q.left,q.right);}
+  // Everything the plate has lettered, in one question rather than in a clause apiece (ground.js): the
+  // chapter title, the notes, the captions under the bodies, the names round the rims, the running head.
+  const reach=20*scale;
+  for(const m of groundStanding({left:x-reach,right:x+w+reach,top:y-reach,bottom:y+h+reach},'gloss'))box(m.top,m.bottom,m.left,m.right);
   return clamp(clear,0,1);
 }
 // The line a marginal note is set on: its subject's own, slid up or down its margin until the note
@@ -1303,13 +1304,7 @@ function glossClearance(x,y,w,h){
 // gutter is counted, so a note on the left margin is never pushed about by one on the right.
 function floaterLine(f,left,h){
   const top=hudBand()+16,bottom=H-frameBand()*.92-21,boxes=[];
-  const band=typeof revealBand==='function'?revealBand():null;
-  if(band)boxes.push([band.top,band.bottom]);
-  if(typeof inscriptions!=='undefined')for(const g of inscriptions){
-    const b=inscriptionBox(g);
-    if(left?b.left>W*.5:b.right<W*.5)continue;
-    boxes.push([b.top,b.bottom]);
-  }
+  for(const m of groundStanding({left:left?0:W*.5,right:left?W*.5:W,top:0,bottom:H},'floater'))boxes.push([m.top,m.bottom]);
   for(const q of floaters)if(q!==f&&q.lift!==undefined&&q.left===left){
     const qy=sy(q.y)+q.lift;boxes.push([qy-h*.55,qy+h*.55]);
   }
@@ -1363,6 +1358,10 @@ function drawDarkMarginalia(fy,time,alpha){
   const gy=marginaliaGloss(fy,gloss).y;
   if(gy+gloss.h<=0)return;
   const clear=glossClearance(gx,gy,gloss.w,gloss.h);if(clear<=0)return;
+  // HIC SUNT DRACONES is lettering like any other once it is actually on the sheet, so it takes its ground
+  // in the register too (ground.js) — a note or a caption placed while it drifts past keeps off it, rather
+  // than the gloss being the only one of the two doing the yielding.
+  markGround('gloss',gx,gy,gx+gloss.w,gy+gloss.h);
   ctx.save();
   ctx.beginPath();ctx.rect(inner,inner,Math.max(0,W-inner*2),Math.max(0,H-inner*2));ctx.clip();
   ctx.globalAlpha=alpha*.5*clear;
@@ -1739,7 +1738,8 @@ function drawEffects(dt){
     if(f.lift===null)continue;
     // floaterBox (inscriptions.js) is the one place this geometry is worked out; placeInscription reads
     // the same box to keep a brand-new note off a floater still standing where it would be set.
-    const {x,y,left}=floaterBox(f);
+    const fb=floaterBox(f),{x,y,left}=fb;
+    markGround('floater',fb.l,fb.t,fb.r,fb.b,f);
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);

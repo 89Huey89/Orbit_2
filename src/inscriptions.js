@@ -137,19 +137,25 @@ function placeInscription(g){
     // sheet, so the lettering keeps off them as well.
     for(let k=Math.max(0,world.surveys.length-3);k<world.surveys.length;k++)cost+=inscriptionOverDisc(box,sx(world.surveys[k].x),sy(world.surveys[k].y),30*scale);
     cost+=inscriptionOverDisc(box,sx(p.x),sy(p.y),16*scale)*3;
-    // The chapter title is lettering too, even though it is set by a hand of its own, so it is counted as
-    // a clash rather than as a cost: a note yields to it the way it yields to another note, and the whole
-    // sheet is combed for clear ground before anything is set across the plate's own title. Weighed as a
-    // mere cost it could be outbid by a planet or two and the title was crossed anyway. It is counted
-    // against the title's actual measure now (revealMetrics, celestial.js) rather than against the full
-    // width of the sheet, so a note may still share the line out at the margin, where the title never reaches.
-    const rb=revealBand();if(rb)clash+=inscriptionSpan(box.top,box.bottom,rb.top,rb.bottom)*inscriptionSpan(box.left,box.right,rb.left,rb.right)/100;
+    // Everything else the plate has lettered is weighed here, in one question to the register (ground.js),
+    // rather than in a clause apiece as it used to be. Type that is cut and left — the chapter title, the
+    // running head, the legend — is a clash: a note yields to it the way it yields to another note, and the
+    // whole sheet is combed for clear ground before anything is set across it. Counted as a mere cost it
+    // could be outbid by a planet or two and crossed anyway, which is how notes came to be set through the
+    // plate's own title. Type that is only passing through — a caption riding its planet up the sheet, a
+    // score standing in the margin for a second, the gloss drifting along the flood, the impressum at the
+    // start of a run — is a cost instead, and a heavy one, but never a reason to leave a note unwritten:
+    // this solver refuses the page rather than crowd it (see inscribe), and the sheet's passing type is not
+    // worth silencing the run for. Notes are excused from both and taken below, where inscriptionClash can
+    // allow for the sway of each.
+    // The passing term is capped well under what a single unit of clash costs below (clash*40), so that it
+    // can only ever break a tie between two clear places and never beat one. Uncapped it could: the
+    // impressum alone is five hundred of these units, so a clear line under the cartouche scored worse than
+    // a line straight across a note, and the note was refused the page for want of anywhere better.
+    const fixed=groundFixed(box,'note',2*scale);
+    clash+=fixed;
+    cost+=Math.min(24,(groundTaken(box,'note',2*scale)-fixed)*.6);
     for(const q of others)clash+=inscriptionClash(box,sway,q);
-    // A score floater is gone in 1.15s and an inscription is permanent, so the floater is always the one
-    // that yields once both exist — floaterLine (effects.js) already keeps a floater off inscriptions on
-    // its own side. What is still missing is this direction: a brand-new note should not be set directly
-    // over a floater that happens to be standing exactly where it is chosen.
-    for(const f of floaters){const fb=floaterBox(f);if(fb)clash+=inscriptionSpan(box.left,box.right,fb.l,fb.r)*inscriptionSpan(box.top,box.bottom,fb.t,fb.b)/100;}
     cost+=clash*40;
     if(!best||cost<best.cost)best={cost,clash,cx,cy,box};
     return cost;
@@ -334,6 +340,9 @@ function drawInscriptions(dt){
     // (frameBand()*.92 is a handful of px; footerBand() is the running head and the DOM icon row), and a
     // note between them was already carried under the plate's own furniture, not merely toward the edge.
     if(box.top>H-footerBand()&&!(g.held&&g.touched)){inscriptions.splice(i,1);continue;}
+    // Each note declares the ground it stands on, itself as its own owner, so the solver below can weigh
+    // every other note without excusing the one it is placing (ground.js).
+    if(onPage)markGroundBox('note',box,g);
     if(onPage)drawInscription(g);
     if(running)g.touched=false;
   }

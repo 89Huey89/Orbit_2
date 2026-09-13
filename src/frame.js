@@ -899,6 +899,9 @@ function drawPauseMagnitudeKey(){
   const colors=ink.frame,cx=W*.5,top=Math.min(H*.68,H-186);
   ctx.save();
   ctx.font=plateFace(Math.max(6.8,7.5*scale),'sc');ctx.fillStyle=colors.text;ctx.textAlign='center';
+  // The key stands on the sheet for as long as the pause does, heading and glyph row together, so it takes
+  // its ground in the register rather than being something a note or a caption can be set on top of.
+  markGround('key',cx-Math.min(W*.5-18,150),top-12,cx+Math.min(W*.5-18,150),top+50);
   ctx.fillText('MAGNITUDINES',cx,top);
   ctx.lineWidth=.6;ctx.strokeStyle=colors.tickMinor;
   ctx.beginPath();ctx.moveTo(cx-40,top+5.5);ctx.lineTo(cx+40,top+5.5);ctx.stroke();
@@ -923,14 +926,6 @@ function drawRunningHead(){
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
-  // While the chapter title stands on this line it already names the plate; running the head under it
-  // too would set the same name twice within a hand's breadth. The title is carried down here by the
-  // ascent and then off the foot of the sheet altogether (revealPoint, celestial.js), so what decides
-  // this is where its band actually lies rather than how old the writing is: the head yields the line
-  // for as long as the title is standing on it, and takes it back the moment the sheet has carried it
-  // past — which is also when revealBand answers nothing at all.
-  const band=revealBand();
-  if(band&&band.bottom>y-26&&band.top<y+14)return;
   // REGIO, not TAB.: the impressum's own TAB. names the plate itself, and TAB. naming the region too
   // made one abbreviation stand for two different things on the same sheet. The region takes its own
   // Latin name (chaptersLatin, plates.js) rather than the game's English one, matching the plate's voice
@@ -941,6 +936,14 @@ function drawRunningHead(){
   // Cleared the way a printer actually clears a running head: a plain band of the sheet's own stock,
   // ruled top and bottom in the plate's own burin, rather than a glow that fades to nothing on every side.
   const half=Math.min(ctx.measureText(head).width*.5+18,W*.42),midY=y-size*.35,halfH=size*.95;
+  // Should the chapter title ever be cut down here — a short screen can set it low — it already names the
+  // plate, and running the head under it would say the same name twice within a hand's breadth. The head
+  // yields the line, and it is the register that says so (ground.js) rather than this function knowing what
+  // a chapter title is. It declares its own band in the same breath, so everything else the plate letters
+  // keeps off the foot of the sheet.
+  const band={left:W*.5-half,right:W*.5+half,top:midY-halfH,bottom:midY+halfH};
+  if(!groundClear(band,'head',2)){ctx.restore();return;}
+  markGroundBox('head',band);
   ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.5:.6})`;
   ctx.fillRect(W*.5-half,midY-halfH,half*2,halfH*2);
   burinSegment(ctx,W*.5-half,midY-halfH,W*.5+half,midY-halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81301,{segments:10,skips:1,hair:false,wobble:.15});
@@ -1122,6 +1125,10 @@ function drawImpressum(){
   if(!world||eraId()!==0||plainPlate()||!W||!H)return;
   const m=impressumMetrics(),a=impressumAnchor(m),x=sx(a.x),y=sy(a.y),left=x-m.width*.5,top=y-m.height*.5;
   if(top>H-m.inner||top+m.height<m.inner)return;
+  // Eleven rows of type in a ruled cartouche is the largest single block of lettering the plate ever sets,
+  // so it goes into the register (ground.js) like any other: impressumTop() is what the marginalia in this
+  // margin used to consult one at a time, and it stays for the ones that need the line rather than the box.
+  markGround('impressum',left,top,left+m.width,top+m.height);
   const colors=ink.frame,rows=impressumRows();
   ctx.save();
   ctx.beginPath();ctx.rect(m.inner,m.inner,Math.max(0,W-m.inner*2),Math.max(0,H-m.inner*2));ctx.clip();
@@ -1168,6 +1175,9 @@ function render(dt){
   // penNib call registers instead of drawing (reveal.js) is cleared here, at the very top, and whichever
   // candidate is still standing is cut once, at the very bottom, after everything else this frame draws.
   nibClaimReset();
+  // And the plate's register of lettered ground turns over with it: what the last frame's type declared is
+  // what this frame's solvers read, and this frame begins collecting its own (see ground.js).
+  groundTurn();
   // A plate that draws its whole frame in its own hand names one painter here (see defineHand() in
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
   // instead is still the atlas's own, since every other painter in this file is unchanged.

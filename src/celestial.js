@@ -696,15 +696,13 @@ function revealMetrics(){
 // The band the chapter lettering occupies while it is on the page, or null when nothing is printed there.
 // This is a claim on the sheet, not a reserve painted on it: the chart prints straight over the title and
 // is meant to, the way it prints over the graticule, but two pieces of lettering on one line are two things
-// to read in the same place, so everything else the plate letters — notes, node captions, the running head,
-// the drifting gloss — keeps off this box. The plate title is ink, not a toast, so the claim stands for as
-// long as the title does. What ends it is the sheet itself: once the chart has carried the title down past
-// the foot of the plate the ground it held is free again, and this answers nothing.
+// to read in the same place, so everything else the plate letters keeps off this box — which it does by
+// reading it out of the register (ground.js) rather than by asking here. The claim stands for as long as
+// the title does, which is as long as the plate is open.
 function revealBand(){
   if(world.state==='ready'||world.state==='dead'||plainPlate())return null;
   if(H<540&&W>H)return null;
-  const p=revealPoint();if(p.gone)return null;
-  const m=revealMetrics();
+  const p=revealPoint(),m=revealMetrics();
   return {top:p.y-REVEAL_HALF,bottom:p.y+REVEAL_HALF,left:p.x-m.half,right:p.x+m.half};
 }
 // One line of the title, cut into the sheet rather than written onto it. A copper plate meets damp paper
@@ -736,19 +734,20 @@ function engraveLettering(text,x,y,size,face,age,track,inkStyle){
 // by then, so it is not what this checks: a node past the picker (row>0, not itself a difficultyChoice)
 // is the actual chart, and its absence is what the reveal has to wait out.
 function chartOpen(){return world.nodes.some(n=>!n.difficultyChoice&&n.row>0);}
-// Where the chapter lettering is set: the line under the HUD band, or one of the lower lines when a planet
-// or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins —
-// but "begins" waits for chartOpen(), so it reads the ground the reader is actually about to fly through
-// rather than the three offered targets alone. The lettering never jumps once that choice is struck.
-// This is the whole of the title's defence now that it is cut into the plate and nothing is cleared for
-// it: the name and the chart are both fixed in the sheet's own coordinates, so a line found clear of the
-// chart is clear of it for as long as the sheet holds them both — no later row can descend onto it, since
-// the chart grows upward, ahead of the climb. Five lines are searched rather than three for the same
-// reason: with no reserve to fall back on, a clear line is worth looking a little harder for.
+// Where the chapter lettering is set: the line under the HUD band, or one of the lower lines when the chart
+// or the plate's own lettering already sits across it as the sheet turns. The choice is made once, when the
+// reveal begins — but "begins" waits for chartOpen(), so it reads the ground the reader is actually about to
+// fly through rather than the three offered targets alone. The lettering never jumps once that choice is
+// struck, and never moves again: the title is cut into the plate, and a plate does not rearrange itself
+// while it is being read.
+// This one choice is the whole of the title's defence against the chart, since nothing is cleared for it.
+// Against the plate's own lettering it has a second: everything else the plate letters asks the register
+// (ground.js) what ground is taken, and the title's band is in it. So this weighs both — what is drawn on
+// the sheet, which can only be dodged now, and what is lettered on it, which will dodge back.
 function revealAnchor(){
-  if(chapterReveal.y!==undefined)return chapterReveal.y;
+  if(chapterReveal.y!==undefined)return clamp(chapterReveal.y,hudBand()+40,Math.max(hudBand()+40,H-footerBand()-REVEAL_HALF-6));
   if(!world.nodes)return Math.min(H*.3,hudBand()+46);
-  const base=Math.min(H*.3,hudBand()+46),reach=revealMetrics().half,limit=H*.62;
+  const base=Math.min(H*.3,hudBand()+46),m=revealMetrics(),reach=m.half,limit=H*.62;
   let bestY=base,bestCost=Infinity;
   for(const y of [base,base+60,base+120,base+180,base+240]){
     if(y!==base&&y+40>limit)break;
@@ -762,34 +761,28 @@ function revealAnchor(){
     // A live constellation's name is lettered round its entry star's rim, well past the star's own
     // radius: keep the chapter lettering off that ring too, not just off the planet itself.
     for(const c of world.constellations)if(!c.expired&&c.entry)cost+=cover(sx(c.entry.x),sy(c.entry.y),c.entry.r*scale+40*scale);
-    // A note already written keeps its ground as firmly as a planet does: the title looks for a line
-    // clear of whatever is already lettered on the sheet, not only of what is drawn on it.
-    if(typeof inscriptions!=='undefined')for(const g of inscriptions){const b=inscriptionBox(g);cost+=Math.max(0,Math.min(y+38,b.bottom)-Math.max(y-38,b.top));}
+    // Whatever the plate has already lettered keeps its ground as firmly as a planet does — notes, the
+    // captions under the bodies, a name round a rim, the running head at the foot, the impressum.
+    cost+=groundTaken({left:W*.5-reach,right:W*.5+reach,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF},'title',3)*.4;
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }
   if(chartOpen())chapterReveal.y=bestY;
   return bestY;
 }
-// The name is written onto the sheet, not over it: the line chosen above is taken into world coordinates
-// the first time it is asked for (once chartOpen() — see revealAnchor), and the chart carries the
-// lettering from there, exactly as it carries an orbit. Only the head of the play channel is held against:
-// the title may not print up into the HUD band, but it is no longer caught at the foot either. It used to
-// be, and a plate lasts eight rows, so a fast ascent slid it down to that clamp and parked it there — the
-// one piece of lettering on the sheet that the sheet could never carry away, sitting across the live chart
-// for the rest of the plate. It rides off the bottom now, the way a note set beside an orbit does
-// (inscriptions.js), and `gone` says when the sheet has taken it.
+// The title does not move. It is cut into the plate — not written onto the chart the plate carries — and a
+// plate is a fixed thing in the reader's hands: the graticule does not slide, the running head at the foot
+// does not slide, and neither does the sheet's own title. What moves is the chart, scrolling up through the
+// engraving as the traveller climbs, and that is the whole of the motion there should ever have been here.
+// It rode the sheet before this, on the argument that the name was written onto the chart, and it took two
+// tries to see that the argument was wrong on both ends: caught at the foot of the play channel it parked
+// across the live chart for the rest of the plate, and let go of it drifted down the sheet the entire time
+// it was up. Engraving does neither. The line is chosen once (revealAnchor) and kept.
 function revealPoint(){
   const compact=H<540&&W>H,m=revealMetrics(),inner=frameBand()*.92+8;
-  const clampX=v=>clamp(v,Math.min(W*.5,inner+m.reach),Math.max(W*.5,W-inner-m.reach)),clampTop=v=>Math.max(v,hudBand()+40);
-  if(chapterReveal.wx===undefined){
-    const x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor();
-    if(!compact&&!chartOpen())return {x:clampX(x),y:clampTop(y),compact,gone:false};
-    chapterReveal.wx=(x-W*.5-plateShift.x)/scale;
-    chapterReveal.wy=(y-plateShift.y)/scale+world.cameraY;
-  }
-  const y=clampTop(sy(chapterReveal.wy));
-  return {x:clampX(sx(chapterReveal.wx)),y,compact,gone:y-REVEAL_HALF>H-footerBand()};
+  const x=clamp(compact?W*.2:W*.5,Math.min(W*.5,inner+m.reach),Math.max(W*.5,W-inner-m.reach));
+  const y=clamp(compact?H*.44:revealAnchor(),hudBand()+40,Math.max(hudBand()+40,H-footerBand()-REVEAL_HALF-6));
+  return {x,y,compact};
 }
 function drawChapterReveal(dt){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
@@ -797,21 +790,18 @@ function drawChapterReveal(dt){
   const own=handFor('chapterReveal');if(own)return own(dt);
   if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
-  // The plate title is written once and left as ink: it fades in under the pen and then stands at full
-  // strength for as long as the sheet holds it, rather than fading back out like a toast. What takes it in
-  // the end is the margin, not a timer — see the sink below.
-  const t=chapterReveal.age,written=clamp(t/.55,0,1);
-  // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
-  // channel underneath it, and rides the sheet from there.
+  // The plate title is cut once and left as ink: it comes up under the pen and then stands, at full
+  // strength and in one place, for as long as the plate is open. It is struck out only by the next plate's
+  // own title, at the page turn, which is the only thing that has ever been entitled to replace it.
+  const t=chapterReveal.age,alpha=clamp(t/.55,0,1);
+  // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the title is cut into the play
+  // channel underneath it and stays there.
   const place=revealPoint();
-  // The sheet is allowed to take the title away: once the chart has carried it past the foot of the plate
-  // it is gone with that ground, and the running head goes back to naming the region on its own.
-  if(place.gone)return;
   const m=revealMetrics(),x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
-  // Nothing is printed into the margin: as the ascent carries the title down into the footer band it goes
-  // with the rest of that ground rather than sliding across the running head and the buttons, so the last
-  // stretch of its travel is also the last of its ink. It is out exactly where revealPoint calls it gone.
-  const alpha=written*(1-clamp((y+REVEAL_HALF-(H-footerBand()))/(REVEAL_HALF*2),0,1));
+  // The ground the title stands on, declared to the register (ground.js) so that everything else the plate
+  // letters — a note, a caption under a body, a name round a rim, a score in the margin, the gloss on the
+  // flood, the running head — keeps off it without any of them having to know what a chapter title is.
+  markGroundBox('title',revealBand());
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is

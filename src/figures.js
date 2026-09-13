@@ -1073,9 +1073,12 @@ function drawConstellations(){
       const label=chart.stars[2];
       // The caption rides above its star, flips below it and clears the HUD band exactly as a node caption does.
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
-      const y=star+captionOffset(sx(label.x),star,r,46*scale);
-      ctx.textAlign=label.x>0?'right':'left';ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;ctx.fillText(chart.name,x,y);
-      ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;ctx.fillText('COMPLETE · +60',x,y+16);
+      const y=star+captionOffset(sx(label.x),star,r,46*scale,60);
+      const side=label.x>0?'right':'left';
+      ctx.textAlign=side;ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;
+      markGroundText('caption',x,y,ctx.measureText(chart.name).width,14,side);ctx.fillText(chart.name,x,y);
+      ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;
+      markGroundText('caption',x,y+16,ctx.measureText('COMPLETE · +60').width,13,side);ctx.fillText('COMPLETE · +60',x,y+16);
     }
     // Skipped where the node already carries the early-run "NEXT" caption (see drawNode in figures.js):
     // the wide-orbit hint sits on the same main-line node right after a constellation's entry, and the
@@ -1084,7 +1087,8 @@ function drawConstellations(){
     if(world.player.node===chart.entry&&chart.main[0]&&!nextCaptioned&&!plainPlate()&&!captionsHeld()){
       const n=chart.main[0],nx=sx(n.x),ny=sy(n.y);
       ctx.textAlign='center';ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationHint},.66)`;
-      ctx.fillText('WIDE ORBITS',nx,ny+captionOffset(nx,ny,n.r*scale,26*scale));
+      const hintW=ctx.measureText('WIDE ORBITS').width,hintY=ny+captionOffset(nx,ny,n.r*scale,26*scale,hintW*.5+6);
+      markGroundText('caption',nx,hintY,hintW,13,'center');ctx.fillText('WIDE ORBITS',nx,hintY);
     }
     ctx.restore();
   }
@@ -1097,18 +1101,29 @@ const HUD_TEXT_HALF=150;
 const captionsHeld=()=>world.state==='ready';
 // Captions ride above their planet, but flip underneath it when the node sits so high that the text would
 // cross the frame's inner rule or run into the DOM score block in the middle of the HUD band — or when the
-// chapter name is lettered at that same height, as it is over the middle of the three opening targets.
-// Returns the y offset in node-local coordinates, where 0 is the planet's centre.
-function captionOffset(x,y,r,gap){
+// plate has already lettered that ground: the chapter title cut across it, a note set beside a neighbouring
+// orbit, a name round a rim, a score standing in the margin. The planet moves and its caption moves with it,
+// so unlike the title this is asked again every frame, of the register (ground.js) rather than of each
+// possible neighbour in turn — which is how a caption that had been taught to dodge the title alone ended
+// up set straight through a note instead. Whichever side is clearer is taken, and above wins a tie, since
+// that is where a caption belongs. Returns the y offset in node-local coordinates, 0 being the planet's centre.
+const CAPTION_HALF=52,CAPTION_STEP=13;
+function captionOffset(x,y,r,gap,half){
   const inner=frameBand()*.92+8,guard=Math.abs(x-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner;
-  // A caption only has to dodge the title where the title actually is: its band carries its own measure
-  // (revealMetrics, celestial.js) rather than an estimate of it, so a planet out past the lettering's own
-  // ends keeps its caption on the line it would have used anyway.
-  const band=revealBand(),nearBand=band&&x>band.left-30&&x<band.right+30,above=-(r+gap);
-  if(y+above>=guard&&!(nearBand&&y+above>band.top-12&&y+above<band.bottom+12))return above;
-  let below=Math.max(r+gap+3,guard+12-y);
-  if(nearBand&&y+below>band.top&&y+below<band.bottom+12)below=band.bottom+12-y;
-  return below;
+  const reach=half||CAPTION_HALF,floor=H-footerBand()-6;
+  const above=-(r+gap),below=Math.max(r+gap+3,guard+12-y);
+  const taken=dy=>groundTaken({left:x-reach,right:x+reach,top:y+dy-9,bottom:y+dy+4},'caption',2);
+  let best=null;
+  // Its own side of the planet first, then a little further out on each in turn, above always asked before
+  // below so a tie is settled where a caption belongs. Clear ground ends the search; where the sheet offers
+  // none, the least crowded line found is taken rather than the first.
+  for(let step=0;step<5;step++)for(const dy of [above-step*CAPTION_STEP,below+step*CAPTION_STEP]){
+    if(y+dy<guard||y+dy>floor)continue;
+    const t=taken(dy);
+    if(t<=0)return dy;
+    if(!best||t<best.t)best={dy,t};
+  }
+  return best?best.dy:below;
 }
 // The halo behind a planet. It used to be a radial gradient built per node and rasterised over a box
 // four planet-diameters across, every frame — and, because the held orbit's radius changes constantly,
@@ -1304,9 +1319,22 @@ function drawNode(n,aim){
       const caption=active?(p.speed>=MAX_SPEED?'MAX SPEED  ·  ×'+pace:charge>=1?'SPEED HELD  ·  ×'+pace:'BUILDING SPEED  ·  ×'+pace):'SLINGSHOT STAR';
       // The caption for the orbit being held is always set below the planet, where it cannot cover the
       // release marks; when the star is high enough that below is still inside the HUD band, it is pushed
-      // clear of the band instead.
-      let dy=active?r+28*scale:captionOffset(x,y,r,25*scale);
+      // clear of the band instead. Below is the one thing it is firm about — the release marks matter more
+      // than a clash — so where that ground is already lettered it is pushed further down rather than
+      // flipped over the marks. This is the caption that used to be set with no deconfliction at all: it
+      // took the one branch of this that never asked, which is how "SPEED HELD · ×3" came to be struck
+      // straight through the chapter title on the opening rows.
+      const half=ctx.measureText(caption).width*.5+6;
+      let dy=active?r+28*scale:captionOffset(x,y,r,25*scale,half);
       if(active&&Math.abs(x-W*.5)<HUD_TEXT_HALF&&y+dy<hudBand()+12)dy=hudBand()+12-y;
+      if(active)for(let step=0;step<6;step++){
+        const standing=groundStanding({left:x-half,right:x+half,top:y+dy-9,bottom:y+dy+4},'caption',2);
+        if(!standing.length)break;
+        let lowest=y+dy;for(const m of standing)lowest=Math.max(lowest,m.bottom+11);
+        if(lowest>H-footerBand()-6)break;
+        dy=lowest-y;
+      }
+      markGroundText('caption',x,y+dy,half*2-12,13,'center');
       writeText(ctx,caption,0,dy,revealLabel(pen,caption),{size:13});
     }
   }
@@ -1405,8 +1433,11 @@ function drawNode(n,aim){
     // sling star keeps its own name in that same spot instead (see above): the first main-line
     // star is always row 2, so without this the two captions would print on top of each other.
     if(world.captures<2&&!active&&!sling&&n.row===Math.floor(world.progress)+1){
-      const label=n.difficultyChoice?DIFFICULTY_LABELS[n.difficultyChoice]:'NEXT';
-      ctx.textAlign='center';ctx.font=plateFace(Math.max(9,9*scale),'sc');ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;writeText(ctx,label,0,captionOffset(x,y,r,24*scale),revealLabel(pen,label),{size:Math.max(9,9*scale)});
+      const label=n.difficultyChoice?DIFFICULTY_LABELS[n.difficultyChoice]:'NEXT',labelSize=Math.max(9,9*scale);
+      ctx.textAlign='center';ctx.font=plateFace(labelSize,'sc');ctx.fillStyle=paper?`rgba(${ink.base.ink},.75)`:`rgba(${ink.marks.next},.6)`;
+      const labelW=ctx.measureText(label).width,labelY=captionOffset(x,y,r,24*scale,labelW*.5+6);
+      markGroundText('caption',x,y+labelY,labelW,labelSize,'center');
+      writeText(ctx,label,0,labelY,revealLabel(pen,label),{size:labelSize});
     }
   }
   if(renaissanceStar&&!captionsHeld())drawRenaissanceStarLetter(n,renaissanceStarObservation(n),rgb);
