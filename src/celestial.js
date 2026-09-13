@@ -677,9 +677,18 @@ function revealBand(){
   if(H<540&&W>H)return null;
   const y=revealPoint().y;return {top:y-36,bottom:y+36};
 }
+// Whether the chart the reader is actually about to fly through exists yet. The opening's three-way
+// difficulty choice fills world.nodes with nothing but its own three targets; capturing one clears
+// difficultyPending, but the real rows past it are only laid down by ensureAhead() later in that same
+// tick — and the capture's own "PRESSURE SET" announcement is inscribed in between the two, asking
+// revealBand() for the reveal's line before that chart exists. difficultyPending alone is already false
+// by then, so it is not what this checks: a node past the picker (row>0, not itself a difficultyChoice)
+// is the actual chart, and its absence is what the reveal has to wait out.
+function chartOpen(){return world.nodes.some(n=>!n.difficultyChoice&&n.row>0);}
 // Where the chapter lettering is set: the line under the HUD band, or one of two lower lines when a planet
-// or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins,
-// so the lettering never jumps while the pen is still writing it.
+// or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins —
+// but "begins" waits for chartOpen(), so it reads the ground the reader is actually about to fly through
+// rather than the three offered targets alone. The lettering never jumps once that choice is struck.
 function revealAnchor(){
   if(chapterReveal.y!==undefined)return chapterReveal.y;
   if(!world.nodes)return Math.min(H*.3,hudBand()+46);
@@ -700,25 +709,24 @@ function revealAnchor(){
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }
-  chapterReveal.y=bestY;return bestY;
+  if(chartOpen())chapterReveal.y=bestY;
+  return bestY;
 }
 // The name is written onto the sheet, not over it: the line chosen above is taken into world coordinates
-// the first time it is asked for, and the chart carries the lettering from there, exactly as it carries an
-// orbit. It is held back at the edge of the play channel rather than allowed to print into the margin, so
-// a fast ascent slides it to the foot of the sheet and it settles there.
+// the first time it is asked for (once chartOpen() — see revealAnchor), and the chart carries the
+// lettering from there, exactly as it carries an orbit. It is held back at the edge of the play channel
+// rather than allowed to print into the margin, so a fast ascent slides it to the foot of the sheet and it
+// settles there.
 function revealPoint(){
-  const compact=H<540&&W>H;
+  const compact=H<540&&W>H,reach=Math.min(95,W*.21)+16,inner=frameBand()*.92+8;
+  const clampX=v=>clamp(v,Math.min(W*.5,inner+reach),Math.max(W*.5,W-inner-reach)),clampY=v=>clamp(v,hudBand()+40,H-footerBand()-34);
   if(chapterReveal.wx===undefined){
     const x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor();
+    if(!compact&&!chartOpen())return {x:clampX(x),y:clampY(y),compact};
     chapterReveal.wx=(x-W*.5-plateShift.x)/scale;
     chapterReveal.wy=(y-plateShift.y)/scale+world.cameraY;
   }
-  const reach=Math.min(95,W*.21)+16,inner=frameBand()*.92+8;
-  return {
-    x:clamp(sx(chapterReveal.wx),Math.min(W*.5,inner+reach),Math.max(W*.5,W-inner-reach)),
-    y:clamp(sy(chapterReveal.wy),hudBand()+40,H-footerBand()-34),
-    compact
-  };
+  return {x:clampX(sx(chapterReveal.wx)),y:clampY(sy(chapterReveal.wy)),compact};
 }
 const chapterRevealLeaves=new Map();
 function chapterRevealLeaf(){
