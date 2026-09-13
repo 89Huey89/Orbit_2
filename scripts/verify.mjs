@@ -196,7 +196,7 @@ get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFra
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
-groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,\
+groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
@@ -851,6 +851,20 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   assert.equal(run.observe('threeMinutes'),true);assert.equal(run.observe('threeMinutes'),false,'An observation is awarded once per run');
   context.test.render(step);
   assert(inscribed().includes('OBSERVATION \u00b7 Vigilia'),inscribed());
+  // The pen's own ink readout \u2014 the quill's filled barrel and the trail's wet weight/alpha \u2014 must
+  // draw cleanly across the whole reservoir, brimming to bone dry, not only whatever level a real
+  // flight happens to leave it at here. Forced onto the quill mark itself, since a seeded run may
+  // have a different one in hand.
+  {
+    const heldMark=context.test.cosmetic('mark'),heldInk=run.player.ink;
+    context.test.setCosmetic('mark','quill');
+    for(const level of [0,.2,.5,1]){
+      run.player.ink=level;
+      assert.equal(run.inkLevel(),level,'inkLevel must read back the level just set: '+level);
+      context.test.render(step);
+    }
+    context.test.setCosmetic('mark',heldMark);run.player.ink=heldInk;
+  }
   const beforeRun={captures:context.test.ledger.captures,perfects:context.test.ledger.perfects,
     charts:context.test.ledgerStat('constellations'),runs:context.test.ledgerStat('runs'),seconds:context.test.ledger.playSeconds};
   run.die('RUN COMPLETE');run.player.deadTime=.8;context.test.render(.1);
@@ -1086,6 +1100,16 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // Nothing written fades or expires: a note stays on the sheet, at full strength, for as long as the
     // sheet holds still under it, and leaves only when the chart has carried it under the plate's rule.
     {
+      // The survey fixture above leaves the world mid its own opening choice, and past this point every
+      // frame this loop renders would keep re-writing that choice's own standing instruction beside this
+      // same node — a third note sharing the one anchor this block deliberately holds still under while
+      // it also holds 'kept' and, in a moment, 'stood'. Three notes fighting one small point on a 320px
+      // sheet is a tight fit at the best of times; it happened to still resolve under the old, far taller
+      // HUD band candidates once clamped against, and no longer reliably does now that the atlas clamps
+      // to the inner rule instead (hudBand(), src/plates.js). The fixture is settled out of its pending
+      // choice here, which is no part of what this block actually tests, rather than asking the placer to
+      // solve a crowd it was never written to be tested against.
+      w.difficultyPending=false;w.captures=Math.max(w.captures,2);
       context.test.clearInscriptions();
       const kept=context.test.inscribe('KEPT AS INK',{node:w.player.node});
       const before=context.test.inscriptionBox(kept);
@@ -1168,13 +1192,28 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // A proof plate is pulled before the letters were cut: it sets no type at all, so it holds no ground
     // and there is nothing here for it to answer.
     if(!test.plainPlate()){
-    // The chapter title is cut into the plate and does not move again: two seconds of climbing, and it is
-    // exactly where it was struck. It used to ride the sheet, which is what this is here to stop.
+    const w=test.world;
+    // The opening's difficulty picker offers three targets and no chart to speak of yet — chartOpen()
+    // waits on a real row past it — so it is skipped straight through here, the way an actual capture
+    // would clear it, and the real course generated behind it, so the title below actually gets struck
+    // rather than sitting in its pre-strike search for the length of this test.
+    w.difficultyPending=false;w.ensureAhead();
+    // The chapter title is engraved on the paper now: struck once, on the line revealAnchor still chooses
+    // once, and from there carried down by exactly as much of the sheet as the camera moves — no more, no
+    // less, and never sideways. Two seconds of a real climb is the proof of it; render() alone never
+    // advances the sim clock (it only draws), so the camera is driven by hand here to stand in for it.
     test.render(step);test.render(step);
-    const struck=test.revealPoint();
+    const struck=test.revealPoint(),cameraBefore=w.cameraY;
     for(let i=0;i<120*2;i++)test.render(step);
-    const held=test.revealPoint();
-    assert(Math.abs(held.x-struck.x)<1e-6&&Math.abs(held.y-struck.y)<1e-6,'The chapter title stays where it was cut: '+JSON.stringify(struck)+' vs '+JSON.stringify(held));
+    if(w.cameraY===cameraBefore)w.cameraY-=140;
+    test.render(step);
+    const held=test.revealPoint(),cameraAfter=w.cameraY;
+    assert(Math.abs(held.x-struck.x)<1e-6&&Math.abs((held.y-struck.y)-(-(cameraAfter-cameraBefore)*test.scale))<1e-6,
+      'The chapter title moves with the paper and only with it: '+JSON.stringify(struck)+' vs '+JSON.stringify(held)+' over a camera move of '+(cameraAfter-cameraBefore));
+    // One more frame lets the register (ground.js) catch up to the position just moved to — it reads the
+    // last complete frame, by design, so a check made in the same beat as a manual camera move would be
+    // asking about ground the title has already left rather than the ground it is standing on now.
+    test.render(step);
     // A short landscape screen sets the title out beside the play area and claims no band for it at all,
     // which is the one layout with nothing here to check.
     const band=test.revealBand();
@@ -1190,7 +1229,6 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // And a note asked for on that same ground is set somewhere else entirely, by the same one question.
     {
       test.clearInscriptions();
-      const w=context.test.world;
       const note=test.inscribe('A NOTE ASKED FOR EXACTLY WHERE THE PLATE IS ALREADY TITLED',{x:(band.left+band.right)/2/test.scale,y:w.cameraY,life:6});
       const box=test.inscriptionBox(note);
       const overlap=Math.max(0,Math.min(box.right,band.right)-Math.max(box.left,band.left))*Math.max(0,Math.min(box.bottom,band.bottom)-Math.max(box.top,band.top));
@@ -1198,6 +1236,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       test.clearInscriptions();
     }
     }
+    // Enough more climbing carries the title's own box under the foot of the plate, the same as any other
+    // ink the sheet has carried that far: the register has nothing left to say about where it stands.
+    w.cameraY-=6000;test.render(step);
+    assert.equal(test.revealBand(),null,'The chapter title leaves the sheet once the paper has carried it under the foot');
     // The register itself: a mark declared on one frame is what the next frame's solvers read, and it is
     // cleared by the turn after that rather than accumulating for the life of the run.
     {
@@ -1210,6 +1252,50 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(test.groundTaken(box),0,'The register is cleared with the frame');
     }
     }
+    context.test.newWorld();
+  }
+  // ---------- The atlas's own tally: a landing's score, inked once rather than floated and faded ----------
+  {
+    context.test.newWorld();context.test.setPlaying();
+    const w=context.test.world,origin=w.player.node,destination=w.makeNode(120,-400,54,1,'still');
+    w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];w.nebulas=[];
+    const path=context.test.orbitTangents(origin,destination,-1)[0];
+    assert(path,'A tangent route must exist for the tally fixture');
+    w.player.angle=path.angle;w.player.dir=-1;w.player.speed=150;w.positionPlayer();w.start();
+    assert.equal(w.release(),true);
+    for(let i=0;i<120*8&&w.state==='playing'&&!w.player.node;i++)w.update(step);
+    assert.equal(w.player.node,destination,'The tally fixture must land');
+    context.test.render(step);
+    const tallyList=context.test.tallies;
+    assert(tallyList.length>0,'A landing inks a standing tally rather than a fading floater');
+    const tally=tallyList.at(-1);
+    assert.equal(tally.line2,'SUMMA '+w.score,'The tally carries the run\'s total, not only the landing\'s own gain');
+    // The landing's own announcement is inscribed in the same event that pushes the tally, and the
+    // register is read a frame behind: a tally waits one frame for its line so that it reads that note
+    // where it was set (drawTallies), so the first frame shows it unsettled and the second settled.
+    assert.equal(context.test.tallyBox(tally),null,'A fresh tally waits one frame before settling its line');
+    context.test.render(step);
+    const before=context.test.tallyBox(tally);
+    assert(before,'A tally settles a line to stand on the frame after it is pushed');
+    const beforeSide=tally.left,beforeCam=w.cameraY;
+    // A modest, forced new height to close over: what the orbit's own drift happens to give back is not
+    // reliable enough to test against, and the property under test is the exact relation between the
+    // camera's own movement and the tally's, not how far a couple of seconds of this fixture's own
+    // flight happens to climb.
+    w.topY-=60;
+    for(let i=0;i<Math.round(2/step);i++)w.update(step);
+    assert.equal(w.state,'playing','The fixture must still be flying two seconds on');
+    context.test.render(step);
+    const moved=w.cameraY-beforeCam,after=context.test.tallyBox(tally);
+    assert(moved<-1e-6,'The fixture must actually move the camera to be worth testing: '+moved);
+    assert.equal(tally.left,beforeSide,'A standing tally never changes gutter once it is set');
+    assert(Math.abs((after.top-before.top)-(-moved*context.test.scale))<1e-6,
+      'A tally rides the ascent by exactly the camera\'s own movement: '+(after.top-before.top)+' vs '+(-moved*context.test.scale));
+    // Pushed far past the footer band rather than merely off the visible screen, so the strike is read
+    // off the same rule drawInscriptions itself is cut against.
+    w.cameraY-=height*6;
+    context.test.render(step);
+    assert(!context.test.tallies.includes(tally),'A tally carried under the footer band is struck from the sheet');
     context.test.newWorld();
   }
   // A nebula patch is baked into a sprite of its own, whatever the plate.

@@ -98,6 +98,23 @@ function floaterBox(f){
   ctx.save();ctx.font=plateFace(size,'text','italic');const width=ctx.measureText(f.text).width;ctx.restore();
   return {x,y,left,l:left?x:x-width,r:left?x+width:x,t:y-size*.8,b:y+size*.3};
 }
+// The same geometry for the atlas's own standing tally (effects.js's drawTallies): two lines rather
+// than one, the second set a size under the first in the same italic, and no age-driven climb
+// subtracted from the lift, since a tally never drifts — the lift is the whole of where it stands.
+// Kept beside floaterBox rather than folded into it because the two are read by different callers for
+// different reasons and a floater's own contract (one line, a fading climb) is owed to the eras as it
+// stands; this is the one place a tally's box is worked out, so the register (ground.js) and the draw
+// loop that marks it never disagree about where the ink actually sits.
+function tallyBox(f){
+  if(f.lift==null)return null;
+  const size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
+  const y=sy(f.y)+f.lift,left=f.left,x=left?inner+hand*2.4:W-inner-hand*2.4;
+  ctx.save();ctx.font=plateFace(size,'text','italic');const w1=ctx.measureText(f.line1).width;
+  ctx.font=plateFace(size2,'text','italic');const w2=ctx.measureText(f.line2).width;
+  ctx.restore();
+  const width=Math.max(w1,w2);
+  return {x,y,left,l:left?x:x-width,r:left?x+width:x,top:y-size*.8,bottom:y+size*.98+size2*.3};
+}
 // Wherever a place is chosen, the lettering is slid back onto the sheet before it is judged, so a note
 // beside a planet at the very edge of the plate is set inside the frame rather than into its margin.
 function ontoSheet(cx,cy,w,h){

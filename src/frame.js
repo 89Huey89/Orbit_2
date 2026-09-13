@@ -253,15 +253,16 @@ function frameNorthNeedle(g,cx,cy,rgb,alpha,size){
   g.fillText('SEPT.',0,size*.5);
   g.restore();
 }
-// The DOM HUD prints ORBIT, the score and BEST across the top of the plate, and the two upper corners of
-// the margin have to keep out of its way. Shrinking whichever ornament is active there to clear it —
-// the documented 45%-of-the-head reduction — read fine at a wide sheet's 14px head but reduced the
+// The eras and the modern plate print ORBIT, the score and BEST across the top of the plate in the DOM,
+// and their two upper corners have to keep out of its way. Shrinking whichever ornament is active there to
+// clear it — a 45%-of-the-head reduction — read fine at a wide sheet's 14px head but reduced the
 // reference wind-head to a smudge of noise at a narrow sheet's 9px, and every cosmetic corner (the
 // strapwork interlace, the acanthus scroll, the sea-monster corner's own rosette) packs the same kind of
-// fine detail into its own reach, so the same floor catches all four at some width. The two upper corners
-// keep the *reduction*, not the shrink: a mark cut lean enough to read at any width instead, tucked close
-// to the literal corner and blown or knotted so it clears the HUD by where it sits rather than by how
-// small it has been made. The two lower corners, which nothing is set over, are unchanged.
+// fine detail into its own reach, so the same floor catches all four at some width. Those plates' upper
+// corners keep the *reduction*, not the shrink: a mark cut lean enough to read at any width instead,
+// tucked close to the literal corner and blown or knotted so it clears the heading by where it sits
+// rather than by how small it has been made. The atlas sets no heading there (see `.hud` in
+// src/index.html), so its four corners are cut alike, at one reach and by one style.
 const SIMPLE_INSET=2,SIMPLE_ANGLE=Math.PI/2;
 function frameOrnaments(g,wide,innerR){
   const style=activeCosmetic('frame'),head=wide?14:9,simpleHead=head*.8,inset=SIMPLE_INSET+(wide?1:0);
@@ -272,28 +273,37 @@ function frameOrnaments(g,wide,innerR){
   // and into the tick ladder it should clear. Anchoring it at R*1.44 instead, plus the same clearance
   // gap the old formula already carried, clears the rule by that gap rather than missing it by one.
   const fullInset=innerR+head*1.44+(wide?3:2);
-  // Top corners carry only their direction: every top mark now sits at its own fixed inset (below)
-  // rather than at the shrunken-head inset the old single corners array placed it at.
-  const topCorners=[[1],[-1]],bottomCorners=[[fullInset,H-fullInset,1,-1],[W-fullInset,H-fullInset,-1,-1]];
-  for(const [dirX] of topCorners){
-    const cx=dirX>0?innerR+inset:W-(innerR+inset),cy=innerR+inset,seed=51001+Math.round(cx*7+cy*13);
+  const atlas=renaissanceAtlas();
+  // The four corners' own ornament, kept in one place now that the atlas draws all four alike: the
+  // wind-heads blowing along the diagonal into the chart by default, or whichever of the catalogue's
+  // ornaments is chosen. The monsters swim wherever the rising ink reaches, cut in the flood's own
+  // pigment at the weight the shoreline marginalia is printed at, so they still read once the page is
+  // half drowned.
+  const drawCorner=(x,y,dx,dy,seed)=>{
+    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,head,seed);
+    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,head*.9,seed);
+    else if(style==='seamonsters')frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
+    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed,1);
+  };
+  // Top corners carry their direction both ways: on the atlas that is all drawCorner needs to place and
+  // orient the same mark the bottom corners get; on the eras and the modern plate only dirX is read, for
+  // the lean mark tucked into the corner.
+  const topCorners=[[1,1],[-1,1]],bottomCorners=[[fullInset,H-fullInset,1,-1],[W-fullInset,H-fullInset,-1,-1]];
+  for(const [dirX,dirY] of topCorners){
     // A narrow sheet has no flank for the compass rose (see buildFrameLayer's `if(wide)` block below),
     // so the upper-left corner — otherwise the same wind-head or cosmetic ornament as the other three —
     // takes a bare needle instead, the one piece of the rose a phone actually has room for.
     if(!wide&&dirX>0){frameNorthNeedle(g,innerR+11,innerR+11,rgb,alpha,10);continue;}
+    if(atlas){
+      const x=dirX>0?fullInset:W-fullInset,y=fullInset;
+      drawCorner(x,y,dirX,dirY,51001+Math.round(x*7+y*13));
+      continue;
+    }
+    const cx=dirX>0?innerR+inset:W-(innerR+inset),cy=innerR+inset,seed=51001+Math.round(cx*7+cy*13);
     if(style==='strapwork'||style==='acanthus'||style==='seamonsters')frameCornerKnot(g,cx,cy,rgb,alpha,simpleHead*.72,seed);
     else frameWindHeadSimple(g,cx,cy,SIMPLE_ANGLE,rgb,alpha,simpleHead,seed);
   }
-  for(const [x,y,dx,dy] of bottomCorners){
-    const seed=51001+Math.round(x*7+y*13);
-    if(style==='strapwork')frameStrapwork(g,x,y,dx,dy,rgb,alpha,head,seed);
-    else if(style==='acanthus')frameAcanthus(g,x,y,dx,dy,rgb,alpha,head*.9,seed);
-    // The monsters swim in the two lower corners, where the rising ink reaches: they are cut in the
-    // flood's own pigment, at the weight the shoreline marginalia is printed at, so they still read
-    // once the page is half drowned.
-    else if(style==='seamonsters')frameSeaMonster(g,x,y,dx,ink.dark.pigment,onPaper()?.55:.46,head*.72,seed);
-    else frameWindHead(g,x,y,Math.atan2(dy,dx),rgb,alpha,head,seed,1);
-  }
+  for(const [x,y,dx,dy] of bottomCorners)drawCorner(x,y,dx,dy,51001+Math.round(x*7+y*13));
 }
 // A scale bar that scales nothing on a sheet with no distances reads as a mile-scale sitting on a
 // chart that never states a mile. Cut to the same unit the border ladder itself counts by — ten
@@ -418,11 +428,12 @@ function buildFrameLayer(){
     g.textAlign='right';g.fillText('°',W-outerR-tickLen*.5-2,unitY);
   }
   // Restrained corner brackets at the inner rule — the two lower corners only. Their own ornament sits
-  // well clear of the bracket's reach (frameOrnaments' `inset` pushes it out by the ornament's own size
-  // plus a gap), so the two read as separate marks; the two upper corners tuck their ornament in close
-  // to the literal corner on purpose (needle, simplified head or knot, all sized for HUD clearance by
-  // placement rather than by distance), which puts it on top of a bracket cut here, so the bracket is
-  // dropped there rather than fighting the ornament for the same few pixels.
+  // well clear of the bracket's reach (frameOrnaments' `fullInset` pushes it out by the ornament's own
+  // size plus a gap), so the two read as separate marks. On the eras and the modern plate the two upper
+  // corners tuck their ornament in close to the literal corner, clear of the DOM `ORBIT` and `BEST`
+  // headings, which would put it on top of a bracket cut here, so no bracket is cut there; the atlas's
+  // upper corners sit at the lower two's reach but take no bracket either — the bracket is the foot of
+  // the sheet's own mark, not a thing every corner is owed.
   frameCorner(g,innerR,H-innerR,1,-1,colors.orn);frameCorner(g,W-innerR,H-innerR,-1,-1,colors.orn);
   // The marginal ornament in each corner — the wind-heads blowing along the diagonal into the chart by
   // default, or whichever of the catalogue's ornaments is chosen — kept in the margin's own tone.
@@ -836,9 +847,11 @@ function drawRenaissanceGrid(){
   ctx.drawImage(renaissanceGridLayer,0,0,W,H);
 }
 
-// The score, the pace and the flow are DOM, printed in the middle of the HUD band, and the chart scrolls up
-// beneath them. While a run is on, a soft leaf of the sheet's own ground is laid under that column,
-// feathered to nothing all round, so the figures never print straight across a planet.
+// On the eras and the modern plate the score, the pace and the flow are DOM, printed in the middle of the
+// HUD band, and the chart scrolls up beneath them: while a run is on, a soft leaf of the sheet's own ground
+// is laid under that column, feathered to nothing all round, so the figures never print straight across a
+// planet. The atlas prints no such column — its score is a tally in the gutter, its ink is in the quill —
+// so it lays no leaf (see `.hud` in src/index.html for what became of the heading).
 // A gradient's stops depend only on the plate, never on where or how large it is painted — the
 // translate+scale around each fillRect below place and size it — so, like the plate frame layer
 // above, it is built once per plate and reused rather than reallocated every single frame.
@@ -859,6 +872,9 @@ function drawHudLeaf(){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('hudLeaf');if(own)return own();
+  // The atlas sets nothing at the head of the sheet for a leaf to protect: the top of its play channel is
+  // the frame's own inner rule (hudBand(), src/plates.js).
+  if(renaissanceAtlas())return;
   if(!world||world.state==='ready'||world.state==='dead')return;
   // The block is one line taller for every charge in hand, and those lines are the ones that come and go,
   // so the pass is drawn to reach whatever is actually set on it rather than to a fixed depth: a charge
@@ -867,26 +883,6 @@ function drawHudLeaf(){
   const cx=W*.5,band=hudBand(),cy=band*.5,rx=Math.min(W*.3,124),ry=Math.max(band*.64,band+carried*15-cy);
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
   ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
-  drawInkGauge();
-}
-// The nib's reservoir, cut as an engraved rule rather than a browser's progress bar: the wet length in
-// the plate's gold (copper once it is too short to carry an ordinary transfer), a bead of wet ink at its
-// end, and the spent length left as a bare score in the copper — a mark a burin left, not a grey
-// remainder. Positioned off the DOM slip's own rect (#ink, kept invisible on the atlas — see index.html)
-// so it sits exactly where the score-block's own rhythm already puts it, without this file having to
-// reason about that layout itself. The fixed seeds keep the wobble steady frame to frame; only the split
-// between wet and spent moves.
-function drawInkGauge(){
-  if(!renaissanceAtlas())return;
-  const el=$('ink');if(!el)return;
-  const rect=el.getBoundingClientRect();
-  if(!(rect.width>0)||!Number.isFinite(rect.left)||!Number.isFinite(rect.top)||!Number.isFinite(rect.height))return;
-  const level=clamp(world.inkLevel(),0,1),x0=rect.left,x1=rect.left+rect.width,y=rect.top+rect.height*.5,xh=x0+rect.width*level;
-  if(level<1)burinSegment(ctx,xh,y,x1,y,ink.base.copper,.3,.5,81403,{segments:6,skips:1,hair:false,wobble:.18});
-  if(level>0){
-    burinSegment(ctx,x0,y,xh,y,level<=.34?ink.base.copper:ink.base.gold,.92,.9,81401,{segments:6,skips:1,hair:false,wobble:.18});
-    penBead(xh,y,0,1.1*scale,.85);
-  }
 }
 // The MAGNITUDINES key: on a wide sheet it stands permanently in the right flank (buildFrameLayer's
 // `if(wide)` block above), but a narrow one has no flank to carry it in, and the play field is kept
@@ -1157,7 +1153,7 @@ function drawImpressum(){
 // The frontispiece's two action rows (see .action-row, index.html) stand directly on the open plate,
 // with no CSS box of their own — a group boxed in CSS there would be a chip laid over the drawing, the
 // very thing this cut is meant to stop. The frame around each is cut here instead, in the plate's own
-// burin, measured live off the DOM row exactly as drawInkGauge() measures #ink: the row decides its own
+// burin, measured live off the DOM row's own rect: the row decides its own
 // width and wrap, this only draws the rule around whatever it settled on.
 function drawActionRowFrame(el){
   if(!el)return;

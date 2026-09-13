@@ -675,8 +675,22 @@ function drawAmbient(dt,aim){
 // of the widest name the atlas sets — so a short name reserved a stretch of plate it never came near. The
 // rule under the name is cut to the title now rather than to the sheet, and the whole assembly is only
 // ever as wide as the words in it.
-const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34;
+const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34,REVEAL_TITLE_CAP=3;
 let revealMeasure=null;
+// Every chapter title still standing on the sheet, oldest first. Each is struck once — same moment,
+// same line choice, as revealAnchor below always chose — and the strike converts that line into a fixed
+// world y (drawChapterReveal), so from then on it is carried exactly as any other mark set at a world
+// point is: sy() of that y, every frame, until the paper takes it under the foot. Capped rather than
+// unbounded because a run flown at real pace turns a chapter before the last one's title has scrolled
+// clear of the foot, so more than one is legitimately on the page at once — but never the whole run's
+// history at once.
+let revealTitles=[];
+// The index of the newest turn actually struck, kept apart from revealTitles itself because that list
+// only holds what is still standing: a title carried under the foot is pruned from it same as any other
+// ink that has left the sheet, but its turn must not read as unstruck again just because nothing of it is
+// left to look at — struck once is once, whether or not a trace of it remains on the page.
+let revealStruckIndex=-1;
+function clearRevealTitles(){revealTitles.length=0;revealStruckIndex=-1;}
 function revealMetrics(){
   const compact=H<540&&W>H,key=plateName+'|'+chapterReveal.index+'|'+Math.round(W)+'x'+Math.round(H)+(compact?'c':'');
   if(revealMeasure&&revealMeasure.key===key)return revealMeasure;
@@ -693,16 +707,22 @@ function revealMetrics(){
   revealMeasure={key,size,plate,name,reach,half:Math.min(reach+13,Math.max(70,W*.5-frameBand()*.92-6))};
   return revealMeasure;
 }
-// The band the chapter lettering occupies while it is on the page, or null when nothing is printed there.
+// The band the newest chapter title occupies while it is on the page, or null when none stands there.
 // This is a claim on the sheet, not a reserve painted on it: the chart prints straight over the title and
 // is meant to, the way it prints over the graticule, but two pieces of lettering on one line are two things
 // to read in the same place, so everything else the plate letters keeps off this box — which it does by
 // reading it out of the register (ground.js) rather than by asking here. The claim stands for as long as
-// the title does, which is as long as the plate is open.
+// the newest title stands on the sheet, from the turn that struck it to the moment the paper carries it
+// under the foot — an older title still on its way out declares its own box straight to the register
+// (drawChapterReveal), rather than through this, since this is only ever asked about the newest.
 function revealBand(){
   if(world.state==='ready'||world.state==='dead'||plainPlate())return null;
   if(H<540&&W>H)return null;
-  const p=revealPoint(),m=revealMetrics();
+  const struck=revealCurrent();
+  // The current turn was struck and has already left the sheet: there is nothing standing for it any more,
+  // and — unlike a title still finding its line — nothing left here to search for either.
+  if(!struck&&revealStruckIndex===chapterReveal.index)return null;
+  const p=revealPoint(),m=struck||revealMetrics();
   return {top:p.y-REVEAL_HALF,bottom:p.y+REVEAL_HALF,left:p.x-m.half,right:p.x+m.half};
 }
 // One line of the title, cut into the sheet rather than written onto it. A copper plate meets damp paper
@@ -737,9 +757,10 @@ function chartOpen(){return world.nodes.some(n=>!n.difficultyChoice&&n.row>0);}
 // Where the chapter lettering is set: the line under the HUD band, or one of the lower lines when the chart
 // or the plate's own lettering already sits across it as the sheet turns. The choice is made once, when the
 // reveal begins — but "begins" waits for chartOpen(), so it reads the ground the reader is actually about to
-// fly through rather than the three offered targets alone. The lettering never jumps once that choice is
-// struck, and never moves again: the title is cut into the plate, and a plate does not rearrange itself
-// while it is being read.
+// fly through rather than the three offered targets alone. Struck, the choice is not re-made: this function
+// never searches a second time for the same turn, whatever comes to stand across its line afterward. What
+// becomes of that struck line is no longer this function's business — it hands the line to strikeReveal,
+// below, which turns it into the world anchor the title actually rides on from here.
 // This one choice is the whole of the title's defence against the chart, since nothing is cleared for it.
 // Against the plate's own lettering it has a second: everything else the plate letters asks the register
 // (ground.js) what ground is taken, and the title's band is in it. So this weighs both — what is drawn on
@@ -761,58 +782,74 @@ function revealAnchor(){
     // A live constellation's name is lettered round its entry star's rim, well past the star's own
     // radius: keep the chapter lettering off that ring too, not just off the planet itself.
     for(const c of world.constellations)if(!c.expired&&c.entry)cost+=cover(sx(c.entry.x),sy(c.entry.y),c.entry.r*scale+40*scale);
-    // Whatever the plate has already lettered keeps its ground as firmly as a planet does — notes, the
-    // captions under the bodies, a name round a rim, the running head at the foot, the impressum.
-    cost+=groundTaken({left:W*.5-reach,right:W*.5+reach,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF},'title',3)*.4;
+    // Whatever the plate has already lettered keeps its ground. Type that is cut and left — a note, a
+    // tally, the running head — is weighed far above the six points a lower line costs, since a title
+    // struck across a standing note is the one thing the register exists to prevent and the note, being
+    // ink, cannot step aside afterward; type only passing through — a caption, the gloss, the impressum —
+    // is worth stepping around at the same modest rate a planet's edge is.
+    const band={left:W*.5-reach,right:W*.5+reach,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF};
+    cost+=groundFixed(band,'title',3)*8+(groundTaken(band,'title',3)-groundFixed(band,'title',3))*.4;
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }
   if(chartOpen())chapterReveal.y=bestY;
   return bestY;
 }
-// The title does not move. It is cut into the plate — not written onto the chart the plate carries — and a
-// plate is a fixed thing in the reader's hands: the graticule does not slide, the running head at the foot
-// does not slide, and neither does the sheet's own title. What moves is the chart, scrolling up through the
-// engraving as the traveller climbs, and that is the whole of the motion there should ever have been here.
-// It rode the sheet before this, on the argument that the name was written onto the chart, and it took two
-// tries to see that the argument was wrong on both ends: caught at the foot of the play channel it parked
-// across the live chart for the rest of the plate, and let go of it drifted down the sheet the entire time
-// it was up. Engraving does neither. The line is chosen once (revealAnchor) and kept.
+// The current turn's own struck title, while it still stands: the newest entry in revealTitles, if its
+// index still matches chapterReveal's. Null both before the strike (revealAnchor is still finding the
+// line) and after the title has scrolled clear off the sheet — telling those two apart is revealStruckIndex's
+// job, not this one. An older entry, left over from a chapter already behind us, is never what "the" title
+// means to revealPoint or revealBand: only the newest is, and this is how they tell it apart from the rest.
+function revealCurrent(){
+  const newest=revealTitles[revealTitles.length-1];
+  return newest&&newest.index===chapterReveal.index?newest:null;
+}
+// The title is ink on the scroll, not a fixture of the frame, and moves exactly as everything else set on
+// the chart moves: once struck, its line is read into a world y a single time (strikeReveal, below) and
+// every frame after draws it at sy() of that y — the rule an orbit or an inscription is drawn by — so it
+// rides down under the traveller's ascent and leaves the sheet under the foot exactly as they do. Before
+// it is struck, this reports the live candidate line revealAnchor is searching (or the compact layout's
+// fixed one). Two earlier treatments animated the title in screen space instead — held at the foot of
+// the play channel it parked across the live chart, let go it drifted — and both were guesses at a motion
+// the camera already knows; sy() of a world anchor is that motion read off the camera itself.
 function revealPoint(){
-  const compact=H<540&&W>H,m=revealMetrics(),inner=frameBand()*.92+8;
+  const compact=H<540&&W>H,inner=frameBand()*.92+8,struck=revealCurrent(),m=struck||revealMetrics();
   const x=clamp(compact?W*.2:W*.5,Math.min(W*.5,inner+m.reach),Math.max(W*.5,W-inner-m.reach));
-  const y=clamp(compact?H*.44:revealAnchor(),hudBand()+40,Math.max(hudBand()+40,H-footerBand()-REVEAL_HALF-6));
+  const y=struck?sy(struck.anchorY):clamp(compact?H*.44:revealAnchor(),hudBand()+40,Math.max(hudBand()+40,H-footerBand()-REVEAL_HALF-6));
   return {x,y,compact};
 }
-function drawChapterReveal(dt){
-  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
-  // plate that names none is drawn exactly as the atlas always drew it.
-  const own=handFor('chapterReveal');if(own)return own(dt);
-  if(world.state==='ready'||world.state==='dead'||plainPlate())return;
-  if(world.state!=='paused')chapterReveal.age+=dt;
-  // The plate title is cut once and left as ink: it comes up under the pen and then stands, at full
-  // strength and in one place, for as long as the plate is open. It is struck out only by the next plate's
-  // own title, at the page turn, which is the only thing that has ever been entitled to replace it.
-  const t=chapterReveal.age,alpha=clamp(t/.55,0,1);
-  // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the title is cut into the play
-  // channel underneath it and stays there.
-  const place=revealPoint();
-  const m=revealMetrics(),x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
-  // The ground the title stands on, declared to the register (ground.js) so that everything else the plate
-  // letters — a note, a caption under a body, a name round a rim, a score in the margin, the gloss on the
-  // flood, the running head — keeps off it without any of them having to know what a chapter title is.
-  markGroundBox('title',revealBand());
+// The moment the current turn's line is settled — chartOpen() true, and this index not struck already —
+// it is read once into a world y, the same way drawImpressum reads a screen line back into one for its own
+// world-anchored block (impressumAnchor, src/frame.js): cameraY and plateShift undone out of sy(). From
+// here the title is exactly what any other mark set at a world y is, and this function has nothing further
+// to do with it — including, once revealStruckIndex records the strike, ever doing it again for this turn,
+// however long after the title itself has scrolled off the sheet. Everything about the choice of line
+// itself is untouched — the same cost search above, the same compact-layout exception, the same one-time
+// freeze of chapterReveal.y that revealAnchor keeps for its own sake — only what the chosen line becomes.
+function strikeReveal(){
+  if(revealStruckIndex===chapterReveal.index||!world.nodes||!chartOpen())return;
+  const compact=H<540&&W>H,m=revealMetrics(),y=compact?H*.44:revealAnchor();
+  revealTitles.push({index:chapterReveal.index,anchorY:world.cameraY+(y-plateShift.y)/scale,plate:m.plate,name:m.name,size:m.size,reach:m.reach,half:m.half,age:chapterReveal.age});
+  if(revealTitles.length>REVEAL_TITLE_CAP)revealTitles.shift();
+  revealStruckIndex=chapterReveal.index;
+}
+// A struck title leaves the sheet the way an inscription does (drawInscriptions, src/inscriptions.js, is
+// the precedent this mirrors): carried under the plate's own furniture and struck from the list once the
+// paper has carried it wholly clear, never faded and never rewritten in place. Checked once here, ahead of
+// the draw below, so a title that has left is simply absent from every solver asking about it this frame.
+function pruneRevealTitles(){
+  for(let i=revealTitles.length-1;i>=0;i--)if(sy(revealTitles[i].anchorY)-REVEAL_HALF>H-footerBand())revealTitles.splice(i,1);
+}
+// One title's letters, its rule and its diamond, at whatever screen point and whatever age it is standing
+// at now — the age an older entry in the list is still carrying forward from the turn that struck it, or
+// chapterReveal.age itself for the current turn's own line before strikeReveal has cut it in. Factored out
+// of drawChapterReveal because more than one of these can legitimately be true on the sheet at once.
+function drawRevealTitle(x,y,m,age){
+  const t=age,alpha=clamp(t/.55,0,1);
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
   // done — and always under reduced motion — the ordinary lettering below is the finished state.
-  // Nothing is cleared for it and nothing is laid under it. The title is cut into the plate, so it is
-  // printed with the plate: the chart is drawn over it (render(), frame.js) exactly as it is drawn over the
-  // graticule and the plate-mark, and the sheet's own grain goes over all three last. Whatever the atlas
-  // tried instead — a torn scrap of clean stock, a soft leaf of ground, a ruled band of the running head's
-  // own kind — was a card laid on the sheet, and read as one however it was cut. The answer to a planet
-  // standing across the name is not a card: it is the line the name was set on (revealAnchor), chosen once,
-  // on ground the chart is not using, and then left alone.
   // Spelled out rather than abbreviated: this is the largest lettering on the sheet, so it names the
   // plate itself in full — TABULA, matching what the impressum's own TAB. row abbreviates — while the
   // running head six inches below it (frame.js) names the region instead, REGIO, so the two no longer
@@ -823,16 +860,54 @@ function drawChapterReveal(dt){
   // cut, which is how a title reads as engraved lettering rather than as a line of running text blown up.
   const plate=m.plate,name=m.name,size=m.size;
   ctx.font=plateFace(12,'sc');ctx.letterSpacing=REVEAL_TRACK+'px';
-  engraveLettering(plate,x,y-22+rise,12,'sc',t,REVEAL_TRACK,ink.dark.chapterLabel);
+  engraveLettering(plate,x,y-22,12,'sc',t,REVEAL_TRACK,ink.dark.chapterLabel);
   ctx.font=plateFace(size);ctx.letterSpacing=REVEAL_NAME_TRACK+'px';
-  engraveLettering(name,x,y+12+rise,size,'text',t,REVEAL_NAME_TRACK,ink.base.text);
+  engraveLettering(name,x,y+12,size,'text',t,REVEAL_NAME_TRACK,ink.base.text);
   ctx.letterSpacing='0px';
   const reach=m.reach,ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
   if(ruled>=1){
-    line(x-reach,y+27+rise,x-9,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27+rise,x+reach,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);
-  }else penRule(x,y+27+rise,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);
+    line(x-reach,y+27,x-9,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27,x+reach,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);
+  }else penRule(x,y+27,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);
   ctx.globalAlpha=alpha*(ruled>=1?1:ruled);
-  ctx.strokeStyle=`rgba(${ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24+rise);ctx.lineTo(x+3,y+27+rise);ctx.lineTo(x,y+30+rise);ctx.lineTo(x-3,y+27+rise);ctx.closePath();ctx.stroke();ctx.restore();
+  ctx.strokeStyle=`rgba(${ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24);ctx.lineTo(x+3,y+27);ctx.lineTo(x,y+30);ctx.lineTo(x-3,y+27);ctx.closePath();ctx.stroke();ctx.restore();
+}
+function drawChapterReveal(dt){
+  // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
+  // plate that names none is drawn exactly as the atlas always drew it.
+  const own=handFor('chapterReveal');if(own)return own(dt);
+  if(world.state==='ready'||world.state==='dead'||plainPlate())return;
+  if(world.state!=='paused'){chapterReveal.age+=dt;for(const rt of revealTitles)rt.age+=dt;}
+  strikeReveal();pruneRevealTitles();
+  const compact=H<540&&W>H,inner=frameBand()*.92+8,rule=frameBand()*.92,struck=revealCurrent();
+  // Nothing is cleared for it and nothing is laid under it: it is struck early in the chart's own paint
+  // order — with the graticule, before a single orbit or body — so everything drawn after prints over it
+  // exactly as it prints over the graticule, and the sheet's own grain goes over all of it last. Whatever
+  // the atlas tried instead — a torn scrap of clean stock, a soft leaf of ground, a ruled band of the
+  // running head's own kind — was a card laid on the sheet, and read as one however it was cut. The answer
+  // to a planet standing across the name was never a card: it is the line the name was set on (revealAnchor,
+  // chosen once) and, now, ink like the chart's own — carried down with it rather than left floating over it.
+  // Clipped to the same rect drawInscriptions uses: the inner rule on the sides and top, the footer band at
+  // the foot. A title is a piece of that file's kind of ink now, and leaves the sheet the same way.
+  ctx.save();ctx.beginPath();ctx.rect(rule,rule,Math.max(0,W-rule*2),Math.max(0,H-footerBand()-rule));ctx.clip();
+  // Every struck title still standing draws and declares its own ground (ground.js), oldest first, so a
+  // reader who has carried two chapters' names down the sheet at once — the next turn strikes its own
+  // title whether or not the last one has left — sees both, and neither is a card laid over the other.
+  for(const rt of revealTitles){
+    const x=clamp(compact?W*.2:W*.5,Math.min(W*.5,inner+rt.reach),Math.max(W*.5,W-inner-rt.reach)),y=sy(rt.anchorY);
+    if(!compact)markGroundBox('title',{left:x-rt.half,right:x+rt.half,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF});
+    drawRevealTitle(x,y,rt,rt.age);
+  }
+  // The current turn's own title, still finding its line before chartOpen() lets strikeReveal cut it into
+  // the list above: drawn live here in the meantime, on the same ground the list entries claim, so it
+  // never reads as unclaimed merely because the chart is not open yet. Gated on revealStruckIndex rather
+  // than merely on `!struck`, since a turn already struck and carried clear off the sheet is not awaiting
+  // a line any more — it is finished, not unclaimed, and must not be drawn a second time from scratch.
+  if(!struck&&revealStruckIndex!==chapterReveal.index){
+    const place=revealPoint(),m=revealMetrics();
+    if(!compact)markGroundBox('title',{left:place.x-m.half,right:place.x+m.half,top:place.y-REVEAL_HALF,bottom:place.y+REVEAL_HALF});
+    drawRevealTitle(place.x,place.y,m,chapterReveal.age);
+  }
+  ctx.restore();
 }
 // Region-level ambience: drifting dust plates, the region wash, the starfield and its atlas annotations.
 // Night literals below are the original artwork's exact values; only the paper column is new.

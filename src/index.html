@@ -59,6 +59,13 @@
     #sky{display:block;width:100%;height:100%;outline:none;touch-action:none}
     #sky:focus-visible{outline:1px solid var(--gold);outline-offset:-5px}
     .hud{position:absolute;z-index:2;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:max(24px,calc(env(safe-area-inset-top) + 12px));display:grid;grid-template-columns:1fr auto 1fr;align-items:start;pointer-events:none;opacity:0;transition:opacity .5s}
+    /* The atlas now says all of this on the sheet itself — the score a running tally in the gutter, the
+       pace and the flow in the landing notes, the three charges on the traveller, the ink in the quill's
+       own barrel and its trail — so this header is not a second account laid over the first any longer.
+       It is pulled off the visible plate exactly as .sr-only pulls text: still read by anyone listening,
+       gone for anyone looking. Eras and the modern plate keep no such account on the sheet, so they keep
+       this printed as it always was. */
+    #game:not([data-era]):not([data-plate-id="modern"]) .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     .brand{font-family:var(--face-sc);font-size:17px;letter-spacing:.24em;line-height:1.2;padding-top:7px}
     .brand::after{content:'';display:block;height:1px;width:31px;background:var(--gold);margin-top:13px;opacity:.5}
     .score-block{text-align:center;min-width:70px;opacity:0;transition:opacity .5s}
@@ -104,6 +111,12 @@
        own button stands when no run is in progress, so the row of marks keeps its count either way. */
     #pause-open{display:none}
     #game.playing #pause-open{display:grid}
+    /* The page icon and fullscreen belong to the frontispiece and the colophon, not to a run in
+       progress, so on the atlas they stand down while one is on and leave the corner to the two controls
+       a run actually needs — the pause and the sound, sitting exactly where they always have, since
+       nothing here moves #pause-open, only removes what used to stand after it. Eras and the modern
+       plate are unaffected: their row already keeps its own count as it always has. */
+    #game:not([data-era]):not([data-plate-id="modern"]).playing #plate,#game:not([data-era]):not([data-plate-id="modern"]).playing #fullscreen{display:none}
     #game[data-plate="paper"] #plate .plate-night{display:none}
     #intro{background:radial-gradient(ellipse at center,rgba(var(--veil),.4),rgba(var(--veil),.12) 70%,transparent)}
     #end{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(var(--veil),.5),rgba(var(--veil),.18) 68%,transparent);padding:30px 18px 60px}
@@ -145,14 +158,14 @@
     .action-row .diff-btn[hidden],.pause-menu .diff-btn[hidden]{display:none}
     .action-row .diff-btn+.diff-btn,.pause-menu .diff-btn+.diff-btn{border-top:1px solid var(--line)}
     .action-row .diff-btn[aria-pressed="true"]::before,.pause-menu .diff-btn[aria-pressed="true"]::before{content:'';position:absolute;left:2px;top:50%;width:6px;height:6px;margin-top:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
-    /* The nib's reservoir, engraved as a short rule that drains as the ink is spent and turns copper
-       when what is left will not carry a long transfer. On the atlas it is cut on the canvas instead
-       (drawInkGauge(), src/frame.js, drawn under the score in drawHudLeaf's pass) — this DOM slip stays
-       only to hold the score-block's own rhythm, so nothing below it shifts, and to carry era II's own
-       reed-shaped bar, which keeps the CSS treatment. */
+    /* The nib's reservoir no longer needs an engraved rule of its own: it rides the traveller now, in
+       the quill's own barrel and its trail, so there is nothing left on the atlas for a gauge beside the
+       score to say that the traveller does not already say. drawInkGauge() (src/frame.js) is retired
+       along with the rest of the atlas's own HUD. This DOM slip survives only for era II's own
+       reed-shaped bar and era I's and the modern plate's plain one — none of which that canvas gauge
+       ever drew for in the first place — and it stays hidden with the rest of `.hud` on the atlas itself. */
     #ink{height:3px;margin:7px auto 0;width:54px;padding:0;background:var(--line);opacity:0;transition:opacity .4s}
     #game.playing #ink{opacity:.85}
-    #game:not([data-era]):not([data-plate-id="modern"]).playing #ink{opacity:0;transition:none}
     #ink.dry{animation:breathe 1s ease-in-out infinite}
     #shield{color:var(--shield)}
     #reflector{color:var(--reflector)}

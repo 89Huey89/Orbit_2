@@ -22,9 +22,9 @@ let groundMarks=[],groundPast=[];
 // Called once at the top of the frame, beside the nib's own reset (render(), frame.js): this frame's
 // register becomes the one solvers read, and the frame begins collecting again into the other.
 function groundTurn(){const done=groundMarks;groundMarks=groundPast;groundPast=done;groundMarks.length=0;}
-// `kind` is what sort of type this is — 'title', 'note', 'caption', 'name', 'floater', 'gloss', 'head',
-// 'impressum', 'key' — and is how a solver excuses its own kind from its own question. `owner` is the
-// particular mark, for a solver that must excuse one note without excusing every note.
+// `kind` is what sort of type this is — 'title', 'note', 'caption', 'name', 'floater', 'tally', 'gloss',
+// 'head', 'impressum', 'key' — and is how a solver excuses its own kind from its own question. `owner`
+// is the particular mark, for a solver that must excuse one note without excusing every note.
 function markGround(kind,left,top,right,bottom,owner){
   if(!(right>left)||!(bottom>top)||!Number.isFinite(left)||!Number.isFinite(top)||!Number.isFinite(right)||!Number.isFinite(bottom))return;
   groundMarks.push({kind,left,top,right,bottom,owner:owner||null});
@@ -38,12 +38,14 @@ function markGroundText(kind,x,baseline,width,size,align,owner){
   markGround(kind,left,baseline-size*.86,left+width,baseline+size*.28,owner);
 }
 // Not all type on a plate is equally settled, and a solver has to know the difference. These kinds are cut
-// and left: the plate's own title, a note already written, the running head, the legend. Nothing may be set
-// over them, and a mark that can find no ground clear of them goes unwritten rather than illegibly printed.
-// The rest — a caption riding a planet up the sheet, a score standing in the margin for a second, the gloss
-// drifting along the flood, the impressum at the start of a run — is type that will have moved on shortly,
-// so it is worth stepping around but never worth suppressing a note for.
-const GROUND_FIXED=new Set(['title','note','head','key']);
+// and left: the plate's own title, a note already written, the running head, the legend, and — on the
+// atlas — a landing's own tally, struck once and carried off with the sheet rather than a score that
+// fades. Nothing may be set over them, and a mark that can find no ground clear of them goes unwritten
+// rather than illegibly printed. The rest — a caption riding a planet up the sheet, an era's own score
+// still drifting up its margin before it fades, the gloss drifting along the flood, the impressum at the
+// start of a run — is type that will have moved on shortly, so it is worth stepping around but never
+// worth suppressing a note for.
+const GROUND_FIXED=new Set(['title','note','head','key','tally']);
 const groundSpan=(a0,a1,b0,b1)=>Math.max(0,Math.min(a1,b1)-Math.max(a0,b0));
 function groundSkipped(mark,skip){
   if(!skip)return false;

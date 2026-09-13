@@ -555,10 +555,16 @@ function drawLandingSurvey(s,t,rgb,gold,base){
 function drawTrail(){
   const trail=world.trail;
   if(trail.length<2)return;
-  const pen=trailInk(),m=trailMaterial();
-  // Past the gauge's own copper mark (see updateUI) the nib is starved: the stroke skips beats and
-  // loses its weight the nearer the reservoir runs to dry, as a real pen scratches out its last ink.
-  const starved=clamp(1-world.inkLevel()/.34,0,1),thin=1-starved*.55;
+  const pen=trailInk(),m=trailMaterial(),level=world.inkLevel();
+  // Past the point where the barrel's own fill would show copper (see OBSERVER_MARKS.quill) the nib
+  // is starved: the stroke skips beats and loses its weight the nearer the reservoir runs to dry, as
+  // a real pen scratches out its last ink.
+  const starved=clamp(1-level/.34,0,1),thin=1-starved*.55;
+  // A charged nib presses more ink onto the sheet than a half-spent one, so the stroke's own body and
+  // wash answer to how much is actually held, graded across the whole reservoir rather than only once
+  // it runs starved — but only ever down from the weight a brimming nib has always laid, never past
+  // it, so a full trail reads exactly as it always has.
+  const wet=1-(1-level)*.35;
   // Only a liquid medium dries, so only a liquid medium is mixed from its wet tone to its dry one as
   // the segment ages. Chalk, silverpoint and leaf are already the colour they will stay the instant
   // they touch the sheet, so the settled tone is written out once here rather than mixed seventy-five
@@ -596,7 +602,7 @@ function drawTrail(){
     // as the flight turns and an orbit is written the way a letter is. A stick or a stylus has no edge
     // to turn and holds one width whichever way the flight goes.
     const cut=m.nib>0?Math.abs((dx*NIB_SIN-dy*NIB_COS)/d):1;
-    const spread=m.body*scale*thin,gauge=(1+m.nib*(cut-.62))*spread;
+    const spread=m.body*scale*thin*wet,gauge=(1+m.nib*(cut-.62))*spread;
     // Whatever feels the grain of the sheet also wanders on it: a chalk line is never straight, where a
     // stylus on prepared ground is. A second field, read across the sheet rather than along it so the
     // line does not veer in step with its own fading, and taken at both ends, so consecutive pieces
@@ -631,7 +637,7 @@ function drawTrail(){
         if(j===0?m.halo<=0:bare&&j>2)continue;
         const off=lean*out,tone=j===0?pen.wash:j===1?pen.edge:dried;
         line(x1+nx*off,y1+ny*off,x2+nx*off,y2+ny*off,
-          `rgba(${tone},${t*t*STROKE_PROFILE[j][1]*grain*(j===0?m.halo:1)})`,core+reach*out);
+          `rgba(${tone},${t*t*STROKE_PROFILE[j][1]*grain*wet*(j===0?m.halo:1)})`,core+reach*out);
       }
     }
     if(pen.burnish&&flake>.6&&!reducedMotion)line(x1,y1,x2,y2,`rgba(${pen.burnish},${t*t*(flake-.6)*2.4})`,(.15+.5*weight)*gauge);
@@ -710,7 +716,11 @@ const OBSERVER_MARKS={
     const flex=reducedMotion?0:boost*3.6+breath*1.6;
     // A feather does not grow when the hand moves faster. The plume keeps very nearly its own length
     // whatever the flight is doing and answers to speed in the flex of the vane instead.
-    const plume=-(24+length*.3),tipY=-5.2-flex*.9,cx=plume*.5,cy=-1.1-flex*.26,BARBS=30;
+    // The barrel below needs more of the shaft than a feather that started right at the nib would
+    // leave it, so the whole feather — its near end, its control point, and the plume alike — is
+    // struck this same distance further out. Moved as one piece rather than restretched, it keeps
+    // exactly the length and curve it always had; only where it starts changes.
+    const reed=4.6,plume0=-(24+length*.3),plume=plume0-reed,tipY=-5.2-flex*.9,cx=plume0*.5-reed,cy=-1.1-flex*.26,quillX0=-10.6-reed,BARBS=30;
     // On paper a ring of reserved, unprinted sheet keeps the ink of the vane clear of the nib.
     if(onPaper()){ctx.fillStyle=ink.dark.playerHalo;ctx.beginPath();ctx.ellipse(-4.4,0,8,4.6,0,0,TAU);ctx.fill();}
     // The vane is laid twice from one formula: once as the wash the barb tips enclose, once as the
@@ -721,10 +731,10 @@ const OBSERVER_MARKS={
       for(let pass=0;pass<2;pass++){
         if(pass){ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},${side>0?.56:.46})`;ctx.lineWidth=.34;}
         else ctx.fillStyle=`rgba(${ink.dark.playerHeadWash},${side>0?.28:.22})`;
-        ctx.beginPath();if(!pass)ctx.moveTo(-10.6,-.5);
+        ctx.beginPath();if(!pass)ctx.moveTo(quillX0,-.5);
         for(let i=0;i<BARBS;i++){
-          const u=(i+.7)/(BARBS+.7),x=qAt(u,-10.6,cx,plume),y=qAt(u,-.5,cy,tipY);
-          const tx=2*((1-u)*(cx+10.6)+u*(plume-cx)),ty=2*((1-u)*(cy+.5)+u*(tipY-cy)),tl=Math.hypot(tx,ty)||1;
+          const u=(i+.7)/(BARBS+.7),x=qAt(u,quillX0,cx,plume),y=qAt(u,-.5,cy,tipY);
+          const tx=2*((1-u)*(cx-quillX0)+u*(plume-cx)),ty=2*((1-u)*(cy+.5)+u*(tipY-cy)),tl=Math.hypot(tx,ty)||1;
           const ux=tx/tl,uy=ty/tl,w=vaneProfile(u)*reach,nx=-uy*side,ny=ux*side;
           // Every barb leaves the rachis across it and is swept back along it, so the vane closes to
           // the tip instead of standing off the shaft like the teeth of a comb.
@@ -737,13 +747,28 @@ const OBSERVER_MARKS={
     }
     // The rachis, laid over the barbs it carries.
     markStroke(.8,.95);
-    ctx.beginPath();ctx.moveTo(-10.6,-.5);ctx.quadraticCurveTo(cx,cy,plume,tipY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(quillX0,-.5);ctx.quadraticCurveTo(cx,cy,plume,tipY);ctx.stroke();
     // The stripped barrel between the cut and the feather: a quill is bared where the hand holds it,
-    // so the shaft is two outlines with nothing printed between them and the sheet showing through,
-    // which is the only way an engraver had of saying that a thing was translucent.
+    // so the shaft is two outlines with the sheet showing through between them — the only way an
+    // engraver had of saying that a thing was translucent — except where the ink actually drawn up
+    // into it shows through those same outlines instead, exactly as far as the level held.
+    const bNear=-7,bCtrl=-9-reed,bFarTop=-11.2-reed,bFarBot=-10.9-reed;
+    if(inkHeld>0){
+      // Filled from the nib's own end toward the feather, to the level held, rather than laid as a
+      // flat tint over the whole shaft: a barrel this narrow reads as a reservoir only if the fill
+      // itself has a level in it. Clipped to the barrel's own outline so a straight-sided wash still
+      // comes out cut to the taper of a real shaft.
+      const tone=inkHeld<=.34?ink.base.copper:ink.dark.playerNib,reach=bNear-(bFarTop+bFarBot)*.5;
+      ctx.save();
+      ctx.beginPath();ctx.moveTo(bNear,-2.2);ctx.quadraticCurveTo(bCtrl,-2.2,bFarTop,-1.4);
+      ctx.lineTo(bFarBot,1);ctx.quadraticCurveTo(bCtrl,2.1,bNear,2.2);ctx.closePath();ctx.clip();
+      ctx.fillStyle=`rgba(${tone},.58)`;
+      ctx.fillRect(bNear-reach*inkHeld,-3,reach*inkHeld,6);
+      ctx.restore();
+    }
     markStroke(.66,.7);
-    ctx.beginPath();ctx.moveTo(-7,-2.2);ctx.quadraticCurveTo(-9,-2.2,-11.2,-1.4);
-    ctx.moveTo(-7,2.2);ctx.quadraticCurveTo(-9,2.1,-10.9,1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(bNear,-2.2);ctx.quadraticCurveTo(bCtrl,-2.2,bFarTop,-1.4);
+    ctx.moveTo(bNear,2.2);ctx.quadraticCurveTo(bCtrl,2.1,bFarBot,1);ctx.stroke();
     ctx.strokeStyle=`rgba(${ink.dark.playerFilamentA},.42)`;ctx.lineWidth=.38;
     ctx.beginPath();
     for(let i=0;i<3;i++){const x=-8-i*1.4;ctx.moveTo(x,-2.1+i*.14);ctx.quadraticCurveTo(x-.55,0,x+.2,2.1-i*.18);}
@@ -1299,14 +1324,39 @@ function glossClearance(x,y,w,h){
   for(const m of groundStanding({left:x-reach,right:x+w+reach,top:y-reach,bottom:y+h+reach},'gloss'))box(m.top,m.bottom,m.left,m.right);
   return clamp(clear,0,1);
 }
+// The atlas's own standing tallies: a landing's gain and the run's running total, inked once into the
+// same gutter a floater used to drift up through, then left — carried by the ascent like every other
+// mark on the sheet rather than fading over a second and change. Era plates keep the floater exactly
+// as it was (see ui.js's two push sites), so this list is empty and idle whenever one of them is on
+// the press. At most this many stand on the sheet at once (see the cap below); the lowest gives way.
+let tallies=[];
+const TALLY_CAP=12;
 // The line a marginal note is set on: its subject's own, slid up or down its margin until the note
 // stands clear of everything already lettered there. Only lettering that actually reaches into this
-// gutter is counted, so a note on the left margin is never pushed about by one on the right.
-function floaterLine(f,left,h){
+// gutter is counted, so a note on the left margin is never pushed about by one on the right. `kind`
+// is which register of marginal note is being placed — 'floater' for the eras' own drifting score, or
+// 'tally' for the atlas's standing one — so it excuses its own kind from the register the way every
+// other solver does, and counts only the standing marks of that same kind already in the gutter.
+function floaterLine(f,left,h,kind){
+  kind=kind||'floater';
   const top=hudBand()+16,bottom=H-frameBand()*.92-21,boxes=[];
-  for(const m of groundStanding({left:left?0:W*.5,right:left?W*.5:W,top:0,bottom:H},'floater'))boxes.push([m.top,m.bottom]);
-  for(const q of floaters)if(q!==f&&q.lift!==undefined&&q.left===left){
+  for(const m of groundStanding({left:left?0:W*.5,right:left?W*.5:W,top:0,bottom:H},kind))boxes.push([m.top,m.bottom]);
+  const list=kind==='tally'?tallies:floaters;
+  for(const q of list)if(q!==f&&q.lift!==undefined&&q.left===left){
     const qy=sy(q.y)+q.lift;boxes.push([qy-h*.55,qy+h*.55]);
+  }
+  // A tally is ink that stands, so it is kept off the chart as well as off the lettering — a body or a
+  // hazard whose disc reaches into the stretch of gutter the note would take is a line the note is not
+  // set on, exactly as a note beside the chart steps round the bodies (placeInscription). A floater, gone
+  // in a second, never needed to; a tally set across a slingshot's rose would stand there until the sheet
+  // carried both away.
+  if(kind==='tally'){
+    const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
+    ctx.save();ctx.font=plateFace(size,'text','italic');let w=ctx.measureText(f.line1).width;ctx.font=plateFace(size2,'text','italic');w=Math.max(w,ctx.measureText(f.line2).width);ctx.restore();
+    const l=left?inner:W-inner-hand*2.4-w,r=left?inner+hand*2.4+w:W-inner;
+    const disc=(x,y,rad)=>{if(x+rad>l&&x-rad<r)boxes.push([y-rad,y+rad]);};
+    for(const n of world.nodes)disc(sx(n.x),sy(n.y),(n.cap||n.r)*scale+2);
+    for(const hz of world.hazards)disc(sx(hz.x),sy(hz.y),hz.r*scale+6);
   }
   const clash=y=>{let worst=0;for(const [t,b] of boxes){const o=Math.min(y+h*.55,b)-Math.max(y-h*.55,t);if(o>worst)worst=o;}return worst;};
   const home=clamp(sy(f.y),top,bottom);
@@ -1715,8 +1765,10 @@ function drawEffects(dt){
     }
     burinArc(ctx,sx(r.x),sy(r.y),(r.start+(reducedMotion?0:t*r.distance))*scale,0,TAU,ink.dark.ringSimple,(1-t)*r.alpha,.8,r.seed||7,{segments:20,skips:2});
   }
-  // Scores are written up as marginal notes in Fell italic beside the play field, each with a small
-  // engraved manicule pointing back in at the event. They drift up gently and fade, as before.
+  // An era's own score is still written up as a marginal note in Fell italic beside the play field,
+  // each with a small engraved manicule pointing back in at the event, drifting up gently and fading —
+  // exactly as the atlas's own used to. The atlas keeps its score as ink now instead (drawTallies,
+  // below), so this loop only ever has anything in it on a plate that still deals in floaters.
   for(let i=floaters.length-1;i>=0;i--){
     const f=floaters[i];if(world.state!=='paused')f.age+=dt;if(f.age>1.15){floaters.splice(i,1);continue;}
     const alpha=Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1);
@@ -1746,4 +1798,62 @@ function drawEffects(dt){
     manicule(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left?1:-1,hand,ink.dark.floaterText,alpha*.85);
     ctx.restore();
   }
+  drawTallies(dt);
+}
+// The atlas's own reading of a landing's score: the same gutter and hand as a floater, but struck once
+// and left, so it goes on carrying the run's own SUMMA down the sheet rather than drifting up and out
+// of it. Settling a line is the one thing it still shares with a floater's own first frame (see the
+// comment above); everything after that is a difference of degree, not of kind — ink instead of chalk.
+function drawTallies(dt){
+  for(let i=tallies.length-1;i>=0;i--){
+    const t=tallies[i];
+    if(world.state!=='paused')t.age+=dt;
+    // Settled one frame after it is pushed, not the frame it arrives: the landing that pushes it also
+    // announces itself in the same breath (ui.js), and that note is placed before this tally has any
+    // line to declare. The register is read a frame behind by design, so a tally settling on its first
+    // frame would read a sheet without the note and could take the note's own line; waiting one frame
+    // reads the note where it was actually set, and sixteen milliseconds is not a delay anyone reads.
+    if(!t.seen){t.seen=true;continue;}
+    if(t.lift===undefined){
+      t.left=sx(t.x)<W*.5;
+      // Two lines tall, so the line it asks for is the height tallyBox will actually declare, not a floater's one.
+      const size=Math.max(11,13*scale),line=floaterLine(t,t.left,size*1.85,'tally');
+      // A gutter with nowhere left to stand it is a tally that is never struck at all, exactly as a
+      // note the plate has no clear ground for goes unwritten (inscriptions.js) rather than printed
+      // over whatever already stands there.
+      if(line===null){tallies.splice(i,1);continue;}
+      t.lift=line-sy(t.y);
+    }
+  }
+  // The cap, weighed once every tally on the sheet has a settled line to stand on: the lowest — the
+  // next the ascent would carry under the footer band anyway — gives way to a fresh landing rather
+  // than the sheet keeping an unbounded history of every one a long run has made.
+  while(tallies.length>TALLY_CAP){
+    let drop=0,lowest=-Infinity;
+    for(let i=0;i<tallies.length;i++){const b=tallyBox(tallies[i]);if(b&&b.bottom>lowest){lowest=b.bottom;drop=i;}}
+    tallies.splice(drop,1);
+  }
+  // Cut off at the plate's inner rule and its footer band exactly as an inscription is (drawInscriptions,
+  // inscriptions.js), since a tally is that same kind of mark now: ink laid once in world units and
+  // carried away under the sheet's own furniture rather than a sprite clipped to the raw canvas.
+  const rule=frameBand()*.92;
+  ctx.save();ctx.beginPath();ctx.rect(rule,rule,Math.max(0,W-rule*2),Math.max(0,H-footerBand()-rule));ctx.clip();
+  for(let i=tallies.length-1;i>=0;i--){
+    const t=tallies[i],tb=tallyBox(t);
+    // No box yet is a tally still waiting its frame for a line (above), not one to strike; a box carried
+    // under the footer band is ink the sheet has taken away, and goes exactly as an inscription goes.
+    if(!tb)continue;
+    if(tb.top>H-footerBand()){tallies.splice(i,1);continue;}
+    markGround('tally',tb.l,tb.top,tb.r,tb.bottom,t);
+    const alpha=reducedMotion?1:Math.min(1,t.age*8);
+    const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
+    ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
+    ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';
+    ctx.fillText(t.line1,tb.x,tb.y);
+    ctx.font=plateFace(size2,'text','italic');
+    ctx.fillText(t.line2,tb.x,tb.y+size*.98);
+    manicule(tb.x+(t.left?-hand*1.5:hand*1.5),tb.y-hand*.62,t.left?1:-1,hand,ink.dark.floaterText,alpha*.85);
+    ctx.restore();
+  }
+  ctx.restore();
 }

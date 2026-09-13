@@ -6,6 +6,10 @@
 let ringSeq=0;const ringSeed=()=>(ringSeq=(ringSeq+9781)>>>0)||1;
 let eraReturn=null;
 let replayLog=null;
+// Whether this run has already inscribed its own NOVUM RECORDUM: at most one per run, struck the
+// moment the score first passes the best it opened with (see event(), below), and reset wherever the
+// rest of a fresh run's marks are (newWorld()).
+let recordAnnounced=false;
 // The atlas's own vocabulary — what a plain run of the printed star chart calls things, in its
 // own words. A plate cut for another century registers its own defineVoice() and replaces only the
 // entries it renames (see plateWords()/spoken() in src/plates.js); anything it leaves out is still
@@ -21,6 +25,9 @@ defineVoice('atlas',{
   opening:'Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.',
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
+  // Struck once beside the traveller the moment a run's score first passes the best it opened with —
+  // see event(), below — never on a first run, which breaks no record for want of one to beat.
+  newRecord:'NOVUM RECORDUM',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -74,7 +81,16 @@ function event(type,e){
       audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
       if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
     }
-    floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:'+'+e.gain+(e.angleBonus?'  ·  ANGULUS +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):''),age:0});screenFlash=e.perfect?.28:0;
+    // The gain is the same line either way; only where it lands differs. The atlas keeps it as ink —
+    // a tally of its own, the run's SUMMA struck beneath it (world.score already carries this landing's
+    // gain: the simulation adds it before emitting the event, see OrbitWorld.capture) — while an era
+    // still gets the floater it always had, drifting up and fading over a second and change.
+    {
+      const gainText='+'+e.gain+(e.angleBonus?'  ·  ANGULUS +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):'');
+      if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
+      else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,age:0});
+    }
+    screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
     const at={node:e.n};
@@ -143,7 +159,11 @@ function event(type,e){
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
-    audio.tone(698.46,.28,0,.16);floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
+    audio.tone(698.46,.28,0,.16);
+    // A graze's own +5 is scored before this fires (OrbitWorld's near handling), so the same total the
+    // atlas's tally carries after a landing is exactly as true here.
+    if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:'CLOSE +5',line2:'SUMMA '+world.score,age:0});
+    else floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
     recordBest(world.score);
   }else if(type==='death'){
     audio.death();
@@ -172,9 +192,17 @@ function event(type,e){
     setDifficulty(e.value);
     audio.tone(440,.3,0,.15);say(spoken('pressureSet',{label:plateWords().pressures[e.value]}));
   }
+  // The one inscription that answers no event of its own: struck the moment any of the above actually
+  // carries the score past the best the run opened with, wherever that happens to land — a capture, a
+  // graze, a constellation's bonus. plateOwns('score') is how a century keeps its own record apart from
+  // the atlas's (see the colophon, below, and syncEraChrome's own use of it), so an era is left to its
+  // own telling of a new best; recordAtStart of 0 means the run opened with no best yet to beat.
+  if(renaissanceAtlas()&&!plateOwns('score')&&world.state==='playing'&&recordAtStart>0&&!recordAnnounced&&world.score>recordAtStart){
+    recordAnnounced=true;say(plateWords().newRecord);
+  }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).

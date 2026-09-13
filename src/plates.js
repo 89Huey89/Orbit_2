@@ -16,9 +16,16 @@ let reducedMotion=reducedMotionStored?reducedMotionStored==='on':window.matchMed
 // the press). See openReview()/renderReview() in src/review.js.
 let reviewing=false;
 let W=0,H=0,DPR=1,scale=1,world,particles=[],rings=[],floaters=[],glyphs=new Map();
-// Height in CSS pixels of the DOM HUD band across the top of the plate, mirroring the CSS: the header sits
-// higher and prints smaller on short landscape screens and lower on wide ones. Canvas lettering keeps below it.
-function hudBand(){return H<=530&&W>H?104:W>=800?142:132;}
+// Height in CSS pixels of the top of the play channel. On eras and the modern plate this still mirrors
+// the DOM HUD band across the top of the plate exactly as it always has — the header sits higher and
+// prints smaller on short landscape screens and lower on wide ones, and canvas lettering keeps below it.
+// The atlas carries no such band any more: its score, pace and flow are off the DOM entirely (see `.hud`
+// in src/index.html), so there the top of the channel is simply the frame's own inner rule plus the same
+// small margin the frame's own margin inscriptions already keep off it — frameBand()*.92+8, the same
+// `inner` every one of those inscriptions already computes for itself. frameBand() is defined later, in
+// src/frame.js, but this is only ever read at draw time, well after every script has finished loading,
+// so the later definition costs nothing here.
+function hudBand(){return renaissanceAtlas()?frameBand()*.92+8:H<=530&&W>H?104:W>=800?142:132;}
 // Height in CSS pixels of the footer band across the bottom of the plate — the running head and the
 // utility buttons — again mirroring the CSS, with whatever safe-area inset the browser reports added to
 // it. Canvas marginalia keep above it.
