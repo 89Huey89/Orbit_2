@@ -923,15 +923,14 @@ function drawRunningHead(){
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
   const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
-  // While the chapter title is still freshly written and sitting close to this line, it already names
-  // the plate; running the head under it too would set the same name twice within a hand's breadth.
-  // The title yields the ground back once it has settled or drifted well clear of the foot.
-  if(chapterReveal.age<4.2){
-    const band=revealBand();
-    // 60px is the audit's own estimate; measured against the reference viewport, the title's own clamp
-    // (revealPoint) never lets it drift closer than about 66px, so the threshold is set just past that.
-    if(band&&Math.abs((band.top+band.bottom)/2-y)<70)return;
-  }
+  // While the chapter title stands on this line it already names the plate; running the head under it
+  // too would set the same name twice within a hand's breadth. The title is carried down here by the
+  // ascent and then off the foot of the sheet altogether (revealPoint, celestial.js), so what decides
+  // this is where its band actually lies rather than how old the writing is: the head yields the line
+  // for as long as the title is standing on it, and takes it back the moment the sheet has carried it
+  // past — which is also when revealBand answers nothing at all.
+  const band=revealBand();
+  if(band&&band.bottom>y-26&&band.top<y+14)return;
   // REGIO, not TAB.: the impressum's own TAB. names the plate itself, and TAB. naming the region too
   // made one abbreviation stand for two different things on the same sheet. The region takes its own
   // Latin name (chaptersLatin, plates.js) rather than the game's English one, matching the plate's voice
@@ -1175,7 +1174,12 @@ function render(dt){
   const own=handFor('frame');
   if(own){own(dt,world.aim());updateUI(dt);return;}
   reveal.prime();prewarmGlyph();
-  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawConstellationFigures();drawGravitationalLenses();
+  // The chapter title is struck here, with the graticule and before a single chart mark, because it is cut
+  // into the plate rather than laid over it: the orbits, the bodies, the traveller, the flood and the notes
+  // all print over the name exactly as they print over the graticule, and the sheet's own grain goes over
+  // every one of them last (drawLaidPaper, at the foot of this function). Drawn last, as it was, no amount
+  // of care with what was laid under it could stop it reading as a card on the sheet.
+  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawChapterReveal(dt);drawConstellationFigures();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);
@@ -1200,14 +1204,10 @@ function render(dt){
   // wash: it is drawn once, at whatever alpha that single frame calls for, then cleared unconditionally
   // so it can never linger into a second frame or survive a pause.
   if(darkFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.pigment},${darkFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}darkFlash=0;}
-  drawChapterReveal(dt);
-  // The reveal's own leaf is a reserve of the sheet, opaque wherever it stands (paper's torn scrap and the
-  // flood-covered panel both are) so its lettering stays legible over whatever the chart has scrolled
-  // beneath it — the traveller and the pricked aim line it is charging included, since the leaf is chosen
-  // once and does not step aside for what flies through it later. Struck a second time here, over the
-  // reserve rather than under it, so a flight the leaf happens to stand on is never actually hidden by it.
-  ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
-  drawAim(aim);drawPlayer();ctx.restore();
+  // The traveller and its aim line used to be struck a second time here, over the reveal's leaf, because
+  // that leaf was an opaque reserve chosen once and would otherwise hide a flight that happened to cross
+  // it. There is no leaf to climb back over now that the title is cut into the plate underneath everything,
+  // so the one pass in the chart's own order is the whole of it again.
   // Whichever candidate this frame's marks claimed, drawn once, here, after every one of them has had
   // its turn to register (drawChapterReveal's own letter-stroke nib included) and before the laid
   // paper's own grain goes over the whole sheet last, the way every other mark's ink already sits under it.

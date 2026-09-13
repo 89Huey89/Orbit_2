@@ -1261,18 +1261,13 @@ function glossSprite(relief){
 // of the impressum's cartouche, at the start of a run when that furniture still sits in this same
 // lower margin — whichever comes first. The waterline itself goes on rising past it — only the
 // monster and the gloss are held above.
-// The chapter title is world-anchored ink, not a screen overlay (see revealPoint()): once the camera
-// has scrolled well past where it was written, it settles at the same clamp this floor is built from
-// and stays there, in the same lower reach the gloss is drifting into. Left alone, the gloss would
-// slowly climb up through that fixed band as the flood rose past it, fading in and out of
-// glossClearance's own test the whole time it took to cross — a systematic collision, not an
-// occasional one. Lowering the floor by the band's own height while it is on the sheet keeps the
-// gloss's own pinned rest position clear of it, so it sinks under the lettering and stays there.
-function marginaliaFloor(){
-  const floor=Math.min(H-footerBand()-frameBand()*.92,impressumTop()-8);
-  const band=typeof revealBand==='function'?revealBand():null;
-  return band?floor-(band.bottom-band.top):floor;
-}
+// The chapter title used to be caught at that same lower clamp and parked there for the rest of the
+// plate, in the very reach the gloss drifts into, so this floor was lowered by the title's own band to
+// keep the two apart — a standing concession to a standing collision. The title rides off the foot of
+// the sheet now (revealPoint, celestial.js) instead of coming to rest in the gloss's lane, so the floor
+// is the footer band and the impressum again, and the occasional crossing on the way down is what
+// glossClearance's own fade is for.
+function marginaliaFloor(){return Math.min(H-footerBand()-frameBand()*.92,impressumTop()-8);}
 // Where the gloss is printed for a given waterline: it rides just under the ink until the flood would
 // carry it into the footer band, and from there it stays where it is while the ink goes on past it.
 function marginaliaGloss(fy,gloss){
@@ -1289,9 +1284,9 @@ function glossClearance(x,y,w,h){
   const near=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-(x+w*.5))-w*.5),dy=Math.max(0,Math.abs(py-(y+h*.5))-h*.5);return Math.hypot(dx,dy)-r;};
   for(const n of world.nodes){const ny=sy(n.y);if(ny<y-220||ny>y+h+220)continue;clear=Math.min(clear,near(sx(n.x),ny,(n.cap||n.r)*scale+6*scale)/(16*scale));}
   for(const hz of world.hazards){const hy=sy(hz.y);if(hy<y-320||hy>y+h+320)continue;clear=Math.min(clear,near(sx(hz.x),hy,hz.r*scale+14*scale)/(16*scale));}
-  // The gloss keeps off lettering as carefully as it keeps off the chart. The chapter plate is set in the
-  // same lower half of the sheet the flood is climbing into, and the whole point of the drifting gloss is
-  // that it eventually reaches wherever the title has come to rest; left uncounted it parked across it.
+  // The gloss keeps off lettering as carefully as it keeps off the chart. The chapter title is carried
+  // down the sheet by the same ascent that raises the flood, so the two cross on the title's way off the
+  // foot of the plate; left uncounted the gloss printed straight through it while they did.
   // Notes set beside the chart are counted the same way, since the solver that places them cannot see a
   // sprite drifting in from the margin.
   const box=(t,b,l,r)=>{
@@ -1299,7 +1294,7 @@ function glossClearance(x,y,w,h){
     clear=Math.min(clear,Math.hypot(dx,dy)/(14*scale));
   };
   const band=typeof revealBand==='function'?revealBand():null;
-  if(band)box(band.top,band.bottom,0,W);
+  if(band)box(band.top,band.bottom,band.left,band.right);
   if(typeof inscriptions!=='undefined')for(const g of inscriptions){const q=inscriptionBox(g);box(q.top,q.bottom,q.left,q.right);}
   return clamp(clear,0,1);
 }

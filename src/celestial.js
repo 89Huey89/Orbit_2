@@ -669,13 +669,64 @@ function drawAmbient(dt,aim){
   }
   ctx.restore();
 }
+// The plate title's own measure, taken once per plate, chapter and viewport: the width of the longer of
+// the two lines it sets, which is the rule's reach and the ground the rest of the sheet's lettering keeps
+// off. Both used to be struck at a fixed reach — 325 points across on the reference sheet, twice the width
+// of the widest name the atlas sets — so a short name reserved a stretch of plate it never came near. The
+// rule under the name is cut to the title now rather than to the sheet, and the whole assembly is only
+// ever as wide as the words in it.
+const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34;
+let revealMeasure=null;
+function revealMetrics(){
+  const compact=H<540&&W>H,key=plateName+'|'+chapterReveal.index+'|'+Math.round(W)+'x'+Math.round(H)+(compact?'c':'');
+  if(revealMeasure&&revealMeasure.key===key)return revealMeasure;
+  const plate='TABULA '+numerals[chapterReveal.index],name=chapters[chapterReveal.index];
+  // Still the largest lettering on the sheet, as a plate's own title should be, but no longer a headline:
+  // at the old size it stood half again above everything else printed on the plate, read as a poster laid
+  // over the chart rather than as the plate's own title, and dragged the ground it asked for up with it.
+  const size=compact?22:Math.min(32,Math.max(22,W*.055));
+  ctx.save();
+  ctx.font=plateFace(size);ctx.letterSpacing=REVEAL_NAME_TRACK+'px';const nameW=ctx.measureText(name).width;
+  ctx.font=plateFace(12,'sc');ctx.letterSpacing=REVEAL_TRACK+'px';const plateW=ctx.measureText(plate).width;
+  ctx.letterSpacing='0px';ctx.restore();
+  const reach=Math.min(Math.max(nameW,plateW)*.5+9,W*.42);
+  revealMeasure={key,size,plate,name,reach,half:Math.min(reach+13,Math.max(70,W*.5-frameBand()*.92-6))};
+  return revealMeasure;
+}
 // The band the chapter lettering occupies while it is on the page, or null when nothing is printed there.
-// The plate title is ink, not a toast — it stays on the sheet once written, so the band stays
-// reserved for as long as it does, and other captions keep clear of it indefinitely.
+// This is a claim on the sheet, not a reserve painted on it: the chart prints straight over the title and
+// is meant to, the way it prints over the graticule, but two pieces of lettering on one line are two things
+// to read in the same place, so everything else the plate letters — notes, node captions, the running head,
+// the drifting gloss — keeps off this box. The plate title is ink, not a toast, so the claim stands for as
+// long as the title does. What ends it is the sheet itself: once the chart has carried the title down past
+// the foot of the plate the ground it held is free again, and this answers nothing.
 function revealBand(){
   if(world.state==='ready'||world.state==='dead'||plainPlate())return null;
   if(H<540&&W>H)return null;
-  const y=revealPoint().y;return {top:y-36,bottom:y+36};
+  const p=revealPoint();if(p.gone)return null;
+  const m=revealMetrics();
+  return {top:p.y-REVEAL_HALF,bottom:p.y+REVEAL_HALF,left:p.x-m.half,right:p.x+m.half};
+}
+// One line of the title, cut into the sheet rather than written onto it. A copper plate meets damp paper
+// under a ton of pressure: the ink is driven into the stock and the stock is driven down with it, so every
+// stroke sits in a shallow valley with a shaded wall on the side the light comes from and a lit one
+// opposite. That is all this is — the same line set three times, the press's shadow a fraction up and
+// left, the sheet's own light a fraction down and right, and the ink itself between them. The impression
+// arrives with the ink and not before it: while the pen is still cutting the letter there is nothing to
+// have pressed yet, so it comes up over the half second after the writing is done.
+function engraveLettering(text,x,y,size,face,age,track,inkStyle){
+  const press=reducedMotion?1:clamp((age-letteringTime(text))/.5,0,1),base=ctx.globalAlpha;
+  if(press>0){
+    // Paper takes the whole impression: cream stock holds a lit edge as plainly as a shaded one. The night
+    // plate's stock is darker than the ink is light, so a lit edge in its own ground would be no edge at
+    // all — there the press leaves the shadow alone, which is what lifts ivory lettering out of a dark sheet.
+    const shade=onPaper()?.26:.34,lift=onPaper()?.62:0,d=Math.max(.7,size*.045);
+    ctx.fillStyle=`rgb(${ink.base.inkSoft})`;ctx.globalAlpha=base*press*shade;ctx.fillText(text,x-d,y-d);
+    if(lift){ctx.fillStyle=`rgb(${ink.base.paperRgb})`;ctx.globalAlpha=base*press*lift;ctx.fillText(text,x+d,y+d*1.15);}
+    ctx.globalAlpha=base;
+  }
+  ctx.fillStyle=inkStyle;
+  if(!penLettering(text,x,y,size,face,age,'center',track))ctx.fillText(text,x,y);
 }
 // Whether the chart the reader is actually about to fly through exists yet. The opening's three-way
 // difficulty choice fills world.nodes with nothing but its own three targets; capturing one clears
@@ -685,19 +736,27 @@ function revealBand(){
 // by then, so it is not what this checks: a node past the picker (row>0, not itself a difficultyChoice)
 // is the actual chart, and its absence is what the reveal has to wait out.
 function chartOpen(){return world.nodes.some(n=>!n.difficultyChoice&&n.row>0);}
-// Where the chapter lettering is set: the line under the HUD band, or one of two lower lines when a planet
+// Where the chapter lettering is set: the line under the HUD band, or one of the lower lines when a planet
 // or a hazard already sits across it as the sheet turns. The choice is made once, when the reveal begins —
 // but "begins" waits for chartOpen(), so it reads the ground the reader is actually about to fly through
 // rather than the three offered targets alone. The lettering never jumps once that choice is struck.
+// This is the whole of the title's defence now that it is cut into the plate and nothing is cleared for
+// it: the name and the chart are both fixed in the sheet's own coordinates, so a line found clear of the
+// chart is clear of it for as long as the sheet holds them both — no later row can descend onto it, since
+// the chart grows upward, ahead of the climb. Five lines are searched rather than three for the same
+// reason: with no reserve to fall back on, a clear line is worth looking a little harder for.
 function revealAnchor(){
   if(chapterReveal.y!==undefined)return chapterReveal.y;
   if(!world.nodes)return Math.min(H*.3,hudBand()+46);
-  const base=Math.min(H*.3,hudBand()+46),reach=Math.min(95,W*.21)+72,limit=H*.62;
+  const base=Math.min(H*.3,hudBand()+46),reach=revealMetrics().half,limit=H*.62;
   let bestY=base,bestCost=Infinity;
-  for(const y of [base,base+70,base+140]){
+  for(const y of [base,base+60,base+120,base+180,base+240]){
     if(y!==base&&y+40>limit)break;
-    let cost=0;
-    const cover=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-W*.5)-reach),dy=Math.max(0,Math.abs(py-y)-38);return Math.max(0,r-Math.hypot(dx,dy));};
+    // The first line under the HUD band is the title's proper home; a lower one is a concession to
+    // whatever is standing across it, so it has to be clearly better to be taken rather than merely
+    // a shade quieter.
+    let cost=y===base?0:6;
+    const cover=(px,py,r)=>{const dx=Math.max(0,Math.abs(px-W*.5)-reach),dy=Math.max(0,Math.abs(py-y)-REVEAL_HALF-4);return Math.max(0,r-Math.hypot(dx,dy));};
     for(const n of world.nodes)cost+=cover(sx(n.x),sy(n.y),(n.cap||n.r)*scale+6);
     for(const h of world.hazards)cost+=cover(sx(h.x),sy(h.y),h.r*scale+10);
     // A live constellation's name is lettered round its entry star's rim, well past the star's own
@@ -714,32 +773,23 @@ function revealAnchor(){
 }
 // The name is written onto the sheet, not over it: the line chosen above is taken into world coordinates
 // the first time it is asked for (once chartOpen() — see revealAnchor), and the chart carries the
-// lettering from there, exactly as it carries an orbit. It is held back at the edge of the play channel
-// rather than allowed to print into the margin, so a fast ascent slides it to the foot of the sheet and it
-// settles there.
+// lettering from there, exactly as it carries an orbit. Only the head of the play channel is held against:
+// the title may not print up into the HUD band, but it is no longer caught at the foot either. It used to
+// be, and a plate lasts eight rows, so a fast ascent slid it down to that clamp and parked it there — the
+// one piece of lettering on the sheet that the sheet could never carry away, sitting across the live chart
+// for the rest of the plate. It rides off the bottom now, the way a note set beside an orbit does
+// (inscriptions.js), and `gone` says when the sheet has taken it.
 function revealPoint(){
-  const compact=H<540&&W>H,reach=Math.min(95,W*.21)+16,inner=frameBand()*.92+8;
-  const clampX=v=>clamp(v,Math.min(W*.5,inner+reach),Math.max(W*.5,W-inner-reach)),clampY=v=>clamp(v,hudBand()+40,H-footerBand()-34);
+  const compact=H<540&&W>H,m=revealMetrics(),inner=frameBand()*.92+8;
+  const clampX=v=>clamp(v,Math.min(W*.5,inner+m.reach),Math.max(W*.5,W-inner-m.reach)),clampTop=v=>Math.max(v,hudBand()+40);
   if(chapterReveal.wx===undefined){
     const x=compact?W*.2:W*.5,y=compact?H*.44:revealAnchor();
-    if(!compact&&!chartOpen())return {x:clampX(x),y:clampY(y),compact};
+    if(!compact&&!chartOpen())return {x:clampX(x),y:clampTop(y),compact,gone:false};
     chapterReveal.wx=(x-W*.5-plateShift.x)/scale;
     chapterReveal.wy=(y-plateShift.y)/scale+world.cameraY;
   }
-  return {x:clampX(sx(chapterReveal.wx)),y:clampY(sy(chapterReveal.wy)),compact};
-}
-const chapterRevealLeaves=new Map();
-function chapterRevealLeaf(){
-  let g=chapterRevealLeaves.get(plateName);
-  if(!g){
-    g=ctx.createRadialGradient(0,0,0,0,0,1);
-    // A reserved patch of the sheet's own stock, not a light: the centre and the .85 stop share one
-    // alpha, so the ground reads flat out to there, and only the last sliver feathers to nothing.
-    const centre=onPaper()?.5:.56;
-    g.addColorStop(0,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(.85,`rgba(${ink.base.paperRgb},${centre})`);g.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-    chapterRevealLeaves.set(plateName,g);
-  }
-  return g;
+  const y=clampTop(sy(chapterReveal.wy));
+  return {x:clampX(sx(chapterReveal.wx)),y,compact,gone:y-REVEAL_HALF>H-footerBand()};
 }
 function drawChapterReveal(dt){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
@@ -747,77 +797,47 @@ function drawChapterReveal(dt){
   const own=handFor('chapterReveal');if(own)return own(dt);
   if(world.state==='ready'||world.state==='dead'||plainPlate())return;
   if(world.state!=='paused')chapterReveal.age+=dt;
-  // The plate title is written once and left as ink: it fades in under the pen, then stands at
-  // full strength for as long as the plate is open, rather than fading back out like a toast.
-  const t=chapterReveal.age,alpha=clamp(t/.55,0,1);
+  // The plate title is written once and left as ink: it fades in under the pen and then stands at full
+  // strength for as long as the sheet holds it, rather than fading back out like a toast. What takes it in
+  // the end is the margin, not a timer — see the sink below.
+  const t=chapterReveal.age,written=clamp(t/.55,0,1);
   // The DOM HUD (brand, score, pace, flow) owns roughly the top 132 CSS px; the reveal is set in the play
   // channel underneath it, and rides the sheet from there.
-  const place=revealPoint(),compact=place.compact,x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
+  const place=revealPoint();
+  // The sheet is allowed to take the title away: once the chart has carried it past the foot of the plate
+  // it is gone with that ground, and the running head goes back to naming the region on its own.
+  if(place.gone)return;
+  const m=revealMetrics(),x=place.x,y=place.y,rise=reducedMotion?0:(1-Math.min(t,1))*5;
+  // Nothing is printed into the margin: as the ascent carries the title down into the footer band it goes
+  // with the rest of that ground rather than sliding across the running head and the buttons, so the last
+  // stretch of its travel is also the last of its ink. It is out exactly where revealPoint calls it gone.
+  const alpha=written*(1-clamp((y+REVEAL_HALF-(H-footerBand()))/(REVEAL_HALF*2),0,1));
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
-  {
-    // The lettering is pulled on a small leaf of its own: one soft pass of the sheet's ground, feathered to
-    // nothing, so the chapter name reads over whatever the chart has scrolled beneath it — the Eclipse's dark
-    // disc included — without a hard edge anywhere on the page. That feathering is what a soft pass over an
-    // ordinary chart calls for; laid over the flood's own solid ink it reads as a glow rather than a reserve.
-    // Once the rising dark has actually covered the reveal point, the leaf takes its other form instead: a
-    // hard-edged panel of the sheet's own ground, boundaried the way the impressum's own cartouche is (see
-    // drawImpressum, frame.js), so the name sits in unprinted sheet rather than airbrushed over solid ink —
-    // and, once it is a rectangle, glossClearance (effects.js) has the same one to keep the drifting gloss
-    // clear of, pairing this with the HIC SUNT DRACONES fix.
-    const band=typeof revealBand==='function'?revealBand():null;
-    const fy=sy(world.floorY-4);
-    if(band&&fy<=band.bottom){
-      const rw=Math.min(95,W*.21)+72,rh=(band.bottom-band.top)/2,cy=(band.top+band.bottom)/2;
-      ctx.save();ctx.translate(x,cy);
-      ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.92:.94})`;ctx.fillRect(-rw,-rh,rw*2,rh*2);
-      burinRect(ctx,-rw,-rh,rw*2,rh*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,90701+chapterReveal.index*7);
-      burinRect(ctx,-rw+4,-rh+4,rw*2-8,rh*2-8,ink.base.inkSoft,onPaper()?.36:.25,.6,90711+chapterReveal.index*7);
-      ctx.restore();
-    }else if(onPaper()){
-      // A torn scrap of the sheet's own stock laid over the chart, not a light thrown onto it: paper
-      // never glows (see the no-glow rule at the top of this file), so its reserve has to be a material
-      // — an irregular, deckle-edged card, opaque, with the laid-paper tile still reading through it —
-      // rather than the soft radial fade chapterRevealLeaf() paints for night, where a glow is honest.
-      // Its height reserves the same band the flood-covered rectangle above does, not a wide, shallow
-      // .42 aspect carried over from the old feathered gradient: that ellipse was mostly transparent, so
-      // its extra height never read as a shape, but opaque and deckle-edged at that height it swallowed
-      // the planet ring the title sits over and the player flying near it, not just the lettering.
-      const spread=Math.min(95,W*.21)+72,rx=spread,ry=band?(band.bottom-band.top)/2:36,cx=x,cy=y+4+rise;
-      ctx.save();ctx.translate(cx,cy);
-      landContour(ctx,0,0,rx,ry,seeded(60301+chapterReveal.index*7));
-      ctx.save();ctx.clip();
-      ctx.fillStyle=`rgba(${ink.base.paperRgb},1)`;ctx.fillRect(-rx,-ry,rx*2,ry*2);
-      const sheet=laidSheetFor();
-      if(sheet){ctx.translate(-cx,-cy);ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.35;ctx.drawImage(sheet,0,0,W,H);}
-      ctx.restore();
-      ctx.strokeStyle=`rgba(${ink.base.inkSoft},.4)`;ctx.lineWidth=.8;ctx.stroke();
-      ctx.restore();
-    }else{
-      const spread=Math.min(95,W*.21)+72;
-      ctx.save();ctx.translate(x,y+4+rise);ctx.scale(spread,spread*.42);
-      ctx.fillStyle=chapterRevealLeaf();ctx.fillRect(-1,-1,2,2);ctx.restore();
-    }
-  }
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
   // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
-  // done — and always under reduced motion — the ordinary lettering below is the finished state. The
-  // reserved leaf above is what keeps this readable over the chart; a second glow on top of it was ink
-  // spent twice for the one job.
+  // done — and always under reduced motion — the ordinary lettering below is the finished state.
+  // Nothing is cleared for it and nothing is laid under it. The title is cut into the plate, so it is
+  // printed with the plate: the chart is drawn over it (render(), frame.js) exactly as it is drawn over the
+  // graticule and the plate-mark, and the sheet's own grain goes over all three last. Whatever the atlas
+  // tried instead — a torn scrap of clean stock, a soft leaf of ground, a ruled band of the running head's
+  // own kind — was a card laid on the sheet, and read as one however it was cut. The answer to a planet
+  // standing across the name is not a card: it is the line the name was set on (revealAnchor), chosen once,
+  // on ground the chart is not using, and then left alone.
   // Spelled out rather than abbreviated: this is the largest lettering on the sheet, so it names the
   // plate itself in full — TABULA, matching what the impressum's own TAB. row abbreviates — while the
   // running head six inches below it (frame.js) names the region instead, REGIO, so the two no longer
-  // collide on one abbreviation for two different things. The wide tracking is real letterspacing now,
+  // collide on one abbreviation for two different things. The tracking on both lines is real letterspacing,
   // not literal space characters typed in between the letters — those timed and drew as glyphs of their
-  // own under penLettering, which is why the plain string carries no gaps and the same tracking value is
-  // handed to both the pen and the settled ctx.letterSpacing.
-  const plate='TABULA '+numerals[chapterReveal.index],name=chapters[chapterReveal.index],plateTrack=2;
-  const size=compact?24:Math.min(36,Math.max(24,W*.062));
-  ctx.fillStyle=ink.dark.chapterLabel;ctx.font=plateFace(12,'sc');ctx.letterSpacing=plateTrack+'px';
-  if(!penLettering(plate,x,y-22+rise,12,'sc',t,'center',plateTrack))ctx.fillText(plate,x,y-22+rise);
+  // own under penLettering, which is why the plain strings carry no gaps and the same tracking value is
+  // handed to both the pen and the settled ctx.letterSpacing. The name is set a little wider than it was
+  // cut, which is how a title reads as engraved lettering rather than as a line of running text blown up.
+  const plate=m.plate,name=m.name,size=m.size;
+  ctx.font=plateFace(12,'sc');ctx.letterSpacing=REVEAL_TRACK+'px';
+  engraveLettering(plate,x,y-22+rise,12,'sc',t,REVEAL_TRACK,ink.dark.chapterLabel);
+  ctx.font=plateFace(size);ctx.letterSpacing=REVEAL_NAME_TRACK+'px';
+  engraveLettering(name,x,y+12+rise,size,'text',t,REVEAL_NAME_TRACK,ink.base.text);
   ctx.letterSpacing='0px';
-  ctx.fillStyle=ink.base.text;ctx.font=plateFace(size);
-  if(!penLettering(name,x,y+12+rise,size,'text',t,'center'))ctx.fillText(name,x,y+12+rise);
-  const reach=Math.min(95,W*.21),ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
+  const reach=m.reach,ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
   if(ruled>=1){
     line(x-reach,y+27+rise,x-9,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27+rise,x+reach,y+27+rise,`rgba(${ink.dark.chapterRule},.42)`,.6);
   }else penRule(x,y+27+rise,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);

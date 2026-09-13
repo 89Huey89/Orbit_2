@@ -1101,7 +1101,10 @@ const captionsHeld=()=>world.state==='ready';
 // Returns the y offset in node-local coordinates, where 0 is the planet's centre.
 function captionOffset(x,y,r,gap){
   const inner=frameBand()*.92+8,guard=Math.abs(x-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner;
-  const band=revealBand(),nearBand=band&&Math.abs(x-W*.5)<W*.45,above=-(r+gap);
+  // A caption only has to dodge the title where the title actually is: its band carries its own measure
+  // (revealMetrics, celestial.js) rather than an estimate of it, so a planet out past the lettering's own
+  // ends keeps its caption on the line it would have used anyway.
+  const band=revealBand(),nearBand=band&&x>band.left-30&&x<band.right+30,above=-(r+gap);
   if(y+above>=guard&&!(nearBand&&y+above>band.top-12&&y+above<band.bottom+12))return above;
   let below=Math.max(r+gap+3,guard+12-y);
   if(nearBand&&y+below>band.top&&y+below<band.bottom+12)below=band.bottom+12-y;

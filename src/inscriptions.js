@@ -137,9 +137,13 @@ function placeInscription(g){
     // sheet, so the lettering keeps off them as well.
     for(let k=Math.max(0,world.surveys.length-3);k<world.surveys.length;k++)cost+=inscriptionOverDisc(box,sx(world.surveys[k].x),sy(world.surveys[k].y),30*scale);
     cost+=inscriptionOverDisc(box,sx(p.x),sy(p.y),16*scale)*3;
-    // The chapter title is lettering too, even though it is set by a hand of its own: a note keeps off
-    // it exactly as it keeps off another note's ground, not just off the chart underneath it.
-    const rb=revealBand();if(rb)cost+=inscriptionSpan(box.top,box.bottom,rb.top,rb.bottom)*inscriptionSpan(box.left,box.right,0,W)/100*2;
+    // The chapter title is lettering too, even though it is set by a hand of its own, so it is counted as
+    // a clash rather than as a cost: a note yields to it the way it yields to another note, and the whole
+    // sheet is combed for clear ground before anything is set across the plate's own title. Weighed as a
+    // mere cost it could be outbid by a planet or two and the title was crossed anyway. It is counted
+    // against the title's actual measure now (revealMetrics, celestial.js) rather than against the full
+    // width of the sheet, so a note may still share the line out at the margin, where the title never reaches.
+    const rb=revealBand();if(rb)clash+=inscriptionSpan(box.top,box.bottom,rb.top,rb.bottom)*inscriptionSpan(box.left,box.right,rb.left,rb.right)/100;
     for(const q of others)clash+=inscriptionClash(box,sway,q);
     // A score floater is gone in 1.15s and an inscription is permanent, so the floater is always the one
     // that yields once both exist — floaterLine (effects.js) already keeps a floater off inscriptions on
