@@ -297,6 +297,8 @@
       #end #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
       #end #end-unlocked{margin:-9px 0 10px;font-size:9px}
       #end .exlibris{width:84px;height:50px;margin-top:9px}
+      #end .finis{margin:8px 0 2px}
+      #end .finis canvas{width:28px;height:28px}
       #end .end-plate-line{margin-top:9px}
       #end #copy-score{padding:6px 12px}
       #end .action-copy{font-size:17px;margin-bottom:8px}
@@ -386,6 +388,11 @@
     .exlibris-line{font-family:var(--face-sc);font-size:8px;letter-spacing:.24em}
     #exlibris-initials{font-family:var(--face-text);font-size:16px;letter-spacing:.2em;line-height:1.1}
     .exlibris.hidden{display:none}
+    /* The one page a period book closes in Latin: the shop's device, struck small, over a closing
+       word — FINIS on an ordinary run, LAVS DEO where the run itself earned a perfect chain. */
+    .finis{display:flex;flex-direction:column;align-items:center;gap:1px;margin:12px 0 2px}
+    .finis canvas{width:36px;height:36px}
+    .finis span{font-family:var(--face-sc);font-size:10px;letter-spacing:.22em;color:var(--muted);opacity:.85}
     @media(max-height:530px) and (orientation:landscape){
       #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
       #catalogue h2{font-size:19px}
@@ -571,6 +578,7 @@
     #game.over #end-score,#game.over #record{animation:ink-rise .5s ease-out .5s backwards}
     #game.over .stat span{animation:ink-rise .5s ease-out .62s backwards}
     #game.over #end-constellations,#game.over #end-observations,#game.over .end-plate-line{animation:ink-rise .6s ease-out .78s backwards}
+    #game.over .finis{animation:ink-rise .6s ease-out .92s backwards}
     /* — Reviewing: the colophon steps aside and the finished plate takes the whole frame, free to drag. — */
     /* The way out is set inside the chart, so it has to keep out of the plate's own furniture: the inner
        rule and, at this corner, the wind-head whose breath streams down into the sheet (frameOrnaments(),
@@ -675,6 +683,7 @@
       <div id="end-observations"></div>
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
+      <div id="end-finis" class="finis atlas-only"><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="action-copy">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>

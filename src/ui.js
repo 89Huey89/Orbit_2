@@ -265,6 +265,9 @@ function showEnd(){
   // words for nothing rather than as that figure.
   $('end-constellations').textContent=charts?charts+' '+plateWords().chartNoun+(charts===1?'':'s')+' traced':'no '+plateWords().chartNoun+'s traced';
   $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(' · ');
+  // The one page a period book always closes in Latin: FINIS on an ordinary run, LAVS DEO where the
+  // run itself earned a perfect chain (the same three-in-a-row the 'Tres perfecti' observation marks).
+  $('end-finis-word').textContent=world.observed.has('perfectThree')?'LAVS DEO':'FINIS';paintFinisDevice();
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
@@ -556,6 +559,18 @@ function paintLeafFrame(id,opts={}){
   if(!opts.noRosette)frameRosette(g,24,24,rgb,onPaper()?.34:.24,9,58119);
 }
 function paintCatalogueLeafFrame(){paintLeafFrame('cat-leaf-frame');}
+// The colophon's own closing device, struck small over FINIS or (a perfect chain earned) LAVS DEO —
+// the same armillary-and-strapwork mark impressumDevice already cuts for the frontispiece cartouche,
+// re-centred on its own little canvas rather than shared with a live-drawn layer.
+function paintFinisDevice(){
+  const c=$('end-finis-device');if(!c)return;
+  const w=c.clientWidth,h=c.clientHeight;
+  if(!(w>0&&h>0)||!c.getContext)return;
+  c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+  const g=c.getContext('2d');if(!g)return;
+  g.setTransform(DPR,0,0,DPR,0,0);
+  impressumDevice(g,w/2,h/2,w*.42,onPaper()?.6:.42,90721);
+}
 // The eight observer marks, cut as the pen cuts them in flight (see OBSERVER_MARKS in src/effects.js).
 // Five of them are walked out of a loop here rather than typed as path data — the feather's vane off
 // the very `vaneProfile` the flight lays it with, and the comet's rays, Saturn's hatching, the
