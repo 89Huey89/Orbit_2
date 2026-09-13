@@ -52,6 +52,9 @@ let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.flo
 // dozens of vortices as it climbs, and inscribing all of them would spend the whole plate's inscription
 // budget on repeating the one word instead of leaving room for anything the run still has to say.
 let namedHazardKinds=new Set();
+// A working plate queries a wrong impression rather than pretending it never happened, but only once
+// a run: the first steep arrival earns the chart's one correction, not every one of them.
+let correctionNode=null;
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');

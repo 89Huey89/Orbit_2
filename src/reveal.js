@@ -520,6 +520,25 @@ function penStrike(n,r,t,rgb){
   if(t<1){penBead(x1,y1,a,1.1*scale,.8);penNib(x1,y1,a,.85,undefined,nibRecency(t));}
   ctx.restore();
 }
+// A wrong impression is queried rather than pretended away: two hatch strokes crossing the capture
+// band — distinct from penStrike's own single diagonal, so a correction reads as a different fact
+// from an ordinary retired orbit — and a small marginal query in the plate's own italic beside it.
+function penCorrection(n,r,t,rgb){
+  if(t<=0)return;
+  const reach=r+7*scale,tone=rgb||ink.reveal.strike,base=.5+((n.seed>>>3)&15)/15*.3;
+  ctx.save();ctx.globalAlpha=1;
+  ctx.strokeStyle=`rgba(${tone},${lerp(.55,.3,t)})`;ctx.lineWidth=lerp(1.1,.5,t)*scale;ctx.lineCap='round';
+  let ex=0,ey=0;
+  for(const a of [base,-base]){
+    const dx=Math.cos(a),dy=Math.sin(a),x0=-dx*reach,y0=-dy*reach,x1=x0+dx*reach*2*t,y1=y0+dy*reach*2*t;
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+    ex=x1;ey=y1;
+  }
+  if(t<1){penBead(ex,ey,-base,1.1*scale,.8);penNib(ex,ey,-base,.85,undefined,nibRecency(t));}
+  ctx.font=plateFace(Math.max(8,9*scale),'text','italic');ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=`rgba(${tone},${lerp(0,.62,t)})`;ctx.fillText('?',reach*1.15,-reach*.35);
+  ctx.restore();
+}
 // ---------- Hazards: a drop of ink lands, spreads, darkens, and the rings are scratched in ----------
 function revealHazard(h,draw){
   const t=reveal.progress(h,HAZARD_REVEAL,true);

@@ -1349,6 +1349,7 @@ function drawNode(n,aim){
   ctx.stroke();
   if(wedged)penWedgeEnd(pen,n,r);else penNibLift(n,NODE_REVEAL,n,r);
   if(used)penStrike(n,r,struck,rgb);
+  if(used&&n===correctionNode)penCorrection(n,r,reveal.progress('correction:'+n.id,.4,true),rgb);
   // A Latin caption engraved round the outer rim of every fourth main orbit, set in small caps at a
   // whisper — the sheet reads better with fewer of them, and fainter. It is printed only on orbits the
   // player is not holding, so it can never cross the release marks, the perfect window, or the fading

@@ -67,6 +67,9 @@ function event(type,e){
       // A rough impression still earns its base; the duller strike and displaced colour carry the
       // cost now, while the score floater makes the continuous angle progression explicit.
       audio.tone(196,.35,0,.2,'triangle',150);audio.brush(700,.18);burst(e.x,e.y,6,'red',.4);
+      // The impressum already promises a correction notice for exactly this (impressumHasRoughImpression,
+      // frame.js); the chart itself queries the first one a run makes, and only the first.
+      if(!correctionNode)correctionNode=e.n;
     }else{
       audio.capture(e.n.row,e.perfect);burst(e.x,e.y,e.perfect?12:6,'gold',.5);
       if(e.square){audio.tone(880,.3,.02,.12);audio.tone(1174.66,.3,.11,.1);}
@@ -171,7 +174,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];clearInscriptions();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
