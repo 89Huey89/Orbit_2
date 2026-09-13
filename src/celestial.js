@@ -683,7 +683,7 @@ function revealBand(){
 function revealAnchor(){
   if(chapterReveal.y!==undefined)return chapterReveal.y;
   if(!world.nodes)return Math.min(H*.3,hudBand()+46);
-  const base=Math.min(H*.3,hudBand()+46),reach=Math.min(95,W*.21)+30,limit=H*.62;
+  const base=Math.min(H*.3,hudBand()+46),reach=Math.min(95,W*.21)+72,limit=H*.62;
   let bestY=base,bestCost=Infinity;
   for(const y of [base,base+70,base+140]){
     if(y!==base&&y+40>limit)break;
