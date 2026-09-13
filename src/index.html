@@ -80,6 +80,15 @@
     .start-copy{position:absolute;bottom:max(15%,95px);left:24px;right:24px}
     .action-copy{font-style:italic;font-family:var(--face-text);font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
     .instruction{font-family:var(--face-text);color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
+    /* The canones pages before a period ephemeris tell the reader how to use the tables that follow in
+       exactly this shape: a small-caps head, a hairline under it, then rules in a hanging indent with
+       marginal numerals — never four centred sentences of four different lengths, as this used to be. */
+    .rubric{text-align:left;padding-left:14px;border-left:1px solid var(--line)}
+    .rubric-head{margin:0 0 7px;padding-bottom:7px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-size:11px;letter-spacing:.28em;color:var(--muted)}
+    .rubric-rules{margin:0;padding-left:18px;list-style:lower-roman}
+    .rubric-rules li{margin:0 0 5px}
+    .rubric-rules li:last-child{margin-bottom:0}
+    .rubric-gold{color:var(--gold)}
     .footer{position:absolute;bottom:max(17px,calc(env(safe-area-inset-bottom) + 7px));left:max(15px,env(safe-area-inset-left));right:max(15px,env(safe-area-inset-right));z-index:6;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
     .utility{pointer-events:auto;width:48px;height:48px;border:0;padding:12px;background:none;color:var(--muted);cursor:pointer;transition:color .2s;display:grid;place-items:center}
     .utility:hover,.utility:focus-visible{color:var(--gold)}
@@ -646,7 +655,7 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">TOMB TT353 · DYNASTY XVIII</p>
     </div>
-    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span></p><p class="instruction" id="instructions" hidden><span class="atlas-only">Tap to release. Skim the next orbit.<br>Circle stars to gain speed. Faster earns more.<br>Keep ahead of the rising dark.<br>Aim your first orbit — Tiro, Adeptus, or Magister.</span><span class="ceiling-only">Tap to release the flat night barque.<br>Skim an hour-circle; hold it to restore the reed.<br>Follow the painted dabs around Apep, the Eye, Shu and Nun.<br>The first landing sets the course.</span></p>
+    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
       <div class="daily-group">
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>

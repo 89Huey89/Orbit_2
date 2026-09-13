@@ -22,7 +22,8 @@ defineVoice('atlas',{
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
-  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.'},
+  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
+    instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
@@ -212,6 +213,16 @@ function syncEraChrome(){
   const pauseNote=$('pause-note');if(pauseNote)pauseNote.textContent=chrome.pauseNote;
   const pauseResume=$('pause-resume');if(pauseResume)pauseResume.textContent=chrome.pauseResume;
   const pauseLeave=$('pause-leave');if(pauseLeave)pauseLeave.textContent=chrome.pauseLeave;
+  // The canones-page rubric: a plate's own head and its four rules, the {pressures} marker in the
+  // fourth resolved here rather than baked into the voice map, so a rubricated word is always this
+  // plate's own pressure names — TIRO, ADEPTUS, MAGISTER on the atlas — not a copy typed a second time.
+  const instructions=chrome.instructions,instrHead=$('instructions-head'),instrRules=$('instructions-rules');
+  if(instrHead)instrHead.textContent=instructions?instructions.head:'';
+  if(instrRules){
+    const names=Object.values(plateWords().pressures).map(p=>`<b class="rubric-gold">${p}</b>`);
+    const pressures=names.slice(0,-1).join(', ')+(names.length>1?' or ':'')+(names[names.length-1]||'');
+    instrRules.innerHTML=(instructions?instructions.rules:[]).map(r=>`<li>${r.replace('{pressures}',pressures)}</li>`).join('');
+  }
   syncPauseControl();
   game.setAttribute('aria-label',chrome.gameLabel);
   canvas.setAttribute('aria-label',chrome.canvasLabel);
