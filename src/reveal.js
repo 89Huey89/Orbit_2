@@ -204,7 +204,11 @@ function penNibDraw(x,y,angle,alpha,rgb){
   ctx.beginPath();ctx.ellipse(-.25*k,.2*k,4.1*k,3.3*k,0,0,TAU);ctx.fill();
   const sx0=-reach*.5,sdx=-1.9,sdy=-.42,sl=Math.hypot(sdx,sdy),sux=sdx/sl,suy=sdy/sl,far=reach*.5+W+H;
   const ex=sux*far,ey=suy*far,shaft=ctx.createLinearGradient(sx0,0,ex,ey);
-  shaft.addColorStop(0,`rgba(${tone},${.45*alpha})`);shaft.addColorStop(1,`rgba(${tone},0)`);
+  // The far end sits off the frame edge so the shaft never shows a visible stub, but the fade itself has
+  // to land well short of it: a single stop at 1 spreads the fade across that whole off-screen run, which
+  // at these lengths reads as a long straight line clear across the sheet rather than a short flourish.
+  const fade=Math.min(1,reach*6/far);
+  shaft.addColorStop(0,`rgba(${tone},${.45*alpha})`);shaft.addColorStop(fade,`rgba(${tone},0)`);
   ctx.strokeStyle=shaft;ctx.lineWidth=.6;
   ctx.beginPath();ctx.moveTo(sx0,0);ctx.lineTo(ex,ey);ctx.stroke();
   ctx.restore();
