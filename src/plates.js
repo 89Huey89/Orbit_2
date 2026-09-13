@@ -47,6 +47,11 @@ function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
 // own tone (see the death handler in ui.js) rather than a wash that lingers and decays.
 let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,darkFlash=0,lastScore=-1;
 let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
+// A hazard's Latin name (HAZARD_KINDS in simulation.js) is taught once per kind, on the first instance
+// of it the run fully reveals, rather than lettered on every one it ever generates: a run passes
+// dozens of vortices as it climbs, and inscribing all of them would spend the whole plate's inscription
+// budget on repeating the one word instead of leaving room for anything the run still has to say.
+let namedHazardKinds=new Set();
 let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');

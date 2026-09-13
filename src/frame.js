@@ -1178,7 +1178,20 @@ function render(dt){
   const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawConstellationFigures();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
-  drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);for(const h of world.hazards)revealHazard(h,drawHazard);
+  drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);
+  // The first hazard of each kind the run fully reveals is named — the same Latin the observation
+  // list already carries (HAZARD_KINDS in simulation.js) — through the inscription solver rather than
+  // welded straight onto a scrolling body, so the name can never overlap the plate's own other
+  // lettering. Only the first of a kind: a run passes dozens of vortices as it climbs, and the plate
+  // teaches the word once rather than spending its whole inscription budget repeating it. Skipped
+  // where every other piece of lettering already is, the proof plate.
+  for(const h of world.hazards){
+    revealHazard(h,drawHazard);
+    const kind=h.kind||'vortex';
+    if(!plainPlate()&&!namedHazardKinds.has(kind)&&reveal.progress(h,HAZARD_REVEAL,true)>=1){
+      if(inscribe(hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
+    }
+  }
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(world.state==='paused')drawPauseMagnitudeKey();
