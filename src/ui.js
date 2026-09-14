@@ -333,6 +333,21 @@ function showEnd(){
   const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
   $('end-tip').textContent=plateWords().tips[tip];
   $('announcement').textContent=spoken('ended',{score:world.score,best:best});
+  syncEndFit();
+}
+// Whether the colophon actually fits #end's own box is measured directly rather than guessed from a
+// breakpoint: @media height features read a stable viewport so a mobile browser's own chrome sliding
+// in and out doesn't reflow the page underneath it, which is exactly the size #end's height (100dvh,
+// inherited from #game) does track. Called once the colophon's text is set and again on every resize,
+// so the two compaction tiers in the stylesheet follow the sheet's real, current room instead.
+function syncEndFit(){
+  const end=$('end'),colophon=$('end-colophon');
+  end.classList.remove('end-compact','end-tight');
+  const fits=()=>{const er=end.getBoundingClientRect(),cr=colophon.getBoundingClientRect();return cr.top>=er.top&&cr.bottom<=er.bottom;};
+  if(!fits()){
+    end.classList.add('end-compact');
+    if(!fits())end.classList.add('end-tight');
+  }
 }
 // ---------- The catalogue: the ledger's own leaf ----------
 // A ruled library-catalogue page over the plate. It lists what the ledger has recorded and, under it,
@@ -1120,6 +1135,7 @@ function resize(){
     // only matching the run up to the first time the window changed shape.
     if(replayLog)replayLog.resizes.push({at:world.time,width:world.width,height:world.height});
   }
+  syncEndFit();
 }
 function enterFullscreen(){
   if(document.fullscreenElement||document.webkitFullscreenElement)return;

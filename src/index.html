@@ -311,29 +311,31 @@
     #end-daily{margin:0}
     #copy-score{margin:0;display:none}
     #game.daily #copy-score{display:flex}
-    @media(max-height:660px) and (orientation:portrait){
-      /* Two new lines on the colophon; on a short sheet the whole table tightens. */
-      #end{padding:16px 18px 48px}
-      #end .end-stats{margin:15px 0 22px;padding:11px 0}
-      #end #end-constellations{margin:-13px 0 15px}
-      #end #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
-      #end #end-unlocked{margin:-9px 0 10px;font-size:9px}
-      #end .exlibris{width:84px;height:50px;margin-top:9px}
-      #end .finis{margin:8px 0 2px}
-      #end .finis canvas{width:28px;height:28px}
-      #end .end-plate-line{margin-top:9px}
-      #end #copy-score{padding:6px 12px}
-      #end .action-copy{font-size:17px;margin-bottom:8px}
-      #end h2{font-size:clamp(19px,5vw,24px)}
-      #end #end-score{font-size:clamp(48px,13vw,68px);margin:7px 0 2px}
-      #end #end-score-roman{font-size:11px;margin:0 0 6px}
-      #end .score-frame{margin:6px 0 4px;padding:9px 26px 6px}
-    }
-    @media(max-height:600px) and (orientation:portrait){
-      #end #end-daily{display:none}
-      #end #end-tip{font-size:12px}
-      #end #end-observations{margin:-9px 0 10px}
-    }
+    /* Whether the colophon actually fits #end's own box is a live measurement, not a breakpoint:
+       @media height features are read against a stable viewport so a mobile browser's own chrome
+       sliding in and out doesn't reflow the page underneath it — which is exactly the size #end's
+       height (100dvh, inherited from #game) does track, so a tall phone with its address bar and
+       toolbar showing can be short in fact while a max-height query still reads it as tall. syncEndFit()
+       in ui.js measures the real overflow instead, once the colophon's text is set and again on every
+       resize, and toggles these two tiers itself; on a short sheet the whole table tightens. */
+    #end.end-compact{padding:16px 18px 48px}
+    #end.end-compact .end-stats{margin:15px 0 22px;padding:11px 0}
+    #end.end-compact #end-constellations{margin:-13px 0 15px}
+    #end.end-compact #end-observations{margin:-11px 0 13px;font-size:9px;line-height:1.55}
+    #end.end-compact #end-unlocked{margin:-9px 0 10px;font-size:9px}
+    #end.end-compact .exlibris{width:84px;height:50px;margin-top:9px}
+    #end.end-compact .finis{margin:8px 0 2px}
+    #end.end-compact .finis canvas{width:28px;height:28px}
+    #end.end-compact .end-plate-line{margin-top:9px}
+    #end.end-compact #copy-score{padding:6px 12px}
+    #end.end-compact .action-copy{font-size:17px;margin-bottom:8px}
+    #end.end-compact h2{font-size:clamp(19px,5vw,24px)}
+    #end.end-compact #end-score{font-size:clamp(48px,13vw,68px);margin:7px 0 2px}
+    #end.end-compact #end-score-roman{font-size:11px;margin:0 0 6px}
+    #end.end-compact .score-frame{margin:6px 0 4px;padding:9px 26px 6px}
+    #end.end-tight #end-daily{display:none}
+    #end.end-tight #end-tip{font-size:12px}
+    #end.end-tight #end-observations{margin:-9px 0 10px}
     @media(max-height:530px) and (orientation:landscape){
       #intro .daily-group{margin-top:5px}
       #end #end-observations{margin:2px 0 4px;font-size:8px;line-height:1.4}
@@ -692,7 +694,7 @@
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
-    <div class="colophon">
+    <div id="end-colophon" class="colophon">
       <canvas id="end-leaf-frame" class="cat-leaf-frame" aria-hidden="true"></canvas>
       <svg class="ceiling-corner cc-tl ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
       <svg class="ceiling-corner cc-tr ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
