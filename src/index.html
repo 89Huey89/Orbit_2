@@ -89,8 +89,14 @@
     .instruction{font-family:var(--face-text);color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
     /* The canones pages before a period ephemeris tell the reader how to use the tables that follow in
        exactly this shape: a small-caps head, a hairline under it, then rules in a hanging indent with
-       marginal numerals — never four centred sentences of four different lengths, as this used to be. */
-    .rubric{text-align:left;padding-left:14px;border-left:1px solid var(--line)}
+       marginal numerals — never four centred sentences of four different lengths, as this used to be.
+       Open, it is a slip pasted onto the chart rather than type floating over it: the same opaque leaf
+       and doubled rule as the colophon and the pause slip (laidPaper()'s tile, blended into the ground
+       colour, inside a hairline box), just cut small enough to sit in the corner of the sheet. */
+    .rubric{position:relative;text-align:left;padding:13px 16px 13px 18px;background-color:rgba(var(--veil),.93);background-image:var(--leaf-paper,none);background-repeat:repeat;background-size:120px 96px;background-blend-mode:var(--leaf-blend,multiply)}
+    .rubric::before,.rubric::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
+    .rubric::before{inset:0;border-left-width:2px}
+    .rubric::after{inset:3px;opacity:.6}
     .rubric-head{margin:0 0 7px;padding-bottom:7px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-size:11px;letter-spacing:.28em;color:var(--muted)}
     .rubric-rules{margin:0;padding-left:18px;list-style:lower-roman}
     .rubric-rules li{margin:0 0 5px}
