@@ -1830,10 +1830,10 @@ function rockChapterReveal(){}
 let rockRelightAt=-9;
 function rockRelight(e){rockRelightAt=world.time;rockCaptureGlow=Math.max(rockCaptureGlow,.55);}
 function rockPaintRelight(){
-  const age=world.time-rockRelightAt;if(age<0||age>.6)return;
+  const age=world.time-rockRelightAt;if(age<0||age>.9)return;
   const p=world.player,px=sx(p.x),py=sy(p.y);let best=null,bd=1e9;
   for(const h of world.hazards){if(h.kind!=='flare')continue;const d=Math.hypot(h.x-p.x,h.y-p.y);if(d<bd){bd=d;best=h;}}
-  if(!best)return;const fx=sx(best.x),fy=sy(best.y),k=1-age/.6;
+  if(!best)return;const fx=sx(best.x),fy=sy(best.y),k=1-age/.9;
   ctx.save();ctx.globalCompositeOperation='lighter';
   for(let i=0;i<8;i++){const u=((i*.618+world.time*1.6)%1+1)%1,bend=Math.sin(i*2.3)*28*scale*(1-u)*u*4,
     x=fx+(px-fx)*u-(py-fy)/Math.max(1,Math.hypot(px-fx,py-fy))*bend,y=fy+(py-fy)*u+(px-fx)/Math.max(1,Math.hypot(px-fx,py-fy))*bend;
