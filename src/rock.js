@@ -1397,6 +1397,12 @@ function rockHazardReveal(h,draw,t){
 // drop, not a whirlpool, and nothing on this wall is light to be bent, so the swirl is not drawn: the
 // pull is told by the soot and the grit going over the lip.
 function rockLenses(){}
+// What the wall has to say is cut into it rather than inked on: the charcoal of the groove's shadow a
+// hair below and to the right, and the pale fresh stone on the line itself — the same two passes as the
+// scratch primitive — so a note reads on lit rock and dark alike, where one ink read on neither.
+function rockInscriptionInk(caps){
+  return [{rgb:ink.rock.dark,alpha:caps?.85:.7,dx:.9,dy:1.1},{rgb:ink.rock.kaolin,alpha:caps?.95:.86,dx:0,dy:0}];
+}
 // ---------- The HUD: what the run owes the player, set on the rock in the era's own marks ----------
 // The counts are still owed, and are still exact, but they are cut where a hand in this cave would
 // have cut them: at the head of the wall, in the dark above the flame. The tally is additive, as every
@@ -1503,6 +1509,7 @@ defineHand('rock',{
   runningHead:rockRunningHead,
   chapterReveal:rockChapterReveal,
   flourish:rockFlourish,
+  inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,
   hazardReveal:rockHazardReveal
 });
@@ -1524,6 +1531,7 @@ defineHand('rock',{
 // the Shaft, the Flare and the Draught — since the sky's own Latin never reached a cave wall.
 defineVoice('rock',{
   chartNoun:'cluster',
+  chartVerb:'marked',
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
