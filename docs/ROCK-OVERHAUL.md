@@ -1,11 +1,27 @@
 # Era I · The Rock — overhaul plan
 
-Status: **proposal, awaiting direction.** Nothing here is built. The open forks are marked
-**DECISION** and carry a recommendation; the rest is the work that follows whichever way they fall.
+Status: **direction decided (2026-09-23), nothing built yet.** The four forks below are marked
+**DECIDED**, with the option that was chosen. This is a complete redesign of the era's look, not a
+retune of the current wall.
 
 This is a polish pass on a door that already ships (`src/rock.js`, entered from the frontispiece),
 not a resumption of the postponed eight-era progression. It needs nothing from that plan and adds no
 plumbing toward it.
+
+## Measured against the atlas
+
+The atlas works because it is **a dark ground with crisp, bright line work, drawn live by a hand**:
+navy plate, ivory and gold lines, thin marks, and every one of them seen being drawn. The Rock does
+the opposite. It fills the screen with a bright, busy raster, and its marks are soft blobs, so beside
+the atlas it reads as a texture with a game on top. The redesign takes the atlas's rules across:
+
+| The atlas | The Rock, redesigned |
+|---|---|
+| Navy plate | Near-black rock, seen only where the torch reaches |
+| Ivory line | Kaolin and charcoal line, crisp at phone size |
+| Gold, spent sparingly | Red ochre, spent sparingly |
+| The pen that draws the chart live | The hand that paints the wall live, by the torch it carries |
+| Frame and marginalia | None: the edge of the torchlight is the frame |
 
 ## Where the wall stands today
 
@@ -30,7 +46,7 @@ Flown at 430×932 (the reference sheet) through the opening rows, the frontispie
 
 ## Art
 
-### A1 · Art direction — **DECISION**
+### A1 · Art direction — **DECIDED: (a) torch in the dark**
 
 * **(a) Torchlit painted panel: Lascaux and Chauvet (recommended).** Warm limestone that falls off to
   real black. Ochre and charcoal animals and signs, lit by the torch you carry. It builds on the
@@ -41,7 +57,8 @@ Flown at 430×932 (the reference sheet) through the opening rows, the frontispie
 * (c) Charcoal only, Chauvet style. Pale wall, black line animals. Elegant but monochrome, and it
   gives up the ochre that the currency is named after.
 
-The rest of this plan is written for (a).
+The rest of this plan is written for (a). Because it is a full redesign, the bright full-bleed wall
+goes. Most of the screen is black rock, and the wall bake is only ever seen through the torch.
 
 ### A2 · The torch moves with the hand
 
@@ -118,7 +135,7 @@ unchanged.
 
 ## HUD and screens
 
-### H1 · Numbers — **DECISION**
+### H1 · Numbers — **DECIDED: (a) tallies with a small numeral**
 
 * **(a) Tallies with a small curator's numeral (recommended).** Score is scratched as tally notches
   bundled in fives on a strip of bone or stone at the top. Past 50, bundles collapse into dots, the
@@ -168,17 +185,34 @@ The simulation is shared. Everything in G1 is render-side and needs no change to
 * Constellations as animal hunts (A5). The mechanics are unchanged, but finishing one now *paints an
   animal*, a reward the player can see.
 
-### G2 · Era-only mechanics — **DECISION**
+### G2 · Era-only mechanics — **DECIDED: (b) relighting**
 
 * **(a) None beyond G1 (recommended for the first pass).** Ship the look, then measure.
 * (b) **Relighting:** fire hazards double as places to relight. Skimming a Flare's outer field tops
   up the torch, but its core still kills. This needs a simulation flag, gated exactly like Newton
   mode's (the flag is inert elsewhere, and `verify.mjs` proves both) so the atlas's numbers never
   move.
+
+Relighting, as it will be built:
+
+* The torch's fuel **is** the existing ochre (ink) charge. No second resource is added.
+* While the traveller is inside a Flare's field, but outside its lethal core, the charge refills at a
+  fixed rate. The core still kills exactly as it does now. Flying close to fire becomes a
+  risk-for-reward choice, just as slingshot stars are.
+* The field refills only while the traveller is in flight, so the rule cannot be farmed from an orbit.
+* It is a world option, off by default and set only by this era, in the same way `newton` is gated.
+  `verify.mjs` proves it is inert when off: the atlas's 60-seed routes give identical results. It
+  also proves that it refills inside the band, never inside the core, and that `replayRun()`
+  reproduces a run that used it.
+* The Flare is drawn as the fire it now is (A6), and the guide shows the refill band, so the rule is
+  visible before it matters.
+* Open to tuning with `scripts/probe.mjs`: the refill rate, and whether Flares need to appear a little
+  more often in this era.
+
 * (c) **The torch as a hard sight limit:** rows past the torch's reach are not generated visibly
   until approached. This is riskier, because it conflicts with "never withhold a ring".
 
-### G3 · A cave of your own — **DECISION**
+### G3 · A cave of your own — **DECIDED: yes**
 
 Each run leaves a mark on a persistent panel shown on the era's frontispiece: your hand stencil for
 every run, and an animal for every constellation ever finished. Over many runs you paint your own
@@ -191,18 +225,21 @@ back) or **no**.
 
 ## Order of work
 
-Each step is one PR, checked at 430×932 and passing `npm test`:
+Each step is one PR, checked at 430×932 and passing `npm test`. The direction is proven on one frame
+before anything else is built on it:
 
-1. **Words** (H3) plus the end and pause leaves (H4). The cheapest, and it removes every atlas leak.
-2. **Light and wall** (A2, A3 without the palimpsest, A8). The biggest visual jump.
+0. **Look test.** Light and wall only (A2, A3 without the palimpsest): the black cave and the moving
+   torch, with today's marks left in place. Screenshots go back for sign-off before step 1.
+1. **Words** (H3) plus the end and pause leaves (H4). This removes every atlas leak.
+2. **The forgetting** (A8).
 3. **Bodies, ring and traveller** (A4, A7), with guide and trail in the era's hand.
 4. **HUD** (H1, H2).
 5. **Palimpsest and animals** (A3 palimpsest, A5). This is the most drawing work: about twelve
    animal paths plus the sign vocabulary.
 6. **Dangers, particles and sound** (A6, A9).
-7. **Frontispiece** (H4), then the G2 and G3 options if chosen.
+7. **Frontispiece** (H4) and **your cave** (G3).
+8. **Relighting** (G2). It comes last because it is the only step that touches `simulation.js`.
 
 Tests to add along the way, all in `verify.mjs`: the rock voice covers every key the atlas voice
 has; every catalogue figure has a rock animal; the torch pass never drops a ring's alpha below a
-floor; `orbit.rock.v1` round-trips and migrates if G3 is chosen; and G2's flag is inert outside
-the era if G2 is chosen.
+floor; `orbit.rock.v1` round-trips and migrates; and the relighting flag is inert outside the era.
