@@ -1255,26 +1255,70 @@ function ceilingDrawHorizon(gy,th,passed){
 const bw0=()=>ceilingNutBandWidth()+3;
 // Dawn. The run that comes through all twelve gates ends not in the dark but in the one thing the whole
 // night was for: the sun rising out of the east, pushed up by Khepri, the scarab of the becoming sun, as
-// the sky warms from lapis to gold. It plays over the few seconds the end leaf waits for (src/ui.js), on
+// the sky warms from lapis to gold. It is drawn the way the New Kingdom's goldsmiths set the same scene
+// on a pectoral: a lapis scarab closed in gold, falcon wings spread from its shoulders in bands of
+// lapis, carnelian, turquoise and gold, the disc raised in its forelegs and the shen ring, the circle of
+// eternity, held in its hind legs. It plays over the few seconds the end leaf waits for (src/ui.js), on
 // the dead-state clock, so a pause holds it and reduced motion shows its last frame at once.
+function ceilingSunriseWing(g,dir,span,s,e){
+  // One wing: four bands of feathers swept out and a little up from the shoulder, as the goldsmiths set
+  // them: the short coverts in gold along the top, then carnelian and turquoise, and the long lapis
+  // flight feathers lowest and longest; each band is cut into feathers by fine gold lines. Drawn from
+  // the bottom band up, so each shorter band lies over the root of the longer one beneath it.
+  const P=CEILING_PALETTE,rows=[[P.water,10.5,1],[P.faience,7,.8],[P.red,3.5,.62],[P.yellow,0,.44]];
+  for(const [col,dy,len] of rows){
+    const L=span*len,y0=-4*s+dy*s,thick=(dy>10?5.6:4.4)*s,tip=[dir*(12*s+L),y0-7*s*e-dy*.15*s];
+    g.beginPath();g.moveTo(dir*10*s,y0-thick*.5);
+    g.quadraticCurveTo(dir*(12*s+L*.55),y0-thick*.9-6*s*e,tip[0],tip[1]);
+    g.quadraticCurveTo(dir*(12*s+L*.55),y0+thick*.7-3*s*e,dir*10*s,y0+thick*.6);g.closePath();
+    g.fillStyle=col;g.fill();g.strokeStyle=P.yellow;g.lineWidth=Math.max(.8,.9*s);g.stroke();
+    g.save();g.clip();g.strokeStyle='rgba(227,180,71,.7)';g.lineWidth=Math.max(.5,.5*s);
+    for(let k=1;k<Math.max(4,Math.round(L/(5*s)));k++){const x=dir*(10*s+k*5*s);g.beginPath();g.moveTo(x,y0-thick*1.6);g.lineTo(x+dir*2*s,y0+thick*1.2);g.stroke();}
+    g.restore();
+  }
+}
 function ceilingDrawSunrise(){
   if(!world||!world.won)return;
-  const P=CEILING_PALETTE,t=reducedMotion?1:clamp(world.player.deadTime/2.6,0,1),e=1-Math.pow(1-t,3);
-  const g=ctx.createLinearGradient(0,H,0,0);g.addColorStop(0,`rgba(227,180,71,${.55*e})`);g.addColorStop(.55,`rgba(194,74,47,${.28*e})`);g.addColorStop(1,'rgba(21,36,87,0)');
-  ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  const r=Math.min(W*.12,H*.065),cx=W/2,cy=lerp(H*.86,H*.4,e);
-  // Rays struck off the disc, lengthening as it clears the horizon.
-  ctx.strokeStyle=`rgba(227,180,71,${.7*e})`;ctx.lineWidth=2;ctx.lineCap='round';
-  for(let k=0;k<16;k++){const a=k/16*TAU,l=r*(1.35+.55*e*(k%2?.6:1));ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r*1.18,cy+Math.sin(a)*r*1.18);ctx.lineTo(cx+Math.cos(a)*l,cy+Math.sin(a)*l);ctx.stroke();}
-  ctx.fillStyle=`rgb(${mixRgb([194,74,47],[240,196,86],e)})`;ctx.strokeStyle=P.ink;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.fill();ctx.stroke();
-  // Khepri beneath it, forelegs raised to the disc: an oval body split by the wing-cases, the broad
-  // clypeus of the head, and three legs a side, in faience blue closed in ink.
-  const s=r/30;ctx.translate(cx,cy+r+17*s);ctx.lineJoin='round';
-  ctx.strokeStyle=P.ink;ctx.lineWidth=Math.max(1.2,1.5*s);
-  for(const d of [-1,1]){ctx.beginPath();ctx.moveTo(d*6*s,-8*s);ctx.lineTo(d*13*s,-14*s);ctx.lineTo(d*9*s,-22*s);ctx.stroke();ctx.beginPath();ctx.moveTo(d*9*s,2*s);ctx.lineTo(d*19*s,4*s);ctx.lineTo(d*22*s,12*s);ctx.stroke();ctx.beginPath();ctx.moveTo(d*8*s,10*s);ctx.lineTo(d*16*s,18*s);ctx.lineTo(d*15*s,26*s);ctx.stroke();}
-  ctx.fillStyle=P.faience;ctx.beginPath();ctx.ellipse(0,-9*s,7*s,4.5*s,0,0,TAU);ctx.fill();ctx.stroke();
-  ctx.beginPath();ctx.ellipse(0,6*s,11*s,14*s,0,0,TAU);ctx.fill();ctx.stroke();
-  ctx.beginPath();ctx.moveTo(0,-7*s);ctx.lineTo(0,19*s);ctx.stroke();ctx.beginPath();ctx.moveTo(-10*s,-2*s);ctx.quadraticCurveTo(0,1*s,10*s,-2*s);ctx.stroke();
+  const P=CEILING_PALETTE,time=world.player.deadTime,t=reducedMotion?1:clamp(time/2.6,0,1),e=1-Math.pow(1-t,3);
+  const sky=ctx.createLinearGradient(0,H,0,0);sky.addColorStop(0,`rgba(240,196,86,${.6*e})`);sky.addColorStop(.5,`rgba(194,74,47,${.3*e})`);sky.addColorStop(1,'rgba(21,36,87,0)');
+  ctx.save();ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  const s=Math.min(W/330,H/700),R=21*s,cx=W/2,cy=lerp(H*.9,H*.33,e);
+  // The disc: a soft light around it, then rays cut as long wedges turning slowly on the dead clock, then
+  // the disc itself in carnelian warming to gold, closed in a gold rim with a fine ink line inside it.
+  const glow=ctx.createRadialGradient(cx,cy,R*.6,cx,cy,R*3.4);glow.addColorStop(0,`rgba(255,214,120,${.45*e})`);glow.addColorStop(1,'rgba(255,214,120,0)');
+  ctx.fillStyle=glow;ctx.fillRect(cx-R*3.4,cy-R*3.4,R*6.8,R*6.8);
+  const turn=reducedMotion?0:time*.12;ctx.fillStyle=`rgba(240,196,86,${.55*e})`;
+  for(let k=0;k<24;k++){const a=turn+k/24*TAU,r0=R*1.28,r1=R*(k%2?1.55+.25*e:1.75+.65*e),w=k%2?.05:.07;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a-w)*r0,cy+Math.sin(a-w)*r0);ctx.lineTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a+w)*r0,cy+Math.sin(a+w)*r0);ctx.closePath();ctx.fill();}
+  ctx.fillStyle=`rgb(${mixRgb([194,74,47],[236,178,64],e)})`;ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.fill();
+  ctx.strokeStyle=P.yellow;ctx.lineWidth=2.6*s;ctx.stroke();ctx.strokeStyle='rgba(10,16,36,.55)';ctx.lineWidth=.8*s;ctx.beginPath();ctx.arc(cx,cy,R-1.9*s,0,TAU);ctx.stroke();
+  // Khepri, set under the disc so the forelegs meet its rim.
+  ctx.translate(cx,cy+R+38*s);ctx.lineJoin='round';ctx.lineCap='round';
+  ceilingSunriseWing(ctx,-1,82*s*(.35+.65*e),s,e);ceilingSunriseWing(ctx,1,82*s*(.35+.65*e),s,e);
+  const gold=P.yellow,lapis='#23428c',lw=Math.max(1,1.3*s);
+  // Legs first, so the body closes over their roots: forelegs up to the disc, mid legs out, hind legs
+  // down round the shen ring; each a jointed gold line with the tibia's teeth ticked along its edge.
+  const leg=(pts,teeth)=>{ctx.strokeStyle=gold;ctx.lineWidth=2.2*s;ctx.beginPath();pts.forEach(([x,y],k)=>k?ctx.lineTo(x*s,y*s):ctx.moveTo(x*s,y*s));ctx.stroke();
+    if(teeth){const [x0,y0]=pts.at(-2),[x1,y1]=pts.at(-1),n=Math.hypot(x1-x0,y1-y0),nx=-(y1-y0)/n,ny=(x1-x0)/n;ctx.lineWidth=1*s;
+      for(let k=1;k<4;k++){const u=k/4,x=x0+(x1-x0)*u,y=y0+(y1-y0)*u;ctx.beginPath();ctx.moveTo(x*s,y*s);ctx.lineTo((x+nx*2.2)*s,(y+ny*2.2)*s);ctx.stroke();}}};
+  for(const d of [-1,1]){
+    leg([[d*9,-18],[d*18,-28],[d*8,-37.5]],true);
+    leg([[d*12,-4],[d*22,0],[d*25,9]],true);
+    leg([[d*11,16],[d*17,26],[d*8,36]],true);
+  }
+  // The shen ring in the hind legs.
+  ctx.strokeStyle=gold;ctx.lineWidth=2.4*s;ctx.beginPath();ctx.arc(0,41*s,6*s,0,TAU);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-8*s,48.5*s);ctx.lineTo(8*s,48.5*s);ctx.stroke();
+  const shape=(draw,fill)=>{ctx.beginPath();draw();ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=gold;ctx.lineWidth=lw;ctx.stroke();};
+  // The wing-cases, the broad pronotum and the head with its toothed clypeus, each its own cell of lapis.
+  shape(()=>{ctx.moveTo(-13.5*s,-5*s);ctx.bezierCurveTo(-16*s,10*s,-10*s,26*s,0,27*s);ctx.bezierCurveTo(10*s,26*s,16*s,10*s,13.5*s,-5*s);},lapis);
+  ctx.strokeStyle=gold;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(0,-5*s);ctx.lineTo(0,26.5*s);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-11*s,-3*s);ctx.quadraticCurveTo(-6*s,-.5*s,-1.2*s,-3*s);ctx.moveTo(11*s,-3*s);ctx.quadraticCurveTo(6*s,-.5*s,1.2*s,-3*s);ctx.stroke();
+  shape(()=>{ctx.moveTo(-13*s,-5*s);ctx.quadraticCurveTo(-15*s,-19*s,0,-20*s);ctx.quadraticCurveTo(15*s,-19*s,13*s,-5*s);},lapis);
+  shape(()=>{ctx.moveTo(-8*s,-19.5*s);for(let k=0;k<=10;k++){const a=Math.PI+k/10*Math.PI,r=k%2?10.4:8.4;ctx.lineTo(Math.cos(a)*r*s,-20*s+Math.sin(a)*r*.9*s);}ctx.lineTo(8*s,-19.5*s);},'#1e3c80');
+  // A lighter sheen on each cell, set as the goldsmith would set a paler stone, not as a painted highlight.
+  ctx.fillStyle='rgba(110,176,214,.28)';ctx.beginPath();ctx.ellipse(-6*s,6*s,3*s,9*s,.15,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(6*s,6*s,3*s,9*s,-.15,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.ellipse(0,-13*s,7*s,3*s,0,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(0,-24*s,4*s,2*s,0,0,TAU);ctx.fill();
   ctx.restore();
 }
 // The route is a sequence of brush dabs, not a stroke — 02-ceiling.md says so outright, and the aim
