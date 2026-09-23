@@ -272,24 +272,11 @@ Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`:
 | Niches, hole polish, live torch shading (new) | Done |
 | Face rebake speed (≈70 ms → ≈15 ms) | Done |
 
-Left for this era, in the planned order:
-
-1. **Words and leaves** (H3, H4): every atlas string still on this wall — "LEFT THE STAR CHART",
-   "pricked line", TIRO/ADEPTUS/MAGISTER, "PRESSURE SET", "PERFECT · MOMENTUM KEPT", ANGULUS,
-   "SPEED/FLOW" labels, "no clusters traced", "RETURN TO THE ATLAS" — through `defineVoice('rock')`;
-   the end leaf and pause leaf as a lit slab of rock rather than the atlas's dark box.
-2. **The forgetting** (A8): still the zig-zag polygon at the foot.
-3. **The rest of the traveller's hand** (A7): the crayon itself, the aim guide (still the atlas's
-   chevrons), the wet trail and the dried route (still the quill), and the pickups' attested marks.
-4. **HUD** (H1, H2): tally score with a small numeral, the torch-fuel lamp for ochre, flow as
-   handprints, "deepest" as a hand stencil on the wall; drop the `ORBIT` wordmark.
-5. **Palimpsest and animals** (A3, A5): the faded older paintings on the wall, and the twelve
-   constellations as animals.
-6. **Flare and Draught, particles, sound** (A6, A9): the Flare as real fire, the Draught as smoke and
-   flutings, torch sparks and dust, the five cave sounds.
-7. **Frontispiece and your cave** (H4, G3).
-8. **Relighting at the Flare** (G2), behind its own era-only simulation flag like the chasm's.
-9. **Level B lighting** — see below.
+Everything in the plan is now built (as of 2026-09-23): words and leaves, the forgetting, the crayon
+and guide, the tally HUD, the older hands and the animals, the Flare as fire and the Draught as smoke,
+particles, the five cave sounds, the pickups as cave marks, the breathing torch and capture stencils,
+the title mark, your cave (`orbit.rock.v1`), relighting at the Flare, and a small layer of lore
+(opening and closing lines, chamber lines, animal notes, fact-checked). What remains is level B below.
 
 ## Later: a shared relit surface (WebGL)
 
