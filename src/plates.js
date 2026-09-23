@@ -635,9 +635,13 @@ function regionInk(region){
 }
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
-// The sheet itself, as a seamless tile: laid wires every 1.5 px, heavier chain lines every 27 px, and
-// short fibres. It is multiplied over the finished frame on paper so every stroke breaks across the laid
-// lines instead of lying on top of them; at night the same tile is screened back at a whisper.
+// The sheet itself, as a seamless tile: laid wires every 1.5 px, and short fibres. It is multiplied over
+// the finished frame on paper so every stroke breaks across the laid lines instead of lying on top of
+// them; at night the same tile is screened back at a whisper. Chain lines are not this tile's job: they
+// sit far enough apart (paintPaperBackdrop()'s job, in src/backdrop.js) that a repeating 120px tile would
+// have to pick one fixed pitch for the whole sheet, and that mechanical repeat is exactly what beat
+// against the backdrop's own, wider-set chain lines as visible full-height striping — two rulings fighting
+// each other where paper only ever shows one.
 // Both are held as small maps rather than as one slot apiece. The key already named the plate, so a
 // single slot was correct for as long as only one plate was ever on the press at a time — but these two
 // are on the per-frame path, and a frame carrying two eras at once through one slot is a full rebuild
@@ -650,12 +654,9 @@ function laidPaper(){
   // (less pulp settled where the wire itself held it back), packed close (8-12 to the centimetre — a
   // wire roughly every 3-4 CSS px at the reduction "Target viewport" in CLAUDE.md judges against),
   // uneven in spacing and strength, and slightly wavering — never crisp, and under an engraving's ink
-  // barely perceptible. Chain lines sit far apart by comparison, about 25mm (roughly 100 CSS px on this
-  // sheet) with a soft shadow of pulp either side rather than a hard stroke, and are themselves faintly
-  // bowed. One chain line per tile keeps the tile seamless at its repeat without needing tw to divide a
-  // pitch, and the whole set of wire rows is chosen once, jittered, and drawn as a closed set across
-  // [0,th) so the tile still wraps cleanly top to bottom. Night carries none of this: a heavily inked
-  // ground would not show the mould's wires at all, so night keeps only the loose fibre below.
+  // barely perceptible. The whole set of wire rows is chosen once, jittered, and drawn as a closed set
+  // across [0,th) so the tile still wraps cleanly top to bottom. Night carries none of this: a heavily
+  // inked ground would not show the mould's wires at all, so night keeps only the loose fibre below.
   const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=120,th=96;
   const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
   g.scale(unit,unit);
@@ -674,12 +675,6 @@ function laidPaper(){
       g.stroke();
       if(rng()<.35){g.strokeStyle=dark(.035+rng()*.045);g.lineWidth=.3;g.beginPath();g.moveTo(0,y0);g.lineTo(tw,y0);g.stroke();}
     }
-    const cx=tw*.5+(rng()-.5)*4,bow=(rng()-.5)*3;
-    g.strokeStyle=light(.2);g.lineWidth=4.5;
-    g.beginPath();g.moveTo(cx-1.6,0);g.quadraticCurveTo(cx-1.6+bow,th/2,cx-1.6,th);g.stroke();
-    g.beginPath();g.moveTo(cx+1.6,0);g.quadraticCurveTo(cx+1.6+bow,th/2,cx+1.6,th);g.stroke();
-    g.strokeStyle=dark(.08);g.lineWidth=1;
-    g.beginPath();g.moveTo(cx,0);g.quadraticCurveTo(cx+bow,th/2,cx,th);g.stroke();
   }
   for(let i=0;i<90;i++){
     const x=rng()*tw,y=rng()*th,a=rng()*TAU,l=1.5+rng()*5;

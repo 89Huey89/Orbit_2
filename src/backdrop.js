@@ -120,12 +120,16 @@ function paintPaperBackdrop(){
   // ledger-paper read this pass used to leave. What belongs to the sheet itself, at full size rather than
   // a repeating tile, is the wide-set chain lines: real ones fall roughly every 25mm, which on this sheet
   // is about 90-110 CSS px, each a soft shadow of pulp either side of a faint, slightly bowed line —
-  // never the hard, dead-straight stroke a ledger rules.
+  // never the hard, dead-straight stroke a ledger rules. This is the sheet's only chain-line ruling — the
+  // laid tile itself carries none, on purpose: a repeating 120px tile can only ever hold one fixed pitch,
+  // and set beside this system's own varying one that beat into full-height striping, the very structure
+  // this pass exists to remove. Kept to about half the ink a mould shadow would otherwise want, so at the
+  // reference viewport it reads as barely perceptible, not as a second ruling.
   for(let x=rng()*30+20;x<W;x+=90+rng()*22){
     const bow=(rng()-.5)*5,wob=(y)=>bow*Math.sin(y/H*Math.PI)+Math.sin(y*.013+x)*.6;
-    g.strokeStyle='rgba(112,86,52,.05)';g.lineWidth=3.4;
+    g.strokeStyle='rgba(112,86,52,.025)';g.lineWidth=3.4;
     g.beginPath();g.moveTo(x,0);for(let y=0;y<=H;y+=40)g.lineTo(x+wob(y),y);g.stroke();
-    g.strokeStyle='rgba(96,68,38,.09)';g.lineWidth=.7;
+    g.strokeStyle='rgba(96,68,38,.045)';g.lineWidth=.7;
     g.beginPath();g.moveTo(x,0);for(let y=0;y<=H;y+=40)g.lineTo(x+wob(y),y);g.stroke();
   }
   for(let i=0;i<520;i++){
