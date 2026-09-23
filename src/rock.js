@@ -928,6 +928,34 @@ function rockReleaseMarks(n,p,x,y){
   ctx.restore();
 }
 
+// ---------- The gifts: what the atlas calls charges and wells, as the marks this wall already knew ----------
+// Each is a mark someone left here before, and is visible from the moment it comes into the light — a
+// gift, not a light to be watched — so it is drawn whole and at once, and taken, dimmed, once used:
+// the shield is Newgrange's triple spiral, pecked; the reflector a hand stencil turned the other way;
+// the dawn charge an ember laid in a hearth-ring of stones; the inkwell a raw nodule of ochre, the
+// thing itself, lying in a hollow.
+const ROCK_GIFTS={shield:1,reflector:1,dawn:1,inkwell:1};
+function rockGift(n,x,y,r,used){
+  const k=used?.35:1,t=reducedMotion?0:world.time,pulse=used?0:.5+.5*Math.sin(t*2.2+(n.seed%7));
+  ctx.save();
+  // A faint warm halo, so a gift reads as something offered and not only as a mark.
+  if(!used){ctx.globalCompositeOperation='lighter';const hg=ctx.createRadialGradient(x,y,0,x,y,r*1.2);hg.addColorStop(0,`rgba(${ink.rock.ember},${(.12+.08*pulse).toFixed(3)})`);hg.addColorStop(1,`rgba(${ink.rock.ember},0)`);ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,y,r*1.2,0,TAU);ctx.fill();ctx.globalCompositeOperation='source-over';}
+  if(n.type==='shield'){const R=r*.42;for(let s=0;s<3;s++){const a=s/3*TAU-Math.PI/2;rockPeckedSpiral(ctx,x+Math.cos(a)*R*.9,y+Math.sin(a)*R*.9,R*.85,2.1,.95*k,s*2.1);}}
+  else if(n.type==='reflector'){for(let i=0;i<3;i++)rockHand(x,y,r*1.05,ink.rock.redOchre,k,true);}
+  else if(n.type==='dawn'){for(let i=0;i<9;i++){const a=i/9*TAU;rockPeck(ctx,x+Math.cos(a)*r*.62,y+Math.sin(a)*r*.62,r*.09,.9*k);}
+    ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);rockGlint(ctx,r/scale*.16,k*(.7+.3*pulse),n.seed);ctx.restore();}
+  else{
+    // A lump of haematite: faceted, not round, dark red-brown, its broken faces catching the flame.
+    const rnd=seeded(n.seed^0x0c4e||3),m=7,pts=[];for(let i=0;i<m;i++){const a=(i+(rnd()-.5)*.5)/m*TAU;pts.push([x+Math.cos(a)*r*(.38+rnd()*.14),y+Math.sin(a)*r*(.3+rnd()*.12)]);}
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.closePath();
+    const lg=ctx.createLinearGradient(x-r*.4,y-r*.35,x+r*.3,y+r*.35);lg.addColorStop(0,`rgba(${ink.rock.redOchre},${k})`);lg.addColorStop(1,`rgba(70,24,12,${k})`);ctx.fillStyle=lg;ctx.fill();
+    ctx.strokeStyle=`rgba(30,10,4,${(.7*k).toFixed(3)})`;ctx.lineWidth=1.1;ctx.stroke();
+    for(let i=0;i<3;i++){const a=pts[i],b=pts[i+1];ctx.fillStyle=`rgba(255,190,140,${((.22+.1*i)*k).toFixed(3)})`;ctx.beginPath();ctx.moveTo(x-r*.05,y-r*.05);ctx.lineTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.closePath();ctx.fill();}
+    // A smear beside it where someone has already tried it on the rock.
+    rockDot(ctx,x+r*.62,y+r*.22,r*.12,ink.rock.redOchre,.7*k,n.seed);rockDot(ctx,x+r*.78,y+r*.16,r*.09,ink.rock.redOchre,.55*k,n.seed+1);}
+  ctx.restore();
+}
+
 // ---------- The node: ring, body or phenomenon, and the release marks while it is held ----------
 function rockNode(n,aim){
   const pen=revealNode(n);if(pen.t<=0)return;
@@ -939,7 +967,8 @@ function rockNode(n,aim){
   ctx.save();
   const relief=rockRelief(n,x,y,bodyR);
   rockRing(n,x,y,cap,state);
-  if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR,tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
+  if(ROCK_GIFTS[n.type])rockGift(n,x,y,bodyR,used);
+  else if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR,tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
   else rockPhenomenon(n,x,y,bodyR);
   if(active)rockReleaseMarks(n,p,x,y);
   ctx.restore();
