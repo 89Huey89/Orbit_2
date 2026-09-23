@@ -1820,6 +1820,23 @@ function rockHudLeaf(){
 function rockRunningHead(){}
 function rockChapterReveal(){}
 
+// ---------- The title: the era's mark, untranslated ----------
+// The wall has no word for its own name, so its title is a mark, not a word: a ring of red dots pressed
+// round a pecked spiral, the dot-ring of the orbit and the spiral of the last chamber in one sign, with
+// two hands blown beside it as whoever made it signed it. It stands on the frontispiece alone, below
+// the opening lines and above the three lights, and is gone once the hand starts.
+let rockTitleFade=1;
+function rockTitleMark(){
+  const ready=world.state==='ready';rockTitleFade=ready?1:Math.max(0,rockTitleFade-.03);if(rockTitleFade<=0)return;
+  const x=W/2,y=H*.265,R=Math.min(W*.1,46*scale),a=rockTitleFade;
+  ctx.save();
+  for(let i=0;i<32;i++){const t=i/32*TAU;for(let k=0;k<2;k++)rockDot(ctx,x+Math.cos(t)*R,y+Math.sin(t)*R,4.2*scale,ink.rock.redOchre,a,i+700);}
+  // The spiral is pale: fresh stone struck out of the darkened face.
+  for(let t=0,i=0;t<=1;t+=1/70,i++){const q=t*2.6*TAU+.3,r=R*.72*t;rockDot(ctx,x+Math.cos(q)*r,y+Math.sin(q)*r,1.9*scale,ink.rock.kaolin,a*.9,i+40,true);}
+  rockHand(x-R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,false);rockHand(x+R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,true);
+  ctx.restore();
+}
+
 // ---------- The ground: the wall, lit by one torch, and nothing else behind the marks ----------
 function rockAtmosphere(){
   plateShift.x=0;plateShift.y=0;
@@ -1827,6 +1844,7 @@ function rockAtmosphere(){
   rockBuildLight();rockTorchPass();
   // Laid after the torch's full fall, so the hand just pressed is as legible as the marks the run makes.
   rockPaintStencils();
+  rockTitleMark();
 }
 
 defineHand('rock',{
