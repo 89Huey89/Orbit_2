@@ -1228,6 +1228,49 @@ function rockChasm(h){
   ctx.restore();
 }
 
+// ---------- The trail: a finger of wet ochre dragged across the stone ----------
+// Not a row of dots and not a pen's line: the mark a loaded finger leaves as it is drawn along the
+// rock — one continuous stroke, widest and wettest just behind the hand, drying and thinning back along
+// the way it came until it is a dry scrape and gone. It is built as one ribbon (a polygon whose two
+// sides are the path offset by the stroke's half-width at every sample), so it never breaks into beads
+// where pieces overlap, then laid into the wall by multiplying, so the rock's grain runs through it,
+// with a thin darker ridge along one edge where the pigment was pushed.
+function rockTrail(){
+  const tr=world.trail;if(tr.length<2)return;
+  const pts=[];for(let i=0;i<tr.length;i++){const s=tr[i],life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life<=0)continue;pts.push({x:sx(s.x),y:sy(s.y),life});}
+  const p=world.player;if(world.state!=='dead')pts.push({x:sx(p.x),y:sy(p.y),life:1});
+  if(pts.length<2)return;
+  const L=[],R=[],E=[];
+  for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;
+    const t=pts[i].life,w=(1.2+3.6*t*t)*scale*(.85+.3*Math.sin(i*.7)),q=pts[i];L.push([q.x+nx*w,q.y+ny*w]);R.push([q.x-nx*w,q.y-ny*w]);E.push([q.x+nx*w*.8,q.y+ny*w*.8,t]);}
+  const ribbon=()=>{ctx.beginPath();ctx.moveTo(L[0][0],L[0][1]);for(let i=1;i<L.length;i++)ctx.lineTo(L[i][0],L[i][1]);for(let i=R.length-1;i>=0;i--)ctx.lineTo(R[i][0],R[i][1]);ctx.closePath();};
+  const head=pts[pts.length-1],tail=pts[0],gr=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
+  gr.addColorStop(0,`rgba(${ink.rock.ochreDeep},0)`);gr.addColorStop(.5,`rgba(${ink.rock.ochre},.45)`);gr.addColorStop(1,`rgba(${ink.rock.redOchre},.85)`);
+  ctx.save();ctx.globalCompositeOperation='multiply';ribbon();ctx.fillStyle=gr;ctx.fill();
+  // The wet part catches the flame a little, where it is still fresh.
+  ctx.globalCompositeOperation='source-over';const gw=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
+  gw.addColorStop(0,`rgba(${ink.rock.ochre},0)`);gw.addColorStop(.7,`rgba(${ink.rock.ochre},.08)`);gw.addColorStop(1,`rgba(${ink.rock.ember},.28)`);ribbon();ctx.fillStyle=gw;ctx.fill();
+  // The ridge the finger pushed up along one side.
+  ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=Math.max(.7,.9*scale);
+  const gr2=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);gr2.addColorStop(0,`rgba(${ink.rock.charcoal},0)`);gr2.addColorStop(1,`rgba(${ink.rock.charcoal},.4)`);
+  ctx.strokeStyle=gr2;ctx.beginPath();ctx.moveTo(E[0][0],E[0][1]);for(let i=1;i<E.length;i++)ctx.lineTo(E[i][0],E[i][1]);ctx.stroke();
+  ctx.restore();
+}
+
+// The route already flown, once the finger's ochre has dried: a thin, dry scrape of it along the whole
+// way, laid into the rock by multiplying and breaking where the stone's tooth lifted the pigment — read
+// off the path's own length, so it breaks in the same places every frame and scrolls with the wall.
+function rockInkPath(){
+  const P=world.inkPath;if(P.length<2)return;
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle=`rgba(${ink.rock.ochreDeep},.34)`;ctx.lineWidth=Math.max(1,2.2*scale);
+  let d=0,on=true;ctx.beginPath();ctx.moveTo(sx(P[0].x),sy(P[0].y));
+  for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];d+=Math.hypot(b.x-a.x,b.y-a.y);
+    const next=rockWorldNoise(d,0,14,(world.seed>>>0)^0x71)>.28;
+    if(next&&!on)ctx.moveTo(sx(a.x),sy(a.y));if(next)ctx.lineTo(sx(b.x),sy(b.y));on=next;}
+  ctx.stroke();ctx.restore();
+}
+
 // ---------- The traveller: not the crayon, the point on it actually touching the wall ----------
 // A lump of ground haematite worked to a blunt contact point, held point-first — no vane, no
 // aerodynamic taper, because nothing about mined stone needs to look like it is flying. Baked once,
@@ -1274,12 +1317,6 @@ function rockPlayer(){
   if(world.state==='dead')return;
   const p=world.player,x=sx(p.x),y=sy(p.y),ang=Math.atan2(p.vy,p.vx);
   ctx.save();
-  // A short trail of fading ember dabs, sampled off the same shared trail every other era's own
-  // traveller mark rides, so the era's tail keeps whatever cadence the rest of the chart already keeps.
-  for(let i=0;i<world.trail.length;i++){
-    const s=world.trail[i],age=world.time-s.time,life=clamp(1-age/TRAIL_LIFE,0,1);if(life<=0)continue;
-    rockDab(ctx,sx(s.x),sy(s.y),(1.6+2*life)*scale,ink.rock.ember,.35*life,i+7);
-  }
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
@@ -1662,6 +1699,8 @@ defineHand('rock',{
   runningHead:rockRunningHead,
   chapterReveal:rockChapterReveal,
   flourish:rockFlourish,
+  trail:rockTrail,
+  inkPath:rockInkPath,
   inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,
   hazardReveal:rockHazardReveal
