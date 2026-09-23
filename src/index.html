@@ -230,6 +230,16 @@
     #game[data-era="2"] #score{padding:1px 22px 5px}
     #game[data-era="2"] #best{padding:0 13px 2px}
     #game[data-era="2"] #score::after,#game[data-era="2"] #best::after{content:'';position:absolute;right:-4px;top:24%;height:52%;border-right:1.4px solid #efe2c4}
+    /* The canvas cartouche is the score now (a separate painter's own HUD, drawn over #sky), so this
+       DOM account steps down: still in the grid, still on the accessibility tree, just cut from the
+       eye. visibility:hidden would take it off that tree along with the pixels, so the box is clipped
+       instead — its footprint survives untouched, which is what keeps #pace/#flow/#ink from riding up
+       into the space it used to fill. */
+    #game[data-era="2"] #brand,#game[data-era="2"] #score,#game[data-era="2"] .best-block{clip-path:inset(50%)}
+    /* The cartouche the canvas paints runs to roughly y96 from the top of the sheet; the wall's own
+       watch sat close enough under the old (visible) score to graze it, so era II starts it a little
+       lower. */
+    #game[data-era="2"] .score-block{padding-top:14px}
     /* The reed, charged and drying: the reservoir keeps its length but takes the shape of a brush
        laid on its side, so what drains along it reads as paint rather than as a bar. */
     #game[data-era="2"] #ink{height:7px;width:62px;clip-path:polygon(0 20%,64% 4%,90% 32%,100% 50%,90% 68%,64% 96%,0 80%)}
@@ -256,6 +266,21 @@
     #game[data-era="2"] .colophon::before,#game[data-era="2"] .colophon::after{content:'';position:absolute;left:0;right:0;top:auto;bottom:auto;height:8px;border:0;border-top:1.4px solid #efe2c4;border-bottom:1.4px solid #efe2c4;background:var(--blocks);opacity:1}
     #game[data-era="2"] .colophon::before{top:0}
     #game[data-era="2"] .colophon::after{bottom:0}
+    /* The end leaf alone becomes a stela: the wall's own painted card everywhere else in era II, but
+       here a round-topped slab set against the night the run just fell out of, so the run is judged on
+       the sky rather than on the wall it was copied from. Text and rule colour are re-inked cream/gold
+       over this one leaf — the rest of era II still reads dark-on-parchment, which this does not touch. */
+    #game[data-era="2"] #end{--ink:#efe2c4;--ivory:#efe2c4;--gold:#e3b447;--muted:#c9bb98;--copy:#c9bb98;--best:#efe2c4;--line:rgba(239,226,196,.32)}
+    #game[data-era="2"] #end-colophon{background:rgba(13,24,56,.88);border:1.4px solid #efe2c4;border-radius:50% 50% 0 0/78px 78px 0 0;padding:96px 26px 34px;max-width:min(390px,100%);color:#efe2c4}
+    #game[data-era="2"] #end-colophon::before,#game[data-era="2"] #end-colophon::after{border-top-color:#efe2c4;border-bottom-color:#efe2c4}
+    /* The block rule follows the curve rather than fighting it: pushed down to where the stela's own
+       shoulders have already gone straight, so it reads as a line ruled across the stone, not a bar
+       clipped by its own round top. */
+    #game[data-era="2"] #end-colophon::before{top:78px}
+    #game[data-era="2"] #end-colophon .ceiling-corner{color:#efe2c4;opacity:.7}
+    /* The pediment's own carving: a winged sun disc, the mark every stela's lunette actually carries,
+       standing where the round top leaves room for it before the eyebrow line begins. */
+    .stela-sundisc{display:block;width:min(60vw,240px);height:auto;margin:0 auto 8px}
     #game[data-era="2"] .pause-leaf{padding:26px 22px 24px}
     /* Marginal ornament only, kept off the reading text: kheker reed-bundles crown the title panel as
        the frieze crowns the wall itself; ankh sit at the corners; papyrus/lotus columns flank both
@@ -263,6 +288,13 @@
     #game[data-era="2"] .ceiling-frieze{display:flex;justify-content:center;margin:2px 0 6px;color:#efe2c4;pointer-events:none}
     #game[data-era="2"] .ceiling-frieze svg{width:min(60vw,220px);height:auto}
     #game[data-era="2"] .ceiling-corner{position:absolute;width:14px;height:20px;color:#efe2c4;opacity:.82;pointer-events:none}
+    /* The canvas paints the score in Egyptian numerals now (ceilingPaintEndNumerals, src/ceiling.js);
+       this CSS only sizes and places the canvas it paints onto, letting that function set its own
+       width/height off devicePixelRatio. The Arabic figure survives underneath, shrunk to a gloss the
+       way the frontispiece already glosses a numeral in a second script. */
+    #game[data-era="2"] #end-numerals{display:block;margin:0 auto 4px;max-width:100%;height:auto}
+    #game[data-era="2"] #end-score{font-size:clamp(26px,7vw,34px);opacity:.85;margin:0 0 2px}
+    #game[data-era="2"] #end-score-roman{display:none}
     #game[data-era="2"] .ceiling-corner.cc-tl{top:10px;left:9px}
     #game[data-era="2"] .ceiling-corner.cc-tr{top:10px;right:9px}
     #game[data-era="2"] .ceiling-column{position:absolute;top:50%;width:15px;height:72px;transform:translateY(-50%);color:#efe2c4;opacity:.88;pointer-events:none}
@@ -720,8 +752,9 @@
       <svg class="ceiling-corner cc-tr ceiling-only" viewBox="0 0 15 21" aria-hidden="true" focusable="false"><circle cx="7.5" cy="5.6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10v10M2 15h11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
       <svg class="ceiling-column left ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#efe2c4" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#efe2c4" stroke-width="1.5"/><path d="M5 27h10" stroke="#4c8a57" stroke-width="1.6"/><path d="M2 69h16" stroke="#efe2c4" stroke-width="2"/></svg>
       <svg class="ceiling-column right ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#efe2c4" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#efe2c4" stroke-width="1.5"/><path d="M5 27h10" stroke="#4c8a57" stroke-width="1.6"/><path d="M2 69h16" stroke="#efe2c4" stroke-width="2"/></svg>
+      <svg class="ceiling-only stela-sundisc" viewBox="0 0 120 30" aria-hidden="true" focusable="false"><g stroke="#efe2c4" stroke-width=".7" stroke-linejoin="round"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/><g transform="translate(120 0) scale(-1 1)"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/></g><path d="M52 23q-3-5 1-8M68 23q3-5-1-8" fill="none" stroke="#e3b447" stroke-width="1.2"/><circle cx="60" cy="15" r="7" fill="#c24a2f" stroke="#e3b447" stroke-width="1.2"/></g></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
-      <div class="score-frame"><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
+      <div class="score-frame"><canvas id="end-numerals" class="ceiling-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>

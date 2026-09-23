@@ -302,6 +302,11 @@ function showEnd(){
   const preview=plateOwns('score');deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
   paintLeafFrame('end-leaf-frame',{noRosette:true});
   $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
+  // The Ceiling letters its own score in Egyptian numerals, on the canvas rather than in this DOM
+  // text — ceilingPaintEndNumerals (src/ceiling.js) sizes the canvas for its own devicePixelRatio and
+  // paints it; this call only exists on that plate, and the typeof guard keeps it safe if that
+  // painter's script has not defined it yet.
+  if(eraId()===2&&typeof ceilingPaintEndNumerals==='function')ceilingPaintEndNumerals($('end-numerals'),world.score);
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
