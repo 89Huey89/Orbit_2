@@ -286,13 +286,22 @@ function syncEraChrome(){
 // because a century is not a day of the atlas's own almanac. A plate that has something to wait for
 // before its sheet can be painted — a face still loading, say — names a `ready` painter and it is
 // called last, once there is something on screen to repaint.
+// A face is fetched only once something on the page asks for it, and a canvas asking is not enough in
+// every browser — Safari never loads a face for fillText — so an era whose lettering lives only on the
+// canvas, or in markup that is hidden while it is flown, could letter its whole visit in the fallback.
+// Entering one asks for every face its type tokens name, upright and italic; each arrival repaints
+// the cached art through the loadingdone listener below.
+function loadPlateFaces(){
+  if(!document.fonts||!document.fonts.load||!ink.type)return;
+  for(const stack of new Set(Object.values(ink.type)))for(const style of ['','italic '])document.fonts.load(style+'16px '+stack).catch(()=>{});
+}
 function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
   if(world&&world.state==='playing')return;
   if(!PLATES[name])return;
   eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
-  applyPlate(name);invalidateArt();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
+  applyPlate(name);invalidateArt();loadPlateFaces();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
   const ready=handFor('ready');if(ready)ready();
 }
 function leaveEra(){
@@ -1292,6 +1301,10 @@ $('catalogue-body').addEventListener('click',e=>{
   }
 });
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidateArt();if(world)render(0);}).catch(()=>{});
+// ready settles once, for the faces the opening page asked for; a face first wanted later — an era's,
+// entered long after the page loaded — lands after it, and whatever was baked in the meantime was
+// baked in the fallback. Every later arrival therefore repaints the cached art as well.
+if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{invalidateArt();if(world)render(0);});
 // The switch lives on both the title screen and the run-complete colophon, so a daily run is never a
 // dead end: tapping either one toggles the same setting and the next "tap to try again" honours it.
 function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}

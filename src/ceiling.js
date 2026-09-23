@@ -173,11 +173,16 @@ function ceilingWatch(){return Math.floor(ceilingHour()/3);}
 function invalidateCeilingArt(){ceilingCartoucheKey='';ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
-// Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
+// Entering the era therefore asks for every hand it letters in by name — the signs, the slab upright
+// and italic, and Limelight, whose capitals the cartouche, the running head and the frame are baked in
+// — and repaints the wall when they land. Limelight was left off this list when the capitals moved to
+// it, so a browser slow to decode it (Safari is) baked the fallback into every cached piece of
+// lettering and kept it for the whole visit.
 function ceilingFaceReady(){
   if(!document.fonts||!document.fonts.load)return;
   Promise.all([document.fonts.load('16px "Noto Egyptian Hieroglyphs"',String.fromCodePoint(CEILING_G.w)),
-    document.fonts.load('16px "Zilla Slab"','ORBIT')]).then(()=>{invalidateCeilingArt();if(world)render(0);}).catch(()=>{});
+    document.fonts.load('16px "Zilla Slab"','ORBIT'),document.fonts.load('italic 16px "Zilla Slab"','ORBIT'),
+    document.fonts.load('16px "Limelight"','ORBIT')]).then(()=>{invalidateCeilingArt();if(world)render(0);}).catch(()=>{});
 }
 function ceilingHash(a,b=0){
   let h=Math.imul(((a*1009+b*9176)|0)^0x9e3779b9,2654435761);h^=h>>>15;h=Math.imul(h,2246822519);h^=h>>>13;
