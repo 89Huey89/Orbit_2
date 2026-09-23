@@ -973,16 +973,10 @@ function impressumMetrics(){
 function impressumAnchor(metrics){
   if(!world)return null;
   const min=metrics.inner+metrics.height*.5+4;
-  // Nothing is stamped on the plate yet while the frontispiece leaf is still up, so the cartouche does
-  // not commit to a spot: it is measured live against the leaf's own occupied band (the MORE disclosure
-  // can grow it) rather than the footer alone, and only settles for good — the one-time anchor below —
-  // once a run actually begins and the leaf lifts, which is also when the clearance stops applying.
-  if(world.state==='ready'){
-    const rect=$('start-copy')?.getBoundingClientRect(),top=rect&&Number.isFinite(rect.top)?rect.top:null;
-    const clear=top!==null?top-8:H-footerBand();
-    const max=Math.max(min,Math.min(H-footerBand(),clear)-metrics.height*.5-7);
-    return {x:0,y:world.cameraY+((min<=max?max:(min+max)*.5)-plateShift.y)/scale};
-  }
+  // Nothing is stamped on the plate while the frontispiece leaf is still up: the DOM leaf owns that
+  // whole sheet (the ORBIT cartouche, FOLLOW THE PULL, the HOW TO PLAY rubric, MORE's own disclosure),
+  // and there is no ground left over for a second cartouche to sit on without printing through it. The
+  // anchor only settles — the one-time commit below — once a run actually begins and the leaf lifts.
   if(!Number.isFinite(world.impressumY)){
     const max=H-footerBand()-metrics.height*.5-7;
     const target=min<=max?max:(min+max)*.5;
@@ -998,7 +992,7 @@ function impressumAnchor(metrics){
 // whenever the cartouche itself would not be drawn — off era, a plain plate, or scrolled past either
 // edge — so nothing clamps against a box that isn't actually there to collide with.
 function impressumTop(){
-  if(!world||eraId()!==0||plainPlate()||!W||!H)return Infinity;
+  if(!world||world.state==='ready'||eraId()!==0||plainPlate()||!W||!H)return Infinity;
   const m=impressumMetrics(),a=impressumAnchor(m);if(!a)return Infinity;
   const top=sy(a.y)-m.height*.5;
   if(top>H-m.inner||top+m.height<m.inner)return Infinity;
@@ -1118,7 +1112,7 @@ function syncImpressumScreen(){
   const leaf=$('printer-line');if(leaf)leaf.hidden=eraId()===0&&!plainPlate();
 }
 function drawImpressum(){
-  if(!world||eraId()!==0||plainPlate()||!W||!H)return;
+  if(!world||world.state==='ready'||eraId()!==0||plainPlate()||!W||!H)return;
   const m=impressumMetrics(),a=impressumAnchor(m),x=sx(a.x),y=sy(a.y),left=x-m.width*.5,top=y-m.height*.5;
   if(top>H-m.inner||top+m.height<m.inner)return;
   // Eleven rows of type in a ruled cartouche is the largest single block of lettering the plate ever sets,
