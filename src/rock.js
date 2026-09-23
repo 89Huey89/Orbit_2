@@ -1274,31 +1274,62 @@ function rockInkPath(){
   ctx.stroke();ctx.restore();
 }
 
+// ---------- The guide: where the hand means to go, blown in ochre ----------
+// Not a pricked line: a row of fingertip dots pressed ahead along the course, close and full near the
+// hand and smaller and further apart as they reach — the way a sprayed line thins with distance from
+// the mouth — so it reads as one intention and not a dashed rule. Warned courses (a rim that would turn
+// the flight away, a hazard in the way) go dark in manganese; past where the ochre would run out the
+// dots are only ghosts; and a clean landing is promised by a pale kaolin dot at the rim it would meet.
+function rockAim(aim,preview){
+  const p=world.player,points=preview.points,warn=preview.blocked||aim?.steep,end=points[points.length-1];
+  // Pale kaolin, the one pigment that reads on every patch of this wall lit or dark; manganese black
+  // for a course that is warned against.
+  const col=warn?ink.rock.manganese:ink.rock.kaolin,alpha=warn?.85:aim?.95:.7,pale=!warn;
+  const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
+  const P=points.map(q=>[sx(q.x),sy(q.y)]);
+  const lens=[0];for(let i=1;i<P.length;i++)lens.push(lens[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
+  const at=d=>{let i=1;while(i<P.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return [P[i-1][0]+(P[i][0]-P[i-1][0])*t,P[i-1][1]+(P[i][1]-P[i-1][1])*t];};
+  const breathe=14*scale+(reducedMotion?0:(world.time*18*scale)%(9*scale));
+  ctx.save();
+  for(let d=breathe,k=0;d<total;k++){const f=d/total,q=at(d),r=(aim?3.4:2.8)*(1-.45*f)*scale,dry=f>dryFrom;
+    rockDot(ctx,q[0],q[1],r,dry?ink.rock.stone:col,alpha*(dry?.3:1)*(1-f*.3),k*7+3,pale&&!dry);
+    d+=(7+f*9)*scale;}
+  if(aim?.perfect&&!preview.fogged){const x=sx(aim.cx+Math.cos(aim.entryAngle)*aim.radius),y=sy(aim.cy+Math.sin(aim.entryAngle)*aim.radius);
+    rockDot(ctx,x,y,3.6*scale,ink.rock.kaolin,.95,901,true);}
+  ctx.restore();
+}
+
 // ---------- The traveller: not the crayon, the point on it actually touching the wall ----------
 // A lump of ground haematite worked to a blunt contact point, held point-first — no vane, no
 // aerodynamic taper, because nothing about mined stone needs to look like it is flying. Baked once,
 // since it is one tool rather than a body keyed by seed, and rotated live to the heading of travel.
 let rockCrayon=null,rockCrayonKey='';
+// A stick of haematite a finger long, knapped to a blunt faceted point at the working end and worn
+// round at the other: the shape Blombos's ochre crayons are found in. Drawn along local +x (the tip
+// leads), lit from above, with the facets of the point catching light and the rest of the lump dark,
+// grained stone — dead weight around the one point that touches the wall.
 function rockCrayonSprite(){
   const key=DPR.toFixed(2);if(rockCrayon&&rockCrayonKey===key)return rockCrayon;
-  const rx=17,ry=9,pad=6,size=(rx+pad)*2,px=Math.max(1,Math.round(size*DPR));
+  const L=34,Wd=10,pad=6,size=(L+pad)*2,px=Math.max(1,Math.round(size*DPR));
   const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
-  // A closed, wavering silhouette exactly like a body's own edge, but elongated and squashed toward
-  // local +x — the direction of travel — into the one blunt working point, baked once since this is
-  // one tool rather than a body keyed by seed. Building the point array here costs nothing: the whole
-  // function only ever runs again if the pixel ratio changes.
-  const rnd=seeded(4051),steps=14,pts=[];
-  for(let i=0;i<steps;i++){
-    const a=i/steps*TAU,taper=1-Math.max(0,Math.cos(a))*.72,jit=1+(rnd()-.5)*.22;
-    pts.push([Math.cos(a)*rx*taper*jit,Math.sin(a)*ry*taper*jit]);
-  }
-  const f=pts[0],l=pts[steps-1];
-  g.beginPath();g.moveTo((f[0]+l[0])/2,(f[1]+l[1])/2);
-  for(let i=0;i<steps;i++){const a=pts[i],b=pts[(i+1)%steps];g.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2);}
-  g.closePath();
-  g.fillStyle=`rgba(${ink.rock.ochreDeep},1)`;g.fill();
-  g.strokeStyle=`rgba(${ink.rock.charcoal},.5)`;g.lineWidth=1;g.stroke();
-  const sprite={canvas:c,size};rockCrayon=sprite;rockCrayonKey=key;return sprite;
+  const rnd=seeded(4051),out=[];
+  // The outline: a worn round butt, two slightly uneven flanks, and a knapped point in three facets.
+  const tip=L*.5,butt=-L*.5;
+  out.push([tip,0],[tip-5,-Wd*.28],[tip-10,-Wd*.46]);for(let i=0;i<=6;i++){const t=i/6;out.push([tip-10-(L-14)*t,-Wd*.5*(1+(rnd()-.5)*.12)]);}
+  for(let i=0;i<=8;i++){const a=-Math.PI/2-i/8*Math.PI;out.push([butt+4+Math.cos(a)*4.2,Math.sin(a)*Wd*.5]);}
+  for(let i=6;i>=0;i--){const t=i/6;out.push([tip-10-(L-14)*t,Wd*.5*(1+(rnd()-.5)*.12)]);}
+  out.push([tip-10,Wd*.46],[tip-5,Wd*.3]);
+  const path=()=>{g.beginPath();g.moveTo(out[0][0],out[0][1]);for(const p of out)g.lineTo(p[0],p[1]);g.closePath();};
+  const gr=g.createLinearGradient(0,-Wd*.5,0,Wd*.5);gr.addColorStop(0,`rgb(${ink.rock.ochre})`);gr.addColorStop(.35,`rgb(${ink.rock.redOchre})`);gr.addColorStop(1,'rgb(70,26,14)');
+  path();g.fillStyle=gr;g.fill();
+  // Grain of the stone and the scratches of grinding, along the stick.
+  g.save();path();g.clip();for(let i=0;i<26;i++){const y=(rnd()-.5)*Wd,x0=butt+rnd()*L*.7;g.strokeStyle=`rgba(${rnd()<.5?'40,16,8':ink.rock.ochre},${(.2+rnd()*.3).toFixed(2)})`;g.lineWidth=.5+rnd()*.6;g.beginPath();g.moveTo(x0,y);g.lineTo(x0+4+rnd()*10,y+(rnd()-.5));g.stroke();}
+  // The knapped facets of the point, lit on their upper faces.
+  g.fillStyle='rgba(255,214,160,.38)';g.beginPath();g.moveTo(tip,0);g.lineTo(tip-5,-Wd*.28);g.lineTo(tip-10,-Wd*.46);g.lineTo(tip-9,-Wd*.05);g.closePath();g.fill();
+  g.fillStyle='rgba(40,14,6,.35)';g.beginPath();g.moveTo(tip,0);g.lineTo(tip-5,Wd*.3);g.lineTo(tip-10,Wd*.46);g.lineTo(tip-9,-Wd*.05);g.closePath();g.fill();
+  g.restore();
+  path();g.strokeStyle='rgba(30,12,6,.7)';g.lineWidth=1;g.stroke();
+  const sprite={canvas:c,size,tip};rockCrayon=sprite;rockCrayonKey=key;return sprite;
 }
 // The Observer Core: the one small bright spot on the whole tool, and the only pure light on the
 // sheet. Baked once — one traveller, one point — and blended in additively wherever it sits.
@@ -1324,7 +1355,7 @@ function rockPlayer(){
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
   const crayon=rockCrayonSprite();
-  ctx.drawImage(crayon.canvas,-crayon.size*.72,-crayon.size*.5,crayon.size,crayon.size);
+  ctx.drawImage(crayon.canvas,-crayon.size/2-crayon.tip,-crayon.size/2,crayon.size,crayon.size);
   const core=rockCoreSprite();
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(core.canvas,-core.R,-core.R,core.size,core.size);ctx.restore();
   // A shielded run carries the charge visibly, in the one colour this era spends on rarity: kaolin.
@@ -1734,6 +1765,7 @@ defineHand('rock',{
   chapterReveal:rockChapterReveal,
   flourish:rockFlourish,
   trail:rockTrail,
+  aim:rockAim,
   inkPath:rockInkPath,
   inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,

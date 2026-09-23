@@ -1880,6 +1880,8 @@ function drawHazard(h){
 function drawAim(aim){
   const p=world.player;if(!p.node||world.state==='dead')return;
   const preview=world.flightPreview,points=preview?.points;if(!points||points.length<2)return;
+  // A plate whose guide is not a pricked course names its own painter, handed the same prediction.
+  const own=handFor('aim');if(own)return own(aim,preview);
   const launch=world.launchVelocity(),speed=launch.speed,dx=launch.vx/speed,dy=launch.vy/speed,sling=p.node.type==='sling',end=points[points.length-1],blocked=!!preview.blocked;
   ctx.save();ctx.lineCap='round';
   const ax=sx(p.x+dx*12),ay=sy(p.y+dy*12),bx=sx(end.x),by=sy(end.y);
