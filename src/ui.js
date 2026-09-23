@@ -327,6 +327,10 @@ function showEnd(){
     if(endTitleEl)endTitleEl.textContent=world.won?(chrome.endTitleWon||chrome.endTitle):chrome.endTitle;
     // The line under it asks for the next run in the same terms: a won night is not something to try again.
     $('end-action').textContent=world.won?chrome.endActionWon:chrome.endAction;
+    // A won leaf's sun is turned gold a beat after the leaf appears, so it is seen to change rather than
+    // arriving already turned; a loss clears it at once so it never carries over from a win.
+    const leaf=$('end');leaf.classList.remove('won');
+    if(world.won){if(reducedMotion)leaf.classList.add('won');else setTimeout(()=>{if(world&&world.won)leaf.classList.add('won');},350);}
   }
   $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
   // The Ceiling letters its own score in Egyptian numerals, on the canvas rather than in this DOM
