@@ -532,13 +532,35 @@ function rockTorchFollow(){
 // Three unrelated rates, so the flame never settles into a beat the eye can count; reduced motion
 // holds it at its mean.
 function rockFlicker(t,a,b,c){return reducedMotion?0:Math.sin(t*a)*.5+Math.sin(t*b+1.7)*.32+Math.sin(t*c+.4)*.18;}
+// Captures, read off the run's own count rather than hooked from the event, so this era needs nothing
+// from the atlas's own capture path: a capture flares the torch and blooms a hand stencil where it was.
+let rockCaptureSeen=-1,rockCaptureGlow=0,rockCaptureAt=-1,rockStencils=[];
+function rockTorchPulse(){
+  const c=world.captures|0,t=world.time;
+  if(rockCaptureSeen<0||c<rockCaptureSeen){rockCaptureSeen=c;rockStencils=[];rockCaptureGlow=0;rockCaptureAt=t;return;}
+  const dt=Math.max(0,t-rockCaptureAt);rockCaptureAt=t;rockCaptureGlow*=Math.exp(-dt*2.4);
+  if(c>rockCaptureSeen){rockCaptureSeen=c;rockCaptureGlow=1;const n=world.player.node;
+    if(n){const side=(n.seed&1)?1:-1,a=-Math.PI/2+side*.9;rockStencils.push({x:n.x+Math.cos(a)*(n.cap+14),y:n.y+Math.sin(a)*(n.cap+14),t,flip:side<0,rot:side*.35});if(rockStencils.length>24)rockStencils.shift();}}
+}
+// The hand laid down at a capture: blown ochre round a hand held to the rock, blooming in over half a
+// second as the pigment settles and then left on the wall, faint, where it was made.
+function rockPaintStencils(){
+  for(const st of rockStencils){const x=sx(st.x),y=sy(st.y);if(y<-80||y>H+80)continue;
+    const age=world.time-st.t,bloom=clamp(age/.5,0,1),a=age<.5?bloom:.35+.65*Math.exp(-(age-.5)*1.5);
+    ctx.save();ctx.translate(x,y);ctx.rotate(st.rot);for(let k=0;k<2;k++)rockHand(0,0,20*scale*(.85+.15*bloom),ink.rock.redOchre,a,st.flip);ctx.restore();}
+}
 function rockBuildLight(){
   const lw=Math.max(1,Math.ceil(W/ROCK_TORCH_Q)),lh=Math.max(1,Math.ceil(H/ROCK_TORCH_Q));
   if(!rockLight||rockLight.width!==lw||rockLight.height!==lh)rockLight=makeCanvas(lw,lh);
   const g=rockLight.getContext('2d'),at=rockTorchFollow(),t=world.time;
   g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle=`rgb(${ink.rock.ambient})`;g.fillRect(0,0,lw,lh);
   const f=rockFlicker(t,8.3,13.1,21.7),sway=rockFlicker(t,2.3,3.7,5.9);
-  const R=ROCK_TORCH_R*scale*(1+f*.05)/ROCK_TORCH_Q,x=(sx(at.x)+sway*4*scale)/ROCK_TORCH_Q,y=(sy(at.y)-10*scale)/ROCK_TORCH_Q;
+  // The torch breathes with the ochre: the pool draws in as the hand runs low and flares up for a moment
+  // at every capture, so what the hand carries is felt in how far it can see. Render-only; the rule the
+  // simulation keeps about ink is untouched.
+  rockTorchPulse();
+  const breath=.74+.26*Math.sqrt(world.inkLevel())+.18*rockCaptureGlow;
+  const R=ROCK_TORCH_R*scale*breath*(1+f*.05)/ROCK_TORCH_Q,x=(sx(at.x)+sway*4*scale)/ROCK_TORCH_Q,y=(sy(at.y)-10*scale)/ROCK_TORCH_Q;
   g.globalCompositeOperation='lighter';g.globalAlpha=.92+f*.08;g.drawImage(rockFlameSprite(),x-R,y-R,R*2,R*2);
   g.globalAlpha=1;g.globalCompositeOperation='source-over';
 }
@@ -1399,6 +1421,14 @@ function rockPlayer(){
   if(world.state==='dead')return;
   const p=world.player,x=sx(p.x),y=sy(p.y),ang=Math.atan2(p.vy,p.vx);
   ctx.save();
+  // The torch's smoke, curling up off the flame and thinning as it climbs, and dust hanging in its light.
+  {const t=reducedMotion?0:world.time;ctx.save();
+    for(let i=0;i<7;i++){const k=((i/7+t*.35)%1+1)%1,wob=Math.sin(t*1.3+i*1.9)*14*scale*k,px=x+wob+k*6*scale,py=y-10*scale-k*70*scale,r=(3+k*10)*scale;
+      const g=ctx.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,`rgba(150,140,130,${(.16*(1-k)).toFixed(3)})`);g.addColorStop(1,'rgba(150,140,130,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,r,0,TAU);ctx.fill();}
+    ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<16;i++){const hx=rockHash(3,i,1),hy=rockHash(3,i,2),ph=t*(.08+hx*.1)+hy*TAU,dx=(hx-.5)*170*scale+Math.sin(ph)*20*scale,dy=(hy-.5)*170*scale+Math.cos(ph*1.3)*16*scale,d=Math.hypot(dx,dy)/(90*scale);
+      if(d>1)continue;ctx.fillStyle=`rgba(255,226,180,${(.35*(1-d)*(.5+.5*Math.sin(t*2+i))).toFixed(3)})`;ctx.beginPath();ctx.arc(x+dx,y+dy,Math.max(.5,.9*scale),0,TAU);ctx.fill();}
+    ctx.restore();}
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
@@ -1795,6 +1825,8 @@ function rockAtmosphere(){
   plateShift.x=0;plateShift.y=0;
   rockPaintWall();
   rockBuildLight();rockTorchPass();
+  // Laid after the torch's full fall, so the hand just pressed is as legible as the marks the run makes.
+  rockPaintStencils();
 }
 
 defineHand('rock',{
@@ -1968,7 +2000,7 @@ defineVoice('rock',{
 // when the plate or the pixel ratio changes, so the next reach simply rebuilds lazily as it always did.
 function invalidateRockArt(){
   rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockFaceH=null;rockReliefSprites.clear();
-  rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
+  rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;rockCaptureSeen=-1;rockStencils=[];
   rockDabSprites.clear();rockPressSprites.clear();
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
