@@ -601,6 +601,70 @@ function rockRelief(n,x,y,r){
   return kind;
 }
 
+// ---------- Pressed pigment: the mark a loaded pad or fingertip actually leaves on stone ----------
+// A dab of soft gradient reads as a blur laid over the wall, and the bodies drawn that way read as
+// stains. What pressed ochre leaves is the opposite: a shape with an edge, broken where the pad did not
+// reach into the stone's hollows, pooled a little darker at its rim where the wet pigment ran to the
+// edge and dried there, and uneven inside with the grain of the pad. So a pressed mark is baked per
+// pixel into a sprite — a lobed outline, a coverage that frays at the edge on a coarse noise and a fine
+// one, a density that varies inside and deepens at the rim — and laid on the wall by multiplying, so
+// the rock's own relief shows through the pigment exactly as it does through a real one, with a little
+// laid over the top as well so a mark far from the flame is never lost in the dark.
+//
+// The same bake gives the mark in stages. Every pixel is given the moment it is reached — the middle of
+// the mark first, then outward, sooner or later on the pad's own grain — and a stage holds every pixel
+// reached by then, so the stages only ever add, as a hand going back to the same mark only ever adds.
+const ROCK_PRESS_STAGES=[.28,.52,.76,1];
+function rockLattice(seed,n){const r=seeded((seed>>>0)||1),a=new Float32Array(n*n);for(let i=0;i<a.length;i++)a[i]=r();return a;}
+function rockLatticeAt(a,n,x,y){const ix=Math.floor(x),iy=Math.floor(y),tx=rockSS(x-ix),ty=rockSS(y-iy),i0=((iy%n+n)%n)*n,i1=(((iy+1)%n+n)%n)*n,j0=(ix%n+n)%n,j1=((ix+1)%n+n)%n;
+  return (a[i0+j0]+(a[i0+j1]-a[i0+j0])*tx)*(1-ty)+(a[i1+j0]+(a[i1+j1]-a[i1+j0])*tx)*ty;}
+const rockPressSprites=new Map();
+function rockPressSprite(seed,R,rgb,lobe=.12,fray=.32,holes=.8){
+  const Rq=Math.max(2,Math.round(R)),key=(seed>>>0)+':'+Rq+':'+rgb+':'+lobe+':'+fray+':'+holes+':'+DPR.toFixed(2);
+  const cached=rockPressSprites.get(key);if(cached)return cached;
+  const pad=Math.ceil(Rq*.35)+2,size=(Rq+pad)*2,px=Math.max(2,Math.round(size*DPR)),k=size/px,c0=rgb.split(',').map(Number);
+  const rnd=seeded((seed>>>0)^0x6a09||3),h1=rnd()*TAU,h2=rnd()*TAU,h3=rnd()*TAU,L1=rockLattice(seed^0x1234,16),L2=rockLattice(seed^0x9876,16),L3=rockLattice(seed^0x5151,32);
+  const stages=ROCK_PRESS_STAGES.map(()=>{const cv=makeCanvas(px,px),g=cv.getContext('2d');return {cv,g,img:g.createImageData(px,px)};});
+  for(let j=0;j<px;j++)for(let i=0;i<px;i++){
+    const dx=(i+.5)*k-size/2,dy=(j+.5)*k-size/2,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
+    const edge=Rq*(1+lobe*(Math.sin(a*2+h1)*.55+Math.sin(a*3+h2)*.3+Math.sin(a*5+h3)*.15));
+    const n1=rockLatticeAt(L1,16,dx/Rq*2.2+8,dy/Rq*2.2+8),n2=rockLatticeAt(L2,16,dx/Rq*6+8,dy/Rq*6+8);
+    let hh=Math.imul(i+1,0x9E3779B1)^Math.imul(j+7,0x85EBCA77)^(seed|0);hh=Math.imul(hh^(hh>>>15),0x2C1B3C6D);hh^=hh>>>13;const h=(hh&1023)/1023;
+    const d=(edge-r)/Rq+(n1-.5)*fray+(n2-.5)*fray*.45+(h-.5)*.05;if(d<=0)continue;
+    const cover=Math.min(1,d*14),order=Math.min(1,Math.max(0,(1-d)*.55+n1*.45)),rim=Math.exp(-d*9);
+    // Where the pad met a hollow in the stone it left little or nothing, in patches a grain or two across.
+    const u=(dx*.8+dy*.6)/Rq*9+(n1-.5)*2.4,v=(dy*.8-dx*.6)/Rq*9+(n2-.5)*2.4,n3=rockLatticeAt(L3,32,u+16,v+16)*.6+rockLatticeAt(L1,16,u*1.7+3,v*1.7+5)*.4;
+    const skip=1-rockStep(.62,.74,n3)*holes;
+    const dens=Math.min(1,(.64+.34*n2+(h-.5)*.24)*(1+.4*rim)*skip);
+    for(let s=0;s<stages.length;s++){const f=ROCK_PRESS_STAGES[s];if(order>f)continue;
+      const reach=Math.min(1,(f-order)*9),o=(j*px+i)*4,D=stages[s].img.data;
+      D[o]=c0[0]*(1-rim*.18);D[o+1]=c0[1]*(1-rim*.22);D[o+2]=c0[2]*(1-rim*.25);D[o+3]=255*cover*dens*reach;}
+  }
+  const sprite={size,stages:stages.map(st=>{st.g.putImageData(st.img,0,0);return st.cv;})};
+  rockPressSprites.set(key,sprite);if(rockPressSprites.size>48)rockPressSprites.delete(rockPressSprites.keys().next().value);
+  return sprite;
+}
+// Lay a pressed mark at a fill between nought and one: the two baked stages either side of it, the
+// later coming in over the earlier. Dark pigments are multiplied into the stone and a share laid over
+// it; a pale one — kaolin — cannot be multiplied into anything, and is laid straight.
+function rockPress(g,x,y,sprite,fill,alpha,pale,over=.3){
+  if(alpha<=.003||fill<=0)return;
+  const S=ROCK_PRESS_STAGES,sz=sprite.size;let lo=-1;for(let s=0;s<S.length;s++)if(S[s]<=fill)lo=s;
+  const hi=Math.min(S.length-1,lo+1),t=lo<0?fill/S[0]:hi===lo?1:(fill-S[lo])/(S[hi]-S[lo]);
+  const lay=(cv,al)=>{if(al<=.003)return;if(pale){g.globalCompositeOperation='screen';g.globalAlpha=al*.7;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);g.globalCompositeOperation='source-over';g.globalAlpha=al*.45;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);return;}
+    g.globalCompositeOperation='multiply';g.globalAlpha=al;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);
+    g.globalCompositeOperation='source-over';g.globalAlpha=al*over;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);};
+  g.save();
+  if(lo>=0)lay(sprite.stages[lo],alpha*(hi===lo?1:1));
+  if(hi!==lo)lay(sprite.stages[hi],alpha*t);
+  g.restore();
+}
+// A fingertip dot: the same pressed mark, small, in a handful of seeded shapes per pigment.
+function rockDot(g,x,y,r,rgb,alpha,seed,pale){
+  if(r<=.3)return;const sp=rockPressSprite(((seed>>>0)%6)+1,Math.max(3,Math.round(r)),rgb,.14,.2,0);
+  const sc=r/Math.max(3,Math.round(r));g.save();g.translate(x,y);g.scale(sc,sc);rockPress(g,0,0,sp,1,alpha,pale);g.restore();
+}
+
 // ---------- The body: what has been learned, staged over the observation clock alone ----------
 function rockCore(r,tier){return r*(tier==='moon'?.94:tier==='faint'?.6:.72);}
 function rockTone(tier){return tier==='moon'?ink.rock.kaolin:tier==='faint'?ink.rock.ochre:ink.rock.redOchre;}
@@ -608,53 +672,47 @@ function rockTone(tier){return tier==='moon'?ink.rock.kaolin:tier==='faint'?ink.
 // — except a difficultyChoice body, which the design already draws whole before it is observed (see
 // reveal.js's own comment on pen.d): the choice has to read before any caption could, on a sheet that
 // has none, so its taken-ness is never gated at all.
+//
+// The body is one pressed mark, laid in the era's own order: the first press at the capture itself,
+// ungated — colour before contour — as only the middle of the mark and whatever the pad caught; then
+// the same mark filled out over the observation as the hand comes back to it, never a bigger one; and
+// last the sign that says which body this is. Wet pigment pools in a dish and starves over a rise,
+// where less of the pad reaches the stone.
 function rockBody(n,x,y,r,tier,d,taken,relief){
   if(taken<=0)return;
   const core=rockCore(r,tier),tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major';
-  // Wet pigment pools in a dish and starves over a rise, where the wall's own tooth comes up through it
-  // sooner — the same attested observation from the other side (prototypes/rock.html does the same).
-  const pool=relief<0?1.15:relief>0?.85:1,starve=relief>0?1.3:1;
-  // Colour before contour: the crude mass a hand lays down at the capture itself, ungated by d.
-  rockWash(ctx,x,y,core*1.06,tone,(moon?.17:.58)*taken*pool,moon?18:12,n.seed+91);
-  const edge=rockSpan(d,ROCK_STAGE.edge),tooth=rockSpan(d,ROCK_STAGE.tooth),marks=rockSpan(d,ROCK_STAGE.marks),detail=rockSpan(d,ROCK_STAGE.detail);
-  if(marks>0){
-    // Not a bigger dab: the same seeded scatter carried further, since raising n only ever adds.
-    const base=moon?58:tier==='major'?46:bright?40:22;
-    rockWash(ctx,x,y,core,tone,(moon?.15:.5)*Math.min(1,.35+marks)*taken*pool,Math.round(base*marks),n.seed);
-  }
-  if(tooth>0){
-    // The wall's own mineral speckle coming up through the pigment as it is worked — not a drawn line,
-    // which is why both blacks sit in it together (see the palette note above).
-    ctx.save();rockEdgePath(ctx,x,y,core,n.seed^0x51ed);ctx.clip();
-    const rnd=seeded((n.seed^0x2ba9)>>>0||7),count=moon?26:40;
-    for(let i=0;i<count;i++){
-      const a=rnd()*TAU,rr=Math.sqrt(rnd())*core;
-      rockDab(ctx,x+Math.cos(a)*rr,y+Math.sin(a)*rr,(.7+rnd()*1.4)*scale,rnd()<.4?ink.rock.charcoal:ink.rock.manganese,(.05+rnd()*.12)*tooth*taken*starve,n.seed+i+30);
-    }
-    ctx.restore();
-  }
-  if(edge>0){
-    ctx.save();rockEdgePath(ctx,x,y,core*1.03,n.seed^0x51ed);
-    ctx.strokeStyle=`rgba(${moon?ink.rock.manganese:ink.rock.charcoal},${.3*edge*taken})`;ctx.lineWidth=(.9+.9*edge)*scale;ctx.stroke();ctx.restore();
-  }
+  const pool=relief<0?1.08:relief>0?.9:1,marks=rockSpan(d,ROCK_STAGE.marks),edge=rockSpan(d,ROCK_STAGE.edge),detail=rockSpan(d,ROCK_STAGE.detail);
+  const fill=Math.min(1,(.3+.7*Math.max(marks,edge*.5))*(relief>0?.96:1));
+  const sprite=rockPressSprite(n.seed,core/scale,tone,moon?.07:.12,moon?.22:.32,moon?.35:.85);
+  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+  rockPress(ctx,0,0,sprite,fill,taken*pool,moon,tier==='faint'?.55:.34);
   // What the body is, rather than that it is: the last thing the orbit pays for.
   if(detail>0){
+    const cr=core/scale;
     if(moon){
-      for(let i=0;i<7;i++){const rnd=seeded(n.seed+i*13);
-        rockDab(ctx,x+(rnd()*2-1)*core*.5,y+(rnd()*2-1)*core*.5,(5+rnd()*5)*(.45+.55*detail)*scale,ink.rock.manganese,.8*detail*taken,n.seed+i);}
+      const rnd=seeded((n.seed^0x3c1)>>>0||5);
+      for(let i=0;i<5;i++){const a=rnd()*TAU,rr=Math.sqrt(rnd())*cr*.5;
+        rockDot(ctx,Math.cos(a)*rr,Math.sin(a)*rr,(4+rnd()*6)*(.5+.5*detail),ink.rock.charcoal,.5*detail*taken,n.seed+i);}
     }else if(bright){
-      for(let i=0;i<7;i++){const a=i/7*TAU+n.seed,rr=core*1.24;
-        rockDab(ctx,x+Math.cos(a)*rr,y+Math.sin(a)*rr,(3.2+1.6*detail)*scale,ink.rock.manganese,.7*detail*taken,n.seed+i+7);}
-    }else rockDab(ctx,x,y,3.2*scale,ink.rock.manganese,.55*detail*taken,n.seed+3);
+      for(let i=0;i<7;i++){const a=i/7*TAU+n.seed,rr=cr*1.3;
+        rockDot(ctx,Math.cos(a)*rr,Math.sin(a)*rr,2.2+1.2*detail,ink.rock.manganese,.8*detail*taken,n.seed+i+7);}
+    }else rockDot(ctx,0,0,3.2,ink.rock.manganese,.8*detail*taken,n.seed+3);
   }
+  ctx.restore();
 }
+// A body not yet reached is not a mark at all but a light that keeps coming back to the same patch of
+// wall: a small pale glint, breathing, with a little warmth round it — nothing a hand has put there.
 function rockPhenomenon(n,x,y,r){
-  const pulse=.28+.14*(reducedMotion?0:Math.sin(world.time/.6+n.seed));
-  rockDab(ctx,x,y,r*.52,ink.rock.ochre,pulse*1.05,n.seed);
+  const pulse=.55+.3*(reducedMotion?0:Math.sin(world.time/.6+n.seed));
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  rockDab(ctx,x,y,r*.42,ink.rock.ember,.16*pulse,n.seed);
+  ctx.globalCompositeOperation='source-over';
+  rockDot(ctx,x,y,Math.max(2,r*.14),ink.rock.kaolin,.8*pulse,n.seed,true);
+  ctx.restore();
 }
 
 // ---------- The ring: where an observation is possible, structurally unchanged while it is made ----------
-// 28 dabs at the node's own capture radius, never staged wider or narrower and never re-seeded, so the
+// 28 pressed dots at the node's own capture radius, never staged wider or narrower and never re-seeded, so the
 // same 28 dots sit in the same 28 places every frame; only a caller-supplied state scales their size
 // and alpha uniformly. The one exception is the completion cue below, a single brief change of state.
 const ROCK_RING_N=28,ROCK_FLOURISH_DUR=.64;
@@ -669,7 +727,7 @@ function rockFlourish(n){
 function rockRing(n,x,y,cap,state){
   for(let i=0;i<ROCK_RING_N;i++){
     const a=i/ROCK_RING_N*TAU;
-    rockDab(ctx,x+Math.cos(a)*cap,y+Math.sin(a)*cap,3.2*Math.max(.55,state)*scale,ink.rock.redOchre,.5*state,n.seed+i);
+    rockDot(ctx,x+Math.cos(a)*cap,y+Math.sin(a)*cap,2.6*Math.max(.55,state)*scale,ink.rock.redOchre,.95*state,n.seed+i);
   }
   const at=rockFlourishAt.get(n);if(at===undefined)return;
   const seal=clamp(1-(world.time-at)/ROCK_FLOURISH_DUR,0,1);if(seal<=0)return;
@@ -698,15 +756,15 @@ function rockReleaseMarks(n,p,x,y){
     const ROWS=6;
     for(let i=0;i<=ROWS;i++){
       const wa=a-window+2*window*(i/ROWS);
-      rockDab(ctx,Math.cos(wa)*rad,Math.sin(wa)*rad,2.2*scale,ink.rock.ochre,.5,n.seed+i*17+3);
+      rockDot(ctx,Math.cos(wa)*rad,Math.sin(wa)*rad,2*scale,ink.rock.ochre,.9,n.seed+i*17+3);
     }
     // One struck deeper — kaolin over manganese — at the middle of each run that actually threads clear
     // of every hazard; a run with none is left with only the row above, so danger reads as an absence.
     for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
       if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
       const mx=Math.cos(path.angle)*rad,my=Math.sin(path.angle)*rad;
-      rockDab(ctx,mx,my,4.6*scale,ink.rock.manganese,.7,n.seed+900);
-      rockDab(ctx,mx,my,3*scale,ink.rock.kaolin,.85,n.seed+901);
+      rockDot(ctx,mx,my,4.2*scale,ink.rock.manganese,.9,n.seed+900);
+      rockDot(ctx,mx,my,2.6*scale,ink.rock.kaolin,.95,n.seed+901,true);
     }
   }
   ctx.restore();
@@ -1070,7 +1128,7 @@ defineVoice('rock',{
 function invalidateRockArt(){
   rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockFaceH=null;rockReliefSprites.clear();
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
-  rockDabSprites.clear();
+  rockDabSprites.clear();rockPressSprites.clear();
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
   rockCrayon=null;rockCrayonKey='';
