@@ -25,12 +25,12 @@ definePlate('rock',{
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
     ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'228,178,128',torchFar:'150,100,62',
-    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'206,72,40',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'},
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'196,88,56',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
     ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'228,178,128',torchFar:'150,100,62',
-    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'206,72,40',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'}
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'196,88,56',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'}
 });
 
 // ---------- The tunable rows ----------
@@ -410,7 +410,7 @@ function rockBakeFace(camY){
     const flow=rockStep(.55,.75,n25)*rockStep(.45,.66,n26);
     const shade=clamp(.5+(.60*gy-.62*gx)*K*(1-flow*.6)-(1-FH[k])*.08,0,1);
     const o=(j*tw+i)*4;td[o]=132;td[o+1]=126;td[o+2]=120;
-    tone(o,ironT,iron);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow);tone(o,dampT,damp*.8);
+    tone(o,ironT,iron*.72);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow);tone(o,dampT,damp*.8);
     const sv=(shade-.5)*230;td[o]+=sv;td[o+1]+=sv;td[o+2]+=sv;
     const lift=rockStep(.42,1,1-(Math.hypot(wx,wy-ROCK_OPENING_Y)-200)/460)*.3,side=1-.4*Math.min(1,(wx/700)*(wx/700));
     for(let c=0;c<3;c++)td[o+c]=Math.max(0,Math.min(255,(td[o+c]+(pale[c]-td[o+c])*lift)*side));
@@ -531,6 +531,58 @@ function rockPaintWall(){
   const off=((world.cameraY*scale)%tileH+tileH)%tileH;
   for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
   rockPaintFace();
+  rockPaintNiches();
+}
+
+// ---------- The niches: hollows in the face whose back can always be seen ----------
+// A cave wall is not a surface with holes in it only where it is dangerous; it is full of pockets —
+// dissolution hollows, spalled scoops, the dishes painters set bodies into. They are here for the rock's
+// sake alone and must never be read as a drop, so they keep the rule the whole wall keeps: a hollow
+// whose back can be seen is only a hollow. None holds any black. Its back is the wall's own rock a
+// shade deeper; its lip on the side facing the lamp throws a hard little shadow across it, and the
+// far inner wall, which faces the flame across the hollow, catches it. They are seeded off the world
+// in chunks exactly as the fissures are, stay off the opening plane where the triad has to read, and
+// are baked once per shape.
+const ROCK_NICHE_CHUNK=380,rockNicheSprites=new Map();
+function rockNicheSprite(seed,R,ax,rot){
+  const Rq=Math.max(6,Math.round(R)),key=(seed>>>0)+':'+Rq+':'+DPR.toFixed(2);
+  const cached=rockNicheSprites.get(key);if(cached)return cached;
+  const size=Math.ceil(Rq*2*Math.max(1,ax)+12),px=Math.max(2,Math.round(size*DPR));
+  const mk=()=>{const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);return {c,g};};
+  const out=mk(),tmp=mk(),rnd=seeded((seed>>>0)^0x71c4||7),n=18,pts=[];
+  const LX=.707,LY=-.707,cr=Math.cos(rot),sr=Math.sin(rot),h1=rnd()*TAU,h2=rnd()*TAU;
+  for(let i=0;i<n;i++){const a=i/n*TAU,r=Rq*(.86+Math.sin(a*2+h1)*.1+Math.sin(a*3+h2)*.07+(rnd()-.5)*.12),x=Math.cos(a)*r*ax,y=Math.sin(a)*r;pts.push([x*cr-y*sr,x*sr+y*cr]);}
+  // Laid through the midpoints, so the rim of a hollow worn by water is a curve and not a cut.
+  const path=(g,ox=0,oy=0,k=1)=>{g.beginPath();const P=i=>pts[(i+n)%n],m=i=>[(P(i)[0]+P(i+1)[0])/2*k+ox,(P(i)[1]+P(i+1)[1])/2*k+oy];
+    const s0=m(n-1);g.moveTo(s0[0],s0[1]);for(let i=0;i<n;i++){const q=m(i);g.quadraticCurveTo(P(i)[0]*k+ox,P(i)[1]*k+oy,q[0],q[1]);}g.closePath();};
+  const soot=ink.rock.crack,d=Rq*.26;
+  // The dish round it: the face turning down into the hollow, with no edge of its own.
+  {const g=out.g,gr=g.createRadialGradient(0,0,Rq*.3,0,0,Rq*1.35*Math.max(1,ax));gr.addColorStop(0,`rgba(${soot},.3)`);gr.addColorStop(1,`rgba(${soot},0)`);g.fillStyle=gr;path(g,0,0,1.35);g.fill();}
+  // The back: deeper toward its middle, but always the rock itself, seen.
+  {const g=out.g,gr=g.createRadialGradient(-LX*d*.4,-LY*d*.4,0,0,0,Rq*Math.max(1,ax));gr.addColorStop(0,`rgba(${soot},.34)`);gr.addColorStop(1,`rgba(${soot},.1)`);g.fillStyle=gr;path(g);g.fill();}
+  // The lip's shadow, a crescent under the lip nearest the flame, laid three times at widening offsets
+  // so it has a penumbra rather than a cut edge.
+  const crescent=(rgb,al,sx,sy)=>{const g=tmp.g;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,px,px);g.setTransform(DPR,0,0,DPR,size/2*DPR,size/2*DPR);
+    g.globalCompositeOperation='source-over';g.fillStyle=`rgba(${rgb},${al})`;path(g);g.fill();g.globalCompositeOperation='destination-out';g.fillStyle='#000';path(g,sx,sy);g.fill();
+    out.g.drawImage(tmp.c,-size/2,-size/2,size,size);};
+  rockStoneInto(out.g,()=>path(out.g),.45,(seed%83)*5,(seed%79)*5);
+  for(const f of [.3,.45,.6,.75,.9,1.05])crescent(ink.rock.dark,.1,-LX*d*f,-LY*d*f);
+  // The lit far wall, catching the flame across the hollow, as softly.
+  for(const f of [.35,.55,.75,.95])crescent(ink.rock.crust,.08,LX*d*.6*f,LY*d*.6*f);
+  const sprite={canvas:out.c,size};rockNicheSprites.set(key,sprite);
+  if(rockNicheSprites.size>40)rockNicheSprites.delete(rockNicheSprites.keys().next().value);
+  return sprite;
+}
+function rockPaintNiches(){
+  const seed=world.seed>>>0,C=ROCK_NICHE_CHUNK,wx0=-W*.5/scale-C,wx1=W*.5/scale+C,wy0=world.cameraY-C*.5,wy1=world.cameraY+H/scale+C*.5;
+  for(let cj=Math.floor(wy0/C);cj<=Math.floor(wy1/C);cj++)for(let ci=Math.floor(wx0/C);ci<=Math.floor(wx1/C);ci++){
+    const h=rockHash(seed+ci*6007,cj*92821,31),count=h<.35?0:h<.8?1:2;
+    for(let k=0;k<count;k++){const hf=q=>rockHash(seed+ci*6007+k*73,cj*92821+k*11,q);
+      const wx=(ci+hf(2))*C,wy=(cj+hf(3))*C,R=22+hf(4)*44;if(Math.hypot(wx,wy-ROCK_OPENING_Y)<ROCK_OPENING_R+R)continue;
+      const x=sx(wx),y=sy(wy),Rs=R*scale;if(x+Rs*2<0||x-Rs*2>W||y+Rs*2<0||y-Rs*2>H)continue;
+      const sp=rockNicheSprite((seed^(ci*7919+cj*104729+k*31))>>>0,Rs,1+hf(5)*.9,hf(6)*TAU);
+      ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);}
+  }
 }
 
 // ---------- The four primitives, each taking the context they draw into so a hazard's own bake can
@@ -1294,7 +1346,7 @@ function invalidateRockArt(){
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
   rockDabSprites.clear();rockPressSprites.clear();
   rockEdgeShapes.clear();
-  rockShaftSprites.clear();rockChasmSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
+  rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
   rockCrayon=null;rockCrayonKey='';
   rockCoreArt=null;rockCoreKey='';
   rockDarkEdge=null;rockDarkEdgeW=-1;
