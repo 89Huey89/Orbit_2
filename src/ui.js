@@ -28,6 +28,9 @@ defineVoice('atlas',{
   // Struck once beside the traveller the moment a run's score first passes the best it opened with —
   // see event(), below — never on a first run, which breaks no record for want of one to beat.
   newRecord:'NOVUM RECORDUM',
+  // The word for the bonus a landing earns for how true its angle ran, set in the gain line beside the
+  // points themselves (see event()'s capture, below); an era that writes no Latin names its own.
+  gainAngle:'ANGULUS',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -86,7 +89,7 @@ function event(type,e){
     // gain: the simulation adds it before emitting the event, see OrbitWorld.capture) — while an era
     // still gets the floater it always had, drifting up and fading over a second and change.
     {
-      const gainText='+'+e.gain+(e.angleBonus?'  ·  ANGULUS +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):'');
+      const gainText='+'+e.gain+(e.angleBonus?'  ·  '+plateWords().gainAngle+' +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):'');
       if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
       else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,age:0});
     }
@@ -100,7 +103,9 @@ function event(type,e){
     else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
     else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
     else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
-    else if(e.square)say(OBSERVATIONS.rightAngle.latin+' · +'+e.squareBonus,at);
+    // The atlas notes a square landing by its Latin name; a plate that renames the observation in its own
+    // voice (the Ceiling does, in its colophon's words) is read in that voice here too, not in the atlas's.
+    else if(e.square)say((plateWords().observations.rightAngle||OBSERVATIONS.rightAngle.latin)+' · +'+e.squareBonus,at);
     else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
     else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
     recordBest(world.score);

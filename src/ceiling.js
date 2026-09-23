@@ -103,6 +103,7 @@ defineVoice('ceiling',{
   opening:'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.',
   ended:'Preview run complete. Score {score}. Tap to try again or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
+  gainAngle:'TRUE ENTRY',
   hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
   chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
     instructions:{head:'THE MANNER OF USE',rules:['Tap to release the flat night barque.','Skim an hour-circle; hold it to restore the reed.','Follow the painted dabs around Apep, the Eye, Shu and Nun.','The first landing sets the course.']}},
@@ -553,10 +554,18 @@ function ceilingSettingGrid(g,x0,y0,x1,y1,unit){
   // everything — and the .085-alpha hairline this used to run was, in practice, invisible. Brought up
   // to a plainly-legible ruled surface; it still sits under every painted pass (drawn first in
   // ceilingBakeWall, before any furniture) so nothing above it competes for the same ink.
-  g.save();g.strokeStyle='rgba(157,55,36,.24)';g.lineWidth=.6;g.beginPath();
-  for(let x=x0;x<=x1;x+=unit){g.moveTo(x,y0);g.lineTo(x,y1);}
-  for(let y=y0;y<=y1;y+=unit){g.moveTo(x0,y);g.lineTo(x1,y);}
-  g.stroke();g.restore();
+  // It stays legible in the two margins, where the decan columns stand on it, and all but drops out of
+  // the channel between them: on the phone a full-strength grid across the whole flight read as squared
+  // paper rather than as a wall, and competed with the hour-circles for the same eye.
+  const margin=Math.max(unit*2,(x1-x0)*.16),rule=a=>{g.strokeStyle=`rgba(157,55,36,${a})`;};
+  g.save();g.lineWidth=.6;
+  for(const [l,r,a] of [[x0,x0+margin,.24],[x1-margin,x1,.24],[x0+margin,x1-margin,.06]]){
+    rule(a);g.beginPath();
+    for(let x=x0;x<=x1;x+=unit)if(x>=l-.5&&x<=r+.5){g.moveTo(x,y0);g.lineTo(x,y1);}
+    for(let y=y0;y<=y1;y+=unit){g.moveTo(l,y);g.lineTo(r,y);}
+    g.stroke();
+  }
+  g.restore();
 }
 // The border star, redrawn from a figure-scale crop rather than the small reference this first went
 // up from: not five straight-sided kite lobes but five unequal lens-shaped arms — two curved edges
@@ -871,12 +880,12 @@ function ceilingBakeWall(watch){
   const rng=seeded(14731458),patches=Math.round(46*R/H),cracks=Math.round(26*R/H);
   for(let i=0;i<patches;i++){
     const x=rng()*W,y=rng()*R,r=10+rng()*46,sides=5+Math.floor(rng()*3),rot=rng()*TAU,loss=rng()>.5,
-      fill=loss?'rgba(157,137,102,.17)':'rgba(238,228,205,.22)';
+      fill=loss?'rgba(157,137,102,.09)':'rgba(238,228,205,.22)';
     const draw=yy=>{
       g.beginPath();
       for(let k=0;k<sides;k++){const a=rot+k/sides*TAU,rr=r*(.72+ceilingHash(i,k)*.5),px=x+Math.cos(a)*rr,py=yy+Math.sin(a)*rr*.42;k?g.lineTo(px,py):g.moveTo(px,py);}
       g.closePath();g.fillStyle=fill;g.fill();
-      if(loss){g.strokeStyle='rgba(157,137,102,.32)';g.lineWidth=.6;g.stroke();}
+      if(loss){g.strokeStyle='rgba(157,137,102,.16)';g.lineWidth=.6;g.stroke();}
     };
     draw(y);if(y<r*.5+2)draw(y+R);if(y>R-r*.5-2)draw(y-R);
   }
@@ -1093,10 +1102,10 @@ function ceilingDrawRegisterGrid(){
     // tile. No extra canvas height: that gutter was empty before.
     const gapH=Math.max(16,Math.min(24,W/28)),bandT=Math.min(inset-3,20),rr=Math.max(4,inset*.42);
     const top=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(topH*DPR))),tg=top.getContext('2d');tg.scale(DPR,DPR);
-    const bandYt=inset*.5+1;
-    ceilingStarBandH(tg,6,W-6,bandYt,gapH,bandT);
-    ceilingRoundel(tg,6+rr,bandYt,rr);ceilingRoundel(tg,W-6-rr,bandYt,rr);
-    ceilingKheker(tg,x0,x1,inset+3,frieze);
+    // The top edge carries the kheker alone, crowning the room at the very top of the sheet. It used to
+    // stand under a star band, which pushed it down into the score's own line, and on a phone the score
+    // was set straight across the frieze; the top star band gave way rather than the score.
+    ceilingKheker(tg,x0,x1,3,frieze);
     const bot=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(botH*DPR))),bg=bot.getContext('2d');bg.scale(DPR,DPR);
     // Drawn near-opaque rather than the .5 a register-dividing rule wears inside the passing tile: this
     // one is the room's real edge, so it has to close over whatever furniture is sliding behind it, not
@@ -1583,10 +1592,21 @@ function ceilingPointer(x,y,dir,size,alpha){
 // wall makes for itself, like the hour, is written in strokes with ceilingNumber(), and a capture's
 // score is exactly a count read at a run — so no Egyptian numerals are used here.
 function ceilingFloaterMark(f,alpha){
-  const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale),
-    left=sx(f.x)<W*.5,nx=left?margin+hand*2.2:W-margin-hand*2.2,
-    ny=clamp(sy(f.y)-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
+  const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale);
+  // The gutter line is settled once, on the first frame, by the same solver the atlas's own floaters use
+  // (floaterLine, effects.js), so a score in the margin steps clear of a note already standing there
+  // instead of being cut straight across it; with no clear line left the score goes unwritten. It waits
+  // out its first frame unsettled: a landing strikes its note in the same instant as its score, and the
+  // register is a frame behind (ground.js), so only on the second frame does it know where that note
+  // went. Nothing is lost by the wait, since a floater's first frame is drawn at no opacity at all.
+  if(!f.waited){f.waited=true;return;}
+  if(f.lift===undefined){f.left=sx(f.x)<W*.5;const line=floaterLine(f,f.left,size*1.5);f.lift=line===null?null:line-sy(f.y);}
+  if(f.lift===null)return;
+  const left=f.left,nx=left?margin+hand*2.2:W-margin-hand*2.2,
+    ny=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
   ctx.save();ctx.globalAlpha=alpha;ctx.font=plateFace(size,'sc');ctx.fillStyle=CEILING_PALETTE.red;
+  // Declared to the register as it is set, so a note placed on the next frame steps round it in turn.
+  markGroundText('floater',nx,ny,ctx.measureText(f.text).width,size,left?'left':'right',f);
   ctx.textAlign=left?'left':'right';ceilingChisel(ctx,f.text,nx,ny);
   ceilingPointer(nx+(left?-hand*1.8:hand*1.8),ny-hand*.5,left?1:-1,hand,alpha*.85);
   ctx.restore();
