@@ -1784,7 +1784,7 @@ defineVoice('rock',{
     'Cave bears slept here long before anyone painted. Their claw marks are still on the walls.',
     'One Chauvet rhinoceros has its horn drawn again and again, as if to make it move.',
     'A few quick lines: the painters knew the hind well enough to leave most of her out.',
-    'A boar at Altamira has eight legs. Perhaps it is running.',
+    'A many-legged animal at Altamira: a boar, some say; a bison, say others. Perhaps it is only running.',
     'At the Abri du Poisson a salmon a metre long is carved into the roof of the shelter.'
   ],
   opening:'The hand is raised. Tap to release. Follow the ochre dots for a clean landing. Circle a bright light to gain speed and to fill the hand. Every stroke spends ochre by the distance carried; hold a light to fill it again.',
