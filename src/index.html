@@ -43,6 +43,33 @@
        screen readers and is only taken off the screen. */
     #game[data-era="1"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
+    /* The end and pause leaves on this wall are not a printed leaf but a slab of the rock itself, broken
+       off and lying in the torchlight: a chipped edge rather than a rule, warm limestone lit from below
+       where the flame is, its grain from a turbulence field, a shade pooled at its top edge, and the
+       words on it in charcoal with the loss in red ochre. Nothing of the atlas's furniture — no double
+       rule, no gold lozenge, no Roman numeral, no drawn frame — is carried onto it. */
+    #game[data-era="1"] .colophon{--rock-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .17 0 0 0 0 .13 0 0 0 0 .09 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      color:#2c2622;background-color:#9e8666;background-image:var(--rock-grain),radial-gradient(ellipse 70% 40% at 78% 22%,rgba(40,30,22,.22),rgba(40,30,22,0) 70%),radial-gradient(ellipse 60% 35% at 18% 64%,rgba(40,30,22,.16),rgba(40,30,22,0) 70%),radial-gradient(ellipse 120% 90% at 40% 112%,rgba(255,214,160,.5),rgba(255,214,160,0) 62%);background-size:180px 180px,100% 100%,100% 100%,100% 100%;background-repeat:repeat,no-repeat,no-repeat,no-repeat;background-blend-mode:multiply,normal,normal,normal;
+      box-shadow:inset 0 3px 0 rgba(236,214,176,.35),inset 0 14px 22px rgba(236,214,176,.14),inset 0 -4px 0 rgba(26,20,15,.4),inset 0 -22px 30px rgba(26,20,15,.34),inset 4px 0 10px rgba(26,20,15,.2),inset -4px 0 10px rgba(26,20,15,.28);
+      clip-path:polygon(0 7%,4% 0,23% 1.8%,38% 0,61% 2.4%,77% .6%,93% 0,100% 4.5%,98.8% 27%,100% 46%,98.4% 71%,100% 89%,95% 100%,72% 97.8%,54% 100%,31% 98.2%,12% 100%,0 95%,1.4% 70%,0 49%,1.6% 24%)}
+    #game[data-era="1"] .colophon::before,#game[data-era="1"] .colophon::after{display:none}
+    #game[data-era="1"] #end-leaf-frame,#game[data-era="1"] #end-score-roman{display:none}
+    #game[data-era="1"] .colophon .eyebrow{color:#8a2f1a;opacity:1}
+    #game[data-era="1"] .colophon h2,#game[data-era="1"] .colophon strong{color:#2c2622;opacity:1}
+    #game[data-era="1"] .colophon .instruction,#game[data-era="1"] .colophon .small,#game[data-era="1"] .colophon .action-copy{color:#3b322b}
+    #game[data-era="1"] #end-score{color:#2c2622}
+    /* The breathing prompt is its own compositing layer, and over this slab's blended grain that layer
+       showed as a lighter band behind the line; the prompt holds still on stone instead. */
+    #game[data-era="1"] .colophon .action-copy{animation:none;opacity:.8}
+    #game[data-era="1"] #end-constellations{color:#7c2c19}
+    #game[data-era="1"] .score-frame{border-color:rgba(44,38,34,.35)}
+    #game[data-era="1"] .score-frame::before{border-color:#8a2f1a;border-radius:50%;transform:none}
+    #game[data-era="1"] .stat+.stat::before{background:rgba(44,38,34,.3)}
+    #game[data-era="1"] .title-rule::before,#game[data-era="1"] .title-rule::after{background:rgba(44,38,34,.45)}
+    #game[data-era="1"] .colophon .diff-btn{color:#2c2622;background:transparent;border:0;border-top:1px solid rgba(26,20,15,.45);box-shadow:0 1px 0 rgba(236,214,176,.3) inset}
+    #game[data-era="1"] .colophon .diff-btn:last-child{border-bottom:1px solid rgba(26,20,15,.45)}
+    #game[data-era="1"] #end{background:radial-gradient(ellipse at center,rgba(2,2,2,.55),rgba(2,2,2,.2) 70%,transparent)}
+    #game[data-era="1"] #pause{background:rgba(2,2,2,.55)}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--dawn:#c4932e;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     /* Newton mode never rides under the daily plate's own fixed setup (see newWorld() in ui.js), so
