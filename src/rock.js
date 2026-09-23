@@ -23,14 +23,14 @@
 definePlate('rock',{
   night:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'186,176,158',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'},
+    stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
+    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'226,168,108',torchFar:'150,100,62',
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
-    stone:'186,176,158',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'36,31,27',torchWarm:'206,176,140',torchFar:'150,126,100',
-    crust:'232,218,186',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'}
+    stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
+    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'226,168,108',torchFar:'150,100,62',
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'}
 });
 
 // ---------- The tunable rows ----------
@@ -317,16 +317,16 @@ function rockFissureWalk(x,y,a,L,base,turn,hf,step,out,free,wobble=.6){
 // and a small drift kept them there, and two parallel lines of even width read as rope rather than as
 // stone. The angle is free and the drift is twice what it was.
 function rockChunkFissures(seed,ci,cj,out){
-  const C=ROCK_CHUNK,h=rockHash(seed+ci*7919,cj*104729,1),count=h<.25?0:h<.72?1:h<.95?2:3;
+  const C=ROCK_CHUNK,h=rockHash(seed+ci*7919,cj*104729,1),count=h<.45?0:h<.88?1:2;
   for(let f=0;f<count;f++){
     const hf=k=>rockHash(seed+ci*7919+f*131,cj*104729+f*17,k);
-    const w=rockFissureWalk((ci+hf(2))*C,(cj+hf(3))*C,hf(4)*TAU,600+hf(5)*1000,5+hf(6)*9,(hf(11)-.5)*.34,hf,hf(9)<.6?(hf(10)<.5?1:-1):0,out);
+    const w=rockFissureWalk((ci+hf(2))*C,(cj+hf(3))*C,hf(4)*TAU,600+hf(5)*1000,3+hf(6)*5,(hf(11)-.5)*.16,hf,hf(9)<.6?(hf(10)<.5?1:-1):0,out);
     // A branch at most once, from a point in the middle reaches, striking off to one side and thinner.
     if(w&&hf(12)<.35){const n=w.pts.length/2,bi=Math.floor(n*(.3+hf(13)*.4)),hb=k=>hf(k+200);
-      rockFissureWalk(w.pts[bi*2],w.pts[bi*2+1],w.as[bi]+(hf(14)<.5?1:-1)*(.7+hf(15)*.6),(600+hf(5)*1000)*(.3+hf(16)*.3),(5+hf(6)*9)*.6,(hf(17)-.5)*.2,hb,w.step,out);}
+      rockFissureWalk(w.pts[bi*2],w.pts[bi*2+1],w.as[bi]+(hf(14)<.5?1:-1)*(.7+hf(15)*.6),(600+hf(5)*1000)*(.3+hf(16)*.3),(3+hf(6)*5)*.6,(hf(17)-.5)*.2,hb,w.step,out);}
   }
 }
-let rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
+let rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
 function rockBakeFace(camY){
   const tok=k=>ink.rock[k].split(',').map(Number),pale=tok('facePale'),deep=tok('faceDeep'),shaft=ink.rock.shaft,crack=ink.rock.crack,lip=ink.rock.kaolin;
   const up=H*ROCK_FACE_UP,down=H*ROCK_FACE_DOWN,sheetH=H+up+down,cw=Math.max(1,Math.ceil(W*DPR)),ch=Math.max(1,Math.ceil(sheetH*DPR));
@@ -354,21 +354,27 @@ function rockBakeFace(camY){
   // by hand — one across the top above the triad, one across the foot below the ring — placed to run
   // clear of every mark, which is why they alone may cross the disc the seeded ones stop at.
   const hand=k=>rockHash(0x5ca1e,k,k*7+1);
-  rockFissureWalk(-340,-450,.1,760,8,.01,k=>hand(k),1,walks,true,.12);
-  rockFissureWalk(360,300,Math.PI+.15,640,7,-.02,k=>hand(k+300),-1,walks,true,.12);
+  rockFissureWalk(-340,-450,.1,760,5,.01,k=>hand(k),1,walks,true,.12);
+  rockFissureWalk(360,300,Math.PI+.15,640,4,-.02,k=>hand(k+300),-1,walks,true,.12);
   // The lamp is above and to the right. Where a fissure carries a step, the higher side throws its
   // shadow across the lower where the step faces away from the lamp and shows a lit lip where it faces
-  // it; every fissure darkens the rock a little to both sides; and the crack itself goes to black, as
-  // wide as the walk says at that reach and no wider. Shadows first, then margins, lips and cores, so
-  // no fissure's soft edge lies over another's cut.
-  const LX=.707,LY=-.707;g.lineCap='round';
-  const seg=(w,i,ox,oy)=>{g.beginPath();g.moveTo(X(w.pts[i*2])+ox,Y(w.pts[i*2+1])+oy);g.lineTo(X(w.pts[i*2+2])+ox,Y(w.pts[i*2+3])+oy);g.stroke();};
+  // it; every fissure darkens the rock a little to both sides; and the crack itself goes dark, as wide
+  // as the walk says at that reach and no wider. Shadows first, then margins, lips and cores, so no
+  // fissure's soft edge lies over another's cut. Each pass is struck opaque into a layer of its own and
+  // laid down once at its strength: struck straight at that strength, segment by segment, every joint
+  // where two round caps overlap took the ink twice and the crack read as a string of beads.
+  const LX=.707,LY=-.707;
+  if(!rockFaceLayer||rockFaceLayer.width!==cw||rockFaceLayer.height!==ch)rockFaceLayer=makeCanvas(cw,ch);
+  const L=rockFaceLayer.getContext('2d');
+  const seg=(w,i,ox,oy)=>{L.beginPath();L.moveTo(X(w.pts[i*2])+ox,Y(w.pts[i*2+1])+oy);L.lineTo(X(w.pts[i*2+2])+ox,Y(w.pts[i*2+3])+oy);L.stroke();};
   const each=fn=>{for(const w of walks){const n=w.pts.length/2;for(let i=0;i+1<n;i++){const wd=(w.ws[i]+w.ws[i+1])/2;if(wd<.12)continue;
     const dx=w.pts[i*2+2]-w.pts[i*2],dy=w.pts[i*2+3]-w.pts[i*2+1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w.step,ny=dx/l*w.step,facing=nx*LX-ny*LY;fn(w,i,wd,nx,ny,facing);}}};
-  each((w,i,wd,nx,ny,facing)=>{if(!w.step)return;const sh=Math.max(0,-facing)*.4+.06;g.strokeStyle=`rgba(${crack},${sh.toFixed(3)})`;g.lineWidth=wd*1.8+4;seg(w,i,nx*(wd*.8+2),ny*(wd*.8+2));});
-  each((w,i,wd)=>{g.strokeStyle=`rgba(${crack},.45)`;g.lineWidth=wd*3+3;seg(w,i,0,0);});
-  each((w,i,wd,nx,ny,facing)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return;g.strokeStyle=`rgba(${lip},${(facing*.5).toFixed(3)})`;g.lineWidth=1.5;seg(w,i,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2));});
-  each((w,i,wd)=>{g.strokeStyle=`rgba(${shaft},.95)`;g.lineWidth=wd;seg(w,i,0,0);});
+  const pass=(rgb,alpha,fn)=>{L.setTransform(1,0,0,1,0,0);L.clearRect(0,0,cw,ch);L.setTransform(DPR,0,0,DPR,0,0);L.lineCap='round';L.lineJoin='round';L.strokeStyle=`rgb(${rgb})`;each(fn);
+    g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,0,0);g.restore();};
+  pass(crack,.26,(w,i,wd,nx,ny,facing)=>{if(!w.step||facing>0)return;L.lineWidth=wd*1.8+4;seg(w,i,nx*(wd*.8+2),ny*(wd*.8+2));});
+  pass(crack,.24,(w,i,wd)=>{L.lineWidth=wd*2.4+2;seg(w,i,0,0);});
+  pass(lip,.5,(w,i,wd,nx,ny,facing)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return;L.lineWidth=1.3;seg(w,i,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2));});
+  pass(shaft,.78,(w,i,wd)=>{L.lineWidth=wd*.8;seg(w,i,0,0);});
   rockFaceY=camY;rockFaceTop=up;
 }
 function rockPaintFace(){
@@ -377,37 +383,55 @@ function rockPaintFace(){
   ctx.save();ctx.globalCompositeOperation='overlay';ctx.drawImage(rockFace,0,-rockFaceTop-(world.cameraY-rockFaceY)*scale,W,rockFace.height/DPR);ctx.restore();
 }
 
-// The torch's own reach, in view space rather than world space — a light left behind in world space
-// would slide off the top of the sheet the instant the traveller climbed past it. Rebuilt whenever the
-// viewport's own size changes; never rebuilt for a scroll.
-let rockTorch=null,rockTorchKey='';
-function rockBakeTorch(){
-  const key=W+'x'+H;
-  if(rockTorch&&rockTorchKey===key)return rockTorch;
-  const c=makeCanvas(Math.max(1,Math.round(W)),Math.max(1,Math.round(H))),g=c.getContext('2d');
-  g.fillStyle=`rgb(${ink.rock.ambient})`;g.fillRect(0,0,W,H);
-  const tx=W*.44,ty=H*.70;
-  g.globalCompositeOperation='lighter';
-  const near=g.createRadialGradient(tx,ty,8,tx,ty,H*.86);
-  near.addColorStop(0,`rgba(${ink.rock.emberCore},1)`);near.addColorStop(.46,`rgba(${ink.rock.torchWarm},.58)`);near.addColorStop(1,`rgba(${ink.rock.torchWarm},0)`);
-  g.fillStyle=near;g.fillRect(0,0,W,H);
-  const far=g.createRadialGradient(tx,ty,H*.42,tx,ty,H*1.6);
-  far.addColorStop(0,`rgba(${ink.rock.torchFar},.42)`);far.addColorStop(1,`rgba(${ink.rock.torchFar},0)`);
-  g.fillStyle=far;g.fillRect(0,0,W,H);
-  // A fire, low and to the left and out of the frame, throwing its own colour up the nearest rock — a
-  // second source, and a warm one, so the pool of the torch is not the only light on the sheet.
-  const fire=g.createRadialGradient(W*.04,H*1.04,4,W*.04,H*1.04,H*.62);
-  fire.addColorStop(0,`rgba(${ink.rock.ember},.9)`);fire.addColorStop(.3,`rgba(${ink.rock.flare},.5)`);fire.addColorStop(1,`rgba(${ink.rock.flare},0)`);
-  g.fillStyle=fire;g.fillRect(0,0,W,H);
-  rockTorch=c;rockTorchKey=key;return rockTorch;
+// The torch is carried. A cave is a dark that one small flame is moved through, and a light pinned to
+// the view reads as a lamp on a stand however warm it is made, so the pool is centred on the hand and
+// the rest of the wall falls away to near black. The flame is one sprite, baked once per size; each
+// frame lays it into a small light buffer over the ambient dark — a quarter of the view's resolution,
+// since a light has nothing finer in it than its own falloff — and the buffer is multiplied over the
+// sheet, so moving the flame costs the same as holding it still.
+const ROCK_TORCH_R=560,ROCK_TORCH_Q=4,ROCK_TORCH_LAG=4.2;
+let rockFlame=null,rockFlameKey='',rockLight=null,rockTorchAt=null;
+function rockFlameSprite(){
+  const key=ink.rock.torchCore+ink.rock.torchWarm;if(rockFlame&&rockFlameKey===key)return rockFlame;
+  const S=256,c=makeCanvas(S,S),g=c.getContext('2d'),gr=g.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
+  // A flame's light does not fall off as a cone: it is a hot, small, near-white centre, a long even
+  // warm body the wall is actually read by, and a short last shoulder into the dark.
+  gr.addColorStop(0,`rgba(${ink.rock.torchCore},1)`);gr.addColorStop(.12,`rgba(${ink.rock.torchCore},.9)`);
+  gr.addColorStop(.36,`rgba(${ink.rock.torchWarm},.78)`);gr.addColorStop(.66,`rgba(${ink.rock.torchFar},.34)`);
+  gr.addColorStop(.86,`rgba(${ink.rock.torchFar},.08)`);gr.addColorStop(1,`rgba(${ink.rock.torchFar},0)`);
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  rockFlame=c;rockFlameKey=key;return c;
+}
+// Where the flame is, in the world's own space: it trails the hand a little, as a torch held out does,
+// and is carried by the run's own clock, so a pause stands it still and a fresh run finds it at once.
+function rockTorchFollow(){
+  const p=world.player;
+  if(!rockTorchAt||world.time<rockTorchAt.t||world.time-rockTorchAt.t>1){rockTorchAt={x:p.x,y:p.y,t:world.time};return rockTorchAt;}
+  const k=1-Math.exp(-(world.time-rockTorchAt.t)*ROCK_TORCH_LAG);
+  rockTorchAt.x+=(p.x-rockTorchAt.x)*k;rockTorchAt.y+=(p.y-rockTorchAt.y)*k;rockTorchAt.t=world.time;return rockTorchAt;
+}
+// Three unrelated rates, so the flame never settles into a beat the eye can count; reduced motion
+// holds it at its mean.
+function rockFlicker(t,a,b,c){return reducedMotion?0:Math.sin(t*a)*.5+Math.sin(t*b+1.7)*.32+Math.sin(t*c+.4)*.18;}
+function rockBuildLight(){
+  const lw=Math.max(1,Math.ceil(W/ROCK_TORCH_Q)),lh=Math.max(1,Math.ceil(H/ROCK_TORCH_Q));
+  if(!rockLight||rockLight.width!==lw||rockLight.height!==lh)rockLight=makeCanvas(lw,lh);
+  const g=rockLight.getContext('2d'),at=rockTorchFollow(),t=world.time;
+  g.globalCompositeOperation='source-over';g.globalAlpha=1;g.fillStyle=`rgb(${ink.rock.ambient})`;g.fillRect(0,0,lw,lh);
+  const f=rockFlicker(t,8.3,13.1,21.7),sway=rockFlicker(t,2.3,3.7,5.9);
+  const R=ROCK_TORCH_R*scale*(1+f*.05)/ROCK_TORCH_Q,x=(sx(at.x)+sway*4*scale)/ROCK_TORCH_Q,y=(sy(at.y)-10*scale)/ROCK_TORCH_Q;
+  g.globalCompositeOperation='lighter';g.globalAlpha=.92+f*.08;g.drawImage(rockFlameSprite(),x-R,y-R,R*2,R*2);
+  g.globalAlpha=1;g.globalCompositeOperation='source-over';
 }
 // Multiplied over whatever is already on the canvas: full strength over the wall alone (drawn from
 // rockAtmosphere, before a single mark is on it) and again at .42 over the whole composited frame
 // (drawn from rockDark, the last of this era's own painters to run), so the wall takes the whole fall
-// of the flame and the marks laid on it keep under half of that loss.
+// of the flame and the marks laid on it keep over half of their own light however far from it they
+// sit — which is what lets a ring in the dark still be read.
 function rockTorchPass(strength){
+  if(!rockLight)rockBuildLight();
   ctx.save();ctx.globalCompositeOperation='multiply';if(strength!==undefined)ctx.globalAlpha=strength;
-  ctx.drawImage(rockBakeTorch(),0,0,W,H);ctx.restore();
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(rockLight,0,0,W,H);ctx.restore();
 }
 function rockPaintWall(){
   rockBakeWall();
@@ -902,7 +926,7 @@ function rockChapterReveal(){}
 function rockAtmosphere(){
   plateShift.x=0;plateShift.y=0;
   rockPaintWall();
-  rockTorchPass();
+  rockBuildLight();rockTorchPass();
 }
 
 defineHand('rock',{
@@ -942,8 +966,8 @@ defineVoice('rock',{
 // Drops every baked tile and sprite cache this file owns; invalidateArt() calls this alongside its own
 // when the plate or the pixel ratio changes, so the next reach simply rebuilds lazily as it always did.
 function invalidateRockArt(){
-  rockWall=null;rockFace=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockReliefSprites.clear();
-  rockTorch=null;rockTorchKey='';
+  rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockReliefSprites.clear();
+  rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
   rockDabSprites.clear();
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
