@@ -676,10 +676,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(typeof context.test.handFor('frame'),'function','A plate that draws a whole frame in its own hand must name that painter');
     assert.equal(wall.chart,'DECAN COURSE');
     assert.equal(wall.chartNoun,'decan course');
-    assert.equal(wall.losses['THE DARK CAUGHT UP'],'THE WALL BROKE AWAY BENEATH');
+    assert.equal(wall.losses['THE DARK CAUGHT UP'],'THE WATERS OF NUN ROSE OVER THE BARQUE');
     assert.equal(wall.losses['THE NIB RAN DRY'],'THE REED RAN DRY');
     assert.equal(wall.observations.perfectThree,'THREE CLEAN TRANSFERS');
-    assert.equal(wall.observations.rightAngle,'A RIGHT ANGLE ON THE CANON GRID');
+    assert.equal(wall.observations.rightAngle,'A RIGHT ANGLE OF ARRIVAL');
     assert.equal(wall.pressures.relaxed,'QUIET NIGHT');
     assert.equal(wall.pressures.hardcore,'HARD NIGHT');
     assert.equal(wall.hud.pace,'COURSE \u00d7');
