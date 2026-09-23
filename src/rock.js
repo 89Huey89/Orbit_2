@@ -303,10 +303,21 @@ function rockBakeWall(){
 // through all of it.
 const ROCK_CHUNK=600,ROCK_REACH=1800,ROCK_FACE_UP=.34,ROCK_FACE_DOWN=.11,ROCK_TONE_Q=4,ROCK_OPENING_Y=-60,ROCK_OPENING_R=330;
 function rockHash(a,b,c){let h=Math.imul(a^0x9E3779B1,0x85EBCA77)^Math.imul(b+0x27d4eb2f,0xC2B2AE3D)^Math.imul(c+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
-// Value noise on the world's own plane, one octave, read at a point rather than baked to a lattice.
-function rockWorldNoise(x,y,cell,seed){
+// Value noise on the world's own plane, one octave, read at a point rather than baked to a lattice. A
+// bake walks this along a grid a great deal finer than most of the cells it reads (see rockBakeFace's
+// material loop, where a whole reach of ≥260-unit cells moves under one column of samples at a time), so
+// consecutive calls along a row overwhelmingly share one or both lattice corners with the call before
+// them. `st`, when given, is that one field's running state across such a sweep — the last (ix,iy) asked
+// for and the four corner hashes that came back — so a step that lands on the same cell, or slides into
+// the next one along x, costs zero or two fresh rockHash calls instead of four; a jump (a new row, or the
+// first call) falls back to computing all four fresh, which is always correct, just not free.
+function rockWorldNoise(x,y,cell,seed,st){
   const fx=x/cell,fy=y/cell,ix=Math.floor(fx),iy=Math.floor(fy),tx=rockSS(fx-ix),ty=rockSS(fy-iy);
-  const a=rockHash(seed,ix,iy),b=rockHash(seed,ix+1,iy),c=rockHash(seed,ix,iy+1),d=rockHash(seed,ix+1,iy+1);
+  let a,b,c,d;
+  if(st&&st.iy===iy&&st.ix===ix){a=st.a;b=st.b;c=st.c;d=st.d;}
+  else if(st&&st.iy===iy&&st.ix+1===ix){a=st.b;c=st.d;b=rockHash(seed,ix+1,iy);d=rockHash(seed,ix+1,iy+1);}
+  else{a=rockHash(seed,ix,iy);b=rockHash(seed,ix+1,iy);c=rockHash(seed,ix,iy+1);d=rockHash(seed,ix+1,iy+1);}
+  if(st){st.ix=ix;st.iy=iy;st.a=a;st.b=b;st.c=c;st.d=d;}
   return (a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;
 }
 // One fissure: a walk from a point, turning a little at every step, with a width that tapers to
@@ -358,24 +369,45 @@ function rockBakeFace(camY){
   // caption could, and the plane still darkens toward the sides of a wide sheet.
   const tw=Math.ceil(W/ROCK_TONE_Q),th=Math.ceil(sheetH/ROCK_TONE_Q);
   if(!rockFaceTone||rockFaceTone.width!==tw||rockFaceTone.height!==th){rockFaceTone=makeCanvas(tw,th);rockFaceToneImg=rockFaceTone.getContext('2d').createImageData(tw,th);rockFaceH=new Float32Array((tw+2)*(th+2));}
-  const td=rockFaceToneImg.data,FH=rockFaceH,fw=tw+2,N=(k,x,y,c)=>rockWorldNoise(x,y,c,seed+k);
+  const td=rockFaceToneImg.data,FH=rockFaceH,fw=tw+2;
+  // Each of the seventeen fields below is read on a fine sweep across a cell it barely moves through —
+  // every one of the fields is ≥34 world units on a side and the sweep steps by a few world units at a
+  // time, so a column, and often several rows, land back in the same lattice cell as the sample before
+  // it. rockWorldNoise's own hashing is cheap, but paying it 17×4 times a pixel across a whole sheet is
+  // not, so the four corner hashes for each field are carried between samples by hand in plain scalars
+  // (ix/iy/a/b/c/d per field, one letter set per field number) rather than through a shared object or
+  // map: a sample that lands in the cell it just read costs nothing further, one that slides one cell
+  // over costs two fresh hashes instead of four, and a jump — the first sample, or the start of a new
+  // row — costs the full four, which is always correct, only not free. This is exactly what
+  // rockWorldNoise(...,cache) already does; it is inlined here, field by field, because plain local
+  // numbers stay in registers across the loop where a shared cache object's fields do not, and this loop
+  // runs 17 times over every pixel of the sheet.
+  let ix11=NaN,iy11=NaN,a11=0,b11=0,c11=0,d11=0,n11=0,ix12=NaN,iy12=NaN,a12=0,b12=0,c12=0,d12=0,n12=0,ix13=NaN,iy13=NaN,a13=0,b13=0,c13=0,d13=0,n13=0,ix14=NaN,iy14=NaN,a14=0,b14=0,c14=0,d14=0,n14=0,ix15=NaN,iy15=NaN,a15=0,b15=0,c15=0,d15=0,n15=0,ix16=NaN,iy16=NaN,a16=0,b16=0,c16=0,d16=0,n16=0,ix17=NaN,iy17=NaN,a17=0,b17=0,c17=0,d17=0,n17=0,ix18=NaN,iy18=NaN,a18=0,b18=0,c18=0,d18=0,n18=0,ix21=NaN,iy21=NaN,a21=0,b21=0,c21=0,d21=0,n21=0,ix22=NaN,iy22=NaN,a22=0,b22=0,c22=0,d22=0,n22=0,ix23=NaN,iy23=NaN,a23=0,b23=0,c23=0,d23=0,n23=0,ix24=NaN,iy24=NaN,a24=0,b24=0,c24=0,d24=0,n24=0,ix25=NaN,iy25=NaN,a25=0,b25=0,c25=0,d25=0,n25=0,ix26=NaN,iy26=NaN,a26=0,b26=0,c26=0,d26=0,n26=0,ix27=NaN,iy27=NaN,a27=0,b27=0,c27=0,d27=0,n27=0,ix28=NaN,iy28=NaN,a28=0,b28=0,c28=0,d28=0,n28=0,ix29=NaN,iy29=NaN,a29=0,b29=0,c29=0,d29=0,n29=0;
   const bed=(rockHash(seed,5,5)-.5)*.7,bs=Math.sin(bed),bc=Math.cos(bed),sp=64+rockHash(seed,6,6)*56;
   const wxOf=i=>((i-.5)*ROCK_TONE_Q-W*.5)/scale,wyOf=j=>camY+((j-.5)*ROCK_TONE_Q-up)/scale;
   // The height first, with a border of one sample so every sample has both neighbours to be lit from.
   for(let j=0;j<th+2;j++)for(let i=0;i<fw;i++){
-    const wx=wxOf(i),wy=wyOf(j),r=1-Math.abs(2*N(11,wx,wy,380)-1);
-    let h=.5*r*r+.3*N(12,wx,wy,170)+.2*N(13,wx,wy,75)+.38*rockStep(.56,.82,N(14,wx,wy,260));
+    const wx=wxOf(i),wy=wyOf(j);
+    {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy11===iy&&ix11===ix){a=a11;b=b11;c=c11;d=d11;}else if(iy11===iy&&ix11+1===ix){a=b11;c=d11;b=rockHash(seed+11,ix+1,iy);d=rockHash(seed+11,ix+1,iy+1);}else{a=rockHash(seed+11,ix,iy);b=rockHash(seed+11,ix+1,iy);c=rockHash(seed+11,ix,iy+1);d=rockHash(seed+11,ix+1,iy+1);}ix11=ix;iy11=iy;a11=a;b11=b;c11=c;d11=d;n11=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    const r=1-Math.abs(2*n11-1);
+    {const fx=wx/170,fy=wy/170,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy12===iy&&ix12===ix){a=a12;b=b12;c=c12;d=d12;}else if(iy12===iy&&ix12+1===ix){a=b12;c=d12;b=rockHash(seed+12,ix+1,iy);d=rockHash(seed+12,ix+1,iy+1);}else{a=rockHash(seed+12,ix,iy);b=rockHash(seed+12,ix+1,iy);c=rockHash(seed+12,ix,iy+1);d=rockHash(seed+12,ix+1,iy+1);}ix12=ix;iy12=iy;a12=a;b12=b;c12=c;d12=d;n12=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/75,fy=wy/75,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy13===iy&&ix13===ix){a=a13;b=b13;c=c13;d=d13;}else if(iy13===iy&&ix13+1===ix){a=b13;c=d13;b=rockHash(seed+13,ix+1,iy);d=rockHash(seed+13,ix+1,iy+1);}else{a=rockHash(seed+13,ix,iy);b=rockHash(seed+13,ix+1,iy);c=rockHash(seed+13,ix,iy+1);d=rockHash(seed+13,ix+1,iy+1);}ix13=ix;iy13=iy;a13=a;b13=b;c13=c;d13=d;n13=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/260,fy=wy/260,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy14===iy&&ix14===ix){a=a14;b=b14;c=c14;d=d14;}else if(iy14===iy&&ix14+1===ix){a=b14;c=d14;b=rockHash(seed+14,ix+1,iy);d=rockHash(seed+14,ix+1,iy+1);}else{a=rockHash(seed+14,ix,iy);b=rockHash(seed+14,ix+1,iy);c=rockHash(seed+14,ix,iy+1);d=rockHash(seed+14,ix+1,iy+1);}ix14=ix;iy14=iy;a14=a;b14=b;c14=c;d14=d;n14=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    let h=.5*r*r+.3*n12+.2*n13+.38*rockStep(.56,.82,n14);
     // A bedding plane: across the beds the rock climbs slowly and then drops away at the next one's lip.
-    const v=(-wx*bs+wy*bc+(N(15,wx,wy,300)-.5)*220+(N(17,wx,wy,110)-.5)*60)/(sp*(.7+.6*N(18,wx,wy,420))),fr=v-Math.floor(v),saw=fr<.84?fr/.84:(1-fr)/.16;
-    h+=saw*.15*rockStep(.62,.8,N(16,wx,wy,380));
+    {const fx=wx/300,fy=wy/300,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy15===iy&&ix15===ix){a=a15;b=b15;c=c15;d=d15;}else if(iy15===iy&&ix15+1===ix){a=b15;c=d15;b=rockHash(seed+15,ix+1,iy);d=rockHash(seed+15,ix+1,iy+1);}else{a=rockHash(seed+15,ix,iy);b=rockHash(seed+15,ix+1,iy);c=rockHash(seed+15,ix,iy+1);d=rockHash(seed+15,ix+1,iy+1);}ix15=ix;iy15=iy;a15=a;b15=b;c15=c;d15=d;n15=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/110,fy=wy/110,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy17===iy&&ix17===ix){a=a17;b=b17;c=c17;d=d17;}else if(iy17===iy&&ix17+1===ix){a=b17;c=d17;b=rockHash(seed+17,ix+1,iy);d=rockHash(seed+17,ix+1,iy+1);}else{a=rockHash(seed+17,ix,iy);b=rockHash(seed+17,ix+1,iy);c=rockHash(seed+17,ix,iy+1);d=rockHash(seed+17,ix+1,iy+1);}ix17=ix;iy17=iy;a17=a;b17=b;c17=c;d17=d;n17=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/420,fy=wy/420,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy18===iy&&ix18===ix){a=a18;b=b18;c=c18;d=d18;}else if(iy18===iy&&ix18+1===ix){a=b18;c=d18;b=rockHash(seed+18,ix+1,iy);d=rockHash(seed+18,ix+1,iy+1);}else{a=rockHash(seed+18,ix,iy);b=rockHash(seed+18,ix+1,iy);c=rockHash(seed+18,ix,iy+1);d=rockHash(seed+18,ix+1,iy+1);}ix18=ix;iy18=iy;a18=a;b18=b;c18=c;d18=d;n18=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    const v=(-wx*bs+wy*bc+(n15-.5)*220+(n17-.5)*60)/(sp*(.7+.6*n18)),fr=v-Math.floor(v),saw=fr<.84?fr/.84:(1-fr)/.16;
+    {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy16===iy&&ix16===ix){a=a16;b=b16;c=c16;d=d16;}else if(iy16===iy&&ix16+1===ix){a=b16;c=d16;b=rockHash(seed+16,ix+1,iy);d=rockHash(seed+16,ix+1,iy+1);}else{a=rockHash(seed+16,ix,iy);b=rockHash(seed+16,ix+1,iy);c=rockHash(seed+16,ix,iy+1);d=rockHash(seed+16,ix+1,iy+1);}ix16=ix;iy16=iy;a16=a;b16=b;c16=c;d16=d;n16=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    h+=saw*.15*rockStep(.62,.8,n16);
     FH[j*fw+i]=h;
   }
   const d=ROCK_TONE_Q/scale,K=34/d*.5,tone=(o,c,w)=>{td[o]+=(c[0]-td[o])*w;td[o+1]+=(c[1]-td[o+1])*w;td[o+2]+=(c[2]-td[o+2])*w;};
   for(let j=0;j<th;j++)for(let i=0;i<tw;i++){
     const wx=wxOf(i+1),wy=wyOf(j+1),k=(j+1)*fw+i+1,gx=FH[k+1]-FH[k-1],gy=FH[k+fw]-FH[k-fw];
-    const iron=rockStep(.5,.74,.75*N(21,wx,wy,300)+.25*N(22,wx,wy,80)),yel=rockStep(.52,.76,.8*N(27,wx,wy,340)+.2*N(28,wx,wy,70));
-    const calc=rockStep(.54,.76,.8*N(23,wx,wy,380)+.2*N(29,wx,wy,60)),damp=rockStep(.58,.8,N(24,wx,wy,260));
-    const flow=rockStep(.55,.75,N(25,wx,wy/9,34))*rockStep(.45,.66,N(26,wx,wy,460));
+    {const fx=wx/300,fy=wy/300,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy21===iy&&ix21===ix){a=a21;b=b21;c=c21;d=d21;}else if(iy21===iy&&ix21+1===ix){a=b21;c=d21;b=rockHash(seed+21,ix+1,iy);d=rockHash(seed+21,ix+1,iy+1);}else{a=rockHash(seed+21,ix,iy);b=rockHash(seed+21,ix+1,iy);c=rockHash(seed+21,ix,iy+1);d=rockHash(seed+21,ix+1,iy+1);}ix21=ix;iy21=iy;a21=a;b21=b;c21=c;d21=d;n21=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/80,fy=wy/80,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy22===iy&&ix22===ix){a=a22;b=b22;c=c22;d=d22;}else if(iy22===iy&&ix22+1===ix){a=b22;c=d22;b=rockHash(seed+22,ix+1,iy);d=rockHash(seed+22,ix+1,iy+1);}else{a=rockHash(seed+22,ix,iy);b=rockHash(seed+22,ix+1,iy);c=rockHash(seed+22,ix,iy+1);d=rockHash(seed+22,ix+1,iy+1);}ix22=ix;iy22=iy;a22=a;b22=b;c22=c;d22=d;n22=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/340,fy=wy/340,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy27===iy&&ix27===ix){a=a27;b=b27;c=c27;d=d27;}else if(iy27===iy&&ix27+1===ix){a=b27;c=d27;b=rockHash(seed+27,ix+1,iy);d=rockHash(seed+27,ix+1,iy+1);}else{a=rockHash(seed+27,ix,iy);b=rockHash(seed+27,ix+1,iy);c=rockHash(seed+27,ix,iy+1);d=rockHash(seed+27,ix+1,iy+1);}ix27=ix;iy27=iy;a27=a;b27=b;c27=c;d27=d;n27=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/70,fy=wy/70,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy28===iy&&ix28===ix){a=a28;b=b28;c=c28;d=d28;}else if(iy28===iy&&ix28+1===ix){a=b28;c=d28;b=rockHash(seed+28,ix+1,iy);d=rockHash(seed+28,ix+1,iy+1);}else{a=rockHash(seed+28,ix,iy);b=rockHash(seed+28,ix+1,iy);c=rockHash(seed+28,ix,iy+1);d=rockHash(seed+28,ix+1,iy+1);}ix28=ix;iy28=iy;a28=a;b28=b;c28=c;d28=d;n28=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    const iron=rockStep(.5,.74,.75*n21+.25*n22),yel=rockStep(.52,.76,.8*n27+.2*n28);
+    {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy23===iy&&ix23===ix){a=a23;b=b23;c=c23;d=d23;}else if(iy23===iy&&ix23+1===ix){a=b23;c=d23;b=rockHash(seed+23,ix+1,iy);d=rockHash(seed+23,ix+1,iy+1);}else{a=rockHash(seed+23,ix,iy);b=rockHash(seed+23,ix+1,iy);c=rockHash(seed+23,ix,iy+1);d=rockHash(seed+23,ix+1,iy+1);}ix23=ix;iy23=iy;a23=a;b23=b;c23=c;d23=d;n23=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/60,fy=wy/60,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy29===iy&&ix29===ix){a=a29;b=b29;c=c29;d=d29;}else if(iy29===iy&&ix29+1===ix){a=b29;c=d29;b=rockHash(seed+29,ix+1,iy);d=rockHash(seed+29,ix+1,iy+1);}else{a=rockHash(seed+29,ix,iy);b=rockHash(seed+29,ix+1,iy);c=rockHash(seed+29,ix,iy+1);d=rockHash(seed+29,ix+1,iy+1);}ix29=ix;iy29=iy;a29=a;b29=b;c29=c;d29=d;n29=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/260,fy=wy/260,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy24===iy&&ix24===ix){a=a24;b=b24;c=c24;d=d24;}else if(iy24===iy&&ix24+1===ix){a=b24;c=d24;b=rockHash(seed+24,ix+1,iy);d=rockHash(seed+24,ix+1,iy+1);}else{a=rockHash(seed+24,ix,iy);b=rockHash(seed+24,ix+1,iy);c=rockHash(seed+24,ix,iy+1);d=rockHash(seed+24,ix+1,iy+1);}ix24=ix;iy24=iy;a24=a;b24=b;c24=c;d24=d;n24=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    const calc=rockStep(.54,.76,.8*n23+.2*n29),damp=rockStep(.58,.8,n24);
+    {const fx=wx/34,fy=wy/9/34,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy25===iy&&ix25===ix){a=a25;b=b25;c=c25;d=d25;}else if(iy25===iy&&ix25+1===ix){a=b25;c=d25;b=rockHash(seed+25,ix+1,iy);d=rockHash(seed+25,ix+1,iy+1);}else{a=rockHash(seed+25,ix,iy);b=rockHash(seed+25,ix+1,iy);c=rockHash(seed+25,ix,iy+1);d=rockHash(seed+25,ix+1,iy+1);}ix25=ix;iy25=iy;a25=a;b25=b;c25=c;d25=d;n25=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/460,fy=wy/460,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy26===iy&&ix26===ix){a=a26;b=b26;c=c26;d=d26;}else if(iy26===iy&&ix26+1===ix){a=b26;c=d26;b=rockHash(seed+26,ix+1,iy);d=rockHash(seed+26,ix+1,iy+1);}else{a=rockHash(seed+26,ix,iy);b=rockHash(seed+26,ix+1,iy);c=rockHash(seed+26,ix,iy+1);d=rockHash(seed+26,ix+1,iy+1);}ix26=ix;iy26=iy;a26=a;b26=b;c26=c;d26=d;n26=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
+    const flow=rockStep(.55,.75,n25)*rockStep(.45,.66,n26);
     const shade=clamp(.5+(.60*gy-.62*gx)*K*(1-flow*.6)-(1-FH[k])*.08,0,1);
     const o=(j*tw+i)*4;td[o]=132;td[o+1]=126;td[o+2]=120;
     tone(o,ironT,iron);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow);tone(o,dampT,damp*.8);
@@ -404,15 +436,31 @@ function rockBakeFace(camY){
   const LX=.707,LY=-.707;
   if(!rockFaceLayer||rockFaceLayer.width!==cw||rockFaceLayer.height!==ch)rockFaceLayer=makeCanvas(cw,ch);
   const L=rockFaceLayer.getContext('2d');
-  const seg=(w,i,ox,oy)=>{L.beginPath();L.moveTo(X(w.pts[i*2])+ox,Y(w.pts[i*2+1])+oy);L.lineTo(X(w.pts[i*2+2])+ox,Y(w.pts[i*2+3])+oy);L.stroke();};
-  const each=fn=>{for(const w of walks){const n=w.pts.length/2;for(let i=0;i+1<n;i++){const wd=(w.ws[i]+w.ws[i+1])/2;if(wd<.12)continue;
-    const dx=w.pts[i*2+2]-w.pts[i*2],dy=w.pts[i*2+3]-w.pts[i*2+1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w.step,ny=dx/l*w.step,facing=nx*LX-ny*LY;fn(w,i,wd,nx,ny,facing);}}};
-  const pass=(rgb,alpha,fn)=>{L.setTransform(1,0,0,1,0,0);L.clearRect(0,0,cw,ch);L.setTransform(DPR,0,0,DPR,0,0);L.lineCap='round';L.lineJoin='round';L.strokeStyle=`rgb(${rgb})`;each(fn);
-    g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,0,0);g.restore();};
-  pass(crack,.26,(w,i,wd,nx,ny,facing)=>{if(!w.step||facing>0)return;L.lineWidth=wd*1.8+4;seg(w,i,nx*(wd*.8+2),ny*(wd*.8+2));});
-  pass(crack,.24,(w,i,wd)=>{L.lineWidth=wd*2.4+2;seg(w,i,0,0);});
-  pass(lip,.5,(w,i,wd,nx,ny,facing)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return;L.lineWidth=1.3;seg(w,i,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2));});
-  pass(shaft,.78,(w,i,wd)=>{L.lineWidth=wd*.8;seg(w,i,0,0);});
+  // Every fissure is walked the full length seeded for it, out to ROCK_REACH beyond the sheet so a walk
+  // that wanders toward the edge still reads as continuing past it rather than stopping dead — but most
+  // of most walks, and entire walks near the reach's own far edge, project nowhere near the sheet once
+  // X()/Y() places them. The four passes below all share the same geometry, so it is filtered to the
+  // sheet (padded for the widest line any pass draws, plus its offset) exactly once here rather than
+  // once per pass, and what does not survive that is skipped before it ever reaches a stroke call: a
+  // fissure a screen and a half off to the side is real for continuity, not for ink.
+  const segs=[],CULL=48;
+  for(const w of walks){const n=w.pts.length/2;for(let i=0;i+1<n;i++){
+    const wd=(w.ws[i]+w.ws[i+1])/2;if(wd<.12)continue;
+    const x0=X(w.pts[i*2]),y0=Y(w.pts[i*2+1]),x1=X(w.pts[i*2+2]),y1=Y(w.pts[i*2+3]);
+    if(Math.max(x0,x1)<-CULL||Math.min(x0,x1)>W+CULL||Math.max(y0,y1)<-CULL||Math.min(y0,y1)>sheetH+CULL)continue;
+    const dx=w.pts[i*2+2]-w.pts[i*2],dy=w.pts[i*2+3]-w.pts[i*2+1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w.step,ny=dx/l*w.step,facing=nx*LX-ny*LY;
+    segs.push(w,i,wd,nx,ny,facing,x0,y0,x1,y1);
+  }}
+  const seg=(x0,y0,x1,y1,ox,oy)=>{L.beginPath();L.moveTo(x0+ox,y0+oy);L.lineTo(x1+ox,y1+oy);L.stroke();};
+  const each=fn=>{for(let s=0;s<segs.length;s+=10)fn(segs[s],segs[s+1],segs[s+2],segs[s+3],segs[s+4],segs[s+5],segs[s+6],segs[s+7],segs[s+8],segs[s+9]);};
+  const pass=(rgb,alpha,fn)=>{
+    L.setTransform(1,0,0,1,0,0);L.clearRect(0,0,cw,ch);L.setTransform(DPR,0,0,DPR,0,0);L.lineCap='round';L.lineJoin='round';L.strokeStyle=`rgb(${rgb})`;each(fn);
+    g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,0,0);g.restore();
+  };
+  pass(crack,.26,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing>0)return;L.lineWidth=wd*1.8+4;seg(x0,y0,x1,y1,nx*(wd*.8+2),ny*(wd*.8+2));});
+  pass(crack,.24,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{L.lineWidth=wd*2.4+2;seg(x0,y0,x1,y1,0,0);});
+  pass(lip,.5,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return;L.lineWidth=1.3;seg(x0,y0,x1,y1,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2));});
+  pass(shaft,.78,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{L.lineWidth=wd*.8;seg(x0,y0,x1,y1,0,0);});
   rockFaceY=camY;rockFaceTop=up;
 }
 function rockPaintFace(){
