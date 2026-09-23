@@ -989,7 +989,7 @@ function rockRimEdges(g,pts,L){
   g.save();g.lineCap='round';
   for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n],ex=b[0]-a[0],ey=b[1]-a[1],l=Math.hypot(ex,ey)||1,nx=ey/l*sg,ny=-ex/l*sg,f=nx*L.dx+ny*L.dy;
     if(f>.08){g.globalCompositeOperation='screen';g.strokeStyle=`rgba(${ink.rock.torchWarm},${(.42*f*(.35+.65*L.fall)).toFixed(3)})`;g.lineWidth=1.1;}
-    else if(f<-.08){g.globalCompositeOperation='multiply';g.strokeStyle=`rgba(30,24,20,${(.7*-f).toFixed(3)})`;g.lineWidth=1.7;}
+    else if(f<-.08){g.globalCompositeOperation='multiply';g.strokeStyle=`rgba(30,24,20,${(.45*-f).toFixed(3)})`;g.lineWidth=1;}
     else continue;
     g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();}
   g.restore();
@@ -1032,12 +1032,8 @@ function rockShaftSprite(seed,reach,core){
   const ring=(r,ox,oy)=>ang.map((a,k)=>{const rr=r*(1+(jag[k]-1)*Math.min(1,r/rim+.25));return [ox+Math.cos(a)*rr,oy+Math.sin(a)*rr];});
   const mouth=(r,ox,oy)=>{const p=ring(r,ox,oy);g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();};
   const rgb=t=>ink.rock[t].split(',').map(Number),stone=rgb('stone'),dark=rgb('shaft'),soot=ink.rock.crack,warm=stone.map((v,i)=>(v+rgb('stain')[i])/2);
-  // The soot and the loosened rock the pull reaches: the face darkened toward the mouth.
-  const halo=g.createRadialGradient(0,0,rim*.9,0,0,rB);halo.addColorStop(0,`rgba(${soot},.62)`);halo.addColorStop(.45,`rgba(${soot},.22)`);halo.addColorStop(1,`rgba(${soot},0)`);
-  g.fillStyle=halo;g.beginPath();g.arc(0,0,rB,0,TAU);g.fill();
-  // The face slopes into the mouth before it breaks, darkening toward it; which side of the slope takes
-  // the flame is the live light's business, not the bake's.
-  {const sl=g.createRadialGradient(0,0,rim,0,0,rim*1.75);sl.addColorStop(0,`rgba(${soot},.3)`);sl.addColorStop(1,`rgba(${soot},0)`);g.fillStyle=sl;g.beginPath();g.arc(0,0,rim*1.75,0,TAU);g.fill();}
+  // Nothing darkens the face round the mouth: a band of soot or slope drawn there read as a raised
+  // rim throwing its shadow on the rock below it. The face runs unchanged to the edge and breaks.
   // The rock broke along lines out from the mouth before it fell in.
   g.lineCap='round';g.strokeStyle=`rgba(${soot},.7)`;
   for(let k=0;k<7;k++){let a=rnd()*TAU,r=rim*.95,x=Math.cos(a)*r,y=Math.sin(a)*r;const L=rim*(.5+rnd()*1.1);g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);
@@ -1049,7 +1045,10 @@ function rockShaftSprite(seed,reach,core){
   const layers=64,ledge=new Set([12+(rnd()*8|0),29+(rnd()*8|0),45+(rnd()*7|0)]);let step=1;
   for(let k=0;k<=layers;k++){
     if(ledge.has(k))step*=.74;
-    const t=k/layers,r=rim+(cB-rim)*Math.pow(t,.8),lit=.12+.84*Math.pow(1-t,1.5)*step;
+    // The inner wall just under the lip is already a step darker than the face: the edge of a hole is
+    // a break, and a throat that shaded in from nothing put its visible edge inside its real one, so the
+    // lip's line and its shadow landed on what looked like the face outside it.
+    const t=k/layers,r=rim+(cB-rim)*Math.pow(t,.8),lit=.7-.58*(1-Math.pow(1-t,1.3)*step);
     g.fillStyle=`rgb(${Math.round(255*lit)},${Math.round(244*lit)},${Math.round(228*lit)})`;mouth(r,0,0);g.fill();
   }
   // The walls' own grain, running down: flutes from the lip toward the black, a few broken strata
@@ -1184,8 +1183,7 @@ function rockChasmSprite(h,L,w){
     for(let i=1;i<6;i++){const a=Math.PI/2+Math.PI*i/6;p.push([-H+Math.cos(a)*rr*(1+(T[0]+B[0])/2),Math.sin(a)*rr*(1+(T[0]+B[0])/2)]);}
     return p;};
   const outline=(k,ox=0,oy=0)=>{const p=ringAt(k);g.beginPath();g.moveTo(p[0][0]+ox,p[0][1]+oy);for(let i=1;i<p.length;i++)g.lineTo(p[i][0]+ox,p[i][1]+oy);g.closePath();};
-  // Soot and loosened rock along it, darkest at the lip.
-  for(const [k,al] of [[3.1,.1],[2.5,.14],[2.05,.2]]){g.fillStyle=`rgba(${soot},${al})`;outline(k);g.fill();}
+  // No band of soot round it: see rockShaftSprite — the face runs unchanged to the edge and breaks.
   // Short cracks struck off the lip into the face where the rock gave.
   g.lineCap='round';g.strokeStyle=`rgba(${soot},.65)`;
   for(let k=0;k<Math.max(3,Math.round(Lq/40));k++){const side=rnd()<.5?-1:1;let x=(rnd()-.5)*Lq*.9,y=side*wq*1.85,a=side*Math.PI/2+(rnd()-.5)*1.2;g.lineWidth=1.4;g.beginPath();g.moveTo(x,y);
@@ -1195,7 +1193,7 @@ function rockChasmSprite(h,L,w){
   const layers=64,ledge=new Set([15+(rnd()*9|0),37+(rnd()*9|0)]);let step=1;
   for(let k=0;k<=layers;k++){
     if(ledge.has(k))step*=.74;
-    const t=k/layers,kk=1.9+(1-1.9)*Math.pow(t,.8),lit=.12+.84*Math.pow(1-t,1.4)*step;
+    const t=k/layers,kk=1.9+(1-1.9)*Math.pow(t,.8),lit=.7-.58*(1-Math.pow(1-t,1.2)*step);
     g.fillStyle=`rgb(${Math.round(255*lit)},${Math.round(244*lit)},${Math.round(228*lit)})`;outline(kk);g.fill();
   }
   // The walls' grain, running down into the crack from both lips toward the black.
