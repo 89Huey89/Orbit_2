@@ -370,9 +370,13 @@ class OrbitWorld {
   // same two points). Off by default, so an existing fixture, a fixed layout or an ordinary run reads
   // exactly as it always has; the daily plate is the one course dealt with it on, since a showcase of
   // its own is the whole point of a plate everyone is handed the same seed for.
-  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false) {
+  // goalRow is the one thing an endless atlas has no use for and a plate with a real finish line
+  // does: 0 (every existing caller's default) keeps a run endless exactly as it always was, and a
+  // plate that wants a win names the row it is won at, appended last so no existing positional call
+  // has to change to keep meaning what it always meant.
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false, goalRow = 0) {
     this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening; this.newtonOn = !!newtonOn;
-    this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
+    this.width = width; this.height = height; this.time = 0; this.elapsed = 0; this.goalRow = goalRow; this.won = false;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
     this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;this.darknessLead=0;
@@ -750,12 +754,22 @@ class OrbitWorld {
       }
     }
     for(const chart of this.constellations){if(!chart.completed&&this.progress>=chart.entry.row+4)chart.expired=true;}
+    // A goal-row plate's only way to end is by reaching it, and only a landing moves progress, so this
+    // is the one place that can ever cross the line. die() below still does the run-over bookkeeping
+    // every other ending shares (state, reason, deadTime) — only the shake and the event it fires differ.
+    if(this.goalRow>0&&this.state==='playing'&&this.progress>=this.goalRow)this.die('THE SUN ROSE',true);
     return true;
   }
-  die(reason) {
+  // won is false for every ordinary loss, the shape this method has always had; a goal-row plate's
+  // win passes true and fires 'sunrise' in place of 'death'. The powerup a node capture can also grant
+  // is itself called 'dawn' — see the 'dawn' emit above in capture() — so the ending needed a name of
+  // its own for a listener to tell the two apart, and keeps the camera still where every other ending
+  // shakes it.
+  die(reason,won) {
     if(this.state!=='playing')return;
-    this.state='dead';this.reason=reason;this.player.deadTime=0;this.shake=5;
-    this.emit('death',{x:this.player.x,y:this.player.y,reason,score:this.score});
+    this.state='dead';this.reason=reason;this.player.deadTime=0;this.won=!!won;
+    if(won)this.emit('sunrise',{x:this.player.x,y:this.player.y,reason,score:this.score});
+    else{this.shake=5;this.emit('death',{x:this.player.x,y:this.player.y,reason,score:this.score});}
   }
   // A carried shield absorbs one contact with a lethal hazard: it consumes itself and
   // reflects the flight outward instead of ending the run.

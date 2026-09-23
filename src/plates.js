@@ -239,7 +239,10 @@ function copyScore(){
   return line;
 }
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
-const numerals=['I','II','III','IV'];
+// The atlas only ever indexes the first four of these (chapters.length above), but the same array
+// answers ui.js's chapterSaid for whatever plate is on the press, and the Ceiling's twelve hours need
+// a numeral through XII.
+const numerals=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 // The running head speaks the plate's own Latin rather than the game's English — REGIO, not TAB., since
 // TAB. already names two other things on the same sheet (the impressum's plate number and, until this
 // pairing landed, the illustrated figure's own caption). PROFVNDVM is the word the Deep's own nebula

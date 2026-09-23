@@ -10,6 +10,10 @@ let replayLog=null;
 // moment the score first passes the best it opened with (see event(), below), and reset wherever the
 // rest of a fresh run's marks are (newWorld()).
 let recordAnnounced=false;
+// A loss reads in an instant — the flash and the splat already say what happened — but a win takes its
+// own beat: the Ceiling paints its sunrise into the frame the run ends on, and the colophon must not
+// cover it before that has had time to be seen. Losses keep the .65/.7 numbers below unchanged.
+const WIN_END_DELAY=3.2;
 // The atlas's own vocabulary — what a plain run of the printed star chart calls things, in its
 // own words. A plate cut for another century registers its own defineVoice() and replaces only the
 // entries it renames (see plateWords()/spoken() in src/plates.js); anything it leaves out is still
@@ -36,11 +40,13 @@ defineVoice('atlas',{
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
-  chapterSaid:'Plate {numeral}. {name}.',
-  // The atlas has four chapters of eight rows and no end but the dark; a plate with its own count of
-  // chapters, or a row at which the run is won, names them in its own voice.
+  // How many rows one chapter spans, read by the chapter math in updateUI() below; the atlas's own
+  // four chapters are eight rows apiece, as they always were. goalRow is the row a run is won at —
+  // 0, the atlas's own value, means no such row exists and a run is endless, exactly as it always was.
   chapterRows:8,
   goalRow:0,
+  chapterSaid:'Plate {numeral}. {name}.',
+  // The atlas never wins, so it names no line for it; a plate with a goalRow overrides this.
   won:'',
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'}
 });
@@ -198,6 +204,13 @@ function event(type,e){
     }
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
+  }else if(type==='sunrise'){
+    // A win, not a death: its own sound (the plate's 'dawn' hand — see defineHand('ceiling',...) in
+    // src/ceiling.js — falling back to the atlas's fanfare exactly as medal() does), no splat or flash,
+    // and the live region gets its own line rather than the ordinary loss announcement.
+    const h=handFor('dawn');if(h)h(audio);else audio.medal();
+    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best});
+    clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
     audio.tone(440,.3,0,.15);say(spoken('pressureSet',{label:plateWords().pressures[e.value]}));
@@ -216,7 +229,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'));
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateWords().goalRow);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -306,6 +319,13 @@ function setPlaying(){
 function showEnd(){
   const preview=plateOwns('score');deathShown=true;game.classList.remove('playing');game.classList.add('over');$('end').classList.remove('hidden');
   paintLeafFrame('end-leaf-frame',{noRosette:true});
+  // The leaf's own title carries a win, where the plate has one to say (chrome.endTitleWon); it is set
+  // here rather than left to syncEraChrome() alone because that runs on plate change, not per run, and
+  // a losing run after a win must not be left showing the winning title.
+  {
+    const endTitleEl=$('end-title'),chrome=plateWords().chrome;
+    if(endTitleEl)endTitleEl.textContent=world.won?(chrome.endTitleWon||chrome.endTitle):chrome.endTitle;
+  }
   $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
   // The Ceiling letters its own score in Egyptian numerals, on the canvas rather than in this DOM
   // text — ceilingPaintEndNumerals (src/ceiling.js) sizes the canvas for its own devicePixelRatio and
@@ -345,9 +365,11 @@ function showEnd(){
   // this same dark-tip case, but nested inside the branch that only runs once the plate is already
   // known not to be the Ceiling — so the era's own wording was written but never once reached, and is
   // recorded here rather than silently dropped with the ternary that could never read it.
+  // A win has no failure to give a tip about; tips.won is read where a plate names one, and left blank
+  // where it does not, rather than falling through to a loss tip that would misdescribe the run.
   const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
-  $('end-tip').textContent=plateWords().tips[tip];
-  $('announcement').textContent=spoken('ended',{score:world.score,best:best});
+  $('end-tip').textContent=world.won?(plateWords().tips.won||''):plateWords().tips[tip];
+  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best}):spoken('ended',{score:world.score,best:best});
   syncEndFit();
 }
 // Whether the colophon actually fits #end's own box is measured directly rather than guessed from a
@@ -1109,12 +1131,15 @@ function updateUI(dt){
   const paint='linear-gradient(to right,'+wet+' 0 '+held+'%,var(--line) '+held+'% 100%)';
   if(paint!==inkGaugePaint){inkGaugePaint=paint;gauge.style.background=paint;}
   gauge.classList.toggle('dry',level<=.12);
-  const chapter=Math.min(3,Math.floor(world.progress/8));
+  // Rows per chapter is a plate's own number — the atlas's four chapters are eight rows apiece, the
+  // Ceiling's twelve hours are shorter — so the boundary and the chapter count are both read off
+  // plateWords() rather than the atlas's own fixture kept here as a literal 3/8.
+  const chapterVoice=plateWords(),chapter=Math.min(chapterVoice.chapters.length-1,Math.floor(world.progress/chapterVoice.chapterRows));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
   if(chapter!==lastChapter){
     lastChapter=chapter;
-    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:plateWords().chapters[chapter]});}
+    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:chapterVoice.chapters[chapter]});}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
   // the orbit being held, or the vortex that is bending the flight. Each is kept on the sheet while
@@ -1130,7 +1155,7 @@ function updateUI(dt){
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
     inscribeHeld('instruction',plateWords().held.bend,{node:nearestHazard()});
   }
-  if(world.state==='dead'&&!deathShown&&world.player.deadTime>.65)showEnd();
+  if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
 function resize(){
   // Floored at 1.5 even on an ordinary "1x" screen: the engraving's hairline burin strokes run well
@@ -1161,7 +1186,7 @@ function handleInput(){
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing'){if(world.release()&&replayLog)replayLog.releases.push(world.time);}
-  else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
+  else if(world.state==='dead'&&world.player.deadTime>(world.won?WIN_END_DELAY:.7)){newWorld();world.start();setPlaying();}
   else if(world.state==='paused')resume();
 }
 // The frontispiece is the one screen with room enough under it to scroll (see #intro, index.html), so

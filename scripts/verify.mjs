@@ -1398,6 +1398,21 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
     context.test.setPlate('night');
   }
+  // ---- The chapter boundary reads chapterRows off the plate, not the atlas's own hard-coded 8 ----
+  // Last of all: stubbing the Ceiling's voice below is a one-way change for the rest of this process
+  // (defineVoice only ever adds to a plate's table), so nothing after this point may depend on the
+  // Ceiling's real chapter words again.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    context.test.enterEra('ceiling');
+    context.defineVoice('ceiling',{chapterRows:3,chapters:['H1','H2','H3','H4','H5']});
+    context.test.world.state='playing';context.test.world.progress=7;
+    context.test.render(1/60);
+    // floor(7/3)=2 -> 'H3'; the atlas's own literal /8 would read floor(7/8)=0 and announce nothing.
+    assert(element('announcement').textContent.includes('H3'),
+      'The chapter boundary must read chapterRows off the plate, not a literal 8: '+element('announcement').textContent);
+    context.test.leaveEra();
+  }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }
 
@@ -1908,6 +1923,35 @@ const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=pa
   for(let i=0;i<120*10&&last.state==='playing'&&!last.player.node;i++)last.update(step);
   assert.equal(last.player.node,target,'A transfer that arrives on the last drop stands');
   assert.equal(last.state,'playing');
+}
+// A goal row (the Ceiling's twelfth hour) ends a run the same way every other ending does — state,
+// reason, deadTime — but as a win rather than a death: no shake, a 'sunrise' event instead of 'death',
+// and never both. goalRow 0, every existing caller's default, must leave a run exactly as endless as
+// it always was.
+{
+  const seen=[];
+  const w=new OrbitWorld(21,440,860,(type,e)=>{seen.push(type);},false,false,false,5);w.start();
+  // The suite's own tangent-seeking pilot: release the instant the guide reports a clean transfer.
+  for(let i=0;i<120*40&&w.state==='playing';i++){
+    const aim=w.aim();
+    if(aim&&aim.perfect&&w.player.node&&w.player.orbitTime>.12)w.release();
+    w.update(step);
+  }
+  assert.equal(w.won,true,'A goal-row world ends in a win once progress reaches the goal');
+  assert.equal(w.reason,'THE SUN ROSE');
+  assert.equal(w.state,'dead','A win still ends the run through the same state every other ending shares');
+  assert(w.progress>=5,'The winning run must actually have reached its goal row');
+  assert.equal(seen.filter(t=>t==='sunrise').length,1,'The win fires exactly once');
+  assert.equal(seen.includes('death'),false,'A win never also fires a death');
+}
+{
+  const w=new OrbitWorld(22,440,860);
+  assert.equal(w.goalRow,0,'goalRow defaults to 0: every existing caller stays endless');
+  w.state='playing';const n=w.makeNode(0,-400,54,1,'still');
+  w.player.x=0;w.player.y=-400+54;w.player.vx=0;w.player.vy=-150;
+  w.capture(n);
+  assert.equal(w.won,false,'With no goal, a landing however deep never wins the run on its own');
+  assert.equal(w.state,'playing');
 }
 // A skipped orbit is flown past at the same distance-based cost as a landing, so it now pays half the
 // dividend a landing on it would have, rather than the flight paying full price for dividends it
