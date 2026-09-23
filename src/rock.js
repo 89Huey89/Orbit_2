@@ -1429,6 +1429,7 @@ function rockPlayer(){
     for(let i=0;i<16;i++){const hx=rockHash(3,i,1),hy=rockHash(3,i,2),ph=t*(.08+hx*.1)+hy*TAU,dx=(hx-.5)*170*scale+Math.sin(ph)*20*scale,dy=(hy-.5)*170*scale+Math.cos(ph*1.3)*16*scale,d=Math.hypot(dx,dy)/(90*scale);
       if(d>1)continue;ctx.fillStyle=`rgba(255,226,180,${(.35*(1-d)*(.5+.5*Math.sin(t*2+i))).toFixed(3)})`;ctx.beginPath();ctx.arc(x+dx,y+dy,Math.max(.5,.9*scale),0,TAU);ctx.fill();}
     ctx.restore();}
+  rockPaintRelight();
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
@@ -1823,7 +1824,22 @@ function rockChapterReveal(){}
 // in the field; this hook is where the wall would answer it — a flare of light on the crayon, say.
 // Left empty for now (the art lead is drawing this file concurrently); ui.js's event() calls it through
 // handFor('relight') exactly the way it calls every other era-only hand, and does nothing if it stays empty.
-function rockRelight(e){}
+// The torch taking fire from a hearth it is carried past: the flame flares, and sparks leap from the
+// fire to the hand. It reads the event only to know when; where the sparks fly is read off the live
+// flare and the traveller at each frame, so it follows the flight.
+let rockRelightAt=-9;
+function rockRelight(e){rockRelightAt=world.time;rockCaptureGlow=Math.max(rockCaptureGlow,.55);}
+function rockPaintRelight(){
+  const age=world.time-rockRelightAt;if(age<0||age>.6)return;
+  const p=world.player,px=sx(p.x),py=sy(p.y);let best=null,bd=1e9;
+  for(const h of world.hazards){if(h.kind!=='flare')continue;const d=Math.hypot(h.x-p.x,h.y-p.y);if(d<bd){bd=d;best=h;}}
+  if(!best)return;const fx=sx(best.x),fy=sy(best.y),k=1-age/.6;
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<8;i++){const u=((i*.618+world.time*1.6)%1+1)%1,bend=Math.sin(i*2.3)*28*scale*(1-u)*u*4,
+    x=fx+(px-fx)*u-(py-fy)/Math.max(1,Math.hypot(px-fx,py-fy))*bend,y=fy+(py-fy)*u+(px-fx)/Math.max(1,Math.hypot(px-fx,py-fy))*bend;
+    ctx.fillStyle=`rgba(255,${Math.round(170+60*u)},90,${(.8*k*(1-u*.4)).toFixed(3)})`;ctx.beginPath();ctx.arc(x,y,Math.max(.7,1.6*scale),0,TAU);ctx.fill();}
+  ctx.restore();
+}
 
 // ---------- The title: the era's mark, untranslated ----------
 // The wall has no word for its own name, so its title is a mark, not a word: a ring of red dots pressed
