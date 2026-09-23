@@ -7,8 +7,9 @@ would carry? Most of it is now closed. This review asks a different question: **
 holding a phone actually see, second by second, and where does it fall short of the plate the code is
 capable of?** Where a proposal here overlaps an item still open in that file, the item is named.
 
-Nothing here builds toward the archived era progression. Eras I and II are touched on only where
-they share a problem with the atlas.
+Nothing here builds toward the archived era progression. Era II is touched on only where it shares a
+problem with the atlas. Era I, The Rock, is left out: it is being overhauled on
+`claude/stone-age-deck-overhaul-ibtaij`, and what `main` ships of it is out of date.
 
 ## How it was looked at
 
@@ -17,7 +18,7 @@ autopilot built on `world.aim()`, the same way `scripts/probe.mjs` flies them: r
 frame the oracle reports a clean perfect. The ledger was seeded with the whole catalogue (the
 `FULL_LEDGER` fixture from `verify.mjs`) so unlocks and scenery could be switched on. The same set of
 frames (frontispiece, then 1.5 s to 100 s into a run, then the colophon) was taken for four setups:
-night plate, paper plate with chapter plates, night plate with chapter plates, and both era doors.
+night plate, paper plate with chapter plates, night plate with chapter plates, and the Era II door.
 The frames used below are in [`art-review/`](art-review/).
 
 ## The short verdict
@@ -106,14 +107,8 @@ On the paper frontispiece the rising ink's shoreline is a row of dark flat-shade
 above the line, with copper blotches that have hard vector edges. It looks like a pile of rocks, not
 iron-gall bleeding up along the fibres as the README describes. The footer controls and
 `REGIO I · SILENTIUM` sit inside it on a flat grey rectangle and are nearly unreadable.
-*Fix:* drop the floating chips on paper. Give the shoreline the capillary fringe (see B3), and give
+*Fix:* drop the floating chips on paper. Give the shoreline the capillary fringe (see D3), and give
 the footer label a paper reserve instead of the grey box.
-
-### A5. Era I shows the atlas's Latin
-
-The Rock's gain line reads `+37 · ANGULUS +11 · ×1.1` in the atlas's own Latin, and `PERFECT · FLOW`
-in English, both over a wall with no script. The same fault was fixed for Era II in phase 1 of
-`CEILING-OVERHAUL.md`. It's a one-line vocabulary registration on the rock plate.
 
 ---
 
@@ -243,12 +238,8 @@ a replay (`replayRun`, `review.js`), so the colophon could carry a **thumbnail o
 plate**: route, captured specimens and figures, drawn small in a plate-mark on the leaf. That is the
 trophy of a run, and it's also the image people would screenshot and share.
 
-### C6. Keep the eras' look out of the atlas's mould (Era I, Era II)
+### C6. Era II
 
-- **Era I (The Rock)** has soft round yellow light blotches over the wall that read as camera bokeh,
-  and in the middle of the wall a faint vertical step with square-edged dark stains, which looks
-  like a low-octave noise layer being magnified rather than stone. The torch should be one warm gradient that
-  flickers, not a scatter of glowing discs.
 - **Era II (The Ceiling)** is bold and readable after the overhaul, but its pylons, doors and
   frieze are flat vector shapes with no ageing. A single plaster texture (flaking, a dust wash, the
   soot bloom that Theban ceilings actually carry) over the whole painted layer would bring it closer
@@ -349,7 +340,7 @@ about 2 ms.
 
 | Step | What | Why first |
 |---|---|---|
-| 1 | A1, A2, A3, A5 (letters, collisions, duplicated notes, Latin on the rock) | Visible defects in every run; mostly small |
+| 1 | A1, A2, A3 (letters, collisions, duplicated notes) | Visible defects in every run; mostly small |
 | 2 | B2, B3 (quieter tallies, legible pen) | Fixes the hierarchy on the reference sheet |
 | 3 | D1, D4, D5 (press strike, constellation colour pass, death blot) | Makes the big moments feel big; no new systems |
 | 4 | C1, C2, A4 (frontispiece table of contents, Leviathan, paper flood edge) | The weakest-drawn pieces next to the strongest |
