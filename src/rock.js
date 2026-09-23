@@ -1089,59 +1089,78 @@ function rockShaft(h,x,y){
   }
   ctx.restore();
 }
-// The Flare: an ember-red core under soot, breathing gently, deliberately not the traveller's own warm
-// glow — an early pass of the spike let the two share one and they read as the same thing at a glance.
-// Sixteen sooty manganese dabs orbit outside the glow rather than inside it.
-const rockFlareSprites=new Map();
-function rockFlareGlowSprite(core){
-  const cB=Math.max(1,Math.round(core)),key=cB+':'+DPR.toFixed(2);
-  const cached=rockFlareSprites.get(key);if(cached)return cached;
-  const reach=cB*1.15,size=Math.max(4,Math.ceil(reach*2.3)),px=Math.max(1,Math.round(size*DPR));
-  const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
-  const gr=g.createRadialGradient(0,0,0,0,0,reach);
-  gr.addColorStop(0,`rgba(${ink.rock.flare},.9)`);gr.addColorStop(.55,`rgba(${ink.rock.redOchre},.45)`);gr.addColorStop(1,`rgba(${ink.rock.redOchre},0)`);
-  g.fillStyle=gr;g.beginPath();g.arc(0,0,reach,0,TAU);g.fill();
-  const sprite={canvas:c,size};rockFlareSprites.set(key,sprite);
-  if(rockFlareSprites.size>16)rockFlareSprites.delete(rockFlareSprites.keys().next().value);
-  return sprite;
-}
+// The Flare: a fire burning in a hollow of the rock. What the atlas calls a flare is, on a cave wall, a
+// hearth — the one thing down here that pushes a hand away. It is drawn as fire is seen by the eye in
+// the dark: a bed of embers exactly the size of the lethal core, tongues of flame licking up off it
+// (always up the screen, as flame rises whatever way the wall is climbed), sparks lifting off the
+// tips, the rock above it blackened with soot where centuries of such fires stood, and the face all
+// round warmed by its light as far as its push reaches. Its colours are deliberately not the torch's:
+// the torch is the pale, near-white flame; this is the deep red-orange of a fire burning down.
 function rockFlare(h,x,y){
   const core=hazardCore(h)*scale,reach=gravityRadius(h)*scale;
-  if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
-  const t=reducedMotion?0:world.time,breathe=1+(reducedMotion?0:Math.sin(t*7+(h.phase||0))*.03);
-  const sprite=rockFlareGlowSprite(core),bs=sprite.size*breathe;
-  ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(sprite.canvas,x-bs/2,y-bs/2,bs,bs);ctx.restore();
+  if(x+reach<0||x-reach>W||y+reach*2<0||y-reach>H)return;
+  const t=reducedMotion?0:world.time,ph=h.phase||0,seed=h.seed>>>0;
   ctx.save();
-  for(let i=0;i<16;i++){
-    const a=i/16*TAU,dd=core*1.35+(reducedMotion?0:Math.sin(t*4+i)*3*scale);
-    rockDab(ctx,x+Math.cos(a)*dd,y+Math.sin(a)*dd,(7+(i*7)%5)*scale,ink.rock.manganese,.5,h.seed+i);
+  // Soot: the rock above blackened in a plume, broad and uneven.
+  ctx.globalCompositeOperation='multiply';
+  const sg=ctx.createRadialGradient(x,y-core*1.6,core*.3,x,y-core*1.4,reach*1.1);sg.addColorStop(0,'rgba(40,30,24,.55)');sg.addColorStop(1,'rgba(40,30,24,0)');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.ellipse(x,y-core*1.3,reach*.75,reach*1.05,0,0,TAU);ctx.fill();
+  // The warmth it throws on the face, out to where its push ends.
+  ctx.globalCompositeOperation='lighter';
+  const fl=1+(reducedMotion?0:Math.sin(t*9+ph)*.06+Math.sin(t*13.7+ph*2)*.04);
+  const wg=ctx.createRadialGradient(x,y,core*.4,x,y,reach*fl);wg.addColorStop(0,`rgba(${ink.rock.flare},.45)`);wg.addColorStop(.5,`rgba(${ink.rock.flare},.14)`);wg.addColorStop(1,`rgba(${ink.rock.flare},0)`);
+  ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,reach*fl,0,TAU);ctx.fill();
+  // The ember bed: the lethal core, glowing and breaking into coals.
+  ctx.globalCompositeOperation='source-over';
+  const eg=ctx.createRadialGradient(x,y,0,x,y,core);eg.addColorStop(0,'rgba(255,200,110,.95)');eg.addColorStop(.5,`rgba(${ink.rock.flare},.8)`);eg.addColorStop(1,`rgba(${ink.rock.flare},0)`);
+  ctx.fillStyle=eg;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
+  const r=seeded(seed^0xfe||1);ctx.globalCompositeOperation='multiply';
+  for(let i=0;i<9;i++){const a=r()*TAU,d=Math.sqrt(r())*core*.8,k=.5+.5*Math.sin(t*3+i*2.1);ctx.fillStyle=`rgba(90,24,8,${(.18+.12*k).toFixed(2)})`;ctx.beginPath();ctx.ellipse(x+Math.cos(a)*d,y+Math.sin(a)*d,core*(.16+r()*.12),core*(.1+r()*.08),r()*3,0,TAU);ctx.fill();}
+  // The flames: tongues rising off the bed, each swaying and flickering on its own clock.
+  ctx.globalCompositeOperation='lighter';
+  const n=9;
+  for(let i=0;i<n;i++){
+    const u=(i/(n-1)-.5),bx=x+u*core*1.7,hgt=core*(1.8+1.8*(1-Math.abs(u)*1.7))*(.75+.3*Math.sin(t*(6+i)+ph+i*1.7)),w=core*(.4-Math.abs(u)*.14),sw=Math.sin(t*(3.1+i*.4)+i+ph)*core*.28;
+    const tipx=bx+sw,tipy=y-core*.2-hgt;
+    const fg=ctx.createLinearGradient(bx,y,tipx,tipy);fg.addColorStop(0,'rgba(255,214,130,.6)');fg.addColorStop(.35,'rgba(255,150,60,.45)');fg.addColorStop(.7,`rgba(${ink.rock.flare},.28)`);fg.addColorStop(1,'rgba(160,40,12,0)');
+    // Each tongue is rooted in the embers with a rounded foot, never cut off on a line.
+    const by=y+core*.25;ctx.fillStyle=fg;ctx.beginPath();ctx.moveTo(bx-w,by);
+    ctx.bezierCurveTo(bx-w*1.2,y-hgt*.4,tipx-w*.5+sw*.3,tipy+hgt*.35,tipx,tipy);
+    ctx.bezierCurveTo(tipx+w*.5+sw*.3,tipy+hgt*.35,bx+w*1.2,y-hgt*.4,bx+w,by);
+    ctx.quadraticCurveTo(bx,by+w*.9,bx-w,by);ctx.closePath();ctx.fill();
   }
+  // The heart of the fire over the roots of the flames, so tongue and bed are one light.
+  const hg=ctx.createRadialGradient(x,y-core*.3,0,x,y-core*.3,core*1.3);hg.addColorStop(0,'rgba(255,220,150,.55)');hg.addColorStop(1,'rgba(255,160,70,0)');
+  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,y-core*.3,core*1.3,0,TAU);ctx.fill();
+  // Sparks lifting off the tips and dying as they climb.
+  for(let i=0;i<10;i++){const k=((i*.618+t*(.5+(i%4)*.12))%1+1)%1,sx0=x+(((i*.37)%1)-.5)*core*1.4+Math.sin(t*2+i)*core*.3*k,sy0=y-core-k*reach*.9;
+    ctx.fillStyle=`rgba(255,${Math.round(200-80*k)},100,${(.85*(1-k)).toFixed(3)})`;ctx.beginPath();ctx.arc(sx0,sy0,Math.max(.6,1.4*scale*(1-k*.6)),0,TAU);ctx.fill();}
   ctx.restore();
 }
-// The Draught: a streaked charcoal smear dragged sideways, a torch-flame bent by real cave airflow.
-// Baked once per hazard along local +x and rotated live to h.dir, so nothing about its own shape is
-// rebuilt from one frame to the next.
-const rockDraughtSprites=new Map();
-function rockDraughtSprite(seed,reach){
-  const rB=Math.max(2,Math.round(reach)),key=(seed>>>0)+':'+rB+':'+DPR.toFixed(2);
-  const cached=rockDraughtSprites.get(key);if(cached)return cached;
-  const size=Math.max(4,Math.ceil(rB*2.2)),px=Math.max(1,Math.round(size*DPR));
-  const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
-  const rnd=seeded((seed>>>0)||1);
-  for(let i=0;i<8;i++){
-    const lane=(i/7-.5)*rB*1.1,len=rB*(.5+rnd()*.55),jog=(rnd()*2-1)*rB*.08;
-    rockScratch(g,-len*.5,lane,len*.5,lane+jog,1.3+rnd()*1.4,.6+rnd()*.25,false);
-  }
-  const sprite={canvas:c,size};rockDraughtSprites.set(key,sprite);
-  if(rockDraughtSprites.size>16)rockDraughtSprites.delete(rockDraughtSprites.keys().next().value);
-  return sprite;
-}
+// The Draught: moving air made visible the only way a cave shows it — smoke. Soft grey ribbons stream
+// through its reach along the way it blows, each rising and falling on its own slow wave, thickest at
+// the middle of the current and fraying at its edges; and on the rock under them, the finger flutings
+// of an older hand run the same way, as though whoever made them had felt the same draught.
 function rockDraught(h,x,y){
   const reach=gravityRadius(h)*scale;
   if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
-  const sprite=rockDraughtSprite(h.seed,reach);
+  const t=reducedMotion?0:world.time,seed=h.seed>>>0,r=seeded(seed||1);
   ctx.save();ctx.translate(x,y);ctx.rotate(h.dir||0);
-  ctx.drawImage(sprite.canvas,-sprite.size/2,-sprite.size/2,sprite.size,sprite.size);
+  // Flutings under it: three fingers drawn through the soft film, along the wind.
+  ctx.globalCompositeOperation='multiply';ctx.lineCap='round';
+  for(let f=0;f<3;f++){const off=(f-1)*5*scale+(r()-.5)*reach*.6;ctx.strokeStyle='rgba(90,72,56,.35)';ctx.lineWidth=2.4*scale;ctx.beginPath();
+    for(let k=0;k<=12;k++){const u=(k/12-.5)*reach*1.5;k?ctx.lineTo(u,off+Math.sin(k*.6+f)*3*scale):ctx.moveTo(u,off);}ctx.stroke();}
+  // Smoke ribbons streaming along +x.
+  ctx.globalCompositeOperation='source-over';
+  const lanes=6;
+  for(let i=0;i<lanes;i++){
+    const lane=(i/(lanes-1)-.5)*reach*1.1,thick=(1-Math.abs(i/(lanes-1)-.5)*1.4)*reach*.16,speed=.6+r()*.5,ph=r()*TAU;
+    const grd=ctx.createLinearGradient(-reach*1.1,0,reach*1.1,0);grd.addColorStop(0,'rgba(190,180,168,0)');grd.addColorStop(.3,'rgba(190,180,168,.22)');grd.addColorStop(.7,'rgba(190,180,168,.18)');grd.addColorStop(1,'rgba(190,180,168,0)');
+    ctx.fillStyle=grd;ctx.beginPath();
+    const N=18,top=[],bot=[];
+    for(let k=0;k<=N;k++){const u=(k/N-.5)*reach*2.2,wv=Math.sin(u/reach*3+t*speed*2.4+ph)*reach*.08,wv2=Math.sin(u/reach*5.3-t*speed*1.7+ph*2)*thick*.5;top.push([u,lane+wv-thick*.5+wv2]);bot.push([u,lane+wv+thick*.5-wv2*.6]);}
+    ctx.moveTo(top[0][0],top[0][1]);for(const q of top)ctx.lineTo(q[0],q[1]);for(let k=bot.length-1;k>=0;k--)ctx.lineTo(bot[k][0],bot[k][1]);ctx.closePath();ctx.fill();
+  }
   ctx.restore();
 }
 // Unlit rock: the one hazard this era depicts with total fidelity. Nothing drawn at all.
@@ -1923,7 +1942,7 @@ function invalidateRockArt(){
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
   rockDabSprites.clear();rockPressSprites.clear();
   rockEdgeShapes.clear();
-  rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
+  rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';
 }
