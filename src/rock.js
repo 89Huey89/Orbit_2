@@ -24,13 +24,13 @@ definePlate('rock',{
   night:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'226,168,108',torchFar:'150,100,62',
-    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'},
+    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'228,178,128',torchFar:'150,100,62',
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'206,72,40',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'},
   paper:{redOchre:'156,59,34',ochre:'201,150,46',ochreDeep:'169,112,31',manganese:'33,31,30',charcoal:'44,38,34',
     kaolin:'234,225,207',ember:'255,201,122',emberCore:'255,247,225',flare:'228,90,32',
     stone:'204,180,146',shaft:'4,3,3',dark:'2,2,2',
-    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'226,168,108',torchFar:'150,100,62',
-    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80'}
+    ambient:'24,18,14',torchCore:'255,222,172',torchWarm:'228,178,128',torchFar:'150,100,62',
+    crust:'226,204,166',scar:'210,196,166',stain:'160,120,64',crack:'46,39,33',facePale:'182,176,166',faceDeep:'90,84,80',faceIron:'206,72,40',faceOchre:'200,160,60',faceCalcite:'182,186,190',faceFlow:'222,220,214',faceDamp:'44,40,38'}
 });
 
 // ---------- The tunable rows ----------
@@ -301,7 +301,7 @@ function rockBakeWall(){
 // offscreen a little taller than the screen, rebuilt only when the camera has scrolled past its margin,
 // and laid over the tile as one overlay blit a frame; the tile's own grain and its broad relief show
 // through all of it.
-const ROCK_CHUNK=600,ROCK_REACH=1800,ROCK_FACE_UP=.34,ROCK_FACE_DOWN=.11,ROCK_TONE_Q=8,ROCK_OPENING_Y=-60,ROCK_OPENING_R=330;
+const ROCK_CHUNK=600,ROCK_REACH=1800,ROCK_FACE_UP=.34,ROCK_FACE_DOWN=.11,ROCK_TONE_Q=4,ROCK_OPENING_Y=-60,ROCK_OPENING_R=330;
 function rockHash(a,b,c){let h=Math.imul(a^0x9E3779B1,0x85EBCA77)^Math.imul(b+0x27d4eb2f,0xC2B2AE3D)^Math.imul(c+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
 // Value noise on the world's own plane, one octave, read at a point rather than baked to a lattice.
 function rockWorldNoise(x,y,cell,seed){
@@ -339,25 +339,50 @@ function rockChunkFissures(seed,ci,cj,out){
       rockFissureWalk(w.pts[bi*2],w.pts[bi*2+1],w.as[bi]+(hf(14)<.5?1:-1)*(.7+hf(15)*.6),(600+hf(5)*1000)*(.3+hf(16)*.3),(3+hf(6)*5)*.6,(hf(17)-.5)*.2,hb,w.step,out);}
   }
 }
-let rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
+let rockFaceH=null,rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
 function rockBakeFace(camY){
-  const tok=k=>ink.rock[k].split(',').map(Number),pale=tok('facePale'),deep=tok('faceDeep'),shaft=ink.rock.shaft,crack=ink.rock.crack,lip=ink.rock.kaolin;
+  const tok=k=>ink.rock[k].split(',').map(Number),pale=tok('facePale'),ironT=tok('faceIron'),ochreT=tok('faceOchre'),calcT=tok('faceCalcite'),flowT=tok('faceFlow'),dampT=tok('faceDamp'),shaft=ink.rock.shaft,crack=ink.rock.crack,lip=ink.rock.kaolin;
   const up=H*ROCK_FACE_UP,down=H*ROCK_FACE_DOWN,sheetH=H+up+down,cw=Math.max(1,Math.ceil(W*DPR)),ch=Math.max(1,Math.ceil(sheetH*DPR));
   if(!rockFace||rockFace.width!==cw||rockFace.height!==ch)rockFace=makeCanvas(cw,ch);
   const g=rockFace.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);g.globalCompositeOperation='source-over';
   const seed=world.seed>>>0,X=x=>W*.5+x*scale,Y=y=>(y-camY)*scale+up;
-  // The tone of the plane: a slow field on the world, read a sample every few pixels and stretched up
-  // smooth, since it has nothing finer in it. The opening plane is a pale lift around the first screen,
-  // where the triad has to read before any caption could, and the plane darkens toward the sides of a
-  // wide sheet, where the light does not reach.
+  // The material of the plane, read a sample every few pixels and stretched up smooth. A wall that is
+  // one stone lit one way everywhere is a texture, not a cave, however sharp its grain: what the eye
+  // actually reads rock by is that it changes. So the plane has large forms — broken ridges, bosses
+  // standing out of it, and in some reaches bedding planes that step down in ledges with a hard lip —
+  // lit from the same lamp above and to the right as the tile, and it changes material across itself:
+  // iron-red reaches, yellow ones, grey-white calcite, damp dark patches, and flowstone run down it in
+  // pale smooth streaks where water came over the rock for long enough. Every field is on the world's
+  // own plane and seeded off the world, so no two runs and no two screens are the same wall. The
+  // opening plane is still lifted pale around the first screen, where the triad has to read before any
+  // caption could, and the plane still darkens toward the sides of a wide sheet.
   const tw=Math.ceil(W/ROCK_TONE_Q),th=Math.ceil(sheetH/ROCK_TONE_Q);
-  if(!rockFaceTone||rockFaceTone.width!==tw||rockFaceTone.height!==th){rockFaceTone=makeCanvas(tw,th);rockFaceToneImg=rockFaceTone.getContext('2d').createImageData(tw,th);}
-  const td=rockFaceToneImg.data;
+  if(!rockFaceTone||rockFaceTone.width!==tw||rockFaceTone.height!==th){rockFaceTone=makeCanvas(tw,th);rockFaceToneImg=rockFaceTone.getContext('2d').createImageData(tw,th);rockFaceH=new Float32Array((tw+2)*(th+2));}
+  const td=rockFaceToneImg.data,FH=rockFaceH,fw=tw+2,N=(k,x,y,c)=>rockWorldNoise(x,y,c,seed+k);
+  const bed=(rockHash(seed,5,5)-.5)*.7,bs=Math.sin(bed),bc=Math.cos(bed),sp=64+rockHash(seed,6,6)*56;
+  const wxOf=i=>((i-.5)*ROCK_TONE_Q-W*.5)/scale,wyOf=j=>camY+((j-.5)*ROCK_TONE_Q-up)/scale;
+  // The height first, with a border of one sample so every sample has both neighbours to be lit from.
+  for(let j=0;j<th+2;j++)for(let i=0;i<fw;i++){
+    const wx=wxOf(i),wy=wyOf(j),r=1-Math.abs(2*N(11,wx,wy,380)-1);
+    let h=.5*r*r+.3*N(12,wx,wy,170)+.2*N(13,wx,wy,75)+.38*rockStep(.56,.82,N(14,wx,wy,260));
+    // A bedding plane: across the beds the rock climbs slowly and then drops away at the next one's lip.
+    const v=(-wx*bs+wy*bc+(N(15,wx,wy,300)-.5)*220+(N(17,wx,wy,110)-.5)*60)/(sp*(.7+.6*N(18,wx,wy,420))),fr=v-Math.floor(v),saw=fr<.84?fr/.84:(1-fr)/.16;
+    h+=saw*.15*rockStep(.62,.8,N(16,wx,wy,380));
+    FH[j*fw+i]=h;
+  }
+  const d=ROCK_TONE_Q/scale,K=34/d*.5,tone=(o,c,w)=>{td[o]+=(c[0]-td[o])*w;td[o+1]+=(c[1]-td[o+1])*w;td[o+2]+=(c[2]-td[o+2])*w;};
   for(let j=0;j<th;j++)for(let i=0;i<tw;i++){
-    const wx=((i+.5)*ROCK_TONE_Q-W*.5)/scale,wy=camY+((j+.5)*ROCK_TONE_Q-up)/scale;
-    const n=.55*rockWorldNoise(wx,wy,520,seed+1)+.3*rockWorldNoise(wx,wy,210,seed+2)+.15*rockWorldNoise(wx,wy,90,seed+3);
-    let t=.5+(n-.5)*.9;const lift=rockStep(.42,1,1-(Math.hypot(wx,wy-ROCK_OPENING_Y)-200)/460);t+=(1-t)*lift*.8;t*=1-.4*Math.min(1,(wx/700)*(wx/700));
-    const o=(j*tw+i)*4;td[o]=deep[0]+(pale[0]-deep[0])*t;td[o+1]=deep[1]+(pale[1]-deep[1])*t;td[o+2]=deep[2]+(pale[2]-deep[2])*t;td[o+3]=255;
+    const wx=wxOf(i+1),wy=wyOf(j+1),k=(j+1)*fw+i+1,gx=FH[k+1]-FH[k-1],gy=FH[k+fw]-FH[k-fw];
+    const iron=rockStep(.5,.74,.75*N(21,wx,wy,300)+.25*N(22,wx,wy,80)),yel=rockStep(.52,.76,.8*N(27,wx,wy,340)+.2*N(28,wx,wy,70));
+    const calc=rockStep(.54,.76,.8*N(23,wx,wy,380)+.2*N(29,wx,wy,60)),damp=rockStep(.58,.8,N(24,wx,wy,260));
+    const flow=rockStep(.55,.75,N(25,wx,wy/9,34))*rockStep(.45,.66,N(26,wx,wy,460));
+    const shade=clamp(.5+(.60*gy-.62*gx)*K*(1-flow*.6)-(1-FH[k])*.08,0,1);
+    const o=(j*tw+i)*4;td[o]=132;td[o+1]=126;td[o+2]=120;
+    tone(o,ironT,iron);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow);tone(o,dampT,damp*.8);
+    const sv=(shade-.5)*230;td[o]+=sv;td[o+1]+=sv;td[o+2]+=sv;
+    const lift=rockStep(.42,1,1-(Math.hypot(wx,wy-ROCK_OPENING_Y)-200)/460)*.3,side=1-.4*Math.min(1,(wx/700)*(wx/700));
+    for(let c=0;c<3;c++)td[o+c]=Math.max(0,Math.min(255,(td[o+c]+(pale[c]-td[o+c])*lift)*side));
+    td[o+3]=255;
   }
   rockFaceTone.getContext('2d').putImageData(rockFaceToneImg,0,0);g.drawImage(rockFaceTone,0,0,W,sheetH);
   // Every fissure seeded within reach of this sheet, walked again.
@@ -979,7 +1004,7 @@ defineVoice('rock',{
 // Drops every baked tile and sprite cache this file owns; invalidateArt() calls this alongside its own
 // when the plate or the pixel ratio changes, so the next reach simply rebuilds lazily as it always did.
 function invalidateRockArt(){
-  rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockReliefSprites.clear();
+  rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockFaceH=null;rockReliefSprites.clear();
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;
   rockDabSprites.clear();
   rockEdgeShapes.clear();
