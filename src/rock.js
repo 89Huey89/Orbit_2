@@ -1868,6 +1868,104 @@ function rockAtmosphere(){
   rockTitleMark();
 }
 
+// ---------- The sounds ----------
+// Five painters for audio.js's per-era hand (see defineHand()/handFor() and the `own` check every
+// OrbitAudio method opens with, in src/audio.js): a stone peck, a breath-huff, the low tone a cave
+// itself seems to hold, a charcoal scrape, and a guttering torch going out into drips —
+// docs/archive/eras/01-rock.md's "Sound". Everything here is Web Audio nodes built from the same
+// primitives audio.js already keeps (the shared noise buffer, `a.master`), never a second engine and
+// never a recorded sample. The resonant tone and the drips share one lazily-built reverb send — a
+// ConvolverNode fed a decaying-noise impulse generated in code, standing in for the cave acoustics
+// Reznikoff's survey found the paintings cluster near, without ever shipping a captured room.
+function rockCaveSend(a){
+  if(a._rockCave)return a._rockCave;
+  const ctx=a.ctx,len=Math.floor(ctx.sampleRate*1.6),imp=ctx.createBuffer(2,len,ctx.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=imp.getChannelData(ch),rng=seeded(9001+ch);for(let i=0;i<len;i++)d[i]=(rng()*2-1)*Math.pow(1-i/len,2.2);}
+  const conv=ctx.createConvolver();conv.buffer=imp;const wet=ctx.createGain();wet.gain.value=.5;
+  conv.connect(wet);wet.connect(a.master);
+  return a._rockCave={conv,wet};
+}
+// Capture: a short, dry, bright click of stone striking stone, pitched a little differently each
+// time so a run of them never reads as one sample looped, plus the tiny low thud the same strike
+// makes through the rock itself.
+function rockPeckSound(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,s=a.ctx.createBufferSource(),f=a.ctx.createBiquadFilter(),g=a.ctx.createGain();
+  s.buffer=a.noise;f.type='bandpass';f.frequency.value=2200+Math.random()*900;f.Q.value=3+Math.random();
+  g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.045);
+  s.connect(f);f.connect(g);g.connect(a.master);s.start(t,0,.05);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+  a.tone(65+Math.random()*25,.05,0,.14,'sine',42);
+}
+// Release: a soft breath, as if blowing pigment off a hand held to the wall — low-passed noise with
+// a gentle attack rather than the atlas's own bright chime.
+function rockHuff(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,s=a.ctx.createBufferSource(),f=a.ctx.createBiquadFilter(),g=a.ctx.createGain();
+  s.buffer=a.noise;f.type='lowpass';f.frequency.value=800;f.Q.value=.4;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.05);g.gain.exponentialRampToValueAtTime(.001,t+.25);
+  s.connect(f);f.connect(g);g.connect(a.master);s.start(t,0,.26);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+}
+// Perfect landing: a low tone the chamber itself keeps ringing, rising a little with the run's own
+// combo the way the atlas's own perfect chime climbs a fifth on the strike beneath it. Played
+// alongside the peck rather than instead of it — the transfer is still a strike, just one the room
+// answers.
+function rockResonance(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,cave=rockCaveSend(a),combo=(typeof world!=='undefined'&&world.combo)||0,
+    hz=110+Math.min(50,combo*3),o=a.ctx.createOscillator(),g=a.ctx.createGain(),send=a.ctx.createGain();
+  o.type='triangle';o.frequency.setValueAtTime(hz,t);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.3,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.9);
+  send.gain.value=.6;
+  o.connect(g);g.connect(a.master);g.connect(send);send.connect(cave.conv);
+  o.start(t);o.stop(t+1);o.onended=()=>{o.disconnect();g.disconnect();send.disconnect();};
+}
+// Graze: a dry scrape of charcoal catching the wall's own grain, its loudness fluttering rather than
+// holding steady the way a smooth-drawn line would.
+function rockScrape(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,s=a.ctx.createBufferSource(),f=a.ctx.createBiquadFilter(),g=a.ctx.createGain(),dur=.16,steps=5;
+  s.buffer=a.noise;f.type='bandpass';f.frequency.value=1400+Math.random()*400;f.Q.value=1.2;
+  g.gain.setValueAtTime(.02,t);
+  for(let i=1;i<=steps;i++)g.gain.linearRampToValueAtTime(.04+Math.random()*.14,t+dur*i/steps);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur+.04);
+  s.connect(f);f.connect(g);g.connect(a.master);s.start(t,0,dur+.05);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+}
+// Death: a guttering torch losing its flame — filtered noise fading unevenly over just over a
+// second — followed by two or three sparse drips finding the chamber floor, each a short high sine
+// falling in pitch, carried through the same cave send the perfect tone rings through.
+function rockGutter(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,s=a.ctx.createBufferSource(),f=a.ctx.createBiquadFilter(),g=a.ctx.createGain(),dur=1.2,steps=7;
+  s.buffer=a.noise;f.type='bandpass';f.frequency.value=650;f.Q.value=.5;
+  g.gain.setValueAtTime(.24,t);
+  for(let i=1;i<=steps;i++)g.gain.linearRampToValueAtTime(.24*(1-i/steps)*(.5+Math.random()*.6),t+dur*i/steps);
+  g.gain.exponentialRampToValueAtTime(.0006,t+dur+.05);
+  s.connect(f);f.connect(g);g.connect(a.master);s.start(t,0,dur+.08);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+  const cave=rockCaveSend(a),drips=2+(Math.random()<.5?1:0);
+  for(let i=0;i<drips;i++){
+    const dt=t+dur*.5+Math.random()*dur*.6,hz=1800+Math.random()*900,
+      o=a.ctx.createOscillator(),dg=a.ctx.createGain(),send=a.ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(hz,dt);o.frequency.exponentialRampToValueAtTime(hz*.4,dt+.09);
+    dg.gain.setValueAtTime(0,dt);dg.gain.linearRampToValueAtTime(.16,dt+.004);dg.gain.exponentialRampToValueAtTime(.0008,dt+.11);
+    send.gain.value=.7;
+    o.connect(dg);dg.connect(a.master);dg.connect(send);send.connect(cave.conv);
+    o.start(dt);o.stop(dt+.14);o.onended=()=>{o.disconnect();dg.disconnect();send.disconnect();};
+  }
+}
+// Chart complete: three low, breathy tones in place of the atlas's rising chime, standing in for a
+// bone flute's hollow chiff — the same cave send everything else in this row rings through.
+function rockFlute(a){
+  if(!a.ctx||!a.enabled||a.ctx.state!=='running')return;
+  const t=a.ctx.currentTime,cave=rockCaveSend(a),notes=[220,246.94,293.66];
+  notes.forEach((hz,i)=>{
+    const dt=t+i*.22,o=a.ctx.createOscillator(),og=a.ctx.createGain(),send=a.ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(hz,dt);
+    og.gain.setValueAtTime(0,dt);og.gain.linearRampToValueAtTime(.22,dt+.05);og.gain.exponentialRampToValueAtTime(.001,dt+.5);
+    send.gain.value=.4;
+    o.connect(og);og.connect(a.master);og.connect(send);send.connect(cave.conv);
+    o.start(dt);o.stop(dt+.55);o.onended=()=>{o.disconnect();og.disconnect();send.disconnect();};
+  });
+}
 defineHand('rock',{
   atmosphere:rockAtmosphere,
   node:rockNode,
@@ -1889,7 +1987,12 @@ defineHand('rock',{
   inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,
   hazardReveal:rockHazardReveal,
-  relight:rockRelight
+  relight:rockRelight,
+  capture(a,row,perfect){rockPeckSound(a);if(perfect)rockResonance(a);},
+  release:rockHuff,
+  graze:rockScrape,
+  death:rockGutter,
+  medal:rockFlute
 });
 
 // ---------- The vocabulary: only what this era actually calls differently ----------

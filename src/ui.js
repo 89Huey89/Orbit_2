@@ -212,7 +212,7 @@ function event(type,e){
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
-    audio.tone(698.46,.28,0,.16);
+    audio.graze();
     // A graze's own +5 is scored before this fires (OrbitWorld's near handling), so the same total the
     // atlas's tally carries after a landing is exactly as true here.
     if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:plateWords().glosses.close,line2:'SUMMA '+world.score,age:0});

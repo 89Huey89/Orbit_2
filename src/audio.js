@@ -63,13 +63,26 @@ class OrbitAudio {
     this.scratchNext=t+row.gap[0]+Math.random()*row.gap[1]-level*row.ease;
   }
   start(){this.tone(196,.8,0,.3);this.tone(293.66,.7,.11,.22);this.tone(440,.9,.22,.16);}
-  release(){this.tone(330,.11,0,.25,'sine',190);this.brush(2100,.17);}
+  // A launch rings a short bright chime; an era with its own instrument registers a release painter
+  // to replace it.
+  release(){
+    const own=typeof handFor==='function'&&handFor('release');
+    if(own){own(this);return;}
+    this.tone(330,.11,0,.25,'sine',190);this.brush(2100,.17);
+  }
   // A landing on the atlas rings a note off the row's own scale, and a perfect transfer adds the
   // atlas's second chime; an era with its own instrument registers a capture painter to replace both.
   capture(row,perfect){
     const own=typeof handFor==='function'&&handFor('capture');
     if(own){own(this,row,perfect);return;}
     const notes=[220,261.63,293.66,349.23,392,440,523.25];const n=notes[Math.floor(row)%notes.length];this.tone(n,.58,0,.5);this.tone(n*2,.4,.025,.15);if(perfect){this.tone(n*1.5,.7,.08,.2);this.tone(n*2,.6,.14,.12);}this.brush(3500,.14);
+  }
+  // A graze rings a single bright tone; an era with its own instrument registers a graze painter to
+  // replace it.
+  graze(){
+    const own=typeof handFor==='function'&&handFor('graze');
+    if(own){own(this);return;}
+    this.tone(698.46,.28,0,.16);
   }
   // The atlas dies to a dying chord; an era with its own instrument registers a death painter to
   // replace it.

@@ -201,6 +201,32 @@ function taskVariedOpening(){
   return {totalCaptures,variedOpenings:opens.length,variedFigures:firstFigures.size};
 }
 
+// A Web Audio stand-in, just enough of the API surface OrbitAudio and an era's own painters ask for
+// (gains, filters, oscillators, buffer sources, a convolver for a synthetic cave reverb, and the
+// buffers those are built from) to run the real synthesis code end to end with nothing that throws,
+// rather than skip it outright the way a missing AudioContext makes audio.js itself skip it. Every
+// node is a plain no-op sink: nothing here plays a sound, it only has to survive being asked to.
+class FakeAudioParam{constructor(v=0){this.value=v;}setValueAtTime(v){this.value=v;return this;}linearRampToValueAtTime(v){this.value=v;return this;}exponentialRampToValueAtTime(v){this.value=v;return this;}}
+class FakeAudioNode{connect(){return arguments[0];}disconnect(){}}
+class FakeGain extends FakeAudioNode{constructor(){super();this.gain=new FakeAudioParam(1);}}
+class FakeFilter extends FakeAudioNode{constructor(){super();this.type='lowpass';this.frequency=new FakeAudioParam(350);this.Q=new FakeAudioParam(1);}}
+class FakeOscillator extends FakeAudioNode{constructor(){super();this.type='sine';this.frequency=new FakeAudioParam(440);this.onended=null;}start(){}stop(){}}
+class FakeBufferSource extends FakeAudioNode{constructor(){super();this.buffer=null;this.onended=null;}start(){}stop(){}}
+class FakeConvolver extends FakeAudioNode{constructor(){super();this.buffer=null;}}
+class FakeAudioBuffer{
+  constructor(channels,length,sampleRate){this.numberOfChannels=channels;this.length=length;this.sampleRate=sampleRate;this.duration=length/sampleRate;this._data=Array.from({length:channels},()=>new Float32Array(length));}
+  getChannelData(ch){return this._data[ch];}
+}
+class FakeAudioContext{
+  constructor(){this.sampleRate=44100;this.currentTime=0;this.state='running';this.destination=new FakeAudioNode();}
+  createGain(){return new FakeGain();}
+  createBiquadFilter(){return new FakeFilter();}
+  createOscillator(){return new FakeOscillator();}
+  createBufferSource(){return new FakeBufferSource();}
+  createConvolver(){return new FakeConvolver();}
+  createBuffer(channels,length,sampleRate){return new FakeAudioBuffer(channels,length,sampleRate);}
+  resume(){this.state='running';return Promise.resolve();}
+}
 function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},checkRename=false){
   const events={},items=new Map(),raf=[],saved=new Map(Object.entries(seed));
   let lensCopies=0;
@@ -224,7 +250,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
     const classes=new Set(),e={id,style:{},textContent:'',innerHTML:'',classList:{add:(...x)=>x.forEach(a=>classes.add(a)),remove:(...x)=>x.forEach(a=>classes.delete(a)),toggle:(x,force)=>force?classes.add(x):classes.delete(x),contains:x=>classes.has(x)},setAttribute(){},getContext:()=>drawing,getBoundingClientRect:()=>({width,height}),closest:()=>null,removeAttribute(){},addEventListener:(type,fn)=>{events[id+':'+type]=fn;}};
     items.set(id,e);return e;
   }
-  const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
+  const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
@@ -779,6 +805,20 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.enterEra('rock');
     assert.equal(context.test.plateName,'paper','A century may not be entered out from under a run');
     context.test.setPlate('night');
+  }
+  // ---- The Rock's own instrument: five sound painters registered, none of them throwing ----
+  {
+    context.test.setPlate('rock');
+    for(const painter of ['capture','release','graze','death','medal'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Rock names its own sound: '+painter);
+    context.test.audio.unlock();
+    assert(context.test.audio.ctx,'The stand-in AudioContext must actually attach');
+    context.test.audio.capture(3,false);context.test.audio.capture(3,true);
+    context.test.audio.release();context.test.audio.graze();context.test.audio.death();context.test.audio.medal();
+    context.test.setPlate('night');
+    // The atlas's own painters must still throw nothing and stay untouched by the Rock's registration.
+    context.test.audio.capture(3,false);context.test.audio.capture(3,true);
+    context.test.audio.release();context.test.audio.graze();context.test.audio.death();context.test.audio.medal();
   }
   // ---- The Rock's own vocabulary: no word of the atlas's own workshop or Latin is left standing ----
   {
