@@ -30,11 +30,57 @@ defineVoice('atlas',{
   newRecord:'NOVUM RECORDUM',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
+    eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',tryAgain:'Tap to try again',
+    statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
+    reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
-  held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'}
+  held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
+  // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
+  // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
+  // its own has somewhere to put a different word instead.
+  hazards:{vortex:HAZARD_KINDS.vortex.latin,flare:HAZARD_KINDS.flare.latin,wind:HAZARD_KINDS.wind.latin},
+  // The bare currency word, without the ARMED/HELD suffix a capsule's own pickup toast (below) adds to
+  // it — kept apart from POWERUP_LABELS itself so a plate can rename what is carried without touching
+  // the internal type strings every capsule handler already keys on.
+  labels:{shield:POWERUP_LABELS.shield,reflector:POWERUP_LABELS.reflector,dawn:POWERUP_LABELS.dawn},
+  // The one observation whose caption event() reaches for directly rather than through `observations`
+  // (below): the arrival square is announced the instant it lands, ahead of the observation itself
+  // (see the survey fixture in scripts/verify.mjs), so it earns its own key instead of a second, earlier
+  // read of the same table.
+  squareLanding:OBSERVATIONS.rightAngle.latin,
+  // Every other inscription event() strikes onto the chart beside what it is about, kept as one table
+  // so a plate with nothing of its own to say inherits the atlas's words exactly, word for word.
+  glosses:{
+    slingshot:'SLINGSHOT · SPEED ×{factor}',
+    maxSpeed:'MAX SPEED · FIND YOUR LINE',
+    fullCharge:'FULL CHARGE · SPEED IS YOURS',
+    rough:'ROUGH IMPRESSION · BASE {base}',
+    skip:'{count} ORBIT{plural} SKIPPED · +{bonus}',
+    reprieve:'TRACE 3 STARS · +60 & A REPRIEVE',
+    slingOrbit:'ORBIT TO GAIN SPEED · TAP TO LEAVE',
+    fading:'FADING ORBIT · KEEP MOVING',
+    golden:'GOLDEN DETOUR',
+    perfectFlow:'PERFECT · FLOW ×{combo}',
+    perfect:'PERFECT · MOMENTUM KEPT',
+    wandering:'A WANDERING ORBIT',
+    chartProgress:'{chart} · {count} / 3',
+    chartComplete:'{chart} · COMPLETE +60',
+    angleBonus:'  ·  ANGULUS +{bonus}',
+    multiplier:'  ·  ×{mult}',
+    shieldArmed:'{label} ARMED · SURVIVES ONE VORTEX',
+    shieldBreak:'{label} ABSORBED THE IMPACT',
+    reflectorArmed:'{label} ARMED · TURNS BACK THE EDGE',
+    reflectorBreak:'{label} THREW YOU BACK',
+    dawnArmed:'{label} ARMED · TURNS BACK THE DARK',
+    dawnBreak:'{label} DROVE THE DARK BACK',
+    inkwellFound:'A RECKLESS LINE · A NEW COLOUR TAKES',
+    inkwellDry:'THE WELL RUNS DRY · FLY RECKLESS FIRST',
+    observation:'OBSERVATION · {name}',
+    close:'CLOSE +5'
+  }
 });
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see
 // src/inscriptions.js. `where` names the subject — a planet or star to follow, or the point on the sheet
@@ -52,7 +98,7 @@ function event(type,e){
     if(e.sling&&e.charge>.15){
       audio.tone(155,.45,0,.25,'sine',230+e.charge*200);
       if(!reducedMotion){burst(e.x,e.y,Math.round(8+e.charge*12),'gold',.9);rings.push({x:e.x,y:e.y,start:5,distance:55,age:0,life:.5,alpha:.42,seed:ringSeed()});}
-      say('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),{x:e.x,y:e.y});
+      say(fmt(plateWords().glosses.slingshot,{factor:e.factor.toFixed(1)}),{x:e.x,y:e.y});
     }
   }else if(type==='charged'){
     // The trail ladder counts the star's own band filling, which every charged event means by
@@ -60,7 +106,7 @@ function event(type,e){
     // hand loses the moment its release is a frame late, and the ladder's chalk-to-gold-leaf
     // reading of common-to-rare needs its first rung reachable the way a full charge already is.
     tally('maxSpeedSlings');
-    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
+    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(plateWords().glosses[e.max?'maxSpeed':'fullCharge'],{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');if(e.steep)tally('badAngles');
     // The bodies README:56 hand-colours as worlds — every 'still'/'drift'/'fading'/'sling' capture,
@@ -86,30 +132,31 @@ function event(type,e){
     // gain: the simulation adds it before emitting the event, see OrbitWorld.capture) — while an era
     // still gets the floater it always had, drifting up and fading over a second and change.
     {
-      const gainText='+'+e.gain+(e.angleBonus?'  ·  ANGULUS +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):'');
+      const glosses=plateWords().glosses;
+      const gainText='+'+e.gain+(e.angleBonus?fmt(glosses.angleBonus,{bonus:e.angleBonus}):'')+(e.scoreMultiplier>=1.05?fmt(glosses.multiplier,{mult:e.scoreMultiplier.toFixed(1)}):'');
       if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
       else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,age:0});
     }
     screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
-    const at={node:e.n};
-    if(e.steep)say('ROUGH IMPRESSION · BASE '+(e.gain-e.skipBonus),at);
-    else if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
-    else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',at);
-    else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
-    else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
-    else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
-    else if(e.square)say(OBSERVATIONS.rightAngle.latin+' · +'+e.squareBonus,at);
-    else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
-    else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
+    const at={node:e.n},glosses=plateWords().glosses;
+    if(e.steep)say(fmt(glosses.rough,{base:e.gain-e.skipBonus}),at);
+    else if(e.skip)say(fmt(glosses.skip,{count:e.skipped,plural:e.skipped===1?'':'S',bonus:e.skipBonus}),at);
+    else if(e.n.routeRole==='entry')say(glosses.reprieve,at);
+    else if(e.n.type==='sling')say(glosses.slingOrbit,at);
+    else if(e.n.type==='fading')say(glosses.fading,at);
+    else if(e.n.type==='gold')say(glosses.golden,at);
+    else if(e.square)say(plateWords().squareLanding+' · +'+e.squareBonus,at);
+    else if(e.perfect)say(e.combo>=3?fmt(glosses.perfectFlow,{combo:e.combo}):glosses.perfect,at);
+    else if(e.n.type==='drift'&&e.n.row<10)say(glosses.wandering,at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
-    say((plateWords().chart||e.chart.name)+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
+    say(fmt(plateWords().glosses.chartProgress,{chart:plateWords().chart||e.chart.name,count:e.count}),{node:e.chart.stars[e.count-1]||world.player.node});
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
-    say((plateWords().chart||e.chart.name)+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
+    say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||e.chart.name}),{node:e.chart.stars[1]||e.chart.entry});
     for(const n of e.chart.stars){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
     }
@@ -119,51 +166,51 @@ function event(type,e){
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.shield+' ARMED · SURVIVES ONE VORTEX',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.shieldArmed,{label:plateWords().labels.shield}),{x:e.x,y:e.y});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
     burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.shield+' ABSORBED THE IMPACT',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.shieldBreak,{label:plateWords().labels.shield}),{x:e.x,y:e.y});
   }else if(type==='reflector'){
     audio.tone(740,.4,0,.22,'sine',920);burst(e.x,e.y,10,'violet',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.reflector+' ARMED · TURNS BACK THE EDGE',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.reflectorArmed,{label:plateWords().labels.reflector}),{x:e.x,y:e.y});
   }else if(type==='reflectorBreak'){
     tally('reflectorsSpent');
     audio.tone(210,.5,0,.3,'triangle',105);audio.brush(900,.3);
     burst(e.x,e.y,20,'violet',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.reflector+' THREW YOU BACK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.reflectorBreak,{label:plateWords().labels.reflector}),{x:e.x,y:e.y});
   }else if(type==='dawn'){
     audio.tone(587.33,.45,0,.2,'sine',784);audio.tone(880,.45,.13,.14);burst(e.x,e.y,10,'gold',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.dawn+' ARMED · TURNS BACK THE DARK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.dawnArmed,{label:plateWords().labels.dawn}),{x:e.x,y:e.y});
   }else if(type==='dawnBreak'){
     tally('dawnsSpent');
     // The flood going back down the sheet is the constellation reprieve's own event, so it is answered in
     // the same register: a rising pair rather than the dull note a spent shield or reflector takes.
     audio.tone(392,.6,0,.22);audio.tone(659.25,.6,.14,.18);audio.brush(1200,.25);
     burst(e.x,e.y,24,'gold',1);rings.push({x:e.x,y:e.y,start:4,distance:70,age:0,life:.7,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.dawn+' DROVE THE DARK BACK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.dawnBreak,{label:plateWords().labels.dawn}),{x:e.x,y:e.y});
   }else if(type==='inkwell'){
     tally('inkwellsFound');
     audio.tone(523.25,.5,0,.16);audio.tone(659.25,.5,.12,.14);
     burst(e.x,e.y,14,'gold',.7);rings.push({x:e.x,y:e.y,start:4,distance:40,age:0,life:.6,alpha:.5,seed:ringSeed()});
-    say('A RECKLESS LINE · A NEW COLOUR TAKES',{x:e.x,y:e.y});
+    say(plateWords().glosses.inkwellFound,{x:e.x,y:e.y});
   }else if(type==='inkwellDry'){
     audio.tone(220,.3,0,.18,'triangle',160);burst(e.x,e.y,5,'red',.3);
-    say('THE WELL RUNS DRY · FLY RECKLESS FIRST',{x:e.x,y:e.y});
+    say(plateWords().glosses.inkwellDry,{x:e.x,y:e.y});
   }else if(type==='observation'){
     tallyMap('observations',e.key);
-    say('OBSERVATION · '+(plateWords().observations[e.key]||e.latin));
+    say(fmt(plateWords().glosses.observation,{name:plateWords().observations[e.key]||e.latin}));
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
     audio.tone(698.46,.28,0,.16);
     // A graze's own +5 is scored before this fires (OrbitWorld's near handling), so the same total the
     // atlas's tally carries after a landing is exactly as true here.
-    if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:'CLOSE +5',line2:'SUMMA '+world.score,age:0});
-    else floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
+    if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:plateWords().glosses.close,line2:'SUMMA '+world.score,age:0});
+    else floaters.push({x:e.x,y:e.y-20,text:plateWords().glosses.close,age:0});
     recordBest(world.score);
   }else if(type==='death'){
     audio.death();
@@ -244,6 +291,17 @@ function syncEraChrome(){
   const pauseNote=$('pause-note');if(pauseNote)pauseNote.textContent=chrome.pauseNote;
   const pauseResume=$('pause-resume');if(pauseResume)pauseResume.textContent=chrome.pauseResume;
   const pauseLeave=$('pause-leave');if(pauseLeave)pauseLeave.textContent=chrome.pauseLeave;
+  const reduceMotion=$('reduce-motion');
+  if(reduceMotion){reduceMotion.textContent=chrome.reduceMotion;reduceMotion.setAttribute('aria-label',chrome.reduceMotionLabel);}
+  // The one door out of every century, wherever it stands on the sheet — the footer's own utility
+  // button and the colophon's own row both carry the same word and the same aria-label.
+  const eraExitEnd=$('ceiling-exit-end');if(eraExitEnd)eraExitEnd.textContent=chrome.eraExit;
+  const eraExit=$('ceiling-exit');if(eraExit){eraExit.setAttribute('aria-label',chrome.eraExitLabel);eraExit.title=chrome.eraExitLabel;}
+  const tryAgain=$('end-try-again');if(tryAgain)tryAgain.textContent=chrome.tryAgain;
+  const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;
+  const statPerfects=$('end-perfects-label');if(statPerfects)statPerfects.textContent=chrome.statPerfects;
+  const statFlow=$('end-flow-label');if(statFlow)statFlow.textContent=chrome.statFlow;
+  const statRow=$('end-row-label');if(statRow)statRow.textContent=chrome.statRow;
   // The canones-page rubric: a plate's own head and its four rules, the {pressures} marker in the
   // fourth resolved here rather than baked into the voice map, so a rubricated word is always this
   // plate's own pressure names — TIRO, ADEPTUS, MAGISTER on the atlas — not a copy typed a second time.

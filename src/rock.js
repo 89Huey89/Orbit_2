@@ -1513,18 +1513,114 @@ defineHand('rock',{
 // deep the torch carried you (01-rock.md's Names table); the four chambers are its own signature sheet
 // and the later panels its own enrichment adds, in that order. The daily plate is deliberately not
 // attempted, and is not touched here at all — it is already hidden by data-era's own CSS rule.
+// This wall has no script of its own, so everything set on it is a curator's gloss in plain modern
+// English: short, capitalised where the atlas capitalises, but with none of the atlas's Latin and none
+// of its printing-and-writing vocabulary (no pen, nib, ink, press, plate, sheet, chart, engraving,
+// pricked line, frontispiece, atlas — the one exception is the door back out, which really does return
+// to the atlas). The era's own terms, from 01-rock.md's Names table: a constellation is a cluster, a
+// chapter a chamber, the score the tally, the best how deep the torch carried you, the currency the
+// ochre the hand carries, the boundary the dark and the torch guttering, the traveller the hand and its
+// crayon. What the atlas prices as a vortex, a flare and a wind-head this wall gives its own names —
+// the Shaft, the Flare and the Draught — since the sky's own Latin never reached a cave wall.
 defineVoice('rock',{
   chartNoun:'cluster',
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
+  opening:'The hand is raised. Tap to release. Follow the ochre dots for a clean landing. Circle a bright light to gain speed and to fill the hand. Every stroke spends ochre by the distance carried; hold a light to fill it again.',
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
-  // The chasm's own loss, in the wall's terms: what the pen wrote on the atlas as a vortex swallowing
-  // the traveller (see HAZARD_KINDS in simulation.js), this wall writes as the crack it actually is.
-  losses:{'FELL INTO THE CHASM':'THE WALL FELL AWAY'},
+  unrecorded:'A PREVIEW · NOT KEPT',
+  newRecord:'A NEW DEPTH',
+  // The wall's own names for the three fields the atlas prices as a vortex, a flare and a wind-head
+  // (HAZARD_KINDS in simulation.js) — taught once per kind, the same as on the atlas, just in the
+  // hand's own words rather than the sky's Latin.
+  hazards:{vortex:'THE SHAFT',flare:'THE FLARE',wind:'THE DRAUGHT'},
+  // The bare word for each of the three charges a run can carry, without the HELD suffix (below).
+  labels:{shield:'GUARD',reflector:'REBOUND',dawn:'GLOW'},
+  squareLanding:'A SQUARE LANDING',
+  // The opening triad, read against ROCK_TRIAD above rather than restated: the Moon for Tiro, a bright
+  // light for Adeptus, a faint one for Magister.
+  pressures:{relaxed:'THE MOON',classic:'A BRIGHT LIGHT',hardcore:'A FAINT LIGHT'},
+  pressureSet:'THE PACE IS SET · {label}',
+  // Every loss the simulation can deal, in the wall's own terms — the chasm's own loss (what the pen
+  // wrote on the atlas as a vortex swallowing the traveller) is the crack it actually is here.
+  losses:{
+    'THE DARK CAUGHT UP':'THE TORCH GUTTERED',
+    'LEFT THE STAR CHART':'LOST IN THE DARK',
+    'THE ORBIT FADED':'THE LIGHT WAS LOST',
+    'THE NIB RAN DRY':'THE OCHRE RAN OUT',
+    'FELL INTO THE CHASM':'THE WALL FELL AWAY',
+    'DRAWN INTO A VORTEX':'DRAWN DOWN THE SHAFT',
+    'SEARED BY A SUNSPOT FLARE':'BURNED AT THE FLARE'
+  },
+  // Every named feat the simulation can record, captioned in the curator's own gloss rather than the
+  // atlas's Latin (see OBSERVATIONS in simulation.js for the keys this table must cover).
+  observations:{
+    perfectThree:'THREE CLEAN LANDINGS',
+    skipFive:'FIVE LIGHTS SKIPPED',
+    maxSpeed:'FULL SPEED ON THE WALL',
+    graze:'THE SHAFT GRAZED AT FULL SPEED',
+    pureChart:'A CLUSTER IN CLEAN LANDINGS',
+    fortyRows:'THE FORTIETH ROW',
+    threeMinutes:'THREE MINUTES BY TORCHLIGHT',
+    rightAngle:'A SQUARE LANDING'
+  },
+  hud:{pace:'PACE ×',flow:'RHYTHM ×',shield:'GUARD HELD',reflector:'REBOUND HELD',dawn:'GLOW HELD'},
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
-  chrome:{bestLabel:'Deepest',pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',pauseLeave:'LEAVE THE WALL'}
+  chrome:{
+    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The torch gutters.',pauseTitle:'The torch waits.',
+    pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',
+    pauseLeave:'LEAVE THE WALL',pauseLabel:'Rest the hand',gameLabel:'The Rock, a playable Era I preview',
+    canvasLabel:'The Rock. Guide a hand of ochre across torchlit stone through painted lights. Tap or press Space to release.',
+    eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',tryAgain:'Tap to strike again',
+    statCaptures:'Lights',statPerfects:'Clean',statFlow:'Best rhythm',statRow:'Depth',
+    reduceMotion:'STILL THE DUST',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster run',
+    instructions:{head:'HOW TO MARK IT',rules:['Tap to release the hand of ochre.','Circle a light to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first light — {pressures}.']}
+  },
+  tips:{
+    first:'Tap when the ochre dots reach the next light.',
+    dark:'Circle a bright light for speed. The dark grows faster.',
+    faded:'A dim light fades. Move on before it goes.',
+    vortex:'Close passes bend your path. Follow the curve and give the shaft room.',
+    angle:'Land along the rim for a clean landing.',
+    speed:'Clean landings keep your speed. Faster earns more.'
+  },
+  held:{
+    choose:'The first light you circle sets how fast the dark comes.',
+    dry:'The ochre is running low. Hold this light to fill it, or find a bright one.',
+    sling:'One circle builds speed. Land clean and it holds.',
+    release:'Tap when the ochre dots meet the next light.',
+    bend:'The Shaft bends your path. Follow the curve; leave room for the drop.'
+  },
+  glosses:{
+    slingshot:'SWING · SPEED ×{factor}',
+    maxSpeed:'FULL SPEED · HOLD THE LINE',
+    fullCharge:'FULL OCHRE · SPEED IS YOURS',
+    rough:'ROUGH MARK · BASE {base}',
+    skip:'{count} LIGHT{plural} SKIPPED · +{bonus}',
+    reprieve:'MARK 3 LIGHTS · +60 & A REPRIEVE',
+    slingOrbit:'CIRCLE TO GAIN SPEED · TAP TO LEAVE',
+    fading:'FADING LIGHT · KEEP MOVING',
+    golden:'A LUCKY FIND',
+    perfectFlow:'CLEAN LANDING · RHYTHM ×{combo}',
+    perfect:'CLEAN LANDING',
+    wandering:'A DRIFTING LIGHT',
+    chartProgress:'{chart} · {count} / 3',
+    chartComplete:'{chart} · COMPLETE +60',
+    angleBonus:'  ·  ANGLE +{bonus}',
+    multiplier:'  ·  ×{mult}',
+    shieldArmed:'{label} HELD · SURVIVES ONE FALL',
+    shieldBreak:'{label} SPENT · TOOK THE HIT',
+    reflectorArmed:'{label} HELD · TURNS BACK THE EDGE',
+    reflectorBreak:'{label} BOUNCED YOU BACK',
+    dawnArmed:'{label} HELD · HOLDS BACK THE DARK',
+    dawnBreak:'{label} PUSHED THE DARK BACK',
+    inkwellFound:'A BOLD MARK · A NEW COLOUR TAKES',
+    inkwellDry:'THE OCHRE RUNS LOW · GO BOLD FIRST',
+    observation:'MARKED · {name}',
+    close:'CLOSE +5'
+  }
 });
 
 // ---------- Invalidation ----------

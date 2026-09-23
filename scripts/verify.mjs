@@ -779,6 +779,73 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','A century may not be entered out from under a run');
     context.test.setPlate('night');
   }
+  // ---- The Rock's own vocabulary: no word of the atlas's own workshop or Latin is left standing ----
+  {
+    context.test.setPlate('night');
+    const atlasWords=context.test.plateWords();
+    context.test.setPlate('rock');
+    const rockWords=context.test.plateWords();
+    // Every nested table the atlas keeps a word in, the wall keeps one too — a feat, a loss or a
+    // charge the simulation can deal is never left to print in the atlas's own Latin on a wall that
+    // has none of its own. `chart` is the one key both plates leave blank on purpose (an empty chart
+    // name falls back to the constellation's own English name, the same on every plate), and `close`
+    // and the two purely numeric gain glosses need no era-specific word — those three are the only
+    // keys this test deliberately lets the wall inherit.
+    const inherited={glosses:['close','chartProgress','chartComplete','multiplier']};
+    for(const table of ['tips','held','observations','losses','hud','labels','hazards','pressures'])
+      for(const key of Object.keys(atlasWords[table]))
+        assert(rockWords[table][key]!==undefined,'The Rock must name every '+table+' key the atlas has: '+key);
+    for(const key of Object.keys(atlasWords.glosses))
+      if(!inherited.glosses.includes(key))assert(rockWords.glosses[key]!==undefined&&rockWords.glosses[key]!==atlasWords.glosses[key],'The Rock must speak its own gloss for: '+key);
+    for(const key of Object.keys(atlasWords.chrome))
+      if(key!=='instructions')assert(rockWords.chrome[key]!==undefined,'The Rock must set every chrome key the atlas has: '+key);
+    assert(rockWords.chrome.instructions&&rockWords.chrome.instructions.head&&rockWords.chrome.instructions.rules.length===4,'The Rock keeps its own canon-page rubric');
+    assert.equal(rockWords.squareLanding,'A SQUARE LANDING');
+    // Every named feat the simulation can record must have a word on this wall (see OBSERVATIONS in
+    // simulation.js), the same completeness the Ceiling is already held to above.
+    for(const key of Object.keys(OBSERVATIONS))assert(rockWords.observations[key],'The Rock names every observation the simulation can record: '+key);
+    // No word of the atlas's own printing shop, and none of its Latin, is left standing on the wall:
+    // every string the wall can actually set is joined into one block and checked at once, template
+    // markers included, so a placeholder left unfilled cannot hide a forbidden word behind it.
+    const flatten=(value,out)=>{
+      if(value==null)return;
+      if(typeof value==='string')out.push(value);
+      else if(Array.isArray(value))for(const v of value)flatten(v,out);
+      else if(typeof value==='object')for(const k in value)flatten(value[k],out);
+    };
+    const wallText=[];flatten(rockWords,wallText);const wall=wallText.join(' · ');
+    for(const bad of ['pricked','PRESSURE SET','MOMENTUM KEPT','TIRO','ADEPTUS','MAGISTER','LEFT THE STAR CHART','ANGULUS','VORAGO','nib'])
+      assert(!wall.includes(bad),'The Rock\'s vocabulary must never carry the atlas\'s own word "'+bad+'"');
+    // And the atlas keeps its own words exactly as they were: a handful of spot checks against the
+    // strings this change actually touched.
+    assert.equal(atlasWords.chrome.eraExit,'RETURN TO THE ATLAS');
+    assert.equal(atlasWords.chrome.tryAgain,'Tap to try again');
+    assert.equal(atlasWords.chrome.statFlow,'Best flow');
+    assert.equal(atlasWords.hazards.vortex,'VORAGO');
+    assert.equal(atlasWords.squareLanding,'Angulus rectus');
+    assert.equal(atlasWords.glosses.perfect,'PERFECT · MOMENTUM KEPT');
+    assert.equal(atlasWords.held.choose,'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.');
+    context.test.setPlate('night');
+  }
+  // ---- A short run through the Rock actually prints the wall's own words, not the atlas's ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('rock');context.test.newWorld();
+    context.test.handleInput();
+    const run=context.test.world;
+    for(let i=0;i<120*45&&run.state==='playing'&&run.captures<8;i++){
+      if(run.player.node){
+        const aim=run.aim();
+        if(aim&&aim.perfect&&run.player.orbitTime>.12)run.release();
+      }
+      run.update(step);
+      if(i%20===0)context.test.render(step);
+    }
+    const text=inscribed();
+    for(const bad of ['pricked','PRESSURE SET','MOMENTUM KEPT','TIRO','ADEPTUS','MAGISTER','LEFT THE STAR CHART','ANGULUS','VORAGO','nib'])
+      assert(!text.includes(bad),'A rendered Rock run must never print "'+bad+'": '+text);
+    context.test.setPlate(held);context.test.newWorld();
+  }
   {
     // Two eras never share a cached entry, and both hit. applyPlate() points `ink` at a plate without
     // clearing the cached artwork, which is exactly what a frame carrying two eras does — so this is the

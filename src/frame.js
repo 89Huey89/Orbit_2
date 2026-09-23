@@ -1199,7 +1199,7 @@ function render(dt){
     revealHazard(h,drawHazard);
     const kind=h.kind||'vortex';
     if(!plainPlate()&&!namedHazardKinds.has(kind)&&reveal.progress(h,HAZARD_REVEAL,true)>=1){
-      if(inscribe(hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
+      if(inscribe(plateWords().hazards[kind]||hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
     }
   }
   // world.chasms is era I's own array (see simulation.js), never populated on any other plate, so

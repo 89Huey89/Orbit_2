@@ -461,8 +461,11 @@ function plateWords(){
   voiceHeld=mergeTokens(VOICES.atlas||{},VOICES[plateName]||{});voiceKey=key;return voiceHeld;
 }
 // A sentence with the run's own nouns dropped into it. The whole sentence belongs to the plate, not a
-// stem the code assembles, because word order is the first thing a century changes.
-const spoken=(key,vars)=>String(plateWords()[key]||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
+// stem the code assembles, because word order is the first thing a century changes. `fmt` is the same
+// substitution bare, for a template read off a nested table (plateWords().glosses.foo and the like)
+// rather than a top-level key; `spoken` is just `fmt` applied to one of those.
+const fmt=(tpl,vars)=>String(tpl||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
+const spoken=(key,vars)=>fmt(plateWords()[key],vars);
 // The hand. A plate that draws in its own names only the painters that differ from the atlas's; every
 // painter it does not name is the atlas's own, so an era is a row in this registry rather than a fork
 // at every mark, and two hands can draw into one frame — which a render branch that returns early
