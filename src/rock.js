@@ -1271,40 +1271,55 @@ function rockPlayer(){
 // film. Read together here as a hard, sharp-lipped spall margin with small chips drifting free, rather
 // than the atlas's soft wash. The boundary's own position, rate and grace are untouched: read straight
 // off the same world state drawDark reads, so nothing about where the edge is ever moves.
-const rockChipRng=seeded(50221);
-const ROCK_CHIP_N=22;
-const rockChips=Array.from({length:ROCK_CHIP_N},()=>({x:rockChipRng(),phase:rockChipRng(),speed:.4+rockChipRng()*.5,size:.8+rockChipRng()*1.6,drift:rockChipRng()*TAU}));
-let rockDarkEdge=null,rockDarkEdgeW=-1,rockDarkStep=0;
-function rockEnsureDarkEdge(){
-  const wB=Math.round(W/8)*8;
-  if(rockDarkEdge&&rockDarkEdgeW===wB)return;
-  const step=Math.max(1,26*scale),n=Math.max(8,Math.ceil(W/step)+3);
-  const rnd=seeded(9001),pts=new Float32Array(n);
-  for(let i=0;i<n;i++)pts[i]=rnd()*2-1;
-  rockDarkEdge=pts;rockDarkEdgeW=wB;rockDarkStep=step;
+// The edge is not a fixed sawtooth scrolled along — that read as a range of mountains on the horizon —
+// but a break in the world's own rock: faceted at a hand's breadth, wandering at an arm's, and read off
+// the height the dark has reached as well as the position along it, so the margin keeps failing into new
+// shapes as it climbs rather than carrying one outline up the wall. Above it the soot bites into the
+// face; along it only the facets that face the flame catch any light, in broken pieces; and scales of
+// the face come away at it and drop into the dark rather than floating up out of it.
+const ROCK_DARK_FACET=38;
+function rockDarkEdgeAt(xw,level,seed){
+  // Long, gently angled fracture lines meeting at uneven intervals, never a run of bumps: any regular
+  // bump along a horizon reads as a landscape, which is what this edge must never be.
+  const f=xw/ROCK_DARK_FACET,i=Math.floor(f),t=f-i,lv=Math.floor(level/40),v=k=>(rockHash(seed,k,lv)-.5)*10;
+  return v(i)+(v(i+1)-v(i))*t+(rockWorldNoise(xw,level*.35,120,seed+5)-.5)*20;
 }
+// The next scale to come away: a thin sheet of the face already lifting just above the break, its
+// thickness changing from one fracture to the next, parted from the rock behind it by a hairline.
+function rockDarkScaleAt(xw,level,seed){const f=xw/(ROCK_DARK_FACET*.7),i=Math.floor(f),t=f-i,lv=Math.floor(level/40),v=k=>3+rockHash(seed+11,k,lv)*7;return v(i)+(v(i+1)-v(i))*t;}
 function rockDark(dt){
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);
   if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));
   rockTorchPass(.42);
-  rockEnsureDarkEdge();
-  const time=reducedMotion?0:world.time,lip=3*scale;
+  const time=reducedMotion?0:world.time,seed=(world.seed>>>0)^0xd4c,level=world.floorY,step=Math.max(2,3.5*scale),pts=[];
+  for(let x=-step;x<=W+step;x+=step){const xw=(x-W*.5)/scale;pts.push([x,fy+rockDarkEdgeAt(xw,level,seed)*scale]);}
   ctx.save();
-  ctx.fillStyle=`rgba(${ink.rock.dark},.94)`;
-  ctx.beginPath();ctx.moveTo(-10,fy+rockDarkEdge[0]*16*scale);
-  for(let i=0;i<rockDarkEdge.length;i++)ctx.lineTo(-40*scale+i*rockDarkStep,fy+rockDarkEdge[i]*16*scale);
-  ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();ctx.fill();
-  ctx.strokeStyle=`rgba(${ink.rock.charcoal},${.55+near*.2})`;ctx.lineWidth=Math.max(1,4*scale);ctx.stroke();
-  ctx.strokeStyle=`rgba(${ink.rock.kaolin},${.28+near*.18})`;ctx.lineWidth=Math.max(.7,1.3*scale);
-  ctx.beginPath();ctx.moveTo(-10,fy+rockDarkEdge[0]*16*scale-lip);
-  for(let i=0;i<rockDarkEdge.length;i++)ctx.lineTo(-40*scale+i*rockDarkStep,fy+rockDarkEdge[i]*16*scale-lip);
-  ctx.stroke();
-  for(const chip of rockChips){
-    const phase=(chip.phase+time*chip.speed)%1,cx=chip.x*W+Math.sin(time*.3+chip.drift)*3*scale,cy=fy-(2+phase*22)*scale;
-    if(cy<-10||cy>H+10)continue;
-    rockDab(ctx,cx,cy,chip.size*scale*(1-phase*.4),ink.rock.charcoal,(1-phase)*.4*(.6+near*.4),Math.floor(chip.x*1000)+1);
+  // The soot the dark drives ahead of it, deeper as it closes on the hand.
+  const reach=(46+near*40)*scale,sg=ctx.createLinearGradient(0,fy-reach-20*scale,0,fy+10*scale);
+  sg.addColorStop(0,`rgba(${ink.rock.dark},0)`);sg.addColorStop(.7,`rgba(${ink.rock.dark},${(.35+near*.2).toFixed(3)})`);sg.addColorStop(1,`rgba(${ink.rock.dark},.7)`);
+  ctx.fillStyle=sg;ctx.fillRect(0,fy-reach-20*scale,W,reach+40*scale);
+  // The dark itself, below the break.
+  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const p of pts)ctx.lineTo(p[0],p[1]);ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();
+  ctx.fillStyle=`rgba(${ink.rock.dark},.96)`;ctx.fill();
+  // The lifting scale above the break, and the hairline that parts it from the face.
+  {const top=pts.map(p=>[p[0],p[1]-rockDarkScaleAt((p[0]-W*.5)/scale,level,seed)*scale]);
+    ctx.beginPath();ctx.moveTo(top[0][0],top[0][1]);for(const p of top)ctx.lineTo(p[0],p[1]);for(let i=pts.length-1;i>=0;i--)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();
+    ctx.fillStyle=`rgba(${ink.rock.crust},${(.1+near*.06).toFixed(3)})`;ctx.fill();
+    ctx.strokeStyle=`rgba(${ink.rock.dark},${(.55+near*.2).toFixed(3)})`;ctx.lineWidth=Math.max(.7,1*scale);
+    for(let i=0;i+1<top.length;i++){if(rockHash(seed+21,i+Math.floor(level/40)*613,2)<.25)continue;ctx.beginPath();ctx.moveTo(top[i][0],top[i][1]);ctx.lineTo(top[i+1][0],top[i+1][1]);ctx.stroke();}}
+  // The facets of the break that face the flame, lit in broken pieces; nowhere an outline.
+  const tp=rockTorchAt||world.player,tx=sx(tp.x);ctx.lineCap='round';
+  for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1],slope=(b[1]-a[1])/(b[0]-a[0]),toward=(tx-(a[0]+b[0])/2)>0?-1:1,face=clamp(-slope*toward*1.4+.15,0,1);
+    if(face<.25||rockHash(seed,i+Math.floor(level/40)*977,3)<.5)continue;
+    ctx.strokeStyle=`rgba(${ink.rock.crust},${(face*(.22+near*.12)).toFixed(3)})`;ctx.lineWidth=Math.max(.8,1.2*scale);ctx.beginPath();ctx.moveTo(a[0],a[1]-.8*scale);ctx.lineTo(b[0],b[1]-.8*scale);ctx.stroke();}
+  // Scales of the face coming away at the break and dropping into the dark.
+  for(let k=0;k<12;k++){
+    const ph=((k*.618+time*(.18+(k%5)*.05))%1+1)%1,x=((k*.3819+Math.floor(level/60)*.137)%1)*W,xw=(x-W*.5)/scale,ey=fy+rockDarkEdgeAt(xw,level,seed)*scale,y=ey+(ph*ph*34-2)*scale,sz=(.9+(k%4)*.4)*scale,al=(1-ph)*(.35+near*.25);
+    if(y<-10||y>H+10||al<.02)continue;
+    ctx.save();ctx.translate(x,y);ctx.rotate(k*1.7+ph*3);ctx.fillStyle=`rgba(${ink.rock.stain},${(al*.8).toFixed(3)})`;
+    ctx.beginPath();ctx.moveTo(-sz,-sz*.5);ctx.lineTo(sz*.9,-sz*.7);ctx.lineTo(sz*.4,sz*.8);ctx.closePath();ctx.fill();ctx.restore();
   }
   ctx.restore();
 }
@@ -1486,5 +1501,4 @@ function invalidateRockArt(){
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';
-  rockDarkEdge=null;rockDarkEdgeW=-1;
 }
