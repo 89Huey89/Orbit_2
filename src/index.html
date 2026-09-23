@@ -77,20 +77,39 @@
     #best{display:block;font-family:var(--face-text);font-size:23px;line-height:1.4;font-variant-numeric:tabular-nums;color:var(--best)}
     .screen{position:absolute;inset:0;z-index:3;pointer-events:none;text-align:center;transition:opacity .45s,transform .6s}
     .screen.hidden{opacity:0;visibility:hidden;transform:translateY(-9px)}
-    .title-group{position:absolute;top:19%;left:20px;right:20px}
+    /* The frontispiece is the one leaf whose own two blocks can outgrow the sheet — the HOW TO PLAY
+       rubric and the MORE disclosure both add rows under a fixed viewport, on a phone short enough that
+       a run's whole opening leaf never fit at once even folded. A pair of independently top/bottom-
+       anchored absolute blocks (the previous scheme) has no way to notice the other growing, so a tall
+       enough leaf prints one straight through the other. Flow layout can't overlap by construction: the
+       title stands where top:19% used to put it (max() against a floor so a very short phone never loses
+       it off the top), .start-copy's own auto top margin claims whatever is left before its own floor at
+       the foot, and — the one thing flow alone can't promise — #intro itself scrolls when even that
+       isn't room enough, rather than let two leaves print over each other.  */
+    #intro{display:flex;flex-direction:column;align-items:center;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;pointer-events:auto}
+    .title-group{position:relative;width:100%;flex:none;margin:max(19dvh,64px) 0 0;padding:0 20px}
     .eyebrow{margin:0 0 13px;color:var(--gold);font-family:var(--face-sc);font-size:11px;letter-spacing:.37em}
-    h1{margin:0;font-family:var(--face-sc);font-size:clamp(70px,15.5vw,116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1}
+    /* The title may not wrap, so it must also shrink with the sheet: the old 70px floor set ORBIT wider than
+       its own cartouche on a 375px phone, the last letter standing on the frame's rule. The slope is chosen
+       so the reference sheet (430px) still sets it at the 70px it always had. */
+    h1{margin:0;font-family:var(--face-sc);font-size:clamp(52px,calc(18.5vw - 10px),116px);font-weight:400;letter-spacing:.15em;text-indent:.15em;line-height:1.1;white-space:nowrap}
     .title-rule{width:100px;margin:24px auto 0;display:flex;align-items:center;gap:11px;color:var(--gold)}
     .title-rule::before,.title-rule::after{content:'';height:1px;background:linear-gradient(90deg,transparent,var(--gold));flex:1;opacity:.5}
     .title-rule::after{transform:rotate(180deg)}
     .title-rule span{width:4px;height:4px;border:1px solid var(--gold);transform:rotate(45deg)}
-    .start-copy{position:absolute;bottom:max(15%,95px);left:24px;right:24px}
+    .start-copy{position:relative;width:100%;flex:none;margin:auto 0 max(15dvh,56px);padding:0 24px}
     .action-copy{font-style:italic;font-family:var(--face-text);font-size:21px;letter-spacing:.045em;margin:0 0 13px;animation:breathe 3s ease-in-out infinite}
     .instruction{font-family:var(--face-text);color:var(--copy);font-size:14px;letter-spacing:.055em;line-height:1.8;margin:0}
     /* The canones pages before a period ephemeris tell the reader how to use the tables that follow in
        exactly this shape: a small-caps head, a hairline under it, then rules in a hanging indent with
-       marginal numerals — never four centred sentences of four different lengths, as this used to be. */
-    .rubric{text-align:left;padding-left:14px;border-left:1px solid var(--line)}
+       marginal numerals — never four centred sentences of four different lengths, as this used to be.
+       Open, it is a slip pasted onto the chart rather than type floating over it: the same opaque leaf
+       and doubled rule as the colophon and the pause slip (laidPaper()'s tile, blended into the ground
+       colour, inside a hairline box), just cut small enough to sit in the corner of the sheet. */
+    .rubric{position:relative;text-align:left;padding:13px 16px 13px 18px;background-color:rgba(var(--veil),.93);background-image:var(--leaf-paper,none);background-repeat:repeat;background-size:120px 96px;background-blend-mode:var(--leaf-blend,multiply)}
+    .rubric::before,.rubric::after{content:'';position:absolute;pointer-events:none;border:1px solid var(--line)}
+    .rubric::before{inset:0;border-left-width:2px}
+    .rubric::after{inset:3px;opacity:.6}
     .rubric-head{margin:0 0 7px;padding-bottom:7px;border-bottom:1px solid var(--line);font-family:var(--face-sc);font-size:11px;letter-spacing:.28em;color:var(--muted)}
     .rubric-rules{margin:0;padding-left:18px;list-style:lower-roman}
     .rubric-rules li{margin:0 0 5px}
@@ -262,7 +281,8 @@
       .compass-star{width:11px;height:11px}
       .title-group .title-rule{margin-top:6px}
       .title-group .eyebrow{margin-top:6px}
-      #intro .start-copy{bottom:78px}
+      #intro .title-group{margin-top:max(10dvh,20px)}
+      #intro .start-copy{margin-bottom:16px}
       #intro .instruction{font-size:12px;line-height:1.5}
       #game #end{padding:4px 10px}
       #game .colophon{padding:8px 16px 10px;max-width:min(560px,100%)}
@@ -283,8 +303,8 @@
       #pause .pause-menu{margin-top:10px}
       #game .pause-leaf{padding:14px 18px 15px;max-width:min(322px,100%)}
     }
-    @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{top:15%}.start-copy{bottom:14%}}
-    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}.title-group{top:16%}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.start-copy{bottom:16%}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}#end-score-roman{display:none}.end-stats{margin:9px 0 15px;padding-top:10px}}
+    @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{margin-top:max(15dvh,64px)}.start-copy{margin-bottom:max(14dvh,56px)}}
+    @media(max-height:530px) and (orientation:landscape){.hud{top:16px}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}#end-score-roman{display:none}.end-stats{margin:9px 0 15px;padding-top:10px}}
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
     /* Plate frame clearance: nudge the HUD chrome a few px inside the engraved margin drawn on #sky. */
     .hud{left:max(26px,calc(env(safe-area-inset-left) + 4px));right:max(26px,calc(env(safe-area-inset-right) + 4px));top:max(26px,calc(env(safe-area-inset-top) + 14px))}
