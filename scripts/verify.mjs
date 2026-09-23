@@ -844,7 +844,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     const text=inscribed();
     for(const bad of ['pricked','PRESSURE SET','MOMENTUM KEPT','TIRO','ADEPTUS','MAGISTER','LEFT THE STAR CHART','ANGULUS','VORAGO','nib'])
       assert(!text.includes(bad),'A rendered Rock run must never print "'+bad+'": '+text);
-    context.test.setPlate(held);context.test.newWorld();
+    // Leave the suite exactly as it found it: a live run in progress, not a fresh chart still
+    // waiting on its first tap — the blocks after this one assume a 'playing' world already
+    // under way (see the release forced a few blocks down).
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
   }
   {
     // Two eras never share a cached entry, and both hit. applyPlate() points `ink` at a plate without
