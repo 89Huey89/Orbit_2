@@ -37,6 +37,11 @@ defineVoice('atlas',{
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
   chapterSaid:'Plate {numeral}. {name}.',
+  // The atlas has four chapters of eight rows and no end but the dark; a plate with its own count of
+  // chapters, or a row at which the run is won, names them in its own voice.
+  chapterRows:8,
+  goalRow:0,
+  won:'',
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'}
 });
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see

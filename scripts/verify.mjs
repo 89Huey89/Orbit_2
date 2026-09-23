@@ -696,8 +696,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(wall.chrome.pauseLeave,'LEAVE THE VOYAGE');
     assert(!/press|pen|frontispiece/i.test([wall.chrome.pauseEyebrow,wall.chrome.pauseTitle,wall.chrome.pauseNote,wall.chrome.pauseResume,wall.chrome.pauseLeave].join(' ')),'No word of the atlas\'s own workshop is left standing on the pause leaf of another century');
     assert.equal(wall.unrecorded,'ERA PREVIEW \u00b7 NOT RECORDED');
-    assert.equal(wall.chapters[0],'FIRST WATCH');
-    assert.equal(wall.chapters[3],'BEFORE DAWN');
+    assert.equal(wall.chapters.length,12,'The Ceiling divides its night into the Amduat\'s twelve hours');
+    assert.equal(wall.chapters[0],'THE ENTRANCE OF THE WEST');
+    assert.equal(wall.chapters[11],'THE BODY OF THE SERPENT');
+    assert.equal(wall.chapterRows*wall.chapters.length,wall.goalRow,'The Ceiling\'s dawn falls at the end of its last hour');
     assert(/decan course/i.test(wall.chartSaid)&&/wall holds/i.test(wall.chartSaid),'The Ceiling keeps its own completion sentence');
     assert(/barque/i.test(wall.opening),'The Ceiling keeps its own opening line');
     // Every feat the simulation can record must have a word on this sheet. The conversion reads one
