@@ -326,8 +326,12 @@ function surveyProgress(s){
 // One continuing alphabet for the whole run rather than a fresh a/b/c for every construction: the index
 // is kept on the world itself, not read off world.surveys.length, since that array is pruned from the
 // front as old constructions dry off the sheet and would otherwise make the count run backward. Past z
-// the letters double — aa, bb, cc — the way a surveyor reaches for a second mark rather than a new one.
-function surveyLetterName(n){const letter=String.fromCharCode(97+n%26);return letter.repeat(Math.floor(n/26)+1);}
+// the alphabet is taken again with a prime — a', b', c' — the way a geometer marks the points of a second
+// figure, and again with two and three. Doubling the letter instead grew a word at every pass, and by the
+// thirtieth row the sheet carried points lettered mmmmmmm. After the third prime the plain letters come
+// round again; by then the constructions that used them have long been carried off the sheet. The prime
+// is set as the Fell apostrophe, since none of the three faces cuts a prime of its own.
+function surveyLetterName(n){return String.fromCharCode(97+n%26)+"'".repeat(Math.floor(n/26)%4);}
 function nextSurveyLetters(){
   const base=(world.surveyLetterSeq=(world.surveyLetterSeq||0)+3)-3;
   return [surveyLetterName(base),surveyLetterName(base+1),surveyLetterName(base+2)];
@@ -394,10 +398,15 @@ function surveyNumeral(text,x,y,size,rgb,alpha,t){
 function surveyLetter(text,x,y,size,rgb,alpha,t){
   if(t<=0)return;
   ctx.save();ctx.textAlign='center';ctx.font=plateFace(size,'text','italic');
-  // A small leaf of the sheet's own ground behind the letter — the same clearing the construction
-  // labels cut for themselves — since on a crater's own hatching a bare letter simply vanishes into it.
-  const half=ctx.measureText(text).width*.5+2;
-  ctx.fillStyle=`rgba(${ink.base.paperRgb},${alpha*t*.7})`;ctx.fillRect(x-half,y-size*.65,half*2,size*1.2);
+  // A small reserve of the sheet's own ground behind the letter, since on a crater's own hatching a bare
+  // letter simply vanishes into it. It is a soft clearing that fades out at its rim, as a burnisher lifts
+  // the tone round a letter, and not a filled box: a hard rectangle printed as a label chip on the night
+  // plate rather than as bare sheet.
+  const half=ctx.measureText(text).width*.5+size*.45,cy=y-size*.05;
+  ctx.save();ctx.translate(x,cy);ctx.scale(1,size*.62/half);
+  const clear=ctx.createRadialGradient(0,0,0,0,0,half);
+  clear.addColorStop(0,`rgba(${ink.base.paperRgb},${alpha*t*.8})`);clear.addColorStop(.6,`rgba(${ink.base.paperRgb},${alpha*t*.55})`);clear.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+  ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,half,0,Math.PI*2);ctx.fill();ctx.restore();
   ctx.fillStyle=`rgba(${rgb},${alpha})`;
   writeText(ctx,text,x,y+size*.35,t,{size,nib:false});
   ctx.restore();
@@ -526,31 +535,10 @@ function drawLandingSurvey(s,t,rgb,gold,base){
     surveyLetter(s.letters[1],px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
     surveyLetter(s.letters[2],px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
   }
-  // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
-  const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
-  const lines=[];
-  // This note is set in the sheet's own italic text face, not the small-caps one, so the name is raised
-  // to caps here rather than restated — OBSERVATIONS stays the one place the name itself is spelled.
-  if(s.square)lines.push([OBSERVATIONS.rightAngle.latin.toUpperCase()+' · +'+s.squareBonus,gold]);
-  lines.push(['×'+s.mult.toFixed(1)+'  ·  +'+s.gain,rgb]);
-  if(s.skipped>0)lines.push(['SKIP '+s.skipped,rgb]);
-  // The node prints its own row numeral a little east of the ring, so a contact that landed due east
-  // pushes the note further out rather than setting it on top of the number.
-  const size=Math.max(9,10*scale),step=size*1.28,right=s.ux>=0;
-  const out=(s.ux>.9&&Math.abs(s.uy)<.36?38:22)*scale;
-  const nx=px+s.ux*out+(right?4:-4),ny=py+s.uy*out;
-  ctx.save();ctx.font=plateFace(size,'text','italic');
-  // The note is kept inside the frame's inner rule: its left edge is clamped to the sheet, whichever
-  // side of the ring it was set on, so a landing near the margin never prints into the border.
-  let widest=0;for(const l of lines)widest=Math.max(widest,ctx.measureText(l[0]).width||l[0].length*size*.5);
-  const inset=frameBand()+5*scale,left=clamp(right?nx:nx-widest,inset,Math.max(inset,W-inset-widest));
-  ctx.textAlign='left';
-  for(let i=0;i<lines.length;i++){
-    const from=i/lines.length,step2=1/lines.length;
-    ctx.fillStyle=`rgba(${lines[i][1]},${base*.95})`;
-    writeText(ctx,lines[i][0],left,ny+i*step,revealSpan(note,from,from+step2),{size,nib:false});
-  }
-  ctx.restore();
+  // (e) No note is set beside the construction. It once repeated the landing's speed and gain, and the
+  // square's name and bonus, which the tally in the gutter and the note on the orbit already carry: one
+  // landing then wrote the same figures three times over, and it is the figure itself — the angle and
+  // its numeral, or the right angle — that the construction is for.
 }
 function drawTrail(){
   const trail=world.trail;
@@ -1845,7 +1833,13 @@ function drawTallies(dt){
     if(!tb)continue;
     if(tb.top>H-footerBand()){tallies.splice(i,1);continue;}
     markGround('tally',tb.l,tb.top,tb.r,tb.bottom,t);
-    const alpha=reducedMotion?1:Math.min(1,t.age*8);
+    // Only the newest tally is wet. Every older one dries back to half its strength over a second once a
+    // later landing has been written, as the trail dries behind the nib: the running SUMMA is the one
+    // figure the eye needs, and a column of equally bright tallies down the gutter outweighed the chart.
+    const newest=i===tallies.length-1;
+    if(newest)t.stale=0;else if(world.state!=='paused')t.stale=(t.stale||0)+dt;
+    const dry=newest?1:reducedMotion?.5:lerp(1,.5,Math.min(1,(t.stale||0)/1.1));
+    const alpha=(reducedMotion?1:Math.min(1,t.age*8))*dry;
     const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';
