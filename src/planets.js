@@ -5,13 +5,19 @@ function planetFamily(row,runSeed){
   const offset=(runSeed>>>0)%7,stride=1+((runSeed>>>4)%6);
   return planetFamilies[(Math.floor(row)*stride+offset)%7];
 }
-function landContour(g,x,y,rx,ry,rng){
+// Traces one closed contour and hands its points back, so a coast that has to be filled and stroked in
+// separate passes can be traced again without drawing more numbers from the rng. `fresh` false adds the
+// contour to the path already open rather than starting a new one.
+function landContour(g,x,y,rx,ry,rng,fresh=true){
   const phase=rng()*TAU,points=[];
   for(let i=0;i<28;i++){
     const a=i/28*TAU,r=.78+Math.sin(a*3+phase)*.12+Math.sin(a*7-phase)*.07+rng()*.16;
     points.push({x:x+Math.cos(a)*rx*r,y:y+Math.sin(a)*ry*r});
   }
-  const last=points[points.length-1],first=points[0];g.beginPath();g.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
+  if(fresh)g.beginPath();traceContour(g,points);return points;
+}
+function traceContour(g,points){
+  const last=points[points.length-1],first=points[0];g.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
   for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length];g.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2);}
   g.closePath();
 }
@@ -24,8 +30,14 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     // island.
     const lx=(rng()-.5)*core*.3,ly=(rng()-.5)*core*.3;
     g.fillStyle=ink.surface.shorelineFill;g.strokeStyle=ink.surface.shorelineStroke;
-    landContour(g,lx,ly,core*.72,core*.6,rng);g.fill();g.lineWidth=.9;g.stroke();
-    landContour(g,lx+core*.52,ly-core*.22,core*.3,core*.25,rng);g.fill();g.lineWidth=.7;g.stroke();
+    // Both contours are filled as one path, so where the peninsula overlaps the landmass the wash is laid
+    // once rather than twice; each coast is then stroked only where it lies outside the other, so the
+    // seam between them never shows. Laid solid, as the night coast once was, neither mattered.
+    const main=landContour(g,lx,ly,core*.72,core*.6,rng),cape=landContour(g,lx+core*.52,ly-core*.22,core*.3,core*.25,rng,false);g.fill();
+    for(const [coast,other,width] of [[main,cape,.9],[cape,main,.7]]){
+      g.save();g.beginPath();g.rect(-core*2,-core*2,core*4,core*4);traceContour(g,other);g.clip('evenodd');
+      g.beginPath();traceContour(g,coast);g.lineWidth=width;g.stroke();g.restore();
+    }
     for(let i=0;i<9;i++){
       const x=(rng()-.5)*core*1.8,y=(rng()-.5)*core*1.9;
       g.strokeStyle=paper?`rgba(96,74,52,${.14+rng()*.18})`:`rgba(218,218,196,${.1+rng()*.15})`;g.lineWidth=.6+rng()*1.25;g.lineCap='round';

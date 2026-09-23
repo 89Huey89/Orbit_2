@@ -320,7 +320,9 @@ definePlate('planets',{
 // decorative overstroke or cross-hatch that never varied by plate is left as it was.
 definePlate('surface',{
   night:{
-    shorelineFill:'#cbc4a4',shorelineStroke:'rgba(51,60,45,.7)',
+    // The night coast is a translucent wash like paper's, not the opaque cream it was: laid solid, the
+    // landmass sat on the ocean world as a flat cut-out, the one mark on the body no pigment reached.
+    shorelineFill:'rgba(206,196,160,.42)',shorelineStroke:'rgba(51,60,45,.7)',
     craterShadow:'rgba(34,38,42,.48)',craterWall:'rgba(48,43,34,.66)',craterLit:'rgba(239,222,184,.72)',
     ringMajor:'rgba(212,190,150,.44)',ringMinor:'rgba(115,85,64,.45)',
     stormMajor:'rgba(250,244,224,.78)',stormMinor:'rgba(16,14,18,.72)',
