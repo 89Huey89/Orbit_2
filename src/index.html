@@ -266,21 +266,19 @@
     #game[data-era="2"] .colophon::before,#game[data-era="2"] .colophon::after{content:'';position:absolute;left:0;right:0;top:auto;bottom:auto;height:8px;border:0;border-top:1.4px solid #efe2c4;border-bottom:1.4px solid #efe2c4;background:var(--blocks);opacity:1}
     #game[data-era="2"] .colophon::before{top:0}
     #game[data-era="2"] .colophon::after{bottom:0}
-    /* The end leaf alone becomes a stela: the wall's own painted card everywhere else in era II, but
-       here a round-topped slab set against the night the run just fell out of, so the run is judged on
-       the sky rather than on the wall it was copied from. Text and rule colour are re-inked cream/gold
-       over this one leaf — the rest of era II still reads dark-on-parchment, which this does not touch. */
+    /* The end leaf becomes a stela: a round-topped slab set against the night the run just fell out
+       of, the winged sun carved in its lunette and the run's count set below the ruled band, the way a
+       stela sets its dedication under the disc. Text and rule colour are re-inked cream/gold here. */
     #game[data-era="2"] #end{--ink:#efe2c4;--ivory:#efe2c4;--gold:#e3b447;--muted:#c9bb98;--copy:#c9bb98;--best:#efe2c4;--line:rgba(239,226,196,.32)}
-    #game[data-era="2"] #end-colophon{background:rgba(13,24,56,.88);border:1.4px solid #efe2c4;border-radius:50% 50% 0 0/78px 78px 0 0;padding:96px 26px 34px;max-width:min(390px,100%);color:#efe2c4}
+    #game[data-era="2"] #end-colophon{background:rgba(13,24,56,.88);border:1.4px solid #efe2c4;border-radius:50% 50% 0 0/78px 78px 0 0;padding:30px 26px 34px;max-width:min(390px,100%);color:#efe2c4}
     #game[data-era="2"] #end-colophon::before,#game[data-era="2"] #end-colophon::after{border-top-color:#efe2c4;border-bottom-color:#efe2c4}
-    /* The block rule follows the curve rather than fighting it: pushed down to where the stela's own
-       shoulders have already gone straight, so it reads as a line ruled across the stone, not a bar
-       clipped by its own round top. */
-    #game[data-era="2"] #end-colophon::before{top:78px}
-    #game[data-era="2"] #end-colophon .ceiling-corner{color:#efe2c4;opacity:.7}
-    /* The pediment's own carving: a winged sun disc, the mark every stela's lunette actually carries,
-       standing where the round top leaves room for it before the eyebrow line begins. */
-    .stela-sundisc{display:block;width:min(60vw,240px);height:auto;margin:0 auto 8px}
+    /* The block rule is ruled across the stone under the lunette, below the winged sun and where the
+       stela's shoulders have already gone straight, so it is never clipped by the round top. */
+    #game[data-era="2"] #end-colophon::before{top:96px}
+    #game[data-era="2"] #end .ceiling-corner{display:none!important}
+    /* The lunette's own carving: a winged sun disc, the mark every stela's round top carries, set in
+       the curve above the ruled band rather than under it. */
+    .stela-sundisc{display:block;width:min(52vw,210px);height:auto;margin:6px auto 44px}
     #game[data-era="2"] .pause-leaf{padding:26px 22px 24px}
     /* Marginal ornament only, kept off the reading text: kheker reed-bundles crown the title panel as
        the frieze crowns the wall itself; ankh sit at the corners; papyrus/lotus columns flank both

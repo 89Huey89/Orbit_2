@@ -77,7 +77,7 @@ const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
 const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
 const CEILING_LOSS={
-  'THE DARK CAUGHT UP':'THE WALL BROKE AWAY BENEATH',
+  'THE DARK CAUGHT UP':'THE WATERS OF NUN ROSE OVER THE BARQUE',
   'THE ORBIT FADED':'THE HOUR-CIRCLE FADED',
   'DRAWN INTO A VORTEX':'APEP TOOK THE NIGHT BARQUE',
   'SEARED BY A SUNSPOT FLARE':'THE EYE BURNED THE BARQUE',
@@ -98,7 +98,7 @@ const CEILING_OBSERVATIONS={
   pureChart:'A DECAN COURSE IN CLEAN TRANSFERS',
   fortyRows:'THE FORTIETH ROW',
   threeMinutes:'THREE HOURS OF THE NIGHT',
-  rightAngle:'A RIGHT ANGLE ON THE CANON GRID'
+  rightAngle:'A RIGHT ANGLE OF ARRIVAL'
 };
 // The era's whole vocabulary, registered under its own name so plateWords() can lay it over the
 // atlas's (see defineVoice()/plateWords() in src/plates.js): everything this table does not rename —
@@ -491,7 +491,9 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
   const width=Math.max(1.1,h*.13);
   if(kind===1)ceilingBrush(g,[[cx,cy-h*.42],[cx+h*.02,cy+h*.42]],col,width,.9,cx+cy);
   else if(kind===10){
-    const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.4,cy+h*.32+Math.sin(a)*h*.6]);}
+    // Each heel-bone is a narrow arch standing clear of its neighbour: set shoulder to shoulder, two of
+    // them close into one letter M, which is the one thing the count must never be read as.
+    const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.3,cy+h*.32+Math.sin(a)*h*.6]);}
     ceilingBrush(g,p,col,width,.9,cx*3+cy);
   }else if(kind===100){
     const r=Math.min(w,h)*.44,p=[];for(let i=0;i<=26;i++){const t=i/26,a=-1.1+t*8.2,rr=r*(.34+.66*t);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
@@ -506,7 +508,7 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
     ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*17+cy);
   }
 }
-const CEILING_NW={1:.2,10:.34,100:.36,1000:.44,10000:.3};
+const CEILING_NW={1:.2,10:.42,100:.36,1000:.44,10000:.3};
 const ceilingNumRows=c=>c<=3?1:c<=6?2:3;
 function ceilingNumWidth(n,h){
   let w=0;for(const k of [10000,1000,100,10,1]){const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
@@ -793,8 +795,8 @@ function ceilingBakeWall(watch){
   // crowning it and the foot's block rule closing it (docs/archive/eras/02-ceiling.md, "Frame and furniture" —
   // a tomb ceiling's boundary is its architecture, not a page border) — is cached apart from this and
   // pinned to the viewport by ceilingDrawRegisterGrid(). Everything else drawn below is furniture, and
-  // furniture passes: the plaster itself, the painter's snapped canon grid, both star bands, the
-  // register-dividing rule, the twelve month circles, the decan columns, Meskhetiu and Reret. This tile
+  // furniture passes: the lapis ground and its field of stars, the
+  // register-dividing band, the twelve month circles, the decan columns, Meskhetiu and Reret. This tile
   // is drawn once and blitted at an offset tracking world.cameraY*scale in renderCeiling() — the exact
   // rate sy() gives every node and hazard, so the room passes at one rate with no depth in it, the way
   // the era file's "flat, one wall, one rate" reading of the vertical asks for.
@@ -807,10 +809,10 @@ function ceilingBakeWall(watch){
   // never means four resident at once.
   //
   // Every rhythm that has to survive the join between one copy of the tile and the next — the star
-  // band's gap, the canon grid's unit — is forced to an exact divisor of the tile height before it is
-  // drawn with, so the spacing never jumps at the seam. The plaster texture and the crack network are
-  // not periodic, so they are drawn wrapped instead: once at their own position, and again shifted by a
-  // tile height whenever they fall near an edge, the ordinary way to make a baked canvas repeat without
+  // field's rows, the divider band's gap — is forced to an exact divisor of the tile height before it is
+  // drawn with, so the spacing never jumps at the seam. The ground's cloud of blue is
+  // not periodic, so each cloud is drawn wrapped instead: once at its own position, and again shifted by
+  // a tile height whenever it falls near an edge, the ordinary way to make a baked canvas repeat without
   // a visible seam. Checked by eye at 390px and 1400px, stepping world.cameraY across three tile heights.
   const gap=Math.max(20,Math.min(28,H/22)),rows=Math.max(14,Math.round(H*1.6/gap)),R=rows*gap;
   // The gutter grows over the old single-file border's 10-17px: a broad three-row band needs real
