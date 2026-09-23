@@ -451,16 +451,47 @@ function rockBakeFace(camY){
     const dx=w.pts[i*2+2]-w.pts[i*2],dy=w.pts[i*2+3]-w.pts[i*2+1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w.step,ny=dx/l*w.step,facing=nx*LX-ny*LY;
     segs.push(w,i,wd,nx,ny,facing,x0,y0,x1,y1);
   }}
-  const seg=(x0,y0,x1,y1,ox,oy)=>{L.beginPath();L.moveTo(x0+ox,y0+oy);L.lineTo(x1+ox,y1+oy);L.stroke();};
-  const each=fn=>{for(let s=0;s<segs.length;s+=10)fn(segs[s],segs[s+1],segs[s+2],segs[s+3],segs[s+4],segs[s+5],segs[s+6],segs[s+7],segs[s+8],segs[s+9]);};
-  const pass=(rgb,alpha,fn)=>{
-    L.setTransform(1,0,0,1,0,0);L.clearRect(0,0,cw,ch);L.setTransform(DPR,0,0,DPR,0,0);L.lineCap='round';L.lineJoin='round';L.strokeStyle=`rgb(${rgb})`;each(fn);
-    g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,0,0);g.restore();
+  // Both the clear and the blit below used to cover the whole sheet on every one of the four passes, but
+  // a pass's ink never comes close to filling it: the fissures on screen are a scatter of thin walks, not
+  // a wash. So each pass first asks, of every segment it would stroke, only for the axis-aligned box that
+  // stroke reaches (its endpoints, moved by this pass's own offset and widened by half its line width) and
+  // unions those; then it clears and blits back only that box, not the sheet around it the pass was never
+  // going to touch. The strokes themselves are laid down exactly as before — one beginPath/moveTo/lineTo/
+  // stroke call per segment, in the same order, at the same width and offset — because round-capped
+  // strokes overlap at every joint along a fissure, and a browser's antialiasing of many overlapping
+  // partial-coverage edges compounds very slightly differently when several are batched into one stroke()
+  // call versus stroked one at a time; the fissures are meant to look hand-struck, not identical to the
+  // pixel between a batched and an unbatched render, so the batching was dropped and only the windowing
+  // kept, which costs nothing in fidelity and is where nearly all of the saving already was (the sheet is
+  // mostly untouched paper; clearing and blitting all of it back four times over was the waste).
+  const spec=(fn)=>{
+    const list=[];let bx0=Infinity,by0=Infinity,bx1=-Infinity,by1=-Infinity;
+    for(let s=0;s<segs.length;s+=10){
+      const r=fn(segs[s],segs[s+1],segs[s+2],segs[s+3],segs[s+4],segs[s+5],segs[s+6],segs[s+7],segs[s+8],segs[s+9]);
+      if(!r)continue;
+      const[lw,ox,oy,x0,y0,x1,y1]=r,hw=lw/2,X0=x0+ox,Y0=y0+oy,X1=x1+ox,Y1=y1+oy;
+      const mnx=Math.min(X0,X1)-hw,mxx=Math.max(X0,X1)+hw,mny=Math.min(Y0,Y1)-hw,mxy=Math.max(Y0,Y1)+hw;
+      if(mnx<bx0)bx0=mnx;if(mxx>bx1)bx1=mxx;if(mny<by0)by0=mny;if(mxy>by1)by1=mxy;
+      list.push(lw,X0,Y0,X1,Y1);
+    }
+    return{list,bx0,by0,bx1,by1};
   };
-  pass(crack,.26,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing>0)return;L.lineWidth=wd*1.8+4;seg(x0,y0,x1,y1,nx*(wd*.8+2),ny*(wd*.8+2));});
-  pass(crack,.24,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{L.lineWidth=wd*2.4+2;seg(x0,y0,x1,y1,0,0);});
-  pass(lip,.5,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return;L.lineWidth=1.3;seg(x0,y0,x1,y1,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2));});
-  pass(shaft,.78,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{L.lineWidth=wd*.8;seg(x0,y0,x1,y1,0,0);});
+  const pass=(rgb,alpha,fn)=>{
+    const{list,bx0,by0,bx1,by1}=spec(fn);
+    if(bx0>bx1)return;
+    // Padded by 2 CSS px beyond the exact half-width box: a stroke's antialiased fringe reaches a little
+    // past its geometric edge, and this keeps that fringe inside the region actually cleared and blitted.
+    const px0=Math.max(0,Math.floor((bx0-2)*DPR)),py0=Math.max(0,Math.floor((by0-2)*DPR)),px1=Math.min(cw,Math.ceil((bx1+2)*DPR)),py1=Math.min(ch,Math.ceil((by1+2)*DPR)),pw=px1-px0,ph=py1-py0;
+    if(pw<=0||ph<=0)return;
+    L.setTransform(1,0,0,1,0,0);L.clearRect(px0,py0,pw,ph);L.setTransform(DPR,0,0,DPR,0,0);
+    L.lineCap='round';L.lineJoin='round';L.strokeStyle=`rgb(${rgb})`;
+    for(let k=0;k<list.length;k+=5){L.lineWidth=list[k];L.beginPath();L.moveTo(list[k+1],list[k+2]);L.lineTo(list[k+3],list[k+4]);L.stroke();}
+    g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,px0,py0,pw,ph,px0,py0,pw,ph);g.restore();
+  };
+  pass(crack,.26,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing>0)return null;return[wd*1.8+4,nx*(wd*.8+2),ny*(wd*.8+2),x0,y0,x1,y1];});
+  pass(crack,.24,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*2.4+2,0,0,x0,y0,x1,y1]);
+  pass(lip,.5,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return null;return[1.3,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2),x0,y0,x1,y1];});
+  pass(shaft,.78,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*.8,0,0,x0,y0,x1,y1]);
   rockFaceY=camY;rockFaceTop=up;
 }
 function rockPaintFace(){
