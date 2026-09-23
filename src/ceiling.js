@@ -139,7 +139,7 @@ const CEILING_CHANGE_DUR=1.2;
 // from the tall passing strip below, because it never moves: see ceilingDrawRegisterGrid(). Each is
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
 // are otherwise pinned exactly the way this file always pinned the whole wall.
-let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='';
+let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
 // The barque's last known heading side, held between frames so a passing moment of near-zero
 // horizontal speed (the tip of a climb or dive) does not flicker the mirror back and forth.
 let ceilingFacing=1;
@@ -151,7 +151,7 @@ let ceilingAngle=null;
 // (which register to paint) and the running head (which word to print) so the two can never drift.
 function ceilingWatch(){return world?clamp(Math.floor(world.progress/8),0,3):0;}
 
-function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
+function invalidateCeilingArt(){ceilingCartoucheKey='';ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
 // Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
@@ -496,6 +496,9 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
   }else if(kind===100){
     const r=Math.min(w,h)*.44,p=[];for(let i=0;i<=26;i++){const t=i/26,a=-1.1+t*8.2,rr=r*(.34+.66*t);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
     ceilingBrush(g,p,col,Math.max(1,h*.1),.9,cx*5+cy);
+  }else if(kind===10000){
+    // The raised finger: a stroke bent over at its tip, the sign the walls count ten thousands in.
+    ceilingBrush(g,[[cx+w*.05,cy+h*.44],[cx,cy-h*.2],[cx-w*.06,cy-h*.36],[cx-w*.26,cy-h*.42],[cx-w*.3,cy-h*.3]],col,width,.9,cx*19+cy);
   }else{
     ceilingBrush(g,[[cx-w*.05,cy+h*.44],[cx,cy+h*.02]],col,width,.9,cx*7+cy);
     ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.16,cy-h*.14],[cx-w*.3,cy-h*.3],[cx-w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*11+cy);
@@ -503,16 +506,16 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
     ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*17+cy);
   }
 }
-const CEILING_NW={1:.2,10:.34,100:.36,1000:.44};
+const CEILING_NW={1:.2,10:.34,100:.36,1000:.44,10000:.3};
 const ceilingNumRows=c=>c<=3?1:c<=6?2:3;
 function ceilingNumWidth(n,h){
-  let w=0;for(const k of [1000,100,10,1]){const c=Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
+  let w=0;for(const k of [10000,1000,100,10,1]){const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
   return Math.max(0,w-h*.1);
 }
 function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false){
   const total=ceilingNumWidth(n,h);let left=center?x-total/2:x;
-  for(const k of [1000,100,10,1]){
-    const c=Math.floor(n/k)%10;if(!c)continue;
+  for(const k of [10000,1000,100,10,1]){
+    const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(!c)continue;
     const rows=ceilingNumRows(c),per=Math.ceil(c/rows),sw=h*CEILING_NW[k],rh=h/rows;
     for(let i=0;i<c;i++)ceilingNumSign(g,k,left+sw*(i%per+.5),y+rh*(Math.floor(i/per)+.5),sw*.92,rh*.92,col);
     left+=per*sw+h*.1;
@@ -1043,6 +1046,8 @@ function ceilingDrawRegisterGrid(){
     line.push([W-m-rm,m]);
     for(let k=1;k<=6;k++){const t=k/6,a=-Math.PI*.5+t*Math.PI*.5;line.push([W-m-rm+Math.cos(a)*rm,m+rm+Math.sin(a)*rm]);}
     line.push([W-m,ground]);
+    // Kept for the sun's course (ceilingDrawSunCourse): the same line, measured once, from her lips to her feet.
+    {const course=[[i+bw*1.5,ground-bw*2.4],[m,ground-bw*2.4],...line.slice(1,-1),[W-m,ground-bw*1.4]],len=[0];for(let k=1;k<course.length;k++)len.push(len[k-1]+Math.hypot(course[k][0]-course[k-1][0],course[k][1]-course[k-1][1]));ceilingSunCourse={pts:course,len,bw};}
     const pitch=bw*1.35;let next=pitch*.5,walked=0,idx=0;
     for(let k=1;k<line.length;k++){
       const [ax,ay]=line[k-1],[bx,by]=line[k],len=Math.hypot(bx-ax,by-ay);
@@ -1103,6 +1108,59 @@ function ceilingDrawRegisterGrid(){
     ceilingFrameTop=c;ceilingFrameBot=null;ceilingFrameKey=key;
   }
   ctx.drawImage(ceilingFrameTop,0,0,W,H);
+}
+// The run's own count, written the way the walls write a king's name: inside a cartouche, the rope
+// loop tied off at one end, the Egyptian numerals set within it largest first and the modern figure
+// set small beneath as the gloss, since this is the one number the player has to be able to read at
+// a glance. The DOM score is still there for assistive technology; it is simply not drawn over this.
+// Baked once per score and size, because the numerals are brushed and a brush per sign per frame is
+// work for nothing while the score stands still.
+function ceilingDrawCartouche(){
+  const n=Math.max(0,world.score|0),key=n+':'+W+'x'+H+'x'+DPR;
+  if(ceilingCartoucheKey!==key){
+    const P=CEILING_PALETTE,nh=24,numW=n?ceilingNumWidth(n,nh):nh*.6,w=Math.min(W-2*ceilingNutBandWidth()-90,Math.max(112,numW+60)),h=58,pad=8;
+    const c=makeCanvas(Math.ceil((w+pad*2)*DPR),Math.ceil((h+pad*2)*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(pad,pad);
+    const r=h/2,oval=()=>{g.beginPath();g.moveTo(r,0);g.lineTo(w-r-6,0);g.arc(w-r-6,r,r,-Math.PI/2,Math.PI/2);g.lineTo(r,h);g.arc(r,r,r,Math.PI/2,Math.PI*1.5);g.closePath();};
+    oval();g.fillStyle='rgba(13,24,56,.92)';g.fill();
+    // The rope: a doubled line, pale outside and gold within, and the knot tying it off at the right.
+    g.lineWidth=2.4;g.strokeStyle=P.carbon;g.stroke();
+    g.save();g.translate(w/2,h/2);g.scale((w-7)/w,(h-7)/h);g.translate(-w/2,-h/2);oval();g.restore();g.lineWidth=1;g.strokeStyle=P.yellow;g.stroke();
+    g.fillStyle=P.carbon;g.fillRect(w-6.6,7,3.6,h-14);g.strokeStyle=P.yellow;g.lineWidth=1;g.strokeRect(w-6.6,7,3.6,h-14);
+    const scale0=Math.min(1,(w-44)/Math.max(1,numW)),nw=numW*scale0;
+    g.save();g.translate((w-6)/2-nw/2,8);g.scale(scale0,scale0);
+    if(n)ceilingNumber(g,n,0,0,nh,P.yellow);else{g.strokeStyle=P.yellow;g.lineWidth=1.4;g.beginPath();g.arc(nh*.3,nh*.5,nh*.22,0,TAU);g.stroke();}
+    g.restore();
+    g.font=plateFace(11,'sc');g.textAlign='center';g.fillStyle=P.carbon;g.globalAlpha=.9;g.fillText(String(n),(w-6)/2,h-9);
+    ceilingCartouche={c,w:w+pad*2,h:h+pad*2};ceilingCartoucheKey=key;
+  }
+  const q=ceilingCartouche;ctx.drawImage(q.c,W/2-q.w/2+3,ceilingNutBandWidth()+2,q.w,q.h);
+}
+// The sun's course through Nut. The night is the sun travelling through her body, swallowed at her lips
+// in the evening and born at her feet at dawn, and that is exactly what a run is: so the sun is drawn
+// on her, along the line her stars are set on, as far through the night as the run has come, red and
+// low at the start and warming to gold as the dawn nears, with the hours already passed marked as
+// red points behind it. It eases toward its place rather than jumping a row at a time.
+const CEILING_NIGHT_ROWS=CEILING_HOURS.length*8;
+function ceilingDrawSunCourse(dt){
+  const c=ceilingSunCourse;if(!c||!world)return;
+  const target=clamp(world.progress/CEILING_NIGHT_ROWS,0,1);
+  ceilingSunShown=reducedMotion||world.state!=='playing'?target:ceilingSunShown+(target-ceilingSunShown)*(1-Math.exp(-(dt||0)*3));
+  const total=c.len.at(-1),at=f=>{const d=f*total;let k=1;while(k<c.len.length-1&&c.len[k]<d)k++;const u=(d-c.len[k-1])/Math.max(1e-6,c.len[k]-c.len[k-1]);return [lerp(c.pts[k-1][0],c.pts[k][0],u),lerp(c.pts[k-1][1],c.pts[k][1],u)];};
+  ctx.save();
+  for(let h=1;h<CEILING_HOURS.length;h++){const f=h/CEILING_HOURS.length,[x,y]=at(f),past=ceilingSunShown>=f;
+    ctx.fillStyle=past?CEILING_PALETTE.red:CEILING_PALETTE.nutDeep;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(x,y,c.bw*.2,0,TAU);ctx.fill();ctx.stroke();}
+  const [x,y]=at(ceilingSunShown),r=c.bw*.36,warm=mixRgb([194,74,47],[227,180,71],ceilingSunShown);
+  ctx.fillStyle=`rgba(${warm},.25)`;ctx.beginPath();ctx.arc(x,y,r*1.9,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgb(${warm})`;ctx.strokeStyle=CEILING_PALETTE.ink;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.stroke();
+  ctx.restore();
+}
+// The end leaf's count, painted by the same hand the cartouche uses, into a canvas the leaf itself
+// carries (#end-numerals, placed by src/ui.js's showEnd()). It sizes the canvas for the device itself.
+function ceilingPaintEndNumerals(canvas,score){
+  if(!canvas)return;const n=Math.max(0,score|0),h=40,w=Math.max(h,n?ceilingNumWidth(n,h):h*.6)+16,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
+  canvas.width=Math.ceil(w*dpr);canvas.height=Math.ceil((h+12)*dpr);canvas.style.width=w+'px';canvas.style.height=(h+12)+'px';
+  const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h+12);
+  if(n)ceilingNumber(g,n,8,6,h,CEILING_PALETTE.yellow);else{g.strokeStyle=CEILING_PALETTE.yellow;g.lineWidth=2;g.beginPath();g.arc(w/2,h/2+6,h*.22,0,TAU);g.stroke();}
 }
 // The route is a sequence of brush dabs, not a stroke — 02-ceiling.md says so outright, and the aim
 // guide beside it already draws that way. A slow stretch of the flight is a run of close, loaded
@@ -1759,6 +1817,7 @@ function renderCeiling(dt,aim){
   // Nut is laid over everything the night holds, the waters of Nun included: the flight happens inside
   // her, and nothing that rises or passes is ever drawn over her body.
   ceilingDrawRegisterGrid();
+  ceilingDrawSunCourse(dt);if(world.state!=='ready')ceilingDrawCartouche();
   ceilingDrawRunningHead(dt);
   if(screenFlash>0){ctx.fillStyle=`rgba(${CEILING_RGB.red},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
 }
