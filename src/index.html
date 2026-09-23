@@ -39,6 +39,9 @@
        at the top of the sheet, which is where the torch has already stopped reaching. */
     #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--dawn:#c98b46;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
     #game[data-era="1"] .footer{color:#c7bc9e}
+    /* Era I sets its counts on the rock in its own marks (rockHudLeaf() in rock.js); the DOM HUD stays for
+       screen readers and is only taken off the screen. */
+    #game[data-era="1"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#b9a77f;--ivory:#241d16;--gold:#9d3724;--muted:#6e5a40;--copy:#46392a;--best:#34291e;--shield:#285987;--reflector:#6b4f71;--dawn:#c4932e;--copper:#9d3724;--line:rgba(36,29,22,.29);--veil:221,207,173;--blocks:repeating-linear-gradient(90deg,#9d3724 0 12%,#eee4cd 12% 25%,#285987 25% 37%,#eee4cd 37% 50%,#c4932e 50% 62%,#eee4cd 62% 75%,#526f59 75% 87%,#eee4cd 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}

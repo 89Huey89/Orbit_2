@@ -1345,7 +1345,87 @@ function rockHazardReveal(h,draw,t){
 // drop, not a whirlpool, and nothing on this wall is light to be bent, so the swirl is not drawn: the
 // pull is told by the soot and the grit going over the lip.
 function rockLenses(){}
-function rockHudLeaf(){}
+// ---------- The HUD: what the run owes the player, set on the rock in the era's own marks ----------
+// The counts are still owed, and are still exact, but they are cut where a hand in this cave would
+// have cut them: at the head of the wall, in the dark above the flame. The tally is additive, as every
+// tally before writing was — a pressed dot for each hundred, a scratched notch for each ten, bundled in
+// fives with the fifth struck across the four, and a ringed dot for each thousand — so 560 is five
+// dots and six notches, and it reads at a glance as a quantity before it is read as a number. Beside
+// it, small, the curator's numeral, because nobody should have to count notches to know a score. The
+// ochre the hand carries is paste in a shell palette, draining as the flight spends it and reddening
+// when it will not carry an ordinary transfer; the pace is a note under the shell; the rhythm of clean
+// landings is a row of hand stencils; and each charge held is its attested mark. The DOM HUD stays
+// in place for screen readers and is only taken off the screen for this wall (index.html).
+let rockHudTopPx=null;
+function rockHudTop(){
+  if(rockHudTopPx!==null)return rockHudTopPx;
+  let t=26;try{const e=document.querySelector('.hud'),v=e&&typeof getComputedStyle==='function'?parseFloat(getComputedStyle(e).top):NaN;if(isFinite(v))t=v;}catch(e){}
+  return rockHudTopPx=t;
+}
+// A hand stencil: pigment blown round a hand held flat against the rock, so the hand is the rock left
+// bare inside a halo of spray. Baked once per pigment and size.
+const rockHandSprites=new Map();
+function rockHandSprite(rgb,S,flip){
+  const key=rgb+':'+S+':'+(flip?1:0)+':'+DPR.toFixed(2),cached=rockHandSprites.get(key);if(cached)return cached;
+  const size=Math.ceil(S*2.4),px=Math.max(2,Math.round(size*DPR)),c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const rnd=seeded(0x4a4d+S),k=S/12;
+  for(let i=0;i<520;i++){const a=rnd()*TAU,r=Math.pow(rnd(),.55)*S*1.1;g.fillStyle=`rgba(${rgb},${(.3+rnd()*.35)*(1-r/(S*1.15))})`;g.beginPath();g.arc(Math.cos(a)*r,Math.sin(a)*r*1.1,.5+rnd()*1.1*k,0,TAU);g.fill();}
+  // The hand itself, pointing up: palm, thumb out to one side, four fingers spread.
+  g.globalCompositeOperation='destination-out';g.save();if(flip)g.scale(-1,1);g.fillStyle='#000';g.strokeStyle='#000';g.lineCap='round';
+  g.beginPath();g.ellipse(0,3*k,4.6*k,5.2*k,0,0,TAU);g.fill();
+  for(const [a,L,w] of [[-1.05,6.4,2.4],[-.3,8.6,2.2],[-.06,9.6,2.2],[.18,8.8,2.1],[.42,7,1.9]]){
+    const bx=Math.sin(a)*3.6*k,by=3*k-Math.cos(a)*3.8*k;g.lineWidth=w*k;g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.sin(a)*L*k,by-Math.cos(a)*L*k);g.stroke();}
+  g.restore();
+  const sp={canvas:c,size};rockHandSprites.set(key,sp);return sp;
+}
+function rockHand(x,y,S,rgb,alpha,flip){const sp=rockHandSprite(rgb,Math.round(S),flip);ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);ctx.restore();}
+// Newgrange's triple spiral, pecked: the shield's mark.
+function rockSpiralMark(x,y,r,alpha){
+  ctx.save();ctx.translate(x,y);ctx.strokeStyle=`rgba(${ink.rock.kaolin},${alpha})`;ctx.lineWidth=1.3;ctx.lineCap='round';
+  for(let s=0;s<3;s++){const a0=s/3*TAU-Math.PI/2,cx=Math.cos(a0)*r*.55,cy=Math.sin(a0)*r*.55;ctx.beginPath();
+    for(let t=0;t<=1.001;t+=.04){const a=a0+Math.PI+t*TAU*1.6,rr=r*.5*t;const px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;t?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();}
+  ctx.restore();
+}
+function rockHudLeaf(){
+  if(!world||world.state==='ready')return;
+  const top=rockHudTop(),left=26,words=plateWords().hud,score=world.score|0;
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalCompositeOperation='source-over';
+  // The tally. Its marks sit on a band of the dark itself, so they read on any rock.
+  const th=Math.floor(score/1000),hu=Math.floor(score/100)%10,te=Math.floor(score/10)%10;let x=left;const y=top+10;
+  for(let i=0;i<th;i++){rockDot(ctx,x+6,y,5.2,ink.rock.redOchre,1,900+i);ctx.strokeStyle=`rgba(${ink.rock.kaolin},.8)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(x+6,y,8.6,0,TAU);ctx.stroke();x+=21;}
+  for(let i=0;i<hu;i++){rockDot(ctx,x+4.5,y,4.4,ink.rock.redOchre,1,700+i);x+=11.5;}
+  if(th+hu)x+=5;
+  for(let b=0;b<te;b+=5){const n=Math.min(5,te-b),x0=x;
+    for(let i=0;i<Math.min(4,n);i++){const nx=x0+i*5.2+((b+i)%3-1)*.4;rockScratch(ctx,nx,y-9,nx+((b+i)%2?.7:-.5),y+9,1.8,1);}
+    if(n===5)rockScratch(ctx,x0-3,y+7,x0+19,y-7,1.6,1);
+    x=x0+(n===5?27:Math.min(4,n)*5.2+6);}
+  if(!score){rockScratch(ctx,x,y,x+10,y,1.2,.5);}
+  ctx.font=plateFace(11,'sc');ctx.textBaseline='top';ctx.textAlign='left';ctx.fillStyle=`rgba(${ink.rock.kaolin},.62)`;ctx.fillText(String(score),left,y+14);
+  // The ochre in hand, as paste in a scallop valve: the fan of the shell from its hinge, ribbed, with
+  // the paste laid in from the left as far as the ochre goes.
+  const level=world.inkLevel(),cx=W/2,hy=top+22,R=19,low=level<=.34,pulse=low&&!reducedMotion?.5+.5*Math.sin(world.time*6):1,a0=Math.PI*1.08,a1=Math.PI*1.92,ry=R*.8;
+  const fan=()=>{ctx.beginPath();ctx.moveTo(cx,hy);for(let i=0;i<=18;i++){const a=a0+(a1-a0)*i/18,w=1+.05*Math.cos(i*Math.PI);ctx.lineTo(cx+Math.cos(a)*R*w,hy+Math.sin(a)*ry*w);}ctx.closePath();};
+  fan();ctx.fillStyle=`rgba(${ink.rock.dark},.6)`;ctx.fill();
+  ctx.save();fan();ctx.clip();
+  ctx.fillStyle=`rgba(${low?ink.rock.redOchre:ink.rock.ochre},${(.95*(low?.7+.3*pulse:1)).toFixed(3)})`;ctx.fillRect(cx-R,hy-ry-2,R*2*level,ry+4);
+  for(let i=0;i<10;i++)rockDab(ctx,cx-R+((i*7.3)%(R*2))*level,hy-ry*.2-((i*3.7)%(ry*.7)),1.7,ink.rock.ochreDeep,.35,i+40);
+  ctx.restore();ctx.globalAlpha=1;
+  ctx.strokeStyle=`rgba(${ink.rock.kaolin},.28)`;ctx.lineWidth=.9;for(let i=1;i<8;i++){const a=a0+(a1-a0)*i/8;ctx.beginPath();ctx.moveTo(cx,hy);ctx.lineTo(cx+Math.cos(a)*R*.97,hy+Math.sin(a)*ry*.97);ctx.stroke();}
+  fan();ctx.strokeStyle=`rgba(${ink.rock.kaolin},.6)`;ctx.lineWidth=1.2;ctx.stroke();
+  ctx.fillStyle=`rgba(${ink.rock.kaolin},.5)`;ctx.fillRect(cx-4,hy-1,8,3);
+  const cy=hy-ry*.4,ry0=ry*.5;
+  const m=world.speedMultiplier();ctx.textAlign='center';ctx.fillStyle=`rgba(${ink.rock.kaolin},.55)`;ctx.font=plateFace(10,'sc');ctx.fillText(words.pace+(m%1?m.toFixed(1):m),cx,hy+6);
+  // The rhythm of clean landings, as hands; and each charge held, as its mark.
+  const right=W-26;let rx2=right;
+  if(world.combo>1&&world.captures>0){const shown=Math.min(6,world.combo);
+    for(let i=0;i<shown;i++){rockHand(rx2-10,top+11,15,ink.rock.redOchre,1,i%2);rx2-=22;}
+    if(world.combo>6){ctx.textAlign='right';ctx.font=plateFace(10,'sc');ctx.fillStyle=`rgba(${ink.rock.kaolin},.6)`;ctx.fillText('×'+world.combo,right,top+24);}}
+  let ix=right-8;const iy=top+40,p=world.player;
+  if(p.shielded){rockSpiralMark(ix,iy,9,.85);ix-=24;}
+  if(p.reflectorArmed){rockHand(ix,iy,10,ink.rock.kaolin,.8,true);ix-=24;}
+  if(p.dawnArmed){ctx.save();ctx.translate(ix,iy);rockGlint(ctx,2.6,1,7);ctx.restore();ix-=24;}
+  ctx.restore();
+}
 function rockRunningHead(){}
 function rockChapterReveal(){}
 
@@ -1404,7 +1484,7 @@ function invalidateRockArt(){
   rockDabSprites.clear();rockPressSprites.clear();
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();rockFlareSprites.clear();rockDraughtSprites.clear();
-  rockCrayon=null;rockCrayonKey='';
+  rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';
   rockDarkEdge=null;rockDarkEdgeW=-1;
 }
