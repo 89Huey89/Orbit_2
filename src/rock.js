@@ -394,7 +394,9 @@ function rockBakeFace(camY){
     let h=.5*r*r+.3*n12+.2*n13+.38*rockStep(.56,.82,n14);
     // A bedding plane: across the beds the rock climbs slowly and then drops away at the next one's lip.
     {const fx=wx/300,fy=wy/300,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy15===iy&&ix15===ix){a=a15;b=b15;c=c15;d=d15;}else if(iy15===iy&&ix15+1===ix){a=b15;c=d15;b=rockHash(seed+15,ix+1,iy);d=rockHash(seed+15,ix+1,iy+1);}else{a=rockHash(seed+15,ix,iy);b=rockHash(seed+15,ix+1,iy);c=rockHash(seed+15,ix,iy+1);d=rockHash(seed+15,ix+1,iy+1);}ix15=ix;iy15=iy;a15=a;b15=b;c15=c;d15=d;n15=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/110,fy=wy/110,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy17===iy&&ix17===ix){a=a17;b=b17;c=c17;d=d17;}else if(iy17===iy&&ix17+1===ix){a=b17;c=d17;b=rockHash(seed+17,ix+1,iy);d=rockHash(seed+17,ix+1,iy+1);}else{a=rockHash(seed+17,ix,iy);b=rockHash(seed+17,ix+1,iy);c=rockHash(seed+17,ix,iy+1);d=rockHash(seed+17,ix+1,iy+1);}ix17=ix;iy17=iy;a17=a;b17=b;c17=c;d17=d;n17=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/420,fy=wy/420,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy18===iy&&ix18===ix){a=a18;b=b18;c=c18;d=d18;}else if(iy18===iy&&ix18+1===ix){a=b18;c=d18;b=rockHash(seed+18,ix+1,iy);d=rockHash(seed+18,ix+1,iy+1);}else{a=rockHash(seed+18,ix,iy);b=rockHash(seed+18,ix+1,iy);c=rockHash(seed+18,ix,iy+1);d=rockHash(seed+18,ix+1,iy+1);}ix18=ix;iy18=iy;a18=a;b18=b;c18=c;d18=d;n18=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
-    const v=(-wx*bs+wy*bc+(n15-.5)*220+(n17-.5)*60)/(sp*(.7+.6*n18)),fr=v-Math.floor(v),saw=fr<.84?fr/.84:(1-fr)/.16;
+    // The beds keep one spacing: a spacing that drifted across the wall bunched them into rings, and
+    // rings of ridges read as ripples on water, not strata in stone.
+    const v=(-wx*bs+wy*bc+(n15-.5)*220+(n17-.5)*60)/sp,fr=v-Math.floor(v),saw=fr<.84?fr/.84:(1-fr)/.16;
     {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy16===iy&&ix16===ix){a=a16;b=b16;c=c16;d=d16;}else if(iy16===iy&&ix16+1===ix){a=b16;c=d16;b=rockHash(seed+16,ix+1,iy);d=rockHash(seed+16,ix+1,iy+1);}else{a=rockHash(seed+16,ix,iy);b=rockHash(seed+16,ix+1,iy);c=rockHash(seed+16,ix,iy+1);d=rockHash(seed+16,ix+1,iy+1);}ix16=ix;iy16=iy;a16=a;b16=b;c16=c;d16=d;n16=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
     h+=saw*.15*rockStep(.62,.8,n16);
     FH[j*fw+i]=h;
@@ -407,10 +409,10 @@ function rockBakeFace(camY){
     {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy23===iy&&ix23===ix){a=a23;b=b23;c=c23;d=d23;}else if(iy23===iy&&ix23+1===ix){a=b23;c=d23;b=rockHash(seed+23,ix+1,iy);d=rockHash(seed+23,ix+1,iy+1);}else{a=rockHash(seed+23,ix,iy);b=rockHash(seed+23,ix+1,iy);c=rockHash(seed+23,ix,iy+1);d=rockHash(seed+23,ix+1,iy+1);}ix23=ix;iy23=iy;a23=a;b23=b;c23=c;d23=d;n23=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/60,fy=wy/60,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy29===iy&&ix29===ix){a=a29;b=b29;c=c29;d=d29;}else if(iy29===iy&&ix29+1===ix){a=b29;c=d29;b=rockHash(seed+29,ix+1,iy);d=rockHash(seed+29,ix+1,iy+1);}else{a=rockHash(seed+29,ix,iy);b=rockHash(seed+29,ix+1,iy);c=rockHash(seed+29,ix,iy+1);d=rockHash(seed+29,ix+1,iy+1);}ix29=ix;iy29=iy;a29=a;b29=b;c29=c;d29=d;n29=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/260,fy=wy/260,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy24===iy&&ix24===ix){a=a24;b=b24;c=c24;d=d24;}else if(iy24===iy&&ix24+1===ix){a=b24;c=d24;b=rockHash(seed+24,ix+1,iy);d=rockHash(seed+24,ix+1,iy+1);}else{a=rockHash(seed+24,ix,iy);b=rockHash(seed+24,ix+1,iy);c=rockHash(seed+24,ix,iy+1);d=rockHash(seed+24,ix+1,iy+1);}ix24=ix;iy24=iy;a24=a;b24=b;c24=c;d24=d;n24=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
     const calc=rockStep(.54,.76,.8*n23+.2*n29),damp=rockStep(.58,.8,n24);
     {const fx=wx/34,fy=wy/9/34,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy25===iy&&ix25===ix){a=a25;b=b25;c=c25;d=d25;}else if(iy25===iy&&ix25+1===ix){a=b25;c=d25;b=rockHash(seed+25,ix+1,iy);d=rockHash(seed+25,ix+1,iy+1);}else{a=rockHash(seed+25,ix,iy);b=rockHash(seed+25,ix+1,iy);c=rockHash(seed+25,ix,iy+1);d=rockHash(seed+25,ix+1,iy+1);}ix25=ix;iy25=iy;a25=a;b25=b;c25=c;d25=d;n25=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}{const fx=wx/460,fy=wy/460,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy26===iy&&ix26===ix){a=a26;b=b26;c=c26;d=d26;}else if(iy26===iy&&ix26+1===ix){a=b26;c=d26;b=rockHash(seed+26,ix+1,iy);d=rockHash(seed+26,ix+1,iy+1);}else{a=rockHash(seed+26,ix,iy);b=rockHash(seed+26,ix+1,iy);c=rockHash(seed+26,ix,iy+1);d=rockHash(seed+26,ix+1,iy+1);}ix26=ix;iy26=iy;a26=a;b26=b;c26=c;d26=d;n26=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
-    const flow=rockStep(.55,.75,n25)*rockStep(.45,.66,n26);
+    const flow=rockStep(.6,.78,n25)*rockStep(.5,.7,n26);
     const shade=clamp(.5+(.60*gy-.62*gx)*K*(1-flow*.6)-(1-FH[k])*.08,0,1);
     const o=(j*tw+i)*4;td[o]=132;td[o+1]=126;td[o+2]=120;
-    tone(o,ironT,iron*.72);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow);tone(o,dampT,damp*.8);
+    tone(o,ironT,iron*.72);tone(o,ochreT,yel*.85);tone(o,calcT,calc*.9);tone(o,flowT,flow*.45);tone(o,dampT,damp*.8);
     const sv=(shade-.5)*230;td[o]+=sv;td[o+1]+=sv;td[o+2]+=sv;
     const lift=rockStep(.42,1,1-(Math.hypot(wx,wy-ROCK_OPENING_Y)-200)/460)*.3,side=1-.4*Math.min(1,(wx/700)*(wx/700));
     for(let c=0;c<3;c++)td[o+c]=Math.max(0,Math.min(255,(td[o+c]+(pale[c]-td[o+c])*lift)*side));
@@ -1527,27 +1529,58 @@ function rockFigure(chart){
 }
 
 // ---------- The older hands: what was on this wall before the traveller came ----------
-// A painted cave is never painted once. The panels the traveller passes already carry the work of
-// hands long before it — animals gone faint under calcite, red hand stencils, rows of dots, the odd
-// sign — seeded off the world in chunks like the niches and the fissures, never on the opening plane,
-// and kept faint and warm so they read as the wall's history and never as anything to fly by: nothing
-// here is in the light's colour, and nothing is near the contrast of a live mark.
-const ROCK_OLD_CHUNK=440;
+// A painted cave is never painted once, and the deeper a cave goes the more hands it has seen. The
+// panels passed on the way in carry the simplest marks — fingers drawn through the soft film on the
+// rock, scratches, rows of dots; further in, hands pressed and blown and animals drawn in outline; deeper
+// still, whole washed herds; and at the far end, pecked in the stone, the spirals and cup-and-rings of
+// the people who built Newgrange — the last and latest hands on this wall, as the fourth chamber is its
+// last. So the wall itself tells the climb as generations. All of it is seeded off the world in chunks
+// like the niches and fissures, kept off the opening plane, and held far below the contrast of a live
+// mark: nothing here is anything to fly by.
+const ROCK_OLD_CHUNK=440,ROCK_OLD_DEPTHS=[1400,3600,7200];
+// Finger flutings: three or four fingers drawn together through the soft surface in a long curve.
+function rockFlutings(g,x,y,len,ang,fingers,alpha,hf){
+  g.save();g.globalCompositeOperation='multiply';g.lineCap='round';
+  for(let f=0;f<fingers;f++){const off=(f-(fingers-1)/2)*5*scale,bend=(hf(60)-.5)*.9;g.strokeStyle=`rgba(90,72,56,${(alpha*(.75+hf(61+f)*.25)).toFixed(3)})`;g.lineWidth=2.6*scale;
+    g.beginPath();for(let t=0;t<=1.001;t+=.08){const a=ang+bend*(t-.5),px=x+Math.cos(a)*len*(t-.5)-Math.sin(ang)*off,py=y+Math.sin(a)*len*(t-.5)+Math.cos(ang)*off+Math.sin(t*Math.PI)*bend*len*.15;t?g.lineTo(px,py):g.moveTo(px,py);}g.stroke();}
+  g.restore();
+}
+// A pecked spiral or a cup-and-ring: rows of small hammer-struck pits, dark hollows with a lit lip.
+function rockPeckedSpiral(g,x,y,R,turns,alpha,seed){
+  for(let t=0,i=0;t<=1;t+=1/(turns*26),i++){const a=t*turns*TAU+seed,r=R*t;rockPeck(g,x+Math.cos(a)*r,y+Math.sin(a)*r,1.5*scale,alpha*(.7+.3*Math.sin(i)));}
+}
+function rockCupAndRing(g,x,y,R,rings,alpha){
+  rockPeck(g,x,y,R*.22,alpha);
+  for(let k=1;k<=rings;k++){const r=R*k/rings,n=Math.round(TAU*r/(3.2*scale));for(let i=0;i<n;i++){const a=i/n*TAU;rockPeck(g,x+Math.cos(a)*r,y+Math.sin(a)*r,1.3*scale,alpha*.8);}}
+}
 function rockPaintOldHands(){
   const seed=(world.seed>>>0)^0x0a1d,C=ROCK_OLD_CHUNK,wx0=-W*.5/scale-C,wx1=W*.5/scale+C,wy0=world.cameraY-C*.6,wy1=world.cameraY+H/scale+C*.6;
   for(let cj=Math.floor(wy0/C);cj<=Math.floor(wy1/C);cj++)for(let ci=Math.floor(wx0/C);ci<=Math.floor(wx1/C);ci++){
     const hf=q=>rockHash(seed+ci*4099,cj*65537,q),kind=hf(1);if(kind<.1)continue;
     const wx=(ci+.15+hf(2)*.7)*C,wy=(cj+.15+hf(3)*.7)*C;if(Math.hypot(wx,wy-ROCK_OPENING_Y)<ROCK_OPENING_R+160)continue;
     const x=sx(wx),y=sy(wy),fade=.42+hf(4)*.25;if(x<-260||x>W+260||y<-260||y>H+260)continue;
+    // How far in this panel is decides whose hands made it; a little overlap either side, since no
+    // generation stopped at a line.
+    const depth=-wy+(hf(70)-.5)*900,layer=depth<ROCK_OLD_DEPTHS[0]?0:depth<ROCK_OLD_DEPTHS[1]?1:depth<ROCK_OLD_DEPTHS[2]?2:3;
     ctx.save();
-    if(kind<.62){
-      const a=ROCK_ANIMALS[(hf(5)*12)|0],span=(110+hf(6)*120)*scale,face=hf(7)<.5?1:-1,pig=hf(8)<.5?ink.rock.redOchre:ink.rock.manganese;
-      rockPaintAnimal(ctx,a,(hf(9)*1e6)|0,p=>[x+(p[0]-.5)*span*face,y+(p[1]-.25)*span],span,hf(10)<.5?1:.7,hf(11)<.6?.8:0,pig,fade);
-    }else if(kind<.82){
-      const n=2+((hf(12)*4)|0);for(let i=0;i<n;i++)rockHand(x+(i-n/2)*26*scale+(hf(20+i)-.5)*10*scale,y+(hf(30+i)-.5)*18*scale,17*scale,ink.rock.redOchre,fade*1.4,hf(40+i)<.5);
+    if(layer===0){
+      if(kind<.55)rockFlutings(ctx,x,y,(90+hf(8)*120)*scale,(hf(9)-.5)*1.6+Math.PI/2*(hf(10)<.5?1:0),3+((hf(11)*2)|0),fade*.7,hf);
+      else{const n=5+((hf(13)*9)|0),dx=(9+hf(14)*6)*scale,ang=(hf(15)-.5)*.6;
+        for(let i=0;i<n;i++){const t=i-n/2;rockDot(ctx,x+Math.cos(ang)*t*dx,y+Math.sin(ang)*t*dx+Math.sin(i*1.3)*2*scale,(2.4+hf(50+i)*1.4)*scale,ink.rock.redOchre,fade*2,i+ci*13);}}
+    }else if(layer===1){
+      if(kind<.5){const n=2+((hf(12)*4)|0);for(let i=0;i<n;i++)rockHand(x+(i-n/2)*26*scale+(hf(20+i)-.5)*10*scale,y+(hf(30+i)-.5)*18*scale,17*scale,ink.rock.redOchre,fade*1.4,hf(40+i)<.5);}
+      else{const a=ROCK_ANIMALS[(hf(5)*12)|0],span=(110+hf(6)*110)*scale,face=hf(7)<.5?1:-1;
+        rockPaintAnimal(ctx,a,(hf(9)*1e6)|0,p=>[x+(p[0]-.5)*span*face,y+(p[1]-.25)*span],span,1,0,ink.rock.redOchre,fade);}
+    }else if(layer===2){
+      // A herd: two or three washed animals of one kind, overlapping, walking one way.
+      const a=ROCK_ANIMALS[(hf(5)*11)|0],n=2+((hf(16)*2)|0),span=(100+hf(6)*80)*scale,face=hf(7)<.5?1:-1,pig=hf(8)<.5?ink.rock.redOchre:ink.rock.manganese;
+      for(let i=0;i<n;i++){const ox=(i-(n-1)/2)*span*.55*face,oy=(i%2)*span*.12;
+        rockPaintAnimal(ctx,a,((hf(9)*1e6)|0)+i,p=>[x+ox+(p[0]-.5)*span*face,y+oy+(p[1]-.25)*span],span,1,.75,pig,fade*(1-i*.15));}
     }else{
-      const n=5+((hf(13)*9)|0),dx=(9+hf(14)*6)*scale,ang=(hf(15)-.5)*.6;
-      for(let i=0;i<n;i++){const t=i-n/2;rockDot(ctx,x+Math.cos(ang)*t*dx,y+Math.sin(ang)*t*dx+Math.sin(i*1.3)*2*scale,(2.4+hf(50+i)*1.4)*scale,ink.rock.redOchre,fade*2.2,i+ci*13);}
+      // The last hands: pecked into the stone rather than painted on it, as at Newgrange and Knowth.
+      if(kind<.45){const R=(24+hf(17)*14)*scale;for(let k=0;k<3;k++){const a=k/3*TAU-Math.PI/2;rockPeckedSpiral(ctx,x+Math.cos(a)*R*.95,y+Math.sin(a)*R*.95,R*.8,2.2,fade*1.3,k*2.1+hf(18)*6);}}
+      else if(kind<.8)rockCupAndRing(ctx,x,y,(18+hf(19)*20)*scale,2+((hf(20)*3)|0),fade*1.3);
+      else rockPeckedSpiral(ctx,x,y,(22+hf(21)*18)*scale,2.6,fade*1.3,hf(22)*6);
     }
     ctx.restore();
   }
@@ -1730,6 +1763,30 @@ defineVoice('rock',{
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
+  // A line for each chamber as it opens, set on the wall as a curator's note beside the hand. Each says
+  // only what is actually known of the place it borrows its name from.
+  chapterLines:[
+    'Bulls painted over older bulls. No one knows how many hands.',
+    'At the foot of the shaft: a bison, a bird on a stick, a fallen man. No one agrees what it means.',
+    'Palms loaded with wet ochre and pressed to the rock, again and again.',
+    'Five thousand years ago: a tomb built so the midwinter sunrise reaches its heart.'
+  ],
+  // A note for each animal as its cluster closes: one thing known of how the caves drew it, and where
+  // a reading is only a reading, it says so.
+  chartNotes:[
+    'The largest Lascaux bull is over five metres long. Six dots on one shoulder may be the Pleiades, or may not.',
+    'The most painted animal of the Ice Age caves.',
+    'At Altamira the bison lie over bulges in the ceiling, so the rock gives them their bodies.',
+    'Both horns drawn on a head seen from the side, as if it turned to look at you.',
+    'A row of stags at Lascaux, heads raised, is read as a herd swimming a river.',
+    'Rouffignac holds over a hundred and fifty mammoths, some traced with fingers in soft clay.',
+    'Chauvet drew its lions without manes. So, it seems, were the real ones.',
+    'Cave bears slept here long before anyone painted. Their claw marks are still on the walls.',
+    'One Chauvet rhinoceros has its horn drawn again and again, as if to make it move.',
+    'A few quick lines: the painters knew the hind well enough to leave most of her out.',
+    'A boar at Altamira has eight legs. Perhaps it is running.',
+    'At the Abri du Poisson a salmon a metre long is carved into the roof of the shelter.'
+  ],
   opening:'The hand is raised. Tap to release. Follow the ochre dots for a clean landing. Circle a bright light to gain speed and to fill the hand. Every stroke spends ochre by the distance carried; hold a light to fill it again.',
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
   unrecorded:'A PREVIEW · NOT KEPT',

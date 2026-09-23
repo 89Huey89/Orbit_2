@@ -19,6 +19,9 @@ defineVoice('atlas',{
   chartNoun:'constellation',
   chartVerb:'traced',
   chartNames:null,
+  // Lore a plate may keep for itself: a line set on the sheet as each chapter opens, and a note under a
+  // chart as it closes. The atlas keeps none; its chapters and charts say what they are by their names.
+  chapterLines:null,chartNotes:null,
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',
   observations:{},
   pressures:DIFFICULTY_LABELS,
@@ -159,6 +162,7 @@ function event(type,e){
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
     say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||chartTitle(e.chart)}),{node:e.chart.stars[1]||e.chart.entry});
+    {const notes=plateWords().chartNotes,note=notes&&notes[e.chart.catalogueIndex];if(note)say(note,{node:e.chart.stars[2]||e.chart.stars[1],tone:'note'});}
     for(const n of e.chart.stars){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
     }
@@ -251,7 +255,7 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;loreChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
@@ -1157,6 +1161,9 @@ function updateUI(dt){
   const chapter=Math.min(3,Math.floor(world.progress/8));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
+  // A chapter's line of lore is set once the run is actually under way, so the first chapter's is not
+  // spent on the frontispiece; it is tracked apart from lastChapter, which the reveal above keys on.
+  if(chapter!==loreChapter&&world.state==='playing'){loreChapter=chapter;const lines=plateWords().chapterLines,line=lines&&lines[chapter];if(line)say(line,{node:world.player.node,tone:'note'});}
   if(chapter!==lastChapter){
     lastChapter=chapter;
     if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:plateWords().chapters[chapter]});}

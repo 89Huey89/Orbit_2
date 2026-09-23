@@ -53,7 +53,7 @@ function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
 // force every hazard death answers with a fading flash for, so it gets a single frame of the flood's
 // own tone (see the death handler in ui.js) rather than a wash that lingers and decays.
 let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,darkFlash=0,lastScore=-1;
-let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
+let lastChapter=-1,loreChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 // A hazard's Latin name (HAZARD_KINDS in simulation.js) is taught once per kind, on the first instance
 // of it the run fully reveals, rather than lettered on every one it ever generates: a run passes
 // dozens of vortices as it climbs, and inscribing all of them would spend the whole plate's inscription
