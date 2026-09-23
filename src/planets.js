@@ -146,8 +146,8 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
     g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);
     g.strokeStyle=ink.surface.duneRift;g.lineWidth=4.4;g.lineCap='round';g.stroke();
     g.strokeStyle=paper?'rgba(215,182,132,.4)':'rgba(217,190,146,.46)';g.lineWidth=.9;g.stroke();
-    // The crest, like the ocean world's ice cap, is struck on the still front layer in drawPlanet() —
-    // see the polar-cap finding — rather than baked into this spin-rotated wash.
+    // The crest, like the ocean world's ice cap, is cut on the still front layer in glyph(), just before
+    // the hatching, rather than baked into this spin-rotated wash.
   }else if(family==='volcanic'){
     for(let i=0;i<10;i++){
       landContour(g,(rng()-.5)*core*1.8,(rng()-.5)*core*1.8,core*.38,core*.3,rng);
@@ -283,30 +283,32 @@ function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
     }
   }
   const hatchInk=paper?'26,18,11':'38,34,26';
-  // The hatching is laid as a left hand lays it — each stroke runs down and to the right — and it darkens
-  // toward the limb on the right, where the light falls away. On the moon it begins at the terminator, so the
-  // lit hemisphere is left as clean as Galileo left his. The pitch between strokes is held fixed — a burin
-  // does not widen its stroke spacing for a smaller plate — and the count derived from it, rather than a
-  // flat 34 strokes stretched or crowded to fit whatever span this body happens to have: at a fixed count
-  // the moon's own shorter span (it starts at the terminator, not the limb) was cut at half the pitch of
-  // every other body's hatch.
-  // Cut with the same burin primitive as everything else on the sheet rather than a bespoke taper: each
-  // stroke's own bezier is sampled into short chords and struck with burinSegment's three-harmonic width
-  // modulation, so a planet's hatching finally matches the rest of the plate's line quality instead of
-  // introducing a third one. A few strokes skip outright, and the pitch is jittered stroke to stroke
-  // around the fixed average step above — evenly spaced lines are the giveaway of a ruler, not a hand.
-  const x0=moon?core*.16:-core*.62,step=1.4,count=Math.max(1,Math.round((core-x0)/step));
-  let x=x0;
+  // The hatching follows the form, as an engraver's does on any globe of the period: each stroke is the
+  // visible half of the sphere cut by one of a family of parallel planes turned toward the viewer, so it
+  // bows out toward the dark limb, and the strokes crowd together toward that limb of their own accord
+  // because the planes are evenly spaced in depth rather than on the sheet. They used to be one S-shaped
+  // bezier repeated across four fifths of the disc, which read on every body as the grain of a plank rather
+  // than the roundness of a world. The set leans a little down and to the right, as a left hand lays it,
+  // and the lit side is left clean; on the moon it begins at the terminator, as Galileo left his. The pitch
+  // between cutting planes is held fixed — a burin does not widen its stroke spacing for a smaller plate —
+  // and jittered stroke to stroke, since evenly spaced lines are the giveaway of a ruler, not a hand. Each
+  // stroke is sampled into short chords struck with burinSegment, so it shares the plate's one line quality,
+  // and swells from a hair at either end, where a real stroke is entered and lifted.
+  const th=-.62,ct=Math.cos(th),st=Math.sin(th),lean=-.22,cl=Math.cos(lean),sl=Math.sin(lean);
+  const d0=moon?core*.16:-core*.36,step=1.4*ct,count=Math.max(1,Math.round((core-d0)/step));
+  let d=d0;
   for(let i=0;i<count;i++){
-    if(i>0)x+=step*(.82+rng()*.36);
+    if(i>0)d+=step*(.82+rng()*.36);
+    if(d>=core*.995)break;
     if(rng()<.07)continue;
-    const alpha=(paper?.24:.21)+i/count*(paper?.58:.37),weight=(paper?.5:.35)+rng()*(paper?.4:.28);
-    const x1=x,y1=-core*1.14,c1x=x-core*.22,c1y=-core*.3,c2x=x+core*.36,c2y=core*.65,x2=x+core*.48,y2=core*1.1;
-    let px=x1,py=y1;const hseed=(rng()*4294967296)>>>0||1;
-    for(let k=1;k<=5;k++){
-      const u=k/5,mu=1-u;
-      const qx=mu*mu*mu*x1+3*mu*mu*u*c1x+3*mu*u*u*c2x+u*u*u*x2,qy=mu*mu*mu*y1+3*mu*mu*u*c1y+3*mu*u*u*c2y+u*u*u*y2;
-      burinSegment(g,px,py,qx,qy,hatchInk,alpha,weight,hseed+k,{segments:2,skips:0,wobble:.5,hair:false});
+    const rho=Math.sqrt(core*core-d*d)*1.03,c0=-d*st/(rho*ct);
+    if(c0>=1)continue;
+    const reach=Math.acos(Math.max(-1,c0)),alpha=(paper?.2:.17)+i/count*(paper?.62:.41),weight=(paper?.5:.35)+rng()*(paper?.4:.28);
+    const hseed=(rng()*4294967296)>>>0||1,N=8;
+    let px=0,py=0;
+    for(let k=0;k<=N;k++){
+      const t=-reach+2*reach*k/N,x=d*ct-rho*st*Math.cos(t),y=rho*Math.sin(t),qx=x*cl-y*sl,qy=x*sl+y*cl;
+      if(k>0)burinSegment(g,px,py,qx,qy,hatchInk,alpha*(.3+.7*Math.sin(Math.PI*(k-.5)/N)),weight,hseed+k,{segments:2,skips:0,wobble:.5,hair:false});
       px=qx;py=qy;
     }
   }
@@ -659,6 +661,24 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   g.restore();
   // Lighting and ring occlusion stay still as the etched surface turns below.
   g=front.ink;
+  // The ocean world's two poles and the dune world's crest stand still while the surface turns beneath
+  // them, rotated by the spin axis alone — a cap baked into the turning surface would swing round the disc
+  // as the globe spins, which is the one thing a cartographer's pole never does. They are cut here, on the
+  // still front layer inside its own clip to the disc, rather than stroked live over the finished planet as
+  // they were: live, nothing held them to the disc, and each cap stood a few pixels proud of the limb as a
+  // grey smudge outside the keyline. Cut before the hatching, so the dark side's strokes pass over them.
+  if(family==='ocean'||family==='dune'){
+    g.save();g.rotate(tilt);
+    if(family==='ocean')for(const pole of [-1,1]){
+      g.beginPath();g.ellipse(pole*-core*.16,pole*-core*.97,core*.42,core*.16,0,0,TAU);
+      if(paper){g.fillStyle='rgba(231,218,189,.6)';g.fill();g.strokeStyle='rgba(58,42,28,.28)';g.lineWidth=.4;g.stroke();}
+      else{g.fillStyle='rgba(207,213,193,.42)';g.fill();}
+    }else{
+      g.beginPath();g.ellipse(core*.08,-core*.99,core*.44,core*.18,.2,0,TAU);
+      g.fillStyle=paper?'rgba(231,218,189,.5)':'rgba(215,198,164,.47)';g.fill();
+    }
+    g.restore();
+  }
   paintEngraving(g,core,palette,rng,family,tilt);
   if(family==='dune'){
     // The dominant rift's colour lives on the wash (paintPlanetSurface, above); this narrower scar,
@@ -773,27 +793,6 @@ function drawPlanet(art,r,time,impression=null){
       ctx.lineWidth=.65;
       ctx.beginPath();ctx.ellipse(-2,-art.core*.66,art.core*.59,art.core*.3+height,-.1,Math.PI*1.05,Math.PI*1.86);ctx.stroke();
     }
-    ctx.restore();
-  }
-  if(art.family==='ocean'){
-    // Both poles, still and rotated by the spin axis alone: a cap baked into the turning surface would
-    // swing round the disc as the globe spins, which is the one thing a cartographer's pole never does.
-    const paper=onPaper();
-    ctx.save();ctx.rotate(art.tilt);
-    for(const pole of [-1,1]){
-      ctx.beginPath();ctx.ellipse(pole*-art.core*.16,pole*-art.core*.97,art.core*.42,art.core*.16,0,0,TAU);
-      if(paper){ctx.fillStyle='rgba(231,218,189,.6)';ctx.fill();ctx.strokeStyle='rgba(58,42,28,.28)';ctx.lineWidth=.4;ctx.stroke();}
-      else{ctx.fillStyle='rgba(207,213,193,.42)';ctx.fill();}
-    }
-    ctx.restore();
-  }
-  if(art.family==='dune'){
-    // The crest, still and rotated by the spin axis alone, for the same reason the ocean world's poles
-    // are: baked into the turning surface it would swing round the disc as the body spins.
-    const paper=onPaper();
-    ctx.save();ctx.rotate(art.tilt);
-    ctx.beginPath();ctx.ellipse(art.core*.08,-art.core*.99,art.core*.44,art.core*.18,.2,0,TAU);
-    ctx.fillStyle=paper?'rgba(231,218,189,.5)':'rgba(215,198,164,.47)';ctx.fill();
     ctx.restore();
   }
   ctx.drawImage(art.front,-72,-72,144,144);
