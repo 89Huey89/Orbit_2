@@ -1427,31 +1427,49 @@ const rockPolyLen=(P,closed)=>{let l=0;for(let i=0;i+1<P.length;i++)l+=Math.hypo
 function rockCharcoal(g,path,len,w,rgb,alpha,f){
   if(f<=0)return;g.save();g.lineCap='round';g.lineJoin='round';
   if(f<1&&g.setLineDash)g.setLineDash([len*f,len*2]);
-  g.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;g.lineWidth=w*1.8;path(0,0);g.stroke();
+  // `rgb` is a colour triple, or a gradient already carrying its own alpha, laid at `alpha` overall.
+  const paint=a=>typeof rgb==='string'?`rgba(${rgb},${a.toFixed(3)})`:(g.globalAlpha=a,rgb);
+  g.strokeStyle=paint(alpha*.4);g.lineWidth=w*1.8;path(0,0);g.stroke();
   // The core skips, as a charcoal stick does on stone: a dash of uneven gaps, where the soft pass
   // under it keeps the line continuous.
   if(f>=1&&g.setLineDash)g.setLineDash([w*9,w*1.4,w*5,w*.8,w*12,w*2.2]);
-  g.strokeStyle=`rgba(${rgb},${alpha.toFixed(3)})`;g.lineWidth=w*.8;path(w*.25,w*.15);g.stroke();
+  g.strokeStyle=paint(alpha);g.lineWidth=w*.8;path(w*.25,w*.15);g.stroke();
   g.restore();
 }
+// How the Hall of the Bulls actually lays an animal down, which is what this follows rather than a
+// filled silhouette: the colour sits high — sprayed and dabbed along the back, neck and head and fading
+// out down the flank, so the belly is mostly the rock itself; a fine spray of pigment dust lies just
+// outside the back line where it was blown; the black contour is heaviest along the back, withers and
+// head and thins and breaks along the belly; and the legs are not closed round the hooves but trail
+// off, the line lifting before it reaches the ground.
 function rockPaintAnimal(g,a,seed,T,unit,sketch,wash,pig,alpha=1){
-  const sh=rockAnimalShape(a,seed),w=Math.max(1.1,unit*.012),col=ink.rock.charcoal;
+  const sh=rockAnimalShape(a,seed),w=Math.max(1.1,unit*.012),col=ink.rock.charcoal,r=seeded((seed^0x9d)>>>0||1);
+  const top=T([.5,-.3]),mid=T([.5,.22]),foot=T([.5,.6]);
+  const down=(stops)=>{const gr=g.createLinearGradient(top[0],top[1],foot[0],foot[1]);for(const [t,c] of stops)gr.addColorStop(t,c);return gr;};
   if(wash>0){
-    g.save();g.globalCompositeOperation='multiply';rockSmoothPath(g,sh.body,T);g.fillStyle=`rgba(${pig},${(.3*wash*alpha).toFixed(3)})`;g.fill();
-    // Pigment, not a fill: a scatter of pressed dabs through the body, heavier on the back, so the wash
-    // is blotched and the wall's own tooth shows through it.
-    {g.save();g.clip();const bb=sh.body.map(T),xs=bb.map(p=>p[0]),ys=bb.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),r=seeded((seed^0x9d)>>>0||1),n=Math.round((x1-x0)*(y1-y0)/(unit*unit)*700);
-      for(let i=0;i<n;i++){const x=x0+r()*(x1-x0),y=y0+r()*(y1-y0),up=1-(y-y0)/(y1-y0||1);rockDab(g,x,y,unit*(.012+r()*.03),pig,(.05+.12*up)*wash*alpha,i+seed);}
-      g.globalAlpha=1;g.restore();}
-    // The back and the flank carried darker than the belly, as the Lascaux painters modelled a body:
-    // a second wash over the upper body alone.
-    g.clip();const bb=sh.body.map(T),ys=bb.map(p=>p[1]),top=Math.min(...ys),bot=Math.max(...ys),gr=g.createLinearGradient(0,top,0,top+(bot-top)*.55);
-    gr.addColorStop(0,`rgba(${pig},${(.45*wash*alpha).toFixed(3)})`);gr.addColorStop(1,`rgba(${pig},0)`);g.fillStyle=gr;g.fillRect(-9999,top,19999,bot-top);g.restore();}
+    // The body's colour, strong on the back and gone by the belly.
+    g.save();g.globalCompositeOperation='multiply';rockSmoothPath(g,sh.body,T);g.clip();
+    g.fillStyle=down([[0,`rgba(${pig},${(.62*wash*alpha).toFixed(3)})`],[.42,`rgba(${pig},${(.38*wash*alpha).toFixed(3)})`],[.62,`rgba(${pig},${(.08*wash*alpha).toFixed(3)})`],[1,`rgba(${pig},0)`]]);
+    g.fillRect(-9999,-9999,19999,19999);
+    // Dabbed, not flat: the pad's own blotches through the coloured part.
+    const bb=sh.body.map(T),xs=bb.map(p=>p[0]),ys=bb.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),n=Math.round((x1-x0)*(y1-y0)/(unit*unit)*500);
+    for(let i=0;i<n;i++){const x=x0+r()*(x1-x0),y=y0+r()*(y1-y0),up=clamp(1-(y-y0)/((y1-y0)*.6||1),0,1);if(up<=0)continue;rockDab(g,x,y,unit*(.012+r()*.03),pig,.16*up*wash*alpha,i+seed);}
+    g.globalAlpha=1;g.restore();
+    // Blown dust just outside the back line: points along the upper contour, pushed out and scattered.
+    g.save();const P=sh.body;for(let i=0;i<P.length;i++){const p=P[i];if(p[1]>.12)continue;
+      for(let k=0;k<9;k++){const q=T([p[0]+(r()-.5)*.06,p[1]-.01-r()*.05]);rockDab(g,q[0],q[1],unit*(.003+r()*.006),pig,(.35+r()*.35)*wash*alpha,i*9+k+seed);}}
+    g.globalAlpha=1;g.restore();}
   if(sketch>0){
-    const P=sh.body.map(T),len=rockPolyLen(P,true);
-    rockCharcoal(g,(ox,oy)=>rockSmoothPath(g,sh.body,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];}),len*1.05,w,col,.92*alpha,Math.min(1,sketch*1.3));
+    const P=sh.body.map(T),len=rockPolyLen(P,true),outline=(ox,oy)=>rockSmoothPath(g,sh.body,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];});
+    // The whole contour, fading out toward the hooves so the legs trail off unclosed.
+    const fade=down([[0,`rgba(${col},1)`],[.5,`rgba(${col},.85)`],[.66,`rgba(${col},.3)`],[.82,`rgba(${col},.06)`],[.92,`rgba(${col},0)`]]);
+    rockCharcoal(g,outline,len*1.05,w,fade,.92*alpha,Math.min(1,sketch*1.3));
+    // And again, heavier, over the back, withers and head alone.
+    if(sketch>.6){g.save();g.beginPath();g.moveTo(top[0]-9999,top[1]-9999);const cut=T([0,.1]),cut2=T([1.2,.1]);
+      g.rect(Math.min(cut[0],cut2[0])-9999,Math.min(top[1],cut[1],cut2[1])-9999,19999,Math.max(cut[1],cut2[1])-Math.min(top[1],cut[1],cut2[1])+9999);g.clip();
+      rockCharcoal(g,outline,len*1.05,w*1.25,`${col}`,.85*alpha*clamp((sketch-.6)*2.5,0,1),1);g.restore();}
     const rest=clamp((sketch-.55)*2.2,0,1);
-    sh.strokes.forEach(st=>{const Q=st.map(T);rockCharcoal(g,(ox,oy)=>rockSmoothOpen(g,st,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];}),rockPolyLen(Q)*1.05,w*.85,col,.9*alpha,rest);});
+    sh.strokes.forEach(st=>{const Q=st.map(T);rockCharcoal(g,(ox,oy)=>rockSmoothOpen(g,st,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];}),rockPolyLen(Q)*1.05,w*.9,col,.9*alpha,rest);});
   }
 }
 // The three lights fix where the animal stands: it spans the first and last, rides level rather than
