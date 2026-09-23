@@ -61,6 +61,10 @@
     /* The breathing prompt is its own compositing layer, and over this slab's blended grain that layer
        showed as a lighter band behind the line; the prompt holds still on stone instead. */
     #game[data-era="1"] .colophon .action-copy{animation:none;opacity:.8}
+    /* The hand's story, set in the cut hand: one breath on the way in, one on the way out. */
+    .rock-lore-open{position:absolute;left:16px;right:16px;top:calc(9% + env(safe-area-inset-top))}
+    .rock-lore{margin:0 auto 16px;max-width:22em;font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:22px;line-height:1.25;letter-spacing:.06em;color:#eae1cf;text-shadow:1px 1px 0 rgba(2,2,2,.85)}
+    #game[data-era="1"] .colophon .rock-lore{color:#3b322b;text-shadow:1px 1px 0 rgba(236,214,176,.35);font-size:20px;margin:4px auto 10px}
     /* The wall's own announcements in the cut hand (ROCK_FACES in plates.js): the loss, the title, the
        halt. Set large and bold, because the face is narrow and light; everything small stays slab. */
     #game[data-era="1"] #end-reason,#game[data-era="1"] #pause-eyebrow{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:21px;letter-spacing:.14em}
@@ -665,6 +669,7 @@
     <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">
+    <p class="rock-lore rock-lore-open rock-only" id="rock-lore-open">The lights come back to the same place in the sky, night after night.<br>Someone has to remember them.<br>Take the torch. Go deeper. Mark what returns.</p>
     <div class="title-group atlas-only">
       <p class="subtitle-latin">Sive de Motu Corporum C&aelig;lestium Tabul&aelig;</p>
       <div class="cartouche">
@@ -744,7 +749,7 @@
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <div id="end-finis" class="finis atlas-only"><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
-      <p class="action-copy" id="end-try-again">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
+      <p class="rock-lore rock-only" id="rock-lore-close">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-try-again">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>
   </section>

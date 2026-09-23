@@ -1772,7 +1772,7 @@ defineVoice('rock',{
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
   chrome:{
-    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The torch gutters.',pauseTitle:'The torch waits.',
+    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The hand rests.',pauseTitle:'The torch waits.',
     pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',
     pauseLeave:'LEAVE THE WALL',pauseLabel:'Rest the hand',gameLabel:'The Rock, a playable Era I preview',
     canvasLabel:'The Rock. Guide a hand of ochre across torchlit stone through painted lights. Tap or press Space to release.',
