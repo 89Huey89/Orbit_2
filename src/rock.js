@@ -1242,17 +1242,18 @@ function rockTrail(){
   if(pts.length<2)return;
   const L=[],R=[],E=[];
   for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;
-    const t=pts[i].life,w=(1.2+3.6*t*t)*scale*(.85+.3*Math.sin(i*.7)),q=pts[i];L.push([q.x+nx*w,q.y+ny*w]);R.push([q.x-nx*w,q.y-ny*w]);E.push([q.x+nx*w*.8,q.y+ny*w*.8,t]);}
+    const t=pts[i].life,w=(1.6+4*t*t)*scale*(.85+.3*Math.sin(i*.7)),q=pts[i];L.push([q.x+nx*w,q.y+ny*w]);R.push([q.x-nx*w,q.y-ny*w]);E.push([q.x+nx*w*.8,q.y+ny*w*.8,t]);}
   const ribbon=()=>{ctx.beginPath();ctx.moveTo(L[0][0],L[0][1]);for(let i=1;i<L.length;i++)ctx.lineTo(L[i][0],L[i][1]);for(let i=R.length-1;i>=0;i--)ctx.lineTo(R[i][0],R[i][1]);ctx.closePath();};
   const head=pts[pts.length-1],tail=pts[0],gr=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
-  gr.addColorStop(0,`rgba(${ink.rock.ochreDeep},0)`);gr.addColorStop(.5,`rgba(${ink.rock.ochre},.45)`);gr.addColorStop(1,`rgba(${ink.rock.redOchre},.85)`);
-  ctx.save();ctx.globalCompositeOperation='multiply';ribbon();ctx.fillStyle=gr;ctx.fill();
+  gr.addColorStop(0,`rgba(${ink.rock.redOchre},.25)`);gr.addColorStop(.45,`rgba(${ink.rock.redOchre},.8)`);gr.addColorStop(1,`rgba(${ink.rock.redOchre},1)`);
+  // Laid twice into the stone, so the pigment is dense enough to read on the darkest rock the flame reaches.
+  ctx.save();ctx.globalCompositeOperation='multiply';ribbon();ctx.fillStyle=gr;ctx.fill();ctx.fill();
   // The wet part catches the flame a little, where it is still fresh.
   ctx.globalCompositeOperation='source-over';const gw=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
   gw.addColorStop(0,`rgba(${ink.rock.ochre},0)`);gw.addColorStop(.7,`rgba(${ink.rock.ochre},.08)`);gw.addColorStop(1,`rgba(${ink.rock.ember},.28)`);ribbon();ctx.fillStyle=gw;ctx.fill();
   // The ridge the finger pushed up along one side.
   ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=Math.max(.7,.9*scale);
-  const gr2=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);gr2.addColorStop(0,`rgba(${ink.rock.charcoal},0)`);gr2.addColorStop(1,`rgba(${ink.rock.charcoal},.4)`);
+  const gr2=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);gr2.addColorStop(0,`rgba(${ink.rock.charcoal},.25)`);gr2.addColorStop(1,`rgba(${ink.rock.charcoal},.75)`);
   ctx.strokeStyle=gr2;ctx.beginPath();ctx.moveTo(E[0][0],E[0][1]);for(let i=1;i<E.length;i++)ctx.lineTo(E[i][0],E[i][1]);ctx.stroke();
   ctx.restore();
 }
@@ -1263,7 +1264,7 @@ function rockTrail(){
 function rockInkPath(){
   const P=world.inkPath;if(P.length<2)return;
   ctx.save();ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.strokeStyle=`rgba(${ink.rock.ochreDeep},.34)`;ctx.lineWidth=Math.max(1,2.2*scale);
+  ctx.strokeStyle=`rgba(${ink.rock.redOchre},.6)`;ctx.lineWidth=Math.max(1.2,2.6*scale);
   let d=0,on=true;ctx.beginPath();ctx.moveTo(sx(P[0].x),sy(P[0].y));
   for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];d+=Math.hypot(b.x-a.x,b.y-a.y);
     const next=rockWorldNoise(d,0,14,(world.seed>>>0)^0x71)>.28;
