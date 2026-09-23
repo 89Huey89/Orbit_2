@@ -8,8 +8,9 @@ holding a phone actually see, second by second, and where does it fall short of 
 capable of?** Where a proposal here overlaps an item still open in that file, the item is named.
 
 Nothing here builds toward the archived era progression. Era II is touched on only where it shares a
-problem with the atlas. Era I, The Rock, is left out: it is being overhauled on
-`claude/stone-age-deck-overhaul-ibtaij`, and what `main` ships of it is out of date.
+problem with the atlas. Era I, The Rock, is reviewed in its own section
+([R](#r--era-i-the-rock-on-its-overhaul-branch)) against its overhaul branch,
+`claude/stone-age-deck-overhaul-ibtaij`, since what `main` ships of it is out of date.
 
 ## How it was looked at
 
@@ -42,6 +43,27 @@ each piece is drawn:
 
 None of this needs a new renderer. One targeted GPU layer would help with a specific list of
 effects (see [Renderer](#should-there-be-a-new-renderer)).
+
+
+## What has been fixed since
+
+Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
+
+| Item | State | What changed |
+|---|---|---|
+| A1 survey letters | Fixed | Past `z` a letter takes a prime (`a'`, `a''`, `a'''`, then round again) instead of doubling; a soft clearing replaces the dark box (`effects.js` `surveyLetterName`, `surveyLetter`) |
+| A2 caption collisions | Fixed for node captions | A node's side caption takes the west side when the east would cross the frame or a note, and drops to a hairline when neither is clear (`figures.js` `drawNode`). A `verify.mjs` check for intersecting text boxes is still to do |
+| A3 one landing written four times | Fixed | The construction no longer repeats gain, speed and the square's bonus; the tally and the orbit's note carry them (README updated) |
+| A4 paper flood edge | Fixed | Stain pools feathered, weakened and seated on the front; corrosion feathered; the running head's ground fades at its ends and holds over the ink |
+| B2 loud tallies | Fixed | Older tallies dry to half strength once a later landing is written |
+| B3 pen lost in flight | Fixed | A soft reserve of the ground under the pen |
+| B4 soft chapter plates | Partly | Plates are baked at the density they are shown at (capped 1.66×, three held). Printing them as line rather than tone down the channel is still open |
+| C1 frontispiece as a web form | Fixed | The menu stands on the sheet wiped clean through a soft oval, ruled as a table of contents |
+| C2 Leviathan | Fixed | Redrawn as an engraved sea monster |
+
+![frontispiece after](art-review/17-frontispiece-after.jpg)
+![leviathan after](art-review/16-leviathan-after.jpg)
+![survey letters after](art-review/18-survey-letters-after.jpg)
 
 ---
 
@@ -333,6 +355,61 @@ about 2 ms.
 - **Accessibility of the lettering.** The marginal italic at 12–13 px on the night plate is at the
   edge of legibility on the phone. The tallies are huge and the instructions are tiny, when it should
   be the other way round.
+
+---
+
+## R · Era I, The Rock, on its overhaul branch
+
+Flown at 430×932 on `claude/stone-age-deck-overhaul-ibtaij` (head `119db8a`), against its own plan,
+`docs/ROCK-OVERHAUL.md`. The direction chosen there (the torch in the dark) is working: the triad on the
+frontispiece (the crescent with its tally notches, the soliform, the rayed star) is the best-drawn thing
+in the era, the tally HUD with hand stencils reads at a glance, and the chasm reads as a real drop.
+What holds it back is mostly the wall bake, plus the lettering problems the atlas also has.
+
+![rock frontispiece](art-review/11-rock-frontispiece.jpg)
+![rock notes](art-review/12-rock-notes.jpg)
+![rock flowstone](art-review/13-rock-flowstone.jpg)
+![rock moire](art-review/14-rock-moire.jpg)
+
+### R1. The flowstone reads as stage lights (`rock.js`, field 25 of the face bake)
+
+Deep into a run the wall carries bright vertical columns with hard sides, evenly spaced, like light
+through a curtain (`13-rock-flowstone`). They are the flowstone streaks. The field is sampled as
+`fx=wx/34, fy=wy/9/34`, so every streak is one lattice cell wide, and all of them stand on the same
+34-unit grid. `rockStep(.55,.75,…)` then cuts each one with a hard edge.
+*Fix:* warp x before sampling (add a low-frequency noise offset of about ±20 units that drifts with y),
+vary the width by a second field, and widen the step to `.5–.85` so a streak fades out at its sides.
+Real flowstone is also brighter and glossier at the top of a run and fades downward; multiplying by
+a 0–1 ramp along each streak's length would give that.
+
+### R2. Bedding planes turn into moiré (`rock.js`, the `saw` term)
+
+In `14-rock-moire` the wall is covered by concentric bands and a checker pattern. The bedding term is a
+sawtooth with a period of 64–120 world units, lit by the height gradient at `(shade-.5)*230`. Where two
+fields align it becomes a regular grating, and with the flowstone columns on top it beats into a
+checkerboard. *Fix:* cap the bedding contribution to the shading (it's the gradient of a sawtooth, so
+the lit lip is as strong as a real ledge everywhere), jitter the period per bed, and keep the mask
+`rockStep(.62,.8,n16)` from covering more than a small fraction of a screen.
+
+### R3. Notes collide with the tally and with each other
+
+`12-rock-notes`: `+2…` (the gutter tally) prints under `MARKED · A SQUARE LANDING`, and a note set beside
+the chasm runs into it. The wall's notes go through the same register as the atlas's, so this is
+the same class of bug as A2; the rock's own gain floater does not seem to declare its ground before the
+note is placed.
+
+### R4. The frontispiece has no title and a stray button
+
+`HOW TO PLAY` sits alone, left-aligned, under `Tap the wall to begin`, and a large black shape is cut off
+at the top right. The plan already lists the frontispiece as step 7; until then, centring the one button
+and dropping the black shape would remove the unfinished look.
+
+### R5. Niches and dried route read as vector shapes
+
+The niches are flat grey ovals with a drop shadow, so they read as stickers on the rock rather than
+hollows in it. They need the wall texture carried into them, darkened, not a flat fill. The dried route
+is a heavy grey band (`12-rock-notes`, the arc at the top), much heavier than the finger-smear trail it
+dries from. Both are listed in the plan (A7, A3); noted here because they are the next most visible.
 
 ---
 
