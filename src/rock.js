@@ -619,8 +619,8 @@ function rockLattice(seed,n){const r=seeded((seed>>>0)||1),a=new Float32Array(n*
 function rockLatticeAt(a,n,x,y){const ix=Math.floor(x),iy=Math.floor(y),tx=rockSS(x-ix),ty=rockSS(y-iy),i0=((iy%n+n)%n)*n,i1=(((iy+1)%n+n)%n)*n,j0=(ix%n+n)%n,j1=((ix+1)%n+n)%n;
   return (a[i0+j0]+(a[i0+j1]-a[i0+j0])*tx)*(1-ty)+(a[i1+j0]+(a[i1+j1]-a[i1+j0])*tx)*ty;}
 const rockPressSprites=new Map();
-function rockPressSprite(seed,R,rgb,lobe=.12,fray=.32,holes=.8){
-  const Rq=Math.max(2,Math.round(R)),key=(seed>>>0)+':'+Rq+':'+rgb+':'+lobe+':'+fray+':'+holes+':'+DPR.toFixed(2);
+function rockPressSprite(seed,R,rgb,lobe=.12,fray=.32,holes=.8,bite=0){
+  const Rq=Math.max(2,Math.round(R)),key=(seed>>>0)+':'+Rq+':'+rgb+':'+lobe+':'+fray+':'+holes+':'+bite+':'+DPR.toFixed(2);
   const cached=rockPressSprites.get(key);if(cached)return cached;
   const pad=Math.ceil(Rq*.35)+2,size=(Rq+pad)*2,px=Math.max(2,Math.round(size*DPR)),k=size/px,c0=rgb.split(',').map(Number);
   const rnd=seeded((seed>>>0)^0x6a09||3),h1=rnd()*TAU,h2=rnd()*TAU,h3=rnd()*TAU,L1=rockLattice(seed^0x1234,16),L2=rockLattice(seed^0x9876,16),L3=rockLattice(seed^0x5151,32);
@@ -630,7 +630,9 @@ function rockPressSprite(seed,R,rgb,lobe=.12,fray=.32,holes=.8){
     const edge=Rq*(1+lobe*(Math.sin(a*2+h1)*.55+Math.sin(a*3+h2)*.3+Math.sin(a*5+h3)*.15));
     const n1=rockLatticeAt(L1,16,dx/Rq*2.2+8,dy/Rq*2.2+8),n2=rockLatticeAt(L2,16,dx/Rq*6+8,dy/Rq*6+8);
     let hh=Math.imul(i+1,0x9E3779B1)^Math.imul(j+7,0x85EBCA77)^(seed|0);hh=Math.imul(hh^(hh>>>15),0x2C1B3C6D);hh^=hh>>>13;const h=(hh&1023)/1023;
-    const d=(edge-r)/Rq+(n1-.5)*fray+(n2-.5)*fray*.45+(h-.5)*.05;if(d<=0)continue;
+    // A crescent is the same press with a second disc bitten out of it, offset toward the upper right.
+    let d=(edge-r)/Rq;if(bite)d=Math.min(d,(Math.hypot(dx-Rq*bite*.62,dy+Rq*bite*.46)-Rq*.86)/Rq);
+    d+=(n1-.5)*fray+(n2-.5)*fray*.45+(h-.5)*.05;if(d<=0)continue;
     const cover=Math.min(1,d*14),order=Math.min(1,Math.max(0,(1-d)*.55+n1*.45)),rim=Math.exp(-d*9);
     // Where the pad met a hollow in the stone it left little or nothing, in patches a grain or two across.
     const u=(dx*.8+dy*.6)/Rq*9+(n1-.5)*2.4,v=(dy*.8-dx*.6)/Rq*9+(n2-.5)*2.4,n3=rockLatticeAt(L3,32,u+16,v+16)*.6+rockLatticeAt(L1,16,u*1.7+3,v*1.7+5)*.4;
@@ -662,52 +664,80 @@ function rockPress(g,x,y,sprite,fill,alpha,pale,over=.3){
 // A fingertip dot: the same pressed mark, small, in a handful of seeded shapes per pigment.
 function rockDot(g,x,y,r,rgb,alpha,seed,pale){
   if(r<=.3)return;const sp=rockPressSprite(((seed>>>0)%6)+1,Math.max(3,Math.round(r)),rgb,.14,.2,0);
-  const sc=r/Math.max(3,Math.round(r));g.save();g.translate(x,y);g.scale(sc,sc);rockPress(g,0,0,sp,1,alpha,pale);g.restore();
+  const sc=r/Math.max(3,Math.round(r));g.save();g.translate(x,y);g.scale(sc,sc);rockPress(g,0,0,sp,1,alpha,pale,rgb===ink.rock.ochre?.62:.34);g.restore();
 }
 
 // ---------- The body: what has been learned, staged over the observation clock alone ----------
+// This era has no secure evidence of telling a planet from a star, and no script to name either; what
+// it does have is a small set of attested marks that later prehistoric walls use for lights in the
+// sky, and the bodies are drawn in those. A star is the Iberian schematic estrelliform — a pressed dot
+// with short strokes rayed out round it; a brighter light is the soliform and the cup-and-ring — a
+// larger disc with a ring walked round it and rays beyond; and the Moon is a crescent with a row of
+// tally notches beside it, after the notched horn of Laussel and the pitted plaque of Blanchard, the
+// oldest things anyone has proposed as a count of the Moon. None of those readings is certain, and the
+// wall claims no more than the marks: they say "a light, watched and returned to", which is the whole
+// of what this era could know. Each is a real mark in real pigment, and at its middle, once the watch
+// is complete, the light itself shows through: the one thing on the body no hand put there.
 function rockCore(r,tier){return r*(tier==='moon'?.94:tier==='faint'?.6:.72);}
 function rockTone(tier){return tier==='moon'?ink.rock.kaolin:tier==='faint'?ink.rock.ochre:ink.rock.redOchre;}
+// A finger stroke: the same pressed dot laid again and again along a line, thinning as the finger
+// lifts, so a ray has the pigment's own edge and grain rather than a ruled line's. `f` is how far along
+// it the finger has got.
+function rockStroke(g,x0,y0,x1,y1,w,rgb,alpha,seed,f=1,pale){
+  if(f<=0)return;const L=Math.hypot(x1-x0,y1-y0),n=Math.max(2,Math.ceil(L/(w*.7))),m=Math.max(1,Math.round(n*f));
+  for(let i=0;i<=m&&i<=n;i++){const t=i/n;rockDot(g,x0+(x1-x0)*t,y0+(y1-y0)*t,w*(1-t*.55),rgb,alpha,seed+i,pale);}
+}
+// The light at the middle of a body whose watch is complete: warm, small, breathing, laid as light.
+function rockGlint(g,r,alpha,seed){
+  const pulse=.8+.2*(reducedMotion?0:Math.sin(world.time*2.1+seed));
+  g.save();g.globalCompositeOperation='lighter';rockDab(g,0,0,r*2.6,ink.rock.ember,.22*alpha*pulse,seed);rockDab(g,0,0,r,ink.rock.emberCore,.9*alpha*pulse,seed+1);g.restore();
+}
 // `taken` is revealNode's own pen.taken — 0 until the body has ever been orbited, then a fast fade to 1
 // — except a difficultyChoice body, which the design already draws whole before it is observed (see
 // reveal.js's own comment on pen.d): the choice has to read before any caption could, on a sheet that
 // has none, so its taken-ness is never gated at all.
 //
-// The body is one pressed mark, laid in the era's own order: the first press at the capture itself,
-// ungated — colour before contour — as only the middle of the mark and whatever the pad caught; then
-// the same mark filled out over the observation as the hand comes back to it, never a bigger one; and
-// last the sign that says which body this is. Wet pigment pools in a dish and starves over a rise,
-// where less of the pad reaches the stone.
+// Built in the era's own order: the first press at the capture itself, ungated — colour before
+// contour; then over the observation the rest of the sign, ray by ray, round the ring, notch by notch,
+// each only ever added to; and last the light. Wet pigment pools in a dish and starves over a rise.
 function rockBody(n,x,y,r,tier,d,taken,relief){
   if(taken<=0)return;
-  const core=rockCore(r,tier),tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major';
-  const pool=relief<0?1.08:relief>0?.9:1,marks=rockSpan(d,ROCK_STAGE.marks),edge=rockSpan(d,ROCK_STAGE.edge),detail=rockSpan(d,ROCK_STAGE.detail);
-  const fill=Math.min(1,(.3+.7*Math.max(marks,edge*.5))*(relief>0?.96:1));
-  const sprite=rockPressSprite(n.seed,core/scale,tone,moon?.07:.12,moon?.22:.32,moon?.35:.85);
+  const cr=rockCore(r,tier)/scale,tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major';
+  const pool=relief<0?1.08:relief>0?.9:1,edge=rockSpan(d,ROCK_STAGE.edge),marks=rockSpan(d,ROCK_STAGE.marks),detail=rockSpan(d,ROCK_STAGE.detail);
+  const al=taken*pool,rnd=seeded((n.seed^0x7e57)>>>0||11);
   ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
-  rockPress(ctx,0,0,sprite,fill,taken*pool,moon,tier==='faint'?.55:.34);
-  // What the body is, rather than that it is: the last thing the orbit pays for.
-  if(detail>0){
-    const cr=core/scale;
-    if(moon){
-      const rnd=seeded((n.seed^0x3c1)>>>0||5);
-      for(let i=0;i<5;i++){const a=rnd()*TAU,rr=Math.sqrt(rnd())*cr*.5;
-        rockDot(ctx,Math.cos(a)*rr,Math.sin(a)*rr,(4+rnd()*6)*(.5+.5*detail),ink.rock.charcoal,.5*detail*taken,n.seed+i);}
-    }else if(bright){
-      for(let i=0;i<7;i++){const a=i/7*TAU+n.seed,rr=cr*1.3;
-        rockDot(ctx,Math.cos(a)*rr,Math.sin(a)*rr,2.2+1.2*detail,ink.rock.manganese,.8*detail*taken,n.seed+i+7);}
-    }else rockDot(ctx,0,0,3.2,ink.rock.manganese,.8*detail*taken,n.seed+3);
+  if(moon){
+    // A crescent, horns to the upper right, and beside it a tally that counts up as the Moon is watched.
+    const sp=rockPressSprite(n.seed,cr*.8,tone,.05,.2,.3,1);
+    rockPress(ctx,-cr*.12,0,sp,Math.min(1,.55+.45*Math.max(edge,marks)),al,true);
+    const N=7,shown=marks*N;
+    for(let i=0;i<N&&i<shown;i++){const tx=cr*.62+i*cr*.17,ty=cr*.12+(rnd()-.5)*cr*.08,len=cr*(.34+rnd()*.1);
+      rockStroke(ctx,tx,ty-len/2,tx+(rnd()-.5)*3,ty+len/2,1.35,ink.rock.kaolin,.85*al,n.seed+i*31,Math.min(1,shown-i),true);}
+    if(detail>0)ctx.save(),ctx.translate(-cr*.42,-cr*.08),rockGlint(ctx,3.2,detail*taken,n.seed),ctx.restore();
+  }else{
+    const disc=bright?cr*.5:cr*.36,rays=bright?(tier==='major'?12:10):7,r0=bright?cr*.86:cr*.56,r1=bright?cr*1.32:cr*1.08,w=bright?2.1:1.8;
+    rockPress(ctx,0,0,rockPressSprite(n.seed,disc,tone,.1,.26,.6),Math.min(1,.45+.55*Math.max(edge,marks)),al,false,tier==='faint'?.55:.34);
+    // The ring of the cup-and-ring, walked round the disc as the edge firms; a major light takes two.
+    if(bright){const rings=tier==='major'?[.66,.76]:[.68];
+      for(const k of rings){const R=cr*k,N=Math.round(TAU*R/3.4),m=Math.round(N*edge);
+        for(let i=0;i<m;i++){const a=i/N*TAU+n.seed*.1;rockDot(ctx,Math.cos(a)*R,Math.sin(a)*R,1.9,tone,.9*al,n.seed+i+200);}}}
+    // The rays, struck one after another as the hand comes back, each a little off true.
+    const shown=marks*rays;
+    for(let i=0;i<rays&&i<shown;i++){const a=i/rays*TAU+(n.seed%97)*.07+(rnd()-.5)*.22,a0=r0*(.95+rnd()*.1),a1=r1*(.78+rnd()*.34);
+      rockStroke(ctx,Math.cos(a)*a0,Math.sin(a)*a0,Math.cos(a)*a1,Math.sin(a)*a1,w,tone,.92*al,n.seed+i*37,Math.min(1,shown-i));}
+    if(detail>0)rockGlint(ctx,bright?3.4:2.6,detail*taken,n.seed);
   }
   ctx.restore();
 }
-// A body not yet reached is not a mark at all but a light that keeps coming back to the same patch of
-// wall: a small pale glint, breathing, with a little warmth round it — nothing a hand has put there.
+// A body not yet reached is not a mark at all but the light alone, before any hand has answered it:
+// the same point that shows at the middle of a finished sign, breathing on the rock and seen however
+// dark the rock is, with a faint cross of light on it at the size a naked eye would sort it by.
 function rockPhenomenon(n,x,y,r){
-  const pulse=.55+.3*(reducedMotion?0:Math.sin(world.time/.6+n.seed));
-  ctx.save();ctx.globalCompositeOperation='lighter';
-  rockDab(ctx,x,y,r*.42,ink.rock.ember,.16*pulse,n.seed);
-  ctx.globalCompositeOperation='source-over';
-  rockDot(ctx,x,y,Math.max(2,r*.14),ink.rock.kaolin,.8*pulse,n.seed,true);
+  const t=reducedMotion?0:world.time,pulse=.62+.28*Math.sin(t/.6+n.seed),tier=rockTier(n),k=tier==='faint'?.75:tier==='moon'?1.15:1;
+  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+  rockGlint(ctx,2.8*k,pulse,n.seed);
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(${ink.rock.ember},${(.28*pulse).toFixed(3)})`;ctx.lineWidth=1;ctx.lineCap='round';
+  const L=9*k;ctx.beginPath();ctx.moveTo(-L,0);ctx.lineTo(L,0);ctx.moveTo(0,-L);ctx.lineTo(0,L);ctx.stroke();
   ctx.restore();
 }
 
