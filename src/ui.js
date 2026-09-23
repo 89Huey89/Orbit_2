@@ -17,6 +17,7 @@ let recordAnnounced=false;
 defineVoice('atlas',{
   chart:'',
   chartNoun:'constellation',
+  chartVerb:'traced',
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',
   observations:{},
   pressures:DIFFICULTY_LABELS,
@@ -363,7 +364,7 @@ function showEnd(){
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
   // words for nothing rather than as that figure.
-  {const w=plateWords(),v=w.chartVerb||'traced';$('end-constellations').textContent=charts?charts+' '+w.chartNoun+(charts===1?'':'s')+' '+v:'no '+w.chartNoun+'s '+v;}
+  {const w=plateWords(),v=w.chartVerb;$('end-constellations').textContent=charts?charts+' '+w.chartNoun+(charts===1?'':'s')+' '+v:'no '+w.chartNoun+'s '+v;}
   $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(' · ');
   // The one page a period book always closes in Latin: FINIS on an ordinary run, LAVS DEO where the
   // run itself earned a perfect chain (the same three-in-a-row the 'Tres perfecti' observation marks).
