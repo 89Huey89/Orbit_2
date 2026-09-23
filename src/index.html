@@ -40,7 +40,7 @@
     #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--dawn:#c98b46;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
     #game[data-era="1"] .footer{color:#c7bc9e}
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
-    #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#152457;--ivory:#efe2c4;--gold:#e3b447;--muted:#c9bb98;--copy:#c9bb98;--best:#efe2c4;--shield:#3e9c92;--reflector:#6b4f9e;--dawn:#b8862a;--copper:#c24a2f;--line:rgba(239,226,196,.24);--veil:13,24,56;--blocks:repeating-linear-gradient(90deg,#c24a2f 0 12%,#efe2c4 12% 25%,#2e7ea3 25% 37%,#efe2c4 37% 50%,#e3b447 50% 62%,#efe2c4 62% 75%,#4c8a57 75% 87%,#efe2c4 87% 100%)}
+    #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Limelight','Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#152457;--ivory:#efe2c4;--gold:#e3b447;--muted:#c9bb98;--copy:#c9bb98;--best:#efe2c4;--shield:#3e9c92;--reflector:#6b4f9e;--dawn:#b8862a;--copper:#c24a2f;--line:rgba(239,226,196,.24);--veil:13,24,56;--blocks:repeating-linear-gradient(90deg,#c24a2f 0 12%,#efe2c4 12% 25%,#2e7ea3 25% 37%,#efe2c4 37% 50%,#e3b447 50% 62%,#efe2c4 62% 75%,#4c8a57 75% 87%,#efe2c4 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     /* Newton mode never rides under the daily plate's own fixed setup (see newWorld() in ui.js), so
        its switch hides alongside it rather than sitting there, visible but inert. */
@@ -222,7 +222,7 @@
     #game[data-era="2"] #end{background:rgba(13,24,56,.55)}
     #game[data-era="2"] #pause{background:rgba(13,24,56,.68)}
     #game[data-era="2"] .colophon{background:rgba(13,24,56,.92);border-left:1.4px solid #efe2c4;border-right:1.4px solid #efe2c4;padding:36px 26px 34px}
-    #game[data-era="2"] h1,#game[data-era="2"] #score{font-family:'Zilla Slab',Georgia,serif}
+    #game[data-era="2"] #score{font-family:'Zilla Slab',Georgia,serif}
     /* The cartouche, shenu — "that which encircles": a loop of doubled rope tied off at one end, and
        the one piece of this room's furniture that is already the shape of a readout. A figure inside
        it is held apart from the wall around it, which is what the ring was for. */
@@ -248,13 +248,13 @@
     .ceiling-glyphs{position:relative;z-index:0}
     .ceiling-glyphs::before{content:attr(data-ghost);position:absolute;inset:0;z-index:-1;transform:translate(2.5px,-2px);color:#c24a2f;opacity:.4}
     #game[data-era="2"] .ceiling-title{top:12%;max-width:min(560px,calc(100% - 64px));margin:0 auto;padding:16px 22px 14px;background:rgba(13,24,56,.82);border-left:1.4px solid #efe2c4;border-right:1.4px solid #efe2c4}
-    #game[data-era="2"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.07em;text-indent:.07em;line-height:1.06}
+    #game[data-era="2"] .ceiling-title h1{font-size:clamp(40px,9.6vw,68px);letter-spacing:.02em;text-indent:.02em;line-height:1.06}
     .ceiling-glyphs{margin:0 0 5px;color:#efe2c4;font-family:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif;font-size:clamp(38px,9vw,58px);line-height:1;letter-spacing:.06em}
     #game[data-era="2"] .title-rule::before,#game[data-era="2"] .title-rule::after{background:#e3b447}
     #game[data-era="2"] .era-entry{border-color:rgba(194,74,47,.55);color:#e0946e}
     .ceiling-context{max-width:42em;margin:12px auto 0;color:#c9bb98;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
     #game[data-era="2"] .printer-line{margin-top:11px}
-    #game[data-era="2"] .brand{font-style:italic;letter-spacing:.16em}
+    #game[data-era="2"] .brand{font-style:italic;letter-spacing:.06em}
     #game[data-era="2"] .brand::after{background:#e3b447}
     #game[data-era="2"] .score-frame::before{border-color:#e3b447}
     /* The wall's own device, brought into CSS: a black rule, a run of flat colour blocks in
@@ -299,7 +299,14 @@
     #game[data-era="2"] .ceiling-column.left{left:-19px}
     #game[data-era="2"] .ceiling-column.right{right:-19px}
     @media(max-width:480px){#game[data-era="2"] .ceiling-column{display:none}}
-    #game[data-era="2"] .eyebrow{letter-spacing:.28em}
+    /* Limelight already carries the width the Fell/Zilla small caps needed tracking to read as
+       lettering rather than a block; every --face-sc line the Ceiling sets is retightened here. */
+    #game[data-era="2"] .eyebrow{letter-spacing:.12em}
+    #game[data-era="2"] .subtitle-latin{letter-spacing:.1em}
+    #game[data-era="2"] .rubric-head{letter-spacing:.12em}
+    #game[data-era="2"] .diff-btn{letter-spacing:.05em}
+    #game[data-era="2"] #record{letter-spacing:.07em}
+    #game[data-era="2"] #end-row-note{letter-spacing:.08em}
     .score-frame{position:relative;display:inline-flex;flex-direction:column;align-items:center;margin:8px 0 6px;padding:12px 34px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .score-frame::before{content:'';position:absolute;top:-5px;left:50%;width:6px;height:6px;margin-left:-3px;border:1px solid var(--gold);transform:rotate(45deg)}
     .stat+.stat::before{content:'';position:absolute;left:0;top:1px;bottom:1px;width:1px;background:var(--line)}
