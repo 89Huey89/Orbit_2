@@ -1536,7 +1536,7 @@ defineVoice('rock',{
   // hand's own words rather than the sky's Latin.
   hazards:{vortex:'THE SHAFT',flare:'THE FLARE',wind:'THE DRAUGHT'},
   // The bare word for each of the three charges a run can carry, without the HELD suffix (below).
-  labels:{shield:'GUARD',reflector:'REBOUND',dawn:'GLOW'},
+  labels:{shield:'THE SPIRAL',reflector:'THE TURNED HAND',dawn:'THE EMBER'},
   squareLanding:'A SQUARE LANDING',
   // The opening triad, read against ROCK_TRIAD above rather than restated: the Moon for Tiro, a bright
   // light for Adeptus, a faint one for Magister.
@@ -1565,7 +1565,7 @@ defineVoice('rock',{
     threeMinutes:'THREE MINUTES BY TORCHLIGHT',
     rightAngle:'A SQUARE LANDING'
   },
-  hud:{pace:'PACE ×',flow:'RHYTHM ×',shield:'GUARD HELD',reflector:'REBOUND HELD',dawn:'GLOW HELD'},
+  hud:{pace:'PACE ×',flow:'RHYTHM ×',shield:'THE SPIRAL HELD',reflector:'THE TURNED HAND HELD',dawn:'THE EMBER HELD'},
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
   chrome:{
@@ -1610,11 +1610,11 @@ defineVoice('rock',{
     chartComplete:'{chart} · COMPLETE +60',
     angleBonus:'  ·  ANGLE +{bonus}',
     multiplier:'  ·  ×{mult}',
-    shieldArmed:'{label} HELD · SURVIVES ONE FALL',
+    shieldArmed:'{label} · TURNS ONE BLOW',
     shieldBreak:'{label} SPENT · TOOK THE HIT',
-    reflectorArmed:'{label} HELD · TURNS BACK THE EDGE',
+    reflectorArmed:'{label} · SENDS YOU BACK FROM THE EDGE',
     reflectorBreak:'{label} BOUNCED YOU BACK',
-    dawnArmed:'{label} HELD · HOLDS BACK THE DARK',
+    dawnArmed:'{label} · HOLDS BACK THE DARK',
     dawnBreak:'{label} PUSHED THE DARK BACK',
     inkwellFound:'A BOLD MARK · A NEW COLOUR TAKES',
     inkwellDry:'THE OCHRE RUNS LOW · GO BOLD FIRST',
