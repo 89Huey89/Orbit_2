@@ -969,12 +969,12 @@ function rockLightAt(x,y){
 // core is left untouched, because it is the black and nothing lights it.
 function rockHollowLight(g,rim,core,L,depth,shade=.13,lift=.1){
   const ring=(pts,ox,oy)=>{g.moveTo(pts[0][0]+ox,pts[0][1]+oy);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0]+ox,pts[i][1]+oy);g.closePath();};
-  const pass=(sgn,rgb,al,fs)=>{for(const f of fs){const o=depth*L.reach*f*sgn;g.beginPath();g.rect(-4000,-4000,8000,8000);ring(rim,L.dx*o,L.dy*o);g.fillStyle=`rgba(${rgb},${al.toFixed(3)})`;g.fill('evenodd');}};
+  const pass=(sgn,rgb,al,fs,op)=>{g.globalCompositeOperation=op;for(const f of fs){const o=depth*L.reach*f*sgn;g.beginPath();g.rect(-4000,-4000,8000,8000);ring(rim,L.dx*o,L.dy*o);g.fillStyle=`rgba(${rgb},${al.toFixed(3)})`;g.fill('evenodd');}g.globalCompositeOperation='source-over';};
   g.save();g.beginPath();ring(rim,0,0);if(core)ring(core,0,0);g.clip('evenodd');
   // The shadow is kept short of the throat and well short of black however low the flame, because a
   // hollow whose shadow filled it would read as a wider drop than the one there is.
-  pass(1,ink.rock.dark,shade,[.25,.45,.65,.85,1.05]);
-  pass(-1,ink.rock.crust,lift*(.45+.55*L.fall),[.3,.5,.7,.9]);
+  pass(1,'60,48,38',shade*2.6,[.25,.45,.65,.85,1.05],'multiply');
+  pass(-1,ink.rock.torchWarm,lift*.35*(.45+.55*L.fall),[.4,.8],'screen');
   g.restore();
 }
 // `pts` is the edge as a closed ring of [x,y]; (LX,LY) points toward the lamp. A piece is lit as far as
@@ -1002,7 +1002,12 @@ function rockShaftSprite(seed,reach,core){
   const rB=Math.max(2,Math.round(reach)),cB=Math.max(1,Math.round(core)),key=(seed>>>0)+':'+rB+':'+cB+':'+DPR.toFixed(2);
   const cached=rockShaftSprites.get(key);if(cached)return cached;
   const size=Math.max(4,Math.ceil(rB*2.2)),px=Math.max(1,Math.round(size*DPR));
+  // Two layers, not one picture: the shade is multiplied into the wall that is really there, so the
+  // rock's own creases run on down into the hole and darken with its depth — a throat painted as a
+  // picture of rock, however good, sat on the wall like a sticker — and only the floorless core is
+  // laid as itself, opaque, because it is the one thing here that is not rock.
   const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const cc=makeCanvas(px,px),gc=cc.getContext('2d');gc.scale(DPR,DPR);gc.translate(size/2,size/2);
   // The mouth breaks in straight facets at uneven angles, and only ever outward of the core, so the
   // black it holds is never narrower than the fall it stands for.
   const rnd=seeded((seed>>>0)^0x5aa7||9),rim=cB*1.85,n=17,jag=[],ang=[];
@@ -1027,15 +1032,14 @@ function rockShaftSprite(seed,reach,core){
   const layers=64,ledge=new Set([12+(rnd()*8|0),29+(rnd()*8|0),45+(rnd()*7|0)]);let step=1;
   for(let k=0;k<=layers;k++){
     if(ledge.has(k))step*=.74;
-    const t=k/layers,r=rim+(cB-rim)*Math.pow(t,.8),lit=Math.pow(1-t,1.6)*step;
-    g.fillStyle=`rgb(${warm.map((v,i)=>Math.round(dark[i]+(v-dark[i])*lit*.4)).join(',')})`;mouth(r,0,0);g.fill();
+    const t=k/layers,r=rim+(cB-rim)*Math.pow(t,.8),lit=.12+.84*Math.pow(1-t,1.5)*step;
+    g.fillStyle=`rgb(${Math.round(255*lit)},${Math.round(244*lit)},${Math.round(228*lit)})`;mouth(r,0,0);g.fill();
   }
-  rockStoneInto(g,()=>mouth(rim,0,0),.85,(seed%97)*3,(seed%89)*3);
   // The floorless black, exactly the core and centred on it.
-  g.fillStyle=`rgb(${ink.rock.shaft})`;mouth(cB,0,0);g.fill();
-  const deep=g.createRadialGradient(0,0,0,0,0,cB);deep.addColorStop(0,`rgba(${ink.rock.dark},1)`);deep.addColorStop(1,`rgba(${ink.rock.dark},0)`);
-  g.fillStyle=deep;g.fill();
-  const sprite={canvas:c,size,rim,rimPts:ring(rim,0,0),corePts:ring(cB,0,0),cB,seed};rockShaftSprites.set(key,sprite);
+  gc.fillStyle=`rgb(${ink.rock.shaft})`;{const p=ring(cB,0,0);gc.beginPath();gc.moveTo(p[0][0],p[0][1]);for(const q of p)gc.lineTo(q[0],q[1]);gc.closePath();gc.fill();}
+  const deep=gc.createRadialGradient(0,0,0,0,0,cB);deep.addColorStop(0,`rgba(${ink.rock.dark},1)`);deep.addColorStop(1,`rgba(${ink.rock.dark},0)`);
+  gc.fillStyle=deep;gc.fill();
+  const sprite={canvas:c,core:cc,size,rim,rimPts:ring(rim,0,0),corePts:ring(cB,0,0),cB,seed};rockShaftSprites.set(key,sprite);
   if(rockShaftSprites.size>16)rockShaftSprites.delete(rockShaftSprites.keys().next().value);
   return sprite;
 }
@@ -1043,7 +1047,8 @@ function rockShaft(h,x,y){
   const reach=gravityRadius(h)*scale,core=hazardCore(h)*scale;
   if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
   const sprite=rockShaftSprite(h.seed||1,reach,core);
-  ctx.drawImage(sprite.canvas,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(sprite.canvas,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);ctx.restore();
+  ctx.drawImage(sprite.core,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);
   {const L=rockLightAt(x,y);ctx.save();ctx.translate(x,y);rockHollowLight(ctx,sprite.rimPts,sprite.corePts,L,sprite.cB*.75,.09,.17);
     rockBrokenLip(ctx,sprite.rimPts,-L.dx,-L.dy,seeded((sprite.seed>>>0)^0x11d),ink.rock.crust,.34*(.4+.6*L.fall));ctx.restore();}
   // Grit going over the edge: each grain slides in from the loosened face, shrinks and goes dark as it
@@ -1134,7 +1139,9 @@ function rockChasmSprite(h,L,w){
   const Lq=Math.max(4,Math.round(L)),wq=Math.max(2,Math.round(w*2)/2),key=(h.seed>>>0)+':'+Lq+':'+wq+':'+DPR.toFixed(2);
   const cached=rockChasmSprites.get(key);if(cached)return cached;
   const ang=Math.atan2(h.y1-h.y0,h.x1-h.x0),padX=wq*3.2,padY=wq*3.4,SW=Lq+padX*2,SH=padY*2;
+  // Shade multiplied into the real wall, core laid opaque: see rockShaftSprite.
   const c=makeCanvas(Math.max(1,Math.round(SW*DPR)),Math.max(1,Math.round(SH*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(SW/2,SH/2);
+  const cc=makeCanvas(c.width,c.height),gc=cc.getContext('2d');gc.scale(DPR,DPR);gc.translate(SW/2,SH/2);
   const rnd=seeded((h.seed>>>0)^0xc4a5||13);
   const rgb=t=>ink.rock[t].split(',').map(Number),stone=rgb('stone'),dark=rgb('shaft'),soot=ink.rock.crack,warm=stone.map((v,i)=>(v+rgb('stain')[i])/2);
   // Rock breaks in facets, so each side of the crack is a run of straight breaks at uneven spacing, and
@@ -1162,13 +1169,12 @@ function rockChasmSprite(h,L,w){
   const layers=64,ledge=new Set([15+(rnd()*9|0),37+(rnd()*9|0)]);let step=1;
   for(let k=0;k<=layers;k++){
     if(ledge.has(k))step*=.74;
-    const t=k/layers,kk=1.9+(1-1.9)*Math.pow(t,.8),lit=Math.pow(1-t,1.5)*step;
-    g.fillStyle=`rgb(${warm.map((v,i)=>Math.round(dark[i]+(v-dark[i])*lit*.4)).join(',')})`;outline(kk);g.fill();
+    const t=k/layers,kk=1.9+(1-1.9)*Math.pow(t,.8),lit=.12+.84*Math.pow(1-t,1.4)*step;
+    g.fillStyle=`rgb(${Math.round(255*lit)},${Math.round(244*lit)},${Math.round(228*lit)})`;outline(kk);g.fill();
   }
-  rockStoneInto(g,()=>outline(1.9),.85,(h.seed%97)*3,(h.seed%89)*3);
   // The floorless black, which is the capsule the simulation tests and nothing more.
-  g.fillStyle=`rgb(${ink.rock.shaft})`;outline(1);g.fill();
-  const sprite={canvas:c,SW,SH,ang,rimPts:ringAt(1.9),corePts:ringAt(1),wq};rockChasmSprites.set(key,sprite);
+  {const p=ringAt(1);gc.fillStyle=`rgb(${ink.rock.shaft})`;gc.beginPath();gc.moveTo(p[0][0],p[0][1]);for(const q of p)gc.lineTo(q[0],q[1]);gc.closePath();gc.fill();}
+  const sprite={canvas:c,core:cc,SW,SH,ang,rimPts:ringAt(1.9),corePts:ringAt(1),wq};rockChasmSprites.set(key,sprite);
   if(rockChasmSprites.size>12)rockChasmSprites.delete(rockChasmSprites.keys().next().value);
   return sprite;
 }
@@ -1176,7 +1182,7 @@ function rockChasm(h){
   const x0=sx(h.x0),y0=sy(h.y0),x1=sx(h.x1),y1=sy(h.y1),w=h.w*scale,m=w*3.4;
   if(Math.max(x0,x1)+m<0||Math.min(x0,x1)-m>W||Math.max(y0,y1)+m<0||Math.min(y0,y1)-m>H)return;
   const L=Math.hypot(x1-x0,y1-y0),sp=rockChasmSprite(h,L,w),ang=Math.atan2(y1-y0,x1-x0),mx=(x0+x1)/2,my=(y0+y1)/2;
-  ctx.save();ctx.translate(mx,my);ctx.rotate(ang);ctx.drawImage(sp.canvas,-sp.SW/2,-sp.SH/2,sp.SW,sp.SH);
+  ctx.save();ctx.translate(mx,my);ctx.rotate(ang);ctx.globalCompositeOperation='multiply';ctx.drawImage(sp.canvas,-sp.SW/2,-sp.SH/2,sp.SW,sp.SH);ctx.globalCompositeOperation='source-over';ctx.drawImage(sp.core,-sp.SW/2,-sp.SH/2,sp.SW,sp.SH);
   // The light along a crack is not one direction: its near end may have the flame beside it and its far
   // end below it. It is taken from the flame to the crack's nearest point, which is where the eye is
   // looking, and turned into the crack's own frame.
