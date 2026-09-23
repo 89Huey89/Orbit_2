@@ -61,6 +61,12 @@
     /* The breathing prompt is its own compositing layer, and over this slab's blended grain that layer
        showed as a lighter band behind the line; the prompt holds still on stone instead. */
     #game[data-era="1"] .colophon .action-copy{animation:none;opacity:.8}
+    /* The wall's own announcements in the cut hand (ROCK_FACES in plates.js): the loss, the title, the
+       halt. Set large and bold, because the face is narrow and light; everything small stays slab. */
+    #game[data-era="1"] #end-reason,#game[data-era="1"] #pause-eyebrow{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:21px;letter-spacing:.14em}
+    #game[data-era="1"] #end h2,#game[data-era="1"] #pause strong{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-style:normal;font-size:clamp(40px,11vw,52px);letter-spacing:.04em;line-height:1}
+    #game[data-era="1"] #end-score{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700}
+    #game[data-era="1"] .colophon .diff-btn{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:20px;letter-spacing:.1em}
     #game[data-era="1"] #end-constellations{color:#7c2c19}
     #game[data-era="1"] .score-frame{border-color:rgba(44,38,34,.35)}
     #game[data-era="1"] .score-frame::before{border-color:#8a2f1a;border-radius:50%;transform:none}

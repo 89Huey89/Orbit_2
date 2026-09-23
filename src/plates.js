@@ -514,10 +514,17 @@ const CEILING_FACES={
 // curatorial layer — and that takes the same slab the Ceiling's does, for the same reason: it is the
 // type an excavation plate has been captioned in since the trade named the class, and it declares
 // itself modern where the Fell types would claim the wrong century by seventeen thousand years.
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:CEILING_FACES});
+// What the wall itself announces — a loss, a landing, a chamber — is set in a hand that looks cut, not
+// printed: Amatic SC, narrow scratched capitals, bold, the nearest a face comes to the tally notches on
+// the same wall. It is a display hand and too narrow and light to read small, so it is set larger than
+// the slab it replaces (`scale`) and at its bold (`weight`); the running instructions and every small
+// label stay in the slab, where legibility is the whole job.
+const ROCK_FACES={...CEILING_FACES,sc:"'Amatic SC','Zilla Slab',Georgia,serif",weight:{sc:700},scale:{sc:1.55}};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
-const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;
+const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
+  return `${style?style+' ':''}${w?w+' ':''}${k===1?size:+(size*k).toFixed(2)}px ${t[variant]}`;};
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
