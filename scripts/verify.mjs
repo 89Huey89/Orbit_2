@@ -12,18 +12,18 @@ const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // and run in parallel instead of one after another. Every one of them is written exactly as it would
 // be inline — reading these free variables rather than taking parameters — so a worker just needs to
 // populate them (from its own vm sandbox, or from workerData) before calling the task it was asked for.
-let OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
+let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
 
 // Runs the extracted `// BEGIN SIMULATION`/`// END SIMULATION` slice of src/simulation.js in its own
 // vm sandbox and returns the named globals verify.mjs needs off it — the same slice-and-pull the file
 // has always done, just callable once per thread instead of once for the whole process.
 function simSandbox(simulation){
   const sandbox={};vm.createContext(sandbox);
-  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
+  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
   return sandbox.api;
 }
 function useSimulationApi(api){
-  ({OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
+  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
 }
 
 // A tangent-seeking pilot uses the stars and follows the generated main route.
@@ -48,6 +48,40 @@ function taskRoute60(){
   assert.equal(failures.length,0,'Every tested route must remain playable: '+JSON.stringify(failures));
   assert(maxNodes<20&&maxHazards<12,'Endless generation should stay bounded');
   return {totalCaptures,perfects,maxNodes,maxHazards};
+}
+
+// Era I's own hazard, run through the same tangent-seeking pilot taskRoute60 already trusts, with
+// chasmsOn set: every seed must still reach row 48, chasms actually have to appear, and no node's
+// capture-plus-orbit disc may ever come within a chasm's own half-width — generation's own promise
+// that an orbit can never touch one, checked here against every chasm still standing at the end
+// rather than only against the ones a particular pilot happened to fly near.
+function taskChasmRoute60(){
+  let totalChasms=0,firstRow=Infinity;const failures=[],intersections=[];
+  for(let seed=1;seed<=60;seed++){
+    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true);w.keepAll=true;w.start();
+    for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
+      if(w.player.node){
+        const aim=w.aim();
+        if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      }
+      w.update(step);
+      assert(Number.isFinite(w.player.x)&&Number.isFinite(w.player.y));
+    }
+    if(w.progress<48)failures.push({seed,progress:w.progress,reason:w.reason,elapsed:w.elapsed});
+    totalChasms+=w.chasms.length;
+    for(const c of w.chasms){
+      firstRow=Math.min(firstRow,c.row);
+      for(const q of w.nodes){
+        const d=pointSegment(q.baseX,q.baseY,c.x0,c.y0,c.x1,c.y1);
+        if(d<q.cap+q.amp+c.w)intersections.push({seed,row:c.row,node:q.row,d,need:q.cap+q.amp+c.w});
+      }
+    }
+  }
+  assert.equal(failures.length,0,'Every tested route must remain playable with chasms on: '+JSON.stringify(failures));
+  assert(totalChasms>=30,'Chasms must actually be generated when the flag is on: '+totalChasms);
+  assert(firstRow>=5,'No chasm may appear before row 5: first at row '+firstRow);
+  assert.equal(intersections.length,0,'No node\'s capture-plus-orbit disc may ever touch a chasm: '+JSON.stringify(intersections.slice(0,5)));
+  return {totalChasms};
 }
 
 function taskDetourDeep(){
@@ -1351,6 +1385,18 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(replayed.observations.map(o=>o.key).sort().join(),live.observations.map(o=>o.key).sort().join(),'A replayed run must earn the same observations: '+width+'x'+height);
     assert(Math.abs(replayed.player.x-live.player.x)<1e-6&&Math.abs(replayed.player.y-live.player.y)<1e-6,'A replayed run must land in the same place: '+width+'x'+height);
     assert(replayed.nodes.length>live.nodes.length,'An unpruned replay must keep more of the chart than the darkness left the live run holding: '+width+'x'+height);
+    // chasmsOn rides the log exactly as offerDifficulty and varyOpening already do (see replayRun() in
+    // src/replay.js): a log carrying it must deal identical chasms and reach the identical outcome on
+    // a second, independent rebuild, and an older log that predates the field (chasmsOn undefined)
+    // must still replay exactly as it always did — no chasm generated for want of the flag.
+    const chasmLog={...log,chasmsOn:true};
+    const chasmReplayA=context.test.replayRun(chasmLog),chasmReplayB=context.test.replayRun(chasmLog);
+    assert.equal(chasmReplayA.state,'dead','A chasm-flagged replay must still reach an end: '+width+'x'+height);
+    assert.equal(chasmReplayA.reason,chasmReplayB.reason,'The same log with chasmsOn set must reproduce the same cause of death: '+width+'x'+height);
+    assert.equal(chasmReplayA.score,chasmReplayB.score,'The same log with chasmsOn set must reproduce the same score: '+width+'x'+height);
+    assert(Math.abs(chasmReplayA.player.x-chasmReplayB.player.x)<1e-6&&Math.abs(chasmReplayA.player.y-chasmReplayB.player.y)<1e-6,'The same log with chasmsOn set must reproduce the same final position: '+width+'x'+height);
+    assert.equal(chasmReplayA.chasms.length,chasmReplayB.chasms.length,'The same log with chasmsOn set must reproduce the same chasms');
+    assert.equal(context.test.replayRun(log).chasms.length,0,'A log that predates chasmsOn (undefined) must still replay with none generated: '+width+'x'+height);
     // ---- The review: a free-scrolling camera over that same, unpruned replay ----
     context.test.showEnd();
     assert.equal(context.test.reviewing,false,'The colophon alone must not start a review: '+width+'x'+height);
@@ -1407,6 +1453,7 @@ if(!isMainThread){
     if(workerData.script)script=workerData.script;
     let result;
     if(task==='route60')result=taskRoute60();
+    else if(task==='chasmRoute60')result=taskChasmRoute60();
     else if(task==='detourDeep')result=taskDetourDeep();
     else if(task==='sling60')result=taskSling60();
     else if(task==='variedOpening')result=taskVariedOpening();
@@ -1447,6 +1494,7 @@ function runtimeLayout(params){return runInWorker('runtime',{script,simulation,p
 // same claim about a single run), so all of them are fired at once here and only awaited where their
 // results are actually needed, letting them run on worker threads alongside the sequential checks.
 const pRoute=runInWorker('route60',{simulation});
+const pChasmRoute=runInWorker('chasmRoute60',{simulation});
 const pDetourDeep=runInWorker('detourDeep',{simulation});
 const pSling=runInWorker('sling60',{simulation});
 const pVaried=runInWorker('variedOpening',{simulation});
@@ -1493,6 +1541,121 @@ assert(!/ceilingPlate/.test(script),'No code may ask whether the plate is the Ce
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
 assert.equal(segmentCircle(-100,20,100,20,0,0,10),null);
 assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
+
+// ---------- The chasm: a capsule, era I's own hazard ----------
+// segmentCapsuleTime is the swept test flightStep uses for a chasm: a moving point against a fixed
+// segment with a half-width, in place of segmentCircle's moving point against a fixed centre.
+{
+  // A capsule lying along y=0 from x=-50 to x=50, half-width 10: a flight crossing it head-on from
+  // above must be caught at the fraction of its step where it first comes within that half-width,
+  // exactly as segmentCircle reports a fraction for a circle.
+  assert(Math.abs(segmentCapsuleTime(0,-100,0,100,-50,0,50,0,10)-.45)<1e-6,'A capsule is crossed exactly as its circle equivalent would be, straight on');
+  // Passing well clear of the whole capsule, including its rounded reach past either end, never hits.
+  assert.equal(segmentCapsuleTime(-200,50,200,50,-50,0,50,0,10),null,'A flight that never nears the capsule is never caught');
+  // A flight already inside the half-width at the very start of the step is caught at t=0.
+  assert.equal(segmentCapsuleTime(0,0,0,50,-50,0,50,0,10),0,'A flight starting inside the capsule is caught immediately');
+  // A grazing flight parallel to a long capsule, offset by exactly its half-width, must not be
+  // reported as crossing it — a flight lying exactly along a segment's own length has nothing to
+  // enter, unlike a straight line crossing it, so the convex bisection must not mis-fire tangent to it.
+  assert.equal(segmentCapsuleTime(-60,10.5,60,10.5,-50,0,50,0,10),null,'A flight passing just outside a long capsule\'s width is never caught');
+  // segmentSegmentDist is the placement-time check: zero where two segments actually cross, and
+  // otherwise the true minimum distance between them, achieved at an endpoint.
+  assert.equal(segmentSegmentDist(-10,-10,10,10,-10,10,10,-10),0,'Crossing segments are zero apart');
+  assert.equal(segmentSegmentDist(0,0,10,0,0,5,10,5),5,'Two parallel segments are exactly their offset apart');
+}
+
+// ---------- The chasm: generation, fairness, and lethality ----------
+{
+  // The flag defaults off, and off it must generate nothing at all, however many rows are dealt —
+  // proof that mere presence of the machinery never leaks into a plate that never turns it on.
+  const off=new OrbitWorld(9001,440,860);off.keepAll=true;
+  for(let k=0;k<60;k++)off.generateRow();
+  assert.equal(off.chasms.length,0,'chasmsOn defaults off: no chasm is ever generated without it');
+  // A separate stream (this.chasmRandom) means turning chasms on must never perturb the ordinary
+  // course: the same seed must deal the identical nodes and hazards whether the flag is on or off.
+  const on=new OrbitWorld(9001,440,860,()=>{},false,false,false,true);on.keepAll=true;
+  for(let k=0;k<60;k++)on.generateRow();
+  assert(on.chasms.length>0,'chasmsOn: chasms actually appear over 60 rows');
+  assert(on.chasms.every(c=>c.row>=5),'No chasm may be generated before row 5');
+  assert.equal(off.nodes.length,on.nodes.length,'Chasms on or off, the same seed deals the same number of nodes');
+  for(let i=0;i<off.nodes.length;i++){
+    assert.equal(off.nodes[i].x,on.nodes[i].x,'Chasms on or off, node '+i+' sits at the same x');
+    assert.equal(off.nodes[i].y,on.nodes[i].y,'Chasms on or off, node '+i+' sits at the same y');
+  }
+  assert.equal(off.hazards.length,on.hazards.length,'Chasms on or off, the same seed deals the same number of hazards');
+  for(let i=0;i<off.hazards.length;i++)assert.equal(off.hazards[i].x,on.hazards[i].x,'Chasms on or off, hazard '+i+' sits at the same place');
+  // Generation stays bounded exactly as every other endless array does: pruned by update(), never
+  // held onto past the floor's own reach.
+  const bounded=new OrbitWorld(9002,440,860,()=>{},false,false,false,true);bounded.start();
+  let sawChasm=false;
+  for(let i=0;i<120*400&&bounded.state==='playing'&&bounded.progress<48;i++){
+    if(bounded.player.node){
+      const aim=bounded.aim();
+      if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(bounded.progress)+1&&(aim.perfect||bounded.player.orbitSweep>Math.PI*3)&&bounded.player.orbitTime>.12&&(bounded.player.node.type!=='sling'||bounded.charge()===1))bounded.release();
+    }
+    bounded.update(step);
+    if(bounded.chasms.length)sawChasm=true;
+    assert(bounded.chasms.length<6,'Chasm generation must stay bounded exactly as hazard generation does');
+  }
+  assert(sawChasm,'A bounded run long enough to reach row 48 must have carried at least one chasm');
+}
+
+// A chasm applies no force at all: bendVelocity must leave a flight passing through its reach
+// untouched, unlike a real hazard's field.
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:12};
+  const p={x:0,y:0,vx:150,vy:0};const before={vx:p.vx,vy:p.vy};
+  const turn=bendVelocity(p,[],step);
+  assert.equal(turn,0);assert.equal(p.vx,before.vx);assert.equal(p.vy,before.vy);
+}
+
+// Crossing a chasm in free flight kills with its own reason; a shield spends itself and deflects
+// exactly as a lethal hazard core does (see OrbitWorld.chasmHit/hazardHit).
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(1,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.nodes=[];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.x=0;p.y=-200;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'dead');assert.equal(w.reason,'FELL INTO THE CHASM','An unshielded crossing dies with the chasm\'s own reason');
+}
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(2,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.nodes=[];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.shielded=true;p.x=0;p.y=-200;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing'&&p.shielded;i++)w.update(step);
+  assert.equal(w.state,'playing','A shielded crossing survives the chasm exactly as it survives a lethal hazard core');
+  assert.equal(p.shielded,false,'The shield is spent, once, on the crossing');
+}
+// Orbiting must never touch a chasm at all — generation's own guarantee — checked directly here by
+// holding an orbit whose ring is deliberately drawn to pass through one, to prove the run-loop itself
+// never fires a chasm hit while p.node is set (flightStep, which is what tests for a chasm, is only
+// ever called from the free-flight branch of update()).
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(3,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const n=w.player.node;n.x=0;n.y=0;n.baseX=0;n.baseY=0;n.r=10;n.cap=13;w.nodes=[n];
+  w.player.rad=10;w.player.speed=150;w.player.dir=1;w.positionPlayer();
+  for(let i=0;i<600&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'playing','Holding an orbit never triggers a chasm, whatever the ring is drawn across');
+}
+
+// aim() must refuse a release whose straight path would cross a chasm, exactly as it refuses one
+// that would cross a lethal hazard's core. launchVelocity() reads nothing but p.vx/p.vy, so the
+// launch ray can be set directly rather than reconstructed from an orbit's angle and radius.
+{
+  const w=new OrbitWorld(4,440,860);w.start();
+  w.makeNode(0,-400,54,1,'still');
+  const p=w.player;p.x=0;p.y=0;p.vx=0;p.vy=-200;
+  w.chasms=[{x0:-200,y0:-200,x1:200,y1:-200,w:20}];
+  assert.equal(w.aim(),null,'A straight path crossing a chasm must not be offered as an aim');
+  w.chasms=[];
+  assert(w.aim(),'The same release with the chasm removed is offered normally');
+}
+
+
 
 // Tiro's wider pressure asks less precise timing to land a smooth tangent transfer: the windowMult
 // argument widens the band around the target's rim that counts as perfect, and the guide and real
@@ -2080,6 +2243,7 @@ for(const choice of ['relaxed','classic','hardcore']){
 
 
 const {totalCaptures,perfects,maxNodes,maxHazards}=await pRoute;
+const {totalChasms}=await pChasmRoute;
 const {chartCompletions,deepCharts,deepRows,deepFiguresSize}=await pDetourDeep;
 
 // The catalogue is fixed by the run seed and exhausts itself before repeating.

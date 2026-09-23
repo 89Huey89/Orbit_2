@@ -1009,6 +1009,17 @@ function rockHazard(h){
   if(h.kind==='flare')return rockFlare(h,x,y);
   return rockShaft(h,x,y);
 }
+// The chasm: a long crack in the wall, world.chasms's own array rather than a row of the hazard
+// table (see simulation.js), since it carries no field at all — only a lethal capsule. This is a
+// placeholder fill in the era's own void pigment, ink.rock.shaft, standing in for the engraved crack
+// the art lead will cut in its place; wiring the shape and the danger through is this pass's job.
+function rockChasm(h){
+  const x0=sx(h.x0),y0=sy(h.y0),x1=sx(h.x1),y1=sy(h.y1),w=h.w*scale;
+  if(Math.max(x0,x1)+w<0||Math.min(x0,x1)-w>W||Math.max(y0,y1)+w<0||Math.min(y0,y1)-w>H)return;
+  ctx.save();ctx.strokeStyle=`rgb(${ink.rock.shaft})`;ctx.lineCap='round';ctx.lineWidth=Math.max(1,w*2);
+  ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+  ctx.restore();
+}
 
 // ---------- The traveller: not the crayon, the point on it actually touching the wall ----------
 // A lump of ground haematite worked to a blunt contact point, held point-first — no vane, no
@@ -1170,6 +1181,7 @@ defineHand('rock',{
   atmosphere:rockAtmosphere,
   node:rockNode,
   hazard:rockHazard,
+  chasm:rockChasm,
   player:rockPlayer,
   dark:rockDark,
   plateFrame:rockPlateFrame,
@@ -1195,6 +1207,9 @@ defineVoice('rock',{
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
+  // The chasm's own loss, in the wall's terms: what the pen wrote on the atlas as a vortex swallowing
+  // the traveller (see HAZARD_KINDS in simulation.js), this wall writes as the crack it actually is.
+  losses:{'FELL INTO THE CHASM':'THE WALL FELL AWAY'},
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
   chrome:{bestLabel:'Deepest',pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',pauseLeave:'LEAVE THE WALL'}

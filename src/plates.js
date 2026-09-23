@@ -355,7 +355,10 @@ const PLATE_STYLES={
   // paper plate only because a light ground is the nearer of the two starting points; every mark on it
   // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  // chasms:true is read by newWorld() (src/ui.js) to decide whether OrbitWorld generates the long
+  // cracks across the wall (see simulation.js's chasmsOn) \u2014 a capability of this plate alone, so no
+  // other century or the atlas itself ever draws one.
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};

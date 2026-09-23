@@ -1399,6 +1399,9 @@ function drawNode(n,aim){
       ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
       for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
         if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
+        // A tick promising a clean tangent has to be honest about era I's own hazard too: no tick
+        // for a tangent this world's own generation only ever promised was clear of a lethal core.
+        if(world.chasms?.some(c=>segmentSegmentDist(path.x,path.y,path.bx,path.by,c.x0,c.y0,c.x1,c.y1)<c.w))continue;
         registerMark(Math.cos(path.angle)*r,Math.sin(path.angle)*r,ink.marks.releaseMark,.85,false);
       }
     }
