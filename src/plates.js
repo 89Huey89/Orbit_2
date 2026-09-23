@@ -239,7 +239,10 @@ function copyScore(){
   return line;
 }
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
-const numerals=['I','II','III','IV'];
+// The atlas only ever indexes the first four of these (chapters.length above), but the same array
+// answers ui.js's chapterSaid for whatever plate is on the press, and the Ceiling's twelve hours need
+// a numeral through XII.
+const numerals=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 // The running head speaks the plate's own Latin rather than the game's English — REGIO, not TAB., since
 // TAB. already names two other things on the same sheet (the impressum's plate number and, until this
 // pairing landed, the illustrated figure's own caption). PROFVNDVM is the word the Deep's own nebula
@@ -471,7 +474,13 @@ const handFor=name=>plateHand()[name];
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
-  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'},
+  // Repainted for Nut's night sky (2026-09): the wall went from lit lime plaster to a lapis ground, so
+  // every token that used to be a dark mark on a light sheet is now a light mark on a dark one — the
+  // hue families (gold, carnelian, blue) hold, only which end of each is the ink and which is the paper
+  // has flipped. Kept exactly to the agreed night palette so the DOM chrome in index.html (its own,
+  // separate copy — see syncDomPalette's DOM_EXPLICIT_PLATES note) and these shared canvas tokens never
+  // drift apart into two different night skies.
+  ceiling:{paper:'#152457',paperRgb:'21,36,87',ink:'239,226,196',inkStrong:'245,238,220',inkSoft:'201,187,152',gold:'227,180,71',goldBright:'240,205,122',copper:'194,74,47',blue:'46,126,163',shieldBlue:'62,156,146',red:'194,74,47',text:'#efe2c4',caption:'201,187,152',shadow:'#0d1838'},
   // Torchlit limestone, and a palette with two holes in it that are the point rather than an omission:
   // there is no gold, so the reddest ochre stands in and is spent as sparingly as gold ever was, and
   // there is no blue at all, so everything the atlas says in blue this era says in its black.
@@ -492,23 +501,34 @@ const FELL_FACES={
   hiero:HIERO_FACE
 };
 // The Ceiling letters in two hands at once, and neither of them is the atlas's. Its Latin is an
-// openly modern curatorial layer, so it is set in a slab serif — the class the trade named
-// "Egyptian" in the 1810s after the revival Napoleon's expedition set off, and the type an
-// excavation plate has been captioned in ever since. It declares itself modern, where the Fell
-// types would have claimed the wrong century and a screen serif claimed no century at all. Its
-// second hand is the wall's own, and `hiero` is where every plate names the sign face, so a
-// caption in signs asks for a face like any other rather than writing one out at the canvas.
+// openly modern curatorial layer, so its sentences are set in a slab serif — the class the trade
+// named "Egyptian" in the 1810s after the revival Napoleon's expedition set off, and the type an
+// excavation plate has been captioned in ever since. Its capitals go a step further: `sc` — every
+// title, eyebrow, label, and running head — is set in Limelight, the display face cut for 1920s
+// cinema marquees in the "Tutmania" that followed the Tutankhamun dig, the lettering that actually
+// put the find on posters. Zilla trails it in the stack so any glyph Limelight wasn't drawn for
+// still falls back to the slab rather than to the browser's default. Its second hand is the wall's
+// own, and `hiero` is where every plate names the sign face, so a caption in signs asks for a face
+// like any other rather than writing one out at the canvas.
 const CEILING_FACES={
+  text:"'Zilla Slab',Georgia,serif",
+  sc:"'Limelight','Zilla Slab',Georgia,serif",
+  body:"'Zilla Slab',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE
+};
+// The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
+// curatorial layer — the same slab the Ceiling's sentences use, for the same reason: it is the type
+// an excavation plate has been captioned in since the trade named the class, and it declares itself
+// modern where the Fell types would claim the wrong century by seventeen thousand years. It keeps
+// the slab for its capitals too, rather than the Ceiling's 1920s Limelight: the Rock is the oldest
+// wall in the atlas and reaches for no marquee lettering that postdates it by twenty millennia.
+const ROCK_FACES={
   text:"'Zilla Slab',Georgia,serif",
   sc:"'Zilla Slab',Georgia,serif",
   body:"'Zilla Slab',Georgia,'Times New Roman',serif",
   hiero:HIERO_FACE
 };
-// The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
-// curatorial layer — and that takes the same slab the Ceiling's does, for the same reason: it is the
-// type an excavation plate has been captioned in since the trade named the class, and it declares
-// itself modern where the Fell types would claim the wrong century by seventeen thousand years.
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:CEILING_FACES});
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;

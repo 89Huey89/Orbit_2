@@ -1,25 +1,38 @@
 'use strict';
 /* Orbit · Era II · The Ceiling
-   A playable, render-only reconstruction grounded in Senenmut's astronomical ceiling (TT353).
+   A playable, render-only night sky drawn from the New Kingdom's own pictures of it
+   (docs/CEILING-OVERHAUL.md lifts the sheet's earlier rule of one tomb only).
 
    Historical boundary:
-   - TT353 supplies the light lime-plaster ground, fine black drawing, red setting-out, two-register
-     organisation, decan columns, five-point star signs and twelve 24-part month circles.
-   - The kheker frieze and the polychrome block border are the standing furniture of a painted
-     Egyptian wall rather than a motif borrowed from one object; the snapped red grid under
-     everything is the painter's own eighteen-square canon, left where the flood never covered it.
+   - The frame is Nut, the sky goddess, arched over the earth as the Book of Nut draws her (Seti I's
+     cenotaph at Abydos, Ramesses IV), swallowing the evening sun and bearing the dawn one; Geb, the
+     earth, lies under her. The lapis ground and its rows of yellow stars are the blue ceilings of
+     the Theban royal tombs (KV17 among them), not TT353, whose own ground is light plaster.
+   - TT353 still supplies the decan columns, the five-point star signs, the twelve month circles,
+     the register-dividing band and the traced figures, recoloured for the night ground.
    - The solar night barque, Apep, the Eye of Ra, Shu and Nun belong to the wider Egyptian funerary
      repertoire. Their use as player and force diagrams is an explicit gameplay translation, not a
-     claim that those figures occur together on TT353. In particular, TT353 has no Nut arch.
+     claim that those figures occur together on any one monument; the waters of Nun rising as the
+     dark are written as the n sign's zigzag, the way the walls write water.
    - The simulation's seven later planetary families are intentionally not painted as surfaces here:
      a pre-telescopic body remains a star sign, disc, or moving star carried in a barque.
 */
 
+// The sheet is a night sky now, not a lit wall: the Book of Nut and the blue star ceilings of the
+// Ramesside tombs, lapis ground and yellow stars, rather than TT353's lime plaster (see
+// docs/CEILING-OVERHAUL.md). The keys keep the wall's own names so every painter below still asks for
+// the same thing it always did — `plaster` is whatever the ground is, `carbon` whatever the drawing line
+// is — and on lapis the drawing line is the pale huntite the blue ceilings draw their figures in, not
+// black, which would vanish into the ground. `ink` is the one dark kept back, for the outline of a
+// figure flooded in a light colour, where a pale line would only halo it.
 const CEILING_PALETTE={
-  plaster:'#ddcfad',lime:'#eee4cd',warm:'#cbb98e',loss:'#9d8966',carbon:'#241d16',
-  red:'#9d3724',redDark:'#67271d',yellow:'#c4932e',blue:'#285987',green:'#526f59',white:'#eee5d1',
-  gloss:'#5f4b34',duat:'#38271e',duatDeep:'#211914'
+  plaster:'#152457',lime:'#2a3f84',warm:'#1d3170',loss:'#0d1838',carbon:'#efe2c4',ink:'#0a1024',
+  red:'#c24a2f',redDark:'#8f2f1f',yellow:'#e3b447',blue:'#6eb0d6',green:'#5a9a63',white:'#f4ead2',
+  gloss:'#c9bb98',duat:'#08112a',duatDeep:'#050b1e',faience:'#3e9c92',
+  nut:'#2b4f9e',nutDeep:'#1e3c80',nun:'#0b2a44',water:'#2e7ea3',waterHi:'#7cc4dc'
 };
+// The same inks as channel triples, for the painters that build an rgba() with its own alpha.
+const CEILING_RGB={carbon:'239,226,196',red:'194,74,47',yellow:'227,180,71',blue:'110,176,214',violet:'150,130,190',ground:'21,36,87'};
 // The checked sign vocabulary: Gardiner's uniliterals, four logograms and the five ready-made groups,
 // every codepoint carried over from the research file rather than looked up again here. A word this
 // table cannot spell is not written on the wall at all — the sheet would rather be quiet than invent
@@ -55,7 +68,18 @@ const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white
 // calendar: twelve of CEILING_WORD's fourteen entries are enough to give every wheel a caption line
 // without a word the table cannot spell, so nothing here is short of the twelve the correction asks for.
 const CEILING_MONTH_NAMES=['star','water','white','red','shu','nun','sekhmet','set','eye','shield','sah','apep'];
-const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
+// The twelve hours of the night, as the Amduat divides the sun's passage under the earth: one region of
+// the Duat to an hour, each ending at a gate. The names are short English glosses of what each hour's
+// region is known for (the waters of Wernes, the sands and cavern of Sokar, Apep overcome in the seventh,
+// the drowned in the tenth, the pits of fire in the eleventh, the serpent the barque is drawn through to
+// be reborn in the twelfth); they are recalled glosses for a player to read, not translations of the
+// hours' own Egyptian names, which the checked vocabulary cannot spell. Three rows make an hour, so the
+// night is thirty-six rows long: short enough that a practised hand reaches the dawn in a fair share of
+// runs and long enough that most do not (scripts/probe.mjs measured it; see docs/CEILING-OVERHAUL.md).
+const CEILING_HOURS=['THE ENTRANCE OF THE WEST','THE WATERS OF WERNES','THE WATERS OF OSIRIS','THE SANDS OF SOKAR',
+  'THE CAVERN OF SOKAR','THE DEEP WATERS','THE COILS OF APEP','THE CAVERNS OF THE DEAD','THE ROWERS OF RA',
+  'THE WATERS OF THE DROWNED','THE PITS OF FIRE','THE BODY OF THE SERPENT'];
+const CEILING_HOUR_ROWS=3,CEILING_DAWN_ROW=CEILING_HOURS.length*CEILING_HOUR_ROWS;
 // The wall's own names for the three courses the opening circles offer, standing in for the atlas's
 // TIRO, ADEPTUS and MAGISTER (src/simulation.js's DIFFICULTY_LABELS). They are captions on a night's
 // voyage rather than grades of a practitioner, because that is the register everything else on this
@@ -64,12 +88,13 @@ const CEILING_HOURS=['FIRST WATCH','SECOND WATCH','MIDDLE WATCH','BEFORE DAWN'];
 // circles nearest the edge, where a longer caption runs under the marginal month circles on a phone.
 const CEILING_COURSES={relaxed:'QUIET NIGHT',classic:'FULL NIGHT',hardcore:'HARD NIGHT'};
 const CEILING_LOSS={
-  'THE DARK CAUGHT UP':'THE WALL BROKE AWAY BENEATH',
+  'THE DARK CAUGHT UP':'THE WATERS OF NUN ROSE OVER THE BARQUE',
   'THE ORBIT FADED':'THE HOUR-CIRCLE FADED',
   'DRAWN INTO A VORTEX':'APEP TOOK THE NIGHT BARQUE',
   'SEARED BY A SUNSPOT FLARE':'THE EYE BURNED THE BARQUE',
   'LEFT THE STAR CHART':'THE BARQUE LEFT THE REGISTER',
-  'THE NIB RAN DRY':'THE REED RAN DRY'
+  'THE NIB RAN DRY':'THE REED RAN DRY',
+  'THE SUN ROSE':'RA IS BORN FROM THE SKY'
 };
 // The colophon's observation line, recast from the atlas's Latin (TRES PERFECTI, VELOCITAS SUMMA…)
 // into short curatorial captions in the Ceiling's own register — the era's Latin layer is only a
@@ -85,7 +110,7 @@ const CEILING_OBSERVATIONS={
   pureChart:'A DECAN COURSE IN CLEAN TRANSFERS',
   fortyRows:'THE FORTIETH ROW',
   threeMinutes:'THREE HOURS OF THE NIGHT',
-  rightAngle:'A RIGHT ANGLE ON THE CANON GRID'
+  rightAngle:'A RIGHT ANGLE OF ARRIVAL'
 };
 // The era's whole vocabulary, registered under its own name so plateWords() can lay it over the
 // atlas's (see defineVoice()/plateWords() in src/plates.js): everything this table does not rename —
@@ -103,11 +128,15 @@ defineVoice('ceiling',{
   opening:'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.',
   ended:'Preview run complete. Score {score}. Tap to try again or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
+  gainAngle:'TRUE ENTRY',
   hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
-  chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
+  chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',endTitleWon:'The barque came through the night.',endActionWon:'Tap to sail the night again',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
     instructions:{head:'THE MANNER OF USE',rules:['Tap to release the flat night barque.','Skim an hour-circle; hold it to restore the reed.','Follow the painted dabs around Apep, the Eye, Shu and Nun.','The first landing sets the course.']}},
-  tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.'},
+  tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',won:'Twelve hours, twelve gates, and the sun is born again from the sky.'},
   chapters:CEILING_HOURS,
+  chapterRows:CEILING_HOUR_ROWS,
+  goalRow:CEILING_DAWN_ROW,
+  won:'Dawn. The sun is born from the sky with a score of {score}. Tap to sail the night again or return to the atlas.',
   chapterSaid:'Hour {numeral}. {name}.',
   held:{choose:'Choose the first hour-circle — your landing sets the course.',dry:'The reed is dry. Hold this circle, or seek the bright star.',sling:'One circuit quickens the barque. A clean landing keeps its course.',release:'Release when the painted dabs skim the next circle.',bend:'Apep bends the course. Follow the dabs; give the serpent room.'}
 });
@@ -125,7 +154,7 @@ const CEILING_CHANGE_DUR=1.2;
 // from the tall passing strip below, because it never moves: see ceilingDrawRegisterGrid(). Each is
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
 // are otherwise pinned exactly the way this file always pinned the whole wall.
-let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='';
+let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
 // The barque's last known heading side, held between frames so a passing moment of near-zero
 // horizontal speed (the tip of a climb or dive) does not flicker the mirror back and forth.
 let ceilingFacing=1;
@@ -135,9 +164,12 @@ let ceilingFacing=1;
 let ceilingAngle=null;
 // The one expression that names which of the four watches is current, shared by the wall's own bake
 // (which register to paint) and the running head (which word to print) so the two can never drift.
-function ceilingWatch(){return world?clamp(Math.floor(world.progress/8),0,3):0;}
+function ceilingHour(){return world?clamp(Math.floor(world.progress/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
+// The wall keeps four registers of furniture (ceilingBakeWall), so the twelve hours share them three to a
+// register: the room changes every third gate rather than at every one.
+function ceilingWatch(){return Math.floor(ceilingHour()/3);}
 
-function invalidateCeilingArt(){ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
+function invalidateCeilingArt(){ceilingCartoucheKey='';ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
 // Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
@@ -234,7 +266,9 @@ function ceilingChisel(g,text,x,y){
   let h=7;for(let i=0;i<text.length;i++)h=(h*131+text.charCodeAt(i))|0;
   const jx=(ceilingHash(h,1)-.5)*.7*scale,jy=(ceilingHash(1,h)-.5)*.5*scale,tone=g.fillStyle,alpha=g.globalAlpha;
   g.fillStyle=CEILING_PALETTE.duatDeep;g.globalAlpha=alpha*.6;g.fillText(text,x+.75*scale+jx,y+.65*scale+jy);
-  g.fillStyle=CEILING_PALETTE.lime;g.globalAlpha=alpha*.4;g.fillText(text,x-.6*scale-jx,y-.5*scale-jy);
+  // The pale edge is kept faint: the capitals are a heavy display face now, and at the old strength its
+  // offset copy read as the word printed twice.
+  g.fillStyle=CEILING_PALETTE.lime;g.globalAlpha=alpha*.16;g.fillText(text,x-.6*scale-jx,y-.5*scale-jy);
   g.fillStyle=tone;g.globalAlpha=alpha;g.fillText(text,x,y);
 }
 function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
@@ -477,11 +511,16 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
   const width=Math.max(1.1,h*.13);
   if(kind===1)ceilingBrush(g,[[cx,cy-h*.42],[cx+h*.02,cy+h*.42]],col,width,.9,cx+cy);
   else if(kind===10){
-    const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.4,cy+h*.32+Math.sin(a)*h*.6]);}
+    // Each heel-bone is a narrow arch standing clear of its neighbour: set shoulder to shoulder, two of
+    // them close into one letter M, which is the one thing the count must never be read as.
+    const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.3,cy+h*.32+Math.sin(a)*h*.6]);}
     ceilingBrush(g,p,col,width,.9,cx*3+cy);
   }else if(kind===100){
     const r=Math.min(w,h)*.44,p=[];for(let i=0;i<=26;i++){const t=i/26,a=-1.1+t*8.2,rr=r*(.34+.66*t);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
     ceilingBrush(g,p,col,Math.max(1,h*.1),.9,cx*5+cy);
+  }else if(kind===10000){
+    // The raised finger: a stroke bent over at its tip, the sign the walls count ten thousands in.
+    ceilingBrush(g,[[cx+w*.05,cy+h*.44],[cx,cy-h*.2],[cx-w*.06,cy-h*.36],[cx-w*.26,cy-h*.42],[cx-w*.3,cy-h*.3]],col,width,.9,cx*19+cy);
   }else{
     ceilingBrush(g,[[cx-w*.05,cy+h*.44],[cx,cy+h*.02]],col,width,.9,cx*7+cy);
     ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.16,cy-h*.14],[cx-w*.3,cy-h*.3],[cx-w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*11+cy);
@@ -489,42 +528,21 @@ function ceilingNumSign(g,kind,cx,cy,w,h,col){
     ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*17+cy);
   }
 }
-const CEILING_NW={1:.2,10:.34,100:.36,1000:.44};
+const CEILING_NW={1:.2,10:.42,100:.36,1000:.44,10000:.3};
 const ceilingNumRows=c=>c<=3?1:c<=6?2:3;
 function ceilingNumWidth(n,h){
-  let w=0;for(const k of [1000,100,10,1]){const c=Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
+  let w=0;for(const k of [10000,1000,100,10,1]){const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
   return Math.max(0,w-h*.1);
 }
 function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false){
   const total=ceilingNumWidth(n,h);let left=center?x-total/2:x;
-  for(const k of [1000,100,10,1]){
-    const c=Math.floor(n/k)%10;if(!c)continue;
+  for(const k of [10000,1000,100,10,1]){
+    const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(!c)continue;
     const rows=ceilingNumRows(c),per=Math.ceil(c/rows),sw=h*CEILING_NW[k],rh=h/rows;
     for(let i=0;i<c;i++)ceilingNumSign(g,k,left+sw*(i%per+.5),y+rh*(Math.floor(i/per)+.5),sw*.92,rh*.92,col);
     left+=per*sw+h*.1;
   }
   return total;
-}
-// ---------- The wall's standing furniture ----------
-// The kheker frieze: a bundle of reeds bound at the neck and let splay at the head, repeated along
-// the top of a painted wall. It is the one piece of Egyptian architecture that is only ever
-// decoration, and it is what tells the eye at a glance that the surface it crowns is a painted room.
-function ceilingKheker(g,x0,x1,y,h){
-  const cols=[CEILING_PALETTE.red,CEILING_PALETTE.blue,CEILING_PALETTE.yellow],step=Math.max(19,Math.min(30,(x1-x0)/24));
-  for(let x=x0,i=0;x<=x1-step*.55;x+=step,i++){
-    // Each bundle gets its own size and a little give in where it sits along the crown — a reed
-    // bundle bound by hand is never quite the same girth as its neighbour, and the row it stands on
-    // is not a ruled line — plus a heavier or lighter pass on the splay, the same reloaded-brush
-    // unevenness ceilingBrush's own thicker stroke already fakes for a single mark, read here across
-    // the whole frieze instead of within one.
-    const jit=.86+ceilingHash(i,7)*.32,b=x+step*.5+(ceilingHash(i,13)-.5)*step*.22,c=cols[i%3],u=h/16*jit,
-      drop=(ceilingHash(i,19)-.5)*h*.06,load=.72+ceilingHash(i,23)*.5;
-    ceilingPolygon(g,[[b-u*1.9,y+h+drop],[b-u*1.9,y+h*.52+drop],[b-u*2.7,y+h*.44+drop],[b-u*1.1,y+h*.36+drop],[b+u*1.1,y+h*.36+drop],[b+u*2.7,y+h*.44+drop],[b+u*1.9,y+h*.52+drop],[b+u*1.9,y+h+drop]],CEILING_PALETTE.white,1,i*17+3,1);
-    for(let k=-2;k<=2;k++)ceilingBrush(g,[[b+k*u*.85,y+h*.36+drop],[b+k*u*2.5,y+h*.02+drop]],k%2?c:CEILING_PALETTE.carbon,Math.max(1,u*.7*load),.7+.18*load,i*29+k*5);
-    ceilingBrush(g,[[b-u*2.9,y+h*.51+drop],[b+u*2.9,y+h*.51+drop]],c,Math.max(1,u*.8),.9,i*31);
-    ceilingBrush(g,[[b-u*2.9,y+h*.64+drop],[b+u*2.9,y+h*.64+drop]],CEILING_PALETTE.carbon,Math.max(.55,u*.45),.62,i*37);
-  }
-  ceilingBrush(g,[[x0,y+h+1],[x1,y+h+1]],CEILING_PALETTE.carbon,1.2,.68,91);
 }
 // The polychrome block border, which is how one register is divided from the next: a black rule, a
 // run of flat coloured blocks in a fixed cycle, and a black rule to close it.
@@ -546,18 +564,6 @@ function ceilingBlockRule(g,x0,x1,y,h,alpha=.8){
   g.restore();
   ceilingBrush(g,[[x0,y+h+2.4],[x1,y+h+2.4]],CEILING_PALETTE.carbon,1.3,.78*alpha/.8,202);
 }
-// The painter snapped a grid in red before any figure was set out, and the flood never quite covered
-// it. It is the only orthogonal thing on the sheet that was not drawn by a brush.
-function ceilingSettingGrid(g,x0,y0,x1,y1,unit){
-  // The facsimile's red canon is one of the most present things on the sheet — everywhere, under
-  // everything — and the .085-alpha hairline this used to run was, in practice, invisible. Brought up
-  // to a plainly-legible ruled surface; it still sits under every painted pass (drawn first in
-  // ceilingBakeWall, before any furniture) so nothing above it competes for the same ink.
-  g.save();g.strokeStyle='rgba(157,55,36,.24)';g.lineWidth=.6;g.beginPath();
-  for(let x=x0;x<=x1;x+=unit){g.moveTo(x,y0);g.lineTo(x,y1);}
-  for(let y=y0;y<=y1;y+=unit){g.moveTo(x0,y);g.lineTo(x1,y);}
-  g.stroke();g.restore();
-}
 // The border star, redrawn from a figure-scale crop rather than the small reference this first went
 // up from: not five straight-sided kite lobes but five unequal lens-shaped arms — two curved edges
 // meeting at a point at both the hub and the tip, so an arm has a belly, the way a loaded brush
@@ -573,7 +579,7 @@ function ceilingBorderStar(g,cx,cy,r,alpha,seed){
   // big enough to see it (a band at 4x, the corner roundel). Jitter is kept modest on purpose — this
   // is a band of stars, not a scatter of them, and the facsimile's own arms are close to even.
   const rr0=r*(.86+ceilingHash(seed,101)*.3),rot=ceilingHash(seed,3)*TAU,hub=rr0*.17;
-  g.save();g.globalAlpha=alpha*(.84+ceilingHash(seed,97)*.3);g.fillStyle=CEILING_PALETTE.carbon;
+  g.save();g.globalAlpha=alpha*(.84+ceilingHash(seed,97)*.3);g.fillStyle=CEILING_PALETTE.yellow;
   for(let i=0;i<5;i++){
     const a=rot+i*TAU/5+(ceilingHash(seed+i*7,41)-.5)*.32,len=rr0*(.84+ceilingHash(seed+i*3,53)*.3),
       belly=len*(.15+ceilingHash(seed+i*5,59)*.08),bf=.44+ceilingHash(seed+i*9,61)*.12,perp=a+Math.PI/2,
@@ -582,8 +588,10 @@ function ceilingBorderStar(g,cx,cy,r,alpha,seed){
       c1=[bx+Math.cos(perp)*belly,by+Math.sin(perp)*belly],c2=[bx-Math.cos(perp)*belly,by-Math.sin(perp)*belly];
     g.beginPath();g.moveTo(hp[0],hp[1]);g.quadraticCurveTo(c1[0],c1[1],tip[0],tip[1]);g.quadraticCurveTo(c2[0],c2[1],hp[0],hp[1]);g.closePath();g.fill();
   }
-  g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.45,hub*.4);g.beginPath();g.arc(cx,cy,hub,0,TAU);g.stroke();
-  g.beginPath();g.arc(cx,cy,Math.max(.4,hub*.36),0,TAU);g.fill();
+  // On lapis the star is yellow and its heart a dot of red, as the blue ceilings paint it; the hub ring
+  // is kept only where the star is big enough to carry one.
+  if(r>3.4){g.strokeStyle=CEILING_PALETTE.yellow;g.lineWidth=Math.max(.45,hub*.4);g.beginPath();g.arc(cx,cy,hub,0,TAU);g.stroke();}
+  g.fillStyle=CEILING_PALETTE.red;g.beginPath();g.arc(cx,cy,Math.max(.45,hub*.5),0,TAU);g.fill();
   g.restore();
 }
 // The column star: a different mark from the border star, not a smaller copy of it — inside a decan
@@ -605,9 +613,8 @@ function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
 // principal source of density (docs/archive/eras/02-ceiling.md, "The grammar" — hierarchy from scale,
 // separation, overlap and register, never from rendering up a single mark). The middle row sits a
 // half-gap out of phase with its neighbours so the three interlock instead of stacking into a plain
-// square grid. Used for the tile's own two side bands, which pass with the climb like every other
-// margin furniture; ceilingStarBandH below is the same unit run sideways for the frame's fixed top
-// and bottom edges.
+// square grid. It is run sideways (ceilingStarBandH) as the two bands of the register divider; the side
+// bands it once also ran as have given way to Nut's own body (ceilingDrawRegisterGrid).
 // A hi-res crop settled two things a small reference could not: the arm tips of neighbouring stars
 // actually overlap (density comes from the crowding, not from gaps between clean units), and each
 // row runs between fine RED rules — the canon again, not a black border — with as many rules as rows
@@ -617,24 +624,6 @@ function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
 // period is a whole number of cycles across the band's own length, so a tiled copy still joins its
 // neighbour exactly, and each star's position wanders a little more besides — opening and closing the
 // pitch instead of holding one constant gap, the same wobble a hand ruling by eye actually makes.
-function ceilingStarBand(g,x,y0,y1,gap,width,rows=3){
-  const cols=[];for(let c=0;c<rows;c++)cols.push(x-width*.5+(c+.5)*width/rows);
-  for(let e=0;e<=rows;e++)ceilingBrush(g,[[x-width*.5+e*width/rows,y0],[x-width*.5+e*width/rows,y1]],CEILING_PALETTE.red,.6,.34,(x|0)+e*13);
-  // The band is dense before it is irregular. On the facsimile a star is wider than the pitch it is
-  // set at, so the arms of neighbours interlock and the band reads as a mat rather than a scatter;
-  // sizing the star off its row's height instead left it half the pitch and the wobble then read as
-  // randomness. The pitch itself is untouchable — it has to divide the tile height — so the star grows
-  // into it instead, past its own row and into the ones beside it, which is what the wall does.
-  const span=y1-y0,cycles=Math.max(2,Math.round(span/230)),r=Math.max(4.2,Math.min(gap*.62,width/rows*1.5));
-  for(let c=0;c<rows;c++){
-    const stagger=c%2?gap*.5:0,drift=width/rows*.16;
-    for(let y=y0+gap*.5+stagger,i=0;y<y1;y+=gap,i++){
-      const wob=Math.sin((y-y0)/span*TAU*cycles+c*2.09)*drift,seed=(y|0)*3+i*7+c*101+(x|0),
-        jx=(ceilingHash(i*7+c*31,(x|0)+11)-.5)*gap*.24,jy=(ceilingHash(c*13+i*5,(x|0)+17)-.5)*gap*.16;
-      ceilingBorderStar(g,cols[c]+wob+jx,y+jy,r,.86,seed);
-    }
-  }
-}
 function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
   const trows=[];for(let c=0;c<rows;c++)trows.push(y-width*.5+(c+.5)*width/rows);
   for(let e=0;e<=rows;e++)ceilingBrush(g,[[x0,y-width*.5+e*width/rows],[x1,y-width*.5+e*width/rows]],CEILING_PALETTE.red,.6,.34,(y|0)+e*13);
@@ -647,13 +636,6 @@ function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
       ceilingBorderStar(g,x+jx,trows[rr]+wob+jy,r,.86,seed);
     }
   }
-}
-// A plain disc at each corner of the frame, ringed once — small, cheap, and the one thing that turns
-// a set of four independent rules into a closed frame, exactly as the facsimile's own corners do.
-function ceilingRoundel(g,x,y,r){
-  g.save();g.fillStyle=CEILING_PALETTE.warm;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
-  g.strokeStyle=CEILING_PALETTE.carbon;g.lineWidth=Math.max(.7,r*.13);g.stroke();
-  g.beginPath();g.arc(x,y,r*.52,0,TAU);g.stroke();g.restore();
 }
 // One of the twelve lunar-month circles, undone back to what the facsimile actually shows: twelve
 // identical wheels, uniform, roughly two dozen plain thin spokes hub to rim and a small hub circle —
@@ -833,8 +815,8 @@ function ceilingBakeWall(watch){
   // crowning it and the foot's block rule closing it (docs/archive/eras/02-ceiling.md, "Frame and furniture" —
   // a tomb ceiling's boundary is its architecture, not a page border) — is cached apart from this and
   // pinned to the viewport by ceilingDrawRegisterGrid(). Everything else drawn below is furniture, and
-  // furniture passes: the plaster itself, the painter's snapped canon grid, both star bands, the
-  // register-dividing rule, the twelve month circles, the decan columns, Meskhetiu and Reret. This tile
+  // furniture passes: the lapis ground and its field of stars, the
+  // register-dividing band, the twelve month circles, the decan columns, Meskhetiu and Reret. This tile
   // is drawn once and blitted at an offset tracking world.cameraY*scale in renderCeiling() — the exact
   // rate sy() gives every node and hazard, so the room passes at one rate with no depth in it, the way
   // the era file's "flat, one wall, one rate" reading of the vertical asks for.
@@ -847,77 +829,52 @@ function ceilingBakeWall(watch){
   // never means four resident at once.
   //
   // Every rhythm that has to survive the join between one copy of the tile and the next — the star
-  // band's gap, the canon grid's unit — is forced to an exact divisor of the tile height before it is
-  // drawn with, so the spacing never jumps at the seam. The plaster texture and the crack network are
-  // not periodic, so they are drawn wrapped instead: once at their own position, and again shifted by a
-  // tile height whenever they fall near an edge, the ordinary way to make a baked canvas repeat without
+  // field's rows, the divider band's gap — is forced to an exact divisor of the tile height before it is
+  // drawn with, so the spacing never jumps at the seam. The ground's cloud of blue is
+  // not periodic, so each cloud is drawn wrapped instead: once at its own position, and again shifted by
+  // a tile height whenever it falls near an edge, the ordinary way to make a baked canvas repeat without
   // a visible seam. Checked by eye at 390px and 1400px, stepping world.cameraY across three tile heights.
   const gap=Math.max(20,Math.min(28,H/22)),rows=Math.max(14,Math.round(H*1.6/gap)),R=rows*gap;
-  const unitTarget=Math.max(20,Math.min(32,W/36)),gridUnit=R/Math.max(3,Math.round(R/unitTarget));
   // The gutter grows over the old single-file border's 10-17px: a broad three-row band needs real
   // width to interlock in, and this is the one number both this bake and ceilingDrawRegisterGrid's
   // pinned frame read, so the two stay lined up at x0/x1 exactly as before.
-  const inset=Math.max(15,Math.min(24,W*.05)),x0=inset+10,x1=W-inset-10,wide=W>=700;
   const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(R*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
   g.fillStyle=CEILING_PALETTE.plaster;g.fillRect(0,0,W,R);
-  // The wall's texture is material, not pictorial modelling. It used to be 180-odd broad, soft-alpha
-  // ellipses per view-height, which is exactly enough overlap to blend into a haze — plaster read as
-  // grey cloud under the drawing rather than as a surface. Far fewer patches now, each an irregular
-  // hard-edged chip at a real, flat alpha instead of a faint blur, plus a crack network below that
-  // actually follows the ruled canon grid the way a real fracture in a plastered, ruled wall would.
-  // Patches and cracks are drawn a second time, shifted by ±R, whenever they land within their own
-  // reach of an edge, so the texture wraps rather than ending at one edge of the tile and starting
-  // over, unrelated, at the other.
-  const rng=seeded(14731458),patches=Math.round(46*R/H),cracks=Math.round(26*R/H);
-  for(let i=0;i<patches;i++){
-    const x=rng()*W,y=rng()*R,r=10+rng()*46,sides=5+Math.floor(rng()*3),rot=rng()*TAU,loss=rng()>.5,
-      fill=loss?'rgba(157,137,102,.17)':'rgba(238,228,205,.22)';
-    const draw=yy=>{
-      g.beginPath();
-      for(let k=0;k<sides;k++){const a=rot+k/sides*TAU,rr=r*(.72+ceilingHash(i,k)*.5),px=x+Math.cos(a)*rr,py=yy+Math.sin(a)*rr*.42;k?g.lineTo(px,py):g.moveTo(px,py);}
-      g.closePath();g.fillStyle=fill;g.fill();
-      if(loss){g.strokeStyle='rgba(157,137,102,.32)';g.lineWidth=.6;g.stroke();}
-    };
-    draw(y);if(y<r*.5+2)draw(y+R);if(y>R-r*.5-2)draw(y-R);
+  // A lapis ground laid by hand is never one flat value: the blue went on in broad passes, heavier in
+  // some and thinner in others, so the ground carries a slow cloud of lighter and darker blue under the
+  // stars. Each cloud is drawn again a tile height away when it reaches past an edge, so the ground
+  // wraps with the tile rather than ending at one edge and starting over, unrelated, at the other.
+  const rng=seeded(14731458);
+  for(let i=0,n=Math.round(30*R/H);i<n;i++){
+    const x=rng()*W,y=rng()*R,r=40+rng()*110,light=rng()>.45,a=light?.1+rng()*.1:.12+rng()*.14;
+    const draw=yy=>{const gr=g.createRadialGradient(x,yy,0,x,yy,r);gr.addColorStop(0,light?`rgba(58,92,178,${a})`:`rgba(6,12,36,${a})`);gr.addColorStop(1,'rgba(21,36,87,0)');g.fillStyle=gr;g.fillRect(x-r,yy-r,r*2,r*2);};
+    draw(y);if(y<r)draw(y+R);if(y>R-r)draw(y-R);
   }
-  for(let i=0;i<Math.min(Math.round(1400*R/H),Math.floor(W*R/420));i++){
-    const x=rng()*W,y=rng()*R,a=.05+rng()*.08;g.fillStyle=rng()>.55?`rgba(250,243,222,${a})`:`rgba(73,54,34,${a})`;g.fillRect(x,y,.6+rng()*.8,.6+rng()*.8);
+  for(let i=0;i<Math.min(Math.round(1100*R/H),Math.floor(W*R/520));i++){
+    const x=rng()*W,y=rng()*R,a=.04+rng()*.07;g.fillStyle=rng()>.6?`rgba(${CEILING_RGB.carbon},${a})`:`rgba(4,8,24,${a*1.6})`;g.fillRect(x,y,.6+rng()*.9,.6+rng()*.9);
   }
-  // A crack runs through the same ruled surface the painter snapped, so the grid is what sets its
-  // scale and its general bearing — but a fracture is not a drawn line, and one that steps cleanly
-  // from intersection to intersection closes rectangles and reads as an anriss in pencil rather than
-  // as a break in lime. So each crack keeps one horizontal sense and one vertical sense for its whole
-  // length, which is what stops it doubling back into a box, and every vertex is thrown off the
-  // intersection it belongs to by a share of a unit, with a wandering midpoint inside each leg.
-  // Plaster fails downward under its own weight, so the vertical sense is always down.
-  const gcols=Math.max(1,Math.round((x1-x0)/gridUnit)),grows=Math.round(R/gridUnit);
-  for(let i=0;i<cracks;i++){
-    let gxk=Math.floor(rng()*gcols),gyk=Math.floor(rng()*grows);
-    const sway=rng()<.5?-1:1,off=()=>(rng()-.5)*gridUnit*.5;
-    const at=(kx,ky)=>[x0+kx*gridUnit+off(),ky*gridUnit+off()];
-    let p0=at(gxk,gyk);const pts=[p0],legs=3+Math.floor(rng()*4);
-    for(let j=0;j<legs;j++){
-      if(rng()<.5)gxk=clamp(gxk+sway,0,gcols);else gyk=gyk+1;
-      const p1=at(gxk,gyk);
-      pts.push([lerp(p0[0],p1[0],.5)+off()*.7,lerp(p0[1],p1[1],.5)+off()*.7],p1);p0=p1;
+  // The field of stars is the ceiling itself: the blue tomb ceilings are covered edge to edge in rows of
+  // yellow five-pointed stars, set out on a staggered lattice. Here the lattice thins toward the middle,
+  // where the flight is, and fills toward Nut's body at either side, so the hour-circles and the barque
+  // never have to be found among a crowd of stars their own shape. The row count is forced even so the
+  // stagger joins the next copy of the tile exactly.
+  const inset=Math.max(15,Math.min(24,W*.05)),x0=inset+10,x1=W-inset-10,wide=W>=700;
+  {
+    const srows=Math.max(2,Math.round(R/(gap*1.05)/2)*2),sy0=R/srows,pitch=Math.max(22,Math.min(30,W/16)),mid=W*.5,half=Math.max(1,W*.5-inset);
+    for(let row=0;row<srows;row++){
+      const y=(row+.5)*sy0,off=row%2?pitch*.5:0;
+      for(let x=inset+off;x<W-inset+1;x+=pitch){
+        const edge=clamp(Math.abs(x-mid)/half,0,1),h=ceilingHash(row*131+Math.round(x),977);
+        // Nearly every star stands at the margins; only one in five or so survives in the channel.
+        if(h>.18+edge*edge*.82)continue;
+        const r=(2.4+edge*2.6)*(.85+ceilingHash(row,Math.round(x))*.3),alpha=.28+edge*.6;
+        ceilingBorderStar(g,x+(ceilingHash(row+7,Math.round(x))-.5)*3,y+(ceilingHash(Math.round(x),row+3)-.5)*3,r,alpha,row*977+Math.round(x)*31);
+      }
     }
-    // The break is widest where it started and closes to nothing, so it is laid in two passes rather
-    // than as one even line: the whole run thin, and the first third of it again a shade heavier.
-    const draw=q=>{ceilingBrush(g,q,CEILING_PALETTE.loss,.55,.3,100+i);ceilingBrush(g,q.slice(0,Math.max(2,Math.ceil(q.length/3))),CEILING_PALETTE.loss,.95,.26,300+i);};
-    draw(pts);
-    if(pts.some(p=>p[1]>R-2))draw(pts.map(p=>[p[0],p[1]-R]));
-    if(pts.some(p=>p[1]<2))draw(pts.map(p=>[p[0],p[1]+R]));
   }
-  // The grid's own unit already divides R exactly; stopping one pixel short of R keeps the loop from
-  // drawing the seam's line twice (once here, once as the next copy's y=0 line).
-  ceilingSettingGrid(g,inset,0,W-inset,R-1,gridUnit);
-  // The side star bands used to run only between the frieze and the foot rule; now they are furniture
-  // like everything else here, so they run the tile's whole height on a gap that already divides it —
-  // and, per the correction, as the broad three-row woven band the facsimile actually carries rather
-  // than a single filed line of stars.
+  // Nut's body takes the place the side star bands stood in (ceilingDrawRegisterGrid), so the bands are
+  // no longer drawn; their measure is kept because the decan lanes below are still set against it.
   const starW=inset*1.15,starL=6+starW*.5,starRx=W-6-starW*.5;
-  ceilingStarBand(g,starL,0,R,gap,starW);
-  ceilingStarBand(g,starRx,0,R,gap,starW);
   // TT353 is organised as two fields divided by a band, and the band is a layered one: a star band,
   // then several full-width ruled lines of signs, then another star band (divider.png) — not the
   // single flat block rule this used to stand in with. The counts are read off SIGNS_TT353's own
@@ -1045,7 +1002,7 @@ function ceilingBuildWall(){
       // that has already passed; whatever changed further is picked up fresh below, the same as any
       // other cache miss.
       ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
-    }else if(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||chapterReveal.index!==watch){
+    }else if(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||Math.floor(chapterReveal.index/3)!==watch){
       ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
       return ceilingWall;
     }else return ceilingWall; // still mid-band: the outgoing tile keeps passing, already baked — no work this frame
@@ -1076,40 +1033,303 @@ function ceilingBuildWall(){
 function ceilingDrawHudClear(){
   ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=CEILING_PALETTE.plaster;ctx.fillRect(0,0,W,hudBand());ctx.restore();
 }
+// Nut: the sky goddess arched over the sheet, and the one piece of the room that does not pass with
+// the climb. The Book of Nut and the Ramesside ceilings draw her as a long blue body bent over the
+// earth, her hands and feet set down at either end, her body covered in stars, swallowing the sun in
+// the evening and giving birth to it at dawn; here that body is the frame. Her torso is the top edge
+// (the HUD sits under it, inside the arch), her arms run down the left side to her hands and her head,
+// with the evening sun at her mouth, and her legs down the right to her feet, where the dawn sun is
+// born. Geb, the earth, lies green along the foot. She is baked once per screen size into one canvas
+// the size of the screen and drawn over the flight (renderCeiling), so the waters of Nun rise inside
+// her and never over her. Her figure is not animated: she is what the night happens inside.
+function ceilingNutBandWidth(){return Math.max(14,Math.min(22,W*.046));}
 function ceilingDrawRegisterGrid(){
   const key=W+'x'+H+'x'+DPR;
   if(!ceilingFrameTop||ceilingFrameKey!==key){
-    // Same formula ceilingBakeWall reads for its own inset, so the frame's x0/x1 and the passing
-    // tile's stay lined up.
-    const inset=Math.max(15,Math.min(24,W*.05)),x0=inset+10,x1=W-inset-10,frieze=Math.max(13,Math.min(20,H*.026));
-    // Each band is baked at just its own height rather than a screen-sized sheet — the frieze band
-    // never needs more than the reed bundle plus its closing line, and the foot rule is a few pixels
-    // thick, so this pair costs almost nothing beside the tall tile above.
-    const topH=Math.ceil(inset+frieze+8),botY=H-inset-frieze*.45-8-4,botH=Math.ceil(H-botY);
-    // The frame's own top and bottom star bands and corner roundels: correction 1 frames the room on
-    // all four sides, and the top/bottom edges are screen-pinned architecture exactly like the frieze
-    // and the foot rule below, not furniture that passes with the climb — so they belong here, in the
-    // gutter each canvas already carries above the frieze and below the foot rule, rather than in the
-    // tile. No extra canvas height: that gutter was empty before.
-    const gapH=Math.max(16,Math.min(24,W/28)),bandT=Math.min(inset-3,20),rr=Math.max(4,inset*.42);
-    const top=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(topH*DPR))),tg=top.getContext('2d');tg.scale(DPR,DPR);
-    const bandYt=inset*.5+1;
-    ceilingStarBandH(tg,6,W-6,bandYt,gapH,bandT);
-    ceilingRoundel(tg,6+rr,bandYt,rr);ceilingRoundel(tg,W-6-rr,bandYt,rr);
-    ceilingKheker(tg,x0,x1,inset+3,frieze);
-    const bot=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(botH*DPR))),bg=bot.getContext('2d');bg.scale(DPR,DPR);
-    // Drawn near-opaque rather than the .5 a register-dividing rule wears inside the passing tile: this
-    // one is the room's real edge, so it has to close over whatever furniture is sliding behind it, not
-    // share a static sheet with it at a register's own translucency. Its y is measured from botY, the
-    // top of this small canvas, not from the screen the rule actually sits near the foot of.
-    ceilingBlockRule(bg,x0,x1,H-inset-frieze*.45-8-botY,Math.max(4.5,frieze*.4),.94);
-    const bandYb=botH-bandT*.5-2;
-    ceilingStarBandH(bg,6,W-6,bandYb,gapH,bandT);
-    ceilingRoundel(bg,6+rr,bandYb,rr);ceilingRoundel(bg,W-6-rr,bandYb,rr);
-    ceilingFrameTop=top;ceilingFrameBot={c:bot,y:botY};ceilingFrameKey=key;
+    const P=CEILING_PALETTE,bw=ceilingNutBandWidth(),o=3,i=o+bw,geb=Math.max(6,Math.min(9,H*.009)),ground=H-geb,
+      ro=Math.max(18,bw*1.6),ri=Math.max(6,ro-bw);
+    const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');g.scale(DPR,DPR);
+    const arch=(x0,y0,x1,y1,r)=>{g.moveTo(x0,y1);g.lineTo(x0,y0+r);g.quadraticCurveTo(x0,y0,x0+r,y0);g.lineTo(x1-r,y0);g.quadraticCurveTo(x1,y0,x1,y0+r);g.lineTo(x1,y1);};
+    // The body: the outer arch and the inner one filled between, open at the foot where she stands.
+    g.save();g.beginPath();g.rect(0,0,W,ground);g.clip();
+    g.beginPath();arch(o,o,W-o,ground+2,ro);g.lineTo(W-i,ground+2);
+    g.lineTo(W-i,i+ri);g.quadraticCurveTo(W-i,i,W-i-ri,i);g.lineTo(i+ri,i);g.quadraticCurveTo(i,i,i,i+ri);g.lineTo(i,ground+2);g.closePath();
+    g.fillStyle=P.nut;g.fill();
+    // A darker line inside each edge gives the body a contour in the ground's own blue, and the pale
+    // huntite line outside it is the drawing line the figure is closed in.
+    g.lineJoin='round';g.strokeStyle=P.nutDeep;g.lineWidth=2.2;g.stroke();
+    g.beginPath();arch(o,o,W-o,ground+2,ro);g.strokeStyle=P.carbon;g.lineWidth=1.3;g.stroke();
+    g.beginPath();g.moveTo(i,ground+2);g.lineTo(i,i+ri);g.quadraticCurveTo(i,i,i+ri,i);g.lineTo(W-i-ri,i);g.quadraticCurveTo(W-i,i,W-i,i+ri);g.lineTo(W-i,ground+2);g.stroke();
+    // Her stars, one file along the middle of the body, walked round the arch at an even pitch so the
+    // corners carry them too. The centre line is measured as a path and stepped along its length.
+    const m=o+bw*.5,rm=(ro+ri)*.5,line=[];
+    line.push([m,ground]);line.push([m,m+rm]);
+    for(let k=1;k<=6;k++){const t=k/6,a=Math.PI+t*Math.PI*.5;line.push([m+rm+Math.cos(a)*rm,m+rm+Math.sin(a)*rm]);}
+    line.push([W-m-rm,m]);
+    for(let k=1;k<=6;k++){const t=k/6,a=-Math.PI*.5+t*Math.PI*.5;line.push([W-m-rm+Math.cos(a)*rm,m+rm+Math.sin(a)*rm]);}
+    line.push([W-m,ground]);
+    // Kept for the sun's course (ceilingDrawSunCourse): the same line, measured once, from her lips to her feet.
+    {const hu=bw/16,lipY=Math.min(ground-bw*3.2,H-footerBand()-44*hu)+18.6*hu,course=[[i+28.5*hu,lipY],[m,lipY],...line.slice(1,-1),[W-m,ground-bw*1.4]],len=[0];for(let k=1;k<course.length;k++)len.push(len[k-1]+Math.hypot(course[k][0]-course[k-1][0],course[k][1]-course[k-1][1]));ceilingSunCourse={pts:course,len,bw};}
+    const pitch=bw*1.35;let next=pitch*.5,walked=0,idx=0;
+    for(let k=1;k<line.length;k++){
+      const [ax,ay]=line[k-1],[bx,by]=line[k],len=Math.hypot(bx-ax,by-ay);
+      for(;next<=walked+len;next+=pitch,idx++){
+        const f=(next-walked)/len,x=ax+(bx-ax)*f,y=ay+(by-ay)*f;
+        if(y<ground-bw*.6)ceilingBorderStar(g,x,y,bw*(idx%2?.26:.34),.95,idx*37+11);
+      }
+      walked+=len;
+    }
+    g.restore();
+    const hand=(x,dir)=>{
+      // A hand set flat on the earth, the fingers reaching inward along the ground.
+      g.beginPath();g.moveTo(x-dir*bw*.5,ground-bw*.7);g.lineTo(x+dir*bw*.5,ground-bw*.7);
+      g.quadraticCurveTo(x+dir*bw*1.25,ground-bw*.35,x+dir*bw*1.35,ground);g.lineTo(x-dir*bw*.5,ground);g.closePath();
+      g.fillStyle=P.nut;g.fill();g.strokeStyle=P.carbon;g.lineWidth=1.1;g.stroke();
+      for(let f=1;f<4;f++){g.beginPath();g.moveTo(x+dir*bw*(.5+f*.2),ground-bw*.12);g.lineTo(x+dir*bw*(.62+f*.2),ground);g.strokeStyle=P.nutDeep;g.lineWidth=.8;g.stroke();}
+    };
+    const foot=(x,dir)=>{
+      g.beginPath();g.moveTo(x-dir*bw*.5,ground-bw*.9);g.lineTo(x+dir*bw*.5,ground-bw*.9);g.lineTo(x+dir*bw*.55,ground-bw*.42);
+      g.quadraticCurveTo(x+dir*bw*1.6,ground-bw*.38,x+dir*bw*1.7,ground);g.lineTo(x-dir*bw*.5,ground);g.closePath();
+      g.fillStyle=P.nut;g.fill();g.strokeStyle=P.carbon;g.lineWidth=1.1;g.stroke();
+    };
+    hand(o+bw*.5,1);foot(W-o-bw*.5,-1);
+    // Her head hangs at the inside of her arms, above the footer's controls, face turned down and in
+    // toward the earth; the red disc at her lips is the evening sun she swallows. A tripartite wig in
+    // the ground's deepest blue banded with yellow, the face in her own blue, the eye in huntite.
+    {
+      const fb=footerBand(),u=bw/16,hx=i-3*u,hy=Math.min(ground-bw*3.2,H-fb-44*u);
+      ceilingNutHead={left:hx-2,top:hy-4*u,right:hx+37*u,bottom:hy+34*u};
+      g.save();g.translate(hx,hy);g.lineJoin='round';g.lineCap='round';
+      const shape=(pts,fill,stroke,lw)=>{g.beginPath();pts.forEach((q,k)=>k?g.lineTo(q[0]*u,q[1]*u):g.moveTo(q[0]*u,q[1]*u));g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=lw;g.stroke();}};
+      // The broad collar, rows of faience, carnelian and gold beads fanned out from the throat over the
+      // arm's own band, so the head belongs to the body and does not float beside it.
+      for(const [rr,col] of [[15.5,P.yellow],[12.6,P.red],[9.7,P.faience]]){g.beginPath();g.arc(2*u,19*u,rr*u,-.05,1.5);g.strokeStyle=col;g.lineWidth=2.8*u;g.stroke();}
+      g.beginPath();g.arc(2*u,19*u,17*u,-.05,1.5);g.strokeStyle=P.carbon;g.lineWidth=1;g.stroke();
+      // The face, in profile toward the middle of the sheet: brow, nose, lips and chin.
+      shape([[17,3],[23,5],[24.5,9],[28.5,14.5],[25.6,15.8],[27,17.6],[25.2,19.4],[25.8,22.4],[21,25],[16,22]],P.nut,P.carbon,1.1);
+      // The tripartite wig: its crown, the mass falling behind the ear, and the lappet hanging in front
+      // of the shoulder, in the night's deepest blue with a yellow fillet bound round it.
+      g.beginPath();g.moveTo(0,6*u);g.quadraticCurveTo(1*u,-1*u,11*u,-1*u);g.quadraticCurveTo(19.5*u,-1*u,21*u,5.5*u);
+      g.lineTo(18.2*u,6.4*u);g.lineTo(18.6*u,12*u);g.lineTo(21*u,31*u);g.lineTo(15.4*u,32*u);g.lineTo(14.2*u,22*u);g.lineTo(1*u,23*u);g.closePath();
+      g.fillStyle=P.ink;g.fill();g.strokeStyle=P.carbon;g.lineWidth=1.1;g.stroke();
+      g.save();g.clip();g.strokeStyle=P.nutDeep;g.lineWidth=.8;for(let k=0;k<9;k++){g.beginPath();g.moveTo((1+k*2.2)*u,2*u);g.lineTo((1+k*2.2)*u,34*u);g.stroke();}g.restore();
+      g.strokeStyle=P.yellow;g.lineWidth=Math.max(1.2,1.6*u);g.beginPath();g.moveTo(.6*u,7*u);g.quadraticCurveTo(10*u,5*u,19.6*u,6.2*u);g.stroke();
+      // The eye and its long cosmetic line, and the brow above it, in huntite.
+      g.fillStyle=P.carbon;g.beginPath();g.ellipse(22.2*u,9.6*u,1.7*u,.95*u,.12,0,TAU);g.fill();
+      g.strokeStyle=P.carbon;g.lineWidth=Math.max(.8,.9*u);g.beginPath();g.moveTo(20.5*u,9.4*u);g.lineTo(18.9*u,9.9*u);g.moveTo(20*u,7.4*u);g.quadraticCurveTo(22.4*u,6.3*u,24*u,7.6*u);g.stroke();
+      // The evening sun at her lips, going down into her.
+      g.fillStyle=P.red;g.strokeStyle=P.ink;g.lineWidth=1;g.beginPath();g.arc(31.5*u,18.6*u,4.2*u,0,TAU);g.fill();g.stroke();
+      g.restore();
+    }
+    // The dawn sun, born gold at her feet on the far side of the night.
+    {const sx0=W-o-bw*1.9,sy0=ground-bw*.95,sr=bw*.3;g.fillStyle=P.yellow;g.strokeStyle=P.ink;g.lineWidth=1;g.beginPath();g.arc(sx0,sy0,sr,0,TAU);g.fill();g.stroke();
+      g.strokeStyle=P.yellow;g.lineWidth=1;for(let k=0;k<7;k++){const a=Math.PI+.25+k*(Math.PI-.5)/6;g.beginPath();g.moveTo(sx0+Math.cos(a)*sr*1.35,sy0+Math.sin(a)*sr*1.35);g.lineTo(sx0+Math.cos(a)*sr*1.9,sy0+Math.sin(a)*sr*1.9);g.stroke();}}
+    // Geb, the earth she arches over: a band of green along the foot closed in the drawing line, with a
+    // row of short reeds along its upper edge so it reads as land and not as one more rule.
+    g.fillStyle=P.green;g.fillRect(0,ground,W,geb);g.strokeStyle=P.carbon;g.lineWidth=1.1;g.beginPath();g.moveTo(0,ground+.5);g.lineTo(W,ground+.5);g.stroke();
+    g.strokeStyle=P.green;g.lineWidth=1;for(let x=o+bw*2.4;x<W-o-bw*2.8;x+=7+ceilingHash(Math.round(x),5)*9){const h=2+ceilingHash(Math.round(x),9)*3.5;g.beginPath();g.moveTo(x,ground);g.lineTo(x+(ceilingHash(Math.round(x),13)-.5)*2,ground-h);g.stroke();}
+    ceilingFrameTop=c;ceilingFrameBot=null;ceilingFrameKey=key;
   }
-  ctx.drawImage(ceilingFrameTop,0,0,W,ceilingFrameTop.height/DPR);
-  ctx.drawImage(ceilingFrameBot.c,0,ceilingFrameBot.y,W,ceilingFrameBot.c.height/DPR);
+  ctx.drawImage(ceilingFrameTop,0,0,W,H);
+  // Her head stands inside the sheet, where a note could otherwise be written across her face; it is
+  // declared as settled ground so the notes step round it (ground.js).
+  if(ceilingNutHead)markGroundBox('key',ceilingNutHead);
+}
+// The run's own count, written the way the walls write a king's name: inside a cartouche, the rope
+// loop tied off at one end, the Egyptian numerals set within it largest first and the modern figure
+// set small beneath as the gloss, since this is the one number the player has to be able to read at
+// a glance. The DOM score is still there for assistive technology; it is simply not drawn over this.
+// Baked once per score and size, because the numerals are brushed and a brush per sign per frame is
+// work for nothing while the score stands still.
+function ceilingDrawCartouche(){
+  const n=Math.max(0,world.score|0),key=n+':'+W+'x'+H+'x'+DPR;
+  if(ceilingCartoucheKey!==key){
+    const P=CEILING_PALETTE,nh=24,numW=n?ceilingNumWidth(n,nh):nh*.6,w=Math.min(W-2*ceilingNutBandWidth()-90,Math.max(112,numW+60)),h=58,pad=8;
+    const c=makeCanvas(Math.ceil((w+pad*2)*DPR),Math.ceil((h+pad*2)*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(pad,pad);
+    const r=h/2,oval=()=>{g.beginPath();g.moveTo(r,0);g.lineTo(w-r-6,0);g.arc(w-r-6,r,r,-Math.PI/2,Math.PI/2);g.lineTo(r,h);g.arc(r,r,r,Math.PI/2,Math.PI*1.5);g.closePath();};
+    oval();g.fillStyle='rgba(13,24,56,.92)';g.fill();
+    // The rope: a doubled line, pale outside and gold within, and the knot tying it off at the right.
+    g.lineWidth=2.4;g.strokeStyle=P.carbon;g.stroke();
+    g.save();g.translate(w/2,h/2);g.scale((w-7)/w,(h-7)/h);g.translate(-w/2,-h/2);oval();g.restore();g.lineWidth=1;g.strokeStyle=P.yellow;g.stroke();
+    g.fillStyle=P.carbon;g.fillRect(w-6.6,7,3.6,h-14);g.strokeStyle=P.yellow;g.lineWidth=1;g.strokeRect(w-6.6,7,3.6,h-14);
+    const scale0=Math.min(1,(w-44)/Math.max(1,numW)),nw=numW*scale0;
+    g.save();g.translate((w-6)/2-nw/2,8);g.scale(scale0,scale0);
+    if(n)ceilingNumber(g,n,0,0,nh,P.yellow);else{g.strokeStyle=P.yellow;g.lineWidth=1.4;g.beginPath();g.arc(nh*.3,nh*.5,nh*.22,0,TAU);g.stroke();}
+    g.restore();
+    g.font=plateFace(11,'sc');g.textAlign='center';g.fillStyle=P.carbon;g.globalAlpha=.9;g.fillText(String(n),(w-6)/2,h-9);
+    ceilingCartouche={c,w:w+pad*2,h:h+pad*2};ceilingCartoucheKey=key;
+  }
+  const q=ceilingCartouche;ctx.drawImage(q.c,W/2-q.w/2+3,ceilingNutBandWidth()+2,q.w,q.h);
+}
+// The sun's course through Nut. The night is the sun travelling through her body, swallowed at her lips
+// in the evening and born at her feet at dawn, and that is exactly what a run is: so the sun is drawn
+// on her, along the line her stars are set on, as far through the night as the run has come, red and
+// low at the start and warming to gold as the dawn nears, with the hours already passed marked as
+// red points behind it. It eases toward its place rather than jumping a row at a time.
+const CEILING_NIGHT_ROWS=CEILING_DAWN_ROW;
+function ceilingDrawSunCourse(dt){
+  const c=ceilingSunCourse;if(!c||!world)return;
+  const target=clamp(world.progress/CEILING_NIGHT_ROWS,0,1);
+  ceilingSunShown=reducedMotion||world.state!=='playing'?target:ceilingSunShown+(target-ceilingSunShown)*(1-Math.exp(-(dt||0)*3));
+  const total=c.len.at(-1),at=f=>{const d=f*total;let k=1;while(k<c.len.length-1&&c.len[k]<d)k++;const u=(d-c.len[k-1])/Math.max(1e-6,c.len[k]-c.len[k-1]);return [lerp(c.pts[k-1][0],c.pts[k][0],u),lerp(c.pts[k-1][1],c.pts[k][1],u)];};
+  ctx.save();
+  for(let h=1;h<CEILING_HOURS.length;h++){const f=h/CEILING_HOURS.length,[x,y]=at(f),past=ceilingSunShown>=f;
+    ctx.fillStyle=past?CEILING_PALETTE.red:CEILING_PALETTE.nutDeep;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=.9;ctx.beginPath();ctx.arc(x,y,c.bw*.2,0,TAU);ctx.fill();ctx.stroke();}
+  const [x,y]=at(ceilingSunShown),r=c.bw*.36,warm=mixRgb([194,74,47],[227,180,71],ceilingSunShown);
+  ctx.fillStyle=`rgba(${warm},.25)`;ctx.beginPath();ctx.arc(x,y,r*1.9,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgb(${warm})`;ctx.strokeStyle=CEILING_PALETTE.ink;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.stroke();
+  ctx.restore();
+}
+// The end leaf's count, painted by the same hand the cartouche uses, into a canvas the leaf itself
+// carries (#end-numerals, placed by src/ui.js's showEnd()). It sizes the canvas for the device itself.
+function ceilingPaintEndNumerals(canvas,score){
+  if(!canvas)return;const n=Math.max(0,score|0),h=40,w=Math.max(h,n?ceilingNumWidth(n,h):h*.6)+16,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
+  canvas.width=Math.ceil(w*dpr);canvas.height=Math.ceil((h+12)*dpr);canvas.style.width=w+'px';canvas.style.height=(h+12)+'px';
+  const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h+12);
+  if(n)ceilingNumber(g,n,8,6,h,CEILING_PALETTE.yellow);else{g.strokeStyle=CEILING_PALETTE.yellow;g.lineWidth=2;g.beginPath();g.arc(w/2,h/2+6,h*.22,0,TAU);g.stroke();}
+}
+// ---------- The gates of the hours ----------
+// Every hour of the Amduat ends at a gate, and the barque is towed through it into the next region: so
+// each hour's last row and the next hour's first have a pylon standing between them, two battered
+// sandstone towers under a cavetto cornice with cedar doors hung between. The doors stand half shut
+// while the barque is still below and swing back once it is through, which is the whole of their job:
+// the moment of passing is the hour turning. They are scenery, drawn under every circle and never in the
+// flight's way, and nothing in the simulation knows they are there. The last gate is not a pylon but the
+// horizon itself, the akhet: two hills with the sun between them, where the night ends.
+function ceilingGateRows(){
+  const span=new Map();
+  for(const n of world.nodes){const s=span.get(n.row);if(s){s.lo=Math.min(s.lo,n.y);s.hi=Math.max(s.hi,n.y);}else span.set(n.row,{lo:n.y,hi:n.y});}
+  return span;
+}
+function ceilingDrawGates(){
+  if(!world||world.state==='ready')return;
+  const span=ceilingGateRows(),P=CEILING_PALETTE,bw=ceilingNutBandWidth();
+  for(let h=1;h<=CEILING_HOURS.length;h++){
+    const R=h*CEILING_HOUR_ROWS,a=span.get(R),b=span.get(R+1);if(!a)continue;
+    const gateY=b?(a.lo+b.hi)/2:a.lo-70,gy=sy(gateY),th=Math.max(52,64*scale);
+    if(gy<-th*2||gy>H+th*2)continue;
+    const passed=world.player.y<gateY-10,open=reducedMotion?(passed?1:0):clamp((gateY-world.player.y+30)/90,0,1);
+    ctx.save();
+    if(h===CEILING_HOURS.length){ceilingDrawHorizon(gy,th,passed);ctx.restore();continue;}
+    const x0=bw+3,tw=Math.max(46,W*.15),bot=gy+th*.38,top=gy-th*.62;
+    for(const side of [1,-1]){
+      const X=v=>side>0?v:W-v,ox=X(x0),ix=X(x0+tw),itop=X(x0+tw-th*.2),otop=X(x0+th*.08);
+      ctx.beginPath();ctx.moveTo(ox,bot);ctx.lineTo(ix,bot);ctx.lineTo(itop,top);ctx.lineTo(otop,top);ctx.closePath();
+      ctx.globalAlpha=.92;ctx.fillStyle='#c9a86a';ctx.fill();ctx.globalAlpha=1;
+      // Coursed sandstone: the joints of the blocks, faint, so the tower reads as built and not as a slab.
+      ctx.save();ctx.clip();ctx.strokeStyle='rgba(90,62,30,.35)';ctx.lineWidth=.7;
+      for(let k=1;k<7;k++){const y=bot-(bot-top)*k/7;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+        for(let m=0;m<4;m++){const x=X(x0+tw*((m+(k%2?.5:0))/4));ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+(bot-top)/7);ctx.stroke();}}
+      ctx.restore();ctx.strokeStyle=P.ink;ctx.lineWidth=1.2;ctx.stroke();
+      // Two painted bands under the cornice and the torus moulding down the tower's inner edge.
+      ctx.fillStyle=P.red;ctx.beginPath();ctx.moveTo(otop,top+th*.12);ctx.lineTo(itop,top+th*.12);ctx.lineTo(X(x0+tw-th*.197),top+th*.18);ctx.lineTo(X(x0+th*.085),top+th*.18);ctx.closePath();ctx.fill();
+      ctx.fillStyle=P.water;ctx.beginPath();ctx.moveTo(X(x0+th*.085),top+th*.2);ctx.lineTo(X(x0+tw-th*.195),top+th*.2);ctx.lineTo(X(x0+tw-th*.19),top+th*.25);ctx.lineTo(X(x0+th*.087),top+th*.25);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='rgba(10,16,36,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(x0+tw-2),bot);ctx.lineTo(X(x0+tw-th*.2-1.5),top);ctx.stroke();
+      // The cavetto cornice, flaring out over the top, fluted in the painter's own yellow.
+      const cy=top-th*.13;ctx.beginPath();ctx.moveTo(X(x0+th*.08-3),top);ctx.lineTo(X(x0+tw-th*.2+3),top);ctx.lineTo(X(x0+tw-th*.2+6),cy);ctx.lineTo(X(x0+th*.08-6),cy);ctx.closePath();
+      ctx.fillStyle=P.yellow;ctx.fill();ctx.strokeStyle=P.ink;ctx.lineWidth=1.1;ctx.stroke();
+      ctx.strokeStyle='rgba(10,16,36,.55)';ctx.lineWidth=.8;for(let f=x0+th*.08;f<x0+tw-th*.2;f+=5){ctx.beginPath();ctx.moveTo(X(f),top-1);ctx.lineTo(X(f+(side>0?-1:1)),cy+1);ctx.stroke();}
+      // The door leaf on its pivot at the tower's inner edge, cedar studded in gold, turning away as the
+      // barque comes through; drawn as its projected width, so a door swung back is only its edge.
+      const leaf=(W/2-(x0+tw))*.5*Math.cos(open*Math.PI*.46),dt=gy-th*.12;
+      if(leaf>1.5){
+        ctx.fillStyle='rgba(122,76,36,.88)';ctx.fillRect(Math.min(ix,X(x0+tw+leaf)),dt,leaf,bot-dt);
+        ctx.strokeStyle=P.ink;ctx.lineWidth=1;ctx.strokeRect(Math.min(ix,X(x0+tw+leaf)),dt,leaf,bot-dt);
+        ctx.strokeStyle='rgba(10,16,36,.45)';ctx.lineWidth=.7;for(let k=1;k<4;k++){const px=Math.min(ix,X(x0+tw+leaf))+leaf*k/4;ctx.beginPath();ctx.moveTo(px,dt);ctx.lineTo(px,bot);ctx.stroke();}
+        ctx.fillStyle=P.yellow;for(let k=1;k<4;k++)for(let m=0;m<3;m++){const px=X(x0+tw+leaf*k/4),py=dt+(bot-dt)*(m+.5)/3;ctx.beginPath();ctx.arc(px,py,1.2,0,TAU);ctx.fill();}
+      }
+      // The hour the gate closes, counted on the tower's face in the wall's own numerals.
+      ctx.save();ctx.globalAlpha=.85;ceilingNumber(ctx,h,side>0?x0+tw*.5-ceilingNumWidth(h,th*.22)/2:W-x0-tw*.5-ceilingNumWidth(h,th*.22)/2,gy-th*.02,th*.22,P.ink);ctx.restore();
+    }
+    // The name of the hour the gate opens onto, lettered across the opening under the lintel line.
+    const size=Math.max(9,10*scale),label=CEILING_HOURS[h];ctx.font=plateFace(size,'sc');ctx.textAlign='center';
+    const lw=ctx.measureText(label).width,ly=top-th*.02;
+    // Set on a small plate of the night's deepest blue, so the name reads wherever the gate happens to
+    // stand, the register's star band included.
+    ctx.globalAlpha=.82;ctx.fillStyle='rgb(13,24,56)';ctx.beginPath();ctx.roundRect(W/2-lw/2-7,ly-size*1.05,lw+14,size*1.5,3);ctx.fill();
+    ctx.globalAlpha=.7+.3*(1-open);ctx.fillStyle=P.carbon;ctx.fillText(label,W/2,ly);markGroundText('caption',W/2,ly,lw,size,'center');
+    ctx.restore();
+  }
+}
+// The akhet: the eastern horizon the twelfth hour ends at, two hills in the night's yellow with the sun
+// between them, waiting on its rim until the barque is through.
+function ceilingDrawHorizon(gy,th,passed){
+  const P=CEILING_PALETTE,cx=W/2,base=gy+th*.3,hw=Math.max(60,W*.2),hh=th*.9;
+  ctx.globalAlpha=.95;
+  for(const side of [-1,1]){const x=cx+side*hw*.62;ctx.beginPath();ctx.moveTo(x-hw*.55,base);ctx.quadraticCurveTo(x-hw*.5,base-hh,x,base-hh);ctx.quadraticCurveTo(x+hw*.5,base-hh,x+hw*.55,base);ctx.closePath();ctx.fillStyle='#c9a86a';ctx.fill();ctx.strokeStyle=P.ink;ctx.lineWidth=1.2;ctx.stroke();}
+  ctx.strokeStyle=P.carbon;ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(bw0(),base);ctx.lineTo(W-bw0(),base);ctx.stroke();
+  const r=hh*.36;ctx.fillStyle=passed?P.yellow:P.red;ctx.strokeStyle=P.ink;ctx.beginPath();ctx.arc(cx,base-r*.9,r,0,TAU);ctx.fill();ctx.stroke();
+  ctx.globalAlpha=.8;const size=Math.max(9,10*scale);ctx.font=plateFace(size,'sc');ctx.textAlign='center';ctx.fillStyle=P.carbon;ctx.fillText('THE EASTERN HORIZON',cx,base+size*1.5);
+  ctx.globalAlpha=1;
+}
+const bw0=()=>ceilingNutBandWidth()+3;
+// Dawn. The run that comes through all twelve gates ends not in the dark but in the one thing the whole
+// night was for: the sun rising out of the east, pushed up by Khepri, the scarab of the becoming sun, as
+// the sky warms from lapis to gold. It is drawn the way the New Kingdom's goldsmiths set the same scene
+// on a pectoral: a lapis scarab closed in gold, falcon wings spread from its shoulders in bands of
+// lapis, carnelian, turquoise and gold, the disc raised in its forelegs and the shen ring, the circle of
+// eternity, held in its hind legs. It plays over the few seconds the end leaf waits for (src/ui.js), on
+// the dead-state clock, so a pause holds it and reduced motion shows its last frame at once.
+function ceilingSunriseWing(g,dir,span,s,e){
+  // One wing: four bands of feathers swept out and a little up from the shoulder, as the goldsmiths set
+  // them: the short coverts in gold along the top, then carnelian and turquoise, and the long lapis
+  // flight feathers lowest and longest; each band is cut into feathers by fine gold lines. Drawn from
+  // the bottom band up, so each shorter band lies over the root of the longer one beneath it.
+  const P=CEILING_PALETTE,rows=[[P.water,10.5,1],[P.faience,7,.8],[P.red,3.5,.62],[P.yellow,0,.44]];
+  for(const [col,dy,len] of rows){
+    const L=span*len,y0=-4*s+dy*s,thick=(dy>10?5.6:4.4)*s,tip=[dir*(12*s+L),y0-7*s*e-dy*.15*s];
+    g.beginPath();g.moveTo(dir*10*s,y0-thick*.5);
+    g.quadraticCurveTo(dir*(12*s+L*.55),y0-thick*.9-6*s*e,tip[0],tip[1]);
+    g.quadraticCurveTo(dir*(12*s+L*.55),y0+thick*.7-3*s*e,dir*10*s,y0+thick*.6);g.closePath();
+    g.fillStyle=col;g.fill();g.strokeStyle=P.yellow;g.lineWidth=Math.max(.8,.9*s);g.stroke();
+    g.save();g.clip();g.strokeStyle='rgba(227,180,71,.7)';g.lineWidth=Math.max(.5,.5*s);
+    for(let k=1;k<Math.max(4,Math.round(L/(5*s)));k++){const x=dir*(10*s+k*5*s);g.beginPath();g.moveTo(x,y0-thick*1.6);g.lineTo(x+dir*2*s,y0+thick*1.2);g.stroke();}
+    g.restore();
+  }
+}
+function ceilingDrawSunrise(){
+  if(!world||!world.won)return;
+  const P=CEILING_PALETTE,time=world.player.deadTime,t=reducedMotion?1:clamp(time/2.6,0,1),e=1-Math.pow(1-t,3);
+  const sky=ctx.createLinearGradient(0,H,0,0);sky.addColorStop(0,`rgba(240,196,86,${.6*e})`);sky.addColorStop(.5,`rgba(194,74,47,${.3*e})`);sky.addColorStop(1,'rgba(21,36,87,0)');
+  ctx.save();ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  const s=Math.min(W/330,H/700),R=21*s,cx=W/2,cy=lerp(H*.9,H*.33,e);
+  // The disc: a soft light around it, then rays cut as long wedges turning slowly on the dead clock, then
+  // the disc itself in carnelian warming to gold, closed in a gold rim with a fine ink line inside it.
+  const glow=ctx.createRadialGradient(cx,cy,R*.6,cx,cy,R*3.4);glow.addColorStop(0,`rgba(255,214,120,${.45*e})`);glow.addColorStop(1,'rgba(255,214,120,0)');
+  ctx.fillStyle=glow;ctx.fillRect(cx-R*3.4,cy-R*3.4,R*6.8,R*6.8);
+  const turn=reducedMotion?0:time*.12;ctx.fillStyle=`rgba(240,196,86,${.55*e})`;
+  for(let k=0;k<24;k++){const a=turn+k/24*TAU,r0=R*1.28,r1=R*(k%2?1.55+.25*e:1.75+.65*e),w=k%2?.05:.07;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a-w)*r0,cy+Math.sin(a-w)*r0);ctx.lineTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);ctx.lineTo(cx+Math.cos(a+w)*r0,cy+Math.sin(a+w)*r0);ctx.closePath();ctx.fill();}
+  ctx.fillStyle=`rgb(${mixRgb([194,74,47],[236,178,64],e)})`;ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.fill();
+  ctx.strokeStyle=P.yellow;ctx.lineWidth=2.6*s;ctx.stroke();ctx.strokeStyle='rgba(10,16,36,.55)';ctx.lineWidth=.8*s;ctx.beginPath();ctx.arc(cx,cy,R-1.9*s,0,TAU);ctx.stroke();
+  // Khepri, set under the disc so the forelegs meet its rim.
+  ctx.translate(cx,cy+R+38*s);ctx.lineJoin='round';ctx.lineCap='round';
+  ceilingSunriseWing(ctx,-1,82*s*(.35+.65*e),s,e);ceilingSunriseWing(ctx,1,82*s*(.35+.65*e),s,e);
+  const gold=P.yellow,lapis='#23428c',lw=Math.max(1,1.3*s);
+  // Legs first, so the body closes over their roots: forelegs up to the disc, mid legs out, hind legs
+  // down round the shen ring; each a jointed gold line with the tibia's teeth ticked along its edge.
+  const leg=(pts,teeth)=>{ctx.strokeStyle=gold;ctx.lineWidth=2.2*s;ctx.beginPath();pts.forEach(([x,y],k)=>k?ctx.lineTo(x*s,y*s):ctx.moveTo(x*s,y*s));ctx.stroke();
+    if(teeth){const [x0,y0]=pts.at(-2),[x1,y1]=pts.at(-1),n=Math.hypot(x1-x0,y1-y0),nx=-(y1-y0)/n,ny=(x1-x0)/n;ctx.lineWidth=1*s;
+      for(let k=1;k<4;k++){const u=k/4,x=x0+(x1-x0)*u,y=y0+(y1-y0)*u;ctx.beginPath();ctx.moveTo(x*s,y*s);ctx.lineTo((x+nx*2.2)*s,(y+ny*2.2)*s);ctx.stroke();}}};
+  for(const d of [-1,1]){
+    leg([[d*9,-18],[d*18,-28],[d*8,-37.5]],true);
+    leg([[d*12,-4],[d*22,0],[d*25,9]],true);
+    leg([[d*11,16],[d*17,26],[d*8,36]],true);
+  }
+  // The shen ring in the hind legs.
+  ctx.strokeStyle=gold;ctx.lineWidth=2.4*s;ctx.beginPath();ctx.arc(0,41*s,6*s,0,TAU);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-8*s,48.5*s);ctx.lineTo(8*s,48.5*s);ctx.stroke();
+  const shape=(draw,fill)=>{ctx.beginPath();draw();ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=gold;ctx.lineWidth=lw;ctx.stroke();};
+  // The wing-cases, the broad pronotum and the head with its toothed clypeus, each its own cell of lapis.
+  shape(()=>{ctx.moveTo(-13.5*s,-5*s);ctx.bezierCurveTo(-16*s,10*s,-10*s,26*s,0,27*s);ctx.bezierCurveTo(10*s,26*s,16*s,10*s,13.5*s,-5*s);},lapis);
+  ctx.strokeStyle=gold;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(0,-5*s);ctx.lineTo(0,26.5*s);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-11*s,-3*s);ctx.quadraticCurveTo(-6*s,-.5*s,-1.2*s,-3*s);ctx.moveTo(11*s,-3*s);ctx.quadraticCurveTo(6*s,-.5*s,1.2*s,-3*s);ctx.stroke();
+  shape(()=>{ctx.moveTo(-13*s,-5*s);ctx.quadraticCurveTo(-15*s,-19*s,0,-20*s);ctx.quadraticCurveTo(15*s,-19*s,13*s,-5*s);},lapis);
+  shape(()=>{ctx.moveTo(-8*s,-19.5*s);for(let k=0;k<=10;k++){const a=Math.PI+k/10*Math.PI,r=k%2?10.4:8.4;ctx.lineTo(Math.cos(a)*r*s,-20*s+Math.sin(a)*r*.9*s);}ctx.lineTo(8*s,-19.5*s);},'#1e3c80');
+  // A lighter sheen on each cell, set as the goldsmith would set a paler stone, not as a painted highlight.
+  ctx.fillStyle='rgba(110,176,214,.28)';ctx.beginPath();ctx.ellipse(-6*s,6*s,3*s,9*s,.15,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(6*s,6*s,3*s,9*s,-.15,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.ellipse(0,-13*s,7*s,3*s,0,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(0,-24*s,4*s,2*s,0,0,TAU);ctx.fill();
+  ctx.restore();
 }
 // The route is a sequence of brush dabs, not a stroke — 02-ceiling.md says so outright, and the aim
 // guide beside it already draws that way. A slow stretch of the flight is a run of close, loaded
@@ -1138,9 +1358,9 @@ function ceilingDrawRoute(){
       const f=d/len,x=ax+(bx-ax)*f,y=ay+(by-ay)*f;
       // The setting-out rides a hair under the closing dab, off-register, the way the wall's other
       // two-pass marks already keep their red under the black.
-      ctx.strokeStyle=`rgba(157,55,36,${alpha*.5})`;ctx.lineWidth=weight*1.1;
+      ctx.strokeStyle=`rgba(${CEILING_RGB.red},${alpha*.5})`;ctx.lineWidth=weight*1.1;
       ctx.beginPath();ctx.moveTo(x+1-ux*reach,y-1-uy*reach);ctx.lineTo(x+1+ux*reach,y-1+uy*reach);ctx.stroke();
-      ctx.strokeStyle=`rgba(36,29,22,${alpha})`;ctx.lineWidth=weight;
+      ctx.strokeStyle=`rgba(${CEILING_RGB.carbon},${alpha})`;ctx.lineWidth=weight;
       ctx.beginPath();ctx.moveTo(x-ux*reach,y-uy*reach);ctx.lineTo(x+ux*reach,y+uy*reach);ctx.stroke();
     }
     carry=(carry+len)%spacing;
@@ -1188,7 +1408,7 @@ function ceilingDrawDecanCharts(){
   ctx.save();ctx.lineWidth=.7*scale;
   for(const chart of world.constellations){
     if(!chart.stars.length)continue;const t=reveal.progress(chart,CHART_REVEAL),alpha=(chart.expired?.12:chart.completed?.62:.27)*t;
-    ctx.strokeStyle=`rgba(${chart.completed?'40,89,135':'36,29,22'},${alpha})`;ctx.beginPath();
+    ctx.strokeStyle=`rgba(${chart.completed?CEILING_RGB.blue:CEILING_RGB.carbon},${alpha})`;ctx.beginPath();
     chart.stars.forEach((n,i)=>{const x=sx(n.x),y=sy(n.y);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});ctx.stroke();
     const anchor=chart.stars[0],x=sx(anchor.x),y=sy(anchor.y)-anchor.r*scale-10;
     if(y>-20&&y<H+20)ceilingWordRow(ctx,'star',x,y-2,Math.max(11,13*scale),CEILING_PALETTE.carbon,alpha+.2,t);
@@ -1204,7 +1424,7 @@ function ceilingDrawDecanCharts(){
 // White is huntite, the pigment the wall paints star discs in; it is kept to one pot in five and
 // otherwise spent on the disc a star is set on, since a white sign on plaster is a pale mark and a
 // field of them would be a route the player has to hunt for.
-const CEILING_BODY_FILLS=[CEILING_PALETTE.carbon,CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.redDark,CEILING_PALETTE.carbon];
+const CEILING_BODY_FILLS=[CEILING_PALETTE.carbon,CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.faience,CEILING_PALETTE.carbon];
 function ceilingNodeIcon(n,r,stage){
   const seed=n.seed||n.id+1;
   if(n.type==='gold'||n.type==='sling'){
@@ -1284,7 +1504,9 @@ function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade,course){
     inner=set?set.inner:spoked?.34+ceilingHash(seed,403)*.12:.6+ceilingHash(seed,405)*.16,
     outer=set?set.outer:spoked?.97+ceilingHash(seed,407)*.02:.87+ceilingHash(seed,409)*.09,
     ticks=set?clamp(Math.round(r*set.pitch),10,set.most):clamp(Math.round(r*(spoked?.46:.62)),11,34);
-  g.strokeStyle=`rgba(36,29,22,${alpha})`;
+  // On lapis the hour-circle's divisions are struck in yellow, the colour the blue ceilings keep for
+  // what is lit, so a circle reads as a place of light across the whole dark field.
+  g.strokeStyle=`rgba(${CEILING_RGB.yellow},${Math.min(1,alpha*1.5)})`;
   for(let i=0;i<ticks;i++){
     const a=start+i/ticks*TAU,i0=inner*(.97+ceilingHash(seed+i*5,413)*.06),o1=outer*(.97+ceilingHash(seed+i*7,417)*.05);
     g.globalAlpha=fade*clamp(.6+ceilingHash(seed+i*3,411)*.55,0,1);
@@ -1304,25 +1526,30 @@ function ceilingDrawNode(n,aim){
   ctx.save();ctx.translate(x,y);ctx.globalAlpha=fade;
   const red=clamp(t/.25,0,1),correct=clamp((t-.22)/.28,0,1),finish=clamp((t-.68)/.32,0,1),start=n.phase||0;
   if(red>0){
-    ctx.strokeStyle='rgba(157,55,36,.42)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(1.2,-1,r,start,start+TAU*red);ctx.stroke();
+    // The red setting-out recedes once the circle is closed over it, to the sliver every other mark on
+    // the sheet keeps; left at full strength under a pale line on lapis it turned the whole rim mauve.
+    ctx.strokeStyle=`rgba(${CEILING_RGB.red},${.42-.3*correct})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(1.2,-1,r,start,start+TAU*red);ctx.stroke();
     // The setting-out ring is the wall's first pass, so the reed rides its own leading end — the direct
     // counterpart of the atlas's penWedgeEnd, parked on whichever ring is currently sweeping.
     if(red<1&&r>3){const a=start+TAU*red,hx=1.2+Math.cos(a)*r,hy=-1+Math.sin(a)*r,ta=a+Math.PI/2;
       ceilingWet(ctx,hx,hy,1.2*scale,.7*fade,CEILING_PALETTE.red);ceilingReed(ctx,hx,hy,ta,.85*fade,CEILING_PALETTE.red);}
   }
   if(correct>0){
-    ctx.strokeStyle=`rgba(36,29,22,${retired?.16:.42})`;ctx.lineWidth=active?1.45:1;ctx.beginPath();ctx.arc(0,0,r,start,start+TAU*correct);ctx.stroke();
+    ctx.strokeStyle=`rgba(${CEILING_RGB.carbon},${retired?.16:.42})`;ctx.lineWidth=active?1.45:1;ctx.beginPath();ctx.arc(0,0,r,start,start+TAU*correct);ctx.stroke();
     if(correct<1&&r>3){const a=start+TAU*correct,hx=Math.cos(a)*r,hy=Math.sin(a)*r,ta=a+Math.PI/2;
       ceilingWet(ctx,hx,hy,scale,.65*fade,CEILING_PALETTE.carbon);ceilingReed(ctx,hx,hy,ta,.8*fade,CEILING_PALETTE.carbon);}
   }
-  if(finish>0)ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade,n.difficultyChoice);
+  if(finish>0){
+    ctx.fillStyle=`rgba(${CEILING_RGB.yellow},${(retired?.03:active?.12:.07)*finish})`;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+    ceilingNodeWheel(ctx,r,n.seed||n.id+1,start,retired?.16:active?.68:.38,active?1.45:1,fade,n.difficultyChoice);
+  }
   // Defect (e): a dashed circle is the engraved atlas's mark, carried over unexamined. The wall's own
   // way to rule a boundary is a doubled line — the same hair-off-register repeat ceilingSign's closing
   // stroke already wears where the brush reloaded — so the target ring (where the flight will land)
   // and the capture band (how close counts while orbiting) keep the true radius on the inner, on-cap
   // stroke and add only a fainter echo outside it, never inside, so the boundary itself never blurs.
   if(target||active){
-    const col=target?'40,89,135':'196,147,46';
+    const col=target?CEILING_RGB.blue:CEILING_RGB.yellow;
     ctx.strokeStyle=`rgba(${col},.74)`;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,cap,0,TAU);ctx.stroke();
     ctx.strokeStyle=`rgba(${col},.36)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,cap+2.6*scale,0,TAU);ctx.stroke();
   }
@@ -1345,7 +1572,7 @@ function ceilingDrawAim(aim){
     carry=(carry+len)%11;
   }
   ctx.globalAlpha=1;
-  if(aim?.perfect&&!preview.fogged){ctx.strokeStyle='rgba(196,147,46,.72)';ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();}
+  if(aim?.perfect&&!preview.fogged){ctx.strokeStyle=`rgba(${CEILING_RGB.yellow},.72)`;ctx.lineWidth=1.4*scale;ctx.beginPath();ctx.arc(sx(aim.cx),sy(aim.cy),aim.radius*scale,aim.entryAngle,aim.entryAngle+aim.entryDir*.46,aim.entryDir<0);ctx.stroke();}
   if(preview.inkRange>=0&&points.at(-1).distance>preview.inkRange){
     const q=points.find(p=>p.distance>=preview.inkRange);if(q){const x=sx(q.x),y=sy(q.y);ctx.strokeStyle=CEILING_PALETTE.red;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x+4,y-4);ctx.lineTo(x-4,y+4);ctx.stroke();}
   }
@@ -1360,7 +1587,7 @@ function ceilingDrawApep(h,t){
   const pull=world.player.node?0:clamp(1-Math.hypot(world.player.x-h.x,world.player.y-h.y)/gravityRadius(h),0,1);
   ctx.save();ctx.translate(sx(h.x),sy(h.y));
   const pulse=reducedMotion?1:.94+.06*Math.sin(time*1.1+(h.phase||0));
-  ctx.strokeStyle='rgba(157,55,36,.2)';ctx.lineWidth=.7;for(const k of [.48,.72,1]){const kk=k*pulse*(1-pull*.08);ctx.beginPath();ctx.ellipse(0,0,field*kk,field*kk*.62,0,0,TAU);ctx.stroke();}
+  ctx.strokeStyle=`rgba(${CEILING_RGB.red},.2)`;ctx.lineWidth=.7;for(const k of [.48,.72,1]){const kk=k*pulse*(1-pull*.08);ctx.beginPath();ctx.ellipse(0,0,field*kk,field*kk*.62,0,0,TAU);ctx.stroke();}
   const turn=time*.5+(h.phase||0),wind=1.7+pull*1.1;
   const points=[];for(let i=0;i<=52;i++){const u=i/52,a=u*TAU*wind+turn,wave=reducedMotion?0:Math.sin(u*TAU*3-time*2.4+(h.phase||0))*r*.05,rr=r*(.12+.78*u)+wave;points.push([Math.cos(a)*rr,Math.sin(a)*rr*.62]);}
   ceilingBrush(ctx,points,CEILING_PALETTE.carbon,Math.max(3,r*.24),.92*t,h.seed);
@@ -1403,7 +1630,7 @@ function ceilingDrawNun(g){
   // Formless water held perfectly still is the one thing Nun is not, so the hatch drifts sideways
   // as a travelling wave instead of sitting as a fixed zigzag.
   const time=reducedMotion?0:world.time;
-  ctx.save();ctx.globalAlpha=.78*t;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.clip();ctx.fillStyle='rgba(221,207,173,.82)';ctx.fillRect(x-r,y-r,r*2,r*2);
+  ctx.save();ctx.globalAlpha=.78*t;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.clip();ctx.fillStyle='rgba(11,42,68,.82)';ctx.fillRect(x-r,y-r,r*2,r*2);
   for(let i=-5;i<=5;i++){const yy=y+i*r*.16,pts=[];for(let px=x-r*1.1,k=0;px<=x+r*1.15;px+=r*.12,k++)pts.push([px,yy+Math.sin((px-x)/(r*.24)*Math.PI+i*.7+(g.phase||0)+time*1.4)*r*.045]);ceilingBrush(ctx,pts,CEILING_PALETTE.blue,Math.max(.8,r*.055),.62,g.seed+i);}
   ctx.restore();ctx.save();ctx.globalAlpha=.32*t;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(x,y,r*1.02,r*.82,0,0,TAU);ctx.stroke();ctx.restore();
 }
@@ -1424,6 +1651,13 @@ function ceilingDrawPlayer(dt){
   const heading=Math.atan2(p.vy,p.vx),target=ceilingFacing<0?heading+Math.PI:heading;
   if(ceilingAngle===null||reducedMotion)ceilingAngle=target;
   else{let d=(target-ceilingAngle+Math.PI)%TAU;if(d<0)d+=TAU;d-=Math.PI;ceilingAngle+=d*(1-Math.exp(-(dt||0)*14));}
+  // The barque is flooded in light colours, so it alone is closed in the dark ink rather than the pale
+  // line the rest of the night is drawn in; the palette's line is lent to it for the length of the draw.
+  const line=CEILING_PALETTE.carbon;CEILING_PALETTE.carbon=CEILING_PALETTE.ink;
+  try{ceilingPaintBarque(x,y,s,speed);}finally{CEILING_PALETTE.carbon=line;}
+}
+function ceilingPaintBarque(x,y,s,speed){
+  const p=world.player;
   ctx.save();ctx.translate(x,y);ctx.rotate(ceilingAngle);ctx.scale(ceilingFacing*s,s);
   // What is drawn is the barque of the coffin boards and the Greenfield sheet, and it is rowed and
   // steered, never sailed: a crescent hull with papyrus umbels curling up at both ends, a naos
@@ -1487,18 +1721,18 @@ function ceilingDrawPlayer(dt){
   // circle instead of ruled with a dash — a ring built of blocks reads as broken at a glance without
   // borrowing the engraved atlas's ruling pen to do it.
   if(p.shielded){
-    ctx.strokeStyle='rgba(40,89,135,.72)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,17,0,TAU);ctx.stroke();
-    ctx.strokeStyle='rgba(40,89,135,.36)';ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,19.4,0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(${CEILING_RGB.blue},.72)`;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(0,0,17,0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(${CEILING_RGB.blue},.36)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,19.4,0,TAU);ctx.stroke();
   }
   if(p.reflectorArmed){
-    const segs=14,gap=.32;ctx.strokeStyle='rgba(157,55,36,.8)';ctx.lineWidth=1.4;ctx.lineCap='butt';
+    const segs=14,gap=.32;ctx.strokeStyle=`rgba(${CEILING_RGB.red},.8)`;ctx.lineWidth=1.4;ctx.lineCap='butt';
     for(let i=0;i<segs;i++){const a0=i/segs*TAU,a1=a0+(1-gap)/segs*TAU;ctx.beginPath();ctx.arc(0,0,21,a0,a1);ctx.stroke();}
   }
   // The third charge is no ring at all but light thrown off the barque, which is also the one thing on
   // this wall the yellow ochre is actually for: the sun the whole night is rowed toward. Struck outward
   // in alternating lengths, it is told from the other two by its kind of mark before its radius.
   if(p.dawnArmed){
-    ctx.strokeStyle='rgba(196,147,46,.85)';ctx.lineWidth=1.5;ctx.lineCap='round';ctx.beginPath();
+    ctx.strokeStyle=`rgba(${CEILING_RGB.yellow},.85)`;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.beginPath();
     for(let i=0;i<12;i++){
       const a=i*TAU/12,to=i%2===0?29:26;
       ctx.moveTo(Math.cos(a)*24,Math.sin(a)*24);ctx.lineTo(Math.cos(a)*to,Math.sin(a)*to);
@@ -1511,7 +1745,7 @@ function ceilingDrawPlayer(dt){
 // Wet red ochre and the tone it dries toward as it soaks into the lime — this sheet's own wet/dry
 // pair, built from CEILING_PALETTE.red and .loss rather than borrowed from the atlas's trailInk(),
 // since a painted wall dries into its own plaster, not into someone else's paper.
-const CEILING_WET=[157,55,36],CEILING_DRY=[157,137,102];
+const CEILING_WET=[194,74,47],CEILING_DRY=[74,92,146];
 // A capture is the wall's record of a landing: a loaded dab of red ochre set at the circle, its
 // edge grown out from the node by the same reducedMotion-gated start/distance the plain ring below
 // uses, so it stands complete and still exactly like every other mark under that setting. A perfect
@@ -1525,7 +1759,7 @@ function ceilingCaptureMark(q,t,x,y){
   landContour(ctx,0,0,radius,radius*.86,seeded(seed));
   ctx.fillStyle=`rgba(${CEILING_WET},${alpha*(q.perfect?.92:.78)})`;ctx.fill();
   if(q.perfect){
-    ctx.strokeStyle=`rgba(36,29,22,${alpha})`;ctx.lineWidth=Math.max(.7,radius*.12);ctx.stroke();
+    ctx.strokeStyle=`rgba(${CEILING_RGB.carbon},${alpha})`;ctx.lineWidth=Math.max(.7,radius*.12);ctx.stroke();
     for(let i=-2;i<=2;i++){
       const a=i*.5,c=Math.cos(a),s=Math.sin(a),from=radius*1.05,to=from+3+scale*1.5;
       ceilingBrush(ctx,[[c*from,s*from],[c*to,s*to]],CEILING_PALETTE.carbon,Math.max(.5,radius*.08),alpha*.75,seed+i*11);
@@ -1583,10 +1817,21 @@ function ceilingPointer(x,y,dir,size,alpha){
 // wall makes for itself, like the hour, is written in strokes with ceilingNumber(), and a capture's
 // score is exactly a count read at a run — so no Egyptian numerals are used here.
 function ceilingFloaterMark(f,alpha){
-  const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale),
-    left=sx(f.x)<W*.5,nx=left?margin+hand*2.2:W-margin-hand*2.2,
-    ny=clamp(sy(f.y)-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
+  const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale);
+  // The gutter line is settled once, on the first frame, by the same solver the atlas's own floaters use
+  // (floaterLine, effects.js), so a score in the margin steps clear of a note already standing there
+  // instead of being cut straight across it; with no clear line left the score goes unwritten. It waits
+  // out its first frame unsettled: a landing strikes its note in the same instant as its score, and the
+  // register is a frame behind (ground.js), so only on the second frame does it know where that note
+  // went. Nothing is lost by the wait, since a floater's first frame is drawn at no opacity at all.
+  if(!f.waited){f.waited=true;return;}
+  if(f.lift===undefined){f.left=sx(f.x)<W*.5;const line=floaterLine(f,f.left,size*1.5);f.lift=line===null?null:line-sy(f.y);}
+  if(f.lift===null)return;
+  const left=f.left,nx=left?margin+hand*2.2:W-margin-hand*2.2,
+    ny=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*20*scale),hudBand()+15,H-footerBand()-15);
   ctx.save();ctx.globalAlpha=alpha;ctx.font=plateFace(size,'sc');ctx.fillStyle=CEILING_PALETTE.red;
+  // Declared to the register as it is set, so a note placed on the next frame steps round it in turn.
+  markGroundText('floater',nx,ny,ctx.measureText(f.text).width,size,left?'left':'right',f);
   ctx.textAlign=left?'left':'right';ceilingChisel(ctx,f.text,nx,ny);
   ceilingPointer(nx+(left?-hand*1.8:hand*1.8),ny-hand*.5,left?1:-1,hand,alpha*.85);
   ctx.restore();
@@ -1594,7 +1839,7 @@ function ceilingFloaterMark(f,alpha){
 function ceilingDrawEffects(dt){
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];if(world.state!=='paused'){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-dt*1.5);p.vy*=Math.exp(-dt*1.5);}if(p.life<=0){particles.splice(i,1);continue;}
-    const rgb=p.color==='red'?'157,55,36':p.color==='blue'?'40,89,135':p.color==='violet'?'82,65,91':'196,147,46',a=clamp(p.life/(p.max||1),0,1);
+    const rgb=p.color==='red'?CEILING_RGB.red:p.color==='blue'?CEILING_RGB.blue:p.color==='violet'?CEILING_RGB.violet:CEILING_RGB.yellow,a=clamp(p.life/(p.max||1),0,1);
     ctx.strokeStyle=`rgba(${rgb},${a*.75})`;ctx.lineWidth=Math.max(.7,p.size*scale);ctx.beginPath();ctx.moveTo(sx(p.x),sy(p.y));ctx.lineTo(sx(p.x-p.vx*.02),sy(p.y-p.vy*.02));ctx.stroke();
   }
   for(let i=rings.length-1;i>=0;i--){
@@ -1613,95 +1858,64 @@ function ceilingDrawEffects(dt){
     ceilingFloaterMark(f,Math.min(1,f.age*8)*clamp((1.15-f.age)*3,0,1));
   }
 }
-// The break beneath the barque. TT353 never floods — a painted wall has no waterline — so what
-// chases the climb is not spilled ink but the wall itself letting go: a faceted fracture eating
-// upward into the plaster, Duat's own near-black behind it, chips and dust falling into the gap
-// it opens. Apep is this era's attractor and already draws his own coil (ceilingDrawHazard); this
-// is the ledge he threatens the barque off of, not a second serpent. The one line this owes the
-// atlas's ink is fy itself — the simulation's exact kill height (src/simulation.js:738) — so every
-// jag, band and crack below is layered relative to fy and never moves the fill's own baseline.
-const CEILING_DEBRIS_RNG=seeded(50221),CEILING_DEBRIS=Array.from({length:30},()=>{
-  const dust=CEILING_DEBRIS_RNG()<.24;
-  return{x:CEILING_DEBRIS_RNG(),phase:CEILING_DEBRIS_RNG(),dust,
-    speed:dust?.1+CEILING_DEBRIS_RNG()*.1:.3+CEILING_DEBRIS_RNG()*.55,
-    size:dust?.7+CEILING_DEBRIS_RNG()*1.1:1.5+CEILING_DEBRIS_RNG()*2.9,
-    drift:(CEILING_DEBRIS_RNG()-.5)*2,hold:CEILING_DEBRIS_RNG(),
-    tone:CEILING_DEBRIS_RNG()<.5?CEILING_PALETTE.loss:CEILING_PALETTE.warm};
-});
-// One faceted vertex per irregular run of world-space x, offset by a hash keyed on that cell and on
-// world.floorY quantised into the break's own "reach" — so the profile re-rolls in blocks as the
-// wall climbs into stone the player has not passed yet, instead of a fixed shape sliding under the
-// camera the way a tide mark would. calm (darknessRelief) flattens the facets while a decan
-// course's four-second respite holds, the collapse visibly stalling rather than just pausing.
-function ceilingFractureEdge(fy,calm){
-  const reach=Math.floor(world.floorY/22),amp=(2.4+5.6*(1-calm))*scale,pts=[];
-  let x=-18*scale;
-  while(x<=W+18*scale){
-    const wx=(x-plateShift.x-W*.5)/scale,cell=Math.round(wx/(16*scale)),
-      jag=(ceilingHash(cell,reach)-.5)*2*amp,step=(10+ceilingHash(cell*3+1,reach*7+11)*15)*scale;
-    pts.push([x,fy+jag]);x+=step;
-  }
+// What rises beneath the barque is Nun: the dark primordial water every Egyptian night was held above,
+// which the sun sank into at evening and was carried across. It rises inside Nut's arch, since the sky
+// is what holds it back, and it is written the way the wall writes water, as the n sign: rows of
+// zigzag set one under another. The one line it owes the atlas is fy, the simulation's exact kill
+// height (src/simulation.js), which the crest is drawn about; every row below is layered from it and
+// the fill itself starts exactly there, so what the eye reads as the waterline is the line that kills.
+// The rows drift, alternately left and right, because still water is the one thing Nun is not; a decan
+// course's respite (darknessRelief) flattens the crest and slows the drift, the flood visibly stalling.
+function ceilingZigzag(x0,x1,y,step,amp,shift){
+  const pts=[];let k=Math.floor((x0-shift)/step)-1;
+  for(let x=shift+k*step;x<=x1+step;x+=step,k++)pts.push([x,y+(k&1?-amp:amp)]);
   return pts;
 }
 function ceilingDrawDark(dt){
   const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));
-  const calm=darknessRelief,reach=Math.floor(world.floorY/22),pts=ceilingFractureEdge(fy,calm);
+  const P=CEILING_PALETTE,calm=darknessRelief,time=reducedMotion?0:world.time,flow=1-calm*.7,
+    step=Math.max(7,9*scale),amp=(2.2+2.4*(1-calm))*scale,crest=ceilingZigzag(-step,W+step,fy,step,amp,(time*16*flow*scale)%(step*2));
   ctx.save();
-  // The dark behind the wall is Duat, not fog: a flat near-black fill starting exactly at fy, the
-  // same baseline the old ink used, so the fill itself never disagrees with the kill height.
-  ctx.fillStyle=CEILING_PALETTE.duatDeep;ctx.fillRect(0,fy,W,Math.max(0,H-fy));
-  // A thin band of raw aggregate right under the break, ragged on its own lower edge, so the cut
-  // reads as snapped stone rather than a second shoreline.
-  ctx.fillStyle=CEILING_PALETTE.loss;ctx.globalAlpha=.5+near*.1;ctx.beginPath();
-  ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
-  for(let i=pts.length-1;i>=0;i--)ctx.lineTo(pts[i][0],pts[i][1]+(7+ceilingHash(i,reach+5)*9)*scale);
-  ctx.closePath();ctx.fill();ctx.globalAlpha=1;
-  // The fresh upper lip, a hairline highlight riding just above the break: a fracture exposes stone
-  // the smoke never darkened, so it is the palette's palest tone and not the wall's own plaster.
-  ceilingBrush(ctx,pts.map(p=>[p[0],p[1]-1.6*scale]),CEILING_PALETTE.lime,Math.max(.6,.9*scale),.55+near*.15,reach+3);
-  ceilingBrush(ctx,pts,CEILING_PALETTE.carbon,Math.max(1,1.6*scale),.85,reach+7);
-  // The tell: short carbon hairlines biting a little way up into stone that is still intact, so the
-  // player reads where the break is headed before it arrives there.
-  for(let i=2;i<pts.length-2;i+=3){
-    if(ceilingHash(i,reach+13)>.62)continue;
-    const[x0,y0]=pts[i],segs=2+(ceilingHash(i,reach+19)<.5?1:0),len=(10+ceilingHash(i,reach+17)*28)*scale/segs,
-      crack=[[x0,y0]];let cx=x0,cy=y0;
-    for(let s=0;s<segs;s++){cx+=(ceilingHash(i+s,reach+23)-.5)*10*scale;cy-=len*(.7+ceilingHash(i+s,reach+29)*.6);crack.push([cx,cy]);}
-    ceilingBrush(ctx,crack,CEILING_PALETTE.carbon,.7,.3,i*7+reach);
+  ctx.fillStyle=P.nun;ctx.beginPath();ctx.moveTo(crest[0][0],H+4);for(const q of crest)ctx.lineTo(q[0],q[1]);ctx.lineTo(crest.at(-1)[0],H+4);ctx.closePath();ctx.fill();
+  // The rows of the sign, each a little further down and a little fainter, so the water is deep rather
+  // than striped, and the whole deepens toward black the further it lies under the crest.
+  const rowGap=Math.max(9,12*scale);
+  for(let r=1;fy+r*rowGap<H+rowGap;r++){
+    const y=fy+r*rowGap,dir=r&1?-1:1,sh=(dir*time*(10+r*1.5)*flow*scale)%(step*2),fade=Math.max(.12,.62-r*.07);
+    ctx.globalAlpha=fade;ctx.strokeStyle=r&1?P.water:P.waterHi;ctx.lineWidth=Math.max(1,1.3*scale);ctx.lineJoin='round';
+    const q=ceilingZigzag(-step,W+step,y,step,amp*.72,sh);ctx.beginPath();q.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
   }
-  // A slab or two already tilting loose above the line: held still, because they are anticipation
-  // and not motion, the same discipline the era's grammar holds everything else to.
-  for(let i=4;i<pts.length-4;i+=7){
-    if(ceilingHash(i,reach+31)>.22)continue;
-    const[x0,y0]=pts[i],w=(9+ceilingHash(i,reach+37)*7)*scale,h=(5+ceilingHash(i,reach+41)*4)*scale,
-      tilt=(ceilingHash(i,reach+43)-.5)*.5,lift=(6+ceilingHash(i,reach+47)*10)*scale,
-      cos=Math.cos(tilt),sin=Math.sin(tilt),cx=x0,cy=y0-lift;
-    // Through ceilingPolygon like every other closed mark on this wall, rather than a strokeRect: a
-    // slab about to drop is still a shape the painter would have set out, and a true rectangle with a
-    // machine hairline is the one thing here that would not have come off a reed.
-    ceilingPolygon(ctx,[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([px,py])=>[cx+px*cos-py*sin,cy+px*sin+py*cos]),
-      CEILING_PALETTE.plaster,1,i*11+reach,Math.max(.7,scale));
-  }
+  ctx.globalAlpha=1;
+  // The crest itself: the pale line of the water's surface, brighter as it closes on the barque, with a
+  // faint second line riding a hair above it so the surface reads as a lip and not as a ruled edge.
+  ctx.strokeStyle=P.waterHi;ctx.lineWidth=Math.max(1.4,2*scale);ctx.lineJoin='round';ctx.globalAlpha=.8+near*.2;
+  ctx.beginPath();crest.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+  ctx.strokeStyle=P.carbon;ctx.lineWidth=Math.max(.6,.8*scale);ctx.globalAlpha=.25+near*.3;
+  ctx.beginPath();crest.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]-2.4*scale):ctx.moveTo(p[0],p[1]-2.4*scale));ctx.stroke();
   ctx.restore();
   if(reducedMotion)return;
-  // Debris reads as falling, dominantly: chips shed by the break tumbling down into Duat behind it.
-  // A slower, sparser lift of pale dust off the break itself is welcome — collapsing stone does
-  // raise dust — but stays the minor voice. calm quiets both together: chips run out of hold and
-  // settle, dust stops lifting, the same stall the fracture's own facets flatten under above.
-  const time=world.time,fall=1-calm*.55;
-  ctx.save();ctx.beginPath();ctx.rect(0,fy-32*scale,W,Math.max(0,H-fy+32*scale));ctx.clip();
+  // Spray thrown up off the crest and a few pale motes sinking into the deep: the flood's own weather,
+  // quieted with the crest while a respite holds.
+  ctx.save();
   for(const d of CEILING_DEBRIS){
     if(d.hold<calm*.85)continue;
-    const f=((time*d.speed*fall+d.phase)%1+1)%1,a=Math.sin(f*Math.PI)*(d.dust?.22:.55)*(1-calm*.4);
+    const f=((time*d.speed*(1-calm*.55)+d.phase)%1+1)%1,a=Math.sin(f*Math.PI)*(d.dust?.5:.3)*(1-calm*.4);
     if(a<=.02)continue;
-    const x=d.x*W+Math.sin(time*.5+d.phase*TAU)*d.drift*4*scale,y=d.dust?fy-f*30*scale:fy+f*110*scale,s=d.size*scale;
-    ctx.globalAlpha=a;ctx.fillStyle=d.dust?CEILING_PALETTE.lime:d.tone;ctx.fillRect(x-s*.5,y-s*.5,s,s);
+    const x=d.x*W+Math.sin(time*.5+d.phase*TAU)*d.drift*4*scale,y=d.dust?fy-f*22*scale:fy+10*scale+f*110*scale,sz=(d.dust?d.size*1.3:d.size*.7)*scale;
+    ctx.globalAlpha=a;ctx.fillStyle=d.dust?P.waterHi:P.water;ctx.beginPath();ctx.arc(x,y,sz*.5,0,TAU);ctx.fill();
   }
   ctx.restore();
 }
+const CEILING_DEBRIS_RNG=seeded(50221),CEILING_DEBRIS=Array.from({length:30},()=>{
+  const dust=CEILING_DEBRIS_RNG()<.45;
+  return{x:CEILING_DEBRIS_RNG(),phase:CEILING_DEBRIS_RNG(),dust,
+    speed:dust?.25+CEILING_DEBRIS_RNG()*.3:.12+CEILING_DEBRIS_RNG()*.2,
+    size:dust?.7+CEILING_DEBRIS_RNG()*1.1:1.5+CEILING_DEBRIS_RNG()*2.9,
+    drift:(CEILING_DEBRIS_RNG()-.5)*2,hold:CEILING_DEBRIS_RNG()};
+});
 function ceilingDrawRunningHead(dt){
-  const index=ceilingWatch(),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
+  const index=ceilingHour(),bottom=Math.max(22,safeAreaBottom()+13),y=H-bottom;
   // The hour is a count the wall itself makes, so it is written in strokes, largest first, and the
   // Latin beside it stays what it is: a modern gloss, set in the era's slab and not pretending to
   // be a reading of the line it glosses. Roman numerals belonged to a century three sheets later.
@@ -1728,7 +1942,9 @@ function ceilingDrawRunningHead(dt){
 // node, hazard, the aim guide or the barque — so it sits under the whole flight layer in renderCeiling
 // and can never cost the player sight of a circle, whatever alpha it wears.
 function ceilingDrawChangeover(dt){
-  if(reducedMotion||world.state!=='playing'||chapterReveal.index<=0||chapterReveal.age>=CEILING_CHANGE_DUR)return;
+  // Every hour already has its gate on the sheet to announce it; the band is kept for the hours that
+  // also turn the room over to its next register, where the wall itself changes under the flight.
+  if(reducedMotion||world.state!=='playing'||chapterReveal.index<=0||chapterReveal.index%3||chapterReveal.age>=CEILING_CHANGE_DUR)return;
   chapterReveal.age+=dt;
   const age=chapterReveal.age,a=Math.sin(clamp(age/CEILING_CHANGE_DUR,0,1)*Math.PI),cy=H*.5,label=CEILING_HOURS[chapterReveal.index];
   ctx.save();ctx.textAlign='center';
@@ -1760,23 +1976,29 @@ function renderCeiling(dt,aim){
   const phase=(((-world.cameraY*scale)%tileH)+tileH)%tileH;
   for(let y=phase-tileH;y<H;y+=tileH)ctx.drawImage(tile,0,y,W,tileH);
   ceilingDrawHudClear();
-  ceilingDrawRegisterGrid();
   ceilingDrawChangeover(dt);
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
-  ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
+  ceilingDrawGates();ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
   ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);
   // Same slot the atlas gives drawSurveys(): after the aim guide and the route's own ink, ahead of the
   // transient effects layer (render(), src/frame.js) — the survey is dried ink beside the route, not a
   // live effect.
   ceilingDrawSurveys();
   ceilingDrawEffects(dt);drawInscriptions(dt);ceilingDrawPlayer(dt);ceilingDrawDark(dt);ctx.restore();
+  // Nut is laid over everything the night holds, the waters of Nun included: the flight happens inside
+  // her, and nothing that rises or passes is ever drawn over her body.
+  ceilingDrawSunrise();
+  ceilingDrawRegisterGrid();
+  ceilingDrawSunCourse(dt);if(world.state!=='ready')ceilingDrawCartouche();
   ceilingDrawRunningHead(dt);
-  if(screenFlash>0){ctx.fillStyle=`rgba(157,55,36,${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
+  if(screenFlash>0){ctx.fillStyle=`rgba(${CEILING_RGB.red},${screenFlash*.055})`;ctx.fillRect(0,0,W,H);if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
 }
 // The era's own hand: the whole frame above (renderCeiling) and its own five sounds
 // (docs/archive/eras/02-ceiling.md's "Sound") — four painters below plus scratch's own parameter row, since
 // audio.js's scratch() draws its grain from a row of numbers rather than calling out to a function.
 // See defineHand()/handFor() in src/plates.js; everything neither names is still the atlas's own.
+// The scale every string in the Ceiling's hand is tuned to: D pentatonic, D F G A C, over two and a half octaves.
+const CEILING_SCALE=[146.83,174.61,196,220,261.63,293.66,349.23,392,440,523.25,587.33];
 defineHand('ceiling',{
   frame:renderCeiling,
   ready:ceilingFaceReady,
@@ -1785,14 +2007,24 @@ defineHand('ceiling',{
   // into the register a stone mortar rings in — never a second engine, per docs/archive/eras/02-ceiling.md's
   // "Sound".
   scratch:{band:[260,380],q:[.5,1.1],peak:.075,attack:.006,dur:[.05,.05],gap:[.05,.07],ease:.02},
-  // A wet dab of pigment in place of the note off the row's own scale — the wall keeps no key, so
-  // nothing here climbs a scale — and a perfect transfer's dry brush-flick in place of the second
-  // chime: the loaded reed dragged once, dry, clear of the wet mark it just left; see
-  // docs/archive/eras/02-ceiling.md's "Sound".
-  capture(a,row,perfect){a.tone(150,.24,0,.34,'sine',88);a.brush(480,.24);if(perfect)a.brush(2300,.15);},
-  // A dropped stone in place of the dying chord — one low strike and a short low knock, over fast,
-  // because a dropped stone does not ring the way a struck string does.
-  death(a){a.tone(88,.4,0,.55,'sine',32);a.brush(150,.5);},
-  // The naos sistrum (audio.js's own method), in place of the atlas's rising three-note chime.
-  medal(a){a.sistrum();}
+  // The night is scored for the instruments the tomb banquets show: the harp, the frame drum and the
+  // sistrum. Every string is tuned to one five-note scale on D, since the harps that survive are
+  // pentatonic as far as anyone has reconstructed them, and a scale kept this plain never falls into
+  // the augmented second a film score reaches for when it wants to say "Egypt".
+  start(a){a.drum(84,0,.4);[587.33,440,349.23,293.66].forEach((f,i)=>a.pluck(f,1.3,.08+i*.11,.28));},
+  // Letting go is an oar's stroke: water pushed back and a string touched low under it.
+  release(a){a.wash(1700,480,.3,.28);a.pluck(146.83,.35,0,.22);},
+  // A landing plucks the harp, climbing the scale with the row, and a clean transfer strums a second
+  // string a fifth above straight after it, the way a harpist answers a note.
+  capture(a,row,perfect){const n=CEILING_SCALE[3+Math.floor(row)%5];a.pluck(n,1.1,0,.36);if(perfect){a.pluck(n*1.5,.9,.07,.2);a.pluck(n*2,.8,.14,.1);}},
+  // Water closing over the barque: a long deep wash and a string sliding down under it.
+  death(a){a.wash(1100,110,1.5,.42);a.tone(146.83,1.2,.05,.4,'triangle',55);},
+  // The naos sistrum for a decan course completed, with two strings rung high beside it.
+  medal(a){a.sistrum();a.pluck(587.33,1.2,.1,.2);a.pluck(880,1.1,.22,.14);},
+  // A gate: the frame drum struck twice and the sistrum shaken as the doors open; at every third gate,
+  // where the room itself turns over to its next register, a harp run falls under it as well.
+  chapter(a,hour){a.drum(92,0,.45);a.drum(92,.19,.3);a.sistrum();if(hour%3===0)CEILING_SCALE.slice(4,9).reverse().forEach((f,i)=>a.pluck(f,.9,.3+i*.07,.2));},
+  // Dawn: the drum, the sistrum, and the whole scale run upward on the harp over a chord held under it,
+  // the one time the night is allowed to resolve, because it is the one moment that is not a struggle.
+  dawn(a){a.drum(78,0,.5);a.sistrum();CEILING_SCALE.forEach((f,i)=>a.pluck(f,1.6,.15+i*.1,.24));for(const [f,d] of [[146.83,.2],[220,.5],[293.66,.8],[440,1.2]])a.tone(f,2.4,d,.1,'sine');setTimeout(()=>a.sistrum(),1300);}
 });

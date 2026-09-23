@@ -13,6 +13,10 @@ atlas — era V, the only plate a run ships with today (root `README.md`'s "Plat
 sections; `src/plates.js`'s default). Nothing under `archive/` is a live backlog; do not build
 toward it without being explicitly asked to resume it.
 
+One piece of live work sits beside that focus, at the user's request: the overhaul of Era II,
+The Ceiling, planned in [CEILING-OVERHAUL.md](CEILING-OVERHAUL.md). It changes the standalone preview
+door only and builds nothing toward the archived progression.
+
 ## `archive/eras/` — the archived eight-era progression plan
 
 Nothing here describes shipped behaviour, with two exceptions: Era I (`01-rock.md`) and Era II

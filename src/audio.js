@@ -116,8 +116,56 @@ class OrbitAudio {
     s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
     this.scratchNext=t+row.gap[0]+Math.random()*row.gap[1]-level*row.ease;
   }
-  start(){this.tone(196,.8,0,.3);this.tone(293.66,.7,.11,.22);this.tone(440,.9,.22,.16);}
-  release(){this.tone(330,.11,0,.25,'sine',190);this.brush(2100,.17);}
+  // A run's first chord and the tap that lets go are the atlas's own unless the plate in hand registers
+  // its own painter for them, exactly as capture/death/medal below already do.
+  start(){
+    const own=typeof handFor==='function'&&handFor('start');
+    if(own){own(this);return;}
+    this.tone(196,.8,0,.3);this.tone(293.66,.7,.11,.22);this.tone(440,.9,.22,.16);
+  }
+  release(){
+    const own=typeof handFor==='function'&&handFor('release');
+    if(own){own(this);return;}
+    this.tone(330,.11,0,.25,'sine',190);this.brush(2100,.17);
+  }
+  // A plucked string — the angular harp and the lyre of the New Kingdom's banquet scenes, played for
+  // the Ceiling. The string is its fundamental and two overtones that die away faster than it does,
+  // a hair out of tune with each other the way gut strings are, over the short dry click of the finger
+  // leaving the string. Nothing here is sampled; like every other sound in this file it is built on the
+  // spot from oscillators and the one buffer of noise.
+  pluck(hz,length=1.1,delay=0,volume=.4){
+    if(!this.ctx||!this.enabled||this.ctx.state!=='running')return;
+    this.tone(hz,length,delay,volume,'triangle',hz*.998);
+    this.tone(hz*2.004,length*.45,delay,volume*.32,'sine');
+    this.tone(hz*3.01,length*.22,delay,volume*.14,'sine');
+    const t=this.ctx.currentTime+delay,s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();
+    s.buffer=this.noise;f.type='bandpass';f.frequency.value=Math.min(6000,hz*6);f.Q.value=2.2;
+    g.gain.setValueAtTime(volume*.5,t);g.gain.exponentialRampToValueAtTime(.0006,t+.035);
+    s.connect(f);f.connect(g);g.connect(this.master);s.start(t,0,.05);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+  }
+  // A frame drum struck with the flat of the hand: a low body falling in pitch as the skin settles,
+  // under a short muffled slap of noise.
+  drum(hz=96,delay=0,volume=.5){
+    if(!this.ctx||!this.enabled||this.ctx.state!=='running')return;
+    this.tone(hz,.42,delay,volume,'sine',hz*.55);
+    const t=this.ctx.currentTime+delay,s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();
+    s.buffer=this.noise;f.type='lowpass';f.frequency.value=520;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume*.8,t+.004);g.gain.exponentialRampToValueAtTime(.0006,t+.12);
+    s.connect(f);f.connect(g);g.connect(this.master);s.start(t,0,.14);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};
+  }
+  // Moving water: the noise swelled up and let fall through a low filter sweeping downward, the sound
+  // of an oar's stroke or, drawn out and deeper, of water closing over something.
+  wash(from=1400,to=300,length=.5,volume=.3,delay=0){
+    if(!this.ctx||!this.enabled||this.ctx.state!=='running')return;
+    const t=this.ctx.currentTime+delay,f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();f.type='lowpass';f.Q.value=.7;
+    f.frequency.setValueAtTime(from,t);f.frequency.exponentialRampToValueAtTime(Math.max(60,to),t+length);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+length*.3);g.gain.exponentialRampToValueAtTime(.0006,t+length);
+    f.connect(g);g.connect(this.master);
+    // The noise buffer is shorter than a long wash, so the swell is laid from as many copies as it needs.
+    const n=Math.ceil(length/(this.noise.duration*.9));
+    for(let i=0;i<n;i++){const s=this.ctx.createBufferSource();s.buffer=this.noise;s.connect(f);s.start(t+i*this.noise.duration*.9);s.onended=()=>s.disconnect();}
+    setTimeout(()=>{f.disconnect();g.disconnect();},(delay+length+.2)*1000);
+  }
   // A landing on the atlas rings a note off the row's own scale, and a perfect transfer adds the
   // atlas's second chime; an era with its own instrument registers a capture painter to replace both.
   capture(row,perfect){
