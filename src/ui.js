@@ -1149,10 +1149,26 @@ function handleInput(){
   else if(world.state==='dead'&&world.player.deadTime>.7){newWorld();world.start();setPlaying();}
   else if(world.state==='paused')resume();
 }
+// The frontispiece is the one screen with room enough under it to scroll (see #intro, index.html), so
+// the state it shows — 'ready' — can't fire on the down stroke the way every other state safely does:
+// a finger settling to start a scroll drag is indistinguishable from a tap at that instant, and
+// preventDefault()ing it the old way would cancel the scroll outright. Ready alone is tracked down to
+// up instead, unlatched by a real drag or by the browser taking the gesture for its own scroll, so only
+// a stationary release starts the run and a pan of the leaf never does.
+let readyDownX=0,readyDownY=0,readyTracking=false;
+const READY_TAP_SLOP=10;
 game.addEventListener('pointerdown',e=>{
   if(e.target.closest('button')||!e.isPrimary||e.button!==0)return;
+  if(world.state==='ready'){readyTracking=true;readyDownX=e.clientX;readyDownY=e.clientY;return;}
   e.preventDefault();handleInput();
 },{passive:false});
+game.addEventListener('pointerup',e=>{
+  if(!readyTracking||!e.isPrimary)return;
+  readyTracking=false;
+  if(e.target.closest('button')||Math.hypot(e.clientX-readyDownX,e.clientY-readyDownY)>READY_TAP_SLOP)return;
+  handleInput();
+});
+game.addEventListener('pointercancel',()=>{readyTracking=false;});
 // iOS/WebKit doesn't reliably treat pointerdown as a user gesture for unlocking Web
 // Audio, so also unlock on the touch events it does recognize.
 for(const type of ['touchstart','touchend'])game.addEventListener(type,()=>audio.unlock(),{passive:true});
