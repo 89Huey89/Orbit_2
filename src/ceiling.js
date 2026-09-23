@@ -154,7 +154,7 @@ const CEILING_CHANGE_DUR=1.2;
 // from the tall passing strip below, because it never moves: see ceilingDrawRegisterGrid(). Each is
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
 // are otherwise pinned exactly the way this file always pinned the whole wall.
-let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
+let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
 // The barque's last known heading side, held between frames so a passing moment of near-zero
 // horizontal speed (the tip of a climb or dive) does not flicker the mirror back and forth.
 let ceilingFacing=1;
@@ -266,7 +266,9 @@ function ceilingChisel(g,text,x,y){
   let h=7;for(let i=0;i<text.length;i++)h=(h*131+text.charCodeAt(i))|0;
   const jx=(ceilingHash(h,1)-.5)*.7*scale,jy=(ceilingHash(1,h)-.5)*.5*scale,tone=g.fillStyle,alpha=g.globalAlpha;
   g.fillStyle=CEILING_PALETTE.duatDeep;g.globalAlpha=alpha*.6;g.fillText(text,x+.75*scale+jx,y+.65*scale+jy);
-  g.fillStyle=CEILING_PALETTE.lime;g.globalAlpha=alpha*.4;g.fillText(text,x-.6*scale-jx,y-.5*scale-jy);
+  // The pale edge is kept faint: the capitals are a heavy display face now, and at the old strength its
+  // offset copy read as the word printed twice.
+  g.fillStyle=CEILING_PALETTE.lime;g.globalAlpha=alpha*.16;g.fillText(text,x-.6*scale-jx,y-.5*scale-jy);
   g.fillStyle=tone;g.globalAlpha=alpha;g.fillText(text,x,y);
 }
 function ceilingPolygon(g,points,fill,stage=1,seed=1,width=1.2){
@@ -1067,7 +1069,7 @@ function ceilingDrawRegisterGrid(){
     for(let k=1;k<=6;k++){const t=k/6,a=-Math.PI*.5+t*Math.PI*.5;line.push([W-m-rm+Math.cos(a)*rm,m+rm+Math.sin(a)*rm]);}
     line.push([W-m,ground]);
     // Kept for the sun's course (ceilingDrawSunCourse): the same line, measured once, from her lips to her feet.
-    {const course=[[i+bw*1.5,ground-bw*2.4],[m,ground-bw*2.4],...line.slice(1,-1),[W-m,ground-bw*1.4]],len=[0];for(let k=1;k<course.length;k++)len.push(len[k-1]+Math.hypot(course[k][0]-course[k-1][0],course[k][1]-course[k-1][1]));ceilingSunCourse={pts:course,len,bw};}
+    {const hu=bw/16,lipY=Math.min(ground-bw*3.2,H-footerBand()-44*hu)+18.6*hu,course=[[i+28.5*hu,lipY],[m,lipY],...line.slice(1,-1),[W-m,ground-bw*1.4]],len=[0];for(let k=1;k<course.length;k++)len.push(len[k-1]+Math.hypot(course[k][0]-course[k-1][0],course[k][1]-course[k-1][1]));ceilingSunCourse={pts:course,len,bw};}
     const pitch=bw*1.35;let next=pitch*.5,walked=0,idx=0;
     for(let k=1;k<line.length;k++){
       const [ax,ay]=line[k-1],[bx,by]=line[k],len=Math.hypot(bx-ax,by-ay);
@@ -1096,6 +1098,7 @@ function ceilingDrawRegisterGrid(){
     // the ground's deepest blue banded with yellow, the face in her own blue, the eye in huntite.
     {
       const fb=footerBand(),u=bw/16,hx=i-3*u,hy=Math.min(ground-bw*3.2,H-fb-44*u);
+      ceilingNutHead={left:hx-2,top:hy-4*u,right:hx+37*u,bottom:hy+34*u};
       g.save();g.translate(hx,hy);g.lineJoin='round';g.lineCap='round';
       const shape=(pts,fill,stroke,lw)=>{g.beginPath();pts.forEach((q,k)=>k?g.lineTo(q[0]*u,q[1]*u):g.moveTo(q[0]*u,q[1]*u));g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=lw;g.stroke();}};
       // The broad collar, rows of faience, carnelian and gold beads fanned out from the throat over the
@@ -1128,6 +1131,9 @@ function ceilingDrawRegisterGrid(){
     ceilingFrameTop=c;ceilingFrameBot=null;ceilingFrameKey=key;
   }
   ctx.drawImage(ceilingFrameTop,0,0,W,H);
+  // Her head stands inside the sheet, where a note could otherwise be written across her face; it is
+  // declared as settled ground so the notes step round it (ground.js).
+  if(ceilingNutHead)markGroundBox('key',ceilingNutHead);
 }
 // The run's own count, written the way the walls write a king's name: inside a cartouche, the rope
 // loop tied off at one end, the Egyptian numerals set within it largest first and the modern figure
@@ -1237,7 +1243,11 @@ function ceilingDrawGates(){
     }
     // The name of the hour the gate opens onto, lettered across the opening under the lintel line.
     const size=Math.max(9,10*scale),label=CEILING_HOURS[h];ctx.font=plateFace(size,'sc');ctx.textAlign='center';
-    const lw=ctx.measureText(label).width;if(lw<W-2*(x0+tw)-8||true){ctx.globalAlpha=.6+.35*(1-open);ctx.fillStyle=P.carbon;ctx.fillText(label,W/2,top-th*.02);markGroundText('caption',W/2,top-th*.02,lw,size,'center');}
+    const lw=ctx.measureText(label).width,ly=top-th*.02;
+    // Set on a small plate of the night's deepest blue, so the name reads wherever the gate happens to
+    // stand, the register's star band included.
+    ctx.globalAlpha=.82;ctx.fillStyle='rgb(13,24,56)';ctx.beginPath();ctx.roundRect(W/2-lw/2-7,ly-size*1.05,lw+14,size*1.5,3);ctx.fill();
+    ctx.globalAlpha=.7+.3*(1-open);ctx.fillStyle=P.carbon;ctx.fillText(label,W/2,ly);markGroundText('caption',W/2,ly,lw,size,'center');
     ctx.restore();
   }
 }
