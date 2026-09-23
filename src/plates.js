@@ -141,7 +141,10 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-const currentBest=()=>plateOwns('score')?0:dailyOn?dailyBest:best;
+// A preview era (plateOwns('score')) keeps no best of its own here, since it never touches
+// orbit.best.v1 or orbit.bestRow.v1 — but a plate that names its own `best` hand painter (the Rock's
+// rockBest(), read off its own orbit.rock.v1) gets to answer with that instead of a bare 0.
+const currentBest=()=>plateOwns('score')?(handFor('best')?handFor('best')():0):dailyOn?dailyBest:best;
 function recordBest(score){
   // A plate that keeps its own record does not write the atlas's. Its run is playable and scored on
   // its own sheet; what it may never do is rewrite a number the atlas earned.

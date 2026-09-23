@@ -1992,7 +1992,8 @@ defineHand('rock',{
   release:rockHuff,
   graze:rockScrape,
   death:rockGutter,
-  medal:rockFlute
+  medal:rockFlute,
+  caveRun:rockCaveRecordRun,caveAnimal:rockCaveRecordAnimal,best:rockBest
 });
 
 // ---------- The vocabulary: only what this era actually calls differently ----------
@@ -2140,6 +2141,46 @@ defineVoice('rock',{
     relight:'THE TORCH TAKES FIRE'
   }
 });
+
+// ---------- A cave of your own (G3, docs/ROCK-OVERHAUL.md) ----------
+// A small persistent record, kept entirely apart from the atlas's ledger (orbit.ledger.v1) so the
+// frontispiece can one day paint "your cave": every run's depth and haul, and a tally of every animal
+// ever finished. It never touches the atlas's own key, and the atlas never reads this one — the two
+// records exist because Eras I and II already run in preview (plateOwns('score')), which is what keeps
+// showEnd() from folding a Rock run into the atlas's ledger in the first place. Storage may be blocked
+// or the document corrupt; either always yields a valid, empty-shaped record rather than throwing, the
+// same contract every other reader of `storage` keeps.
+const ROCK_CAVE_KEY='orbit.rock.v1',ROCK_CAVE_RUNS_MAX=60;
+function rockCaveRead(){
+  let raw=null;try{raw=JSON.parse(storage.get(ROCK_CAVE_KEY,'null'));}catch(_){raw=null;}
+  const runs=raw&&Array.isArray(raw.runs)?raw.runs:[];
+  const animals=raw&&raw.animals&&typeof raw.animals==='object'?raw.animals:{};
+  return{v:1,runs,animals};
+}
+function rockCaveWrite(record){try{storage.set(ROCK_CAVE_KEY,JSON.stringify(record));}catch(_){}}
+// Called once a Rock run ends (see showEnd()'s `caveRun` hand hook in ui.js). Appends one run and
+// drops whatever is oldest past the cap, so the record never grows without bound across many runs.
+function rockCaveRecordRun(world){
+  const record=rockCaveRead();
+  record.runs.push({row:Math.floor(world.progress),score:world.score,hands:world.captures,at:Date.now()});
+  if(record.runs.length>ROCK_CAVE_RUNS_MAX)record.runs=record.runs.slice(record.runs.length-ROCK_CAVE_RUNS_MAX);
+  rockCaveWrite(record);
+}
+// Called once per completed constellation during a Rock run (see the `caveAnimal` hand hook where
+// ui.js handles the 'constellation' simulation event), keyed by the catalogue index CONSTELLATIONS
+// itself uses, so a later frontispiece can paint straight off ROCK_ANIMALS[catalogueIndex].
+function rockCaveRecordAnimal(catalogueIndex){
+  const record=rockCaveRead();
+  record.animals[catalogueIndex]=(record.animals[catalogueIndex]||0)+1;
+  rockCaveWrite(record);
+}
+// The deepest row any recorded run has reached, 0 for an empty record. This is what handFor('best')
+// hands back to currentBest() in plates.js, so the Rock's HUD and end leaf can show a real "Deepest"
+// instead of the atlas's own best score, which a preview era never earns.
+function rockBest(){
+  let best=0;for(const run of rockCaveRead().runs)if(run&&run.row>best)best=run.row;
+  return best;
+}
 
 // ---------- Invalidation ----------
 // Drops every baked tile and sprite cache this file owns; invalidateArt() calls this alongside its own

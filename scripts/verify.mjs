@@ -253,7 +253,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -888,6 +888,80 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // Leave the suite exactly as it found it: a live run in progress, not a fresh chart still
     // waiting on its first tap — the blocks after this one assume a 'playing' world already
     // under way (see the release forced a few blocks down).
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
+  // ---- A cave of your own: the Rock's own persistent record, apart from the atlas's ledger (G3, orbit.rock.v1) ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('rock');
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.rockCaveRead())),{v:1,runs:[],animals:{}},'A never-written cave reads as a valid, empty-shaped record');
+    assert.equal(context.test.rockBest(),0,'rockBest() is 0 with no recorded runs');
+    // Round-trip: a recorded run and a recorded animal read back exactly as written.
+    context.test.rockCaveRecordRun({progress:12.7,score:340,captures:5});
+    context.test.rockCaveRecordAnimal(3);context.test.rockCaveRecordAnimal(3);
+    let cave=context.test.rockCaveRead();
+    if(!storageBlocked){
+      assert.equal(cave.runs.length,1,'One recorded run appends exactly one entry');
+      assert.equal(cave.runs[0].row,12,'The row is the floor of the run\'s progress');
+      assert.equal(cave.runs[0].score,340);assert.equal(cave.runs[0].hands,5,'hands is the run\'s captures');
+      assert(Number.isFinite(cave.runs[0].at)&&cave.runs[0].at>0,'Every run carries a timestamp');
+      assert.equal(cave.animals[3],2,'Each completed constellation increments its own animal\'s count');
+      assert.equal(context.test.rockBest(),12,'rockBest() is the deepest recorded row');
+      context.test.rockCaveRecordRun({progress:40.2,score:900,captures:9});
+      assert.equal(context.test.rockBest(),40,'rockBest() tracks a deeper run once one is recorded');
+    }else{
+      // Storage blocked: every call above must have been a silent no-op, never a throw, and the record
+      // must still read back as empty rather than partially written.
+      assert.deepEqual(JSON.parse(JSON.stringify(cave)),{v:1,runs:[],animals:{}},'Blocked storage never actually keeps a written run');
+      assert.equal(context.test.rockBest(),0,'rockBest() reads 0 when storage is blocked');
+    }
+    // Corrupt JSON in the key must never throw, and must read back as an empty record.
+    if(!storageBlocked){
+      saved.set(context.test.ROCK_CAVE_KEY,'{not json');
+      assert.deepEqual(JSON.parse(JSON.stringify(context.test.rockCaveRead())),{v:1,runs:[],animals:{}},'Corrupt JSON yields an empty record, not a throw');
+      assert.equal(context.test.rockBest(),0,'rockBest() reads 0 off a corrupt record');
+      saved.delete(context.test.ROCK_CAVE_KEY);
+      // Runs are capped at the most recent 60: the oldest are dropped first, the newest kept.
+      for(let i=0;i<65;i++)context.test.rockCaveRecordRun({progress:i,score:i,captures:i});
+      cave=context.test.rockCaveRead();
+      assert.equal(cave.runs.length,60,'The cave keeps only the most recent 60 runs');
+      assert.equal(cave.runs[0].row,5,'The oldest runs past the cap are dropped first');
+      assert.equal(cave.runs[cave.runs.length-1].row,64,'The newest run is always kept');
+      saved.delete(context.test.ROCK_CAVE_KEY);
+    }
+    context.test.setPlate(held);
+  }
+  // ---- A Rock run end writes exactly one run to its own cave, and never touches the atlas's ledger ----
+  {
+    const held=context.test.plateName;
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    context.test.setPlate('rock');context.test.newWorld();context.test.handleInput();
+    const run=context.test.world,beforeRuns=context.test.ledgerStat('runs'),beforeLedgerDoc=storageBlocked?null:saved.get(LEDGER_KEY);
+    for(let i=0;i<120*45&&run.state==='playing'&&run.captures<3;i++){
+      if(run.player.node){const aim=run.aim();if(aim&&aim.perfect&&run.player.orbitTime>.12)run.release();}
+      run.update(step);
+    }
+    run.die('THE TORCH GUTTERED');run.player.deadTime=.8;context.test.render(.1);
+    assert.equal(context.test.ledgerStat('runs'),beforeRuns,'A Rock run end must never fold into the atlas\'s ledger');
+    if(!storageBlocked){
+      assert.equal(saved.get(LEDGER_KEY),beforeLedgerDoc,'A Rock run end must never write the atlas\'s ledger to storage');
+      const cave=context.test.rockCaveRead();
+      assert.equal(cave.runs.length,1,'A Rock run end writes exactly one run to its own cave');
+      assert.equal(cave.runs[0].hands,run.captures,'The recorded run keeps the run\'s own captures as hands');
+      assert.equal(cave.runs[0].row,Math.floor(run.progress));
+    }
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
+  // ---- The atlas itself never writes the Rock's own key ----
+  {
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    const held=context.test.plateName;
+    context.test.setPlate('night');context.test.newWorld();context.test.handleInput();
+    const run=context.test.world;
+    for(let i=0;i<60&&run.state==='playing';i++)run.update(step);
+    run.die('THE DARK CAUGHT UP');run.player.deadTime=.8;context.test.render(.1);
+    if(!storageBlocked)assert.equal(saved.has(context.test.ROCK_CAVE_KEY),false,'An atlas run must never write orbit.rock.v1');
     context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
   }
   {

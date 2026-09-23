@@ -161,6 +161,9 @@ function event(type,e){
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
+    // A preview era's own record of every animal ever finished (the Rock's cave, G3) is kept here too,
+    // the moment a cluster actually closes, rather than only totalled at the run's end.
+    {const caveAnimal=handFor('caveAnimal');if(caveAnimal)caveAnimal(e.chart.catalogueIndex);}
     say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||chartTitle(e.chart)}),{node:e.chart.stars[1]||e.chart.entry});
     {const notes=plateWords().chartNotes,note=notes&&notes[e.chart.catalogueIndex];if(note)say(note,{node:e.chart.stars[2]||e.chart.stars[1],tone:'note'});}
     for(const n of e.chart.stars){
@@ -370,6 +373,10 @@ function showEnd(){
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
+  // A preview era keeps no best of its own above (orbit.best.v1/orbit.bestRow.v1 are the atlas's), but
+  // may keep a small record of its own runs under its own key — the Rock's cave (G3), never the atlas's
+  // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
+  {const caveRun=handFor('caveRun');if(caveRun)caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
