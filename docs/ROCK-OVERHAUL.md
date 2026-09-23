@@ -1,7 +1,7 @@
 # Era I · The Rock — overhaul plan
 
-Status: **direction decided (2026-09-23), nothing built yet.** The four forks below are marked
-**DECIDED**, with the option that was chosen. This is a complete redesign of the era's look, not a
+Status: **in progress (2026-09-23).** The forks below are marked **DECIDED**, with the option that was
+chosen; see [Progress](#progress) for what is built and what is left. This is a complete redesign of the era's look, not a
 retune of the current wall.
 
 This is a polish pass on a door that already ships (`src/rock.js`, entered from the frontispiece),
@@ -239,6 +239,82 @@ before anything else is built on it:
 6. **Dangers, particles and sound** (A6, A9).
 7. **Frontispiece** (H4) and **your cave** (G3).
 8. **Relighting** (G2). It comes last because it is the only step that touches `simulation.js`.
+
+## Decisions taken while building
+
+- **Bodies are prehistoric sky marks, not plain dabs** (supersedes A4's "dot only" reading). Stars are
+  the Iberian schematic estrelliform (a pressed dot with rays); bright bodies the soliform /
+  cup-and-ring (a disc with a ring walked round it and rays); the Moon a kaolin crescent with tally
+  notches (after the Laussel horn and the Blanchard plaque). Every "this is a star" reading is marked
+  in the README as contested. An unreached body is its light alone, a breathing point.
+- **Holes you can fall into.** The Shaft is drawn as a real hole whose black is exactly the lethal
+  core. A new era-only hazard, the **chasm** (a lethal capsule you must not fly across, from row 5,
+  roughly every 3–4 rows, never touching an orbit, always leaving a way through), sits behind the
+  `chasmsOn` world option the Rock plate turns on; the atlas and Era II never generate one.
+- **Safe depth is always shallow and never black.** Niches (seeded hollows) always show their back,
+  so a harmless pocket is never read as a drop.
+- **Moving shadows, level A.** Holes, chasms and niches are shaded live from the carried torch
+  (shadow under the lip nearest the flame, the far wall lit), capped well short of black.
+- **A hazard breaks open from the rock** instead of the atlas's ink-drop reveal (`hazardReveal`
+  hand hook).
+
+## Progress
+
+Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`:
+
+| Step | State |
+|---|---|
+| 0 · Look test: carried torch, dark cave | Done |
+| Wall material: creases, large forms, bedding, colour zones, flowstone | Done |
+| Bodies, ring, release marks, unreached glints (A4, part of A7) | Done |
+| Shaft as a real hole (A6, part) | Done |
+| Chasm hazard: simulation, tests, art (new) | Done |
+| Niches, hole polish, live torch shading (new) | Done |
+| Face rebake speed (≈70 ms → ≈15 ms) | Done |
+
+Left for this era, in the planned order:
+
+1. **Words and leaves** (H3, H4): every atlas string still on this wall — "LEFT THE STAR CHART",
+   "pricked line", TIRO/ADEPTUS/MAGISTER, "PRESSURE SET", "PERFECT · MOMENTUM KEPT", ANGULUS,
+   "SPEED/FLOW" labels, "no clusters traced", "RETURN TO THE ATLAS" — through `defineVoice('rock')`;
+   the end leaf and pause leaf as a lit slab of rock rather than the atlas's dark box.
+2. **The forgetting** (A8): still the zig-zag polygon at the foot.
+3. **The rest of the traveller's hand** (A7): the crayon itself, the aim guide (still the atlas's
+   chevrons), the wet trail and the dried route (still the quill), and the pickups' attested marks.
+4. **HUD** (H1, H2): tally score with a small numeral, the torch-fuel lamp for ochre, flow as
+   handprints, "deepest" as a hand stencil on the wall; drop the `ORBIT` wordmark.
+5. **Palimpsest and animals** (A3, A5): the faded older paintings on the wall, and the twelve
+   constellations as animals.
+6. **Flare and Draught, particles, sound** (A6, A9): the Flare as real fire, the Draught as smoke and
+   flutings, torch sparks and dust, the five cave sounds.
+7. **Frontispiece and your cave** (H4, G3).
+8. **Relighting at the Flare** (G2), behind its own era-only simulation flag like the chasm's.
+9. **Level B lighting** — see below.
+
+## Later: a shared relit surface (WebGL)
+
+Documented only; not scheduled beyond step 9 above.
+
+Level A shades the hollows live but leaves the wall's own relief lit from a fixed lamp. Level B would
+light the whole wall per pixel from the carried torch's real position, so every crease, boss, ledge,
+niche and rim casts a shadow that stretches and turns as the torch moves (a short height-field ray
+march toward the flame per pixel). That needs a GPU pass: WebGL, which is built into every browser
+and adds no dependency or external resource. It would be built as a **generic relit surface** — a
+height map, a colour map and a light supplied by each plate, one shader — drawn into the 2D canvas,
+with today's Canvas 2D drawing kept as the fallback wherever WebGL is missing (the test suite among
+them).
+
+What the same layer could later give the other eras:
+
+| Era | What it would add | Fit |
+|---|---|---|
+| I · The Rock | Moving torch shadows from all of the wall's relief | First user |
+| II · The Ceiling | Plaster relief, tool marks and raised figures under a moving lamp; gold stars glinting | Strong |
+| V · The Atlas | Paper grain, plate-mark emboss and laid lines under a soft raking light; gold leaf catching it; the rising dark as a living ink wash | Real gain, but it is the shipped main game: prototype and sign-off first, ideally behind a toggle |
+
+Order if it is built: the shared layer with the Rock, then the Ceiling, then an atlas prototype for
+review. Technical plumbing (shader, fallback, tests) by Sonnet; each surface's look by the art lead.
+Frame rate is checked on the reference iPhone for every era before anything ships.
 
 Tests to add along the way, all in `verify.mjs`: the rock voice covers every key the atlas voice
 has; every catalogue figure has a rock animal; the torch pass never drops a ring's alpha below a
