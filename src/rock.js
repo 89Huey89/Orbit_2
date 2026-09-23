@@ -730,28 +730,85 @@ function rockNode(n,aim){
 }
 
 // ---------- The hazards ----------
-// The Shaft: a true black void with a pecked rim. The eye is drawn down into it; it is not a whirlpool,
-// so nothing here turns — only the gradient's own reach and the ten pecks ringing the core.
+// The Shaft: a hole in the wall that goes down, and the one place on this sheet the rock opens rather
+// than being marked. It is drawn as a hole is seen by one light: a jagged mouth broken out of the face,
+// its lip catching the lamp on the side that faces it; inside, the throat stepping down in darker and
+// darker shelves, shifted toward the lamp as they go deeper, so the far inner wall — the one that faces
+// the flame — is lit in a crescent and the near one falls into its own shadow; and at the bottom of it
+// a black with no floor at all. That black is exactly the lethal core and no wider, because the one
+// thing a hole must never do is lie about where the fall begins; what the pull reaches is the soot and
+// the broken rock around the mouth, and the grit going over the edge. The rule the whole wall keeps is
+// that a hollow whose back can be seen is only a hollow, and only this has none. Nothing turns: it is
+// a drop, not a whirlpool. The mouth, the shelves and the cracks are baked once per hazard and size.
 const rockShaftSprites=new Map();
-function rockShaftSprite(reach,core){
-  const rB=Math.max(2,Math.round(reach)),cB=Math.max(1,Math.round(core)),key=rB+':'+cB+':'+DPR.toFixed(2);
+function rockShaftSprite(seed,reach,core){
+  const rB=Math.max(2,Math.round(reach)),cB=Math.max(1,Math.round(core)),key=(seed>>>0)+':'+rB+':'+cB+':'+DPR.toFixed(2);
   const cached=rockShaftSprites.get(key);if(cached)return cached;
-  const size=Math.max(4,Math.ceil(rB*2.1)),px=Math.max(1,Math.round(size*DPR));
+  const size=Math.max(4,Math.ceil(rB*2.2)),px=Math.max(1,Math.round(size*DPR));
   const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
-  const gr=g.createRadialGradient(0,0,2,0,0,rB);
-  gr.addColorStop(0,`rgba(${ink.rock.shaft},.95)`);gr.addColorStop(.45,`rgba(${ink.rock.shaft},.7)`);gr.addColorStop(1,`rgba(${ink.rock.shaft},0)`);
-  g.fillStyle=gr;g.beginPath();g.arc(0,0,rB,0,TAU);g.fill();
-  g.fillStyle=`rgb(${ink.rock.shaft})`;g.beginPath();g.arc(0,0,cB,0,TAU);g.fill();
-  const sprite={canvas:c,size};rockShaftSprites.set(key,sprite);
+  const rnd=seeded((seed>>>0)^0x5aa7||9),LX=.707,LY=-.707,rim=cB*1.85,n=44,jag=[];
+  for(let i=0;i<n;i++)jag.push(1+(rnd()-.5)*.16+Math.sin(i/n*TAU*2+seed%7)*.1+Math.sin(i/n*TAU*3+seed%11)*.08+Math.sin(i/n*TAU*7+seed%5)*.05);
+  for(let i=0;i<n;i++)if(rnd()<.14)jag[i]*=1+(rnd()-.5)*.12;
+  for(let pass=0;pass<2;pass++)for(let i=0;i<n;i++)jag[i]=(jag[(i+n-1)%n]+jag[i]*2+jag[(i+1)%n])/4;
+  const mouth=(r,ox,oy)=>{g.beginPath();for(let i=0;i<=n;i++){const k=i%n,a=k/n*TAU,rr=r*(1+(jag[k]-1)*Math.min(1,r/rim+.2));
+    if(i)g.lineTo(ox+Math.cos(a)*rr,oy+Math.sin(a)*rr);else g.moveTo(ox+Math.cos(a)*rr,oy+Math.sin(a)*rr);}g.closePath();};
+  const rgb=t=>ink.rock[t].split(',').map(Number),stone=rgb('stone'),dark=rgb('shaft'),soot=ink.rock.crack,warm=stone.map((v,i)=>(v+rgb('stain')[i])/2);
+  // The soot and the loosened rock the pull reaches: the face darkened toward the mouth.
+  const halo=g.createRadialGradient(0,0,rim*.9,0,0,rB);halo.addColorStop(0,`rgba(${soot},.62)`);halo.addColorStop(.45,`rgba(${soot},.22)`);halo.addColorStop(1,`rgba(${soot},0)`);
+  g.fillStyle=halo;g.beginPath();g.arc(0,0,rB,0,TAU);g.fill();
+  // The face slopes into the mouth before it breaks: a hollow round the hole, whose far side, facing
+  // the lamp across it, takes the light and whose near side falls into its own shade.
+  {const sl=g.createLinearGradient(-LX*rim*1.7,-LY*rim*1.7,LX*rim*1.7,LY*rim*1.7);
+    sl.addColorStop(0,`rgba(${warm.map(Math.round).join(',')},.34)`);sl.addColorStop(.5,`rgba(${soot},.12)`);sl.addColorStop(1,`rgba(${soot},.5)`);
+    const S=Math.ceil(rim*4),sc=makeCanvas(Math.max(1,Math.round(S*DPR)),Math.max(1,Math.round(S*DPR))),q=sc.getContext('2d');q.scale(DPR,DPR);q.translate(S/2,S/2);
+    q.fillStyle=sl;q.fillRect(-S/2,-S/2,S,S);const fade=q.createRadialGradient(0,0,rim,0,0,rim*1.75);fade.addColorStop(0,'rgba(0,0,0,0)');fade.addColorStop(1,'rgba(0,0,0,1)');
+    q.globalCompositeOperation='destination-out';q.fillStyle=fade;q.fillRect(-S/2,-S/2,S,S);g.drawImage(sc,-S/2,-S/2,S,S);}
+  // The rock broke along lines out from the mouth before it fell in.
+  g.lineCap='round';g.strokeStyle=`rgba(${soot},.7)`;
+  for(let k=0;k<7;k++){let a=rnd()*TAU,r=rim*.95,x=Math.cos(a)*r,y=Math.sin(a)*r;const L=rim*(.5+rnd()*1.1);g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);
+    for(let d=0;d<L;d+=5){a+=(rnd()-.5)*.7;x+=Math.cos(a)*5;y+=Math.sin(a)*5;g.lineTo(x,y);g.lineWidth*=.9;}g.stroke();}
+  // The throat: a smooth fall of the rock into the dark, a little smaller, darker and further toward
+  // the lamp at every depth, with a few ledges where it broke in steps — not a shelf at every depth,
+  // which read as a contour map of a hole rather than a hole.
+  const layers=44,ledge=new Set([8+(rnd()*6|0),20+(rnd()*6|0),31+(rnd()*5|0)]);
+  for(let k=0;k<=layers;k++){
+    const t=k/layers,r=rim+(cB-rim)*Math.pow(t,.8),ox=LX*t*cB*.42,oy=LY*t*cB*.42,lit=Math.pow(1-t,1.6);
+    const gr=g.createLinearGradient(ox-LX*r,oy-LY*r,ox+LX*r,oy+LY*r),mix=(f,q)=>warm.map((v,i)=>Math.round(dark[i]+(v-dark[i])*f*q)).join(',');
+    gr.addColorStop(0,`rgb(${mix(lit,.78)})`);gr.addColorStop(.5,`rgb(${mix(lit,.3)})`);gr.addColorStop(1,`rgb(${mix(lit,.08)})`);
+    g.fillStyle=gr;mouth(r,ox,oy);g.fill();
+    if(ledge.has(k)){g.strokeStyle=`rgba(${ink.rock.dark},${(.35+t*.3).toFixed(3)})`;g.lineWidth=1.4;g.stroke();
+      g.save();g.translate(-LX*.9,-LY*.9);g.strokeStyle=`rgba(${stone.join(',')},${(.22*(1-t)).toFixed(3)})`;g.lineWidth=.9;g.stroke();g.restore();}
+  }
+  // The floorless black, exactly the core.
+  g.fillStyle=`rgb(${ink.rock.shaft})`;mouth(cB,LX*cB*.42,LY*cB*.42);g.fill();
+  const deep=g.createRadialGradient(LX*cB*.42,LY*cB*.42,0,LX*cB*.42,LY*cB*.42,cB);deep.addColorStop(0,`rgba(${ink.rock.dark},1)`);deep.addColorStop(1,`rgba(${ink.rock.dark},0)`);
+  g.fillStyle=deep;g.fill();
+  // The lip: dark all round where the face breaks over the edge, and lit where it faces the lamp.
+  mouth(rim,0,0);g.strokeStyle=`rgba(${soot},.85)`;g.lineWidth=2.4;g.stroke();
+  g.save();mouth(rim*1.03,0,0);const lipG=g.createLinearGradient(-LX*rim,-LY*rim,LX*rim,LY*rim);
+  lipG.addColorStop(0,`rgba(${ink.rock.kaolin},.34)`);lipG.addColorStop(.4,`rgba(${ink.rock.kaolin},0)`);lipG.addColorStop(1,`rgba(${ink.rock.kaolin},0)`);
+  g.strokeStyle=lipG;g.lineWidth=1.2;g.stroke();g.restore();
+  // Struck round the lip by a hand that found it: the era's pecks, small beside the hole itself.
+  for(let i=0;i<12;i++){const a=i/12*TAU+rnd()*.2,r=rim*(1.14+rnd()*.08);rockPeck(g,Math.cos(a)*r,Math.sin(a)*r,1.7+rnd()*.7,.5);}
+  const sprite={canvas:c,size,rim};rockShaftSprites.set(key,sprite);
   if(rockShaftSprites.size>16)rockShaftSprites.delete(rockShaftSprites.keys().next().value);
   return sprite;
 }
 function rockShaft(h,x,y){
   const reach=gravityRadius(h)*scale,core=hazardCore(h)*scale;
   if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
-  const sprite=rockShaftSprite(reach,core);
+  const sprite=rockShaftSprite(h.seed||1,reach,core);
   ctx.drawImage(sprite.canvas,x-sprite.size/2,y-sprite.size/2,sprite.size,sprite.size);
-  for(let i=0;i<10;i++){const a=(h.phase||0)+i/10*TAU;rockPeck(ctx,x+Math.cos(a)*core*1.15,y+Math.sin(a)*core*1.15,3.4*scale,.85);}
+  // Grit going over the edge: each grain slides in from the loosened face, shrinks and goes dark as it
+  // drops, and is gone at the black. Reduced motion leaves a few grains lying on the slope.
+  // A dab leaves the context's alpha where it set it, so the grit is struck inside its own save.
+  const t=reducedMotion?0:world.time,cx=x+.707*core*.42,cy=y-.707*core*.42;ctx.save();
+  for(let i=0;i<14;i++){
+    const ph=((i*.618+t*(.35+(i%5)*.07))%1+1)%1,a=i*2.399+(h.phase||0),r0=sprite.rim*(1.05+(i%3)*.12),r=r0+(core*.5-r0)*ph*ph;
+    const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r,k=1-ph;
+    rockDab(ctx,px,py,(1.1+(i%3)*.5)*scale*(.4+.6*k),ph>.5?ink.rock.charcoal:ink.rock.stain,.7*k,i+(h.seed>>>0));
+  }
+  ctx.restore();
 }
 // The Flare: an ember-red core under soot, breathing gently, deliberately not the traveller's own warm
 // glow — an early pass of the spike let the two share one and they read as the same thing at a glance.
@@ -775,10 +832,12 @@ function rockFlare(h,x,y){
   const t=reducedMotion?0:world.time,breathe=1+(reducedMotion?0:Math.sin(t*7+(h.phase||0))*.03);
   const sprite=rockFlareGlowSprite(core),bs=sprite.size*breathe;
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(sprite.canvas,x-bs/2,y-bs/2,bs,bs);ctx.restore();
+  ctx.save();
   for(let i=0;i<16;i++){
     const a=i/16*TAU,dd=core*1.35+(reducedMotion?0:Math.sin(t*4+i)*3*scale);
     rockDab(ctx,x+Math.cos(a)*dd,y+Math.sin(a)*dd,(7+(i*7)%5)*scale,ink.rock.manganese,.5,h.seed+i);
   }
+  ctx.restore();
 }
 // The Draught: a streaked charcoal smear dragged sideways, a torch-flame bent by real cave airflow.
 // Baked once per hazard along local +x and rotated live to h.dir, so nothing about its own shape is
@@ -956,6 +1015,10 @@ function rockSurveys(){}
 // the HUD reads on lit limestone as exactly what it is — a patch of paper. The counts themselves are
 // still owed the player and are still set, in the modern hand this era admits to; what is dropped is
 // the furniture that would have carried them on a sheet.
+// The atlas bends the starlight round a vortex by resampling the sheet in a whirl. The Shaft is a
+// drop, not a whirlpool, and nothing on this wall is light to be bent, so the swirl is not drawn: the
+// pull is told by the soot and the grit going over the lip.
+function rockLenses(){}
 function rockHudLeaf(){}
 function rockRunningHead(){}
 function rockChapterReveal(){}
@@ -980,7 +1043,8 @@ defineHand('rock',{
   hudLeaf:rockHudLeaf,
   runningHead:rockRunningHead,
   chapterReveal:rockChapterReveal,
-  flourish:rockFlourish
+  flourish:rockFlourish,
+  lenses:rockLenses
 });
 
 // ---------- The vocabulary: only what this era actually calls differently ----------

@@ -1454,6 +1454,8 @@ function drawNode(n,aim){
 // without the step being visible on a ring drawn through them.
 const SWIRL_TURN=0.62;
 function drawGravitationalLenses(){
+  // A plate whose attractor is not a bending of light at all names its own painter here, or none.
+  const own=handFor('lenses');if(own)return own();
   for(const h of world.hazards){
     if(h.kind&&h.kind!=='vortex')continue;
     const x=sx(h.x),y=sy(h.y),outer=gravityRadius(h)*scale,inner=(h.r+1)*scale,diameter=outer*2;
