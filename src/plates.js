@@ -471,7 +471,13 @@ const handFor=name=>plateHand()[name];
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
-  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'},
+  // Repainted for Nut's night sky (2026-09): the wall went from lit lime plaster to a lapis ground, so
+  // every token that used to be a dark mark on a light sheet is now a light mark on a dark one — the
+  // hue families (gold, carnelian, blue) hold, only which end of each is the ink and which is the paper
+  // has flipped. Kept exactly to the agreed night palette so the DOM chrome in index.html (its own,
+  // separate copy — see syncDomPalette's DOM_EXPLICIT_PLATES note) and these shared canvas tokens never
+  // drift apart into two different night skies.
+  ceiling:{paper:'#152457',paperRgb:'21,36,87',ink:'239,226,196',inkStrong:'245,238,220',inkSoft:'201,187,152',gold:'227,180,71',goldBright:'240,205,122',copper:'194,74,47',blue:'46,126,163',shieldBlue:'62,156,146',red:'194,74,47',text:'#efe2c4',caption:'201,187,152',shadow:'#0d1838'},
   // Torchlit limestone, and a palette with two holes in it that are the point rather than an omission:
   // there is no gold, so the reddest ochre stands in and is spent as sparingly as gold ever was, and
   // there is no blue at all, so everything the atlas says in blue this era says in its black.
