@@ -1855,6 +1855,17 @@ function rockTitleMark(){
   // The spiral is pale: fresh stone struck out of the darkened face.
   for(let t=0,i=0;t<=1;t+=1/70,i++){const q=t*2.6*TAU+.3,r=R*.72*t;rockDot(ctx,x+Math.cos(q)*r,y+Math.sin(q)*r,1.9*scale,ink.rock.kaolin,a*.9,i+40,true);}
   rockHand(x-R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,false);rockHand(x+R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,true);
+  // Your cave: every hand that has come this far before is pressed round the mark, the most recent
+  // strongest, in a widening crowd the way hands gather round a panel at Gargas or Cueva de las Manos;
+  // and every animal ever marked here stands faint along the sides of the wall, one for each kind,
+  // drawn more firmly the more often it has been found.
+  if(typeof rockCaveRead==='function'){const cave=rockCaveRead(),runs=cave.runs||[],n=runs.length;
+    for(let i=0;i<n&&i<60;i++){const j=n-1-i,hr=rockHash(7,j,1),ring=R*(2.25+Math.floor(i/10)*.5),ang=-Math.PI/2+(hr-.5)*.5+(i%10)/10*TAU+Math.floor(i/10)*.31;
+      const hx=x+Math.cos(ang)*ring*1.15,hy=y+Math.sin(ang)*ring*.62;if(Math.abs(hy-y)<R*.5&&Math.abs(hx-x)<R*2.2)continue;
+      ctx.save();ctx.translate(hx,hy);ctx.rotate((hr-.5)*.8);for(let q=0;q<2;q++)rockHand(0,0,R*(.5-Math.min(.2,i*.006)),hr<.25?ink.rock.manganese:ink.rock.redOchre,a*(1-Math.min(.55,i*.014)),hr<.5);ctx.restore();}
+    const kinds=Object.keys(cave.animals||{}).map(Number).filter(k=>ROCK_ANIMALS[k]).sort((p,q)=>p-q);
+    kinds.forEach((k,idx)=>{const m=kinds.length,span=Math.min(W*.8/Math.max(3,m),84*scale),cx=W/2+(idx-(m-1)/2)*span*1.05,cy=H*.505+(idx%2)*span*.12,side=idx%2?1:-1,cnt=cave.animals[k];
+      rockPaintAnimal(ctx,ROCK_ANIMALS[k],1000+k,p=>[cx+(p[0]-.5)*span*-side,cy+(p[1]-.25)*span],span,1,Math.min(1,.5+.25*cnt),ink.rock.redOchre,a*Math.min(1,.6+.15*cnt));});}
   ctx.restore();
 }
 
