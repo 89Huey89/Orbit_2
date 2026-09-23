@@ -1147,12 +1147,19 @@ function drawImpressum(){
 // The frontispiece's two action rows (see .action-row, index.html) stand directly on the open plate,
 // with no CSS box of their own — a group boxed in CSS there would be a chip laid over the drawing, the
 // very thing this cut is meant to stop. The frame around each is cut here instead, in the plate's own
-// burin, measured live off the DOM row's own rect: the row decides its own
-// width and wrap, this only draws the rule around whatever it settled on.
+// burin, measured live off the DOM row's own rect: the row decides its own width and wrap, this only
+// draws the rule around whatever it settled on. But a rule alone leaves the sheet's own chart showing
+// through the gap it encloses, and on a short leaf the start planet, its ring, the quill and the aim
+// chevrons all pass under this reading — so the ground goes down first, the same near-opaque wash of
+// the plate's own paper the running head lays under itself (drawRunningHead, above), then the burin
+// cuts the frame over it. This only reads right because drawActionFrames runs at the very foot of
+// render(), after every chart mark is already struck, so the wash goes down last and actually covers them.
 function drawActionRowFrame(el){
   if(!el)return;
   const rect=el.getBoundingClientRect();
   if(!(rect.width>0)||!(rect.height>0)||!Number.isFinite(rect.left)||!Number.isFinite(rect.top))return;
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},.92)`;
+  ctx.fillRect(rect.left,rect.top,rect.width,rect.height);
   burinRect(ctx,rect.left,rect.top,rect.width,rect.height,ink.frame.tickMinor,onPaper()?.55:.4,.75,80601);
 }
 function drawActionFrames(){
