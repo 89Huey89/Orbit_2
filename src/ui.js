@@ -18,6 +18,7 @@ defineVoice('atlas',{
   chart:'',
   chartNoun:'constellation',
   chartVerb:'traced',
+  chartNames:null,
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',
   observations:{},
   pressures:DIFFICULTY_LABELS,
@@ -153,16 +154,16 @@ function event(type,e){
     else if(e.n.type==='drift'&&e.n.row<10)say(glosses.wandering,at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
-    say(fmt(plateWords().glosses.chartProgress,{chart:plateWords().chart||e.chart.name,count:e.count}),{node:e.chart.stars[e.count-1]||world.player.node});
+    say(fmt(plateWords().glosses.chartProgress,{chart:plateWords().chart||chartTitle(e.chart),count:e.count}),{node:e.chart.stars[e.count-1]||world.player.node});
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
-    say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||e.chart.name}),{node:e.chart.stars[1]||e.chart.entry});
+    say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||chartTitle(e.chart)}),{node:e.chart.stars[1]||e.chart.entry});
     for(const n of e.chart.stars){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
     }
     audio.medal();
-    $('announcement').textContent=spoken('chartSaid',{chart:e.chart.name});
+    $('announcement').textContent=spoken('chartSaid',{chart:chartTitle(e.chart)});
     recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);

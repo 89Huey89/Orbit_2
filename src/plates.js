@@ -466,6 +466,9 @@ function plateWords(){
 // rather than a top-level key; `spoken` is just `fmt` applied to one of those.
 const fmt=(tpl,vars)=>String(tpl||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
 const spoken=(key,vars)=>fmt(plateWords()[key],vars);
+// What a chart is called on the plate on the press: its own catalogue name unless the plate names the
+// catalogue its own way. `chart.name` itself is never changed, because it is the ledger's key.
+const chartTitle=chart=>{const own=plateWords().chartNames;return (own&&own[chart.catalogueIndex])||chart.name;};
 // The hand. A plate that draws in its own names only the painters that differ from the atlas's; every
 // painter it does not name is the atlas's own, so an era is a row in this registry rather than a fork
 // at every mark, and two hands can draw into one frame — which a render branch that returns early

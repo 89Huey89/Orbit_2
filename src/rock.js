@@ -562,7 +562,7 @@ function rockPaintWall(){
   const off=((world.cameraY*scale)%tileH+tileH)%tileH;
   for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
   rockPaintFace();
-  rockPaintNiches();
+  rockPaintNiches();rockPaintOldHands();
 }
 
 // ---------- The niches: hollows in the face whose back can always be seen ----------
@@ -1361,6 +1361,142 @@ function rockDark(dt){
   ctx.restore();
 }
 
+// ---------- The animals: what this wall draws where the atlas draws constellation-figures ----------
+// Palaeolithic painters drew animals and never a constellation-figure, so a cluster on this wall is an
+// animal found through its three lights — the way the six dots over the black bull's shoulder at
+// Lascaux sit on an animal and not in a diagram. Every animal is one parametric profile in the manner
+// of the Hall of the Bulls: a body as one closed contour whose back, belly, chest and rump are the
+// real anatomy of a large grazer, thin legs set on as strokes rather than drawn in the round, and the
+// head's horns or antlers in twisted perspective — seen from the front on a head seen from the side,
+// which is exactly how those walls draw them. What changes between species is a row of numbers.
+// Each animal is drawn by hand as one outline — body, legs and head in a single contour, as the Hall
+// of the Bulls outlines them — with horns, antlers, tusks, tail and mane as separate strokes, since
+// those walls set them on in twisted perspective, seen from the front on a head seen from the side.
+// Coordinates are in hundredths, rump at x 0, muzzle near x 100, back near y 0, hooves near y 56,
+// facing right; the silhouettes follow the published Lascaux, Chauvet and Font-de-Gaume animals in
+// proportion only, and none is a tracing of any one figure.
+const ROCK_ANIMALS=[
+  {name:'THE AUROCHS',body:[[2,0],[15,-6],[35,-8],[55,-12],[66,-13],[74,-9],[80,-4],[86,-2],[92,2],[97,8],[99,13],[96,17],[88,16],[82,14],[76,20],[72,26],[70,32],[72,48],[71,56],[67,57],[66,46],[63,36],[61,46],[60,56],[56,56],[56,40],[48,31],[34,30],[24,33],[24,46],[25,56],[21,57],[19,44],[16,37],[14,46],[13,56],[9,56],[9,40],[5,28],[2,14],[0,6]],
+    strokes:[[[86,-2],[84,-12],[88,-22],[97,-25]],[[88,-1],[91,-10],[98,-16],[103,-13]],[[2,3],[-3,14],[-4,30],[-2,40]]]},
+  {name:'THE HORSE',body:[[3,2],[14,-4],[32,-6],[52,-8],[62,-10],[68,-16],[74,-22],[80,-24],[86,-20],[92,-12],[98,-4],[100,2],[97,6],[90,4],[84,0],[78,4],[72,14],[68,24],[68,34],[70,46],[70,56],[66,56],[64,44],[61,36],[59,46],[58,56],[54,56],[54,40],[46,33],[32,32],[22,34],[21,46],[23,56],[19,56],[16,44],[14,38],[12,48],[11,56],[7,56],[7,42],[4,30],[2,16]],
+    strokes:[[[62,-10],[66,-18],[72,-26],[80,-28],[86,-24]],[[3,4],[-4,10],[-8,22],[-6,36]],[[84,-22],[86,-28],[88,-22]]]},
+  {name:'THE BISON',body:[[2,4],[12,-2],[26,-6],[40,-14],[52,-24],[60,-26],[68,-20],[74,-10],[80,-2],[86,4],[90,12],[92,20],[88,24],[84,22],[80,30],[74,30],[70,28],[68,36],[69,48],[68,56],[64,56],[63,46],[60,38],[58,48],[57,56],[53,56],[53,42],[46,34],[34,32],[24,33],[23,46],[24,56],[20,56],[18,44],[15,38],[13,48],[12,56],[8,56],[8,42],[4,30],[2,16]],
+    strokes:[[[80,-2],[84,-10],[90,-10]],[[82,0],[88,-6]],[[2,6],[-2,14],[-2,24]],[[74,24],[76,34],[80,36]]]},
+  {name:'THE IBEX',body:[[3,2],[16,-2],[34,-4],[52,-6],[62,-8],[70,-10],[76,-12],[82,-10],[88,-4],[94,2],[96,8],[92,10],[86,8],[80,10],[74,16],[70,24],[68,32],[70,46],[70,56],[66,56],[64,44],[61,36],[59,46],[58,56],[54,56],[54,38],[46,30],[32,29],[22,32],[21,44],[23,56],[19,56],[16,44],[14,38],[12,48],[11,56],[7,56],[7,40],[4,28],[2,14]],
+    strokes:[[[80,-10],[76,-22],[66,-32],[52,-34],[42,-28]],[[82,-10],[80,-24],[72,-34],[60,-38],[50,-34]],[[3,4],[0,8],[-2,12]],[[92,10],[94,16],[92,20]]]},
+  {name:'THE STAG',body:[[3,2],[16,-2],[34,-4],[50,-6],[60,-10],[66,-18],[72,-26],[78,-30],[84,-28],[90,-22],[96,-16],[99,-12],[96,-8],[88,-10],[82,-12],[76,-6],[72,4],[68,16],[68,30],[70,44],[71,56],[67,56],[65,44],[62,34],[60,44],[59,56],[55,56],[55,38],[46,30],[32,29],[22,32],[21,44],[23,56],[19,56],[16,44],[14,38],[12,48],[11,56],[7,56],[7,40],[4,28],[2,14]],
+    strokes:[[[80,-30],[76,-44],[70,-58],[62,-66]],[[76,-44],[66,-46]],[[72,-54],[66,-60]],[[73,-58],[76,-68]],[[82,-30],[84,-46],[82,-60],[78,-70]],[[84,-46],[90,-54]],[[83,-58],[88,-66]],[[3,4],[0,8]]]},
+  {name:'THE MAMMOTH',body:[[4,10],[10,-4],[24,-14],[40,-22],[54,-30],[64,-34],[74,-32],[82,-26],[88,-16],[92,-4],[94,8],[96,22],[98,36],[100,48],[98,54],[94,50],[92,38],[88,26],[84,22],[80,26],[76,32],[72,40],[72,50],[72,58],[66,58],[65,46],[62,40],[60,48],[60,58],[54,58],[54,44],[46,38],[32,36],[22,38],[20,48],[21,58],[15,58],[14,46],[12,42],[10,50],[9,58],[4,58],[4,44],[2,28]],
+    strokes:[[[88,22],[96,28],[100,20],[98,12]],[[86,24],[90,32],[96,32]],[[4,12],[-1,18],[-2,26]]]},
+  {name:'THE CAVE LION',body:[[3,6],[16,2],[34,0],[52,-2],[64,-4],[72,-8],[80,-12],[88,-10],[94,-4],[98,2],[98,8],[94,12],[88,12],[82,14],[76,18],[72,26],[70,38],[72,50],[72,56],[68,56],[66,46],[63,40],[61,48],[61,56],[57,56],[56,42],[48,34],[34,32],[22,34],[20,44],[22,56],[18,56],[15,46],[13,40],[11,48],[10,56],[6,56],[6,42],[4,30],[2,18]],
+    strokes:[[[3,8],[-6,4],[-14,8],[-18,20],[-14,26]],[[84,-12],[86,-18],[90,-14]]]},
+  {name:'THE BEAR',body:[[4,14],[10,0],[22,-10],[38,-14],[52,-16],[62,-14],[70,-10],[78,-6],[86,-4],[94,0],[100,6],[98,12],[90,14],[82,14],[76,20],[72,28],[72,42],[74,54],[76,58],[68,58],[65,46],[62,40],[60,50],[60,58],[53,58],[53,44],[44,38],[30,38],[20,40],[18,50],[20,58],[12,58],[11,46],[8,40],[6,50],[6,58],[1,58],[1,42],[2,28]],
+    strokes:[[[80,-6],[80,-12],[84,-10]]]},
+  {name:'THE RHINOCEROS',body:[[4,8],[14,-2],[30,-8],[46,-12],[58,-12],[66,-8],[74,-4],[82,0],[90,4],[96,10],[98,18],[94,22],[86,22],[80,24],[74,30],[70,38],[70,50],[70,58],[64,58],[63,48],[60,42],[58,50],[58,58],[52,58],[52,44],[44,38],[30,38],[20,40],[19,50],[20,58],[14,58],[13,48],[10,42],[8,50],[8,58],[3,58],[3,44],[2,26]],
+    strokes:[[[96,10],[104,-6],[110,-20]],[[88,4],[92,-6],[95,-10]],[[4,10],[0,18],[1,26]],[[76,-4],[78,-10],[81,-6]]]},
+  {name:'THE HIND',body:[[3,2],[16,-2],[34,-4],[50,-6],[60,-10],[66,-18],[72,-26],[78,-30],[84,-30],[90,-26],[96,-20],[99,-16],[96,-12],[88,-14],[82,-16],[76,-8],[72,4],[68,16],[68,30],[70,44],[71,56],[67,56],[65,44],[62,34],[60,44],[59,56],[55,56],[55,38],[46,30],[32,29],[22,32],[21,44],[23,56],[19,56],[16,44],[14,38],[12,48],[11,56],[7,56],[7,40],[4,28],[2,14]],
+    strokes:[[[80,-30],[76,-40],[82,-34]],[[84,-30],[84,-40],[88,-33]],[[3,4],[0,8]]]},
+  {name:'THE BOAR',body:[[4,10],[12,-2],[26,-10],[42,-16],[56,-18],[66,-14],[74,-8],[82,-2],[90,4],[98,10],[102,16],[98,20],[88,20],[80,22],[74,28],[70,36],[70,48],[70,56],[65,56],[64,46],[61,40],[59,48],[59,56],[54,56],[54,42],[46,36],[32,35],[22,37],[21,48],[22,56],[17,56],[15,46],[12,42],[10,50],[10,56],[5,56],[5,42],[3,26]],
+    strokes:[[[94,16],[98,8],[96,4]],[[4,12],[0,14],[-2,20]],[[26,-10],[34,-18],[44,-20],[56,-22],[66,-18]],[[76,-6],[78,-12],[81,-7]]]},
+  {name:'THE SALMON',body:[[6,2],[18,-6],[34,-12],[52,-14],[68,-12],[82,-8],[94,-2],[100,4],[96,8],[86,12],[70,16],[52,17],[34,14],[18,10],[8,6],[0,-6],[-4,-10],[-2,4],[-4,18],[0,14]],
+    strokes:[[[44,-13],[48,-22],[58,-14]],[[62,15],[64,22],[70,16]],[[86,-2],[88,0]],[[80,-6],[78,6]]]}
+].map(a=>({...a,body:a.body.map(p=>[p[0]/100,p[1]/100]),strokes:a.strokes.map(st=>st.map(p=>[p[0]/100,p[1]/100]))}));
+// A few thousandths of seeded wobble per point, so the same species is never drawn twice exactly alike.
+function rockAnimalShape(a,seed){
+  const r=seeded((seed>>>0)||7),j=p=>[p[0]+(r()-.5)*.012,p[1]+(r()-.5)*.012];
+  return {body:a.body.map(j),strokes:a.strokes.map(st=>st.map(j))};
+}
+// Through the points rather than between them (Catmull-Rom), so a thin leg keeps its taper and a hoof
+// its point; smoothing through midpoints rounded every leg into a club.
+function rockSmoothPath(g,pts,T){
+  const n=pts.length,P=i=>T(pts[(i+n)%n]);g.beginPath();const s0=P(0);g.moveTo(s0[0],s0[1]);
+  for(let i=0;i<n;i++){const p0=P(i-1),p1=P(i),p2=P(i+1),p3=P(i+2);
+    g.bezierCurveTo(p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6,p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6,p2[0],p2[1]);}
+  g.closePath();
+}
+function rockSmoothOpen(g,pts,T){
+  const P=pts.map(T);g.beginPath();g.moveTo(P[0][0],P[0][1]);
+  for(let i=1;i<P.length-1;i++){const e=[(P[i][0]+P[i+1][0])/2,(P[i][1]+P[i+1][1])/2];g.quadraticCurveTo(P[i][0],P[i][1],e[0],e[1]);}
+  g.lineTo(P[P.length-1][0],P[P.length-1][1]);
+}
+const rockPolyLen=(P,closed)=>{let l=0;for(let i=0;i+1<P.length;i++)l+=Math.hypot(P[i+1][0]-P[i][0],P[i+1][1]-P[i][1]);if(closed)l+=Math.hypot(P[0][0]-P[P.length-1][0],P[0][1]-P[P.length-1][1]);return l;};
+// A charcoal line is one continuous stroke, drawn twice: a broad soft pass and a narrower dark core a
+// hair off it, so the line swells and thins where the two part and meet, as a stick pressed and lifted
+// does — without ever breaking into the beads a stroke laid in short pieces made. `f` is how much of
+// it the hand has drawn, by its own length.
+function rockCharcoal(g,path,len,w,rgb,alpha,f){
+  if(f<=0)return;g.save();g.lineCap='round';g.lineJoin='round';
+  if(f<1&&g.setLineDash)g.setLineDash([len*f,len*2]);
+  g.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;g.lineWidth=w*1.8;path(0,0);g.stroke();
+  // The core skips, as a charcoal stick does on stone: a dash of uneven gaps, where the soft pass
+  // under it keeps the line continuous.
+  if(f>=1&&g.setLineDash)g.setLineDash([w*9,w*1.4,w*5,w*.8,w*12,w*2.2]);
+  g.strokeStyle=`rgba(${rgb},${alpha.toFixed(3)})`;g.lineWidth=w*.8;path(w*.25,w*.15);g.stroke();
+  g.restore();
+}
+function rockPaintAnimal(g,a,seed,T,unit,sketch,wash,pig,alpha=1){
+  const sh=rockAnimalShape(a,seed),w=Math.max(1.1,unit*.012),col=ink.rock.charcoal;
+  if(wash>0){
+    g.save();g.globalCompositeOperation='multiply';rockSmoothPath(g,sh.body,T);g.fillStyle=`rgba(${pig},${(.3*wash*alpha).toFixed(3)})`;g.fill();
+    // Pigment, not a fill: a scatter of pressed dabs through the body, heavier on the back, so the wash
+    // is blotched and the wall's own tooth shows through it.
+    {g.save();g.clip();const bb=sh.body.map(T),xs=bb.map(p=>p[0]),ys=bb.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),r=seeded((seed^0x9d)>>>0||1),n=Math.round((x1-x0)*(y1-y0)/(unit*unit)*700);
+      for(let i=0;i<n;i++){const x=x0+r()*(x1-x0),y=y0+r()*(y1-y0),up=1-(y-y0)/(y1-y0||1);rockDab(g,x,y,unit*(.012+r()*.03),pig,(.05+.12*up)*wash*alpha,i+seed);}
+      g.globalAlpha=1;g.restore();}
+    // The back and the flank carried darker than the belly, as the Lascaux painters modelled a body:
+    // a second wash over the upper body alone.
+    g.clip();const bb=sh.body.map(T),ys=bb.map(p=>p[1]),top=Math.min(...ys),bot=Math.max(...ys),gr=g.createLinearGradient(0,top,0,top+(bot-top)*.55);
+    gr.addColorStop(0,`rgba(${pig},${(.45*wash*alpha).toFixed(3)})`);gr.addColorStop(1,`rgba(${pig},0)`);g.fillStyle=gr;g.fillRect(-9999,top,19999,bot-top);g.restore();}
+  if(sketch>0){
+    const P=sh.body.map(T),len=rockPolyLen(P,true);
+    rockCharcoal(g,(ox,oy)=>rockSmoothPath(g,sh.body,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];}),len*1.05,w,col,.92*alpha,Math.min(1,sketch*1.3));
+    const rest=clamp((sketch-.55)*2.2,0,1);
+    sh.strokes.forEach(st=>{const Q=st.map(T);rockCharcoal(g,(ox,oy)=>rockSmoothOpen(g,st,p=>{const q=T(p);return [q[0]+ox,q[1]+oy];}),rockPolyLen(Q)*1.05,w*.85,col,.9*alpha,rest);});
+  }
+}
+// The three lights fix where the animal stands: it spans the first and last, rides level rather than
+// tipping with them, faces the way the course climbs, and the middle light falls on its shoulder.
+const rockAnimalFor=chart=>ROCK_ANIMALS[((chart.catalogueIndex|0)%ROCK_ANIMALS.length+ROCK_ANIMALS.length)%ROCK_ANIMALS.length];
+function rockFigure(chart){
+  if(chart.stars.length<3)return;
+  const s=chart.stars,x0=sx(s[0].x),y0=sy(s[0].y),x2=sx(s[2].x),y2=sy(s[2].y);
+  if(Math.max(y0,y2)<-220||Math.min(y0,y2)>H+220)return;
+  const count=s.filter(n=>n.visited).length,a=rockAnimalFor(chart),seed=(chart.id*7919+(chart.catalogueIndex|0)*131)>>>0;
+  const span=Math.max(120*scale,Math.hypot(x2-x0,y2-y0)*1.25),face=x2>=x0?1:-1,tilt=clamp(Math.atan2(y2-y0,Math.abs(x2-x0)||1),-.3,.3)*face;
+  const cx=(x0+x2)/2+(sx(s[1].x)-(x0+x2)/2)*.3,cy=(y0+y2)/2+(sy(s[1].y)-(y0+y2)/2)*.3+span*.12,ct=Math.cos(tilt),st=Math.sin(tilt);
+  const T=p=>{const u=(p[0]-.5)*span*face,v=(p[1]-.25)*span;return [cx+u*ct-v*st,cy+u*st+v*ct];};
+  const sketch=chart.expired?0:chart.completed?1:count/3,wash=chart.completed?Math.min(1,.4+(chart.flash||0)*.3+.6):0;
+  if(chart.expired){ctx.save();rockPaintAnimal(ctx,a,seed,T,span,1,.5,ink.rock.redOchre,.25);ctx.restore();return;}
+  ctx.save();rockPaintAnimal(ctx,a,seed,T,span,Math.max(.12,sketch),wash,seed%3?ink.rock.redOchre:ink.rock.ochreDeep);ctx.restore();
+}
+
+// ---------- The older hands: what was on this wall before the traveller came ----------
+// A painted cave is never painted once. The panels the traveller passes already carry the work of
+// hands long before it — animals gone faint under calcite, red hand stencils, rows of dots, the odd
+// sign — seeded off the world in chunks like the niches and the fissures, never on the opening plane,
+// and kept faint and warm so they read as the wall's history and never as anything to fly by: nothing
+// here is in the light's colour, and nothing is near the contrast of a live mark.
+const ROCK_OLD_CHUNK=440;
+function rockPaintOldHands(){
+  const seed=(world.seed>>>0)^0x0a1d,C=ROCK_OLD_CHUNK,wx0=-W*.5/scale-C,wx1=W*.5/scale+C,wy0=world.cameraY-C*.6,wy1=world.cameraY+H/scale+C*.6;
+  for(let cj=Math.floor(wy0/C);cj<=Math.floor(wy1/C);cj++)for(let ci=Math.floor(wx0/C);ci<=Math.floor(wx1/C);ci++){
+    const hf=q=>rockHash(seed+ci*4099,cj*65537,q),kind=hf(1);if(kind<.1)continue;
+    const wx=(ci+.15+hf(2)*.7)*C,wy=(cj+.15+hf(3)*.7)*C;if(Math.hypot(wx,wy-ROCK_OPENING_Y)<ROCK_OPENING_R+160)continue;
+    const x=sx(wx),y=sy(wy),fade=.42+hf(4)*.25;if(x<-260||x>W+260||y<-260||y>H+260)continue;
+    ctx.save();
+    if(kind<.62){
+      const a=ROCK_ANIMALS[(hf(5)*12)|0],span=(110+hf(6)*120)*scale,face=hf(7)<.5?1:-1,pig=hf(8)<.5?ink.rock.redOchre:ink.rock.manganese;
+      rockPaintAnimal(ctx,a,(hf(9)*1e6)|0,p=>[x+(p[0]-.5)*span*face,y+(p[1]-.25)*span],span,hf(10)<.5?1:.7,hf(11)<.6?.8:0,pig,fade);
+    }else if(kind<.82){
+      const n=2+((hf(12)*4)|0);for(let i=0;i<n;i++)rockHand(x+(i-n/2)*26*scale+(hf(20+i)-.5)*10*scale,y+(hf(30+i)-.5)*18*scale,17*scale,ink.rock.redOchre,fade*1.4,hf(40+i)<.5);
+    }else{
+      const n=5+((hf(13)*9)|0),dx=(9+hf(14)*6)*scale,ang=(hf(15)-.5)*.6;
+      for(let i=0;i<n;i++){const t=i-n/2;rockDot(ctx,x+Math.cos(ang)*t*dx,y+Math.sin(ang)*t*dx+Math.sin(i*1.3)*2*scale,(2.4+hf(50+i)*1.4)*scale,ink.rock.redOchre,fade*2.2,i+ci*13);}
+    }
+    ctx.restore();
+  }
+}
+
 // ---------- The frame, the laid paper: nothing surrounds this sky ----------
 // No border, cartouche, colophon or maker's mark — a figure's edge is wherever rock or torchlight
 // stops, and there are no laid wires on a cave wall. Registered as no-ops so the intent is stated
@@ -1375,7 +1511,6 @@ function rockLaid(){}
 // with no script and no geometry to letter one in. The cluster this era does have for a constellation
 // — six dots over a bull's shoulder, three of them ringed, kept exactly as ambiguous as the reading
 // that licenses it — is not drawn yet.
-function rockFigure(){}
 function rockSurveys(){}
 // And three fixtures of the printed sheet that a wall simply does not have: the leaf of ground the
 // atlas lays under its running numbers, the plate's number and name engraved at the foot, and the
@@ -1532,6 +1667,8 @@ defineHand('rock',{
 defineVoice('rock',{
   chartNoun:'cluster',
   chartVerb:'marked',
+  // The catalogue's twelve, named for the animal each is found as on this wall (ROCK_ANIMALS).
+  chartNames:ROCK_ANIMALS.map(a=>a.name),
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',

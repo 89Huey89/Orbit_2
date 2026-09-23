@@ -1039,12 +1039,14 @@ function drawConstellations(){
         // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
         const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
         const guard=Math.abs(ex-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner,below=ey-ring-size<guard;
-        const dir=below?Math.PI/2:-Math.PI/2,latin=CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
+        // A plate with names of its own for the catalogue (plateWords().chartNames) sets that alone, with no
+        // Latin over it: the Latin is the atlas's, and a century that never wrote it has no gloss to give.
+        const own=chartTitle(chart)!==chart.name,dir=below?Math.PI/2:-Math.PI/2,latin=!own&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
         const alpha=chart.completed?.34:.52;
         ctx.save();ctx.translate(ex,ey);
         ctx.font=plateFace(size,'sc');
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${alpha})`;
-        textAlongArc(ctx,latin||chart.name,0,0,ring,dir,{align:'center',size,spacing:size*.24,inward:below});
+        textAlongArc(ctx,latin||chartTitle(chart),0,0,ring,dir,{align:'center',size,spacing:size*.24,inward:below});
         if(latin){
           const glossSize=size*.64,glossRing=ring+size*1.05;
           ctx.font=plateFace(glossSize,'text','italic');
