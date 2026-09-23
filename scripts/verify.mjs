@@ -12,18 +12,18 @@ const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // and run in parallel instead of one after another. Every one of them is written exactly as it would
 // be inline — reading these free variables rather than taking parameters — so a worker just needs to
 // populate them (from its own vm sandbox, or from workerData) before calling the task it was asked for.
-let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
+let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
 
 // Runs the extracted `// BEGIN SIMULATION`/`// END SIMULATION` slice of src/simulation.js in its own
 // vm sandbox and returns the named globals verify.mjs needs off it — the same slice-and-pull the file
 // has always done, just callable once per thread instead of once for the whole process.
 function simSandbox(simulation){
   const sandbox={};vm.createContext(sandbox);
-  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
+  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
   return sandbox.api;
 }
 function useSimulationApi(api){
-  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
+  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
 }
 
 // A tangent-seeking pilot uses the stars and follows the generated main route.
@@ -50,15 +50,16 @@ function taskRoute60(){
   return {totalCaptures,perfects,maxNodes,maxHazards};
 }
 
-// Era I's own hazard, run through the same tangent-seeking pilot taskRoute60 already trusts, with
-// chasmsOn set: every seed must still reach row 48, chasms actually have to appear, and no node's
-// capture-plus-orbit disc may ever come within a chasm's own half-width — generation's own promise
-// that an orbit can never touch one, checked here against every chasm still standing at the end
-// rather than only against the ones a particular pilot happened to fly near.
+// Era I's own hazards, run through the same tangent-seeking pilot taskRoute60 already trusts, with
+// chasmsOn AND relightOn both set together — the two era-only flags the wall turns on at once, so this
+// is the pilot that proves neither perturbs the other: every seed must still reach row 48, chasms
+// actually have to appear, no node's capture-plus-orbit disc may ever come within a chasm's own
+// half-width, and the run must never raise anything (the relight logic runs every flight tick of every
+// seed here, so a broken bound or a NaN would surface across sixty seeds long before anyone saw it).
 function taskChasmRoute60(){
   let totalChasms=0,firstRow=Infinity;const failures=[],intersections=[];
   for(let seed=1;seed<=60;seed++){
-    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true);w.keepAll=true;w.start();
+    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true,true);w.keepAll=true;w.start();
     for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
       if(w.player.node){
         const aim=w.aim();
@@ -1467,6 +1468,16 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert(Math.abs(chasmReplayA.player.x-chasmReplayB.player.x)<1e-6&&Math.abs(chasmReplayA.player.y-chasmReplayB.player.y)<1e-6,'The same log with chasmsOn set must reproduce the same final position: '+width+'x'+height);
     assert.equal(chasmReplayA.chasms.length,chasmReplayB.chasms.length,'The same log with chasmsOn set must reproduce the same chasms');
     assert.equal(context.test.replayRun(log).chasms.length,0,'A log that predates chasmsOn (undefined) must still replay with none generated: '+width+'x'+height);
+    // relightOn rides the log the same way: a run flown with it set must reproduce identically on a
+    // second, independent rebuild — the refill is a pure function of the fixed-step ticks and the
+    // hazards each one already deals, so nothing about it can diverge between two rebuilds of one log.
+    const relightLog={...log,relightOn:true};
+    const relightReplayA=context.test.replayRun(relightLog),relightReplayB=context.test.replayRun(relightLog);
+    assert.equal(relightReplayA.state,'dead','A relight-flagged replay must still reach an end: '+width+'x'+height);
+    assert.equal(relightReplayA.reason,relightReplayB.reason,'The same log with relightOn set must reproduce the same cause of death: '+width+'x'+height);
+    assert.equal(relightReplayA.score,relightReplayB.score,'The same log with relightOn set must reproduce the same score: '+width+'x'+height);
+    assert(Math.abs(relightReplayA.player.x-relightReplayB.player.x)<1e-6&&Math.abs(relightReplayA.player.y-relightReplayB.player.y)<1e-6,'The same log with relightOn set must reproduce the same final position: '+width+'x'+height);
+    assert.equal(relightReplayA.player.ink,relightReplayB.player.ink,'The same log with relightOn set must reproduce the same final ink charge: '+width+'x'+height);
     // ---- The review: a free-scrolling camera over that same, unpruned replay ----
     context.test.showEnd();
     assert.equal(context.test.reviewing,false,'The colophon alone must not start a review: '+width+'x'+height);
@@ -1725,7 +1736,55 @@ assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
   assert(w.aim(),'The same release with the chasm removed is offered normally');
 }
 
-
+// ---------- Relighting at the Flare: era-only, gated exactly like chasmsOn (G2) ----------
+{
+  // relightOn defaults off: held in a Flare's outer field, in flight, for a good while, the charge
+  // must never move — the flag is inert exactly like newtonOn and chasmsOn before this era sets it.
+  const h={x:0,y:0,r:100,kind:'flare'},mid=(hazardCore(h)+gravityRadius(h))/2;
+  const off=new OrbitWorld(101,440,860);
+  off.hazards=[h];off.nodes=[];off.chasms=[];off.ensureAhead=()=>{};off.state='playing';
+  const op=off.player;op.node=null;op.ink=.5;
+  for(let i=0;i<200&&off.state==='playing';i++){op.x=mid;op.y=0;op.vx=0;op.vy=0;off.update(step);}
+  assert.equal(off.state,'playing','A traveller held in a Flare\'s outer field is never itself in danger');
+  assert(op.ink<=.5+1e-9,'relightOn defaults off: the charge never refills inside a Flare\'s field');
+}
+{
+  // relightOn set: held in the same band, the charge refills, and clamps at 1 rather than running past it.
+  const h={x:0,y:0,r:100,kind:'flare'},mid=(hazardCore(h)+gravityRadius(h))/2;
+  const on=new OrbitWorld(102,440,860,()=>{},false,false,false,false,true);
+  on.hazards=[h];on.nodes=[];on.chasms=[];on.ensureAhead=()=>{};on.state='playing';
+  // Started a hair above empty rather than at it: hitting dry exactly is its own, older death (THE NIB
+  // RAN DRY, checked before this rule ever runs), not a case relighting is meant to answer.
+  const p=on.player;p.node=null;p.ink=.01;
+  for(let i=0;i<400&&on.state==='playing';i++){p.x=mid;p.y=0;p.vx=0;p.vy=0;on.update(step);}
+  assert.equal(on.state,'playing','Refilling in the field must not itself endanger the traveller');
+  assert.equal(p.ink,1,'relightOn: the charge refills inside the band and clamps at 1');
+}
+{
+  // The lethal core still kills exactly as it does without the flag: relighting only ever answers the
+  // outer field, never the core a straight crossing dies to.
+  const h={x:0,y:0,r:100,kind:'flare'};
+  const w=new OrbitWorld(103,440,860,()=>{},false,false,false,false,true);
+  w.hazards=[h];w.nodes=[];w.chasms=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.ink=.5;p.x=0;p.y=-400;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'dead','relightOn: the core still kills a straight crossing');
+  assert.equal(w.reason,hazardKind(h).loss,'relightOn: the core kills with its own, unchanged reason');
+}
+{
+  // No refill while orbiting, even when the ring sits inside a Flare's own band: an orbit still earns
+  // only the ordinary per-second gain the node it holds always paid, never the relight rate as well.
+  const h={x:0,y:150,r:100,kind:'flare'};
+  const w=new OrbitWorld(104,440,860,()=>{},false,false,false,false,true);
+  w.hazards=[h];w.chasms=[];w.ensureAhead=()=>{};w.state='playing';
+  const n=w.player.node;n.x=0;n.y=0;n.baseX=0;n.baseY=0;n.r=50;n.cap=60;n.amp=0;n.type='still';w.nodes=[n];
+  const p=w.player;p.rad=50;p.dir=1;p.speed=150;p.angle=Math.PI/2;p.ink=.5;p.orbitSweep=0;p.orbitTime=0;p.tangentCapture=true;
+  w.positionPlayer();
+  const d=Math.hypot(p.x-h.x,p.y-h.y);
+  assert(d>hazardCore(h)&&d<gravityRadius(h),'fixture must actually hold its orbit inside the Flare\'s own band');
+  w.update(step);
+  assert(Math.abs(p.ink-Math.min(1,.5+INK_ORBIT_GAIN*step))<1e-9,'relightOn: an orbit inside a Flare\'s field earns only the ordinary orbit gain, never relight on top of it');
+}
 
 // Tiro's wider pressure asks less precise timing to land a smooth tangent transfer: the windowMult
 // argument widens the band around the target's rim that counts as perfect, and the guide and real

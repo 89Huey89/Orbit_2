@@ -42,6 +42,16 @@ const FLIGHT_STEP = 1/120;
 const INK_REACH = 2000;
 const INK_ORBIT_GAIN = 0.13, INK_SLING_GAIN = 0.85;
 const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
+// Era I's own relighting rule (see relightOn below): skimming a Flare's outer field, in flight and
+// clear of its lethal core, refills the same ochre charge at this fixed rate — faster than holding an
+// ordinary orbit (INK_ORBIT_GAIN), since the whole point is a real, risk-priced alternative to one, but
+// well short of a slingshot star's lap (INK_SLING_GAIN), which is the one full-charge guarantee the
+// chart already promises. At this rate a run held continuously in the band refills from empty in about
+// 2.2 seconds — long enough that dipping in still costs the flight time it takes, never nothing.
+const RELIGHT_RATE = 0.45;
+// Relight events are throttled to this many seconds apart so a renderer or sound hook can react to
+// them without being driven at the simulation's own 120 Hz tick rate.
+const RELIGHT_EMIT_PERIOD = 0.25;
 // A skipped orbit also buys a head start on the flood: the floor is allowed to trail this far
 // further behind the camera's bottom edge than its ordinary 25-unit slack, so a traveller who
 // outran the pursuit sees it, rather than finding it re-painted at the sill on the very next frame.
@@ -434,8 +444,13 @@ class OrbitWorld {
   // chasmsOn is era I's own switch — see PLATE_STYLES.rock.can.chasms in src/plates.js and newWorld()
   // in src/ui.js. Off by default, exactly like offerDifficulty/varyOpening/newtonOn, so every existing
   // fixture, replay and plate keeps generating no chasms at all.
-  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false, chasmsOn = false) {
+  // relightOn is gated exactly the same way, via PLATE_STYLES.rock.can.relight: off by default, so it
+  // perturbs nothing generated for a seed (there is no separate random stream to keep isolated, since
+  // the rule reads only the hazards and player state the rest of the tick already produced) and every
+  // atlas, Era II and daily route flies on with p.ink untouched by any Flare it passes.
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false, chasmsOn = false, relightOn = false) {
     this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening; this.newtonOn = !!newtonOn; this.chasmsOn = !!chasmsOn;
+    this.relightOn = !!relightOn; this.relightCooldown = 0;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.chasms = []; this.row = 0; this.serial = 0;
@@ -988,6 +1003,23 @@ class OrbitWorld {
         else if(result.hit?.kind==='edge')this.edgeHit();
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node&&p.ink<=0)this.die('THE NIB RAN DRY');
+        // Relighting at the Flare (era I only, see relightOn above): inside the field but clear of the
+        // core, still in flight, the charge tops back up — the core above still kills exactly as it did
+        // the tick before this rule existed. Only one Flare is credited per tick (break, below) so two
+        // fields overlapping can never stack their refill; which one is irrelevant since the rate is the
+        // same for all of them. this.relightCooldown throttles the accompanying event, not the refill
+        // itself, so the charge always reflects the exact seconds spent in the band, replay included.
+        if(this.state==='playing'&&!p.node&&this.relightOn)for(const h of this.hazards){
+          if(h.kind!=='flare')continue;
+          const d=Math.hypot(h.x-p.x,h.y-p.y);
+          if(d<=hazardCore(h)||d>=gravityRadius(h))continue;
+          const before=p.ink;p.ink=Math.min(1,p.ink+RELIGHT_RATE*step);
+          if(p.ink>before){
+            this.relightCooldown-=step;
+            if(this.relightCooldown<=0){this.relightCooldown=RELIGHT_EMIT_PERIOD;this.emit('relight',{x:p.x,y:p.y});}
+          }
+          break;
+        }
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
           // A gust cannot be grazed: what a graze pays for is the room left beside something lethal.
           if(!hazardKind(h).lethal)continue;

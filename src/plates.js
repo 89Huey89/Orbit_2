@@ -357,8 +357,10 @@ const PLATE_STYLES={
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
   // chasms:true is read by newWorld() (src/ui.js) to decide whether OrbitWorld generates the long
   // cracks across the wall (see simulation.js's chasmsOn) \u2014 a capability of this plate alone, so no
-  // other century or the atlas itself ever draws one.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  // other century or the atlas itself ever draws one. relight:true is read the same way to set
+  // OrbitWorld's relightOn (see simulation.js): skimming a Flare's field refills the ochre charge on
+  // this wall alone; the atlas, Era II and the daily plate never set it, so a Flare stays inert to them.
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};

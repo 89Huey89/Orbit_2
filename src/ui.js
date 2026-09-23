@@ -218,6 +218,11 @@ function event(type,e){
     if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:plateWords().glosses.close,line2:'SUMMA '+world.score,age:0});
     else floaters.push({x:e.x,y:e.y-20,text:plateWords().glosses.close,age:0});
     recordBest(world.score);
+  }else if(type==='relight'){
+    // Era-only (relightOn, see PLATE_STYLES.rock.can.relight): the atlas never emits this event, so
+    // this branch is dead code everywhere but the wall. The era draws the effect itself; a plate with
+    // nothing to show for it (the atlas, always) simply has no 'relight' hand and nothing happens.
+    const own=handFor('relight');if(own)own(e);
   }else if(type==='death'){
     audio.death();
     if(e.reason==='LEFT THE STAR CHART'){
@@ -259,7 +264,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'));
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'));
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -270,7 +275,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,startedAt:0,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,startedAt:0,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');

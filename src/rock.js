@@ -1819,6 +1819,11 @@ function rockHudLeaf(){
 }
 function rockRunningHead(){}
 function rockChapterReveal(){}
+// Relighting at the Flare (relightOn, G2): the ochre refills itself in simulation.js while the hand is
+// in the field; this hook is where the wall would answer it — a flare of light on the crayon, say.
+// Left empty for now (the art lead is drawing this file concurrently); ui.js's event() calls it through
+// handFor('relight') exactly the way it calls every other era-only hand, and does nothing if it stays empty.
+function rockRelight(e){}
 
 // ---------- The title: the era's mark, untranslated ----------
 // The wall has no word for its own name, so its title is a mark, not a word: a ring of red dots pressed
@@ -1867,7 +1872,8 @@ defineHand('rock',{
   inkPath:rockInkPath,
   inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,
-  hazardReveal:rockHazardReveal
+  hazardReveal:rockHazardReveal,
+  relight:rockRelight
 });
 
 // ---------- The vocabulary: only what this era actually calls differently ----------
@@ -2009,7 +2015,10 @@ defineVoice('rock',{
     inkwellFound:'A BOLD MARK · A NEW COLOUR TAKES',
     inkwellDry:'THE OCHRE RUNS LOW · GO BOLD FIRST',
     observation:'MARKED · {name}',
-    close:'CLOSE +5'
+    close:'CLOSE +5',
+    // Spoken while relightOn refills the ochre in a Flare's field (G2); the atlas never sets this key
+    // since it never turns the flag on, so it carries no atlas counterpart to match or diverge from.
+    relight:'THE TORCH TAKES FIRE'
   }
 });
 
