@@ -646,25 +646,40 @@ const laidTiles=new Map(),laidSheets=new Map();
 function laidPaper(){
   const key=plateName+':'+DPR,held=laidTiles.get(key);
   if(held)return held;
-  // Wires every 4 CSS px and chain lines every 120 — the same reduction the rest of the sheet is judged
-  // at (see "Target viewport" in CLAUDE.md), rather than the 1.5px/27px mould the tile used to carry,
-  // which packed seven-odd grey levels of banding into a texture too fine for the mark to read as wires
-  // at all and left the chain lines close enough to lose the real rhythm a laid sheet has. The tile is
-  // widened to 120 so one chain line per tile is the new 120px pitch exactly, with no seam at the repeat.
+  // A mould's wires are not a ruled grid: they are seen mostly as thinner, lighter patches in the sheet
+  // (less pulp settled where the wire itself held it back), packed close (8-12 to the centimetre — a
+  // wire roughly every 3-4 CSS px at the reduction "Target viewport" in CLAUDE.md judges against),
+  // uneven in spacing and strength, and slightly wavering — never crisp, and under an engraving's ink
+  // barely perceptible. Chain lines sit far apart by comparison, about 25mm (roughly 100 CSS px on this
+  // sheet) with a soft shadow of pulp either side rather than a hard stroke, and are themselves faintly
+  // bowed. One chain line per tile keeps the tile seamless at its repeat without needing tw to divide a
+  // pitch, and the whole set of wire rows is chosen once, jittered, and drawn as a closed set across
+  // [0,th) so the tile still wraps cleanly top to bottom. Night carries none of this: a heavily inked
+  // ground would not show the mould's wires at all, so night keeps only the loose fibre below.
   const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=120,th=96;
   const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
   g.scale(unit,unit);
   g.fillStyle=paper?'#ffffff':'#000000';g.fillRect(0,0,tw,th);
   const dark=a=>paper?`rgba(70,50,26,${a})`:`rgba(206,222,226,${a})`;
   const light=a=>paper?`rgba(255,252,242,${a})`:`rgba(0,0,0,${a})`;
-  g.lineWidth=.45;
-  for(let y=0;y<th;y+=4){
-    g.strokeStyle=dark(paper?.2:.14);g.beginPath();g.moveTo(0,y+.3);g.lineTo(tw,y+.3);g.stroke();
-    if(paper){g.strokeStyle=light(.5);g.beginPath();g.moveTo(0,y+1.05);g.lineTo(tw,y+1.05);g.stroke();}
-  }
-  for(let x=0;x<tw;x+=120){
-    if(paper){g.strokeStyle=light(.4);g.lineWidth=2.4;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();}
-    g.strokeStyle=dark(paper?.11:.07);g.lineWidth=.9;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();
+  if(paper){
+    const rows=Math.round(th/4);
+    for(let i=0;i<rows;i++){
+      const y0=(i+.5)*th/rows+(rng()-.5)*1.6,segs=7,brk=rng()<.25?1+Math.floor(rng()*(segs-1)):-1;
+      g.lineWidth=.3+rng()*.35;g.strokeStyle=light(.12+rng()*.16);g.beginPath();
+      for(let s=0;s<=segs;s++){
+        const x=tw*s/segs,y=y0+Math.sin((s/segs+i*.63)*TAU)*.55+(rng()-.5)*.4;
+        if(s===0||s===brk){g.moveTo(x,y);}else{g.lineTo(x,y);}
+      }
+      g.stroke();
+      if(rng()<.35){g.strokeStyle=dark(.035+rng()*.045);g.lineWidth=.3;g.beginPath();g.moveTo(0,y0);g.lineTo(tw,y0);g.stroke();}
+    }
+    const cx=tw*.5+(rng()-.5)*4,bow=(rng()-.5)*3;
+    g.strokeStyle=light(.2);g.lineWidth=4.5;
+    g.beginPath();g.moveTo(cx-1.6,0);g.quadraticCurveTo(cx-1.6+bow,th/2,cx-1.6,th);g.stroke();
+    g.beginPath();g.moveTo(cx+1.6,0);g.quadraticCurveTo(cx+1.6+bow,th/2,cx+1.6,th);g.stroke();
+    g.strokeStyle=dark(.08);g.lineWidth=1;
+    g.beginPath();g.moveTo(cx,0);g.quadraticCurveTo(cx+bow,th/2,cx,th);g.stroke();
   }
   for(let i=0;i<90;i++){
     const x=rng()*tw,y=rng()*th,a=rng()*TAU,l=1.5+rng()*5;
@@ -693,7 +708,11 @@ function drawLaidPaper(){
   if(modernPlate())return;
   const sheet=laidSheetFor();if(!sheet||!W||!H)return;
   const chapter=world?clamp(Math.floor(world.progress/8),0,3):0;
-  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=(onPaper()?.35:.055)*CHAPTER_LAID_STRENGTH[chapter];
+  // Paper's own wires are already drawn faint inside the tile; laid here at a lower strength than the
+  // grid this used to be so the sheet reads as texture, not as lines a reader could count. Night carries
+  // no wires in the tile at all (an inked ground would not show them), so its own pass is left as the
+  // whisper it always was, for the loose fibre alone.
+  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=(onPaper()?.26:.055)*CHAPTER_LAID_STRENGTH[chapter];
   ctx.drawImage(sheet,0,0,W,H);ctx.restore();
 }
 function grainTexture(){

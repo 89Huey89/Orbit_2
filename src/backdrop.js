@@ -101,8 +101,9 @@ function dressSheet(sheet){
   return sheet;
 }
 function paintPaperBackdrop(){
-  // Aged laid paper: warm cream, mottled sizing, laid and chain lines, fibres, foxing, a tide mark, and the
-  // same calibrated ecliptic as the night plate pressed into the sheet in dilute sepia.
+  // Aged laid paper: warm cream, mottled sizing, chain lines, fibres, foxing, a tide mark, and the same
+  // calibrated ecliptic as the night plate pressed into the sheet in dilute sepia. The wires themselves
+  // come from drawLaidPaper()'s tile, laid over the whole chart including this sheet.
   const c=makeCanvas(Math.ceil(W*DPR),Math.ceil(H*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);
   const rng=seeded(90211);
   g.fillStyle='#e6d8b8';g.fillRect(0,0,W,H);
@@ -114,13 +115,18 @@ function paintPaperBackdrop(){
     blot.addColorStop(0,warm?'rgba(196,160,104,.10)':'rgba(246,238,216,.16)');blot.addColorStop(1,'rgba(200,170,120,0)');
     g.fillStyle=blot;g.fillRect(x-r,y-r,r*2,r*2);
   }
-  // Laid lines run across the sheet; heavier chain lines cross them at the mould's wire spacing.
-  g.strokeStyle='rgba(112,86,52,.045)';g.lineWidth=.5;g.beginPath();
-  for(let y=0;y<H;y+=1.55){g.moveTo(0,y+rng()*.3);g.lineTo(W,y+rng()*.3);}
-  g.stroke();
-  g.strokeStyle='rgba(112,86,52,.075)';g.lineWidth=.8;
-  for(let x=(rng()*10);x<W;x+=27+rng()*2){
-    g.beginPath();g.moveTo(x,0);for(let y=0;y<=H;y+=40)g.lineTo(x+Math.sin(y*.013+x)*.6,y);g.stroke();
+  // The mould's own wires are laidPaper()'s job (drawLaidPaper() lays that tile over the whole chart,
+  // this sheet included); doubling a second, mechanically-spaced ruling here on top of it is exactly the
+  // ledger-paper read this pass used to leave. What belongs to the sheet itself, at full size rather than
+  // a repeating tile, is the wide-set chain lines: real ones fall roughly every 25mm, which on this sheet
+  // is about 90-110 CSS px, each a soft shadow of pulp either side of a faint, slightly bowed line —
+  // never the hard, dead-straight stroke a ledger rules.
+  for(let x=rng()*30+20;x<W;x+=90+rng()*22){
+    const bow=(rng()-.5)*5,wob=(y)=>bow*Math.sin(y/H*Math.PI)+Math.sin(y*.013+x)*.6;
+    g.strokeStyle='rgba(112,86,52,.05)';g.lineWidth=3.4;
+    g.beginPath();g.moveTo(x,0);for(let y=0;y<=H;y+=40)g.lineTo(x+wob(y),y);g.stroke();
+    g.strokeStyle='rgba(96,68,38,.09)';g.lineWidth=.7;
+    g.beginPath();g.moveTo(x,0);for(let y=0;y<=H;y+=40)g.lineTo(x+wob(y),y);g.stroke();
   }
   for(let i=0;i<520;i++){
     const x=rng()*W,y=rng()*H,a=(rng()-.5)*.9+(rng()>.5?0:Math.PI/2),l=4+rng()*22;
