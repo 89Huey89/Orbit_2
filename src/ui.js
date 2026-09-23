@@ -1139,7 +1139,8 @@ function updateUI(dt){
   // live region is told once, so the change is still spoken.
   if(chapter!==lastChapter){
     lastChapter=chapter;
-    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:chapterVoice.chapters[chapter]});}
+    // A plate may mark the turn of a chapter with a sound of its own (the Ceiling's gates); the atlas has none.
+    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};{const turn=handFor('chapter');if(turn)turn(audio,chapter);}$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:chapterVoice.chapters[chapter]});}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
   // the orbit being held, or the vortex that is bending the flight. Each is kept on the sheet while

@@ -1987,6 +1987,8 @@ function renderCeiling(dt,aim){
 // (docs/archive/eras/02-ceiling.md's "Sound") — four painters below plus scratch's own parameter row, since
 // audio.js's scratch() draws its grain from a row of numbers rather than calling out to a function.
 // See defineHand()/handFor() in src/plates.js; everything neither names is still the atlas's own.
+// The scale every string in the Ceiling's hand is tuned to: D pentatonic, D F G A C, over two and a half octaves.
+const CEILING_SCALE=[146.83,174.61,196,220,261.63,293.66,349.23,392,440,523.25,587.33];
 defineHand('ceiling',{
   frame:renderCeiling,
   ready:ceilingFaceReady,
@@ -1995,17 +1997,24 @@ defineHand('ceiling',{
   // into the register a stone mortar rings in — never a second engine, per docs/archive/eras/02-ceiling.md's
   // "Sound".
   scratch:{band:[260,380],q:[.5,1.1],peak:.075,attack:.006,dur:[.05,.05],gap:[.05,.07],ease:.02},
-  // A wet dab of pigment in place of the note off the row's own scale — the wall keeps no key, so
-  // nothing here climbs a scale — and a perfect transfer's dry brush-flick in place of the second
-  // chime: the loaded reed dragged once, dry, clear of the wet mark it just left; see
-  // docs/archive/eras/02-ceiling.md's "Sound".
-  capture(a,row,perfect){a.tone(150,.24,0,.34,'sine',88);a.brush(480,.24);if(perfect)a.brush(2300,.15);},
-  // A dropped stone in place of the dying chord — one low strike and a short low knock, over fast,
-  // because a dropped stone does not ring the way a struck string does.
-  death(a){a.tone(88,.4,0,.55,'sine',32);a.brush(150,.5);},
-  // The naos sistrum (audio.js's own method), in place of the atlas's rising three-note chime.
-  medal(a){a.sistrum();},
-  // Dawn: the sistrum shaken, and a slow chord climbing under it as the sun clears the horizon, the one
-  // time this wall is allowed a key, because it is the one moment of the night that is not a struggle.
-  dawn(a){a.sistrum();for(const [f,d] of [[196,0],[293.66,.35],[392,.7],[587.33,1.1]])a.tone(f,1.6,d,.13,'sine');}
+  // The night is scored for the instruments the tomb banquets show: the harp, the frame drum and the
+  // sistrum. Every string is tuned to one five-note scale on D, since the harps that survive are
+  // pentatonic as far as anyone has reconstructed them, and a scale kept this plain never falls into
+  // the augmented second a film score reaches for when it wants to say "Egypt".
+  start(a){a.drum(84,0,.4);[587.33,440,349.23,293.66].forEach((f,i)=>a.pluck(f,1.3,.08+i*.11,.28));},
+  // Letting go is an oar's stroke: water pushed back and a string touched low under it.
+  release(a){a.wash(1700,480,.3,.28);a.pluck(146.83,.35,0,.22);},
+  // A landing plucks the harp, climbing the scale with the row, and a clean transfer strums a second
+  // string a fifth above straight after it, the way a harpist answers a note.
+  capture(a,row,perfect){const n=CEILING_SCALE[3+Math.floor(row)%5];a.pluck(n,1.1,0,.36);if(perfect){a.pluck(n*1.5,.9,.07,.2);a.pluck(n*2,.8,.14,.1);}},
+  // Water closing over the barque: a long deep wash and a string sliding down under it.
+  death(a){a.wash(1100,110,1.5,.42);a.tone(146.83,1.2,.05,.4,'triangle',55);},
+  // The naos sistrum for a decan course completed, with two strings rung high beside it.
+  medal(a){a.sistrum();a.pluck(587.33,1.2,.1,.2);a.pluck(880,1.1,.22,.14);},
+  // A gate: the frame drum struck twice and the sistrum shaken as the doors open; at every third gate,
+  // where the room itself turns over to its next register, a harp run falls under it as well.
+  chapter(a,hour){a.drum(92,0,.45);a.drum(92,.19,.3);a.sistrum();if(hour%3===0)CEILING_SCALE.slice(4,9).reverse().forEach((f,i)=>a.pluck(f,.9,.3+i*.07,.2));},
+  // Dawn: the drum, the sistrum, and the whole scale run upward on the harp over a chord held under it,
+  // the one time the night is allowed to resolve, because it is the one moment that is not a struggle.
+  dawn(a){a.drum(78,0,.5);a.sistrum();CEILING_SCALE.forEach((f,i)=>a.pluck(f,1.6,.15+i*.1,.24));for(const [f,d] of [[146.83,.2],[220,.5],[293.66,.8],[440,1.2]])a.tone(f,2.4,d,.1,'sine');setTimeout(()=>a.sistrum(),1300);}
 });

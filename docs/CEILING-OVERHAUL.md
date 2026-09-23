@@ -49,8 +49,9 @@ Flown at 430×932 by a pilot built on `world.aim()` (the same one `scripts/probe
 
 ## Phases
 
-Status (2026-09-23): phases 1 to 4 are built on `claude/egyptian-deck-overhaul-7aj1yi`; phase 5, the
-sound pass, is open. The hour is three rows and dawn is row thirty-six, read off `scripts/probe.mjs`:
+Status (2026-09-23): all five phases are built on `claude/egyptian-deck-overhaul-7aj1yi`; the sound
+is a harp, a frame drum, water and the sistrum on one D pentatonic scale, and the capitals are set in
+Limelight. The hour is three rows and dawn is row thirty-six, read off `scripts/probe.mjs`:
 a hand releasing 16 ms late reaches row thirty in about a fifth of runs, so the dawn is an achievement
 without being out of reach. Sunrise ends the run as a win (`goalRow` on `OrbitWorld`, the `sunrise`
 event), not a lap.
