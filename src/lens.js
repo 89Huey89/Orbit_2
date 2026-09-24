@@ -971,16 +971,49 @@ function lensScopeSprite(reg){
     g.fillStyle=cyl(-5.2,5.2,[92,70,48],[140,110,78],[40,28,18]);g.fillRect(-22,-5.2,6.2,10.4);g.strokeRect(-22,-5.2,6.2,10.4);
     g.fillStyle='rgb(22,20,18)';g.fillRect(-20.6,-7.4,1.6,4);g.strokeStyle='rgba(220,220,210,.6)';g.lineWidth=.35;g.beginPath();g.moveTo(-21.8,0);g.lineTo(-16,0);g.stroke();core=-19;
   }else{
-    // the arrays, ruled into cells, set square across the tube
-    for(const s of[-1,1]){g.fillStyle='rgba(60,70,96,.95)';g.fillRect(-5,s*6,8,s*13);g.strokeStyle='rgba(200,210,230,.8)';g.lineWidth=.35;g.strokeRect(-5,s*6,8,s*13);
-      g.beginPath();for(let i=1;i<4;i++){g.moveTo(-5+i*2,s*6);g.lineTo(-5+i*2,s*19);}for(let i=1;i<6;i++){g.moveTo(-5,s*(6+i*13/6));g.lineTo(3,s*(6+i*13/6));}g.stroke();
-      g.strokeStyle='rgba(210,214,222,.9)';g.lineWidth=.6;g.beginPath();g.moveTo(-1,s*4.2);g.lineTo(-1,s*6);g.stroke();}
-    g.fillStyle=cyl(-4.4,4.4,[190,196,204],[244,246,250],[92,98,110]);g.fillRect(-16,-4.4,30,8.8);g.strokeStyle='rgba(40,44,52,.9)';g.lineWidth=.45;g.strokeRect(-16,-4.4,30,8.8);
-    g.strokeStyle='rgba(120,126,140,.8)';g.lineWidth=.35;g.beginPath();for(const x of[-9,-2,6])g.moveTo(x,-4.4),g.lineTo(x,4.4);g.stroke();
-    g.fillStyle=cyl(-4.8,4.8,[170,176,186],[228,232,238],[80,86,96]);g.fillRect(-20,-4.8,4.2,9.6);g.strokeRect(-20,-4.8,4.2,9.6);
-    // the aperture door, open on its hinge
-    g.save();g.translate(14,-4.4);g.rotate(-1.05);g.fillStyle='rgba(206,210,218,.95)';g.fillRect(0,-.6,9,1.2);g.strokeRect(0,-.6,9,1.2);g.restore();
-    g.fillStyle='rgba(10,12,18,.95)';g.beginPath();g.ellipse(14,0,.9,4,0,0,TAU);g.fill();core=-15.5;
+    // Hubble as it flew in 1990, in the few shapes that still read at the size it is flown: a body wrapped in
+    // silver foil, quilted in panels and banded where its sections join, with the equipment bays standing
+    // proud round its middle; the aperture door swung open at the front on its hinge, the baffle's black
+    // inside the mouth; the first arrays, two flexible blankets rolled out along a central mast on each
+    // side; the two high-gain dishes on their booms; and the yellow handrails a spacewalker holds.
+    const foil=(y0,y1)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,'rgb(150,156,168)');gr.addColorStop(.18,'rgb(236,240,246)');gr.addColorStop(.32,'rgb(252,253,255)');gr.addColorStop(.62,'rgb(186,192,204)');gr.addColorStop(1,'rgb(70,76,90)');return gr;};
+    // the arrays first, so the body lies over their roots: the mast, the blanket either side of it in cells,
+    // a gold frame at the blanket's edge and the spreader bar at its tip
+    for(const s of[-1,1]){const y0=s*6.2,y1=s*20.5;
+      g.strokeStyle='rgba(206,210,220,.95)';g.lineWidth=.7;g.beginPath();g.moveTo(-.5,s*4.4);g.lineTo(-.5,y1+s*.8);g.stroke();
+      for(const side of[-1,1]){const x0=side<0?-5.4:.3,w=4.6,cellH=(y1-y0)/7;
+        const bl=g.createLinearGradient(x0,0,x0+w,0);bl.addColorStop(0,'rgb(34,44,86)');bl.addColorStop(.5,'rgb(58,74,128)');bl.addColorStop(1,'rgb(30,38,74)');g.fillStyle=bl;g.fillRect(x0,y0,w,y1-y0);
+        g.strokeStyle='rgba(150,170,220,.55)';g.lineWidth=.22;g.beginPath();for(let k=1;k<7;k++){g.moveTo(x0,y0+k*cellH);g.lineTo(x0+w,y0+k*cellH);}g.moveTo(x0+w/2,y0);g.lineTo(x0+w/2,y1);g.stroke();
+        g.strokeStyle='rgba(214,176,92,.85)';g.lineWidth=.35;g.strokeRect(x0,Math.min(y0,y1),w,Math.abs(y1-y0));}
+      g.fillStyle='rgb(200,204,212)';g.fillRect(-5.8,y1-(s<0?.9:0),11.8,.9);
+      // a sheen across the blankets, the one glint the sun gives the arrays
+      const sh=g.createLinearGradient(-6,y0,6,y1);sh.addColorStop(0,'rgba(255,255,255,0)');sh.addColorStop(.45,'rgba(200,220,255,.18)');sh.addColorStop(.55,'rgba(200,220,255,0)');g.fillStyle=sh;g.fillRect(-5.4,Math.min(y0,y1),10.3,Math.abs(y1-y0));}
+    // the high-gain dishes on their booms, one above the body and one below, set aft of the arrays
+    for(const s of[-1,1]){g.strokeStyle='rgba(196,200,210,.95)';g.lineWidth=.55;g.beginPath();g.moveTo(-8.5,s*4.4);g.lineTo(-11,s*9.6);g.stroke();
+      g.save();g.translate(-11.4,s*10.4);g.rotate(s*.5);g.fillStyle='rgb(222,226,232)';g.beginPath();g.ellipse(0,0,2.3,.95,0,0,TAU);g.fill();g.strokeStyle='rgba(60,66,80,.9)';g.lineWidth=.3;g.stroke();
+      g.fillStyle='rgba(90,96,110,.9)';g.beginPath();g.ellipse(0,s*.25,1.2,.4,0,0,TAU);g.fill();g.restore();}
+    // the body: the light shield forward, the equipment section standing proud aft of the arrays, the aft shroud
+    g.fillStyle=foil(-4.3,4.3);g.fillRect(-9,-4.3,23,8.6);
+    g.fillStyle=foil(-4.9,4.9);g.fillRect(-16.5,-4.9,8,9.8);
+    g.fillStyle=foil(-4.6,4.6);g.fillRect(-20,-4.6,3.6,9.2);
+    // the foil's quilting: faint panel seams, and one crumpled facet catching light a little differently
+    g.strokeStyle='rgba(110,116,130,.45)';g.lineWidth=.22;g.beginPath();for(const x of[-5,-1,3,7.5,11])g.moveTo(x,-4.3),g.lineTo(x,4.3);for(const x of[-14.5,-12.5,-10.5])g.moveTo(x,-4.9),g.lineTo(x,4.9);g.stroke();
+    g.fillStyle='rgba(255,255,255,.28)';g.beginPath();g.moveTo(4,-4.3);g.lineTo(7.2,-4.3);g.lineTo(6.4,-.6);g.lineTo(3.6,-1.2);g.closePath();g.fill();
+    g.fillStyle='rgba(40,46,60,.18)';g.beginPath();g.moveTo(-4.6,1);g.lineTo(-1.4,1.6);g.lineTo(-1.8,4.3);g.lineTo(-4.8,4.3);g.closePath();g.fill();
+    g.strokeStyle='rgba(34,38,48,.95)';g.lineWidth=.45;g.strokeRect(-9,-4.3,23,8.6);g.strokeRect(-16.5,-4.9,8,9.8);g.strokeRect(-20,-4.6,3.6,9.2);
+    // the equipment bays' doors, a row of small panels round the proud section
+    g.strokeStyle='rgba(80,86,100,.7)';g.lineWidth=.25;g.beginPath();for(let k=0;k<3;k++){const x=-16+k*2.5;g.rect(x,-3.4,2,2.6);g.rect(x,.8,2,2.6);}g.stroke();
+    // handrails, yellow, where a hand would hold on
+    g.strokeStyle='rgba(236,190,40,.95)';g.lineWidth=.45;g.lineCap='round';g.beginPath();for(const x of[-15.5,-12,-6,0,8])g.moveTo(x,x<-8?-5.35:-4.75),g.lineTo(x+2,x<-8?-5.35:-4.75);for(const x of[-14,-4,5])g.moveTo(x,x<-8?5.35:4.75),g.lineTo(x+2,x<-8?5.35:4.75);g.stroke();
+    // the mouth and the baffle's black inside it, then the aperture door swung open on its hinge
+    g.fillStyle='rgb(200,206,214)';g.fillRect(14,-4.5,1.2,9);
+    g.fillStyle='rgb(6,8,12)';g.beginPath();g.ellipse(15.2,0,1.1,4.1,0,0,TAU);g.fill();g.strokeStyle='rgba(90,100,120,.6)';g.lineWidth=.25;g.beginPath();g.ellipse(15.2,0,.6,2.6,0,0,TAU);g.stroke();
+    g.save();g.translate(15.2,-4.5);g.rotate(-1.18);const dg=g.createLinearGradient(0,-1,0,1);dg.addColorStop(0,'rgb(250,251,253)');dg.addColorStop(1,'rgb(150,156,168)');
+    g.fillStyle=dg;g.beginPath();g.moveTo(0,-.7);g.lineTo(9,-.5);g.quadraticCurveTo(9.8,0,9,.5);g.lineTo(0,.7);g.closePath();g.fill();g.strokeStyle='rgba(34,38,48,.9)';g.lineWidth=.35;g.stroke();g.restore();
+    g.fillStyle='rgb(120,126,140)';g.beginPath();g.arc(15.2,-4.5,.7,0,TAU);g.fill();
+    // a thin rim light along the lit edge, so the craft is never lost against the star field
+    g.strokeStyle='rgba(170,220,255,.5)';g.lineWidth=.35;g.beginPath();g.moveTo(-20,-4.75);g.lineTo(-16.5,-4.75);g.moveTo(-16.5,-5.05);g.lineTo(-8.5,-5.05);g.moveTo(-9,-4.45);g.lineTo(14,-4.45);g.stroke();
+    core=-18.2;
   }
   lensScopes[reg]={canvas:c,size,S,core:core*S};return lensScopes[reg];
 }
@@ -997,9 +1030,11 @@ function lensPlayer(){
   ctx.strokeStyle=reg===2?`rgb(${P.instrSoft})`:`rgb(${P.ink})`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(ax,0,2.5,0,TAU);ctx.stroke();
   // the charges held: the dew-cap as a ring round the tube, the finder's mirror as a silver arc, the open sky's light
   const cc=reg===0?P.ink:reg===1?P.inkBlack:P.instr;
-  if(p.shielded){ctx.strokeStyle=`rgba(${cc},.75)`;ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,24,0,TAU);ctx.stroke();ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,22,0,TAU);ctx.stroke();}
-  if(p.reflectorArmed){ctx.strokeStyle=`rgba(${P.mirror},.95)`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,27,-.9,.9);ctx.stroke();ctx.strokeStyle=`rgba(${cc},.8)`;ctx.lineWidth=.4;ctx.beginPath();ctx.arc(0,0,28.3,-.9,.9);ctx.stroke();}
-  if(p.dawnArmed){ctx.strokeStyle=reg===2?`rgba(${P.cyan},.85)`:`rgba(${P.gold},.85)`;ctx.lineWidth=1;ctx.lineCap='round';ctx.beginPath();for(let i=0;i<12;i++){const a=i*TAU/12;ctx.moveTo(Math.cos(a)*19,Math.sin(a)*19);ctx.lineTo(Math.cos(a)*(i%2?21.5:24),Math.sin(a)*(i%2?21.5:24));}ctx.stroke();}
+  // the arrays reach further than a tube, so off the sensor the charges stand clear of them
+  const cr=reg===2?6:0;
+  if(p.shielded){ctx.strokeStyle=`rgba(${cc},.75)`;ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(0,0,24+cr,0,TAU);ctx.stroke();ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,22+cr,0,TAU);ctx.stroke();}
+  if(p.reflectorArmed){ctx.strokeStyle=`rgba(${P.mirror},.95)`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,27+cr,-.9,.9);ctx.stroke();ctx.strokeStyle=`rgba(${cc},.8)`;ctx.lineWidth=.4;ctx.beginPath();ctx.arc(0,0,28.3+cr,-.9,.9);ctx.stroke();}
+  if(p.dawnArmed){ctx.strokeStyle=reg===2?`rgba(${P.cyan},.85)`:`rgba(${P.gold},.85)`;ctx.lineWidth=1;ctx.lineCap='round';ctx.beginPath();for(let i=0;i<12;i++){const a=i*TAU/12;ctx.moveTo(Math.cos(a)*(19+cr),Math.sin(a)*(19+cr));ctx.lineTo(Math.cos(a)*(i%2?21.5+cr:24+cr),Math.sin(a)*(i%2?21.5+cr:24+cr));}ctx.stroke();}
   ctx.restore();
 }
 
