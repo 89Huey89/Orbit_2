@@ -654,6 +654,13 @@ function scrollInscriptionInk(caps){
 // its ground), the geometer's lettered survey of a landing, the swirl of starlight round a vortex, the
 // engraved running head and the chapter title struck across the sheet.
 function scrollNone(){}
+// Three more of the atlas's fixtures this chart has no use for, named here so the intent is stated. The
+// armillary sphere the atlas rules behind its chart is lettered in Latin — Ecliptica, Aequator Coelestis,
+// Roman hours — and a Tang chart measures its sky in lodges and dù, which the rails already carry. The
+// engraved star the atlas sets over each star of a chart says "these belong together", and a star
+// office says that with its own joined circles and the boundary it is filed in. And the atlas's quill
+// nib is not the tool that wrote this sheet: a brush lays each sign down whole, so the captions come up
+// a glyph at a time (see the reveal plate in reveal.js) with no tip following them.
 function invalidateScrollArt(){scrollTile=null;scrollTileKey='';scrollTitleArt=null;scrollTitleKey='';scrollTubeArt=null;scrollTubeKey='';scrollHudTopPx=null;}
 // Entering the era asks for the kaishu at each weight it is set in, and repaints the cached art when they
 // land, since a face that arrives late would otherwise leave its fallback baked into the title and tile.
@@ -682,6 +689,9 @@ defineHand('scroll',{
   inkPath:scrollInkPath,
   inscriptionInk:scrollInscriptionInk,
   lenses:scrollNone,
+  sphere:scrollNone,
+  chartStar:scrollNone,
+  nib:scrollNone,
   hazardReveal:scrollHazardReveal,
   ready:scrollFaceReady
 });

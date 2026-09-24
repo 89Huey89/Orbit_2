@@ -94,9 +94,11 @@ function inscriptionClash(box,sway,q){
 function floaterBox(f){
   if(f.lift==null)return null;
   const size=Math.max(11,13*scale),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
-  const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,H-inner-14);
+  // Carried by the ascent a note can sink after it was set; on a sheet with no foot it stops above the
+  // utility buttons, the same line floaterLine (effects.js) set it clear of.
+  const y=clamp(sy(f.y)+f.lift-(reducedMotion?0:f.age*22*scale),hudBand()+16,renaissanceAtlas()?H-inner-14:H-84);
   const left=f.left,x=left?inner+hand*2.4:W-inner-hand*2.4;
-  ctx.save();ctx.font=plateFace(size,'text','italic');const width=ctx.measureText(f.text).width;ctx.restore();
+  let width=f.markWidth;if(width==null){ctx.save();ctx.font=plateFace(size,'text','italic');width=ctx.measureText(f.text).width;ctx.restore();}
   return {x,y,left,l:left?x:x-width,r:left?x+width:x,t:y-size*.8,b:y+size*.3};
 }
 // The same geometry for the atlas's own standing tally (effects.js's drawTallies): two lines rather

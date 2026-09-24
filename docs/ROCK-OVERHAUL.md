@@ -258,6 +258,27 @@ before anything else is built on it:
 - **A hazard breaks open from the rock** instead of the atlas's ink-drop reveal (`hazardReveal`
   hand hook).
 
+- **Polish pass (2026-09-24).** The chasm read as a slot stamped into the wall: a pill of even width
+  with evenly spaced teeth and round ends. It is now a crack — an asymmetric throat that swells and
+  pinches, facets at uneven knots, ends narrowing to points past a blunt-pointed black (which still
+  contains the capsule), and a hairline running on into the face past each tip. Niches fade out at
+  the rim and take a soft stacked shadow instead of one crisp crescent, and the lit lip of every
+  hollow, hole and crack is struck in broken lengths. Unreached lights are queued and struck after the
+  torch pass, with a pool of light and a longer cross, so they read in the dark. Three atlas leftovers
+  came off the wall: the armillary sphere and its Latin labels (seen as grey bars on the rock), the
+  pen nib after captions, and the engraved chart-star over each body (now three ochre dots). Era
+  floaters are kept above the utility buttons.
+- **Landing notes as tally marks (2026-09-24).** The floater "+43 · ANGLE +10 · ×1.6" is now cut in
+  the HUD's own tally: pale scratched notches for the landing's tens, a gap, red-ochre strokes for the
+  tens the angle earned, and the curator's numeral small beside them. Word notes keep the modern hand
+  without the atlas's manicule. The same pass took the Latin armillary sphere, the chart-star marker
+  and the quill nib off Era III (the Scroll); Era II draws its whole frame itself and never had them.
+- **No engraved script (2026-09-24).** Considered and declined: letting the wall's text be cut in live,
+  letter by letter, as the atlas pens its names. No script survives from this era, and a hand
+  inscribing words would invent one — the thing this plan refuses. The era's live "writing" is its
+  marks instead (animal contours, dabs, tally notches), which already arrive stroke by stroke; the
+  words stay the curator's gloss and appear glyph by glyph with no tool at their edge.
+
 ## Progress
 
 Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`:
@@ -280,7 +301,18 @@ the title mark, your cave (`orbit.rock.v1`), relighting at the Flare, and a smal
 
 ## Later: a shared relit surface (WebGL)
 
-Documented only; not scheduled beyond step 9 above.
+**First cut built (2026-09-24), shadows-only.** `src/relight.js` is the generic surface (one fragment
+shader into an offscreen WebGL canvas, byte height maps as textures, a cost watch that retires it above
+4 ms a frame, `null` wherever WebGL is missing). The Rock's shader (`ROCK_RELIGHT_FRAG` in `rock.js`)
+reads the tile's slow relief (`HL`, kept at bake as bytes) and the face's heights (`rockFaceH`, sent as
+16-bit), relights each point from the flame over the baked lamp, ray-marches 16 steps toward the flame
+for shadow, and is composited in soft-light at half the css resolution after the face and before the
+niches. What it does not do yet is level B in full: the bake's own lamp is divided out approximately
+rather than removed (albedo and shading are not separated in `rockShadePass`), the per-pixel tooth casts
+no shadow, and the niches, shafts and chasms, being sprites, keep their level-A shading. Frame rate on
+the reference iPhone is still to be measured on the device.
+
+What follows is the original plan for the full surface.
 
 Level A shades the hollows live but leaves the wall's own relief lit from a fixed lamp. Level B would
 light the whole wall per pixel from the carried torch's real position, so every crease, boss, ledge,

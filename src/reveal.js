@@ -25,6 +25,12 @@ definePlate('reveal',{
   // sketch-then-correct-then-flood-then-close order this mode animates is unchanged, only its ink.
   ceiling:{mode:'wall',sketch:'194,74,47',nib:'239,226,196',bead:'239,226,196',dry:'201,187,152',
     spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196'},
+  // The Rock writes nothing of its own: what it sets is the curator's gloss, and a gloss does not arrive
+  // behind a quill. Its captions come up a glyph at a time with no tool at their edge, the wall's own
+  // order, and the red setting-out is its red ochre.
+  rock:{mode:'wall',sketch:'156,59,34'},
+  // The Scroll is brushed: the same glyph-by-glyph hand, and its setting-out is its cinnabar.
+  scroll:{mode:'wall',sketch:'183,49,44'},
   // blot is the eighth "this means black" token the void-family finding names (see definePlate('dark')
   // in effects.js): the same three plates' own ink-black, not the automatic duotone's lighter reach.
   cellarius:{blot:'6,8,20'},
@@ -231,6 +237,8 @@ function penNibDraw(x,y,angle,alpha,rgb){
 }
 function nibClaimDraw(){
   if(!nibClaim)return;
+  // A hand that holds no pen names its own tool here, or none at all.
+  const own=handFor('nib');if(own)return own(nibClaim);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
   ctx.restore();

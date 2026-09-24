@@ -1425,7 +1425,10 @@ const TALLY_CAP=12;
 // other solver does, and counts only the standing marks of that same kind already in the gutter.
 function floaterLine(f,left,h,kind){
   kind=kind||'floater';
-  const top=hudBand()+16,bottom=H-frameBand()*.92-21,boxes=[];
+  // The atlas's own foot (the running head) keeps its notes above the row of utility buttons; a sheet
+  // with no foot keeps them above that row itself (48px buttons set at least 17px off the bottom, see `.footer`
+  // in index.html), or they settled under the icons and stacked there.
+  const top=hudBand()+16,bottom=renaissanceAtlas()?H-frameBand()*.92-21:H-84,boxes=[];
   for(const m of groundStanding({left:left?0:W*.5,right:left?W*.5:W,top:0,bottom:H},kind))boxes.push([m.top,m.bottom]);
   const list=kind==='tally'?tallies:floaters;
   for(const q of list)if(q!==f&&q.lift!==undefined&&q.left===left){
@@ -1882,8 +1885,14 @@ function drawEffects(dt){
     if(f.lift===null)continue;
     // floaterBox (inscriptions.js) is the one place this geometry is worked out; placeInscription reads
     // the same box to keep a brand-new note off a floater still standing where it would be set.
+    // A plate that sets its notes in its own marks names a `floater` painter: asked once with no box it
+    // says how wide its marks run (or null, for a note it still sets as text), so the box, the register
+    // and the gutter solver all see the ground it really takes; asked with the box, it draws the note.
+    const own=handFor('floater');
+    if(own&&f.markWidth===undefined)f.markWidth=own(f,null);
     const fb=floaterBox(f),{x,y,left}=fb;
     markGround('floater',fb.l,fb.t,fb.r,fb.b,f);
+    if(own){ctx.save();own(f,fb,alpha);ctx.restore();continue;}
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);

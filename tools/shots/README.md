@@ -87,7 +87,7 @@ await shoot({viewport: 'laptop', plate: 'modern'}, async g => { await g.shot('fr
 
 | Verb | Does |
 |---|---|
-| `g.shot(name, {selector, fullPage, note})` | a capture; `selector` crops to an element, `fullPage` takes the whole scrollable leaf |
+| `g.shot(name, {selector, fullPage, clip, note})` | a capture; `selector` crops to an element, `clip` (`{x, y, width, height}` in CSS px) to a region, `fullPage` takes the whole scrollable leaf |
 | `g.start()` | taps the frontispiece to begin the run |
 | `g.fly(seconds, {hand, patience, paint})` | flies with the pilot (probe.mjs's hand) for that long |
 | `g.flyTo(row, {maxSeconds})` | flies until the run reaches `row` |
