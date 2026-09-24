@@ -179,24 +179,83 @@ function paintRhumbPlate(g,index,w,h){
     g.fillRect(x,y,.55,.7);
   }
 }
+// How strongly the plate's line is printed down the play channel, where its tone is left out altogether.
+const CHANNEL_LINE=.55;
+// A context that lets every stroke through and holds back every fill but the finest: what an engraving is
+// when its tone is taken away — the hatching, the contours, the stipple — and nothing of its washes, patches,
+// grounds or solid discs.
+function lineOnlyContext(g){
+  return new Proxy(g,{
+    get(t,k){
+      if(k==='fill')return ()=>{};
+      if(k==='fillRect')return (x,y,w,h)=>{if(Math.abs(w*h)<=6)t.fillRect(x,y,w,h);};
+      const v=t[k];return typeof v==='function'?v.bind(t):v;
+    },
+    set(t,k,v){t[k]=v;return true;}
+  });
+}
 function celestialPlate(index,style){
-  // A counterproof is the very same copper pulled a second time, so it asks for the chapter print's own
-  // plate and differs only in how that plate is laid down; only the rhumb web is a different cut.
-  const cut=style==='rhumbs'?'rhumbs':'chapters';
   // The plate goes into the key as well as the region index — a cross-dissolve holds two plates in one
   // frame, so each must keep its own cached illustration — and it is built once, here, so the lookup
   // below and the store at the end of the function can never be spelled two different ways.
   // The plate is drawn in its own 720 by 1200 measure but cut at the resolution it is actually shown at:
   // laid at a fixed 720 by 1200 it was always blown up to fill the sheet, by about two thirds again on the
-  // reference phone, and the moon's hatching went to grey fog. The density is capped, and only the three
+  // reference phone, and the moon's hatching went to grey fog. The density is capped, and only the two
   // most recent plates are held, since each one is several megabytes and a page turn only ever needs two.
-  const density=clamp(Math.ceil(celestialPlacementFit()*DPR*8)/8,1,1.66);
-  const key=plateName+':'+cut+':'+index+':'+density;
-  if(celestialPlates.has(key))return celestialPlates.get(key);
-  while(celestialPlates.size>=3)celestialPlates.delete(celestialPlates.keys().next().value);
-  const c=makeCanvas(Math.round(720*density),Math.round(1200*density)),g=c.getContext('2d'),rng=seeded(98153+index*437),w=720,h=1200;
+  const job=celestialJob(index,style);
+  if(celestialPlates.has(job.key))return celestialPlates.get(job.key);
+  while(celestialStage(job));
+  return celestialPlates.get(job.key);
+}
+// A plate is baked in three stages — the whole print, the line alone, the join — and the page turn needs
+// the next one the moment it begins. Done all at once there, the bake stood still in the middle of the turn;
+// so the next chapter's plate is started a couple of rows ahead (prewarmCelestial, from drawAtmosphere) and
+// taken one stage a frame, and asking for a plate part-way through only finishes the stages still to do.
+let celestialPending=null;
+function celestialJob(index,style){
+  // A counterproof is the very same copper pulled a second time, so it asks for the chapter print's own
+  // plate and differs only in how that plate is laid down; only the rhumb web is a different cut.
+  const cut=style==='rhumbs'?'rhumbs':'chapters',density=clamp(Math.ceil(celestialPlacementFit()*DPR*8)/8,1,1.66);
+  const key=plateName+':'+cut+':'+index+':'+density+':'+Math.round(W);
+  if(celestialPending&&celestialPending.key===key)return celestialPending;
+  return celestialPending={key,index,cut,density,stage:0,full:null,line:null};
+}
+// Runs the next stage of a job, and answers whether there is another still to run.
+function celestialStage(job){
+  if(celestialPlates.has(job.key)){if(celestialPending===job)celestialPending=null;return false;}
+  if(job.stage===0){job.full=paintCelestialPlate(job.index,job.cut,job.density,false);job.stage=1;return true;}
+  if(job.stage===1){job.line=paintCelestialPlate(job.index,job.cut,job.density,true);job.stage=2;return true;}
+  while(celestialPlates.size>=2)celestialPlates.delete(celestialPlates.keys().next().value);
+  celestialPlates.set(job.key,joinChannel(job.full,job.line));
+  if(celestialPending===job)celestialPending=null;
+  return false;
+}
+function prewarmCelestial(index,style){
+  if(index>3||style==='none')return;
+  const job=celestialJob(index,style);
+  if(!celestialPlates.has(job.key))celestialStage(job);
+}
+function joinChannel(c,line){
+  // Behind the chart an engraving reads because it is line, not tone: a dark disc under a veil is still a
+  // disc. So the plate is pulled twice — whole, and with its tone left out — and the two are joined once,
+  // here: the whole print in the margins, where nothing is played, and only its line, at a little over half
+  // strength, down the play channel, graded across the same feather either side the veil it replaces used.
+  // The channel is a fixed band of the sheet and the print is only ever carried up and down it, never
+  // across, so the join can be cut into the cached plate rather than composited every frame.
+  const fit=celestialPlacementFit(),ox=(W-720*fit)/2,half=playChannel(),u=X=>clamp((X-ox)/(720*fit),0,1);
+  const band=g=>{const grad=g.createLinearGradient(0,0,c.width,0);
+    grad.addColorStop(u(W*.5-half-CHANNEL_FEATHER),'rgba(0,0,0,0)');grad.addColorStop(u(W*.5-half),'rgba(0,0,0,1)');
+    grad.addColorStop(u(W*.5+half),'rgba(0,0,0,1)');grad.addColorStop(u(W*.5+half+CHANNEL_FEATHER),'rgba(0,0,0,0)');return grad;};
+  const g=c.getContext('2d'),gl=line.getContext('2d');
+  g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='destination-out';g.fillStyle=band(g);g.fillRect(0,0,c.width,c.height);
+  gl.setTransform(1,0,0,1,0,0);gl.globalCompositeOperation='destination-in';gl.globalAlpha=CHANNEL_LINE;gl.fillStyle=band(gl);gl.fillRect(0,0,line.width,line.height);
+  g.globalCompositeOperation='source-over';g.drawImage(line,0,0);
+  return c;
+}
+function paintCelestialPlate(index,cut,density,lineOnly){
+  const c=makeCanvas(Math.round(720*density),Math.round(1200*density)),raw=c.getContext('2d'),g=lineOnly?lineOnlyContext(raw):raw,rng=seeded(98153+index*437),w=720,h=1200;
   g.scale(density,density);
-  if(cut==='rhumbs'){paintRhumbPlate(g,index,w,h);celestialPlates.set(key,c);return c;}
+  if(cut==='rhumbs'){paintRhumbPlate(g,index,w,h);return c;}
   if(!onPaper()){
     const tones=ink.plates.tones[index];
     const base=g.createLinearGradient(0,0,w,h);base.addColorStop(0,tones[0]);base.addColorStop(1,tones[1]);g.fillStyle=base;g.fillRect(0,0,w,h);
@@ -423,7 +482,7 @@ function celestialPlate(index,style){
     // the background grain, and the plate must stay fully transparent otherwise so the laid-paper
     // backdrop shows through.
   }
-  celestialPlates.set(key,c);return c;
+  return c;
 }
 // How far the scenery rides the ascent relative to the chart itself: the two dust layers behind it
 // (drawRegion) are nearer and carry their own faster factors, this is the furthest thing on the
@@ -518,38 +577,10 @@ function drawPlateCaptions(index,weight,place,style){
   }
   ctx.restore();
 }
-// The illustrated plate is left whole in the margins and washed back down the play channel, where the
-// chart and the traveller have to read first: one pass of the sheet's own ground colour, at full strength
-// across the channel and fading out over a 60-pixel feather either side, so the transition is graded
-// rather than cut and nothing changes but the contrast under the chart.
+// The illustrated plate is left whole in the margins and only its line is printed down the play channel,
+// where the chart and the traveller have to read first (see celestialPlate, above), graded across a 60-pixel
+// feather either side so the change from print to line is never a cut.
 const CHANNEL_FEATHER=60;
-// Painted in the plain DPR-scaled transform render() sets up top of frame, so this gradient's
-// absolute coordinates stay valid across frames until a resize or a plate switch changes W, DPR
-// or the ground colour — exactly the sort of thing already cached everywhere else in this file.
-const channelVeils=new Map();
-function drawChannelVeil(){
-  const half=playChannel(),edge=half+CHANNEL_FEATHER,cx=W*.5,alpha=onPaper()?.3:.34;
-  const key=W+':'+DPR+':'+plateName;
-  let veil=channelVeils.get(key);
-  if(!veil){
-    const ground=ink.base.paperRgb;
-    // The wash is flat across the channel and only graded over the two feathers, so it is laid as the
-    // three bands it actually is: one plain fill down the middle, where a gradient was being evaluated
-    // per pixel for a colour that never changes, and a short gradient either side of it.
-    const left=ctx.createLinearGradient(cx-edge,0,cx-half,0);
-    left.addColorStop(0,`rgba(${ground},0)`);left.addColorStop(1,`rgba(${ground},${alpha})`);
-    const right=ctx.createLinearGradient(cx+half,0,cx+edge,0);
-    right.addColorStop(0,`rgba(${ground},${alpha})`);right.addColorStop(1,`rgba(${ground},0)`);
-    veil={left,right,flat:`rgba(${ground},${alpha})`};
-    channelVeils.set(key,veil);
-    if(channelVeils.size>8)channelVeils.delete(channelVeils.keys().next().value);
-  }
-  ctx.save();
-  ctx.fillStyle=veil.left;ctx.fillRect(Math.max(0,cx-edge),0,Math.max(0,Math.min(cx-half,W)-Math.max(0,cx-edge)),H);
-  ctx.fillStyle=veil.flat;ctx.fillRect(Math.max(0,cx-half),0,Math.max(0,Math.min(cx+half,W)-Math.max(0,cx-half)),H);
-  ctx.fillStyle=veil.right;ctx.fillRect(Math.max(0,cx+half),0,Math.max(0,Math.min(cx+edge,W)-Math.max(0,cx+half)),H);
-  ctx.restore();
-}
 function ambientPoint(e,progress){
   if(e.kind==='comet')return {x:lerp(e.x,e.endX,progress)*W,y:lerp(e.y,e.endY,progress)*H};
   const place=celestialPlacement();
@@ -1057,19 +1088,20 @@ function drawAtmosphere(dt=0,aim=null){
   // chart, and they stand or fall together. The page turn is not one of them — the chapter still
   // changes on a bare sheet — so the fresh sheet still rises whatever is or is not printed on it.
   const distance=sceneryOn();
+  // The next chapter's plate is baked a stage a frame over the last rows before its turn (celestialJob).
+  if(distance&&world.state==='playing'&&world.progress%8>5.5)prewarmCelestial(chapter+1,sceneryStyle());
   if(mix>0&&!reducedMotion){
     // The new chapter arrives as a fresh sheet drawn up from below the frame, its dust and its own
     // marginalia riding with it; the old plate stays where it lies and fades away underneath.
     const turn=pageTurn(mix),slide=(1-turn)*H;
-    if(distance){drawCelestialScene(first,1-turn*.9);drawChannelVeil();drawRegion(first,1-turn);}
+    if(distance){drawCelestialScene(first,1-turn*.9);drawRegion(first,1-turn);}
     ctx.save();ctx.beginPath();ctx.rect(0,slide,W,Math.max(0,H-slide));ctx.clip();
     ctx.globalAlpha=(1-turn)*.7;ctx.fillStyle=ink.base.paper;ctx.fillRect(0,slide,W,Math.max(0,H-slide));ctx.globalAlpha=1;
-    if(distance){drawCelestialScene(second,1);drawChannelVeil();drawRegion(second,1);}
+    if(distance){drawCelestialScene(second,1);drawRegion(second,1);}
     ctx.restore();
     drawSheetEdge(slide,1-turn);
   }else if(distance){
     drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
-    drawChannelVeil();
     drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);
   }
   const regionA=regionInk(atlasRegions[first]),regionB=regionInk(atlasRegions[second]),paper=onPaper();

@@ -57,7 +57,9 @@ Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
 | A4 paper flood edge | Fixed | Stain pools feathered, weakened and seated on the front; corrosion feathered; the running head's ground fades at its ends and holds over the ink |
 | B2 loud tallies | Fixed | Older tallies dry to half strength once a later landing is written |
 | B3 pen lost in flight | Fixed | A soft reserve of the ground under the pen |
-| B4 soft chapter plates | Partly | Plates are baked at the density they are shown at (capped 1.66×, three held). Printing them as line rather than tone down the channel is still open |
+| B1 empty sheet | Fixed | Unobserved catalogue stars are set out in sanguine chalk at their own magnitude sign under the ink prick; an unobserved world gets a chalk trial circle at its true size and, at night, a star sign of the class its size earns. The chapter plate's line now carries the channel too (B4) |
+| B4 soft chapter plates | Fixed | Plates are baked at the density they are shown at (capped 1.66×, two held). Down the channel only the plate's line is printed, at 0.55, from a second tone-free pull joined into the cached plate; the flat veil is gone, and the next plate is baked a stage a frame before its turn |
+| F screenshot harness | Built | `tools/shots` (`npm run shots`). The `sheet` scenario covers B1/B4 with the chapter plates on; `press` forces D1, D4 and D5 on night and paper. The text-box intersection check in `verify.mjs` is still to do |
 | C1 frontispiece as a web form | Fixed | The menu stands on the sheet wiped clean through a soft oval, ruled as a table of contents |
 | C2 Leviathan | Fixed | Redrawn as an engraved sea monster |
 | C3 cartouches | Fixed | The impressum and the chapter title stand in one strapwork cartouche (`src/press.js`): notched strap, scrolls at the ends, lozenges at head and foot. The printer's device inside the impressum is still open |
