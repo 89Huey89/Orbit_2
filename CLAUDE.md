@@ -30,7 +30,7 @@ Era IV (`src/astrolabe.js`), standalone preview doors on the frontispiece; see R
 - `npm run test:quick` — the same file with `--quick`: skips the seeded playthroughs
   (the five 60-seed worker loops and the long pressure/rusher pilots) and runs two of
   the seven full-page runtime scenarios (430×932 blocked storage, 1440×900 full
-  ledger). About a minute instead of six. Use it for changes that leave gameplay alone. It
+  ledger). Under a minute instead of about a minute and a half on four cores. Use it for changes that leave gameplay alone. It
   checks git and runs the full suite instead if `src/simulation.js` has changed since
   the branch left `origin/main` (committed, staged, unstaged or untracked);
   `--quick=force` skips that check. Run the full `npm test` before pushing anything
