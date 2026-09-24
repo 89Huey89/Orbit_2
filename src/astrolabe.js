@@ -42,9 +42,15 @@ function astroTier(n){
   if(n.difficultyChoice)return ASTRO_TRIAD[n.difficultyChoice];
   return n.r>=ASTRO_TIER_MAJOR?'major':n.r>=ASTRO_TIER_BRIGHT?'bright':'faint';
 }
-// A body's greatness, al-Ṣūfī's qadr, one to six from the brightest: read off its size, the only measure of
-// brightness the chart has, and cut beside its closed scale in abjad.
-const astroQadr=n=>n.r>=46?1:n.r>=40?2:n.r>=34?3:n.r>=28?4:n.r>=22?5:6;
+// A body's greatness, al-Ṣūfī's qadr, one to six from the brightest, cut beside its closed scale in abjad. It
+// is read off the same naked-eye grading the atlas gives its figures' stars (renaissanceStarProfile, in
+// simulation.js) rather than off a body's size: the chart deals almost every plain orbit wider than any
+// threshold a size could be graded by, so a qadr read off the radius was the first greatness on nearly every
+// body, and a number that is always the same has measured nothing. A figure's star keeps the grade the chart
+// already gave it; every other body is graded off its own seed, so one seed grades the same sheet every time.
+const astroQadr=n=>n.magnitude||renaissanceStarProfile(n.seed|0,0).magnitude;
+// The disc a finished measurement nests, sized to that greatness: the brightest the largest.
+const ASTRO_QADR_DISC=[4.6,4.1,3.6,3.2,2.8,2.5];
 // Where the measurement's three stages fall on the observation clock `d` (revealNode's pen.d, 0 to 1 over
 // the 240° that completes an observation): by a quarter-turn a sparse scale, by half a turn the scale all
 // but struck, by two thirds of a turn the arc closed and gilt and the qadr lettered — 04-astrolabe.md's
@@ -101,14 +107,18 @@ function astroNoise(x,y,seed,period){const xi=Math.floor(x),yi=Math.floor(y),xf=
   const h=(i,j)=>astroHash(i,w(j),seed);return lerp(lerp(h(xi,yi),h(xi+1,yi),u),lerp(h(xi,yi+1),h(xi+1,yi+1),u),v)*2-1;}
 function astroFbm(x,y,cell,oct,seed,tileH){let a=0,m=.5,c=cell;for(let i=0;i<oct;i++){a+=astroNoise(x/c,y/c,seed+i*17,Math.round(tileH/c))*m;m*=.5;c/=2;}return a;}
 // Naskh, set right to left in Amiri; the browser shapes the joins. Bold is the heavier cut, for titles.
-function astroNaskh(g,str,x,y,size,rgb,alpha,align='center',bold=false){
+// `halo` sets the lettering the way an engraver letters over ruled work: the lines it crosses are
+// burnished back to the paper for a hair round every stroke, so a name laid over its own orbit still reads.
+function astroNaskh(g,str,x,y,size,rgb,alpha,align='center',bold=false,halo=false){
   if(alpha<=0)return;g.save();g.font=plateFace(size,bold?'naskhB':'naskh');g.direction='rtl';g.textAlign=align;g.textBaseline='middle';
-  g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
+  if(halo)astroHalo(g,str,x,y,size,alpha);g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
 }
 // The curator's English beside it, in the slab the other eras use.
-function astroGloss(g,str,x,y,size,rgb,alpha,align='center'){
-  if(alpha<=0)return;g.save();g.font=plateFace(size,'sc');g.direction='ltr';g.textAlign=align;g.textBaseline='middle';g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
+function astroGloss(g,str,x,y,size,rgb,alpha,align='center',halo=false){
+  if(alpha<=0)return;g.save();g.font=plateFace(size,'sc');g.direction='ltr';g.textAlign=align;g.textBaseline='middle';
+  if(halo)astroHalo(g,str,x,y,size,alpha);g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
 }
+function astroHalo(g,str,x,y,size,alpha){g.strokeStyle=`rgba(${ink.astro.paper},${(.92*alpha).toFixed(3)})`;g.lineWidth=Math.max(2.5,size*.34);g.lineJoin='round';g.strokeText(str,x,y);}
 // A line cut into brass: the groove itself dark, and a hair of burr beside it catching the light, offset
 // down and right the way a lit groove's lower lip shows. `path` builds the path; it is stroked twice.
 function astroGroove(g,path,w,alpha=1,rgb){
@@ -351,9 +361,9 @@ function astroTitleMark(){
   ctx.save();ctx.globalAlpha=astroTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2-sp.dy,sp.size,sp.size);
   astroNaskh(ctx,'الأسطرلاب',x,y+R+20,22,P.ink,.92,'center',true);
   const done=rec.completed>0?'THE ZIJ IS FINISHED':'PARTS '+(rec.furthest+1)+' OF '+ASTRO_CHAPTERS.length+' · '+ASTRO_CHAPTERS[rec.furthest].en;
-  astroGloss(ctx,done,x,y+R+40,8.5,P.inkSoft,.8);
+  astroGloss(ctx,done,x,y+R+40,9.5,P.inkSoft,.85);
   const ns=Object.keys(fih.stars).length,nf=Object.keys(fih.figures).length,np=Object.keys(fih.planets).length;
-  if(ns||nf||np)astroGloss(ctx,'FIHRIST · '+ns+' OF '+ASTRO_STARS.length+' STARS · '+nf+' OF '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' OF '+ASTRO_PLANETS.length+' WANDERERS':''),x,y+R+54,7.5,P.giltDeep,.9);
+  if(ns||nf||np)astroGloss(ctx,'FIHRIST · '+ns+' OF '+ASTRO_STARS.length+' STARS · '+nf+' OF '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' OF '+ASTRO_PLANETS.length+' WANDERERS':''),x,y+R+55,9,P.giltDeep,.95,'center',true);
   ctx.restore();
 }
 // The ground: the paper tile at the camera's own rate, a lamp above the held body, the limb, the title.
@@ -374,7 +384,44 @@ function astroAtmosphere(){
 // into the plate: the astrolabe as far as this chapter builds it, faint behind the play, its newest part
 // swept in over two seconds, and the place named in naskh with the curator's English and year beneath.
 let astroRevealCanvas=null,astroRevealKey='',astroRevealOf=null,astroRevealAt=0;
+// Two of the places gave the sky a theorem as well as the instrument a part, and their doors draw it,
+// in ink over the ghost of the instrument and turning while the door stands. Valencia's century built the
+// equatorium (Ibn al-Samḥ, al-Zarqālī): a planet's place found with no tables at all, by setting its
+// epicycle on an eccentric deferent and reading the line of sight from the earth. Marāgha gave the Ṭūsī
+// couple: a circle rolling inside one twice its size, whose point runs back and forth along a straight
+// diameter — two circular motions making a straight one, the device the observatory's planetary models
+// were built on. Every other door draws only its part of the instrument.
+function astroTheorem(i,cx,cy,R,age,alpha){
+  if((i!==3&&i!==4)||alpha<=0)return;
+  const P=ink.astro,lw=Math.max(.6,.7*scale),ln=`rgba(${P.ink},.8)`,lt=(ch,x,y)=>astroNaskh(ctx,ch,x,y,Math.max(11,12*scale),P.ink,.85*alpha,'center',false,true);
+  ctx.save();ctx.globalAlpha=alpha;ctx.lineWidth=lw;ctx.strokeStyle=ln;ctx.lineCap='round';
+  const dot=(x,y,r,rgb)=>{ctx.fillStyle=`rgb(${rgb})`;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();};
+  if(i===3){
+    const th=-Math.PI/2+age*.9,ex=cx,ey=cy+R*.12,dx=cx+R*.16,dy=cy-R*.04,rd=R*.78,re=R*.24,qx=dx+Math.cos(th)*rd,qy=dy+Math.sin(th)*rd,ph=th*3,px=qx+Math.cos(ph)*re,py=qy+Math.sin(ph)*re;
+    ctx.beginPath();ctx.arc(dx,dy,rd,0,TAU);ctx.stroke();
+    ctx.beginPath();ctx.arc(qx,qy,re,0,TAU);ctx.stroke();
+    ctx.setLineDash([2*scale,2.5*scale]);ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(dx,dy);ctx.moveTo(dx,dy);ctx.lineTo(qx,qy);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(qx,qy);ctx.lineTo(px,py);ctx.stroke();
+    // the line of sight from the earth through the planet, carried on to the limb where it is read
+    const a=Math.atan2(py-ey,px-ex);ctx.strokeStyle=`rgba(${P.verm},.85)`;ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex+Math.cos(a)*R*1.12,ey+Math.sin(a)*R*1.12);ctx.stroke();
+    ctx.beginPath();ctx.arc(ex,ey,R*.2,Math.min(-Math.PI/2,a),Math.max(-Math.PI/2,a));ctx.stroke();
+    dot(ex,ey,1.6*scale,P.ink);dot(dx,dy,1.2*scale,P.ink);dot(qx,qy,1.2*scale,P.ink);dot(px,py,2.4*scale,P.gilt);
+    ctx.restore();lt('ا',ex-9*scale,ey+8*scale);lt('ب',dx+8*scale,dy-7*scale);lt('ج',qx+(qx-dx)/rd*11*scale,qy+(qy-dy)/rd*11*scale);lt('د',px+(px-qx)/re*9*scale,py+(py-qy)/re*9*scale);
+  }else{
+    const ph=age*1.7,sx0=cx+Math.cos(ph)*R/2,sy0=cy+Math.sin(ph)*R/2,px=cx+Math.cos(ph)*R,py=cy;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.stroke();
+    ctx.beginPath();ctx.arc(sx0,sy0,R/2,0,TAU);ctx.stroke();
+    ctx.setLineDash([2*scale,2.5*scale]);ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(sx0,sy0);ctx.lineTo(px,py);ctx.stroke();
+    // the straight path the point has run so far, struck solid over the dashed diameter
+    const lo=age*1.7>=Math.PI?-R:Math.cos(ph)*R;ctx.strokeStyle=`rgba(${P.verm},.85)`;ctx.lineWidth=lw*1.6;ctx.beginPath();ctx.moveTo(cx+lo,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
+    dot(cx,cy,1.4*scale,P.ink);dot(sx0,sy0,1.2*scale,P.ink);dot(px,py,2.4*scale,P.gilt);
+    ctx.restore();lt('ا',cx-11*scale,cy-9*scale);lt('ب',sx0+(sx0-cx)/R*14*scale,sy0+(sy0-cy)/R*14*scale-4*scale);lt('ج',px,py+11*scale);
+  }
+}
+let astroTitleGap=null;
 function astroChapterReveal(dt){
+  astroTitleGap=null;
   if(!world||world.state==='ready'||world.state==='dead')return;
   // Timed off the run's own clock from the moment this chapter's reveal was dealt, rather than by adding up
   // frame times, so a frame that is never painted (a background tab, a long step) cannot hold it open.
@@ -386,10 +433,16 @@ function astroChapterReveal(dt){
   const g=astroRevealCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,astroRevealCanvas.width,astroRevealCanvas.height);
   g.setTransform(DPR,0,0,DPR,0,0);g.translate(size/2,size/2+R*.18);astroInstrument(g,R,i+1,astroEase(clamp((age-.3)/1.8,0,1)),.35+age*.04,0,{ghost:true});
   const cx=W/2,cy=H*.47;ctx.save();ctx.globalAlpha=.36*fade;ctx.drawImage(astroRevealCanvas,cx-size/2,cy-size/2-R*.18,size,size);ctx.restore();
+  astroTheorem(i,cx,cy,R*.52,age,fade*clamp((age-.5)/.8,0,1));
   const tk=clamp((age-.2)/.8,0,1)*fade;
   const ty=cy-R*1.5-8;astroNaskh(ctx,C.ar,cx,ty-46,30,P.ink,.9*tk,'center',true);
   astroGloss(ctx,'DOOR '+(i+1)+' OF '+ASTRO_CHAPTERS.length+' · '+C.en+' · '+C.year,cx,ty-20,10,P.ink,.78*tk);
-  astroGloss(ctx,C.part,cx,ty-4,8.5,P.inkSoft,.85*clamp((age-.9)/.6,0,1)*fade);
+  astroGloss(ctx,C.part,cx,ty-3,9.5,P.inkSoft,.85*clamp((age-.9)/.6,0,1)*fade);
+  // The title is cut under every orbit, so while it stands the orbits and bodies struck over it break
+  // round it, as an engraver breaks ruled work round lettering, rather than running through its words.
+  if(tk>.05){ctx.save();ctx.font=plateFace(30,'naskhB');const w1=ctx.measureText(C.ar).width;ctx.font=plateFace(10,'sc');
+    const w2=ctx.measureText('DOOR '+(i+1)+' OF '+ASTRO_CHAPTERS.length+' · '+C.en+' · '+C.year).width;ctx.font=plateFace(9.5,'sc');const w3=ctx.measureText(C.part).width;ctx.restore();
+    const hw=Math.max(w1,w2,w3)/2+10;astroTitleGap={x0:cx-hw,x1:cx+hw,y0:ty-68,y1:ty+6};}
 }
 
 // ---------- The node: ring, body or point, and the release marks while it is held ----------
@@ -428,8 +481,9 @@ function astroReleaseMarks(n,p,x,y){
     }
   }
 }
-// Which bodies have been named this run: the first completed body of each class is set on the sheet with a
-// star's name from a rete, in naskh with the curator's gloss; every other one carries only its qadr.
+// Which bodies have been named this run: every completed body of the first or second greatness is set on the
+// sheet with a star's name from a rete, in naskh with the curator's gloss, since those are the stars a rete
+// actually carries pointers to; every other one carries only its qadr.
 let astroRunWorld=null,astroNamed=new Map(),astroNameNext=0;
 function astroRun(){if(astroRunWorld!==world){astroRunWorld=world;astroNamed=new Map();astroNameNext=0;astroFlourishAt.clear();}}
 // The wanderers: one body of each chapter after Baghdad is not a fixed star but a planet, its row
@@ -521,7 +575,7 @@ function astroBody(n,x,y,tier,d,taken){
     astroNaskh(ctx,'القمر',x,y+r+16*scale,Math.max(12,13*scale),P.ink,.88*al*(n.difficultyChoice?1:s3));
     return;
   }
-  const cls=tier==='major'?4.6:tier==='bright'?3.6:2.7,disc=cls*scale,rm=disc*2.4+5*scale,fill=astroEase(s3),wi=astroWanderer(n);
+  const wi=astroWanderer(n),cls=n.difficultyChoice?(tier==='bright'?3.6:2.7):wi>=0?ASTRO_QADR_DISC[0]:ASTRO_QADR_DISC[astroQadr(n)-1],disc=cls*scale,rm=disc*2.4+5*scale,fill=astroEase(s3);
   if(fill<1)astroPoint(x,y,Math.max(1.4,disc*.55),al*(1-fill));
   if(fill>0)astroDisc(x,y,disc,al*fill);
   astroScale(x,y,rm,d,al);
@@ -535,15 +589,15 @@ function astroBody(n,x,y,tier,d,taken){
   // noted in the fihrist the first time a run sights it.
   if(s3>0&&wi>=0){const k=clamp(s3*2-1,0,1),key='planet'+wi;
     if(s3>=.5&&!astroNamed.has(key)){astroNamed.set(key,{id:n.id,i:wi});astroFihristNote('planets',wi);}
-    const S=ASTRO_PLANETS[wi];astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true);
-    astroGloss(ctx,S[1]+' · A WANDERING STAR',x,y+rm+30*scale,Math.max(7.5,8*scale),P.inkSoft,.8*al*k);}
+    const S=ASTRO_PLANETS[wi];astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true,true);
+    astroGloss(ctx,S[1]+' · A WANDERING STAR',x,y+rm+31*scale,Math.max(9,9.5*scale),P.inkSoft,.85*al*k,'center',true);}
   else if(s3>0&&!n.difficultyChoice){
     const q=astroQadr(n),tx=x+(rm+9*scale)*Math.cos(-.75),ty=y+(rm+9*scale)*Math.sin(-.75);
-    astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true);
-    let named=astroNamed.get(tier);if(named===undefined&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(tier,named);astroFihristNote('stars',named.i);}
+    astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true,true);
+    let named=astroNamed.get(n.id);if(named===undefined&&q<=2&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(n.id,named);astroFihristNote('stars',named.i);}
     if(named&&named.id===n.id){const S=ASTRO_STARS[named.i],k=clamp(s3*2-1,0,1);
-      astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true);
-      astroGloss(ctx,S[1],x,y+rm+30*scale,Math.max(7.5,8*scale),P.inkSoft,.8*al*k);}
+      astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true,true);
+      astroGloss(ctx,S[1],x,y+rm+31*scale,Math.max(9,9.5*scale),P.inkSoft,.85*al*k,'center',true);}
   }
 }
 // A light not yet reached: an unadorned punched point, its sighting cross, and nothing else.
@@ -574,6 +628,10 @@ function astroGift(n,x,y,r,used){
   ctx.restore();
 }
 function astroNode(n,aim){
+  const gap=astroTitleGap;if(!gap)return astroNodeDrawn(n,aim);
+  ctx.save();ctx.beginPath();ctx.rect(-W,-H,W*3,H*3);ctx.rect(gap.x0,gap.y0,gap.x1-gap.x0,gap.y1-gap.y0);ctx.clip('evenodd');astroNodeDrawn(n,aim);ctx.restore();
+}
+function astroNodeDrawn(n,aim){
   astroRun();
   const pen=revealNode(n);if(pen.t<=0)return;
   const p=world.player,active=p.node===n,used=n.visited&&!active,target=!!(aim&&aim.n.id===n.id);
@@ -920,13 +978,13 @@ function astroChartRoute(chart){
 // The score on the leaf: the reckoning in the manuscript's own digits, cut over a short graduated arc,
 // and beneath it how far the fihrist has come.
 function astroPaintEndNumerals(canvas,w){
-  if(!canvas)return;const P=ink.astro,f=astroFihrist(),np=Object.keys(f.planets).length,text=astroDigits(w.score),Wd=240,Hd=78,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
+  if(!canvas)return;const P=ink.astro,f=astroFihrist(),np=Object.keys(f.planets).length,text=astroDigits(w.score),Wd=300,Hd=80,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
   canvas.width=Math.ceil(Wd*dpr);canvas.height=Math.ceil(Hd*dpr);canvas.style.width=Wd+'px';canvas.style.height=Hd+'px';
   const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,Wd,Hd);
   astroNaskh(g,text,Wd/2,28,40,P.ink,.95,'center',true);
   const R=260,cx=Wd/2,cy=52-R,half=Math.asin(90/R);g.strokeStyle=`rgba(${P.giltDeep},.9)`;g.lineWidth=.8;g.beginPath();g.arc(cx,cy,R,Math.PI/2-half,Math.PI/2+half);g.stroke();
   g.beginPath();for(let i=0;i<=36;i++){const a=Math.PI/2+half-i/36*half*2,l=i%6===0?6:3;g.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);g.lineTo(cx+Math.cos(a)*(R+l),cy+Math.sin(a)*(R+l));}g.lineWidth=.6;g.stroke();
-  astroGloss(g,'FIHRIST · '+Object.keys(f.stars).length+' / '+ASTRO_STARS.length+' STARS · '+Object.keys(f.figures).length+' / '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' / '+ASTRO_PLANETS.length+' WANDERERS':''),Wd/2,70,8,P.giltDeep,.95);
+  astroGloss(g,'FIHRIST · '+Object.keys(f.stars).length+' / '+ASTRO_STARS.length+' STARS · '+Object.keys(f.figures).length+' / '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' / '+ASTRO_PLANETS.length+' WANDERERS':''),Wd/2,71,9,P.giltDeep,.95);
 }
 
 // ---------- The instrument's sound: brass, a burin, dividers ----------
