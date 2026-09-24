@@ -1040,12 +1040,14 @@ function drawConstellations(){
         // captions make — when the star sits too near the top edge for the lettering to print inside the frame.
         const ring=e.r*scale+11*scale+size,inner=frameBand()*.92+8;
         const guard=Math.abs(ex-W*.5)<HUD_TEXT_HALF?Math.max(inner,hudBand()):inner,below=ey-ring-size<guard;
-        const dir=below?Math.PI/2:-Math.PI/2,latin=CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
+        // A plate with names of its own for the catalogue (plateWords().chartNames) sets that alone, with no
+        // Latin over it: the Latin is the atlas's, and a century that never wrote it has no gloss to give.
+        const own=chartTitle(chart)!==chart.name,dir=below?Math.PI/2:-Math.PI/2,latin=!own&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
         const alpha=chart.completed?.34:.52;
         ctx.save();ctx.translate(ex,ey);
         ctx.font=plateFace(size,'sc');
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${alpha})`;
-        textAlongArc(ctx,latin||chart.name,0,0,ring,dir,{align:'center',size,spacing:size*.24,inward:below});
+        textAlongArc(ctx,latin||chartTitle(chart),0,0,ring,dir,{align:'center',size,spacing:size*.24,inward:below});
         if(latin){
           const glossSize=size*.64,glossRing=ring+size*1.05;
           ctx.font=plateFace(glossSize,'text','italic');
@@ -1400,6 +1402,9 @@ function drawNode(n,aim){
       ctx.strokeStyle=next.routeRole==='star'||(sling&&next.id===n.shortcutId)?`rgba(${ink.marks.releaseWindowStar},.35)`:`rgba(${ink.marks.releaseWindowPlain},.24)`;ctx.lineWidth=cut('bold');ctx.beginPath();ctx.arc(0,0,r,a-window,a+window);ctx.stroke();
       for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
         if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
+        // A tick promising a clean tangent has to be honest about era I's own hazard too: no tick
+        // for a tangent this world's own generation only ever promised was clear of a lethal core.
+        if(world.chasms?.some(c=>segmentSegmentDist(path.x,path.y,path.bx,path.by,c.x0,c.y0,c.x1,c.y1)<c.w))continue;
         registerMark(Math.cos(path.angle)*r,Math.sin(path.angle)*r,ink.marks.releaseMark,.85,false);
       }
     }
@@ -1467,6 +1472,8 @@ function drawNode(n,aim){
 // without the step being visible on a ring drawn through them.
 const SWIRL_TURN=0.62;
 function drawGravitationalLenses(){
+  // A plate whose attractor is not a bending of light at all names its own painter here, or none.
+  const own=handFor('lenses');if(own)return own();
   for(const h of world.hazards){
     if(h.kind&&h.kind!=='vortex')continue;
     const x=sx(h.x),y=sy(h.y),outer=gravityRadius(h)*scale,inner=(h.r+1)*scale,diameter=outer*2;
@@ -1886,6 +1893,8 @@ function drawHazard(h){
 function drawAim(aim){
   const p=world.player;if(!p.node||world.state==='dead')return;
   const preview=world.flightPreview,points=preview?.points;if(!points||points.length<2)return;
+  // A plate whose guide is not a pricked course names its own painter, handed the same prediction.
+  const own=handFor('aim');if(own)return own(aim,preview);
   const launch=world.launchVelocity(),speed=launch.speed,dx=launch.vx/speed,dy=launch.vy/speed,sling=p.node.type==='sling',end=points[points.length-1],blocked=!!preview.blocked;
   ctx.save();ctx.lineCap='round';
   const ax=sx(p.x+dx*12),ay=sy(p.y+dy*12),bx=sx(end.x),by=sy(end.y);

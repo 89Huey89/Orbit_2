@@ -1240,9 +1240,13 @@ function render(dt){
     revealHazard(h,drawHazard);
     const kind=h.kind||'vortex';
     if(!plainPlate()&&!namedHazardKinds.has(kind)&&reveal.progress(h,HAZARD_REVEAL,true)>=1){
-      if(inscribe(hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
+      if(inscribe(plateWords().hazards[kind]||hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
     }
   }
+  // world.chasms is era I's own array (see simulation.js), never populated on any other plate, so
+  // this asks for a 'chasm' painter rather than assuming every hand has one — the atlas and era II
+  // never see this loop do anything at all.
+  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms)paintChasm(c);}
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(world.state==='paused')drawPauseMagnitudeKey();

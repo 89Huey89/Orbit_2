@@ -552,6 +552,8 @@ function revealHazard(h,draw){
   const t=reveal.progress(h,HAZARD_REVEAL,true);
   if(t>=1||reducedMotion){draw(h);return;}
   if(t<=0)return;
+  // A plate whose hazards are not ink on a sheet names its own way of bringing one onto the page.
+  const own=handFor('hazardReveal');if(own)return own(h,draw,t);
   const x=sx(h.x),y=sy(h.y),r=Math.max(4,h.r*scale);
   const drop=revealSpan(t,0,.52),cut=revealSpan(t,.42,1),rng=seeded((h.seed^0x2b17ac)>>>0||1);
   ctx.save();
