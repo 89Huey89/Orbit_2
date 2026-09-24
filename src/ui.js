@@ -57,6 +57,8 @@ function say(text,where){
   return inscribe(text,where);
 }
 function event(type,e){
+  // The press answers a few of these in its own way (src/press.js) before anything else hears them.
+  pressEvent(type,e);
   if(type==='start'){audio.start();if(replayLog)replayLog.startedAt=world.time;return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
@@ -197,6 +199,15 @@ function event(type,e){
       // short crown of the flood's own bleed threads climbing over the spot.
       rings.push({kind:'splat',x:e.x,y:e.y,spray:-Math.PI/2,crown:true,size:24,age:0,life:1.8,alpha:.72,seed:ringSeed()});
       darkFlash=1;
+    }else if(renaissanceAtlas()){
+      // A hazard takes the traveller by force, and on the atlas the page blots: the nib is driven into the
+      // sheet and the run's own ink floods out from the point of loss, flung away from whatever struck it,
+      // and soaks in under the colophon's leaf rather than bursting into sparks that belong to no sheet.
+      const h=world.hazards.reduce((a,b)=>!a||Math.hypot(b.x-e.x,b.y-e.y)<Math.hypot(a.x-e.x,a.y-e.y)?b:a,null);
+      const spray=h?Math.atan2(e.y-h.y,e.x-h.x):-Math.PI/2;
+      rings.push({kind:'splat',x:e.x,y:e.y,spray,size:34,age:0,life:PRESS_BLOT,alpha:.84,seed:ringSeed()});
+      rings.push({kind:'splat',x:e.x+Math.cos(spray)*20,y:e.y+Math.sin(spray)*20,spray,size:11,age:0,life:PRESS_BLOT,alpha:.66,seed:ringSeed()});
+      screenFlash=1;
     }else{
       burst(e.x,e.y,56,'gold',1.4);burst(e.x,e.y,24,'red',.7);
       rings.push({x:e.x,y:e.y,start:3,distance:115,age:0,life:1.2,alpha:.6,seed:ringSeed()});

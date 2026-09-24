@@ -60,10 +60,24 @@ Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
 | B4 soft chapter plates | Partly | Plates are baked at the density they are shown at (capped 1.66×, three held). Printing them as line rather than tone down the channel is still open |
 | C1 frontispiece as a web form | Fixed | The menu stands on the sheet wiped clean through a soft oval, ruled as a table of contents |
 | C2 Leviathan | Fixed | Redrawn as an engraved sea monster |
+| C3 cartouches | Fixed | The impressum and the chapter title stand in one strapwork cartouche (`src/press.js`): notched strap, scrolls at the ends, lozenges at head and foot. The printer's device inside the impressum is still open |
+| C4 plate tone | Fixed | Wiping streaks and edge film cut into the cached frame layer, clipped to the plate mark; the paper vignette lightened to match |
+| D1 press strike | Fixed | A perfect transfer sets the sheet down 1 px for 80 ms and embosses the landing ring (lit and shadowed offset strokes) for 0.95 s |
+| D4 second colour pass | Fixed | A completed figure is inked again in one left-to-right sweep, rubric red on paper and gold at night, off register, settling and drying over the completion's 2.4 s flash |
+| D5 death blot | Fixed | A hazard death on the atlas blots the page with the run's own ink, flung away from the nearest hazard, instead of bursting |
+
+Built on `claude/remaining-art-assets-6bf6v4`, with everything new in `src/press.js` and one-line hooks
+elsewhere, so it merges cleanly with the Era I overhaul (`claude/stone-age-deck-conflicts-g0en46`).
+The eras never reach any of it: they draw their own frame, and the event hooks ask `renaissanceAtlas()`.
 
 ![frontispiece after](art-review/17-frontispiece-after.jpg)
 ![leviathan after](art-review/16-leviathan-after.jpg)
 ![survey letters after](art-review/18-survey-letters-after.jpg)
+![cartouches and plate tone](art-review/19-press-paper.jpg)
+![second colour, paper](art-review/20-second-colour-paper.jpg)
+![second colour, night](art-review/21-second-colour-night.jpg)
+![hazard blot](art-review/22-hazard-blot.jpg)
+![strike emboss](art-review/23-strike-emboss.jpg)
 
 ---
 

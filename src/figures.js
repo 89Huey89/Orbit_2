@@ -963,6 +963,7 @@ function drawConstellationFigure(chart){
   const x=sx(frame.originX),y=sy(frame.originY);
   if(x>W||y>H||x+layer.canvas.width<0||y+layer.canvas.height<0)return;
   ctx.drawImage(layer.canvas,x,y);
+  pressColourPass(chart,layer,x,y);
   figureCorrode(layer.canvas,x,y);
 }
 // The rising ink eats a figure's own contours the way it eats the plate's furniture, and for the same

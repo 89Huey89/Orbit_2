@@ -1848,6 +1848,8 @@ function drawEffects(dt){
     }
     burinArc(ctx,sx(r.x),sy(r.y),(r.start+(reducedMotion?0:t*r.distance))*scale,0,TAU,ink.dark.ringSimple,(1-t)*r.alpha,.8,r.seed||7,{segments:20,skips:2});
   }
+  // The embossed bite a perfect landing's strike leaves in the ring (src/press.js).
+  drawPress(dt);
   // An era's own score is still written up as a marginal note in Fell italic beside the play field,
   // each with a small engraved manicule pointing back in at the event, drifting up gently and fading —
   // exactly as the atlas's own used to. The atlas keeps its score as ink now instead (drawTallies,

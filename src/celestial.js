@@ -683,7 +683,7 @@ function drawAmbient(dt,aim){
 // of the widest name the atlas sets — so a short name reserved a stretch of plate it never came near. The
 // rule under the name is cut to the title now rather than to the sheet, and the whole assembly is only
 // ever as wide as the words in it.
-const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34,REVEAL_TITLE_CAP=3;
+const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34,REVEAL_TITLE_CAP=3,REVEAL_CARTOUCHE_H=78;
 let revealMeasure=null;
 // Every chapter title still standing on the sheet, oldest first. Each is struck once — same moment,
 // same line choice, as revealAnchor below always chose — and the strike converts that line into a fixed
@@ -877,6 +877,10 @@ function drawRevealTitle(x,y,m,age){
     line(x-reach,y+27,x-9,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27,x+reach,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);
   }else penRule(x,y+27,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);
   ctx.globalAlpha=alpha*(ruled>=1?1:ruled);
+  // The title is set in a strapwork cartouche (src/press.js), struck with the rule once the name is cut:
+  // its scrolls stand clear of the rule's ends, and it never reaches past the frame's own inner margin.
+  {const out=pressCartoucheInset(W,REVEAL_CARTOUCHE_H),half=Math.min(reach+8+out.x,Math.max(reach+out.x,Math.min(x,W-x)-frameBand()*.92-4));
+    drawPressCartouche(x-half,y-40,half*2,REVEAL_CARTOUCHE_H,ink.dark.chapterRule,.5,.7,70291);}
   ctx.strokeStyle=`rgba(${ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24);ctx.lineTo(x+3,y+27);ctx.lineTo(x,y+30);ctx.lineTo(x-3,y+27);ctx.closePath();ctx.stroke();ctx.restore();
 }
 function drawChapterReveal(dt){
