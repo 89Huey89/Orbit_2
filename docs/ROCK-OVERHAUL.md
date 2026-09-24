@@ -301,7 +301,18 @@ the title mark, your cave (`orbit.rock.v1`), relighting at the Flare, and a smal
 
 ## Later: a shared relit surface (WebGL)
 
-Documented only; not scheduled beyond step 9 above.
+**First cut built (2026-09-24), shadows-only.** `src/relight.js` is the generic surface (one fragment
+shader into an offscreen WebGL canvas, byte height maps as textures, a cost watch that retires it above
+4 ms a frame, `null` wherever WebGL is missing). The Rock's shader (`ROCK_RELIGHT_FRAG` in `rock.js`)
+reads the tile's slow relief (`HL`, kept at bake as bytes) and the face's heights (`rockFaceH`, sent as
+16-bit), relights each point from the flame over the baked lamp, ray-marches 16 steps toward the flame
+for shadow, and is composited in soft-light at half the css resolution after the face and before the
+niches. What it does not do yet is level B in full: the bake's own lamp is divided out approximately
+rather than removed (albedo and shading are not separated in `rockShadePass`), the per-pixel tooth casts
+no shadow, and the niches, shafts and chasms, being sprites, keep their level-A shading. Frame rate on
+the reference iPhone is still to be measured on the device.
+
+What follows is the original plan for the full surface.
 
 Level A shades the hollows live but leaves the wall's own relief lit from a fixed lamp. Level B would
 light the whole wall per pixel from the carried torch's real position, so every crease, boss, ledge,

@@ -222,7 +222,7 @@ function rockShadePass(F,y0,y1){
 }
 // Baked lazily on first reach rather than at load, so a player who never opens this era never pays for
 // it; invalidateRockArt() below drops it, and rockBakeWall() below rebuilds it once on next reach.
-let rockWall=null;
+let rockWall=null,rockWallRelief=null;
 function rockBakeWall(){
   if(rockWall)return rockWall;
   const NW=ROCK_NW,NH=ROCK_NH,N=NW*NH,QW=ROCK_QW,QH=ROCK_QH;
@@ -239,6 +239,9 @@ function rockBakeWall(){
   const CZ=rockBuild(q(),QW,QH,Q,[[240,300,1,2020],[96,100,.5,2121]]);
   // Where the stone is broken and where water has worn it smooth: the creases below are cut at full
   // depth in some reaches and all but polished away in others, so the wall is not one texture repeated.
+  // The slow relief is also kept, as bytes, for the relit surface below (rockRelightPass): one extra
+  // row and column copied from the first, so a texture filtered across the tile's own seam wraps.
+  rockWallRelief=new Uint8Array((QW+1)*(QH+1));for(let y=0;y<=QH;y++)for(let x=0;x<=QW;x++)rockWallRelief[y*(QW+1)+x]=Math.round(clamp(HL[(y%QH)*QW+(x%QW)],0,1)*255);
   const RM=rockBuild(q(),QW,QH,Q,[[192,180,1,2222],[96,90,.4,2323]]);for(let i=0;i<ROCK_QN;i++)RM[i]=.18+rockStep(.25,.75,RM[i])*1.05;
   // The zones are decided here, once, on the slow fields: where the crazing gathers, where the wall is
   // pitted, where manganese has bloomed, how thick the crust is, and where scales have come away.
@@ -350,7 +353,7 @@ function rockChunkFissures(seed,ci,cj,out){
       rockFissureWalk(w.pts[bi*2],w.pts[bi*2+1],w.as[bi]+(hf(14)<.5?1:-1)*(.7+hf(15)*.6),(600+hf(5)*1000)*(.3+hf(16)*.3),(3+hf(6)*5)*.6,(hf(17)-.5)*.2,hb,w.step,out);}
   }
 }
-let rockFaceH=null,rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
+let rockFaceVersion=0,rockFaceH=null,rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
 function rockBakeFace(camY){
   const tok=k=>ink.rock[k].split(',').map(Number),pale=tok('facePale'),ironT=tok('faceIron'),ochreT=tok('faceOchre'),calcT=tok('faceCalcite'),flowT=tok('faceFlow'),dampT=tok('faceDamp'),shaft=ink.rock.shaft,crack=ink.rock.crack,lip=ink.rock.kaolin;
   const up=H*ROCK_FACE_UP,down=H*ROCK_FACE_DOWN,sheetH=H+up+down,cw=Math.max(1,Math.ceil(W*DPR)),ch=Math.max(1,Math.ceil(sheetH*DPR));
@@ -494,7 +497,7 @@ function rockBakeFace(camY){
   pass(crack,.24,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*2.4+2,0,0,x0,y0,x1,y1]);
   pass(lip,.5,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return null;return[1.3,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2),x0,y0,x1,y1];});
   pass(shaft,.78,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*.8,0,0,x0,y0,x1,y1]);
-  rockFaceY=camY;rockFaceTop=up;
+  rockFaceY=camY;rockFaceTop=up;rockFaceVersion++;
 }
 function rockPaintFace(){
   const key=W+'x'+H+'@'+DPR+'/'+scale.toFixed(4)+'#'+(world.seed>>>0),dy=(world.cameraY-rockFaceY)*scale;
@@ -574,6 +577,71 @@ function rockTorchPass(strength){
   ctx.save();ctx.globalCompositeOperation='multiply';if(strength!==undefined)ctx.globalAlpha=strength;
   ctx.imageSmoothingEnabled=true;ctx.drawImage(rockLight,0,0,W,H);ctx.restore();
 }
+// ---------- The relit wall: the carried flame's own shadows, where WebGL is to be had ----------
+// Level A lights the hollows from the flame but leaves the wall's own relief lit from the fixed lamp it
+// was baked under. This is level B, kept small: the heights the wall was built from — the slow relief of
+// the tile and the large forms of the face, both already made for the bake — are handed to one shader
+// (relightSurface, src/relight.js) with the flame's place, and every pixel is lit again from the flame
+// rather than the lamp, and walked a few steps toward it to see whether a ridge, a boss or the lip of a
+// bed stands in the way. What comes back is only a shading layer, laid over the finished wall in
+// soft-light at a quarter of the pixels, since shadow has nothing in it finer than that; the wall's own
+// tooth stays the 2D bake's, at one sample to one device pixel. The layer is neutral grey where the flame
+// agrees with the lamp, so a wall where WebGL is missing, or has been retired for costing too much, is
+// exactly the wall this era always had.
+//
+// The relit shade is the flame's light over the lamp's, each divided by what it gives a flat face, so
+// the flame's own fall across the sheet (which the torch pass already lays) is not taken twice: only
+// which way the rock turns, and what stands between it and the flame, is.
+const ROCK_RELIGHT_Q=2,ROCK_RELIGHT_Z=70,ROCK_RELIEF_FACE=40,ROCK_RELIEF_TILE=14,ROCK_RELIGHT_STRENGTH=.8;
+const ROCK_RELIGHT_FRAG=`#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2 vUV;
+uniform sampler2D uTile,uFace;
+uniform vec2 uRes,uFaceSize,uTileN,uTileSize;
+uniform vec3 uTorch;
+uniform float uFaceOff,uQ,uTileOff,uDPR,uTileQ,uRf,uRt,uStrength;
+float hgt(vec2 p){
+  vec2 fu=vec2(p.x/uQ+1.,(p.y+uFaceOff)/uQ+1.)/uFaceSize;
+  vec2 tp=mod(vec2(p.x,p.y+uTileOff)*uDPR,uTileN);
+  vec4 f=texture2D(uFace,fu);
+  return (f.r+f.a/256.)*uRf+texture2D(uTile,(tp/uTileQ)/uTileSize).r*uRt;
+}
+void main(){
+  vec2 p=vec2(vUV.x,1.-vUV.y)*uRes;
+  float h0=hgt(p),e=3.;
+  vec3 n=normalize(vec3(-(hgt(p+vec2(e,0.))-hgt(p-vec2(e,0.)))/(2.*e),-(hgt(p+vec2(0.,e))-hgt(p-vec2(0.,e)))/(2.*e),1.));
+  vec2 to=uTorch.xy-p;float dxy=max(length(to),1.);vec2 dir=to/dxy;
+  vec3 Ld=normalize(vec3(to,uTorch.z-h0));
+  float sh=1.,D=min(dxy,150.);
+  for(int i=1;i<=16;i++){float t=D*pow(float(i)/16.,1.4);float ray=h0+(uTorch.z-h0)*t/dxy;float occ=clamp((hgt(p+dir*t)-ray)/(.8+t*.05),0.,1.);sh=min(sh,1.-occ);}
+  vec3 Lb=normalize(vec3(.62,-.6,.9));float a=.35;
+  float dyn=(a+max(0.,dot(n,Ld))*sh)/(a+Ld.z),bak=(a+max(0.,dot(n,Lb)))/(a+Lb.z);
+  float m=mix(1.,dyn/bak,uStrength);
+  float s=clamp(.5+(m-1.),0.,1.);
+  gl_FragColor=vec4(s,s,s,1.);
+}`;
+let rockRelit,rockRelitTile=false,rockRelitFace=-1;
+function rockRelightPass(){
+  if(rockRelit===undefined)rockRelit=relightSurface(ROCK_RELIGHT_FRAG);
+  const R=rockRelit;if(!R||!R.ok||!rockWallRelief||!rockFaceH||!rockFaceTone)return;
+  const QW=ROCK_QW+1,QH=ROCK_QH+1,fw=rockFaceTone.width+2,fh=rockFaceTone.height+2;
+  if(!rockRelitTile){R.texture('uTile',0,QW,QH,rockWallRelief);rockRelitTile=true;}
+  if(rockRelitFace!==rockFaceVersion){
+    const FH=rockFaceH,n=fw*fh,b=new Uint8Array(n*2);for(let i=0;i<n;i++){const v=Math.round(clamp(FH[i]/1.6,0,1)*65535);b[i*2]=v>>8;b[i*2+1]=v&255;}
+    R.texture('uFace',1,fw,fh,b,true);rockRelitFace=rockFaceVersion;
+  }
+  const at=rockTorchAt||world.player,tileH=ROCK_NH/DPR,off=((world.cameraY*scale)%tileH+tileH)%tileH;
+  const out=R.render(Math.max(1,Math.ceil(W/ROCK_RELIGHT_Q)),Math.max(1,Math.ceil(H/ROCK_RELIGHT_Q)),{
+    uRes:[W,H],uTorch:[sx(at.x),sy(at.y)-10*scale,ROCK_RELIGHT_Z*scale],uFaceOff:rockFaceTop+(world.cameraY-rockFaceY)*scale,uFaceSize:[fw,fh],
+    uQ:ROCK_TONE_Q,uTileOff:off,uDPR:DPR,uTileN:[ROCK_NW,ROCK_NH],uTileSize:[QW,QH],uTileQ:ROCK_Q,uRf:ROCK_RELIEF_FACE*scale,uRt:ROCK_RELIEF_TILE*scale,uStrength:ROCK_RELIGHT_STRENGTH});
+  if(!out)return;
+  const t0=typeof performance!=='undefined'?performance.now():0;
+  ctx.save();ctx.globalCompositeOperation='soft-light';ctx.drawImage(out,0,0,W,H);ctx.restore();
+  if(t0)R.charge(performance.now()-t0);
+}
 function rockPaintWall(){
   rockBakeWall();
   // One baked sample to one device pixel, and every blit landing on a whole one. The wall's tooth is a
@@ -585,7 +653,7 @@ function rockPaintWall(){
   const tileW=ROCK_NW/DPR,tileH=ROCK_NH/DPR,snap=v=>Math.round(v*DPR)/DPR;
   const off=((world.cameraY*scale)%tileH+tileH)%tileH;
   for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
-  rockPaintFace();
+  rockPaintFace();rockRelightPass();
   rockPaintNiches();rockPaintOldHands();
 }
 
@@ -2366,5 +2434,5 @@ function invalidateRockArt(){
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
-  rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;
+  rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;rockWallRelief=null;rockRelitTile=false;rockFaceVersion++;
 }
