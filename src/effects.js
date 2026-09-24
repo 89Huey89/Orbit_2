@@ -1684,9 +1684,16 @@ function drawDark(dt=0){
   }
   drawDarkMarginalia(fy,time,.55+near*.3+darknessRelief*.15);
   if(near>.2&&world.state==='playing'){
-    const edge=ctx.createRadialGradient(W*.5,H*.5,H*.3,W*.5,H*.5,Math.max(W,H)*.65);
-    edge.addColorStop(0,'rgba(81,48,39,0)');edge.addColorStop(1,`rgba(${rgb},${near*.105*(1-darknessRelief*.75)})`);
-    ctx.fillStyle=edge;ctx.fillRect(0,0,W,H);
+    // The gradient runs from nothing to one alpha, so it is painted once at full strength (sheetWash,
+    // src/plates.js) and laid at the strength this frame asks for; while the relief is carrying its ink
+    // from one colour to the other, the two ends are laid in their shares rather than a new wash painted
+    // for every shade in between.
+    const A=clamp(near*.105*(1-darknessRelief*.75),0,1),edgeWash=c=>g=>{const edge=g.createRadialGradient(W*.5,H*.5,H*.3,W*.5,H*.5,Math.max(W,H)*.65);
+      edge.addColorStop(0,'rgba(81,48,39,0)');edge.addColorStop(1,`rgba(${c},1)`);g.fillStyle=edge;g.fillRect(0,0,W,H);};
+    ctx.save();
+    if(darknessRelief<.999){ctx.globalAlpha=A*(1-darknessRelief);sheetWash('dark.edge.'+ink.dark.pigment,edgeWash(ink.dark.pigment));}
+    if(darknessRelief>.001){ctx.globalAlpha=A*darknessRelief;sheetWash('dark.edge.'+ink.dark.shorelineRelief,edgeWash(ink.dark.shorelineRelief));}
+    ctx.restore();
   }
   ctx.restore();
 }

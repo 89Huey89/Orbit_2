@@ -1615,21 +1615,35 @@ function pacePresent(dt,raw){
   paceIntervals.push(raw);
   if(paceIntervals.length<PACE_WINDOW)return;
   const sorted=paceIntervals.slice().sort((a,b)=>a-b);
-  const native=sorted[Math.floor(sorted.length*.1)],achieved=sorted[sorted.length>>1];
+  const native=sorted[Math.floor(sorted.length*.1)],achieved=sorted[sorted.length>>1],late=sorted[Math.floor(sorted.length*.8)];
   paceIntervals.length=0;
+  // Before the press slows, it drops what it can do without: a plate's relit surface (src/relight.js) is
+  // an addition to the ground, never the ground, so a screen of any speed that is plainly missing frames
+  // — one in five or more — loses it first, and the window is measured again without it.
+  if(late>native*PACE_MISS&&typeof relightShed==='function'&&relightShed())return;
   if(native<PACE_FAST_PANEL&&achieved>native*PACE_MISS){
     presentEvery=2;presentIn=1;paceProbeIn=paceProbeWait;paceProbeWait=Math.min(30,paceProbeWait*2);
   }
 }
+// The flight steps at 1/120 s, and a sixty-hertz screen's frames come a little early and a little late
+// round their 16.7 ms: taken at face value, the clock then hands the flight one step on this frame, three
+// on the next and two on most, and the traveller moves unevenly across a sheet painted perfectly evenly —
+// a judder no amount of speed in the painting can cure. So an interval within a millisecond or so of a
+// whole number of steps is taken as exactly that many; anything else (a ninety-hertz screen, a frame
+// really dropped) is taken as it came. The run's own time is untouched in kind: it only ever advances
+// in whole fixed steps, as it always did.
+const PACE_SNAP_MS=1.2;
+function snapInterval(raw){const steps=Math.round(raw/(FLIGHT_STEP*1000));return steps>=1&&Math.abs(raw-steps*FLIGHT_STEP*1000)<PACE_SNAP_MS?steps*FLIGHT_STEP*1000:raw;}
 function tick(now){
   const raw=frameTime?now-frameTime:0;
-  const dt=frameTime?Math.min(raw/1000,.05):0;frameTime=now;
+  const dt=frameTime?Math.min(snapInterval(raw)/1000,.05):0;frameTime=now;
   if(!document.hidden){
     if(reviewing){
       if(--presentIn<=0){presentIn=presentEvery;renderReview();}
     }else{
       accumulator+=dt;
-      while(accumulator>=FLIGHT_STEP){
+      // A hair of slack, so a whole number of steps taken as exactly that is never one short to rounding.
+      while(accumulator>=FLIGHT_STEP-1e-9){
         world.update(FLIGHT_STEP);accumulator-=FLIGHT_STEP;
       }
       recordTrail();
