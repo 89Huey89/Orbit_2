@@ -63,6 +63,9 @@ defineVoice('atlas',{
   // Endless reading never ends (docs/archive/eras/LINKING.md). Only a century whose chapters, notes and
   // record all read sanely past its own last chapter says so; the atlas, having no ending, has no choice.
   endless:false,
+  // The rows past which a century changes its medium under the run, growing the next out of the body
+  // landed on (see TRANSITION_GRACE in the simulation, and the Lens's registers). The atlas has none.
+  transitionRows:[],
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
   // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
   // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
@@ -289,6 +292,10 @@ function event(type,e){
     }
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
+  }else if(type==='transition'){
+    // The medium changes under the run (JOURNEY.md §1.3): the plate's own hand draws it, and a plate with
+    // no hand for it has no transition rows either.
+    const h=handFor('transition');if(h)h(e);
   }else if(type==='sunrise'){
     // A win, not a death: its own sound (the plate's 'dawn' hand — see defineHand('ceiling',...) in
     // src/ceiling.js — falling back to the atlas's fanfare exactly as medal() does), no splat or flash,
@@ -392,7 +399,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());
+  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
