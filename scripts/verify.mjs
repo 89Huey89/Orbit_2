@@ -13,18 +13,18 @@ const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // and run in parallel instead of one after another. Every one of them is written exactly as it would
 // be inline — reading these free variables rather than taking parameters — so a worker just needs to
 // populate them (from its own vm sandbox, or from workerData) before calling the task it was asked for.
-let OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
+let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
 
 // Runs the extracted `// BEGIN SIMULATION`/`// END SIMULATION` slice of src/simulation.js in its own
 // vm sandbox and returns the named globals verify.mjs needs off it — the same slice-and-pull the file
 // has always done, just callable once per thread instead of once for the whole process.
 function simSandbox(simulation){
   const sandbox={};vm.createContext(sandbox);
-  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
+  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
   return sandbox.api;
 }
 function useSimulationApi(api){
-  ({OrbitWorld,segmentCircle,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
+  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
 }
 
 // A tangent-seeking pilot uses the stars and follows the generated main route.
@@ -49,6 +49,41 @@ function taskRoute60(){
   assert.equal(failures.length,0,'Every tested route must remain playable: '+JSON.stringify(failures));
   assert(maxNodes<20&&maxHazards<12,'Endless generation should stay bounded');
   return {totalCaptures,perfects,maxNodes,maxHazards};
+}
+
+// Era I's own hazards, run through the same tangent-seeking pilot taskRoute60 already trusts, with
+// chasmsOn AND relightOn both set together — the two era-only flags the wall turns on at once, so this
+// is the pilot that proves neither perturbs the other: every seed must still reach row 48, chasms
+// actually have to appear, no node's capture-plus-orbit disc may ever come within a chasm's own
+// half-width, and the run must never raise anything (the relight logic runs every flight tick of every
+// seed here, so a broken bound or a NaN would surface across sixty seeds long before anyone saw it).
+function taskChasmRoute60(){
+  let totalChasms=0,firstRow=Infinity;const failures=[],intersections=[];
+  for(let seed=1;seed<=60;seed++){
+    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true,true);w.keepAll=true;w.start();
+    for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
+      if(w.player.node){
+        const aim=w.aim();
+        if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+      }
+      w.update(step);
+      assert(Number.isFinite(w.player.x)&&Number.isFinite(w.player.y));
+    }
+    if(w.progress<48)failures.push({seed,progress:w.progress,reason:w.reason,elapsed:w.elapsed});
+    totalChasms+=w.chasms.length;
+    for(const c of w.chasms){
+      firstRow=Math.min(firstRow,c.row);
+      for(const q of w.nodes){
+        const d=pointSegment(q.baseX,q.baseY,c.x0,c.y0,c.x1,c.y1);
+        if(d<q.cap+q.amp+c.w)intersections.push({seed,row:c.row,node:q.row,d,need:q.cap+q.amp+c.w});
+      }
+    }
+  }
+  assert.equal(failures.length,0,'Every tested route must remain playable with chasms on: '+JSON.stringify(failures));
+  assert(totalChasms>=30,'Chasms must actually be generated when the flag is on: '+totalChasms);
+  assert(firstRow>=5,'No chasm may appear before row 5: first at row '+firstRow);
+  assert.equal(intersections.length,0,'No node\'s capture-plus-orbit disc may ever touch a chasm: '+JSON.stringify(intersections.slice(0,5)));
+  return {totalChasms};
 }
 
 function taskDetourDeep(){
@@ -167,6 +202,34 @@ function taskVariedOpening(){
   return {totalCaptures,variedOpenings:opens.length,variedFigures:firstFigures.size};
 }
 
+// A Web Audio stand-in, just enough of the API surface OrbitAudio and an era's own painters ask for
+// (gains, filters, oscillators, buffer sources, a convolver for a synthetic cave reverb, the master
+// compressor, and the buffers those are built from) to run the real synthesis code end to end with nothing that throws,
+// rather than skip it outright the way a missing AudioContext makes audio.js itself skip it. Every
+// node is a plain no-op sink: nothing here plays a sound, it only has to survive being asked to.
+class FakeAudioParam{constructor(v=0){this.value=v;}setValueAtTime(v){this.value=v;return this;}linearRampToValueAtTime(v){this.value=v;return this;}exponentialRampToValueAtTime(v){this.value=v;return this;}setTargetAtTime(v){this.value=v;return this;}}
+class FakeAudioNode{connect(){return arguments[0];}disconnect(){}}
+class FakeGain extends FakeAudioNode{constructor(){super();this.gain=new FakeAudioParam(1);}}
+class FakeFilter extends FakeAudioNode{constructor(){super();this.type='lowpass';this.frequency=new FakeAudioParam(350);this.Q=new FakeAudioParam(1);}}
+class FakeOscillator extends FakeAudioNode{constructor(){super();this.type='sine';this.frequency=new FakeAudioParam(440);this.onended=null;}start(){}stop(){}}
+class FakeBufferSource extends FakeAudioNode{constructor(){super();this.buffer=null;this.onended=null;}start(){}stop(){}}
+class FakeConvolver extends FakeAudioNode{constructor(){super();this.buffer=null;}}
+class FakeCompressor extends FakeAudioNode{constructor(){super();for(const k of ['threshold','knee','ratio','attack','release'])this[k]=new FakeAudioParam();}}
+class FakeAudioBuffer{
+  constructor(channels,length,sampleRate){this.numberOfChannels=channels;this.length=length;this.sampleRate=sampleRate;this.duration=length/sampleRate;this._data=Array.from({length:channels},()=>new Float32Array(length));}
+  getChannelData(ch){return this._data[ch];}
+}
+class FakeAudioContext{
+  constructor(){this.sampleRate=44100;this.currentTime=0;this.state='running';this.destination=new FakeAudioNode();}
+  createGain(){return new FakeGain();}
+  createBiquadFilter(){return new FakeFilter();}
+  createOscillator(){return new FakeOscillator();}
+  createBufferSource(){return new FakeBufferSource();}
+  createConvolver(){return new FakeConvolver();}
+  createDynamicsCompressor(){return new FakeCompressor();}
+  createBuffer(channels,length,sampleRate){return new FakeAudioBuffer(channels,length,sampleRate);}
+  resume(){this.state='running';return Promise.resolve();}
+}
 function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},checkRename=false){
   const events={},items=new Map(),raf=[],saved=new Map(Object.entries(seed));
   let lensCopies=0;
@@ -190,10 +253,10 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
     const classes=new Set(),e={id,style:{},textContent:'',innerHTML:'',classList:{add:(...x)=>x.forEach(a=>classes.add(a)),remove:(...x)=>x.forEach(a=>classes.delete(a)),toggle:(x,force)=>force?classes.add(x):classes.delete(x),contains:x=>classes.has(x)},setAttribute(){},getContext:()=>drawing,getBoundingClientRect:()=>({width,height}),closest:()=>null,removeAttribute(){},addEventListener:(type,fn)=>{events[id+':'+type]=fn;}};
     items.set(id,e);return e;
   }
-  const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;}},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
+  const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -748,6 +811,164 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','A century may not be entered out from under a run');
     context.test.setPlate('night');
   }
+  // ---- The Rock's own instrument: five sound painters registered, none of them throwing ----
+  {
+    context.test.setPlate('rock');
+    for(const painter of ['capture','release','graze','death','medal'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Rock names its own sound: '+painter);
+    context.test.audio.unlock();
+    assert(context.test.audio.ctx,'The stand-in AudioContext must actually attach');
+    context.test.audio.capture(3,false);context.test.audio.capture(3,true);
+    context.test.audio.release();context.test.audio.graze();context.test.audio.death();context.test.audio.medal();
+    context.test.setPlate('night');
+    // The atlas's own painters must still throw nothing and stay untouched by the Rock's registration.
+    context.test.audio.capture(3,false);context.test.audio.capture(3,true);
+    context.test.audio.release();context.test.audio.graze();context.test.audio.death();context.test.audio.medal();
+  }
+  // ---- The Rock's own vocabulary: no word of the atlas's own workshop or Latin is left standing ----
+  {
+    context.test.setPlate('night');
+    const atlasWords=context.test.plateWords();
+    context.test.setPlate('rock');
+    const rockWords=context.test.plateWords();
+    // Every nested table the atlas keeps a word in, the wall keeps one too — a feat, a loss or a
+    // charge the simulation can deal is never left to print in the atlas's own Latin on a wall that
+    // has none of its own. `chart` is the one key both plates leave blank on purpose (an empty chart
+    // name falls back to the constellation's own English name, the same on every plate), and `close`
+    // and the two purely numeric gain glosses need no era-specific word — those three are the only
+    // keys this test deliberately lets the wall inherit.
+    const inherited={glosses:['close','chartProgress','chartComplete','multiplier']};
+    for(const table of ['tips','held','observations','losses','hud','labels','hazards','pressures'])
+      for(const key of Object.keys(atlasWords[table]))
+        assert(rockWords[table][key]!==undefined,'The Rock must name every '+table+' key the atlas has: '+key);
+    for(const key of Object.keys(atlasWords.glosses))
+      if(!inherited.glosses.includes(key))assert(rockWords.glosses[key]!==undefined&&rockWords.glosses[key]!==atlasWords.glosses[key],'The Rock must speak its own gloss for: '+key);
+    for(const key of Object.keys(atlasWords.chrome))
+      if(key!=='instructions')assert(rockWords.chrome[key]!==undefined,'The Rock must set every chrome key the atlas has: '+key);
+    assert(rockWords.chrome.instructions&&rockWords.chrome.instructions.head&&rockWords.chrome.instructions.rules.length===4,'The Rock keeps its own canon-page rubric');
+    assert.equal(rockWords.squareLanding,'A SQUARE LANDING');
+    // Every named feat the simulation can record must have a word on this wall (see OBSERVATIONS in
+    // simulation.js), the same completeness the Ceiling is already held to above.
+    for(const key of Object.keys(OBSERVATIONS))assert(rockWords.observations[key],'The Rock names every observation the simulation can record: '+key);
+    // No word of the atlas's own printing shop, and none of its Latin, is left standing on the wall:
+    // every string the wall can actually set is joined into one block and checked at once, template
+    // markers included, so a placeholder left unfilled cannot hide a forbidden word behind it.
+    const flatten=(value,out)=>{
+      if(value==null)return;
+      if(typeof value==='string')out.push(value);
+      else if(Array.isArray(value))for(const v of value)flatten(v,out);
+      else if(typeof value==='object')for(const k in value)flatten(value[k],out);
+    };
+    const wallText=[];flatten(rockWords,wallText);const wall=wallText.join(' · ');
+    for(const bad of ['pricked','PRESSURE SET','MOMENTUM KEPT','TIRO','ADEPTUS','MAGISTER','LEFT THE STAR CHART','ANGULUS','VORAGO','nib'])
+      assert(!wall.includes(bad),'The Rock\'s vocabulary must never carry the atlas\'s own word "'+bad+'"');
+    // And the atlas keeps its own words exactly as they were: a handful of spot checks against the
+    // strings this change actually touched.
+    assert.equal(atlasWords.chrome.eraExit,'RETURN TO THE ATLAS');
+    assert.equal(atlasWords.chrome.endAction,'Tap to try again');
+    assert.equal(atlasWords.chrome.statFlow,'Best flow');
+    assert.equal(atlasWords.hazards.vortex,'VORAGO');
+    assert.equal(atlasWords.squareLanding,'Angulus rectus');
+    assert.equal(atlasWords.glosses.perfect,'PERFECT · MOMENTUM KEPT');
+    assert.equal(atlasWords.held.choose,'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.');
+    context.test.setPlate('night');
+  }
+  // ---- A short run through the Rock actually prints the wall's own words, not the atlas's ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('rock');context.test.newWorld();
+    context.test.handleInput();
+    const run=context.test.world;
+    for(let i=0;i<120*45&&run.state==='playing'&&run.captures<8;i++){
+      if(run.player.node){
+        const aim=run.aim();
+        if(aim&&aim.perfect&&run.player.orbitTime>.12)run.release();
+      }
+      run.update(step);
+      if(i%20===0)context.test.render(step);
+    }
+    const text=inscribed();
+    for(const bad of ['pricked','PRESSURE SET','MOMENTUM KEPT','TIRO','ADEPTUS','MAGISTER','LEFT THE STAR CHART','ANGULUS','VORAGO','nib'])
+      assert(!text.includes(bad),'A rendered Rock run must never print "'+bad+'": '+text);
+    // Leave the suite exactly as it found it: a live run in progress, not a fresh chart still
+    // waiting on its first tap — the blocks after this one assume a 'playing' world already
+    // under way (see the release forced a few blocks down).
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
+  // ---- A cave of your own: the Rock's own persistent record, apart from the atlas's ledger (G3, orbit.rock.v1) ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('rock');
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    assert.deepEqual(JSON.parse(JSON.stringify(context.test.rockCaveRead())),{v:1,runs:[],animals:{}},'A never-written cave reads as a valid, empty-shaped record');
+    assert.equal(context.test.rockBest(),0,'rockBest() is 0 with no recorded runs');
+    // Round-trip: a recorded run and a recorded animal read back exactly as written.
+    context.test.rockCaveRecordRun({progress:12.7,score:340,captures:5});
+    context.test.rockCaveRecordAnimal(3);context.test.rockCaveRecordAnimal(3);
+    let cave=context.test.rockCaveRead();
+    if(!storageBlocked){
+      assert.equal(cave.runs.length,1,'One recorded run appends exactly one entry');
+      assert.equal(cave.runs[0].row,12,'The row is the floor of the run\'s progress');
+      assert.equal(cave.runs[0].score,340);assert.equal(cave.runs[0].hands,5,'hands is the run\'s captures');
+      assert(Number.isFinite(cave.runs[0].at)&&cave.runs[0].at>0,'Every run carries a timestamp');
+      assert.equal(cave.animals[3],2,'Each completed constellation increments its own animal\'s count');
+      assert.equal(context.test.rockBest(),12,'rockBest() is the deepest recorded row');
+      context.test.rockCaveRecordRun({progress:40.2,score:900,captures:9});
+      assert.equal(context.test.rockBest(),40,'rockBest() tracks a deeper run once one is recorded');
+    }else{
+      // Storage blocked: every call above must have been a silent no-op, never a throw, and the record
+      // must still read back as empty rather than partially written.
+      assert.deepEqual(JSON.parse(JSON.stringify(cave)),{v:1,runs:[],animals:{}},'Blocked storage never actually keeps a written run');
+      assert.equal(context.test.rockBest(),0,'rockBest() reads 0 when storage is blocked');
+    }
+    // Corrupt JSON in the key must never throw, and must read back as an empty record.
+    if(!storageBlocked){
+      saved.set(context.test.ROCK_CAVE_KEY,'{not json');
+      assert.deepEqual(JSON.parse(JSON.stringify(context.test.rockCaveRead())),{v:1,runs:[],animals:{}},'Corrupt JSON yields an empty record, not a throw');
+      assert.equal(context.test.rockBest(),0,'rockBest() reads 0 off a corrupt record');
+      saved.delete(context.test.ROCK_CAVE_KEY);
+      // Runs are capped at the most recent 60: the oldest are dropped first, the newest kept.
+      for(let i=0;i<65;i++)context.test.rockCaveRecordRun({progress:i,score:i,captures:i});
+      cave=context.test.rockCaveRead();
+      assert.equal(cave.runs.length,60,'The cave keeps only the most recent 60 runs');
+      assert.equal(cave.runs[0].row,5,'The oldest runs past the cap are dropped first');
+      assert.equal(cave.runs[cave.runs.length-1].row,64,'The newest run is always kept');
+      saved.delete(context.test.ROCK_CAVE_KEY);
+    }
+    context.test.setPlate(held);
+  }
+  // ---- A Rock run end writes exactly one run to its own cave, and never touches the atlas's ledger ----
+  {
+    const held=context.test.plateName;
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    context.test.setPlate('rock');context.test.newWorld();context.test.handleInput();
+    const run=context.test.world,beforeRuns=context.test.ledgerStat('runs'),beforeLedgerDoc=storageBlocked?null:saved.get(LEDGER_KEY);
+    for(let i=0;i<120*45&&run.state==='playing'&&run.captures<3;i++){
+      if(run.player.node){const aim=run.aim();if(aim&&aim.perfect&&run.player.orbitTime>.12)run.release();}
+      run.update(step);
+    }
+    run.die('THE TORCH GUTTERED');run.player.deadTime=.8;context.test.render(.1);
+    assert.equal(context.test.ledgerStat('runs'),beforeRuns,'A Rock run end must never fold into the atlas\'s ledger');
+    if(!storageBlocked){
+      assert.equal(saved.get(LEDGER_KEY),beforeLedgerDoc,'A Rock run end must never write the atlas\'s ledger to storage');
+      const cave=context.test.rockCaveRead();
+      assert.equal(cave.runs.length,1,'A Rock run end writes exactly one run to its own cave');
+      assert.equal(cave.runs[0].hands,run.captures,'The recorded run keeps the run\'s own captures as hands');
+      assert.equal(cave.runs[0].row,Math.floor(run.progress));
+    }
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
+  // ---- The atlas itself never writes the Rock's own key ----
+  {
+    if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
+    const held=context.test.plateName;
+    context.test.setPlate('night');context.test.newWorld();context.test.handleInput();
+    const run=context.test.world;
+    for(let i=0;i<60&&run.state==='playing';i++)run.update(step);
+    run.die('THE DARK CAUGHT UP');run.player.deadTime=.8;context.test.render(.1);
+    if(!storageBlocked)assert.equal(saved.has(context.test.ROCK_CAVE_KEY),false,'An atlas run must never write orbit.rock.v1');
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
   {
     // Two eras never share a cached entry, and both hit. applyPlate() points `ink` at a plate without
     // clearing the cached artwork, which is exactly what a frame carrying two eras does — so this is the
@@ -839,9 +1060,31 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(let i=0;i<40;i++)context.test.render(step);
     assert(written().includes(held),'A standing instruction stays while its condition holds');
   }
+  // Reaching full charge is a promise the run itself makes (OrbitWorld emits 'charged' the instant the
+  // lap or the top speed is met, exactly once — see src/simulation.js), not a promise about where the
+  // pen manages to fit the note describing it. The standing instruction just checked above is real ink,
+  // held right beside this very orbit, and by the time the charge fills, this seed's chart may also
+  // carry a constellation's name, an observation, or both — none of it wrong to have written, all of it
+  // real lettering the note has to fit beside. inscribe() never prints over other lettering (it goes
+  // unwritten rather than garble the page — see placeInscription in src/inscriptions.js), so on a chart
+  // crowded enough, even a single standing instruction beside a small orbit can leave the solver no
+  // clear ground on a phone-width sheet, and that is a real, intended limit, not a bug to catch here.
+  // What must always be true is checked by watching the emission itself: `run.emit` is nothing but the
+  // callback OrbitWorld was built with (see the constructor), reassigned for the span of this loop so
+  // every event is both recorded and still passed on for the rest of this fixture to see, exactly as if
+  // nothing had been watching.
+  let chargedEvent=null;const passThrough=run.emit;
+  run.emit=(type,e)=>{if(type==='charged')chargedEvent=e;passThrough(type,e);};
   while(run.state==='playing'&&run.charge()<1){run.update(step);context.test.render(step);}
-  assert.equal(run.charge(),1);assert(/FULL CHARGE|MAX SPEED/.test(inscribed()),inscribed());
-  assert(/FULL CHARGE|MAX SPEED/.test(element('inscribed').textContent),'Every inscription is spoken as it is written');
+  run.emit=passThrough;
+  assert.equal(run.charge(),1);
+  assert(chargedEvent,'Reaching full charge must always announce itself, whatever the sheet has room to print');
+  // When the sheet did have clear ground for the note, it must say the right thing and be spoken aloud
+  // too — checked here, not required, since a crowded chart is free to leave it unwritten (above).
+  if(/FULL CHARGE|MAX SPEED/.test(inscribed())||/FULL CHARGE|MAX SPEED/.test(element('inscribed').textContent)){
+    assert(/FULL CHARGE|MAX SPEED/.test(inscribed()),inscribed());
+    assert(/FULL CHARGE|MAX SPEED/.test(element('inscribed').textContent),'Every inscription is spoken as it is written');
+  }
   events['window:blur']();run.update(1);assert.equal(run.charge(),1);context.test.handleInput();
   const shortcut=run.player.node.shortcutId;
   for(let i=0;i<120*10&&run.state==='playing'&&run.player.node;i++){
@@ -1354,6 +1597,28 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(replayed.observations.map(o=>o.key).sort().join(),live.observations.map(o=>o.key).sort().join(),'A replayed run must earn the same observations: '+width+'x'+height);
     assert(Math.abs(replayed.player.x-live.player.x)<1e-6&&Math.abs(replayed.player.y-live.player.y)<1e-6,'A replayed run must land in the same place: '+width+'x'+height);
     assert(replayed.nodes.length>live.nodes.length,'An unpruned replay must keep more of the chart than the darkness left the live run holding: '+width+'x'+height);
+    // chasmsOn rides the log exactly as offerDifficulty and varyOpening already do (see replayRun() in
+    // src/replay.js): a log carrying it must deal identical chasms and reach the identical outcome on
+    // a second, independent rebuild, and an older log that predates the field (chasmsOn undefined)
+    // must still replay exactly as it always did — no chasm generated for want of the flag.
+    const chasmLog={...log,chasmsOn:true};
+    const chasmReplayA=context.test.replayRun(chasmLog),chasmReplayB=context.test.replayRun(chasmLog);
+    assert.equal(chasmReplayA.state,'dead','A chasm-flagged replay must still reach an end: '+width+'x'+height);
+    assert.equal(chasmReplayA.reason,chasmReplayB.reason,'The same log with chasmsOn set must reproduce the same cause of death: '+width+'x'+height);
+    assert.equal(chasmReplayA.score,chasmReplayB.score,'The same log with chasmsOn set must reproduce the same score: '+width+'x'+height);
+    assert(Math.abs(chasmReplayA.player.x-chasmReplayB.player.x)<1e-6&&Math.abs(chasmReplayA.player.y-chasmReplayB.player.y)<1e-6,'The same log with chasmsOn set must reproduce the same final position: '+width+'x'+height);
+    assert.equal(chasmReplayA.chasms.length,chasmReplayB.chasms.length,'The same log with chasmsOn set must reproduce the same chasms');
+    assert.equal(context.test.replayRun(log).chasms.length,0,'A log that predates chasmsOn (undefined) must still replay with none generated: '+width+'x'+height);
+    // relightOn rides the log the same way: a run flown with it set must reproduce identically on a
+    // second, independent rebuild — the refill is a pure function of the fixed-step ticks and the
+    // hazards each one already deals, so nothing about it can diverge between two rebuilds of one log.
+    const relightLog={...log,relightOn:true};
+    const relightReplayA=context.test.replayRun(relightLog),relightReplayB=context.test.replayRun(relightLog);
+    assert.equal(relightReplayA.state,'dead','A relight-flagged replay must still reach an end: '+width+'x'+height);
+    assert.equal(relightReplayA.reason,relightReplayB.reason,'The same log with relightOn set must reproduce the same cause of death: '+width+'x'+height);
+    assert.equal(relightReplayA.score,relightReplayB.score,'The same log with relightOn set must reproduce the same score: '+width+'x'+height);
+    assert(Math.abs(relightReplayA.player.x-relightReplayB.player.x)<1e-6&&Math.abs(relightReplayA.player.y-relightReplayB.player.y)<1e-6,'The same log with relightOn set must reproduce the same final position: '+width+'x'+height);
+    assert.equal(relightReplayA.player.ink,relightReplayB.player.ink,'The same log with relightOn set must reproduce the same final ink charge: '+width+'x'+height);
     // ---- The review: a free-scrolling camera over that same, unpruned replay ----
     context.test.showEnd();
     assert.equal(context.test.reviewing,false,'The colophon alone must not start a review: '+width+'x'+height);
@@ -1425,6 +1690,7 @@ if(!isMainThread){
     if(workerData.script)script=workerData.script;
     let result;
     if(task==='route60')result=taskRoute60();
+    else if(task==='chasmRoute60')result=taskChasmRoute60();
     else if(task==='detourDeep')result=taskDetourDeep();
     else if(task==='sling60')result=taskSling60();
     else if(task==='variedOpening')result=taskVariedOpening();
@@ -1438,7 +1704,7 @@ if(!isMainThread){
 
 // ---------- the driver: bundle once, fire every heavy block into a worker immediately, then run every
 // fast sequential check below on the main thread while that work runs alongside it ----------
-// `--quick` (npm run test:quick) leaves out the seeded playthroughs — the four sixty-flight loops above
+// `--quick` (npm run test:quick) leaves out the seeded playthroughs — the five sixty-flight loops above
 // and the long pressure and rusher pilots at the end — and boots two of the seven page scenarios
 // instead of all of them, which together are nearly all of the suite's wall time. Every fixture and
 // every generation sweep still runs. The playthroughs read nothing but the simulation slice of
@@ -1488,6 +1754,7 @@ function runtimeLayout(params){return runInWorker('runtime',{script,simulation,p
 // results are actually needed, letting them run on worker threads alongside the sequential checks.
 const playthrough=task=>quick?Promise.resolve({}):runInWorker(task,{simulation});
 const pRoute=playthrough('route60');
+const pChasmRoute=playthrough('chasmRoute60');
 const pDetourDeep=playthrough('detourDeep');
 const pSling=playthrough('sling60');
 const pVaried=playthrough('variedOpening');
@@ -1539,6 +1806,169 @@ assert(!/ceilingPlate/.test(script),'No code may ask whether the plate is the Ce
 assert.equal(segmentCircle(-100,0,100,0,0,0,10),.45,'Swept collision must detect fast crossing');
 assert.equal(segmentCircle(-100,20,100,20,0,0,10),null);
 assert.equal(segmentCircle(0,0,100,0,0,0,10),0);
+
+// ---------- The chasm: a capsule, era I's own hazard ----------
+// segmentCapsuleTime is the swept test flightStep uses for a chasm: a moving point against a fixed
+// segment with a half-width, in place of segmentCircle's moving point against a fixed centre.
+{
+  // A capsule lying along y=0 from x=-50 to x=50, half-width 10: a flight crossing it head-on from
+  // above must be caught at the fraction of its step where it first comes within that half-width,
+  // exactly as segmentCircle reports a fraction for a circle.
+  assert(Math.abs(segmentCapsuleTime(0,-100,0,100,-50,0,50,0,10)-.45)<1e-6,'A capsule is crossed exactly as its circle equivalent would be, straight on');
+  // Passing well clear of the whole capsule, including its rounded reach past either end, never hits.
+  assert.equal(segmentCapsuleTime(-200,50,200,50,-50,0,50,0,10),null,'A flight that never nears the capsule is never caught');
+  // A flight already inside the half-width at the very start of the step is caught at t=0.
+  assert.equal(segmentCapsuleTime(0,0,0,50,-50,0,50,0,10),0,'A flight starting inside the capsule is caught immediately');
+  // A grazing flight parallel to a long capsule, offset by exactly its half-width, must not be
+  // reported as crossing it — a flight lying exactly along a segment's own length has nothing to
+  // enter, unlike a straight line crossing it, so the convex bisection must not mis-fire tangent to it.
+  assert.equal(segmentCapsuleTime(-60,10.5,60,10.5,-50,0,50,0,10),null,'A flight passing just outside a long capsule\'s width is never caught');
+  // segmentSegmentDist is the placement-time check: zero where two segments actually cross, and
+  // otherwise the true minimum distance between them, achieved at an endpoint.
+  assert.equal(segmentSegmentDist(-10,-10,10,10,-10,10,10,-10),0,'Crossing segments are zero apart');
+  assert.equal(segmentSegmentDist(0,0,10,0,0,5,10,5),5,'Two parallel segments are exactly their offset apart');
+}
+
+// ---------- The chasm: generation, fairness, and lethality ----------
+{
+  // The flag defaults off, and off it must generate nothing at all, however many rows are dealt —
+  // proof that mere presence of the machinery never leaks into a plate that never turns it on.
+  const off=new OrbitWorld(9001,440,860);off.keepAll=true;
+  for(let k=0;k<60;k++)off.generateRow();
+  assert.equal(off.chasms.length,0,'chasmsOn defaults off: no chasm is ever generated without it');
+  // A separate stream (this.chasmRandom) means turning chasms on must never perturb the ordinary
+  // course: the same seed must deal the identical nodes and hazards whether the flag is on or off.
+  const on=new OrbitWorld(9001,440,860,()=>{},false,false,false,true);on.keepAll=true;
+  for(let k=0;k<60;k++)on.generateRow();
+  assert(on.chasms.length>0,'chasmsOn: chasms actually appear over 60 rows');
+  assert(on.chasms.every(c=>c.row>=5),'No chasm may be generated before row 5');
+  assert.equal(off.nodes.length,on.nodes.length,'Chasms on or off, the same seed deals the same number of nodes');
+  for(let i=0;i<off.nodes.length;i++){
+    assert.equal(off.nodes[i].x,on.nodes[i].x,'Chasms on or off, node '+i+' sits at the same x');
+    assert.equal(off.nodes[i].y,on.nodes[i].y,'Chasms on or off, node '+i+' sits at the same y');
+  }
+  assert.equal(off.hazards.length,on.hazards.length,'Chasms on or off, the same seed deals the same number of hazards');
+  for(let i=0;i<off.hazards.length;i++)assert.equal(off.hazards[i].x,on.hazards[i].x,'Chasms on or off, hazard '+i+' sits at the same place');
+  // Generation stays bounded exactly as every other endless array does: pruned by update(), never
+  // held onto past the floor's own reach.
+  const bounded=new OrbitWorld(9002,440,860,()=>{},false,false,false,true);bounded.start();
+  let sawChasm=false;
+  for(let i=0;i<120*400&&bounded.state==='playing'&&bounded.progress<48;i++){
+    if(bounded.player.node){
+      const aim=bounded.aim();
+      if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(bounded.progress)+1&&(aim.perfect||bounded.player.orbitSweep>Math.PI*3)&&bounded.player.orbitTime>.12&&(bounded.player.node.type!=='sling'||bounded.charge()===1))bounded.release();
+    }
+    bounded.update(step);
+    if(bounded.chasms.length)sawChasm=true;
+    assert(bounded.chasms.length<6,'Chasm generation must stay bounded exactly as hazard generation does');
+  }
+  assert(sawChasm,'A bounded run long enough to reach row 48 must have carried at least one chasm');
+}
+
+// A chasm applies no force at all: bendVelocity must leave a flight passing through its reach
+// untouched, unlike a real hazard's field.
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:12};
+  const p={x:0,y:0,vx:150,vy:0};const before={vx:p.vx,vy:p.vy};
+  const turn=bendVelocity(p,[],step);
+  assert.equal(turn,0);assert.equal(p.vx,before.vx);assert.equal(p.vy,before.vy);
+}
+
+// Crossing a chasm in free flight kills with its own reason; a shield spends itself and deflects
+// exactly as a lethal hazard core does (see OrbitWorld.chasmHit/hazardHit).
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(1,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.nodes=[];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.x=0;p.y=-200;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'dead');assert.equal(w.reason,'FELL INTO THE CHASM','An unshielded crossing dies with the chasm\'s own reason');
+}
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(2,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.nodes=[];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.shielded=true;p.x=0;p.y=-200;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing'&&p.shielded;i++)w.update(step);
+  assert.equal(w.state,'playing','A shielded crossing survives the chasm exactly as it survives a lethal hazard core');
+  assert.equal(p.shielded,false,'The shield is spent, once, on the crossing');
+}
+// Orbiting must never touch a chasm at all — generation's own guarantee — checked directly here by
+// holding an orbit whose ring is deliberately drawn to pass through one, to prove the run-loop itself
+// never fires a chasm hit while p.node is set (flightStep, which is what tests for a chasm, is only
+// ever called from the free-flight branch of update()).
+{
+  const c={x0:-100,y0:0,x1:100,y1:0,w:10};
+  const w=new OrbitWorld(3,440,860,()=>{},false,false,false,true);
+  w.chasms=[c];w.hazards=[];w.ensureAhead=()=>{};w.state='playing';
+  const n=w.player.node;n.x=0;n.y=0;n.baseX=0;n.baseY=0;n.r=10;n.cap=13;w.nodes=[n];
+  w.player.rad=10;w.player.speed=150;w.player.dir=1;w.positionPlayer();
+  for(let i=0;i<600&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'playing','Holding an orbit never triggers a chasm, whatever the ring is drawn across');
+}
+
+// aim() must refuse a release whose straight path would cross a chasm, exactly as it refuses one
+// that would cross a lethal hazard's core. launchVelocity() reads nothing but p.vx/p.vy, so the
+// launch ray can be set directly rather than reconstructed from an orbit's angle and radius.
+{
+  const w=new OrbitWorld(4,440,860);w.start();
+  w.makeNode(0,-400,54,1,'still');
+  const p=w.player;p.x=0;p.y=0;p.vx=0;p.vy=-200;
+  w.chasms=[{x0:-200,y0:-200,x1:200,y1:-200,w:20}];
+  assert.equal(w.aim(),null,'A straight path crossing a chasm must not be offered as an aim');
+  w.chasms=[];
+  assert(w.aim(),'The same release with the chasm removed is offered normally');
+}
+
+// ---------- Relighting at the Flare: era-only, gated exactly like chasmsOn (G2) ----------
+{
+  // relightOn defaults off: held in a Flare's outer field, in flight, for a good while, the charge
+  // must never move — the flag is inert exactly like newtonOn and chasmsOn before this era sets it.
+  const h={x:0,y:0,r:100,kind:'flare'},mid=(hazardCore(h)+gravityRadius(h))/2;
+  const off=new OrbitWorld(101,440,860);
+  off.hazards=[h];off.nodes=[];off.chasms=[];off.ensureAhead=()=>{};off.state='playing';
+  const op=off.player;op.node=null;op.ink=.5;
+  for(let i=0;i<200&&off.state==='playing';i++){op.x=mid;op.y=0;op.vx=0;op.vy=0;off.update(step);}
+  assert.equal(off.state,'playing','A traveller held in a Flare\'s outer field is never itself in danger');
+  assert(op.ink<=.5+1e-9,'relightOn defaults off: the charge never refills inside a Flare\'s field');
+}
+{
+  // relightOn set: held in the same band, the charge refills, and clamps at 1 rather than running past it.
+  const h={x:0,y:0,r:100,kind:'flare'},mid=(hazardCore(h)+gravityRadius(h))/2;
+  const on=new OrbitWorld(102,440,860,()=>{},false,false,false,false,true);
+  on.hazards=[h];on.nodes=[];on.chasms=[];on.ensureAhead=()=>{};on.state='playing';
+  // Started a hair above empty rather than at it: hitting dry exactly is its own, older death (THE NIB
+  // RAN DRY, checked before this rule ever runs), not a case relighting is meant to answer.
+  const p=on.player;p.node=null;p.ink=.01;
+  for(let i=0;i<400&&on.state==='playing';i++){p.x=mid;p.y=0;p.vx=0;p.vy=0;on.update(step);}
+  assert.equal(on.state,'playing','Refilling in the field must not itself endanger the traveller');
+  assert.equal(p.ink,1,'relightOn: the charge refills inside the band and clamps at 1');
+}
+{
+  // The lethal core still kills exactly as it does without the flag: relighting only ever answers the
+  // outer field, never the core a straight crossing dies to.
+  const h={x:0,y:0,r:100,kind:'flare'};
+  const w=new OrbitWorld(103,440,860,()=>{},false,false,false,false,true);
+  w.hazards=[h];w.nodes=[];w.chasms=[];w.ensureAhead=()=>{};w.state='playing';
+  const p=w.player;p.node=null;p.ink=.5;p.x=0;p.y=-400;p.vx=0;p.vy=400;
+  for(let i=0;i<400&&w.state==='playing';i++)w.update(step);
+  assert.equal(w.state,'dead','relightOn: the core still kills a straight crossing');
+  assert.equal(w.reason,hazardKind(h).loss,'relightOn: the core kills with its own, unchanged reason');
+}
+{
+  // No refill while orbiting, even when the ring sits inside a Flare's own band: an orbit still earns
+  // only the ordinary per-second gain the node it holds always paid, never the relight rate as well.
+  const h={x:0,y:150,r:100,kind:'flare'};
+  const w=new OrbitWorld(104,440,860,()=>{},false,false,false,false,true);
+  w.hazards=[h];w.chasms=[];w.ensureAhead=()=>{};w.state='playing';
+  const n=w.player.node;n.x=0;n.y=0;n.baseX=0;n.baseY=0;n.r=50;n.cap=60;n.amp=0;n.type='still';w.nodes=[n];
+  const p=w.player;p.rad=50;p.dir=1;p.speed=150;p.angle=Math.PI/2;p.ink=.5;p.orbitSweep=0;p.orbitTime=0;p.tangentCapture=true;
+  w.positionPlayer();
+  const d=Math.hypot(p.x-h.x,p.y-h.y);
+  assert(d>hazardCore(h)&&d<gravityRadius(h),'fixture must actually hold its orbit inside the Flare\'s own band');
+  w.update(step);
+  assert(Math.abs(p.ink-Math.min(1,.5+INK_ORBIT_GAIN*step))<1e-9,'relightOn: an orbit inside a Flare\'s field earns only the ordinary orbit gain, never relight on top of it');
+}
 
 // Tiro's wider pressure asks less precise timing to land a smooth tangent transfer: the windowMult
 // argument widens the band around the target's rim that counts as perfect, and the guide and real
@@ -1959,7 +2389,7 @@ const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=pa
 // it always was.
 {
   const seen=[];
-  const w=new OrbitWorld(21,440,860,(type,e)=>{seen.push(type);},false,false,false,5);w.start();
+  const w=new OrbitWorld(21,440,860,(type,e)=>{seen.push(type);},false,false,false,false,false,5);w.start();
   // The suite's own tangent-seeking pilot: release the instant the guide reports a clean transfer.
   for(let i=0;i<120*40&&w.state==='playing';i++){
     const aim=w.aim();
@@ -2155,6 +2585,7 @@ for(const choice of ['relaxed','classic','hardcore']){
 
 
 const {totalCaptures,perfects,maxNodes,maxHazards}=await pRoute;
+const {totalChasms}=await pChasmRoute;
 const {chartCompletions,deepCharts,deepRows,deepFiguresSize}=await pDetourDeep;
 
 // The catalogue is fixed by the run seed and exhausts itself before repeating.

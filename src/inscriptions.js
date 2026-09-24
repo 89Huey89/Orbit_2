@@ -323,10 +323,15 @@ function drawInscription(g){
   drawLeader(box.ax,box.ay,box.rad);
   if(g.extraAnchors)for(const e of g.extraAnchors){const a=inscriptionAnchor(e);drawLeader(sx(a.x),sy(a.y),a.r*scale);}
   ctx.textAlign='center';ctx.font=inscriptionFont(g.tone,size);
-  ctx.fillStyle=`rgba(${caps?ink.inscription.caps:ink.inscription.note},${caps?.94:.82})`;
-  for(let i=0;i<g.lines.length;i++){
-    const start=.22+i/g.lines.length*.78,end=.22+(i+1)/g.lines.length*.78;
-    writeText(ctx,g.lines[i],box.cx,box.top+size+i*step,revealSpan(t,start,end),{size,plain:true});
+  // A plate whose lettering is not ink names the passes it is struck in instead — the rock cuts it, a
+  // dark shadow a hair below and a pale core on the line — and every pass is one full writing of it.
+  const passes=(handFor('inscriptionInk')||(()=>null))(caps)||[{rgb:caps?ink.inscription.caps:ink.inscription.note,alpha:caps?.94:.82,dx:0,dy:0}];
+  for(const p of passes){
+    ctx.fillStyle=`rgba(${p.rgb},${p.alpha})`;
+    for(let i=0;i<g.lines.length;i++){
+      const start=.22+i/g.lines.length*.78,end=.22+(i+1)/g.lines.length*.78;
+      writeText(ctx,g.lines[i],box.cx+p.dx*scale,box.top+size+i*step+p.dy*scale,revealSpan(t,start,end),{size,plain:true});
+    }
   }
   // An announcement is ruled underneath, as a plate rules a legend; an instruction is left unruled.
   const ruled=caps?revealSpan(t,.88,1):0;
