@@ -10,7 +10,7 @@
 const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1',COSMETICS_KEY='orbit.cosmetics.v1',INITIALS_KEY='orbit.initials.v1';
 function emptyLedger(){
   return {captures:0,perfects:0,bestFlow:0,constellations:{},bestRow:0,deepestChapter:0,deepestHardcoreChapter:0,
-    grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,telescopicCaptures:0,runs:{},playSeconds:0,personalBests:{},observations:{},allFourInOneRun:false};
+    grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,telescopicCaptures:0,runs:{},playSeconds:0,personalBests:{},observations:{},deaths:{},allFourInOneRun:false};
 }
 const countOf=value=>{const n=Number(value);return Number.isFinite(n)&&n>0?Math.floor(n):0;};
 function cleanCounts(raw){
@@ -43,6 +43,9 @@ function readLedger(){
   out.playSeconds=Math.max(0,Number(raw.playSeconds)||0);
   out.constellations=cleanCounts(raw.constellations);out.runs=cleanCounts(raw.runs);
   out.observations=cleanCounts(raw.observations);out.personalBests=cleanCounts(raw.personalBests);
+  // How each run ended, keyed by the loss the simulation reports. A document written before it was kept
+  // simply has none, which reads as an empty map rather than as a shape to migrate.
+  out.deaths=cleanCounts(raw.deaths);
   out.allFourInOneRun=raw.allFourInOneRun===true;
   // A lingering v1 document is promoted to v2 the moment it is read forward, so the rename is
   // written down once rather than re-migrated (and re-saved) on every load.
@@ -74,7 +77,7 @@ function ledgerStat(name,l=ledger){
 // Counted from the simulation's events, zeroed whenever it is folded in, so a second fold after a
 // page has been hidden and resumed adds only what happened since the first.
 let runTally=freshTally(),runCounted=false,runSeconds=0;
-function freshTally(){return {captures:0,perfects:0,grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,telescopicCaptures:0,constellations:{},observations:{}};}
+function freshTally(){return {captures:0,perfects:0,grazes:0,shieldsSpent:0,reflectorsSpent:0,dawnsSpent:0,maxSpeedSlings:0,inkwellsFound:0,badAngles:0,telescopicCaptures:0,constellations:{},observations:{},deaths:{}};}
 function resetRunTally(){runTally=freshTally();runCounted=false;runSeconds=0;}
 function tally(key,by=1){runTally[key]+=by;}
 function tallyMap(map,key){if(!key)return;runTally[map][key]=(runTally[map][key]||0)+1;}
@@ -89,6 +92,7 @@ function ledgerCommit(){
   ledger.maxSpeedSlings+=runTally.maxSpeedSlings;ledger.inkwellsFound+=runTally.inkwellsFound;ledger.badAngles+=runTally.badAngles;
   ledger.telescopicCaptures+=runTally.telescopicCaptures;
   foldCounts(ledger.constellations,runTally.constellations);foldCounts(ledger.observations,runTally.observations);
+  foldCounts(ledger.deaths,runTally.deaths);
   // A Newtonian run keeps its own bucket regardless of which pressure rode under it, exactly as the
   // daily plate keeps its own regardless of always riding at Adeptus.
   const key=dailyOn?'daily':world.newtonOn?'newton':difficulty;

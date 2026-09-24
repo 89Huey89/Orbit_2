@@ -80,6 +80,11 @@ const PERFECT_MULT={relaxed:1.35,classic:1,hardcore:1};
 // Tiro widens the whole forgiving capture window a body carries beyond its drawn rim, not just the
 // narrower perfect band within it. Adeptus and Magister keep the drawn window.
 const CAP_MULT={relaxed:1.3,classic:1,hardcore:1};
+// How far either side of a tap a release may be let go from (see RELEASE_GRACE in simulation.js). Adeptus
+// forgives the glass its own noise and no more; Tiro forgives a little of the hand as well; Magister
+// forgives nothing, so a release there is flown exactly where the screen reported the finger. Kept as
+// plain numbers so scripts/probe.mjs can fly each pressure from this same table.
+const RELEASE_GRACE_BY={relaxed:.03,classic:.012,hardcore:0};
 let difficulty=storage.get('orbit.difficulty.v1','classic');
 if(!(difficulty in DARKNESS_MULT))difficulty='classic';
 // Newton mode: a standing preference like the pressure choice rather than a one-visit special like
@@ -162,7 +167,7 @@ function recordBest(score){
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
 function setDifficulty(value){if(dailyOn)return;difficulty=value;if(!plateOwns('score'))storage.set('orbit.difficulty.v1',difficulty);syncDifficulty();}
-function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];}
+function syncDifficulty(){if(!world)return;world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];}
 function syncDaily(){
   game.classList.toggle('daily',dailyOn);
   $('daily').setAttribute('aria-pressed',String(dailyOn));
