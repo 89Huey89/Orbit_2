@@ -138,6 +138,8 @@ defineVoice('ceiling',{
   tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',won:'Twelve hours, twelve gates, and the sun is born again from the sky.'},
   chapters:CEILING_HOURS,
   chapterRows:CEILING_HOUR_ROWS,
+  // The Journey's milestones are the night's four watches, three of its twelve hours each.
+  milestones:['HOURS I TO III','HOURS IV TO VI','HOURS VII TO IX','HOURS X TO XII'],
   goalRow:CEILING_DAWN_ROW,
   won:'Dawn. The sun is born from the sky with a score of {score}. Tap to sail the night again or return to the atlas.',
   chapterSaid:'Hour {numeral}. {name}.',
@@ -2331,3 +2333,13 @@ defineHand('ceiling',{
   // the one time the night is allowed to resolve, because it is the one moment that is not a struggle.
   dawn(a){a.drum(78,0,.5);a.sistrum();CEILING_SCALE.forEach((f,i)=>a.pluck(f,1.6,.15+i*.1,.24));for(const [f,d] of [[146.83,.2],[220,.5],[293.66,.8],[440,1.2]])a.tone(f,2.4,d,.1,'sine');setTimeout(()=>a.sistrum(),1300);}
 });
+
+// The Journey's milestones under Nut (LINKING.md): the night's four watches as four groups of three hour
+// stars, each star painted yellow as the knowledge banked reaches its hour and until then laid in the
+// ground's own paler blue, a place on the plaster not yet painted — the star the ceiling sets for an
+// hour, not a new sign.
+defineHand('ceiling',{journeyMark(g,w,h,m){
+  const step=Math.min(64,w/(m.of+.3)),r=Math.min(7.5,h*.12);
+  for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,lit=i<m.open?3:i===m.open?Math.floor(m.toward*3):0;
+    for(let s=0;s<3;s++){const x=cx+(s-1)*r*2.3,y=h/2+(s===1?-r*.8:r*.35);ceilingStar(g,x,y,r,s<lit?CEILING_PALETTE.yellow:CEILING_PALETTE.lime,1,i*3+s+1);}}
+}});

@@ -2264,6 +2264,7 @@ defineVoice('rock',{
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
+  milestones:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   // A line for each chamber as it opens, set on the wall as a curator's note beside the hand. Each says
   // only what is actually known of the place it borrows its name from.
   chapterLines:[
@@ -2289,7 +2290,13 @@ defineVoice('rock',{
     'At the Abri du Poisson a salmon a metre long is carved into the roof of the shelter.'
   ],
   opening:'The hand is raised. Tap to release. Follow the ochre dots for a clean landing. Circle a bright light to gain speed and to fill the hand. Every stroke spends ochre by the distance carried; hold a light to fill it again.',
+  // The Chronicle ends where the fourth chamber does: at Newgrange the midwinter sunrise comes down the
+  // passage to the back of the chamber, which is the one thing the tomb is known to have been built for.
+  // Read Endless, the wall goes on as it always did (LINKING.md).
+  goalRow:32,
+  endless:true,
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
+  won:'Midwinter. The sunrise comes down the passage into the chamber. Tally {score}. Strike again, or return to the atlas.',
   unrecorded:'A PREVIEW · NOT KEPT',
   newRecord:'A NEW DEPTH',
   // The wall's own names for the three fields the atlas prices as a vortex, a flare and a wind-head
@@ -2312,7 +2319,8 @@ defineVoice('rock',{
     'THE NIB RAN DRY':'THE OCHRE RAN OUT',
     'FELL INTO THE CHASM':'THE WALL FELL AWAY',
     'DRAWN INTO A VORTEX':'DRAWN DOWN THE SHAFT',
-    'SEARED BY A SUNSPOT FLARE':'BURNED AT THE FLARE'
+    'SEARED BY A SUNSPOT FLARE':'BURNED AT THE FLARE',
+    'THE SUN ROSE':'THE MIDWINTER SUN CAME IN'
   },
   // Every named feat the simulation can record, captioned in the curator's own gloss rather than the
   // atlas's Latin (see OBSERVATIONS in simulation.js for the keys this table must cover).
@@ -2330,11 +2338,14 @@ defineVoice('rock',{
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
   chrome:{
-    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The hand rests.',pauseTitle:'The torch waits.',
+    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The hand rests.',endTitleWon:'The sun reaches the chamber.',
+    endLore:'The torch is out. What you marked stays on the rock for the next hand.',endLoreWon:'The sun came in where it was meant to. What you marked stays on the rock for the next hand.',
+    pauseTitle:'The torch waits.',
     pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',
     pauseLeave:'LEAVE THE WALL',pauseLabel:'Rest the hand',gameLabel:'The Rock, a playable Era I preview',
     canvasLabel:'The Rock. Guide a hand of ochre across torchlit stone through painted lights. Tap or press Space to release.',
-    eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to strike again',endActionWon:'Tap to strike again',
+    eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to strike again',endActionWon:'Tap to go in again',
+    readings:{chronicle:'TO NEWGRANGE',endless:'THE ENDLESS WALL',label:'The way: {reading}. Tap to change it'},
     statCaptures:'Lights',statPerfects:'Clean',statFlow:'Best rhythm',statRow:'Depth',
     reduceMotion:'STILL THE DUST',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster run',
     instructions:{head:'HOW TO MARK IT',rules:['Tap to release the hand of ochre.','Circle a light to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first light — {pressures}.']}
@@ -2439,3 +2450,14 @@ function invalidateRockArt(){
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;rockWallRelief=null;rockRelitTile=false;rockFaceVersion++;
 }
+
+// The Journey's milestones on this wall (LINKING.md): the four chambers as four rings of eight pressed dots,
+// a dot for each row a chamber spans, pressed in red ochre as the knowledge banked reaches it and left as a
+// faint charcoal mark until then; a chamber whose ring is closed has a pale dab struck at its heart. It is
+// the Rock's own ring language, the one mark on this wall that says where an observation is possible.
+defineHand('rock',{journeyMark(g,w,h,m){
+  const P=ink.rock,step=Math.min(58,w/(m.of+.4)),r=Math.min(13,h*.2);
+  for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,cy=h/2,lit=i<m.open?8:i===m.open?Math.floor(m.toward*8):0;
+    for(let d=0;d<8;d++){const a=-Math.PI/2+d/8*TAU,on=d<lit;rockDot(g,cx+Math.cos(a)*r,cy+Math.sin(a)*r,on?2.6:2.1,on?P.redOchre:P.manganese,on?.95:.3,i*8+d+900);}
+    if(i<m.open)rockDot(g,cx,cy,4.2,P.kaolin,.9,i+960,true);}
+}});

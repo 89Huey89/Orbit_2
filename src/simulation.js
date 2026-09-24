@@ -73,6 +73,11 @@ const DARKNESS_LEAD_PER_SKIP = 55, DARKNESS_LEAD_CAP = 260, DARKNESS_LEAD_DECAY 
 // above anything a burst of skipped orbits can bank, since this is the one credit that has to be enough
 // on its own rather than adding to whatever the run already had in hand.
 const DARKNESS_RESCUE_DROP = 230, DARKNESS_RESCUE_GRACE = 4, DARKNESS_RESCUE_LEAD = 420;
+// A change of medium inside a run (JOURNEY.md §1.3; the Lens's registers first) holds the dark still for
+// as long as the new medium takes to grow out from the body it starts at, and a little over, so the one
+// moment the sheet is busiest is never the moment the boundary closes. Input is never held: the next tap
+// is an ordinary release, and a release during the change only leaves it growing behind the traveller.
+const TRANSITION_GRACE = 3;
 // The chart is drawn for a pace rather than for a row count, and every transfer on it is cut to
 // take about the same time to fly. As the early slingshots put a faster pace within reach the
 // gulfs open to match, so speed earned on a star buys distance instead of merely arriving sooner.
@@ -467,6 +472,9 @@ class OrbitWorld {
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
     this.nodes = []; this.hazards = []; this.nebulas = []; this.chasms = []; this.row = 0; this.serial = 0;
     this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;this.darknessLead=0;
+    // The rows at which the medium changes under the run, set by the plate after construction ([] for none),
+    // and how many of them the run has crossed.
+    this.transitionRows=[];this.transitionsCrossed=0;
     // Figure order and nebula placement use their own streams so the main course
     // generation for a seed is unaffected by them.
     const shuffle=seeded((seed*2654435761>>>0)^0x9e3779b9);
@@ -916,6 +924,14 @@ class OrbitWorld {
       }
     }
     for(const chart of this.constellations){if(!chart.completed&&this.progress>=chart.entry.row+4)chart.expired=true;}
+    // The first landing at or past a transition row is where the medium changes: the body landed on is the
+    // one the new medium grows out from. It is a landing, so a replay of the same releases crosses it at the
+    // same moment on the same body.
+    const crossing=this.transitionRows[this.transitionsCrossed];
+    if(crossing!==undefined&&n.row>=crossing){
+      this.transitionsCrossed++;this.darknessGrace=Math.max(this.darknessGrace,TRANSITION_GRACE);
+      this.emit('transition',{n,x:n.x,y:n.y,index:this.transitionsCrossed-1,time:this.time});
+    }
     // A goal-row plate's only way to end is by reaching it, and only a landing moves progress, so this
     // is the one place that can ever cross the line. die() below still does the run-over bookkeeping
     // every other ending shares (state, reason, deadTime) — only the shake and the event it fires differ.

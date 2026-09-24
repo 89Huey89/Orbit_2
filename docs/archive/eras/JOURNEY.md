@@ -497,7 +497,7 @@ the player timing, it has failed regardless of how it looks. Record the outcome 
 
 **What is built.** The plate-declares-itself seam (§6.1), `eraId()` and `data-era`, the Ceiling fully
 entsandboxed (L7, nought reads left), the caches keyed, and the singleton-to-map conversions. **What is
-not:** `src/journey.js`, the persisted document, `runMode`, the milestone table, the Free Play
+not:** ~~`src/journey.js`, the persisted document, `runMode`~~ (landed, see `LINKING.md`), the milestone table, the Free Play
 re-pointing, and the migrations. Those are the whole of the rest of this stage and none of them exists.
 
 Two corrections to the plan below, both measured rather than argued:
@@ -642,6 +642,8 @@ Decisions this file does not make, and which should not be invented by an implem
 - **The threshold's final value.** §1.6 sets 25 per era from the measurement, which fixes the *shape*
   — five typical runs per era, forty for the ladder. The number itself is re-read off the probe once
   stage 6 is playable and the milestones, not the raw total, are what actually gate an era.
+- *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
+  era's milestones are the chapters its preview is already told in.*
 - **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and
   §1.6 measures the climb in knowledge; whether the milestones *are* the gate with the total merely
   pacing them, or both must be satisfied, is not settled and should be decided in stage 6 against a

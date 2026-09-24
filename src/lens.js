@@ -413,31 +413,29 @@ function lensTile(reg){
 }
 
 // ---------- Where one register gives way to the next ----------
-// The boundary between two registers is a real line on the sheet, between the last row of the one and the
-// first of the next: halfway between the highest body the first register dealt and the lowest the second
-// did. It is found as soon as both are dealt and kept for the run, since earlier rows leave the chart.
-let lensSeamWorld=null,lensSeamY=[null,null];const LENS_SEAM_GAP=120;
-function lensSeams(){
-  if(lensSeamWorld!==world){lensSeamWorld=world;lensSeamY=[null,null];}
-  for(let k=0;k<2;k++){if(lensSeamY[k]!==null)continue;const R=(k+1)*LENS_REG_ROWS;let lo=Infinity,hi=-Infinity;
-    for(const n of world.nodes){if(n.row<R)lo=Math.min(lo,n.y);else hi=Math.max(hi,n.y);}
-    if(lo<Infinity&&hi>-Infinity)lensSeamY[k]=(lo+hi)/2;
-    // Every frame is painted in play, so both sides are always seen together; but a frame can go unpainted (a
-    // background tab, a fast-forwarded capture) while the earlier rows leave, and then the seam is set just
-    // below the lowest body the later register dealt, which is where the halfway line would have fallen.
-    else if(lo===Infinity&&hi>-Infinity&&world.nodes.length)lensSeamY[k]=hi+LENS_SEAM_GAP;}
-  return lensSeamY;
+// The next register does not arrive from an edge: it grows out of the body the run lands on at the first
+// row past each register's last (the simulation's 'transition', at LENS_REG_ROWS and twice that), as a
+// circle round that body widening until it holds the whole sheet — the plate laid over the drawing from
+// the planet outward, then the readout from the planet outward over the plate. This is JOURNEY.md's stage 5
+// tried inside one century first: the medium changes under the run, the body it grows from stays where it
+// is, and nothing waits on the player, who may release while it grows and leave it growing behind them.
+// The dark is held while it does (TRANSITION_GRACE in the simulation). Everything on the sheet is drawn in
+// the register of the ground it stands on, so a body the circle has not reached yet is still the old one.
+const LENS_GROW=1.8;
+let lensGrowWorld=null,lensGrowth=[];
+function lensGrowths(){if(lensGrowWorld!==world){lensGrowWorld=world;lensGrowth=[];}return lensGrowth;}
+function lensTransition(e){const g=lensGrowths();if(g.length<2)g.push({x:e.x,y:e.y,t0:e.time});}
+// How far a register has grown from its body, in world units: nothing before it starts and, once grown,
+// everything, so a body dealt later far up the chart is already in it. Read off the run's own clock, so a
+// pause holds it where it stands.
+function lensReach(g){
+  const t=(world.time-g.t0)/(reducedMotion?.5:LENS_GROW);if(t<=0)return 0;if(t>=1)return Infinity;
+  return t*t*(3-2*t)*Math.hypot(W,H)/scale*1.15;
 }
-// The register a point in the world is drawn in, read off where it stands against those seams.
-function lensRegAtY(y){const s=lensSeams();return s[1]!==null&&y<s[1]?2:s[0]!==null&&y<s[0]?1:0;}
-const lensRegAtScreen=ys=>lensRegAtY((ys-plateShift.y)/scale+world.cameraY);
-// The screen bands each register holds this frame: [register, top, bottom].
-function lensBands(){
-  const s=lensSeams(),y1=s[0]===null?-Infinity:sy(s[0]),y2=s[1]===null?-Infinity:sy(s[1]),out=[];
-  const b0=[Math.max(0,y1),H],b1=[Math.max(0,y2),Math.min(H,y1)],b2=[0,Math.min(H,y2)];
-  if(b0[1]>b0[0])out.push([0,b0[0],b0[1]]);if(b1[1]>b1[0])out.push([1,b1[0],b1[1]]);if(b2[1]>b2[0])out.push([2,b2[0],b2[1]]);
-  return out;
-}
+function lensRegAt(x,y){const gs=lensGrowths();let reg=0;for(let k=0;k<gs.length;k++){const r=lensReach(gs[k]);if(r===Infinity||Math.hypot(x-gs[k].x,y-gs[k].y)<r)reg=k+1;}return reg;}
+// The register a point in the world is drawn in. Callers that know only a height ask at the sheet's middle.
+function lensRegAtY(y,x=0){return lensRegAt(x,y);}
+const lensRegAtScreen=(ys,xs=W/2)=>lensRegAt((xs-W*.5-plateShift.x)/scale,(ys-plateShift.y)/scale+world.cameraY);
 // The margins down both edges count the climb in arcminutes in every register, each in its own manner: an
 // engraved double rule with the Fell's figures at the eyepiece; the plate's own unexposed edge, clear glass
 // with its numbers typed, on the plate; and an instrument axis with row numbers in the card face, off the sensor.
@@ -460,27 +458,23 @@ function lensMargins(reg,top,bot){
       ctx.restore();}}
   ctx.restore();
 }
-// The seam itself. Paper to glass: the plate's lower edge lying on the sheet, a bevel catching the light over
-// a thin shadow cast down onto the paper, with a strip of unexposed emulsion along it. Glass to sensor: the
-// readout's edge, a stair of pixels with a scan line along it.
-function lensSeamMarks(){
-  const P=ink.lens,s=lensSeams();
-  if(s[0]!==null){const y=sy(s[0]);if(y>-20&&y<H+20){ctx.save();
-    const sh=ctx.createLinearGradient(0,y,0,y+14);sh.addColorStop(0,'rgba(60,44,24,.28)');sh.addColorStop(1,'rgba(60,44,24,0)');ctx.fillStyle=sh;ctx.fillRect(0,y,W,14);
-    ctx.fillStyle='rgba(248,248,244,.7)';ctx.fillRect(0,y-7,W,7);
-    ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y-.5);ctx.lineTo(W,y-.5);ctx.stroke();
-    ctx.strokeStyle=`rgba(${P.reseau},.6)`;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(0,y+.4);ctx.lineTo(W,y+.4);ctx.moveTo(0,y-7);ctx.lineTo(W,y-7);ctx.stroke();
-    lensGrot(ctx,'CARTE DU CIEL · ZONE +12° · PLATE No. 1',W-LENS_BAND-6,y-15,8,P.inkBlack,.72,'right');
-    lensFell(ctx,'Sidereus nuncius, 1610 — the eye alone',LENS_BAND+6,y+12,9,P.inkSoft,.7,'left','text','italic');
-    ctx.restore();}}
-  if(s[1]!==null){const y=sy(s[1]);if(y>-20&&y<H+20){ctx.save();
-    const px=Math.max(2,Math.round(3*scale));ctx.fillStyle=`rgb(${P.sensor})`;ctx.beginPath();ctx.moveTo(0,y);
-    for(let x=0;x<=W;x+=px){const st=Math.floor(lensHash(Math.floor(x/px),5,113)*3)*px;ctx.lineTo(x,y+st);ctx.lineTo(x+px,y+st);}ctx.lineTo(W,y-2);ctx.lineTo(0,y-2);ctx.closePath();ctx.fill();
-    const t=reducedMotion?0:world.time,glow=.55+.25*Math.sin(t*2.4);
-    ctx.strokeStyle=`rgba(${P.cyan},${glow.toFixed(3)})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y-2.5);ctx.lineTo(W,y-2.5);ctx.stroke();
-    lensMono(ctx,'READOUT · ROW 0000',W-LENS_BAND-6,y-11,7.5,P.cyan,.85,'right');
-    lensTyped(ctx,'HARVARD STACKS · LAST PLATE 1989',LENS_BAND+6,y+13,8,P.inkBlack,.7,'left');
-    ctx.restore();}}
+// The growing edge itself. Paper to glass: the plate's bevel catching the light over a thin shadow cast
+// out onto the paper, with a strip of unexposed emulsion inside it. Glass to sensor: the readout's dark
+// border with a scan line glowing inside it.
+function lensRim(reg,x,y,R){
+  // Just after it starts the circle is smaller than the edge's own rings, which then stand at nought.
+  const P=ink.lens,at=d=>Math.max(0,R+d);ctx.save();
+  if(reg===1){
+    ctx.strokeStyle='rgba(60,44,24,.22)';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,y,at(+4),0,TAU);ctx.stroke();
+    ctx.strokeStyle='rgba(248,248,244,.7)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,y,at(-3),0,TAU);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,at(0),0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(${P.reseau},.6)`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(x,y,at(-6),0,TAU);ctx.stroke();
+  }else{
+    ctx.strokeStyle=`rgb(${P.sensor})`;ctx.lineWidth=Math.max(3,4*scale);ctx.beginPath();ctx.arc(x,y,at(+1.5),0,TAU);ctx.stroke();
+    const glow=.55+.25*Math.sin((reducedMotion?0:world.time)*2.4);
+    ctx.strokeStyle=`rgba(${P.cyan},${glow.toFixed(3)})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,at(-1.5),0,TAU);ctx.stroke();
+  }
+  ctx.restore();
 }
 // The frontispiece's title mark: Saturn as far as any run on this device has resolved it, above the opening
 // lights and gone once the hand starts; the era's name beneath it in the Fell capitals, and the catalogue.
@@ -515,20 +509,25 @@ function lensTitleMark(){
 }
 // The ground: each register's tile laid in its own band at the camera's rate, a light held over the middle of
 // the sheet where the eye is, the margins, the seams, and on the frontispiece the title.
+function lensGround(reg){
+  const th=LENS_TILE,phase=(((-world.cameraY*scale)%th)+th)%th,tile=lensTile(reg);
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
+  for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));ctx.restore();
+  const lg=ctx.createRadialGradient(W*.5,H*.45,Math.min(W,H)*.12,W*.5,H*.45,Math.max(W,H)*.8);
+  if(reg===0){lg.addColorStop(0,'rgba(255,250,232,.07)');lg.addColorStop(1,'rgba(80,56,24,.16)');}
+  else if(reg===1){lg.addColorStop(0,'rgba(255,255,255,.08)');lg.addColorStop(1,'rgba(40,44,48,.12)');}
+  else{lg.addColorStop(0,'rgba(40,60,90,.06)');lg.addColorStop(1,'rgba(0,0,0,.35)');}
+  ctx.save();ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
+  lensMargins(reg,0,H);
+}
 function lensAtmosphere(){
   plateShift.x=0;plateShift.y=0;
-  const th=LENS_TILE,phase=(((-world.cameraY*scale)%th)+th)%th,bands=lensBands();
-  for(const [reg,top,bot] of bands){const tile=lensTile(reg);
-    ctx.save();ctx.beginPath();ctx.rect(0,top,W,bot-top);ctx.clip();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
-    for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));ctx.restore();
-    ctx.save();ctx.beginPath();ctx.rect(0,top,W,bot-top);ctx.clip();
-    const lg=ctx.createRadialGradient(W*.5,H*.45,Math.min(W,H)*.12,W*.5,H*.45,Math.max(W,H)*.8);
-    if(reg===0){lg.addColorStop(0,'rgba(255,250,232,.07)');lg.addColorStop(1,'rgba(80,56,24,.16)');}
-    else if(reg===1){lg.addColorStop(0,'rgba(255,255,255,.08)');lg.addColorStop(1,'rgba(40,44,48,.12)');}
-    else{lg.addColorStop(0,'rgba(40,60,90,.06)');lg.addColorStop(1,'rgba(0,0,0,.35)');}
-    ctx.fillStyle=lg;ctx.fillRect(0,top,W,bot-top);ctx.restore();
-    lensMargins(reg,top,bot);}
-  lensSeamMarks();
+  // The newest register that has finished growing is the whole ground; any still growing is laid over it
+  // inside its own circle, with its edge drawn round it.
+  const gs=lensGrowths();let base=0;gs.forEach((g,k)=>{if(lensReach(g)===Infinity)base=k+1;});
+  lensGround(base);
+  for(let k=base;k<gs.length;k++){const r=lensReach(gs[k]);if(r<=0)continue;const x=sx(gs[k].x),y=sy(gs[k].y),R=r*scale;
+    ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();lensGround(k+1);ctx.restore();lensRim(k+1,x,y,R);}
   lensTitleMark();
 }
 
@@ -822,7 +821,7 @@ function lensNode(n,aim){
   const p=world.player,active=p.node===n,used=n.visited&&!active,target=!!(aim&&aim.n.id===n.id);
   const x=sx(n.x),y=sy(n.y),cap=n.cap*scale;
   if(y<-cap*2-60||y>H+cap*2+60)return;
-  const reg=lensRegAtY(n.y),state=active||target?1:used?.32:.62;
+  const reg=lensRegAt(n.x,n.y),state=active||target?1:used?.32:.62;
   lensRing(n,reg,x,y,cap,state,pen.ring);
   if(n.type==='sling')lensSling(n,reg,x,y);
   if(['shield','reflector','dawn','inkwell'].includes(n.type))lensGift(n,reg,x,y,used);
@@ -935,7 +934,7 @@ function lensHazardLabel(draw,str,x,y,off,size,variant){
   const right=x+off+w<=W-LENS_BAND-4;draw(right?x+off:x-off,y,right?'left':'right');
 }
 function lensHazard(h){
-  const x=sx(h.x),y=sy(h.y),reg=lensRegAtY(h.y);
+  const x=sx(h.x),y=sy(h.y),reg=lensRegAt(h.x,h.y);
   if(h.kind==='nebula')return lensDarkNebula(h,reg,x,y);
   if(h.kind==='wind')return lensDrift(h,reg,x,y);
   const reach=gravityRadius(h)*scale;if(y+reach<-20||y-reach>H+20)return;
@@ -945,7 +944,7 @@ function lensHazard(h){
 // A danger comes onto the sheet the way its register makes an image: at the eyepiece it is brought to focus
 // out of a blur; on the plate it develops in, faint to dense; off the sensor it is read out a row at a time.
 function lensHazardReveal(h,draw,t){
-  const reg=lensRegAtY(h.y),x=sx(h.x),y=sy(h.y),R=(gravityRadius(h)+24)*scale,e=1-Math.pow(1-t,3);
+  const reg=lensRegAt(h.x,h.y),x=sx(h.x),y=sy(h.y),R=(gravityRadius(h)+24)*scale,e=1-Math.pow(1-t,3);
   ctx.save();
   if(reg===2){ctx.beginPath();ctx.rect(x-R,y-R,R*2,R*2*e);ctx.clip();draw(h);ctx.restore();
     if(e<1){ctx.save();ctx.strokeStyle=`rgba(${ink.lens.cyan},${(.7*(1-e)).toFixed(3)})`;ctx.lineWidth=scale;ctx.beginPath();ctx.moveTo(x-R,y-R+R*2*e);ctx.lineTo(x+R,y-R+R*2*e);ctx.stroke();ctx.restore();}return;}
@@ -1143,7 +1142,7 @@ function lensFigure(chart){
   if(chart.stars.length<3)return;const P=ink.lens;
   const pts=chart.stars.map(s=>[sx(s.x),sy(s.y)]),ys=pts.map(p=>p[1]);if(Math.max(...ys)<-240||Math.min(...ys)>H+240)return;
   const count=chart.stars.filter(n=>n.visited).length,done=chart.completed,f=chart.expired?.3:done?1:count/3;if(f<=0)return;
-  const reg=lensRegAtY(chart.stars[1].y),F=lensFieldName(chart),al=chart.expired?.35:1;
+  const reg=lensRegAt(chart.stars[1].x,chart.stars[1].y),F=lensFieldName(chart),al=chart.expired?.35:1;
   let cx=0,cy=0;for(const p of pts){cx+=p[0];cy+=p[1];}cx/=3;cy/=3;
   ctx.save();ctx.globalAlpha=al;ctx.lineCap='round';
   if(reg===0){let R=0;for(const p of pts)R=Math.max(R,Math.hypot(p[0]-cx,p[1]-cy));R+=30*scale;const a0=-Math.PI/2,a1=a0+TAU*f;
@@ -1170,7 +1169,7 @@ function lensFigure(chart){
 // and the field's name set small by its middle star while the route is live.
 function lensChartRoute(chart){
   if(!chart.stars.length||sy(chart.entry.y)<-150||sy(chart.stars[chart.stars.length-1].y)>H+170)return;
-  const P=ink.lens,reg=lensRegAtY(chart.stars[0].y),points=[chart.entry,...chart.stars];if(chart.exit)points.push(chart.exit);
+  const P=ink.lens,reg=lensRegAt(chart.stars[0].x,chart.stars[0].y),points=[chart.entry,...chart.stars];if(chart.exit)points.push(chart.exit);
   const live=reg===0?P.ink:reg===1?P.inkBlack:P.cyan,dry=reg===0?P.wash:reg===1?P.silverMid:P.instrSoft;
   ctx.save();revealChartClip(chart);ctx.lineCap='round';
   for(let i=1;i<points.length;i++){
@@ -1319,6 +1318,7 @@ function lensFaceReady(){
 const LENS_SCALE=[196,220,246.94,293.66,329.63,392,440,493.88,587.33,659.25,783.99,880];
 function lensClack(a,soft=false){a.brush(soft?1800:2600,soft?.12:.2);a.tone(soft?140:180,.05,0,soft?.1:.16,'square',90);}
 defineHand('lens',{
+  transition:lensTransition,
   atmosphere:lensAtmosphere,
   node:lensNode,
   hazard:lensHazard,
@@ -1378,6 +1378,10 @@ defineVoice('lens',{
   chapters:LENS_CHAPTERS.map(c=>c.place+' · '+c.year),
   chapterRows:LENS_CHAPTER_ROWS,
   goalRow:LENS_GOAL_ROW,
+  // The rows past which the sheet changes medium under the run (lensTransition, above).
+  transitionRows:[LENS_REG_ROWS,LENS_REG_ROWS*2],
+  // The three registers the sheet climbs through are the Journey's milestones, not the six chapters in them.
+  milestones:['AT THE EYEPIECE','ON THE GLASS PLATE','OFF THE SENSOR'],
   chapterSaid:'Plate {numeral}. {name}.',
   // A line for each place as its chapter opens, set on the sheet as a curator's note beside the telescope.
   // Each says only what is known of the place and the work it is named for.
@@ -1488,3 +1492,13 @@ defineVoice('lens',{
     bend:'The void bends the course. Follow the guide; give it room.'
   }
 });
+
+// The Journey's milestones through the lens (LINKING.md): Saturn, resolved as far as the climb has taken
+// it — Galileo's three bodies before the eyepiece is known, Huygens's ring once it is, the glass plate's and
+// the sensor's after — with the three registers pricked beneath it, filled as each is known.
+defineHand('lens',{journeyMark(g,w,h,m){
+  const P=ink.lens,stage=[1,2,4,6][Math.min(3,m.open)],R=Math.min(15,h*.2);
+  g.save();g.translate(w/2,h*.42);lensSaturn(g,R,stage,1,{card:false});g.restore();
+  for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*14,y=h-7;g.save();g.strokeStyle=`rgb(${P.ink})`;g.lineWidth=.8;g.beginPath();g.arc(x,y,2.6,0,TAU);g.stroke();
+    const f=i<m.open?1:i===m.open?m.toward:0;if(f>0){g.fillStyle=`rgb(${P.inkRed})`;g.beginPath();g.moveTo(x,y);g.arc(x,y,2.6,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.fill();}g.restore();}
+}});

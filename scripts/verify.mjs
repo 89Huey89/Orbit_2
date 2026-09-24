@@ -256,6 +256,8 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
   const drawing=new Proxy({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),createRadialGradient:()=>gradient,createLinearGradient:()=>gradient,createPattern:()=>({}),measureText:t=>({width:Math.max(1,String(t).length*5.5)}),getTransform:()=>({a:1,b:0,c:0,d:1,e:0,f:0})},{
     get(target,key){return key in target?target[key]:(...args)=>{
       for(const a of args)if(typeof a==='number')assert(Number.isFinite(a),'Non-finite canvas argument in '+String(key));
+      // A real canvas throws on a negative radius where this one would not, and stops the frame there.
+      if((key==='arc'&&args[2]<0)||(key==='ellipse'&&(args[2]<0||args[3]<0)))assert.fail('Negative radius in '+String(key)+': '+args.join(','));
       if(key==='drawImage'&&args[0]?.id==='sky'&&args.length===9){
         const [source,x,y,w,h,,,dw,dh]=args;
         assert(x>=0&&y>=0&&w>0&&h>0&&dw>0&&dh>0);assert(x+w<=source.width+1e-6&&y+h<=source.height+1e-6,'Lens sampling must clip to the real canvas bounds');lensCopies++;
@@ -270,7 +272,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,LENS_KEY,LENS_CHAPTERS,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -1001,6 +1003,23 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(words.chapterLines.length,words.chapters.length,'Every chapter opens with a curator\'s line');
     assert.equal(words.chartNotes.length,12,'Every field carries a note');
     for(const key of Object.keys(OBSERVATIONS))assert(words.observations[key],'The Lens names every observation the simulation can record: '+key);
+    assert.equal(JSON.stringify(words.transitionRows),'[12,24]','The Lens changes medium past its twelfth and twenty-fourth rows');
+    // The next register grows out of the body it starts at, drawn every frame of the way, and a point is
+    // drawn in it once the circle has reached it and not before.
+    {
+      const w=context.test.world,at={x:0,y:w.cameraY+300};
+      assert.equal(context.test.lensRegAt(at.x,at.y),0,'Before any change the sheet is the eyepiece');
+      context.test.handFor('transition')({x:at.x,y:at.y,time:w.time,index:0});
+      const t0=w.time;
+      for(const dt of [0,.01,.05,.2,.5,.9,1.4,1.79,1.81,3]){w.time=t0+dt;context.test.render(1/60);}
+      w.time=t0+.4;
+      const r=context.test.lensReach(context.test.lensGrowths()[0]);
+      assert(r>0&&r<Infinity,'Part way, the plate has a reach');
+      assert.equal(context.test.lensRegAt(at.x,at.y+r*.5),1,'Inside the circle the sheet is already glass');
+      assert.equal(context.test.lensRegAt(at.x,at.y+r*1.5),0,'Outside it, still the eyepiece');
+      w.time=t0+5;assert.equal(context.test.lensRegAt(at.x,at.y+50000),1,'Once grown, the whole sheet is glass');
+      context.test.newWorld();assert.equal(context.test.lensGrowths().length,0,'A fresh chart starts at the eyepiece');
+    }
     for(const painter of ['atmosphere','node','hazard','player','dark','figure','hudLeaf','chapterReveal','trail','aim','floater','tally','chartRoute','endNumerals'])
       assert.equal(typeof context.test.handFor(painter),'function','The Lens names its own: '+painter);
     // Two chapters to a register, and the register changes exactly at a chapter pair's boundary.
@@ -1764,6 +1783,38 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
     context.test.setPlate('night');
   }
+  // ---- A century with an ending may be flown without one: its Chronicle, or Endless (LINKING.md) ----
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    const reading=element('reading');
+    for(const id in context.test.PLATE_STYLES){
+      if(!context.test.PLATE_STYLES[id].door)continue;
+      context.test.enterEra(id);const w=context.test.plateWords();
+      if(w.goalRow>0)assert(w.won&&w.chrome.endTitleWon&&w.chrome.endActionWon&&w.losses['THE SUN ROSE'],'A century with an ending names it on every leaf: '+id);
+      assert.equal(context.test.world.goalRow,w.goalRow,'A century opens on its Chronicle: '+id);
+      assert.equal(reading.hidden,!w.endless,'The choice of reading stands only on a century that offers one: '+id);
+      if(w.endless)assert(w.goalRow>0&&w.chrome.readings.chronicle!==w.chrome.readings.endless,'A century offering two readings has an ending to leave out, and names both: '+id);
+      context.test.leaveEra();context.test.newWorld();
+    }
+    assert.equal(reading.hidden,true,'The atlas has no ending, and so no choice of reading');
+    context.test.enterEra('rock');
+    assert.equal(context.test.world.goalRow,32,'The Rock\'s Chronicle ends with the fourth chamber, Newgrange');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'Read Endless, the wall has no row it is won at');
+    assert.equal(reading.textContent,context.test.plateWords().chrome.readings.endless);
+    assert.equal(reading.hidden,false);
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).rock,'endless','The reading is kept, per century');
+    context.test.leaveEra();context.test.newWorld();context.test.enterEra('scroll');
+    assert.equal(context.test.world.goalRow,32,'One century\'s reading is not another\'s: the Scroll\'s Chronicle ends with its fourth palace');
+    context.test.leaveEra();context.test.newWorld();context.test.enterEra('rock');
+    assert.equal(context.test.world.goalRow,0,'The reading chosen still stands when the century is entered again');
+    context.test.handleInput();events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'A run under way keeps the finish line it was dealt');
+    context.test.leaveEra();context.test.newWorld();context.test.enterEra('rock');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,32,'And the Chronicle can be chosen back');
+    context.test.leaveEra();context.test.setPlate('night');
+  }
   // ---- The chapter boundary reads chapterRows off the plate, not the atlas's own hard-coded 8 ----
   // Last of all: stubbing the Ceiling's voice below is a one-way change for the rest of this process
   // (defineVoice only ever adds to a plate's table), so nothing after this point may depend on the
@@ -1778,6 +1829,67 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert(element('announcement').textContent.includes('H3'),
       'The chapter boundary must read chapterRows off the plate, not a literal 8: '+element('announcement').textContent);
     context.test.leaveEra();
+  }
+  // Nothing enters a Journey run yet, so however much this page flew, it must not have moved the climb.
+  if(!('orbit.journey.v1' in seed))assert(!saved.has('orbit.journey.v1'),'Free Play must never write the Journey document: '+width+'x'+height);
+  // ---- The Journey's door: a run on the frontier, banked on its leaf, and the page turned between runs ----
+  {
+    const t=context.test,note=element('journey-note'),endNote=element('end-journey');
+    for(const id of [null,...Object.keys(t.PLATE_STYLES).filter(id=>t.PLATE_STYLES[id].door)]){
+      if(id)t.enterEra(id);else t.setPlate('paper');
+      assert.equal(t.plateWords().milestones.length,t.ERA_MILESTONES[t.eraId()||5],'A century names exactly the milestones the Journey counts for it: '+(id||'atlas'));
+      if(id)t.leaveEra();
+    }
+    t.setPlate('paper');t.newWorld();
+    assert.equal(note.hidden,true,'Outside the Journey the frontispiece says nothing of it');
+    events['journey-open:click']();
+    assert.equal(t.runMode,'journey');
+    assert.equal(t.plateName,'rock','A first Journey opens on the frontier, era I');
+    assert.equal(t.world.goalRow,0,'A Journey run is never won at a row: its chapters are opened by knowledge');
+    assert.equal(element('reading').hidden,true,'A Journey run has no reading to choose');
+    assert.equal(note.hidden,false);assert(note.textContent.includes('THE HALL OF THE BULLS'),'The frontispiece names the milestone the climb is working toward: '+note.textContent);
+    t.handleInput();for(let i=0;i<7;i++)t.journeyObserve(1);
+    t.world.die('THE DARK CAUGHT UP');t.showEnd();
+    assert.equal(t.journey.knowledge,7,'A Journey run banks what it observed');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,7);
+    assert.equal(endNote.hidden,false);assert(endNote.textContent.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.textContent);
+    t.journey.knowledge=24.5;t.newWorld();t.handleInput();t.journeyObserve(1);
+    t.world.die('THE DARK CAUGHT UP');t.showEnd();
+    assert(endNote.textContent.includes('IS KNOWN')&&endNote.textContent.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.textContent);
+    assert(element('end-action').textContent.includes('THE CEILING'),'And the leaf asks for the tap that turns the page to it: '+element('end-action').textContent);
+    t.world.player.deadTime=10;t.handleInput();
+    assert.equal(t.journey.era,2,'The page turns between runs');
+    assert.equal(t.plateName,'ceiling','The next run opens on the next century');
+    assert.equal(t.world.state,'ready','Onto its frontispiece, not straight into a run');
+    assert.equal(t.world.goalRow,0,'The Ceiling in a Journey has no dawn row either');
+    assert(note.textContent.includes('HOURS I TO III'),'The Ceiling names its own milestones: '+note.textContent);
+    events['ceiling-exit:click']();
+    assert.equal(t.runMode,'free','Leaving a century by its exit leaves the Journey with it');
+    assert.equal(t.plateName,'paper');assert.equal(note.hidden,true);
+    // Era V is the atlas itself: the door puts the Journey on the plate already on the press, and the daily
+    // plate is Free Play's, never the Journey's.
+    t.journey.era=5;t.journey.knowledge=0;
+    events['journey-open:click']();
+    assert.equal(t.plateName,'paper','Era V is flown on the atlas, on the plate already chosen');
+    assert.equal(t.runMode,'journey');assert.equal(t.world.goalRow,0);
+    events['daily:click']();
+    assert.equal(t.runMode,'free','Turning to the daily plate leaves the Journey');assert.equal(t.dailyOn,true);
+    events['daily:click']();
+    events['journey-open:click']();events['journey-open:click']();
+    assert.equal(t.runMode,'free','The door pressed again on the atlas leaves the Journey');
+    // Every century on the ladder draws its own milestones, and draws them at every stage of the climb.
+    const mark=element('journey-mark');
+    for(const era of [1,2,3,4,5,6]){
+      t.journey.era=era;t.journey.knowledge=0;events['journey-open:click']();
+      assert.equal(t.eraId()||5,era,'The door opens on the frontier era: '+era);
+      if(era!==5)assert.equal(typeof t.handFor('journeyMark'),'function','Every century paints its own milestones: era '+era);
+      for(const k of [0,3.1,12.5,24.9,25]){t.journey.knowledge=k;t.paintJourneyMark('journey-mark');}
+      assert.equal(mark.hidden,false,'The milestones are drawn under the frontispiece\'s line: era '+era);
+      if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();
+      assert.equal(mark.hidden,true,'And gone with the Journey: era '+era);
+    }
+    t.journey.era=1;t.journey.knowledge=0;
+    t.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }
@@ -1829,6 +1941,96 @@ if(quick)console.error('verify: quick run — the seeded playthroughs and five o
 const bundled=await bundle();const html=bundled.html;script=bundled.script;
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
 useSimulationApi(simSandbox(simulation));
+
+// ---------- The Journey's document, read and folded on its own ----------
+// src/journey.js is loaded alone over the few globals it reads, so its rules are checked here without
+// booting a page: what a Journey run banks, what it never banks, and what the document survives.
+{
+  const journeySource=await readFile(new URL('../src/journey.js',import.meta.url),'utf8');
+  const TAU_J=Math.PI*2,SWEEP=TAU_J*2/3;
+  const load=(seed={},over={})=>{
+    const saved=new Map(Object.entries(seed));
+    const context={Math,Number,JSON,Array,Set,Object,String,SWEEP_FULL:SWEEP,dailyOn:false,world:null,plate:0,...over,
+      clamp:(v,lo,hi)=>Math.max(lo,Math.min(hi,v)),
+      cleanCounts:raw=>{const out={};if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw){const n=Math.floor(Number(raw[k]));if(n>0)out[k]=n;}return out;},
+      storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
+    context.eraId=()=>context.plate;
+    vm.createContext(context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY};',context);
+    return {j:context.j,context,saved};
+  };
+  const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
+  {
+    const {j,saved}=load();
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:1,knowledge:0,milestones:{},unlocked:[1],bests:{}},'A fresh store opens the Journey at era I with nothing banked');
+    // Free Play is the default, and observes nothing however much is flown.
+    j.journeyObserve(1);assert.equal(j.run,0,'Free Play must bank nothing toward the Journey');
+    assert.equal(j.journeyCommit(true),null,'Only a Journey run may fold anything into the Journey');
+    assert(!saved.has(j.JOURNEY_KEY),'Free Play must never write the Journey document');
+  }
+  {
+    const {j,context,saved}=load({},{plate:1});
+    j.mode='journey';context.world=held(null);
+    j.journeyObserve(.5);j.journeyObserve(1.4);j.journeyObserve(-1);
+    assert.equal(j.run,1.5,'Each encounter banks its observed fraction, clamped to a whole observation and never below none');
+    let fold=j.journeyCommit();
+    assert.equal(j.doc.knowledge,1.5);assert.equal(JSON.parse(saved.get(j.JOURNEY_KEY)).knowledge,1.5,'A fold is written at once');
+    assert.equal(fold.opened,0);assert.equal(fold.of,4,'The Rock has its four chambers for milestones');
+    j.journeyCommit();assert.equal(j.doc.knowledge,1.5,'A second fold adds only what was observed since the first');
+    // Death ends the attempt, not the knowledge: the body held at the end counts for what it was observed
+    // to, once, and a fold that is not an ending (the page hidden mid-orbit) does not count it at all.
+    context.world=held(SWEEP*.5);
+    j.journeyCommit();assert.equal(j.doc.knowledge,1.5,'A body still held is not banked by a fold that does not end the run');
+    j.journeyCommit(true);assert.equal(j.doc.knowledge,2,'The body held at death is banked for what it was observed to');
+    context.world=held(null);
+    j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);fold=j.journeyCommit(true);
+    assert.equal(j.doc.knowledge,6);assert.equal(fold.opened,0,'Six of twenty-five is still short of the first of four milestones');
+    j.journeyObserve(.25);fold=j.journeyCommit(true);
+    assert.equal(fold.opened,1,'Knowledge opens a milestone at each ERA_THRESHOLD/k');assert.equal(fold.open,1);assert.equal(fold.ready,false);
+    for(let i=0;i<40;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
+    assert.equal(j.doc.knowledge,j.ERA_THRESHOLD,'A ready era banks nothing past the threshold: the surplus is the transition\'s');
+    assert.equal(fold.open,4);assert.equal(fold.opened,3);assert.equal(fold.ready,true,'All milestones standing is transition-ready, and nothing else is asked');
+    // A run on another century than the frontier's, or on the daily plate, banks nothing and keeps nothing over.
+    context.plate=6;j.journeyObserve(1);assert.equal(j.journeyCommit(true),null,'A run on an era that is not the frontier is not the frontier\'s to bank');
+    assert.equal(j.run,0,'Nor is its knowledge carried over to the next fold');
+    context.plate=1;context.dailyOn=true;j.journeyObserve(1);assert.equal(j.journeyCommit(true),null,'The daily plate never moves the Journey');
+    context.dailyOn=false;j.resetJourneyRun();
+    // The deliberate restart clears the climb and nothing else.
+    const doc=j.doc;doc.era=3;doc.unlocked=[1,2,3];doc.bests={2:40};
+    j.journeyReset();
+    assert.equal(j.doc.era,1);assert.equal(j.doc.knowledge,0);assert.deepEqual(JSON.parse(JSON.stringify(j.doc.unlocked)),[1,2,3],'A restart leaves the eras already reached open');
+    assert.equal(j.doc.bests[2],40,'A restart leaves every record where it was');
+  }
+  {
+    // The printed atlas is itself era V, and banks for a frontier that stands there.
+    const {j,context}=load({'orbit.journey.v1':JSON.stringify({era:5,knowledge:3,unlocked:[1,2,3,4,5]})},{plate:0});
+    j.mode='journey';context.world=held(null);j.journeyObserve(1);
+    assert.equal(j.journeyCommit(true).of,4,'The atlas has its four chapters for milestones');assert.equal(j.doc.knowledge,4);
+  }
+  // Whatever the store holds, the Journey opens: malformed, blocked, or out of range.
+  for(const raw of ['{ not a journey','[1,2]','null','{"era":99,"knowledge":-4,"unlocked":"all","bests":[3]}','{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}']){
+    const {j}=load({'orbit.journey.v1':raw});const d=j.doc;
+    assert(d.era>=1&&d.era<=8&&d.knowledge>=0&&d.knowledge<=j.ERA_THRESHOLD,'A malformed Journey document reads as a sane one: '+raw);
+    assert(d.unlocked.includes(1)&&d.unlocked.includes(d.era),'The frontier and era I are always open: '+raw);
+    assert(d.unlocked.every(e=>Number.isInteger(e)&&e>=1&&e<=8),'Only real eras are ever open: '+raw);
+  }
+  {const {j}=load({'orbit.journey.v1':'{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}'});
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:25,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
+  {
+    // Until the in-run transition exists, a known era is turned over between runs, and only onto a century
+    // that is drawn.
+    const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:25})});
+    assert.equal(j.journeyAdvance(()=>false),false,'The frontier never climbs onto a century with nothing drawn');
+    assert.equal(j.doc.era,1);
+    assert.equal(j.journeyAdvance(e=>e===2),true,'A known era is turned over to the next');
+    assert.equal(j.doc.era,2);assert.equal(j.doc.knowledge,0,'The next era starts its own knowledge from nothing');
+    assert(j.doc.unlocked.includes(2),'An era reached stays open');
+    assert.equal(j.journeyAdvance(()=>true),false,'An era not yet known does not move');
+    assert.equal(j.journeyMilestones().toward,0);
+  }
+  {const {j,context,saved}=load({},{blocked:true,plate:1});j.mode='journey';context.world=held(null);j.journeyObserve(1);
+    assert.equal(j.journeyCommit(true).open,0,'Blocked storage is an ordinary condition: the Journey plays on in memory');assert.equal(saved.size,0);}
+}
 
 const workers=[];
 function runInWorker(task,extra={}){
@@ -2188,6 +2390,23 @@ assert(!shy.event.square&&Math.abs(shy.event.angle-90)>1.5&&Math.abs(shy.event.a
   assert.equal(w.capture(destination),true);assert.equal(events.length,1);
   assert(!events[0].n.impression?.perfect&&events[0].n.impression?.quality<1,'A rough landing records a distinct hand-colour impression');
   assert(!events[0].perfect&&!events[0].square&&events[0].angle<10,'A flight straight at the centre reads near zero');
+}
+// A change of medium inside a run: the first landing at or past each transition row is where it happens,
+// once per row and on the body landed on, holding the dark still, and never on a plate that names none.
+{
+  const land=(w,row,y)=>{const n=w.makeNode(0,y,54,row,'still');w.nodes.push(n);w.player.node=null;w.player.x=0;w.player.y=y+54;w.player.vx=0;w.player.vy=-150;w.player.launch={row:row-1,sweep:1};w.state='playing';w.capture(n);return n;};
+  const said=[],w=new OrbitWorld(33,440,860,(type,e)=>{if(type==='transition')said.push(e);});
+  w.transitionRows=[3,6];
+  land(w,2,-400);assert.equal(said.length,0,'No change of medium short of its row');
+  const at=land(w,4,-800);
+  assert.equal(said.length,1,'The first landing past a transition row changes the medium');
+  assert.equal(said[0].n,at,'It grows out of the body landed on');assert.equal(said[0].index,0);
+  assert(w.darknessGrace>=2.9,'The dark is held still while the new medium grows');
+  land(w,5,-1200);assert.equal(said.length,1,'A transition row is crossed once');
+  land(w,7,-1600);assert.equal(said.length,2,'And the next one past it');assert.equal(said[1].index,1);
+  land(w,9,-2000);assert.equal(said.length,2,'Past the last, nothing more');
+  const quiet=[],plain=new OrbitWorld(33,440,860,(type,e)=>{if(type==='transition')quiet.push(e);});
+  land(plain,4,-800);assert.equal(quiet.length,0,'A plate that names no transition rows never changes medium');
 }
 function curvedFixture(speed=240,drift=false,angle=-.002){
   const captures=[],w=new OrbitWorld(712,440,860,(type,e)=>{if(type==='capture')captures.push(e);}),origin=w.player.node;
@@ -3166,7 +3385,7 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
 
-console.log(JSON.stringify({simulation:quick?'passed (quick: playthroughs skipped)':'passed',...(quick?{}:{routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60}),boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:quick?undefined:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,variedOpening:{seeds:variedOpenings,transfers:variedCaptures,distinctFirstFigures:variedFigures},runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','a varied opening that draws the second and third planets and all twelve regions’ figures from its own seed, exactly as playable as a fixed one','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:quick?'passed (quick: playthroughs skipped)':'passed',...(quick?{}:{routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60}),boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:quick?undefined:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,variedOpening:{seeds:variedOpenings,transfers:variedCaptures,distinctFirstFigures:variedFigures},runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','a varied opening that draws the second and third planets and all twelve regions’ figures from its own seed, exactly as playable as a fixed one','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','a Journey banked only by a Journey run, paced by knowledge and gated by milestones','a Chronicle and an Endless reading of every century that offers both','a change of medium inside a run, once per transition row, grown from the body landed on with the dark held still','a Journey door onto the frontier, its milestones said on the frontispiece and the leaf, and the page turned between runs once an era is known','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
 
 }finally{
   for(const w of workers)w.terminate();
