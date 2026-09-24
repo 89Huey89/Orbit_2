@@ -151,7 +151,7 @@ function event(type,e){
       const glosses=plateWords().glosses;
       const gainText='+'+e.gain+(e.angleBonus?fmt(glosses.angleBonus,{bonus:e.angleBonus}):'')+(e.scoreMultiplier>=1.05?fmt(glosses.multiplier,{mult:e.scoreMultiplier.toFixed(1)}):'');
       if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
-      else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,age:0});
+      else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,gain:e.gain,angleBonus:e.angleBonus||0,mult:e.scoreMultiplier,age:0});
     }
     screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});

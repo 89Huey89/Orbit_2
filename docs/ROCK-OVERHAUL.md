@@ -268,6 +268,11 @@ before anything else is built on it:
   came off the wall: the armillary sphere and its Latin labels (seen as grey bars on the rock), the
   pen nib after captions, and the engraved chart-star over each body (now three ochre dots). Era
   floaters are kept above the utility buttons.
+- **Landing notes as tally marks (2026-09-24).** The floater "+43 · ANGLE +10 · ×1.6" is now cut in
+  the HUD's own tally: pale scratched notches for the landing's tens, a gap, red-ochre strokes for the
+  tens the angle earned, and the curator's numeral small beside them. Word notes keep the modern hand
+  without the atlas's manicule. The same pass took the Latin armillary sphere, the chart-star marker
+  and the quill nib off Era III (the Scroll); Era II draws its whole frame itself and never had them.
 - **No engraved script (2026-09-24).** Considered and declined: letting the wall's text be cut in live,
   letter by letter, as the atlas pens its names. No script survives from this era, and a hand
   inscribing words would invent one — the thing this plan refuses. The era's live "writing" is its

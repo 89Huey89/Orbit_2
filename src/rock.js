@@ -1942,6 +1942,41 @@ function rockHudLeaf(){
   if(p.dawnArmed){ctx.save();ctx.translate(ix,iy);rockGlint(ctx,2.6,1,7);ctx.restore();ix-=24;}
   ctx.restore();
 }
+// A landing's gain, cut beside the play field the way the tally at the head of the wall is cut, rather
+// than written in the atlas's words: a scratched notch for each ten the landing earned, bundled in fives
+// with the fifth struck across, and after a short gap the tens its angle earned laid in red ochre with the
+// finger, so how much of the gain was the angle reads as a colour before it reads as a number. Beside
+// them, small, the curator's numeral and the pace it was multiplied at — as with the tally, nobody should
+// have to count notches to know a score. A note that is words (a graze, say) is still set in the modern
+// hand, without the atlas's pointing hand before it.
+const ROCK_NOTCH=4.6,ROCK_NOTCH_BUNDLE=24;
+function rockNotchRun(n){let w=0;for(let b=0;b<n;b+=5){const k=Math.min(5,n-b);w+=k===5?ROCK_NOTCH_BUNDLE:Math.min(4,k)*ROCK_NOTCH+3;}return w;}
+function rockFloater(f,fb,alpha){
+  const size=Math.max(10,11*scale),small=Math.max(9,10*scale);
+  if(f.gain==null){
+    if(!fb)return null;
+    ctx.fillStyle=`rgba(${ink.rock.kaolin},${(.85*alpha).toFixed(3)})`;ctx.font=plateFace(size,'text','italic');ctx.textAlign=fb.left?'left':'right';ctx.fillText(f.text,fb.x,fb.y);return;
+  }
+  const bonus=Math.max(0,f.angleBonus|0),base=Math.max(0,(f.gain|0)-bonus),bt=Math.floor(base/10),at=Math.floor(bonus/10);
+  const label='+'+(f.gain|0)+(f.mult>=1.05?' ×'+f.mult.toFixed(1):'');
+  ctx.font=plateFace(small,'sc');const lw=ctx.measureText(label).width;
+  const wBase=bt?rockNotchRun(bt):ROCK_NOTCH,wBonus=at?rockNotchRun(at)+6:0,width=wBase+wBonus+6+lw;
+  if(!fb)return width;
+  const x0=fb.left?fb.x:fb.x-width,y=fb.y-size*.32,hh=6.5*scale;
+  const notches=(n,x,paint)=>{for(let b=0;b<n;b+=5){const k=Math.min(5,n-b),bx=x;
+      for(let i=0;i<Math.min(4,k);i++){const nx=bx+i*ROCK_NOTCH+((b+i)%3-1)*.35;paint(nx,y-hh,nx+((b+i)%2?.6:-.45),y+hh,b+i);}
+      if(k===5)paint(bx-2.5,y+hh*.75,bx+ROCK_NOTCH*3+2.5,y-hh*.75,b+99);
+      x=bx+(k===5?ROCK_NOTCH_BUNDLE:Math.min(4,k)*ROCK_NOTCH+3);}return x;};
+  let x=x0+1;
+  if(bt)x=notches(bt,x,(a,b,c,d)=>rockScratch(ctx,a,b,c,d,1.5,alpha));
+  else{rockPeck(ctx,x+1.5,y,1.6*scale,alpha);x+=ROCK_NOTCH;}
+  // The ochre strokes are laid over the stone rather than multiplied into it, with the scratch's own
+  // shadow under them: multiplied, a red on rock this dark was simply not there.
+  if(at){x+=6;const red=ink.rock.redOchre.split(',').map(v=>Math.round(+v+(255-v)*.3)).join(',');
+    x=notches(at,x,(a,b,c,d)=>{ctx.save();ctx.lineCap='round';ctx.strokeStyle=`rgba(${ink.rock.charcoal},${(.5*alpha).toFixed(3)})`;ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(a+1,b+1.3);ctx.lineTo(c+1,d+1.3);ctx.stroke();
+      ctx.strokeStyle=`rgba(${red},${(.95*alpha).toFixed(3)})`;ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.stroke();ctx.restore();});}
+  ctx.fillStyle=`rgba(${ink.rock.kaolin},${(.7*alpha).toFixed(3)})`;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(label,x0+width-lw,fb.y);
+}
 function rockRunningHead(){}
 function rockChapterReveal(){}
 // Relighting at the Flare (relightOn, G2): the ochre refills itself in simulation.js while the hand is
@@ -2122,6 +2157,7 @@ defineHand('rock',{
   inscriptionInk:rockInscriptionInk,
   lenses:rockLenses,
   sphere:rockSphere,
+  floater:rockFloater,
   chartStar:rockChartStar,
   nib:rockNib,
   hazardReveal:rockHazardReveal,

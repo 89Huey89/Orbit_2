@@ -29,6 +29,8 @@ definePlate('reveal',{
   // behind a quill. Its captions come up a glyph at a time with no tool at their edge, the wall's own
   // order, and the red setting-out is its red ochre.
   rock:{mode:'wall',sketch:'156,59,34'},
+  // The Scroll is brushed: the same glyph-by-glyph hand, and its setting-out is its cinnabar.
+  scroll:{mode:'wall',sketch:'183,49,44'},
   // blot is the eighth "this means black" token the void-family finding names (see definePlate('dark')
   // in effects.js): the same three plates' own ink-black, not the automatic duotone's lighter reach.
   cellarius:{blot:'6,8,20'},

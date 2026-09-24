@@ -1879,8 +1879,14 @@ function drawEffects(dt){
     if(f.lift===null)continue;
     // floaterBox (inscriptions.js) is the one place this geometry is worked out; placeInscription reads
     // the same box to keep a brand-new note off a floater still standing where it would be set.
+    // A plate that sets its notes in its own marks names a `floater` painter: asked once with no box it
+    // says how wide its marks run (or null, for a note it still sets as text), so the box, the register
+    // and the gutter solver all see the ground it really takes; asked with the box, it draws the note.
+    const own=handFor('floater');
+    if(own&&f.markWidth===undefined)f.markWidth=own(f,null);
     const fb=floaterBox(f),{x,y,left}=fb;
     markGround('floater',fb.l,fb.t,fb.r,fb.b,f);
+    if(own){ctx.save();own(f,fb,alpha);ctx.restore();continue;}
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=left?'left':'right';
     ctx.fillText(f.text,x,y);
