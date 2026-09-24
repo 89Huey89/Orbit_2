@@ -27,6 +27,15 @@ on the frontispiece; see README.md's "The eras".
 - `npm test` — runs `scripts/verify.mjs`, the whole test suite (deterministic
   simulation/runtime checks, no browser, no framework — plain
   `node:assert/strict`).
+- `npm run test:quick` — the same file with `--quick`: skips the seeded playthroughs
+  (the four 60-seed worker loops and the long pressure/rusher pilots) and runs two of
+  the seven full-page runtime scenarios (430×932 blocked storage, 1440×900 full
+  ledger). About 35s instead of 90s. Use it for changes that leave gameplay alone. It
+  checks git and runs the full suite instead if `src/simulation.js` has changed since
+  the branch left `origin/main` (committed, staged, unstaged or untracked);
+  `--quick=force` skips that check. Run the full `npm test` before pushing anything
+  that touches gameplay, the ledger's migrations, the daily log, or the playthrough
+  tasks in verify.mjs themselves. CI always runs the full suite.
 - `npm run build` — bundles into `dist/index.html` + `dist/assets/` via
   `scripts/bundle.mjs`.
 - `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
@@ -44,7 +53,7 @@ Those two are the only commands needing a dependency. `assets/fonts.source.css`
 holds the full faces, is the input to both, and is never served; the build ships
 only the cut `assets/fonts.css`.
 
-Run `npm test` before `npm run build` — CI (`.github/workflows/deploy-pages.yml`)
+Run `npm test` (the full suite, not `test:quick`) before `npm run build` — CI (`.github/workflows/deploy-pages.yml`)
 does the same before deploying `dist/` to GitHub Pages on every push to `main`.
 
 ## Architecture

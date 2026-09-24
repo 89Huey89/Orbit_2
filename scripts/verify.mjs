@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {execFileSync} from 'node:child_process';
 import {Worker,isMainThread,parentPort,workerData} from 'node:worker_threads';
 import {bundle} from './bundle.mjs';
 
@@ -1437,6 +1438,28 @@ if(!isMainThread){
 
 // ---------- the driver: bundle once, fire every heavy block into a worker immediately, then run every
 // fast sequential check below on the main thread while that work runs alongside it ----------
+// `--quick` (npm run test:quick) leaves out the seeded playthroughs — the four sixty-flight loops above
+// and the long pressure and rusher pilots at the end — and boots two of the seven page scenarios
+// instead of all of them, which together are nearly all of the suite's wall time. Every fixture and
+// every generation sweep still runs. The playthroughs read nothing but the simulation slice of
+// src/simulation.js, so they can only change their verdict when that file has. The quick run
+// therefore asks git whether it has been touched on this branch (committed since it left origin/main,
+// staged, unstaged or untracked) and flies the whole suite anyway when it has, or when git cannot say.
+// `--quick=force` skips that question. Editing the playthrough tasks themselves still wants `npm test`.
+function simulationTouched(){
+  const git=args=>execFileSync('git',args,{cwd:new URL('..',import.meta.url),encoding:'utf8',stdio:['ignore','pipe','ignore']});
+  try{
+    let base='HEAD';try{base=git(['merge-base','HEAD','origin/main']).trim();}catch{}
+    const changed=git(['diff','--name-only',base,'--'])+git(['ls-files','--others','--exclude-standard']);
+    return changed.split('\n').includes('src/simulation.js');
+  }catch{return true;}
+}
+const quickArg=process.argv.find(a=>a==='--quick'||a.startsWith('--quick='));
+let quick=!!quickArg;
+if(quick&&quickArg!=='--quick=force'&&simulationTouched()){
+  quick=false;console.error('verify: src/simulation.js has changed on this branch (or git cannot tell), so the quick run flies the full suite instead.');
+}
+if(quick)console.error('verify: quick run — the seeded playthroughs and five of the seven page scenarios are skipped; npm test runs them.');
 const bundled=await bundle();const html=bundled.html;script=bundled.script;
 const simulation=(await readFile(new URL('../src/simulation.js',import.meta.url),'utf8')).split('// BEGIN SIMULATION')[1].split('// END SIMULATION')[0];
 useSimulationApi(simSandbox(simulation));
@@ -1463,10 +1486,11 @@ function runtimeLayout(params){return runInWorker('runtime',{script,simulation,p
 // writes another's state (proven by the daily-plate determinism checks further down, which are the
 // same claim about a single run), so all of them are fired at once here and only awaited where their
 // results are actually needed, letting them run on worker threads alongside the sequential checks.
-const pRoute=runInWorker('route60',{simulation});
-const pDetourDeep=runInWorker('detourDeep',{simulation});
-const pSling=runInWorker('sling60',{simulation});
-const pVaried=runInWorker('variedOpening',{simulation});
+const playthrough=task=>quick?Promise.resolve({}):runInWorker(task,{simulation});
+const pRoute=playthrough('route60');
+const pDetourDeep=playthrough('detourDeep');
+const pSling=playthrough('sling60');
+const pVaried=playthrough('variedOpening');
 // A ledger that has earned the whole catalogue, seeded into storage before the page boots, so the
 // unlocked half of every screen is exercised as well as the empty one.
 const FULL_LEDGER=JSON.stringify({captures:10500,perfects:4000,bestFlow:9,constellations:{'THE LYRE':40},bestRow:88,
@@ -1480,22 +1504,27 @@ const SAVED_REPLAY=JSON.stringify({seed:1,width:440,height:860,offerDifficulty:t
 // "Bayer's own dozen" (ART-AUDIT-TODO.md) retired — proof that the v1→v2 migration folds them
 // onto the new names rather than losing them.
 const RENAMED_LEDGER=JSON.stringify({captures:40,perfects:5,bestFlow:2,constellations:{'THE COMPASS':7,'THE HOURGLASS':3,'THE ASTROLABE':2,'THE LYRE':1},bestRow:12,runs:{classic:60},playSeconds:600,personalBests:{classic:80},observations:{},allFourInOneRun:false});
+// A quick run boots only the two marked `quick`: the reference phone with storage blocked and motion
+// reduced, and the wide sheet with the whole catalogue earned and a plate saved — between them an
+// empty and a full ledger, a narrow and a wide frame, blocked and working storage. The other five
+// (the other viewports, the v1 rename, the junk ledger and daily log, the derived plate) wait for `npm test`.
+const layout=(params,inQuick=false)=>quick&&!inQuick?null:runtimeLayout(params);
 const pLayouts=Promise.all([
-  runtimeLayout({width:390,height:844}),
-  runtimeLayout({width:430,height:932,storageBlocked:true,reduceMotion:true}),
+  layout({width:390,height:844}),
+  layout({width:430,height:932,storageBlocked:true,reduceMotion:true},'quick'),
   // The whole catalogue earned, on a wide plate where the frame prints its credit line and its legend.
-  runtimeLayout({width:1440,height:900,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB','orbit.lastReplay.v1':SAVED_REPLAY,
-    'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}}),
-  runtimeLayout({width:844,height:390}),
-  runtimeLayout({width:400,height:800,seed:{'orbit.ledger.v1':RENAMED_LEDGER},checkRename:true}),
+  layout({width:1440,height:900,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.initials.v1':'ORB','orbit.lastReplay.v1':SAVED_REPLAY,
+    'orbit.cosmetics.v1':JSON.stringify({plate:'night',mark:'telescope',trail:'sanguine',capture:'rose',frame:'acanthus',figures:'bayer'})}},'quick'),
+  layout({width:844,height:390}),
+  layout({width:400,height:800,seed:{'orbit.ledger.v1':RENAMED_LEDGER},checkRename:true}),
   // A ledger that is not JSON at all is the same as no ledger: the page boots on an empty one. The
   // ephemeris log is seeded here too, with junk among the days, beside a daily record from before the
   // log existed for the boot to fold in.
-  runtimeLayout({width:320,height:568,seed:{'orbit.ledger.v1':'{ this is not a ledger',
+  layout({width:320,height:568,seed:{'orbit.ledger.v1':'{ this is not a ledger',
     'orbit.dailyLog.v1':JSON.stringify({'2018-05-04':{best:'420',plays:3},nonsense:{best:9},'3000-01-01':{best:5},'2018-05-05':7}),
     'orbit.daily.v1':JSON.stringify({date:'2019-11-30',best:88})}}),
   // The same, under reduced motion, with a derived plate, an ink, a mark, an ornament and a hand chosen.
-  runtimeLayout({width:412,height:915,reduceMotion:true,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
+  layout({width:412,height:915,reduceMotion:true,seed:{'orbit.ledger.v1':FULL_LEDGER,'orbit.plate.v1':'cellarius','orbit.initials.v1':'ORB',
     'orbit.cosmetics.v1':JSON.stringify({plate:'cellarius',mark:'saturn',trail:'goldleaf',capture:'seal',frame:'seamonsters',figures:'bode'})}}),
 ]);
 
@@ -2435,7 +2464,7 @@ const fade=new OrbitWorld(8);fade.start();fade.player.node.type='fading';fade.pl
   assert.equal(untouched.documented||0,0,'A missing documented fraction reads as zero wherever it is asked for');
 }
 
-const layouts=await pLayouts;
+const layouts=(await pLayouts).filter(Boolean);
 
 // Two pilots traverse the same course. A dawdler that lingers two laps on every ring and leaves its
 // stars uncharged keeps little of the chart's pace and is eventually overhauled by the flood;
@@ -2462,14 +2491,17 @@ function pressureRun(useStars,observations,inkMult=0){
   }
   return w;
 }
-const observed=[];
-const slowRun=pressureRun(false),fastRun=pressureRun(true,observed);
+// These long pilots are playthroughs too, and a quick run leaves them to `npm test` with the rest.
+const observed=[];let slowRun,fastRun;
+if(!quick){
+slowRun=pressureRun(false);fastRun=pressureRun(true,observed);
 assert.equal(slowRun.state,'dead');assert.equal(slowRun.reason,'THE DARK CAUGHT UP');// Consistently slow play meets the flood far sooner than it once did, and deliberately so: the chart
 // is cut for a faster pace with the tide taking a quarter of that growth, from row 12 a hazard may
 // close one side of a crossing, and a rim will not accept a flight that falls at it. The band is what
 // this assertion is really for — the pursuit must neither become unable to catch a dawdler nor take
 // one the instant the run begins.
 assert(slowRun.elapsed>60&&slowRun.elapsed<300,'The pursuit must eventually catch consistently slow progress: '+slowRun.elapsed.toFixed(0)+'s');
+}
 // The streak rule, tested where it lives rather than read off whichever landing a pilot happened to
 // stop on: an ordinary capture resets it, and with no streak there is no relief from the pursuit.
 {
@@ -2481,6 +2513,7 @@ assert(slowRun.elapsed>60&&slowRun.elapsed<300,'The pursuit must eventually catc
   assert.equal(streak.w.perfectStreak,0,'An ordinary capture resets the perfect streak');
   assert.equal(streak.w.darknessRelief(),1,'and with it the relief from the pursuit');
 }
+if(!quick){
 assert.equal(fastRun.state,'playing');assert(fastRun.progress>=220&&fastRun.elapsed>slowRun.elapsed);
 // The two pressures answer two different mistakes, and a run can only dodge both by flying well.
 // Dwelling on a ring buys ink but spends the time the flood is counting, so the slow, centred pilot
@@ -2507,11 +2540,13 @@ assert(rushed.every(w=>w.progress<60),'The nib gives out well before a rushed ru
 // 15% back, which is the whole of the relief a run can earn.
 assert.equal(fastRun.bestRelief,.85,'A long chain of perfect transfers earns the whole of the relief');
 assert.equal(150*fastRun.bestRelief,127.5,'A player using speed and smooth transfers faces 127.5 where sloppy play faces the full 150');
+}
 const reliefWorld=new OrbitWorld(21);reliefWorld.start();reliefWorld.elapsed=400;
 for(const [streak,factor] of [[0,1],[1,1],[2,1],[3,.97],[4,.94],[7,.85],[40,.85]]){
   reliefWorld.perfectStreak=streak;
   assert(Math.abs(reliefWorld.darknessSpeed()-150*factor)<1e-9,'Each perfect past the second slows the pursuit 3%, to a limit of 15%');
 }
+if(!quick){
 // Named feats fire once each and are recorded on the world in the order they happen.
 assert(observed.length>=3,'A long, fast run must earn several observations: '+JSON.stringify(observed.map(o=>o.key)));
 assert.equal(new Set(observed.map(o=>o.key)).size,observed.length,'Each observation is awarded once per run');
@@ -2523,6 +2558,7 @@ for(const key of ['perfectThree','maxSpeed','fortyRows','threeMinutes'])assert(o
 // claim worth holding is that the feat is never awarded without the transfers it names.
 assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=3,
   'TRES PERFECTI is never earned without three perfect transfers');
+}
 {
   const plain=transferFixture(25,240);plain.w.release();
   for(let i=0;i<120*3&&!plain.w.player.node;i++)plain.w.update(step);
@@ -2532,7 +2568,7 @@ assert(!slowRun.observations.some(o=>o.key==='perfectThree')||slowRun.perfects>=
 assert.equal((html.match(/<\/script>/g)||[]).length,1);
 assert(!/\b(fetch\(|XMLHttpRequest|WebSocket|https?:\/\/)/.test(script),'Game must not require the network');
 
-console.log(JSON.stringify({simulation:'passed',routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60,boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,variedOpening:{seeds:variedOpenings,transfers:variedCaptures,distinctFirstFigures:variedFigures},runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','a varied opening that draws the second and third planets and all twelve regions’ figures from its own seed, exactly as playable as a fixed one','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
+console.log(JSON.stringify({simulation:quick?'passed (quick: playthroughs skipped)':'passed',...(quick?{}:{routeSeeds:60,detourSeeds:60,slingSeeds:60,deepSeeds:60}),boostedTransfers,longFlightSeconds,openingIdleSeconds:idle.elapsed,driftCaptures,gravity:{curvedCaptures,maxPreviewSteps,slowFlybyDegrees:slowClose.turn*180/Math.PI,fastFlybyDegrees:fastClose.turn*180/Math.PI,flareCaptures,flareGrazes,flareFlybyDegrees:flareSlow.turn*180/Math.PI,windCaptures},pressure:quick?undefined:{slowCaughtAt:slowRun.elapsed,fastSurvivedTo:fastRun.elapsed,fastProgress:fastRun.progress,reliefEarned:1-fastRun.bestRelief},chartCompletions,catalogue:CONSTELLATIONS.length,deep:{rowsReached:deepRows/60,lateChartsTraced:deepCharts,lateFiguresSeen:deepFiguresSize},hazards:{flares:flareRows,vortices:holeRows,winds:windRows,nebulas:nebulaCount,placed:hazardsPlaced,closingARoute:routesClosed},observations:observed.map(o=>o.key),transfers:totalCaptures,perfectTransfers:perfects,maxResidentNodes:maxNodes,maxResidentHazards:maxHazards,variedOpening:{seeds:variedOpenings,transfers:variedCaptures,distinctFirstFigures:variedFigures},runtimeLayouts:layouts,checks:['rim tangency in both directions at three speeds','moving-planet tangent prediction and momentum','symmetric gravity with retained speed','curved guide matches real captures','vortex warnings match collisions','bounded prediction and clipped lens sampling','center captures do not earn perfects','persistent speed and star acceleration','speed-based rewards and bounded launches','slow progress eventually loses; charged runs survive','a nib charged with ink, spent by distance and paid back by landings','a guide that prices its own course and marks the one the nib cannot pay for','two pressures: dwelling loses to the dark, rushing runs the nib dry','a chart cut for the pace it expects, with orbits that open with it','a rough radial arrival that keeps its base score and is marked before the release','a pace that hides the far end of a fast crossing without moving the landing','one seed deals one chart however it is flown','a narrowed sheet pulls its orbits back inside its edge','hazards that close one way across but never the last','swept collision','automatic capture','both routes through 48 rows','forks in every region through 60 rows','a seeded catalogue of twelve figures','an engraving for every catalogue figure','a varied opening that draws the second and third planets and all twelve regions’ figures from its own seed, exactly as playable as a fixed one','lettering along an arc','the page turn completes and freezes','charged shortcut routes','one-lap charge, cap and reset','boosted preview matches momentum','long flights have no expiry','per-orbit skip rewards including gold endpoints','distant hazards and chart boundary','resizing mid-run','bounded generation','constellation reward and expiry','duplicate capture protection','symmetric repulsive flare fields with a smaller core','arrival angles and the right-angle square bonus','flare guides match real flight','wind-heads that bend a crossing without ever ending one, and whose guide matches real flight','inert nebulas that fog the guide but not the flight','perfect streaks relieve the pursuit','a charge carried against the rising dark, dealt off the main line and spent once at the waterline','observations awarded once per run','the daily plate, its own record and its copied line','the ephemeris of daily plates: a day opened only by having been drawn on itself, dealt again from its own date','the ascent record','an empty ledger from a fresh, blocked or malformed store','the ledger written at the end of a run','every unlock threshold in the catalogue','every plate and every cosmetic selection renders','a bounded dried route, cleared with the run','a surveyed departure and a surveyed square landing, bounded and cleared','descriptions inscribed on the chart, carried by the sheet, kept off the margins, never overlapping and never fading','a nebula baked into its own faint sprite','the gloss kept clear of the footer band at every layout','the catalogue leaf, its locked rules and its initials','reprieve and pause','a pause control on the sheet, its leaf, and the run it sets aside for the frontispiece','earlier rising darkness','fading orbit','hazard death','full-script boot and drawing arguments','slingshot UI and hints','blocked localStorage','one-tap restart','focus pause','a chart replayed from nothing but its own seed and release log matches the run that drew it, unpruned','a review scrolls freely over that replay and its range never inverts','a plate saved at the end of a run is named on the frontispiece and reviewable from it, blocked storage included','no network dependencies']},null,2));
 
 }finally{
   for(const w of workers)w.terminate();
