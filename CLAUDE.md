@@ -15,9 +15,9 @@ that design; `docs/README.md` maps the rest of the tree.
 **Current focus now includes building out the eight-era progression**, alongside
 continued polish of the shipped Renaissance atlas — era V, the only plate a run ships
 with today (see README.md's "Plates" and "Catalogue" sections, and `src/plates.js`).
-Three pieces of that plan are already shipped, independent of the progression system
-itself — Era I (`src/rock.js`), Era II (`src/ceiling.js`) and Era III (`src/scroll.js`),
-standalone preview doors on the frontispiece; see README.md's "The eras".
+Four pieces of that plan are already shipped, independent of the progression system
+itself — Era I (`src/rock.js`), Era II (`src/ceiling.js`), Era III (`src/scroll.js`) and
+Era IV (`src/astrolabe.js`), standalone preview doors on the frontispiece; see README.md's "The eras".
 
 ## Commands
 

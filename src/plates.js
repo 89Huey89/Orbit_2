@@ -376,7 +376,11 @@ const PLATE_STYLES={
   // the paper plate's, so it is pulled from that one, and every mark on it comes from the hand
   // `src/scroll.js` registers; the identity transform is here for the same reason as on the two eras
   // above. It keeps no record of its own yet, like the Ceiling, and asks for none of the Rock's walls.
-  scroll:{base:'paper',wash:0,era:3,render:'scroll',can:{score:true,mode:true},door:{button:'scroll-open',label:'ERA III \u00b7 THE SCROLL'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  scroll:{base:'paper',wash:0,era:3,render:'scroll',can:{score:true,mode:true},door:{button:'scroll-open',label:'ERA III \u00b7 THE SCROLL'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era IV is the sky measured through brass, on the sized cream paper its geometry is constructed on: a
+  // light ground again, pulled from the paper plate, and every mark on it from the hand `src/astrolabe.js`
+  // registers. Its record is its own (orbit.astrolabe.v1), kept apart from the atlas's like the Rock's cave.
+  astrolabe:{base:'paper',wash:0,era:4,render:'astrolabe',can:{score:true,mode:true},door:{button:'astrolabe-open',label:'ERA IV \u00b7 THE ASTROLABE'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -511,7 +515,10 @@ definePlate('base',{
   rock:{paper:'#c7bc9e',paperRgb:'199,188,158',ink:'44,38,34',inkStrong:'33,31,30',inkSoft:'105,88,66',gold:'156,59,34',goldBright:'201,150,46',copper:'169,112,31',blue:'33,31,30',shieldBlue:'44,38,34',red:'156,59,34',text:'#2c2622',caption:'105,88,66',shadow:'#8a7f68'},
   // Aged hemp paper and pine-soot ink, and a palette with no blue and no gold in it: cinnabar is the one
   // colour, spent on the Shi Shen school's stars and on seals, and it stands in for the atlas's gold.
-  scroll:{paper:'#d8c79b',paperRgb:'216,199,155',ink:'30,26,21',inkStrong:'20,17,13',inkSoft:'90,76,60',gold:'183,49,44',goldBright:'210,73,60',copper:'134,31,27',blue:'30,26,21',shieldBlue:'44,36,26',red:'183,49,44',text:'#1e1a15',caption:'90,76,60',shadow:'#b9a67a'}
+  scroll:{paper:'#d8c79b',paperRgb:'216,199,155',ink:'30,26,21',inkStrong:'20,17,13',inkSoft:'90,76,60',gold:'183,49,44',goldBright:'210,73,60',copper:'134,31,27',blue:'30,26,21',shieldBlue:'44,36,26',red:'183,49,44',text:'#1e1a15',caption:'90,76,60',shadow:'#b9a67a'},
+  // Sized cream paper and lamp-black, gilt where the atlas spends gold, and the manuscript's lapis kept for
+  // what the atlas says in blue: the one plate after the atlas's own that has a blue worth the name.
+  astrolabe:{paper:'#efe1c4',paperRgb:'239,225,196',ink:'36,28,17',inkStrong:'24,18,10',inkSoft:'92,74,50',gold:'160,122,36',goldBright:'212,175,55',copper:'168,57,44',blue:'27,63,143',shieldBlue:'40,70,130',red:'196,58,44',text:'#241c11',caption:'92,74,50',shadow:'#c9b48a'}
 });
 // ---------- The hand the plate letters in ----------
 // Every `ctx.font` in the game is built here. The Fell faces are era V's — the engraved atlas the
@@ -576,7 +583,21 @@ const SCROLL_FACES={
   kai:SCROLL_KAI,kaiL:SCROLL_KAI,kaiM:SCROLL_KAI,
   weight:{kaiM:500}
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES});
+// The Astrolabe's own words are in naskh, set in Amiri: a book face after the Bulaq Press type, at the
+// regular for captions and numerals and the bold for titles, so `naskh` and `naskhB` name one family at two
+// weights. The browser shapes the joins at runtime (the era file plans pre-shaping through fontkit's
+// ArabicShaper for the build; this preview leans on the browser, as its own standalone study did). The
+// curator's English beside it is the same slab the other eras use, with Amiri behind it for any Arabic.
+const ASTRO_NASKH="'Amiri','Zilla Slab',serif";
+const ASTRO_FACES={
+  text:"'Zilla Slab','Amiri',Georgia,serif",
+  sc:"'Zilla Slab','Amiri',Georgia,serif",
+  body:"'Zilla Slab','Amiri',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE,
+  naskh:ASTRO_NASKH,naskhB:ASTRO_NASKH,
+  weight:{naskhB:700}
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
@@ -590,6 +611,7 @@ function invalidateArt(){
   if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();
   if(typeof invalidateRockArt==='function')invalidateRockArt();
   if(typeof invalidateScrollArt==='function')invalidateScrollArt();
+  if(typeof invalidateAstrolabeArt==='function')invalidateAstrolabeArt();
 }
 // The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
 // is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own
