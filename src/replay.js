@@ -17,9 +17,9 @@ function replayRun(log){
   // recordDeparture/recordLanding/sampleInkPath (src/effects.js) read and write through the shared
   // `world` binding, the same way every other painter in this file does — so it is pointed at the
   // world being rebuilt for the whole of the loop below, and put back the way it was found afterward.
-  const savedWorld=world;
+  const savedWorld=world,graced=Number.isFinite(log.grace);
   const w=new OrbitWorld(log.seed,log.width,log.height,(type,e)=>{
-    if(type==='difficulty'){w.darknessMult=DARKNESS_MULT[e.value];w.inkMult=INK_MULT[e.value];w.perfectMult=PERFECT_MULT[e.value];w.capMult=CAP_MULT[e.value];}
+    if(type==='difficulty'){w.darknessMult=DARKNESS_MULT[e.value];w.inkMult=INK_MULT[e.value];w.perfectMult=PERFECT_MULT[e.value];w.capMult=CAP_MULT[e.value];if(graced)w.releaseGrace=RELEASE_GRACE_BY[e.value];}
     // The departure and landing are surveyed exactly as they are live (see event() in src/ui.js), so a
     // reviewed plate carries the same release bearings and arrival angles the run itself was drawn with.
     else if(type==='release')recordDeparture(e);
@@ -27,7 +27,9 @@ function replayRun(log){
   },log.offerDifficulty,log.varyOpening);
   // A log written before the release grace existed carries no grace field, and its releases were flown
   // exactly where they were asked for; it is read back that way rather than under a rule it never had.
-  world=w;w.keepAll=true;w.releaseGrace=Number.isFinite(log.grace)?log.grace:0;
+  // One that has it starts from the grace it was dealt with and takes the chosen pressure's own grace
+  // when the opening orbit settles it, exactly as the live run did.
+  world=w;w.keepAll=true;w.releaseGrace=graced?log.grace:0;
   const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
   let ri=0,zi=0,guard=0,started=false;
   // The live clock keeps running while the traveller is still reading the frontispiece (nodes wobble

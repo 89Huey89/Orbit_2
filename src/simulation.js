@@ -32,8 +32,8 @@ const FLIGHT_STEP = 1/120;
 // or late of that. RELEASE_GRACE is that noise and no more. A release is let go from whichever point
 // within it of the moment it was asked for leaves on a perfect transfer to the body the tap was aimed
 // at, or, if the tap was aimed at nothing, lands at all; a tap further off than the hardware can account
-// for was the hand's, and is flown exactly as asked. The grace is the same under every pressure, since
-// how late a screen reports a finger is not a measure of the player.
+// for was the hand's, and is flown exactly as asked. This is Adeptus's grace and the world's default; each
+// pressure sets its own (RELEASE_GRACE_BY in plates.js), from a wider one on Tiro to none on Magister.
 const RELEASE_GRACE = .012, RELEASE_GRACE_STEP = 1/240;
 // The nib carries a charge of ink, held as 0..1. Flight spends it by the distance flown, so a
 // transfer costs what it is long rather than what it takes; going faster crosses the same gulf for

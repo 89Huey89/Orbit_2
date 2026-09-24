@@ -231,7 +231,7 @@ function newWorld(){
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
   recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateWords().goalRow);
-  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
+  world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
   // A chart's whole course reduces to one thing repeated: when the traveller released. Kept here as

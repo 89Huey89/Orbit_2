@@ -179,3 +179,26 @@ node scripts/probe.mjs --seeds=60 --rows=120 --seconds=300 --grace=0      # befo
 node scripts/probe.mjs --seeds=60 --rows=120 --seconds=300                # as shipped
 node scripts/probe.mjs --model=late                                       # the first reading's hand
 ```
+
+### The grace by pressure
+
+The grace is now set per pressure (`RELEASE_GRACE_BY` in `src/plates.js`), and the probe flies a
+pressure's real multipliers with `--pressure=relaxed|classic|hardcore`. Same seeds and cut-offs as
+above. Each cell reads median row (p90) · share reaching row 20 · share reaching row 40.
+
+| hand | Tiro, no grace | Tiro ±20 ms | **Tiro ±30 ms (shipped)** | Tiro ±45 ms | **Adeptus ±12 ms** | **Magister, none** |
+|---|---|---|---|---|---|---|
+| σ 20 ms | 17 (33) · 45 % · 2 % | 50 (120) · 78 % · 60 % | 97 (121) · 92 % · 78 % | 120 · 98 % · 95 % | 26 (54) · 67 % · 17 % | 17 (30) · 40 % · 2 % |
+| σ 30 ms | 15 (25) · 33 % · 2 % | 24 (45) · 68 % · 18 % | 34 (89) · 75 % · 45 % | 78 (120) · 88 % · 73 % | 21 (40) · 57 % · 10 % | 13 (27) · 30 % · 0 % |
+| σ 45 ms | 12 (24) · 20 % · 0 % | 20 (39) · 52 % · 7 % | 23 (52) · 62 % · 20 % | 34 (102) · 80 % · 42 % | 13 (28) · 28 % · 2 % | 10 (24) · 20 % · 0 % |
+| σ 70 ms | 8 (22) · 10 % · 0 % | 10 (26) · 23 % · 3 % | 14 (34) · 30 % · 3 % | 16 (37) · 35 % · 8 % | 8 (19) · 8 % · 0 % | 8 (16) · 2 % · 0 % |
+
+**Without a grace, the pressures barely differed.** Ungraced Tiro reached a median of row 17 at the
+human hand, Adeptus 18 and Magister 17. Their other multipliers (a slower or faster dark, a cheaper or
+dearer nib, wider bands on Tiro) act on losses that end few runs, while missed landings end most of
+them. The grace acts on exactly that loss, so it is now the lever that actually separates the three.
+
+Tiro's ±30 ms roughly doubles a beginner's run (σ 45 ms: row 10 → 23, and 62 % now reach row 20),
+where ±20 ms moved it much less and ±45 ms made even a middling hand nearly unending. It also carries a
+strong hand a long way, which is what the easiest pressure is for. Magister with no grace plays as the
+game did before the grace existed, with its harsher dark and nib on top.

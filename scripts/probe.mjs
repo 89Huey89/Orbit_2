@@ -71,6 +71,20 @@ const SPREAD_HANDS=[
 // The release grace the world is flown under. Left unset, the probe flies the game as it ships; set to 0
 // it reads the chart as it was before the grace existed, which is the baseline the grace is judged by.
 const GRACE=args.some(a=>a.startsWith('--grace='))?flag('grace',0):null;
+// Which pressure the world is flown under. The live game sets the pressure's multipliers on a world just
+// after dealing it, and so does the probe, read off plates.js's own tables rather than copied here, so
+// the two cannot drift apart. Left unset it flies the simulation's own defaults, which are Adeptus's.
+const PRESSURE=(args.find(a=>a.startsWith('--pressure='))||'').slice(11)||null;
+const plates=await readFile(new URL('../src/plates.js',import.meta.url),'utf8');
+const pressureTable=name=>{const m=plates.match(new RegExp('const '+name+'=(\\{[^}]*\\});'));return m?vm.runInNewContext('('+m[1]+')'):null;};
+const MULTS=PRESSURE?{darknessMult:pressureTable('DARKNESS_MULT'),inkMult:pressureTable('INK_MULT'),perfectMult:pressureTable('PERFECT_MULT'),capMult:pressureTable('CAP_MULT'),releaseGrace:pressureTable('RELEASE_GRACE_BY')}:null;
+if(PRESSURE&&!(PRESSURE in MULTS.darknessMult))throw new Error('Unknown pressure '+PRESSURE);
+function dealWorld(seed){
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);
+  if(MULTS)for(const key in MULTS)if(MULTS[key])w[key]=MULTS[key][PRESSURE];
+  if(GRACE!==null)w.releaseGrace=GRACE;
+  return w;
+}
 // Seeds are flown from 1 upward so a curve can be compared against a previous run of the probe, and
 // against `verify.mjs`'s own sixty courses, which start in the same place.
 const SEEDS=flag('seeds',120);
@@ -154,7 +168,7 @@ function forecast(w,eligible,settle,sigma=0){
 }
 function gauss(r){const u=Math.max(1e-12,r()),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 function flySpread(seed,hand){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);if(GRACE!==null)w.releaseGrace=GRACE;w.start();
+  const w=dealWorld(seed);w.start();
   const jitter=rng(seed*7919+Math.round(hand.sigma*1000)+17);
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1,frame=0;
@@ -178,7 +192,7 @@ function flySpread(seed,hand){
 }
 function fly(seed,hand){
   if(MODEL==='spread')return flySpread(seed,hand);
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);if(GRACE!==null)w.releaseGrace=GRACE;w.start();
+  const w=dealWorld(seed);w.start();
   const jitter=rng(seed*7919+Math.round(hand.late*1000));
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1;
@@ -251,7 +265,7 @@ for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
 if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,patience:PATIENCE/TAU,sweepFull:SWEEP_FULL,ledgerFloor:LEDGER_FLOOR,ledgerSpan:LEDGER_SPAN,report},null,2));process.exit(0);}
 
 console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s');
-console.log('hand model '+MODEL+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms'));
+console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms'));
 console.log('knowledge per encounter = '+LEDGER_FLOOR+' + '+LEDGER_SPAN+' × documented\n');
 console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('perf',6)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
 console.log('-'.repeat(89));

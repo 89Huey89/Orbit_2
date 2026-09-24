@@ -444,11 +444,23 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   const beforeDaily=context.test.world;
   const plateBeforeDaily=context.test.plateName,cosmeticsBeforeDaily=JSON.parse(JSON.stringify(context.test.cosmetics));
   const plateStorageBeforeDaily=saved.get('orbit.plate.v1'),cosmeticsStorageBeforeDaily=saved.get('orbit.cosmetics.v1');
+  // Each pressure sets its own release grace alongside its other multipliers: widest on Tiro, the glass's
+  // own noise on Adeptus, and none at all on Magister.
+  {
+    const table=vm.runInContext('RELEASE_GRACE_BY',context),was=context.test.difficulty;
+    assert(table.relaxed>table.classic&&table.classic===RELEASE_GRACE&&table.hardcore===0,'Tiro forgives most, Adeptus the default, Magister nothing: '+JSON.stringify(table));
+    for(const value of ['relaxed','classic','hardcore']){
+      vm.runInContext('setDifficulty('+JSON.stringify(value)+')',context);
+      assert.equal(context.test.world.releaseGrace,table[value],'The '+value+' pressure sets its own release grace');
+    }
+    vm.runInContext('setDifficulty('+JSON.stringify(was)+')',context);
+  }
   events['daily:click']();
   assert.equal(context.test.dailyOn,true);
   assert(/^\d{4}-\d{2}-\d{2}$/.test(context.test.dailyDay),'The daily course is keyed to a UTC date');
   assert.equal(context.test.world.seed,context.test.dailySeed,'The daily course comes from the date, not the clock');
   assert.equal(context.test.world.darknessMult,1,'The daily plate is always played at Classic pressure');
+  assert.equal(context.test.world.releaseGrace,RELEASE_GRACE,'and with Adeptus\'s release grace');
   assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+context.test.dailyDay));
   assert.equal(new OrbitWorld(context.test.dailySeed,440,860,()=>{},false,true).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'Everyone plays the same daily chart');
   assert.equal(context.test.world.varyOpening,true,'The daily plate draws its own opening rather than the fixed one');
@@ -461,6 +473,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(dailyReplayed.catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A replayed daily plate rebuilds the same varied opening');
     const predatesFlag=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,startedAt:0,releases:[],resizes:[]});
     assert.equal(predatesFlag.varyOpening,false,'A replay log saved before this flag existed falls back to the fixed opening');
+    assert.equal(predatesFlag.releaseGrace,0,'A replay log saved before the release grace existed is read back without it');
+    const graced=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,varyOpening:true,startedAt:0,grace:.012,releases:[],resizes:[]});
+    assert.equal(graced.releaseGrace,.012,'A replay starts from the grace its log was dealt with');
   }
   // ---------- The daily's own showcase: a setup drawn from the same date hash ----------
   {
@@ -1163,6 +1178,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       const origin=w.player.node,destination=w.makeNode(0,-300,50,1,'still');
       origin.r=40;origin.x=origin.baseX=offset-origin.r;origin.y=origin.baseY=0;
       w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];w.nebulas=[];
+      // Released exactly where it is aimed: whichever pressure the page is on, no grace may carry this
+      // deliberately rough release onto the tangent beside it.
+      w.releaseGrace=0;
       w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();w.start();
       return {w,destination};
     };
