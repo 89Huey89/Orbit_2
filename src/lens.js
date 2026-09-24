@@ -466,16 +466,32 @@ function lensSeamMarks(){
 // The frontispiece's title mark: Saturn as far as any run on this device has resolved it, above the opening
 // lights and gone once the hand starts; the era's name beneath it in the Fell capitals, and the catalogue.
 let lensTitleFade=1;
+// The mark is laid out upward from the opening lights and downward from the lore above them, so it fits the
+// gap between the two on any sheet — a short phone gets a smaller Saturn rather than a title set over the
+// rings, and a wide one lifts it clear of rings that sit higher than they do in the hand.
+function lensTitleRoom(){
+  let top=H*.13;
+  // read every frame the frontispiece stands, which is the only time this is drawn, so a turned phone is followed
+  try{const e=document.getElementById('lens-lore-open'),r=e&&e.getBoundingClientRect?e.getBoundingClientRect():null,gr=game.getBoundingClientRect?game.getBoundingClientRect():null;
+    if(r&&gr&&r.height>0)top=r.bottom-gr.top+6;}catch(_){}
+  let bottom=H*.36;for(const n of world.nodes)if(n.difficultyChoice)bottom=Math.min(bottom,sy(n.y)-n.cap*scale-6);
+  return{top,bottom};
+}
 function lensTitleMark(){
   const ready=world.state==='ready';lensTitleFade=ready?1:Math.max(0,lensTitleFade-.03);if(lensTitleFade<=0)return;
-  const P=ink.lens,rec=lensRead(),stage=rec.completed>0?6:rec.furthest+1,C=LENS_CHAPTERS[stage-1],R=Math.min(W*.1,34*scale+4),x=W/2,y=H*.235;
-  const key='title:'+stage+':'+R.toFixed(1)+':'+DPR;let sp=lensSprites.get(key);
-  if(!sp){const size=Math.ceil(R*4.4),c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);lensSaturn(g,R,stage,1);sp={canvas:c,size};lensSprites.set(key,sp);}
-  ctx.save();ctx.globalAlpha=lensTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);
-  lensFell(ctx,'THE LENS',x,y+R*1.55+14,24,P.ink,.94,'center','sc');
-  lensFell(ctx,'Saturn, as far as it has been resolved: '+C.year+' · '+C.place.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),x,y+R*1.55+36,10.5,P.inkSoft,.85,'center','text','italic');
-  const nw=lensBits(rec.worlds),nf=lensBits(rec.fields);
-  if(nw||nf)lensTyped(ctx,'LOG · '+nw+' OF 7 WORLDS · '+nf+' OF 12 FIELDS',x,y+R*1.55+52,8,P.inkRed,.8,'center');
+  const P=ink.lens,rec=lensRead(),stage=rec.completed>0?6:rec.furthest+1,C=LENS_CHAPTERS[stage-1],x=W/2,nw=lensBits(rec.worlds),nf=lensBits(rec.fields),log=nw||nf;
+  // from the bottom up: the log, the line, the title, then Saturn in what is left. The vignette round a
+  // drawing reaches past it, so a drawing is measured by its own body and companions or rings, and from
+  // 1887 on by the pane or sensor frame it is set in, which stands taller than either
+  const {top,bottom}=lensTitleRoom(),logY=bottom-6,lineY=log?logY-15:logY,titleY=lineY-21,half=stage<=2?.95:1.25,fit=Math.min(W*.1,34*scale+4,(titleY-16-top)/(half*2)),R=clamp(fit,12,40),y=titleY-16-R*half;
+  // a sheet too short to hold the drawing clear of the lore gets the title alone rather than a drawing set over words
+  ctx.save();ctx.globalAlpha=lensTitleFade;
+  if(fit>=14){const key='title:'+stage+':'+R.toFixed(1)+':'+DPR;let sp=lensSprites.get(key);
+  if(!sp){const size=Math.ceil(R*4.4),c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);lensSaturn(g,R,stage,1);sp={canvas:c,size};if(lensSprites.size>8)lensSprites.clear();lensSprites.set(key,sp);}
+  ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);}
+  lensFell(ctx,'THE LENS',x,titleY,Math.min(24,W*.062),P.ink,.94,'center','sc');
+  lensFell(ctx,'Saturn, as far as it has been resolved: '+C.year+' · '+C.place.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),x,lineY,Math.min(10.5,W*.027),P.inkSoft,.85,'center','text','italic');
+  if(log)lensTyped(ctx,'LOG · '+nw+' OF 7 WORLDS · '+nf+' OF 12 FIELDS',x,logY,8,P.inkRed,.8,'center');
   ctx.restore();
 }
 // The ground: each register's tile laid in its own band at the camera's rate, a light held over the middle of
@@ -1085,6 +1101,9 @@ function lensDark(dt){
 // circle of view at the eyepiece, crosshairs and all; the rectangular field of a survey plate with its
 // fiducial crosses and identity typed in its corner on the glass; a detection box off the sensor. Each is laid
 // on as the field's stars are held, so an unfinished field shows exactly how much of it has been taken.
+// A field's name is settled type, declared to the ground register so a note written after it is set round it
+// rather than over it; the register's own faces are all set on the middle, so the box is measured about y.
+function lensMarkName(str,x,y,size,variant){ctx.save();ctx.font=plateFace(size,variant);const w=ctx.measureText(str).width;ctx.restore();markGround('caption',x-w/2-2,y-size*.62,x+w/2+2,y+size*.62);}
 function lensFieldName(chart){const F=LENS_FIELDS[((chart.catalogueIndex|0)%12+12)%12];return F;}
 function lensFigure(chart){
   if(chart.stars.length<3)return;const P=ink.lens;
@@ -1096,20 +1115,20 @@ function lensFigure(chart){
   if(reg===0){let R=0;for(const p of pts)R=Math.max(R,Math.hypot(p[0]-cx,p[1]-cy));R+=30*scale;const a0=-Math.PI/2,a1=a0+TAU*f;
     ctx.strokeStyle=`rgba(${P.ink},.62)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.beginPath();ctx.arc(cx,cy,R,a0,a1);ctx.stroke();ctx.lineWidth=Math.max(.35,.4*scale);ctx.beginPath();ctx.arc(cx,cy,R+3*scale,a0,a1);ctx.stroke();
     if(done){ctx.strokeStyle=`rgba(${P.ink},.35)`;ctx.lineWidth=Math.max(.35,.4*scale);ctx.setLineDash([3*scale,3*scale]);ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx-R*.2,cy);ctx.moveTo(cx+R*.2,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy-R*.2);ctx.moveTo(cx,cy+R*.2);ctx.lineTo(cx,cy+R);ctx.stroke();ctx.setLineDash([]);
-      const x=clamp(cx,90,W-90),y=clamp(cy+R+16*scale,70,H-70);lensFell(ctx,F[0]+' · '+F[1],x,y,Math.max(12,13*scale),P.ink,.92,'center','sc');}}
+      const x=clamp(cx,90,W-90),y=clamp(cy+R+16*scale,70,H-70),sz=Math.max(12,13*scale);lensFell(ctx,F[0]+' · '+F[1],x,y,sz,P.ink,.92,'center','sc');lensMarkName(F[0]+' · '+F[1],x,y,sz,'sc');}}
   else if(reg===1){const pad=30*scale;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of pts){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);}
     x0-=pad;y0-=pad;x1+=pad;y1+=pad;const per=2*((x1-x0)+(y1-y0));
     ctx.strokeStyle=`rgba(${P.inkBlack},.7)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.setLineDash([per*f,per]);ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y1);ctx.lineTo(x0,y1);ctx.closePath();ctx.stroke();ctx.setLineDash([]);
     ctx.lineWidth=Math.max(.6,.8*scale);ctx.beginPath();for(const [fx,fy] of[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]){ctx.moveTo(fx-5*scale,fy);ctx.lineTo(fx+5*scale,fy);ctx.moveTo(fx,fy-5*scale);ctx.lineTo(fx,fy+5*scale);}ctx.stroke();
     lensTyped(ctx,'FIELD '+(100+((chart.catalogueIndex|0)*53)%900),x0+4*scale,y0+8*scale,Math.max(8,8.5*scale),P.inkBlack,.85);
     chart.stars.forEach((n,i)=>{if(!n.visited&&!done)return;lensTyped(ctx,String(i+1),pts[i][0]+(n.r*.45+5)*scale,pts[i][1]-(n.r*.45+5)*scale,Math.max(9,9.5*scale),P.inkRed,.9);});
-    if(done){lensTyped(ctx,F[0]+' · '+F[1],clamp((x0+x1)/2,90,W-90),y1+12*scale,Math.max(9.5,10*scale),P.inkBlack,.95,'center');}}
+    if(done){const nx=clamp((x0+x1)/2,90,W-90),ny=y1+12*scale,sz=Math.max(9.5,10*scale);lensTyped(ctx,F[0]+' · '+F[1],nx,ny,sz,P.inkBlack,.95,'center');lensMarkName(F[0]+' · '+F[1],nx,ny,sz,'typed');}}
   else{const pad=26*scale;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of pts){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);}
     x0-=pad;y0-=pad;x1+=pad;y1+=pad;const L=Math.min(22*scale,(x1-x0)*.3)*f;
     ctx.strokeStyle=`rgba(${P.cyan},.8)`;ctx.lineWidth=Math.max(.7,.9*scale);ctx.beginPath();
     for(const [fx,fy,sx0,sy0] of[[x0,y0,1,1],[x1,y0,-1,1],[x1,y1,-1,-1],[x0,y1,1,-1]]){ctx.moveTo(fx+sx0*L,fy);ctx.lineTo(fx,fy);ctx.lineTo(fx,fy+sy0*L);}ctx.stroke();
     lensMono(ctx,lensCard('OBJECT',"'"+F[0]+"'"),x0,y0-8*scale,Math.max(7.5,7.5*scale),P.cyan,.9);
-    if(done)lensMono(ctx,F[1],clamp((x0+x1)/2,90,W-90),y1+11*scale,Math.max(8.5,9*scale),P.instr,.95,'center');}
+    if(done){const nx=clamp((x0+x1)/2,90,W-90),ny=y1+11*scale,sz=Math.max(8.5,9*scale);lensMono(ctx,F[1],nx,ny,sz,P.instr,.95,'center');lensMarkName(F[1],nx,ny,sz,'mono');}}
   ctx.restore();
 }
 // A field's route before it is resolved: straight lines between its stars, dashed while only proposed and
