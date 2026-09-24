@@ -102,7 +102,8 @@ Not built by the first stage and recorded here so it is not lost:
 2. The Chronicle endings for I and III, and the reading switch. *Landed.*
 3. A Journey door on the frontispiece that starts a run at the frontier, and the milestones drawn in
    each era's own art. *The door landed*, with the milestones named in each era's own voice and said as a
-   line on the frontispiece and the leaf; drawing them in each era's art is still to do. Until stage 5
+   line on the frontispiece and the leaf, and drawn above that line by each era's own `journeyMark` painter
+   in its own materials (see the root README's "The eras"). Until stage 5
    exists, a known era is turned over **between** runs: the leaf says so and the next tap opens the next
    century's frontispiece (`journeyAdvance()`), which stage 5 replaces with the in-run transition. The
    frontier never climbs onto a century that has no plate yet, so it stops at VI for now.

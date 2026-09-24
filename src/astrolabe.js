@@ -1047,3 +1047,14 @@ defineVoice('astrolabe',{
     bend:'The dragon’s head bends the course. Follow the pricked line; give it room.'
   }
 });
+
+// The Journey's milestones in brass (LINKING.md): the instrument itself, its six parts the six milestones,
+// every part standing cut that the knowledge banked has opened and the next swept in as far as it has
+// carried — the instrument as far as the climb has built it. The mater and limb are most of its face, so
+// six punched points under it count the parts as well, each gilt as its part is finished.
+defineHand('astrolabe',{journeyMark(g,w,h,m){
+  const P=ink.astro,R=Math.min(22,h*.3),done=m.open>=m.of;
+  g.save();g.translate(w/2,h*.4);astroInstrument(g,R,done?m.of:m.open+1,done?1:m.toward,.35,done?1:0);g.restore();
+  for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*12,y=h-6,f=i<m.open?1:i===m.open?m.toward:0;g.save();g.strokeStyle=`rgb(${P.groove})`;g.lineWidth=.8;g.beginPath();g.arc(x,y,2.4,0,TAU);g.stroke();
+    if(f>0){g.fillStyle=`rgb(${P.gilt})`;g.beginPath();g.moveTo(x,y);g.arc(x,y,2.4,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.fill();}g.restore();}
+}});

@@ -342,10 +342,33 @@ function journeyNote(){
   const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
   return fmt(next?c.known:c.whole,{era,next});
 }
+// The milestones drawn, not only named: every century paints its own knowledge structure as far as the
+// climb has built it (a `journeyMark` painter in its hand), onto a small sheet of its own under the
+// frontispiece's line and the leaf's. The atlas's are its four chapters as four engraved roundels, each
+// hatched as the knowledge banked reaches it, the one in hand hatched round from the top as a dial is.
+function atlasJourneyMark(g,w,h,m){
+  const B=ink.base,step=Math.min(56,w/(m.of+.4)),r=Math.min(12,h*.18);
+  for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,cy=h/2,f=i<m.open?1:i===m.open?m.toward:0;
+    g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.strokeStyle=`rgba(${f>=1?B.inkStrong:B.inkSoft},${f>=1?.95:.5})`;g.lineWidth=f>=1?1.1:.7;g.stroke();
+    if(f>0){g.beginPath();g.moveTo(cx,cy);g.arc(cx,cy,r-1.2,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.clip();
+      g.strokeStyle=`rgba(${B.ink},.8)`;g.lineWidth=.55;g.beginPath();for(let d=-r*2;d<=r*2;d+=2.2){g.moveTo(cx+d-r,cy+r);g.lineTo(cx+d+r,cy-r);}g.stroke();}
+    g.restore();
+    if(f>=1){g.save();g.fillStyle=`rgb(${B.gold})`;g.beginPath();g.arc(cx,cy,1.8,0,TAU);g.fill();g.restore();}}
+}
+// The leaf's is drawn flatter than the frontispiece's, since the leaf is already full and must stand clear
+// of the running figures above it on the shortest phone.
+function paintJourneyMark(id,h=64){
+  const c=$(id);if(!c)return;const on=runMode==='journey';c.hidden=!on;if(!on||!c.getContext)return;
+  const w=260,d=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+  c.width=Math.round(w*d);c.height=Math.round(h*d);c.style.width=w+'px';c.style.height=h+'px';
+  const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);
+  (handFor('journeyMark')||atlasJourneyMark)(g,w,h,journeyMilestones());
+}
 function syncJourney(){
   const on=runMode==='journey',c=plateWords().chrome.journey;
   const door=$('journey-open');if(door){door.textContent=c.door;door.setAttribute('aria-pressed',String(on));door.setAttribute('aria-label',c.doorLabel);}
   const note=$('journey-note');if(note){note.hidden=!on;note.textContent=on?journeyNote():'';}
+  paintJourneyMark('journey-mark');
 }
 // Puts the frontier on the press for a Journey run: the century it names entered by its own door, or the
 // atlas dealt a fresh chart. A ready era is turned over first (journeyAdvance), which is the whole of the
@@ -544,6 +567,7 @@ function showEnd(){
   // What a Journey run banked is said on the leaf: any milestone it opened, then where the climb stands.
   {
     const fold=journeyCommit(true),note=$('end-journey');
+    paintJourneyMark('end-journey-mark',42);
     if(note){
       note.hidden=!fold;
       if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyNote()].join(' \u00b7 ');}

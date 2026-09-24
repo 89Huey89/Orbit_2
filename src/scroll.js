@@ -806,3 +806,15 @@ defineVoice('scroll',{
     bend:'Mars bends the course. Follow the pricked line; give it room.'
   }
 });
+
+// The Journey's milestones on the scroll (LINKING.md): the four palaces as the four quarters they keep —
+// east, north, west, south — each a seal pressed in cinnabar once its palace is filed, and until then its
+// quarter written in soot inside a ruled frame, the ink coming up the frame as the knowledge banked does.
+defineHand('scroll',{journeyMark(g,w,h,m){
+  const P=ink.scroll,quarters=['東','北','西','南'],step=Math.min(56,w/(m.of+.4)),size=Math.min(24,h*.4);
+  for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,cy=h/2,q=quarters[i]||'';
+    if(i<m.open){scrollSeal(g,cx,cy,size,q,i+31,.95,(i%2?.04:-.04));continue;}
+    const part=i===m.open?m.toward:0;g.save();g.strokeStyle=`rgba(${P.soot},.4)`;g.lineWidth=.7;g.strokeRect(cx-size/2,cy-size/2,size,size);
+    if(part>0){g.fillStyle=`rgba(${P.soot},.12)`;g.fillRect(cx-size/2,cy+size/2-size*part,size,size*part);}g.restore();
+    scrollColumn(g,q,cx,cy-size*.53,size*.72,P.soot,.35+.5*part,1,'kaiM');}
+}});

@@ -2450,3 +2450,14 @@ function invalidateRockArt(){
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;rockWallRelief=null;rockRelitTile=false;rockFaceVersion++;
 }
+
+// The Journey's milestones on this wall (LINKING.md): the four chambers as four rings of eight pressed dots,
+// a dot for each row a chamber spans, pressed in red ochre as the knowledge banked reaches it and left as a
+// faint charcoal mark until then; a chamber whose ring is closed has a pale dab struck at its heart. It is
+// the Rock's own ring language, the one mark on this wall that says where an observation is possible.
+defineHand('rock',{journeyMark(g,w,h,m){
+  const P=ink.rock,step=Math.min(58,w/(m.of+.4)),r=Math.min(13,h*.2);
+  for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,cy=h/2,lit=i<m.open?8:i===m.open?Math.floor(m.toward*8):0;
+    for(let d=0;d<8;d++){const a=-Math.PI/2+d/8*TAU,on=d<lit;rockDot(g,cx+Math.cos(a)*r,cy+Math.sin(a)*r,on?2.6:2.1,on?P.redOchre:P.manganese,on?.95:.3,i*8+d+900);}
+    if(i<m.open)rockDot(g,cx,cy,4.2,P.kaolin,.9,i+960,true);}
+}});

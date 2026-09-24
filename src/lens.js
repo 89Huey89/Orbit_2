@@ -1490,3 +1490,13 @@ defineVoice('lens',{
     bend:'The void bends the course. Follow the guide; give it room.'
   }
 });
+
+// The Journey's milestones through the lens (LINKING.md): Saturn, resolved as far as the climb has taken
+// it — Galileo's three bodies before the eyepiece is known, Huygens's ring once it is, the glass plate's and
+// the sensor's after — with the three registers pricked beneath it, filled as each is known.
+defineHand('lens',{journeyMark(g,w,h,m){
+  const P=ink.lens,stage=[1,2,4,6][Math.min(3,m.open)],R=Math.min(15,h*.2);
+  g.save();g.translate(w/2,h*.42);lensSaturn(g,R,stage,1,{card:false});g.restore();
+  for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*14,y=h-7;g.save();g.strokeStyle=`rgb(${P.ink})`;g.lineWidth=.8;g.beginPath();g.arc(x,y,2.6,0,TAU);g.stroke();
+    const f=i<m.open?1:i===m.open?m.toward:0;if(f>0){g.fillStyle=`rgb(${P.inkRed})`;g.beginPath();g.moveTo(x,y);g.arc(x,y,2.6,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.fill();}g.restore();}
+}});
