@@ -1,9 +1,5 @@
 # The ascent through time
 
-> **Archived — indefinitely postponed (since 2026-09-08).** The whole progression system,
-> [JOURNEY.md](JOURNEY.md) included, is not being built; see `CLAUDE.md` and `docs/README.md` for
-> current status. Current development is exclusively on polishing the shipped Renaissance atlas.
-
 > **Superseded in part.** The progression system this file describes — a ladder climbed inside a
 > single run — is not the design being built. [JOURNEY.md](JOURNEY.md) is the controlling document;
 > its "What this overrides" table names exactly which claims below are now stale. What this file

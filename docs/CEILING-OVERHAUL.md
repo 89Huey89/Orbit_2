@@ -2,9 +2,9 @@
 
 Era II ships as a playable preview (`src/ceiling.js`), and on the phone it reads as beige graph paper
 with a game on top rather than as Egypt. This file is the plan agreed on 2026-09-23 to change that
-in art, HUD and play. It is live work, not archive: the postponement of the eight-era progression is
-untouched by it, and nothing here builds toward that ladder. Era II stays a standalone door on the
-frontispiece that keeps its own record.
+in art, HUD and play. It is live work, not archive: it is separate from the eight-era progression,
+and nothing here builds toward that ladder. Era II stays a standalone door on the frontispiece that
+keeps its own record.
 
 The mockups the direction was chosen from are an artifact outside the repo; what they decided is
 recorded here so the repository does not depend on them.
