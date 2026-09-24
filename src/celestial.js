@@ -186,9 +186,16 @@ function celestialPlate(index,style){
   // The plate goes into the key as well as the region index — a cross-dissolve holds two plates in one
   // frame, so each must keep its own cached illustration — and it is built once, here, so the lookup
   // below and the store at the end of the function can never be spelled two different ways.
-  const key=plateName+':'+cut+':'+index;
+  // The plate is drawn in its own 720 by 1200 measure but cut at the resolution it is actually shown at:
+  // laid at a fixed 720 by 1200 it was always blown up to fill the sheet, by about two thirds again on the
+  // reference phone, and the moon's hatching went to grey fog. The density is capped, and only the three
+  // most recent plates are held, since each one is several megabytes and a page turn only ever needs two.
+  const density=clamp(Math.ceil(celestialPlacementFit()*DPR*8)/8,1,1.66);
+  const key=plateName+':'+cut+':'+index+':'+density;
   if(celestialPlates.has(key))return celestialPlates.get(key);
-  const c=makeCanvas(720,1200),g=c.getContext('2d'),rng=seeded(98153+index*437),w=c.width,h=c.height;
+  while(celestialPlates.size>=3)celestialPlates.delete(celestialPlates.keys().next().value);
+  const c=makeCanvas(Math.round(720*density),Math.round(1200*density)),g=c.getContext('2d'),rng=seeded(98153+index*437),w=720,h=1200;
+  g.scale(density,density);
   if(cut==='rhumbs'){paintRhumbPlate(g,index,w,h);celestialPlates.set(key,c);return c;}
   if(!onPaper()){
     const tones=ink.plates.tones[index];
@@ -422,8 +429,9 @@ function celestialPlate(index,style){
 // (drawRegion) are nearer and carry their own faster factors, this is the furthest thing on the
 // plate, so it is barely moved by the same climb that scrolls a node clean off the sheet.
 const CELESTIAL_PARALLAX=.05;
+const celestialPlacementFit=()=>Math.max(W/720,H/1200)*1.07;
 function celestialPlacement(){
-  const fit=Math.max(W/720,H/1200)*1.07;
+  const fit=celestialPlacementFit();
   const x=(W-720*fit)/2,y=(H-1200*fit)/2;
   // Tied to cameraY exactly as sy() is, not to elapsed time, so the scenery is engraved on the sheet
   // rather than pasted on the glass: it holds still with the world under pause and reduced motion,
@@ -440,7 +448,7 @@ function drawCelestialScene(index,weight){
   // The plate is laid larger than the sheet so it fills it at any aspect; on a phone that is half a
   // screen of engraving blended in beyond both margins every frame. Only the part on the sheet is
   // blitted, with a little overhang so the resampler still has neighbours to read at the edges.
-  const dw=plate.width*place.fit,dh=plate.height*place.fit,overhang=Math.max(2,Math.ceil(place.fit*2));
+  const dw=720*place.fit,dh=1200*place.fit,overhang=Math.max(2,Math.ceil(place.fit*2));
   // The chapter plates are engraved illustrations; on the observatory plate they are held far back, so
   // they read as the faint deep-sky field a long exposure returns rather than as a printed globe.
   ctx.save();ctx.globalAlpha=onPaper()?weight*.72:modernPlate()?weight*.22:weight;

@@ -17,6 +17,10 @@ One piece of live work sits beside that focus, at the user's request: the overha
 The Ceiling, planned in [CEILING-OVERHAUL.md](CEILING-OVERHAUL.md). It changes the standalone preview
 door only and builds nothing toward the archived progression.
 
+[ART-REVIEW.md](ART-REVIEW.md) is a review of the atlas as it looks on the reference phone, with
+proposals for fixes, effects and rendering. It adds to the root `ART-AUDIT-TODO.md` rather than
+repeating it.
+
 ## `archive/eras/` — the archived eight-era progression plan
 
 Nothing here describes shipped behaviour, with two exceptions: Era I (`01-rock.md`) and Era II

@@ -940,8 +940,13 @@ function drawRunningHead(){
   const band={left:W*.5-half,right:W*.5+half,top:midY-halfH,bottom:midY+halfH};
   if(!groundClear(band,'head',2)){ctx.restore();return;}
   markGroundBox('head',band);
-  ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.5:.6})`;
-  ctx.fillRect(W*.5-half,midY-halfH,half*2,halfH*2);
+  // The band is the sheet's own stock at a strength that holds the head over the risen ink as well as over
+  // the bare sheet, and it fades out at either end rather than stopping, so over the flood it reads as the
+  // plate left clean round the words, not as a grey label laid on top of them.
+  const a=onPaper()?.82:.72,feather=Math.min(22,half*.35),band2=ctx.createLinearGradient(W*.5-half,0,W*.5+half,0),f=feather/(half*2);
+  band2.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);band2.addColorStop(f,`rgba(${ink.base.paperRgb},${a})`);
+  band2.addColorStop(1-f,`rgba(${ink.base.paperRgb},${a})`);band2.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+  ctx.fillStyle=band2;ctx.fillRect(W*.5-half,midY-halfH,half*2,halfH*2);
   burinSegment(ctx,W*.5-half,midY-halfH,W*.5+half,midY-halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81301,{segments:10,skips:1,hair:false,wobble:.15});
   burinSegment(ctx,W*.5-half,midY+halfH,W*.5+half,midY+halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81307,{segments:10,skips:1,hair:false,wobble:.15});
   ctx.fillStyle=colors.text;
@@ -1154,13 +1159,43 @@ function drawImpressum(){
 // the plate's own paper the running head lays under itself (drawRunningHead, above), then the burin
 // cuts the frame over it. This only reads right because drawActionFrames runs at the very foot of
 // render(), after every chart mark is already struck, so the wash goes down last and actually covers them.
+let actionWipe=null;
 function drawActionRowFrame(el){
   if(!el)return;
   const rect=el.getBoundingClientRect();
   if(!(rect.width>0)||!(rect.height>0)||!Number.isFinite(rect.left)||!Number.isFinite(rect.top))return;
-  ctx.fillStyle=`rgba(${ink.base.paperRgb},.92)`;
-  ctx.fillRect(rect.left,rect.top,rect.width,rect.height);
-  burinRect(ctx,rect.left,rect.top,rect.width,rect.height,ink.frame.tickMinor,onPaper()?.55:.4,.75,80601);
+  // The ground is a reserve rather than a box: the sheet wiped clean in an oval that holds solid under the
+  // words and fades out past them, so the chart runs on round it instead of stopping at a hard edge. It is
+  // then ruled as a printer rules a table of contents — a double rule over the head with a lozenge at its
+  // middle, a single rule under the foot, and no rules down the sides — since a box closed on four sides
+  // was what made the frontispiece's choices read as a web form laid on the plate.
+  // What is laid is the sheet itself, not a colour: the painted backdrop is pulled again through the soft
+  // oval, so its tone, vignette, fibres and foxing carry straight through the wiped ground. A flat fill of
+  // the plate's ground colour matched the sheet nowhere and printed as a cloud (night) or a glow (paper).
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,rx=rect.width/2+30,ry=rect.height/2+22;
+  const sheet=typeof paintBackdrop==='function'?paintBackdrop():null,pw=Math.max(1,Math.round(rx*2*DPR)),ph=Math.max(1,Math.round(ry*2*DPR));
+  if(!actionWipe||actionWipe.width!==pw||actionWipe.height!==ph)actionWipe=makeCanvas(pw,ph);
+  const g=actionWipe&&actionWipe.getContext?actionWipe.getContext('2d'):null;
+  if(sheet&&g){
+    g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.clearRect(0,0,pw,ph);
+    g.save();g.translate(pw/2,ph/2);g.scale(pw/2,ph/2);
+    const mask=g.createRadialGradient(0,0,0,0,0,1);mask.addColorStop(0,'rgba(0,0,0,.95)');mask.addColorStop(.72,'rgba(0,0,0,.92)');mask.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=mask;g.beginPath();g.arc(0,0,1,0,TAU);g.fill();g.restore();
+    g.globalCompositeOperation='source-in';g.drawImage(sheet,(cx-rx)*DPR,(cy-ry)*DPR,pw,ph,0,0,pw,ph);g.globalCompositeOperation='source-over';
+    ctx.drawImage(actionWipe,cx-rx,cy-ry,rx*2,ry*2);
+  }else{
+    ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
+    const clear=ctx.createRadialGradient(0,0,0,0,0,1);
+    clear.addColorStop(0,`rgba(${ink.base.paperRgb},.94)`);clear.addColorStop(.72,`rgba(${ink.base.paperRgb},.9)`);clear.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
+  }
+  const rgb=ink.frame.tickMinor,alpha=onPaper()?.55:.42,l=rect.left+6,r=rect.right-6,top=rect.top-3,foot=rect.bottom+3;
+  burinSegment(ctx,l,top,r,top,rgb,alpha,.75,80601,{segments:12,skips:0,hair:false,wobble:.15});
+  burinSegment(ctx,l+10,top-3.5,r-10,top-3.5,rgb,alpha*.7,.45,80603,{segments:12,skips:1,hair:false,wobble:.15});
+  burinSegment(ctx,l,foot,r,foot,rgb,alpha,.6,80607,{segments:12,skips:0,hair:false,wobble:.15});
+  ctx.save();ctx.translate(cx,top-1.75);ctx.rotate(Math.PI/4);
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},1)`;ctx.fillRect(-3.4,-3.4,6.8,6.8);
+  ctx.strokeStyle=`rgba(${rgb},${alpha})`;ctx.lineWidth=.8;ctx.strokeRect(-3.4,-3.4,6.8,6.8);ctx.restore();
 }
 function drawActionFrames(){
   if(!world||world.state!=='ready'||eraId()!==0||plainPlate())return;

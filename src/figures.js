@@ -1426,7 +1426,19 @@ function drawNode(n,aim){
     ctx.font=inkwell?plateFace(size,'text','italic'):named?plateFace(size,'sc'):plateFace(size);
     ctx.textAlign='left';ctx.fillStyle=paper?`rgba(${ink.base.ink},.72)`:`rgba(${rgb},.48)`;
     const mark=gold?'AURUM':shield?POWERUP_LABELS.shield:reflector?POWERUP_LABELS.reflector:dawn?POWERUP_LABELS.dawn:inkwell?'INK':String(Math.floor(n.row)+1);
-    writeText(ctx,mark,r+12*scale,4*scale,revealLabel(pen,mark),{size});
+    // East of the ring is the caption's own side, but it is not always free: near the right margin the
+    // word would run through the frame, and a note written beside this orbit may already stand there. The
+    // caption then takes the west side instead; and where neither side is clear of the rule and of the
+    // settled type, it is still set east but drawn down to a hairline, so a passing name never prints
+    // through a note at full strength (AURORA through ORBIT SKIP read as one word).
+    const markW=ctx.measureText(mark).width||mark.length*size*.55,gap=r+12*scale,inner=frameBand()+2;
+    const sideBox=east=>{const l=east?x+gap:x-gap-markW;return {left:l,right:l+markW,top:y+4*scale-size*.86,bottom:y+4*scale+size*.28};};
+    const fits=b=>b.left>=inner&&b.right<=W-inner&&groundFixed(b,null,2)<=0;
+    const eastBox=sideBox(true),westBox=sideBox(false),east=fits(eastBox)||!fits(westBox),box=east?eastBox:westBox;
+    markGroundBox('caption',box,n);
+    ctx.save();if(!fits(box))ctx.globalAlpha*=.3;ctx.textAlign=east?'left':'right';
+    writeText(ctx,mark,east?gap:-gap,4*scale,revealLabel(pen,mark),{size});
+    ctx.restore();
     if(drift){const dy=captionOffset(x,y,r,15),up=dy<0?1:-1;ctx.beginPath();ctx.strokeStyle=`rgba(${rgb},.45)`;ctx.lineWidth=cut('line');ctx.moveTo(-9,dy);ctx.bezierCurveTo(-3,dy-8*up,3,dy+8*up,9,dy);ctx.stroke();}
     // A difficulty node takes the "next" caption's spot, centred so it never runs off either
     // edge, and names the pressure it sets instead of just marking the node as reachable. A
