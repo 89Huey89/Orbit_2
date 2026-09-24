@@ -101,7 +101,11 @@ Not built by the first stage and recorded here so it is not lost:
    file.*
 2. The Chronicle endings for I and III, and the reading switch. *Landed.*
 3. A Journey door on the frontispiece that starts a run at the frontier, and the milestones drawn in
-   each era's own art.
+   each era's own art. *The door landed*, with the milestones named in each era's own voice and said as a
+   line on the frontispiece and the leaf; drawing them in each era's art is still to do. Until stage 5
+   exists, a known era is turned over **between** runs: the leaf says so and the next tap opens the next
+   century's frontispiece (`journeyAdvance()`), which stage 5 replaces with the in-run transition. The
+   frontier never climbs onto a century that has no plate yet, so it stops at VI for now.
 4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs.
 5. `JOURNEY.md` stage 5, the transition.
 6. The per-era catalogues and the links between eras.

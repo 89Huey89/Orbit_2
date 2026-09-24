@@ -2264,6 +2264,7 @@ defineVoice('rock',{
   chartSaid:'{chart} closes. Sixty toward the tally. The dark retreats for four seconds.',
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
+  milestones:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   // A line for each chamber as it opens, set on the wall as a curator's note beside the hand. Each says
   // only what is actually known of the place it borrows its name from.
   chapterLines:[

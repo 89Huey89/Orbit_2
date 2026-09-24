@@ -41,11 +41,16 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'CHRONICLE',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
+    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
+  // The Journey's milestones for this century (docs/archive/eras/LINKING.md): the chapters it is told in,
+  // named as this century names them. The atlas's are its own four chapters; every century replaces the
+  // list, and src/journey.js's ERA_MILESTONES must count the same number (the suite checks it).
+  milestones:chapters,
   // How many rows one chapter spans, read by the chapter math in updateUI() below; the atlas's own
   // four chapters are eight rows apiece, as they always were. goalRow is the row a run is won at —
   // 0, the atlas's own value, means no such row exists and a run is endless, exactly as it always was.
@@ -315,13 +320,49 @@ const readings=(()=>{
   return out;
 })();
 const eraReading=()=>plateWords().endless&&readings[plateName]==='endless'?'endless':'chronicle';
-const eraGoalRow=()=>eraReading()==='endless'?0:plateWords().goalRow;
+// A Journey run is never won at a row: its chapters are opened by knowledge across runs (LINKING.md).
+const eraGoalRow=()=>runMode==='journey'||eraReading()==='endless'?0:plateWords().goalRow;
 // Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
 function toggleReading(){
-  if(!plateWords().endless||(world&&world.state!=='ready'))return;
+  if(!plateWords().endless||runMode==='journey'||(world&&world.state!=='ready'))return;
   if(eraReading()==='endless')delete readings[plateName];else readings[plateName]='endless';
   storage.set(READING_KEY,JSON.stringify(readings));
   newWorld();resetToFrontispiece();syncEraChrome();render(0);
+}
+// ---------- The Journey's door ----------
+// The one way into a Journey run: from the atlas's frontispiece, onto the frontier — the century whose own
+// door names the era the climb has reached, or the atlas itself for era V, on whichever of its plates is
+// already on the press. Everything a Journey run banks is src/journey.js's; this is only the door.
+const journeyPlate=era=>Object.keys(PLATE_STYLES).find(id=>PLATE_STYLES[id].era===era&&PLATE_STYLES[id].door)||null;
+const journeyPlayable=era=>era===5||!!journeyPlate(era);
+const journeyEraTitle=era=>{const id=journeyPlate(era);return id?PLATE_STYLES[id].door.label:'ERA V \u00b7 THE ATLAS';};
+function journeyNote(){
+  const w=plateWords(),c=w.chrome.journey,m=journeyMilestones(),era=journeyEraTitle(journey.era);
+  if(m.open<m.of)return fmt(c.line,{era,count:m.open+' / '+m.of,name:(w.milestones||[])[m.open]||'',pct:Math.floor(m.toward*100)});
+  const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
+  return fmt(next?c.known:c.whole,{era,next});
+}
+function syncJourney(){
+  const on=runMode==='journey',c=plateWords().chrome.journey;
+  const door=$('journey-open');if(door){door.textContent=c.door;door.setAttribute('aria-pressed',String(on));door.setAttribute('aria-label',c.doorLabel);}
+  const note=$('journey-note');if(note){note.hidden=!on;note.textContent=on?journeyNote():'';}
+}
+// Puts the frontier on the press for a Journey run: the century it names entered by its own door, or the
+// atlas dealt a fresh chart. A ready era is turned over first (journeyAdvance), which is the whole of the
+// transition until JOURNEY.md's stage 5 lets it happen inside a run.
+function journeyTurn(){
+  journeyAdvance(journeyPlayable);
+  if(plateOwns('mode'))leaveEra();
+  runMode='journey';
+  const plate=journeyPlate(journey.era);
+  if(plate)enterEra(plate);else{newWorld();resetToFrontispiece();syncEraChrome();render(0);}
+  syncJourney();
+}
+function toggleJourney(){
+  if(world&&world.state==='playing')return;
+  if(runMode==='journey'){runMode='free';newWorld();resetToFrontispiece();syncEraChrome();render(0);return;}
+  if(dailyOn)setDaily(false);
+  journeyTurn();
 }
 function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;loreChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
@@ -375,10 +416,11 @@ function syncEraChrome(){
   // The choice of reading stands only on a century that offers one, and names the reading in hand.
   const reading=$('reading');
   if(reading){
-    const offered=!!plateWords().endless,now=eraReading(),word=chrome.readings[now];
+    const offered=!!plateWords().endless&&runMode!=='journey',now=eraReading(),word=chrome.readings[now];
     reading.hidden=!offered;reading.textContent=word;
     reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
+  syncJourney();
   const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;
   const statPerfects=$('end-perfects-label');if(statPerfects)statPerfects.textContent=chrome.statPerfects;
   const statFlow=$('end-flow-label');if(statFlow)statFlow.textContent=chrome.statFlow;
@@ -426,6 +468,8 @@ function enterEra(name){
 }
 function leaveEra(){
   if(!plateOwns('mode'))return;
+  // Leaving a century by its exit leaves the Journey with it: the way back in is the Journey's own door.
+  runMode='free';
   const keep=eraReturn||{};
   difficulty=keep.difficulty&&DARKNESS_MULT[keep.difficulty]?keep.difficulty:difficulty;
   dailyOn=!!keep.dailyOn;dailyDay=dailyOn&&dailyOpen(keep.dailyDay)?keep.dailyDay:utcDay();dailyReplay=dailyOn&&dailyDay!==utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
@@ -497,7 +541,17 @@ function showEnd(){
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
   const fresh=preview?[]:[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
-  journeyCommit(true);
+  // What a Journey run banked is said on the leaf: any milestone it opened, then where the climb stands.
+  {
+    const fold=journeyCommit(true),note=$('end-journey');
+    if(note){
+      note.hidden=!fold;
+      if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyNote()].join(' \u00b7 ');}
+    }
+    // The next tap turns the page rather than dealing this century again, and the leaf says so.
+    if(fold&&fold.ready&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1))$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journey.era+1)});
+    syncJourney();
+  }
   const names=fresh.map(id=>UNLOCK_BY_ID[id]&&UNLOCK_BY_ID[id].name).filter(Boolean);
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
@@ -1345,7 +1399,12 @@ function handleInput(){
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
   else if(world.state==='playing'){if(world.release()&&replayLog)replayLog.releases.push(world.time);}
-  else if(world.state==='dead'&&world.player.deadTime>(world.won?WIN_END_DELAY:.7)){newWorld();world.start();setPlaying();}
+  else if(world.state==='dead'&&world.player.deadTime>(world.won?WIN_END_DELAY:.7)){
+    // A Journey whose era has just become known opens the next century's frontispiece rather than dealing
+    // the same one again: the page turns between runs until the transition can turn it inside one.
+    if(runMode==='journey'&&journeyReady()&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)){journeyTurn();return;}
+    newWorld();world.start();setPlaying();
+  }
   else if(world.state==='paused')resume();
 }
 // The frontispiece is the one screen with room enough under it to scroll (see #intro, index.html), so
@@ -1452,7 +1511,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{invalidateArt();if(world)render(0);});
 // The switch lives on both the title screen and the run-complete colophon, so a daily run is never a
 // dead end: tapping either one toggles the same setting and the next "tap to try again" honours it.
-function toggleDaily(){setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
+function toggleDaily(){if(!dailyOn&&runMode==='journey'){runMode='free';syncJourney();}setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
 function toggleNewtonSwitch(){toggleNewton();if(audio.enabled)audio.tone(newtonOn?659.25:392,.3,0,.16);}
@@ -1465,6 +1524,7 @@ for(const id in PLATE_STYLES){
 $('ceiling-exit-end').addEventListener('click',leaveEra);
 $('ceiling-exit').addEventListener('click',leaveEra);
 $('reading').addEventListener('click',toggleReading);
+$('journey-open').addEventListener('click',toggleJourney);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 function syncEffects(){$('reduce-motion').setAttribute('aria-pressed',String(reducedMotion));}

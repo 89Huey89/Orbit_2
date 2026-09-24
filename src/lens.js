@@ -1378,6 +1378,8 @@ defineVoice('lens',{
   chapters:LENS_CHAPTERS.map(c=>c.place+' · '+c.year),
   chapterRows:LENS_CHAPTER_ROWS,
   goalRow:LENS_GOAL_ROW,
+  // The three registers the sheet climbs through are the Journey's milestones, not the six chapters in them.
+  milestones:['AT THE EYEPIECE','ON THE GLASS PLATE','OFF THE SENSOR'],
   chapterSaid:'Plate {numeral}. {name}.',
   // A line for each place as its chapter opens, set on the sheet as a curator's note beside the telescope.
   // Each says only what is known of the place and the work it is named for.

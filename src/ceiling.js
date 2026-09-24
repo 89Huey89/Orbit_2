@@ -138,6 +138,8 @@ defineVoice('ceiling',{
   tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',won:'Twelve hours, twelve gates, and the sun is born again from the sky.'},
   chapters:CEILING_HOURS,
   chapterRows:CEILING_HOUR_ROWS,
+  // The Journey's milestones are the night's four watches, three of its twelve hours each.
+  milestones:['HOURS I TO III','HOURS IV TO VI','HOURS VII TO IX','HOURS X TO XII'],
   goalRow:CEILING_DAWN_ROW,
   won:'Dawn. The sun is born from the sky with a score of {score}. Tap to sail the night again or return to the atlas.',
   chapterSaid:'Hour {numeral}. {name}.',

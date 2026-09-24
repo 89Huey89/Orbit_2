@@ -843,11 +843,13 @@
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
           <button id="reading" class="diff-btn" type="button" aria-pressed="false" hidden>CHRONICLE</button>
+          <button id="journey-open" class="diff-btn atlas-only" type="button" aria-pressed="false">THE JOURNEY</button>
           <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
           <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button>
           <button id="more-toggle" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
         </div>
         <span id="daily-date" class="small daily-note atlas-only"></span>
+        <span id="journey-note" class="small daily-note" hidden></span>
       </div>
       <div id="more-menu" class="daily-group atlas-only" hidden>
         <div class="action-row" id="more-actions">
@@ -884,7 +886,7 @@
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <div id="end-finis" class="finis atlas-only"><canvas id="end-miniature" aria-hidden="true" hidden></canvas><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="rock-lore rock-only" id="end-lore">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
+      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><span id="end-journey" class="small daily-note" hidden></span></div>
     </div>
   </section>
   <button id="review-close" class="diff-btn" type="button">CLOSE</button>

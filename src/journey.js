@@ -37,9 +37,11 @@ const journey=readJourney();
 function saveJourney(){storage.set(JOURNEY_KEY,JSON.stringify(journey));}
 // The printed atlas names no era of its own on its plate, because it is itself era V.
 const journeyEraOf=()=>eraId()||5;
+// `toward` is how far the knowledge banked has carried toward the next milestone still closed, 0..1.
 function journeyMilestones(doc=journey){
-  const of=ERA_MILESTONES[doc.era]||3;
-  return {of,open:Math.min(of,Math.floor(doc.knowledge/(ERA_THRESHOLD/of)+1e-9))};
+  const of=ERA_MILESTONES[doc.era]||3,per=ERA_THRESHOLD/of;
+  const open=Math.min(of,Math.floor(doc.knowledge/per+1e-9));
+  return {of,open,toward:open>=of?1:clamp(doc.knowledge/per-open,0,1)};
 }
 const journeyReady=(doc=journey)=>{const m=journeyMilestones(doc);return m.open>=m.of;};
 // A run's knowledge, banked as each body is released and zeroed whenever it is folded in, so a second
@@ -65,6 +67,16 @@ function journeyCommit(ending=false){
   journeyRun=0;saveJourney();
   const after=journeyMilestones().open;
   return {opened:after-before,open:after,of:journeyMilestones().of,ready:journeyReady()};
+}
+// The frontier moves up one era once every milestone of its own stands. JOURNEY.md §1.3 has this happen
+// inside a run, as a transition that never stops it; until that transition is built (stage 5), a ready
+// era is turned over between runs instead, as the next Journey run is begun. `playable` says whether the
+// era above has anything to be flown on yet, so the frontier never climbs onto a century not drawn.
+function journeyAdvance(playable){
+  if(!journeyReady()||journey.era>=JOURNEY_ERAS||!playable(journey.era+1))return false;
+  journey.era++;journey.knowledge=0;journeyRun=0;
+  if(!journey.unlocked.includes(journey.era))journey.unlocked.push(journey.era);
+  saveJourney();return true;
 }
 // The deliberate restart of §1.2: the frontier back to era I and its knowledge cleared, while the eras
 // already reached stay open to Free Play and every record stays where it was. The page confirms it first;

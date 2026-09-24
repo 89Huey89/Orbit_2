@@ -717,6 +717,7 @@ defineVoice('scroll',{
   chartSaid:'{chart} is filed. Sixty toward the count. Hundun holds back for four seconds.',
   chapters:['THE AZURE DRAGON','THE BLACK TORTOISE','THE WHITE TIGER','THE VERMILION BIRD'],
   chapterSaid:'Palace {numeral}. {name}.',
+  milestones:['THE AZURE DRAGON','THE BLACK TORTOISE','THE WHITE TIGER','THE VERMILION BIRD'],
   opening:'The tube is raised. Tap to release. Follow the pricked line to the next light. Hold a light to file it and to grind more ink; every flight spends ink by the distance it carries.',
   // The Chronicle ends with the fourth palace: the sky's four quarters passed and the scroll rolled up.
   // Read Endless, the sheet unrolls as it always did (LINKING.md).

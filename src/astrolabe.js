@@ -935,6 +935,8 @@ defineVoice('astrolabe',{
   chapterRows:ASTRO_CHAPTER_ROWS,
   goalRow:ASTRO_GOAL_ROW,
   chapterSaid:'Door {numeral}. {name}.',
+  // The instrument's six parts, one a city: the Journey's milestones are the astrolabe assembled.
+  milestones:ASTRO_CHAPTERS.map(c=>c.part),
   // A line for each place as its chapter opens, set on the sheet as a curator's note beside the alidade.
   // Each says only what is known of the place and the work it is named for, and says "roughly" where the
   // number is only reported.
