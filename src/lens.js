@@ -161,13 +161,19 @@ function lensHatchDisc(g,x,y,R,k,P,alpha=1,opts={}){
 }
 // A lit sphere, rendered rather than engraved: albedo, bands, a terminator from the upper left, limb
 // darkening and a scattering rim. Drawn once into a sprite per world; the painters only ever blit it.
-function lensRenderSphere(g,x,y,r,family,seed){
+function lensRenderSphere(g,x,y,r,family,seed,tilt){
   const C=LENS_WORLD[family]||LENS_WORLD.crater,rng=seeded(seed|0);
   g.save();g.beginPath();g.arc(x,y,r,0,TAU);g.clip();
   const al=g.createRadialGradient(x-r*.3,y-r*.35,r*.05,x,y,r*1.05);al.addColorStop(0,lensRgb(C.light));al.addColorStop(.6,lensRgb(C.body));al.addColorStop(1,lensRgb(C.dark));g.fillStyle=al;g.fillRect(x-r,y-r,r*2,r*2);
-  if(family==='ringed'||family==='storm'){const tilt=(rng()-.5)*.3;g.save();g.translate(x,y);g.rotate(tilt);
-    for(let i=0;i<9;i++){const yy=(-1+i/4.5+rng()*.08)*r,h=r*(.05+rng()*.12),lt=rng()<.5;g.fillStyle=lt?`rgba(255,248,232,${(.12+rng()*.14).toFixed(3)})`:`rgba(${C.dark.join(',')},${(.12+rng()*.18).toFixed(3)})`;
-      g.beginPath();g.ellipse(0,yy,r*1.1,h,0,0,TAU);g.fill();}
+  // A ringed world's bands are drawn at the rings' own tilt, since the rings lie in its equator and the bands
+  // run parallel to it; a world without rings leans its bands a little at random.
+  if(family==='ringed'||family==='storm'){const lean=(rng()-.5)*.3,bt=tilt??lean;g.save();g.translate(x,y);g.rotate(bt);
+    // Each band is a line of latitude seen from a little above the equator: an ellipse flattened exactly as
+    // the rings are, centred up or down the disc by its latitude, and only its near half is on the face.
+    const sinB=family==='ringed'?.34:.12,cosB=Math.sqrt(1-sinB*sinB);
+    for(let i=0;i<9;i++){const lat=(-1+i/4.5+rng()*.08)*1.25,h=r*(.05+rng()*.12),lt=rng()<.5,a=r*Math.cos(lat)*1.02;if(a<=0)continue;
+      g.strokeStyle=lt?`rgba(255,248,232,${(.12+rng()*.14).toFixed(3)})`:`rgba(${C.dark.join(',')},${(.12+rng()*.18).toFixed(3)})`;g.lineWidth=h;
+      g.beginPath();g.ellipse(0,-r*Math.sin(lat)*cosB,a,a*sinB,0,0,Math.PI);g.stroke();}
     if(family==='storm'){g.fillStyle='rgba(176,82,52,.55)';g.beginPath();g.ellipse(r*.18,r*.3,r*.22,r*.12,0,0,TAU);g.fill();g.strokeStyle='rgba(255,236,210,.4)';g.lineWidth=Math.max(.4,r*.03);g.stroke();}
     g.restore();}
   else if(family==='crater'){for(let i=0;i<14;i++){const a=rng()*TAU,d=Math.sqrt(rng())*r*.85,cr=r*(.05+rng()*.13),cx=x+Math.cos(a)*d,cy=y+Math.sin(a)*d;
@@ -186,8 +192,11 @@ function lensRenderSphere(g,x,y,r,family,seed){
   const ld=g.createRadialGradient(x,y,r*.55,x,y,r);ld.addColorStop(0,'rgba(0,0,0,0)');ld.addColorStop(1,'rgba(0,0,0,.36)');g.fillStyle=ld;g.fillRect(x-r,y-r,r*2,r*2);
   g.restore();
   const air=family==='crater'?0:family==='volcanic'?.25:family==='dune'?.45:.9;
-  if(air>0){g.save();g.strokeStyle=lensRgb(C.rim,.5*air);g.lineWidth=Math.max(.6,r*.07);g.beginPath();g.arc(x,y,r*1.01,Math.PI*.95,Math.PI*1.75);g.stroke();
-    g.strokeStyle=lensRgb(C.rim,.18*air);g.lineWidth=Math.max(1,r*.16);g.beginPath();g.arc(x,y,r*1.06,Math.PI*1.02,Math.PI*1.68);g.stroke();g.restore();}
+  // The scattering rim hugs the lit limb and fades off toward the terminator; drawn as one arc with round
+  // ends it can never stand out past the globe as a hood or leave a square end where a ring crosses it.
+  if(air>0){g.save();g.lineCap='round';const a0=Math.PI*1.02,a1=Math.PI*1.7,rg=g.createLinearGradient(x+Math.cos(a0)*r,y+Math.sin(a0)*r,x+Math.cos(a1)*r,y+Math.sin(a1)*r);
+    rg.addColorStop(0,lensRgb(C.rim,0));rg.addColorStop(.35,lensRgb(C.rim,.5*air));rg.addColorStop(.65,lensRgb(C.rim,.5*air));rg.addColorStop(1,lensRgb(C.rim,0));
+    g.strokeStyle=rg;g.lineWidth=Math.max(.6,r*.05);g.beginPath();g.arc(x,y,r*1.005,a0,a1);g.stroke();g.restore();}
 }
 // Saturn's rings, rendered: an ellipse of bands with the Cassini division dark across it, drawn in two halves
 // so the far half goes behind the globe and the near half across it, the globe's shadow cut into the far one.
@@ -195,8 +204,13 @@ function lensRenderRings(g,x,y,r,tilt,half){
   g.save();g.translate(x,y);g.rotate(tilt);const fl=.34;
   g.beginPath();if(half==='back')g.rect(-r*3,-r*3,r*6,r*3);else g.rect(-r*3,0,r*6,r*3);g.clip();
   const bands=[[1.25,1.52,'rgba(196,172,128,.55)'],[1.55,1.95,'rgba(236,218,178,.9)'],[1.95,2.02,'rgba(10,8,6,.9)'],[2.02,2.3,'rgba(214,196,160,.75)']];
-  for(const [a,b,c] of bands){g.strokeStyle=c;g.lineWidth=(b-a)*r;g.beginPath();g.ellipse(0,0,(a+b)/2*r,(a+b)/2*r*fl,0,0,TAU);g.stroke();}
-  if(half==='back'){g.fillStyle='rgba(0,0,0,.55)';g.beginPath();g.ellipse(r*.55,-r*.05,r*.55,r*1.4*fl,0,0,TAU);g.fill();}
+  // each band a flattened annulus, filled between its two edges, so it is foreshortened top and bottom as a
+  // flat ring seen from above its plane is, rather than a stroke of one width all the way round
+  for(const [a,b,c] of bands){g.fillStyle=c;g.beginPath();g.ellipse(0,0,b*r,b*r*fl,0,0,TAU);g.ellipse(0,0,a*r,a*r*fl,0,0,TAU);g.fill('evenodd');}
+  // the globe's shadow on the far ring: the light comes from the upper left, so the shadow is cast back and to
+  // the right, a band as wide as the globe crossing the ring just behind its right limb
+  if(half==='back'){g.save();g.beginPath();g.ellipse(0,0,2.3*r,2.3*r*fl,0,0,TAU);g.ellipse(0,0,1.25*r,1.25*r*fl,0,0,TAU);g.clip('evenodd');
+    g.fillStyle='rgba(0,0,0,.6)';g.beginPath();g.moveTo(r*.25,-r*.05);g.lineTo(r*1.05,-r*.05);g.lineTo(r*1.55,-r*1.2);g.lineTo(r*.75,-r*1.2);g.closePath();g.fill();g.restore();}
   g.restore();
 }
 
@@ -211,7 +225,7 @@ const lensSaturnArts=new Map();
 function lensSaturnArt(R){
   const key=R.toFixed(1)+':'+DPR;let a=lensSaturnArts.get(key);if(a)return a;
   const S=Math.ceil(R*5.2),c=makeCanvas(Math.round(S*DPR),Math.round(S*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);
-  const r=R*.62,tilt=-.2;lensRenderRings(g,S/2,S/2,r,tilt,'back');lensRenderSphere(g,S/2,S/2,r,'ringed',1610);
+  const r=R*.62,tilt=-.2;lensRenderRings(g,S/2,S/2,r,tilt,'back');lensRenderSphere(g,S/2,S/2,r,'ringed',1610,tilt);
   // the rings' shadow across the globe, then the near half of the rings over it
   g.save();g.beginPath();g.arc(S/2,S/2,r,0,TAU);g.clip();g.translate(S/2,S/2);g.rotate(tilt);g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(0,r*.3,r*1.6,r*.1,0,0,TAU);g.fill();g.restore();
   lensRenderRings(g,S/2,S/2,r,tilt,'front');
@@ -704,7 +718,7 @@ function lensBodyArt(n,family,R){
   const S=Math.ceil(R*(family==='ringed'?5:2.8)),c=makeCanvas(Math.round(S*DPR),Math.round(S*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);
   const tilt=-.18+(lensHash(n.id,1,31)-.5)*.3;
   if(family==='ringed')lensRenderRings(g,S/2,S/2,R,tilt,'back');
-  lensRenderSphere(g,S/2,S/2,R,family,(n.seed|0)^0x1990);
+  lensRenderSphere(g,S/2,S/2,R,family,(n.seed|0)^0x1990,family==='ringed'?tilt:undefined);
   if(family==='ringed'){g.save();g.beginPath();g.arc(S/2,S/2,R,0,TAU);g.clip();g.translate(S/2,S/2);g.rotate(tilt);g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(0,R*.3,R*1.6,R*.1,0,0,TAU);g.fill();g.restore();lensRenderRings(g,S/2,S/2,R,tilt,'front');}
   a={canvas:c,size:S,channels:lensChannels(c)};if(lensBodyArts.size>30)lensBodyArts.delete(lensBodyArts.keys().next().value);lensBodyArts.set(key,a);return a;
 }
