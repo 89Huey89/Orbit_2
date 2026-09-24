@@ -1068,7 +1068,7 @@ function lensScopeSprite(reg){
 }
 function lensPlayer(){
   if(world.state==='dead')return;
-  const P=ink.lens,reg=lensRegNow(),p=world.player,x=sx(p.x),y=sy(p.y),ang=Math.atan2(p.vy,p.vx),sp=lensScopeSprite(reg),t=reducedMotion?0:world.time;
+  const P=ink.lens,reg=lensRegNow(),p=world.player,sp=lensScopeSprite(reg),{x,y,ang}=heldPose(-21*sp.S,19*sp.S),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
   // the sightline ahead of the objective, faint, so the tube reads as pointing
   const sl=ctx.createLinearGradient(20,0,54,0),lc=reg===0?P.ink:reg===1?P.inkBlack:P.cyan;sl.addColorStop(0,`rgba(${lc},.35)`);sl.addColorStop(1,`rgba(${lc},0)`);ctx.strokeStyle=sl;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(54,0);ctx.stroke();

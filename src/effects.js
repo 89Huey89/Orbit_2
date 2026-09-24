@@ -1000,7 +1000,33 @@ const OBSERVER_MARKS={
     }
   }
 
-};function drawPlayer(){
+};
+// A rigid instrument held tangent to an orbit stands off the curve at both ends, and the longer it is the
+// worse: a crayon trailing thirty units behind its point on a fifty-unit orbit hung its butt a fifth of the
+// radius outside the ring it was going round. So while the traveller is on an orbit the instrument is laid
+// along the chord its own two ends cut on that orbit instead, and set halfway between that chord and the
+// tangent, so its ends and its middle stray from the curve by the same small amount the other way. back and
+// front are the instrument's extent behind and ahead of the travelling point, in the units it is drawn in.
+// The fit eases in on capture and out on release rather than snapping the whole tool a few degrees at once.
+let heldFit=0,heldFitAt=0,heldOrbit=null;
+function heldPose(back,front){
+  const p=world.player,n=p.node,dt=world.time-heldFitAt;heldFitAt=world.time;
+  if(n&&p.rad>0)heldOrbit={x:n.x,y:n.y,r:p.rad,s:p.dir||1};
+  const on=n&&p.rad>0?1:0;heldFit=dt<0||dt>.5||reducedMotion||!heldOrbit?on:heldFit+(on-heldFit)*(1-Math.exp(-dt*14));
+  let ang=Math.atan2(p.vy,p.vx),dx=0,dy=0;
+  if(heldOrbit&&heldFit>.001){
+    const o=heldOrbit,r=o.r,s=o.s,at=Math.atan2(p.y-o.y,p.x-o.x),a1=at+s*back/r,a2=at+s*front/r;
+    const e1x=o.x+Math.cos(a1)*r,e1y=o.y+Math.sin(a1)*r,e2x=o.x+Math.cos(a2)*r,e2y=o.y+Math.sin(a2)*r,t=-back/(front-back);
+    let turn=Math.atan2(e2y-e1y,e2x-e1x)-(at+s*Math.PI/2);turn=Math.atan2(Math.sin(turn),Math.cos(turn));
+    ang+=turn*heldFit;
+    // The offset is taken to the true point projected onto that orbit, so easing out after a release never
+    // carries the tool along a ring the traveller has already left.
+    const px=o.x+Math.cos(at)*r,py=o.y+Math.sin(at)*r;
+    dx=(e1x+(e2x-e1x)*t-px)*.5*heldFit;dy=(e1y+(e2y-e1y)*t-py)*.5*heldFit;
+  }
+  return {x:sx(p.x+dx),y:sy(p.y+dy),ang};
+}
+function drawPlayer(){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('player');if(own)return own();

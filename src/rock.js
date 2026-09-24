@@ -1560,7 +1560,7 @@ let rockCrayon=null,rockCrayonKey='';
 // grained stone — dead weight around the one point that touches the wall.
 function rockCrayonSprite(){
   const key=DPR.toFixed(2);if(rockCrayon&&rockCrayonKey===key)return rockCrayon;
-  const L=34,Wd=10,pad=6,size=(L+pad)*2,px=Math.max(1,Math.round(size*DPR));
+  const L=25,Wd=9,pad=6,size=(L+pad)*2,px=Math.max(1,Math.round(size*DPR));
   const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);
   const rnd=seeded(4051),out=[];
   // The outline: a worn round butt, two slightly uneven flanks, and a knapped point in three facets.
@@ -1579,7 +1579,7 @@ function rockCrayonSprite(){
   g.fillStyle='rgba(40,14,6,.35)';g.beginPath();g.moveTo(tip,0);g.lineTo(tip-5,Wd*.3);g.lineTo(tip-10,Wd*.46);g.lineTo(tip-9,-Wd*.05);g.closePath();g.fill();
   g.restore();
   path();g.strokeStyle='rgba(30,12,6,.7)';g.lineWidth=1;g.stroke();
-  const sprite={canvas:c,size,tip};rockCrayon=sprite;rockCrayonKey=key;return sprite;
+  const sprite={canvas:c,size,tip,L};rockCrayon=sprite;rockCrayonKey=key;return sprite;
 }
 // The Observer Core: the one small bright spot on the whole tool, and the only pure light on the
 // sheet. Baked once — one traveller, one point — and blended in additively wherever it sits.
@@ -1599,7 +1599,7 @@ function rockCoreSprite(){
 }
 function rockPlayer(){
   if(world.state==='dead')return;
-  const p=world.player,x=sx(p.x),y=sy(p.y),ang=Math.atan2(p.vy,p.vx);
+  const p=world.player,crayon=rockCrayonSprite(),{x,y,ang}=heldPose(-crayon.L,0);
   ctx.save();
   // The torch's smoke, curling up off the flame and thinning as it climbs, and dust hanging in its light.
   {const t=reducedMotion?0:world.time;ctx.save();
@@ -1613,7 +1613,6 @@ function rockPlayer(){
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  const crayon=rockCrayonSprite();
   ctx.drawImage(crayon.canvas,-crayon.size/2-crayon.tip,-crayon.size/2,crayon.size,crayon.size);
   const core=rockCoreSprite();
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(core.canvas,-core.R,-core.R,core.size,core.size);ctx.restore();

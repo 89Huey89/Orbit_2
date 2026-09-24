@@ -545,7 +545,7 @@ function scrollTubeSprite(){
 }
 function scrollPlayer(){
   if(world.state==='dead')return;
-  const P=ink.scroll,p=world.player,x=sx(p.x),y=sy(p.y),ang=Math.atan2(p.vy,p.vx),sp=scrollTubeSprite(),t=reducedMotion?0:world.time;
+  const P=ink.scroll,p=world.player,sp=scrollTubeSprite(),{x,y,ang}=heldPose(-19*sp.S,15*sp.S),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
   ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
   const ax=sp.aperture,br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(ax,0,0,ax,0,11*br);
