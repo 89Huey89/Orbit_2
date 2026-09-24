@@ -182,6 +182,7 @@ function event(type,e){
     else floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
     recordBest(world.score);
   }else if(type==='death'){
+    tallyMap('deaths',e.reason);
     audio.death();
     if(e.reason==='LEFT THE STAR CHART'){
       // Run off the side and the hand jitters: the nib skids off the sheet and spills, rather than
@@ -240,7 +241,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,startedAt:0,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -521,6 +522,12 @@ function catalogueRecord(){
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
+  // How the runs ended, in the order the losses are commonly met, then any other the plate has reported.
+  // It is the one figure that says which of the chart's pressures is actually the one being lost to.
+  const losses=['LEFT THE STAR CHART','THE NIB RAN DRY','THE DARK CAUGHT UP',...Object.values(HAZARD_KINDS).map(k=>k.loss).filter(Boolean),'THE ORBIT FADED'];
+  for(const reason in ledger.deaths)if(!losses.includes(reason))losses.push(reason);
+  html+='<section class="cat-group"><h3>How runs ended<span class="cat-latin">Exitus</span></h3>'+
+    ledgerTable(losses.map(reason=>[plainText(reason.charAt(0)+reason.slice(1).toLowerCase()),countMark(ledger.deaths[reason])]))+'</section>';
   html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3>'+
     ledgerTable(CONSTELLATIONS.map(c=>[`<span class="cat-name">${plainText(c.name)}</span><span class="cat-latin">${plainText(c.latin)}</span>`,countMark(ledger.constellations[c.name])]))+'</section>';
   return html;

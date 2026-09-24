@@ -132,3 +132,50 @@ node scripts/probe.mjs --json                           # the same, for a spread
 cut-offs) and `--json`. The probe makes no assertions and is not run by `npm test`; it prints numbers
 to read. The ledger constants it reads the curve against are at the top of the file and are meant to
 be edited when those constants move.
+
+## The second reading: a hand that errs both ways, and the release grace
+
+The lateness model above is never early, so it cannot say what a grace either side of a tap is worth.
+The probe's default hand is now a *spread* hand (`--model=late` still flies the first reading's). It
+reads the guide over the next six tenths of a second of orbit, exactly as the drawn ticks and perfect
+arcs show it to a player, and aims at the middle of a perfect band. If no band has at least one σ of
+room before a miss, it takes the middle of the widest landing on offer instead. It then lets go with a
+Gaussian error of σ either side. Releases still land only on the 120 Hz simulation tick.
+
+That reading found the shape of the problem the first one could only see the edge of. A perfect band
+is where the flight skims the rim, so it sits on the edge of the landing window and one side of it is
+a miss. At depth the band is a single tick wide. A hand with *no* timing error, held to the tick grid
+alone, reached only a median of row 25 without the grace.
+
+60 seeds per hand, patience 1.5 turns, cut off at row 120 or 300 s. Each cell reads median row (p90),
+then the share reaching rows 20 and 40, then the share of landings that were perfect transfers.
+
+| hand | no grace | ±12 ms (shipped) | ±20 ms |
+|---|---|---|---|
+| σ 0 | 25 (49) · 70 % · 20 % · 89 % | 120 (121) · 100 % · 97 % · 98 % | 120 (121) · 100 % · 97 % · 99 % |
+| σ 10 ms | 15 (29) · 37 % · 3 % · 72 % | 65 (120) · 88 % · 68 % · 91 % | 120 (121) · 98 % · 92 % · 97 % |
+| **σ 20 ms** | **18 (40) · 45 % · 10 % · 50 %** | **26 (54) · 67 % · 17 % · 79 %** | 38 (111) · 85 % · 48 % · 92 % |
+| σ 30 ms | 13 (29) · 32 % · 0 % · 44 % | 21 (40) · 57 % · 10 % · 69 % | 23 (69) · 63 % · 20 % · 84 % |
+| σ 45 ms | 10 (25) · 23 % · 0 % · 35 % | 13 (28) · 28 % · 2 % · 66 % | 18 (38) · 43 % · 5 % · 77 % |
+| σ 70 ms | 8 (16) · 5 % · 0 % · 34 % | 8 (19) · 8 % · 0 % · 53 % | 9 (23) · 20 % · 0 % · 64 % |
+
+σ 20 ms without the grace is the row that matches the author's "about row 20", so it is read as the
+human hand. The grace was chosen against targets set before it was measured. At the human hand the
+median should rise from about row 18 into the low-to-mid twenties, not past 40. The share reaching row
+40 should rise from about 10 % to 15–20 %. Imprecise hands (45 ms and worse) should barely move, since
+the grace forgives a device's noise and not a player's error. ±12 ms meets all three. ±20 ms
+overshoots at the human hand (median 38, 48 % reaching row 40). A ±20 ms grace that only rescued
+misses, never upgrading a landing to a perfect one, overshot as well (median 36, 43 % reaching row 40),
+because misses are what end runs.
+
+**What the grace does not fix.** Missed landings and a dry nib still account for more than nine
+deaths in ten at every hand, and a hand precise enough to use the grace fully (σ 10 ms) now often
+reaches the cap. That is the escalation curve being flat past row 24, which the first reading already
+named. A fair release makes that flat curve the next thing a strong player meets, and it is the next
+thing to write.
+
+```
+node scripts/probe.mjs --seeds=60 --rows=120 --seconds=300 --grace=0      # before the grace
+node scripts/probe.mjs --seeds=60 --rows=120 --seconds=300                # as shipped
+node scripts/probe.mjs --model=late                                       # the first reading's hand
+```

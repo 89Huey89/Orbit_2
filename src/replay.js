@@ -4,7 +4,7 @@
    its seed and when the traveller released, so the finished chart can be read back long after the
    run that drew it, without a frame of it ever having played again. */
 // ---------- Replaying a run from its own log ----------
-// A log is {seed, width, height, offerDifficulty, varyOpening, releases, resizes}: releases and
+// A log is {seed, width, height, offerDifficulty, varyOpening, grace, releases, resizes}: releases and
 // resizes are ordered lists of the world.time each one happened at (see replayLog in ui.js, where one
 // is kept). varyOpening is read the same permissive way an older saved log already reads a field it
 // predates — undefined falls through to OrbitWorld's own default of an ordinary, unvaried opening.
@@ -25,7 +25,9 @@ function replayRun(log){
     else if(type==='release')recordDeparture(e);
     else if(type==='capture')recordLanding(e);
   },log.offerDifficulty,log.varyOpening);
-  world=w;w.keepAll=true;
+  // A log written before the release grace existed carries no grace field, and its releases were flown
+  // exactly where they were asked for; it is read back that way rather than under a rule it never had.
+  world=w;w.keepAll=true;w.releaseGrace=Number.isFinite(log.grace)?log.grace:0;
   const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
   let ri=0,zi=0,guard=0,started=false;
   // The live clock keeps running while the traveller is still reading the frontispiece (nodes wobble

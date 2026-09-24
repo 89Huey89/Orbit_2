@@ -54,6 +54,23 @@ const HANDS=[
 
 const args=process.argv.slice(2);
 const flag=(name,fallback)=>{const hit=args.find(a=>a.startsWith('--'+name+'='));return hit?Number(hit.slice(name.length+3)):fallback;};
+// Which hand the probe flies. `late` is the first reading's model above, kept so that reading can still
+// be reproduced. `spread`, the default, is a hand that sees a window coming, aims at its middle and lets
+// go early as often as late — a spread of release errors about the moment it meant, rather than a delay
+// after a moment an oracle chose. Only that model can say what a grace either side of a tap is worth,
+// because the lateness model is never early and so never finds the half of the grace that lies before it.
+const MODEL=args.includes('--model=late')?'late':'spread';
+const SPREAD_HANDS=[
+  {name:'σ 0 ms',sigma:0},
+  {name:'σ 10 ms',sigma:.010},
+  {name:'σ 20 ms',sigma:.020},
+  {name:'σ 30 ms',sigma:.030},
+  {name:'σ 45 ms',sigma:.045},
+  {name:'σ 70 ms',sigma:.070}
+];
+// The release grace the world is flown under. Left unset, the probe flies the game as it ships; set to 0
+// it reads the chart as it was before the grace existed, which is the baseline the grace is judged by.
+const GRACE=args.some(a=>a.startsWith('--grace='))?flag('grace',0):null;
 // Seeds are flown from 1 upward so a curve can be compared against a previous run of the probe, and
 // against `verify.mjs`'s own sixty courses, which start in the same place.
 const SEEDS=flag('seeds',120);
@@ -85,8 +102,83 @@ function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<
 // already marks dry, which is the one warning the game prints on the sheet and no player ignores
 // twice. And the release it decides on is scheduled rather than taken, so the orbit carries it past
 // the heading it chose before the hand catches up with it, which is the whole of the model.
+// What the spread hand can see coming: the guide read at each point of the orbit ahead of it, over a
+// short horizon, exactly as the drawn release ticks and perfect arcs show it to a player. A hand that
+// knows it errs both ways aims where an error costs least: at the perfect window to a body it would take
+// that sits deepest inside the stretch of orbit from which the release lands somewhere at all, so a miss
+// either side of it is still a landing. Failing any perfect window, and only once the pilot has run out
+// of patience, it aims at the middle of the widest stretch that lands on a body it would take. A stretch
+// still open at the horizon is not aimed at yet, since its far edge is not yet seen. Returns the offset
+// aimed at, or null.
+const LOOK=1/240,HORIZON=.6;
+function forecast(w,eligible,settle,sigma=0){
+  // The world's clock is carried forward with the orbit, so a drifting body is read where it will be
+  // when the release is let go rather than where it stands now.
+  const p=w.player,n=p.node,angle=p.angle,rate=p.dir*p.speed/p.rad,samples=[],now=w.time,nx=n.x,nvx=n.vx;
+  for(let o=0;o<=HORIZON+1e-9;o+=LOOK){
+    p.angle=angle+rate*o;w.time=now+o;
+    if(n.amp){const phase=w.time*.72+n.phase;n.x=n.baseX+Math.sin(phase)*n.amp;n.vx=Math.cos(phase)*n.amp*.72;}
+    w.positionPlayer();
+    const a=w.aim();samples.push({o,safe:!!a&&!a.dry,ok:!!a&&eligible(a),perfect:!!a&&a.perfect&&eligible(a)});
+  }
+  p.angle=angle;w.time=now;n.x=nx;n.vx=nvx;w.positionPlayer();
+  let best=null,bestMargin=-1,wide=null,wideLength=-1;
+  for(let i=0;i<samples.length;){
+    if(!samples[i].safe){i++;continue;}
+    let j=i;while(j+1<samples.length&&samples[j+1].safe)j++;
+    if(j<samples.length-1){
+      const start=samples[i].o,end=samples[j].o;
+      for(let k=i;k<=j;){
+        if(!samples[k].perfect){k++;continue;}
+        let m=k;while(m+1<=j&&samples[m+1].perfect)m++;
+        // Measured to the edge of the whole stretch of landings, not of the band: a perfect band is where
+        // the flight skims the rim, so one side of it is usually the edge of a miss.
+        const mid=(samples[k].o+samples[m].o)/2,margin=Math.min(mid-start,end-mid);
+        if(margin>bestMargin){bestMargin=margin;best=mid;}
+        k=m+1;
+      }
+      for(let k=i;k<=j;){
+        if(!samples[k].ok){k++;continue;}
+        let m=k;while(m+1<=j&&samples[m+1].ok)m++;
+        if(samples[m].o-samples[k].o>wideLength){wideLength=samples[m].o-samples[k].o;wide=(samples[k].o+samples[m].o)/2;}
+        k=m+1;
+      }
+    }
+    i=j+1;
+  }
+  // A hand that knows its own spread only goes for a perfect band with at least that much room beside it
+  // before a miss; otherwise it takes the middle of the widest landing on offer at once, as a player does
+  // who would rather land than skim.
+  if(best!==null&&bestMargin>=sigma)return best;
+  return wide!==null&&(settle||sigma>0)?wide:null;
+}
+function gauss(r){const u=Math.max(1e-12,r()),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function flySpread(seed,hand){
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);if(GRACE!==null)w.releaseGrace=GRACE;w.start();
+  const jitter=rng(seed*7919+Math.round(hand.sigma*1000)+17);
+  const sweeps=[],byRow=new Map();
+  let ledger=0,pending=-1,frame=0;
+  for(let i=0;i<120*TIME_CAP&&w.state==='playing'&&w.progress<ROW_CAP;i++,frame++){
+    const p=w.player;
+    if(p.node){
+      if(pending<0&&frame%4===0&&p.orbitTime>.12&&(p.node.type!=='sling'||w.charge()===1)){
+        const row=Math.floor(w.progress)+1;
+        const aimAt=forecast(w,a=>!a.steep&&!a.dry&&a.n.type!=='gold'&&a.n.row>=row&&a.n.row<=row+2,p.orbitSweep>PATIENCE,hand.sigma);
+        if(aimAt!==null)pending=w.time+Math.max(0,aimAt+gauss(jitter)*hand.sigma);
+      }
+      if(pending>=0&&w.time>=pending){
+        sweeps.push(p.orbitSweep);ledger+=ledgerOf(p.orbitSweep);
+        byRow.set(Math.floor(w.progress),ledger);
+        pending=-1;w.release();
+      }
+    } else pending=-1;
+    w.update(STEP);
+  }
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow};
+}
 function fly(seed,hand){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.start();
+  if(MODEL==='spread')return flySpread(seed,hand);
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);if(GRACE!==null)w.releaseGrace=GRACE;w.start();
   const jitter=rng(seed*7919+Math.round(hand.late*1000));
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1;
@@ -112,7 +204,7 @@ function fly(seed,hand){
     } else pending=-1;
     w.update(STEP);
   }
-  return {seed,row:w.progress,captures:w.captures,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow};
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow};
 }
 
 const sorted=a=>[...a].sort((x,y)=>x-y);
@@ -121,13 +213,14 @@ const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const pad=(s,n)=>String(s).padEnd(n),padL=(s,n)=>String(s).padStart(n);
 
 const report=[];
-for(const hand of HANDS){
+for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
   const runs=[];for(let seed=1;seed<=SEEDS;seed++)runs.push(fly(seed,hand));
   const rows=runs.map(r=>r.row),caps=runs.map(r=>r.captures),all=runs.flatMap(r=>r.sweeps);
   const deaths={};for(const r of runs)deaths[r.reason]=(deaths[r.reason]||0)+1;
   report.push({
     hand:hand.name,
     rowMedian:pct(rows,.5),rowP10:pct(rows,.1),rowP90:pct(rows,.9),
+    perfectShare:caps.reduce((a,b)=>a+b,0)?runs.reduce((a,r)=>a+r.perfects,0)/caps.reduce((a,b)=>a+b,0):0,
     capMedian:pct(caps,.5),capP10:pct(caps,.1),capP90:pct(caps,.9),
     elapsedMedian:pct(runs.map(r=>r.elapsed),.5),
     documentedMean:mean(all.map(documented)),
@@ -158,15 +251,17 @@ for(const hand of HANDS){
 if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,patience:PATIENCE/TAU,sweepFull:SWEEP_FULL,ledgerFloor:LEDGER_FLOOR,ledgerSpan:LEDGER_SPAN,report},null,2));process.exit(0);}
 
 console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s');
+console.log('hand model '+MODEL+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms'));
 console.log('knowledge per encounter = '+LEDGER_FLOOR+' + '+LEDGER_SPAN+' × documented\n');
-console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
-console.log('-'.repeat(83));
+console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('perf',6)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
+console.log('-'.repeat(89));
 for(const r of report)console.log(
   pad(r.hand,9)+padL(r.rowP10.toFixed(0),9)+padL(r.rowMedian.toFixed(0),8)+padL(r.rowP90.toFixed(0),7)+
-  padL(r.capMedian.toFixed(0),10)+padL(r.elapsedMedian.toFixed(0),7)+
+  padL(r.capMedian.toFixed(0),10)+padL(r.elapsedMedian.toFixed(0),7)+padL((r.perfectShare*100).toFixed(0)+'%',6)+
   padL(r.documentedMean.toFixed(2),6)+padL((r.completeShare*100).toFixed(0)+'%',7)+
   padL(r.ledgerPerCapture.toFixed(2),12)+padL(r.ledgerMedian.toFixed(0),8));
 console.log('\n  row p10/median/p90 · how deep the run got   captures · bodies landed   secs · run length');
+console.log('  perf · share of landings that were perfect transfers');
 console.log('  doc · mean documented fraction at release   full · share of orbits held to completion');
 console.log('  ledger/cap · mean observation banked per capture   ledger · the run\'s whole observation total');
 
