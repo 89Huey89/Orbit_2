@@ -489,11 +489,17 @@ function scrollTrail(){
   for(let i=tail;i<pts.length;i++)i>tail?ctx.lineTo(pts[i][0]-.5,pts[i][1]-.5):ctx.moveTo(pts[i][0]-.5,pts[i][1]-.5);ctx.stroke();
   ctx.restore();
 }
+// Where the dried route breaks is read off each sample's own distance along the whole route (`cd`, set
+// once, the first time it is drawn — the same field the ceiling's route keeps), never off its distance
+// from the oldest sample still held: the tail is pruned as the sheet unrolls, and breaks counted from
+// there slid along the whole line every time it was, so the dry ink crawled up the scroll.
 function scrollInkPath(){
   const Q=world.inkPath;if(Q.length<2)return;const P=ink.scroll;
+  if(Q[0].cd===undefined)Q[0].cd=0;
+  for(let i=1;i<Q.length;i++)if(Q[i].cd===undefined)Q[i].cd=Q[i-1].cd+Math.hypot(Q[i].x-Q[i-1].x,Q[i].y-Q[i-1].y);
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=`rgba(${P.dried},.55)`;ctx.lineWidth=Math.max(.9,1.3*scale);
-  let d=0,on=true;ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));
-  for(let i=1;i<Q.length;i++){const a=Q[i-1],b=Q[i];d+=Math.hypot(b.x-a.x,b.y-a.y);const next=scrollHash(Math.floor(d/9),world.seed|0,71)>.2;
+  let on=true;ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));
+  for(let i=1;i<Q.length;i++){const a=Q[i-1],b=Q[i];const next=scrollHash(Math.floor(b.cd/9),world.seed|0,71)>.2;
     if(next&&!on)ctx.moveTo(sx(a.x),sy(a.y));if(next)ctx.lineTo(sx(b.x),sy(b.y));on=next;}
   ctx.stroke();ctx.restore();
 }
@@ -502,7 +508,9 @@ function scrollAim(aim,preview){
   const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   const Q=points.map(q=>[sx(q.x),sy(q.y)]),lens=[0];for(let i=1;i<Q.length;i++)lens.push(lens[i-1]+Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
   const at=d=>{let i=1;while(i<Q.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return[Q[i-1][0]+(Q[i][0]-Q[i-1][0])*t,Q[i-1][1]+(Q[i][1]-Q[i-1][1])*t];};
-  ctx.save();const step=7*scale,start=16*scale+(reducedMotion?0:(world.time*14*scale)%step);
+  // The pricks hold still: stepping them forward on the clock made the guide read as a line crawling off
+  // the brush, which ink on paper never does.
+  ctx.save();const step=7*scale,start=16*scale;
   for(let d=start;d<total;d+=step){const f=d/total,q=at(d),dry=f>dryFrom;
     ctx.fillStyle=dry?`rgba(${P.soot3},${(.3*(1-f*.4)).toFixed(3)})`:warn?`rgba(${P.cin},${(.9*(1-f*.3)).toFixed(3)})`:`rgba(${P.soot},${((aim?.85:.62)*(1-f*.35)).toFixed(3)})`;
     ctx.beginPath();ctx.arc(q[0],q[1],(aim?1.1:.9)*(1-.35*f)*scale+.3,0,TAU);ctx.fill();}
