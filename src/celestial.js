@@ -1096,6 +1096,8 @@ function drawAtmosphere(dt=0,aim=null){
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('atmosphere');if(own)return own(dt,aim);
   ctx.drawImage(backdrop,0,0,W,H);
+  // The sheet ages as the run goes on (drawFoxing, src/press.js), laid on the stock under everything printed.
+  drawFoxing();
   const chapter=clamp(Math.floor(world.progress/8),0,3);
   if(world.state!=='paused')regionBlend=lerp(regionBlend,chapter,1-Math.exp(-dt*.8));
   if(Math.abs(chapter-regionBlend)<.001)regionBlend=chapter;

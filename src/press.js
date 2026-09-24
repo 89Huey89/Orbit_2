@@ -18,9 +18,9 @@ definePlate('press',{
 // sits a pixel down and to the right, as it does when the bed runs under the roller with the pressure a
 // shade too high, and the ring the traveller landed on prints with an embossed edge — a lit lip on one
 // side and a shadowed one on the other — that dries back into the sheet over most of a second.
-const PRESS_STRIKE=.08,PRESS_EMBOSS=.95,PRESS_BLOT=2.4;
-let pressWorld=null,pressStrike=Infinity,pressEmboss=[];
-function pressReset(){pressWorld=world;pressStrike=Infinity;pressEmboss=[];}
+const PRESS_STRIKE=.08,PRESS_EMBOSS=.95,PRESS_BLOT=2.4,PRESS_NOVA=.85,PRESS_SHEEN=.28;
+let pressWorld=null,pressStrike=Infinity,pressEmboss=[],pressNovae=[];
+function pressReset(){pressWorld=world;pressStrike=Infinity;pressEmboss=[];pressNovae=[];}
 // The press felt in the hand as well as seen: a short tick on a landing, a double one on a perfect, and one
 // longer pulse when the run is lost. Wherever the device can do it (Android; iOS offers no vibration to a
 // page), on every plate, and never under a stiller press (reduced motion), which asks for less of all this.
@@ -34,6 +34,8 @@ function pressEvent(type,e){
   pressHaptic(type,e);
   if(typeof world==='undefined'||!world||!renaissanceAtlas())return;
   if(pressWorld!==world||type==='start')pressReset();
+  // A slingshot star at full charge strikes its rays across the chart (drawPress, below).
+  if(type==='charged'&&world.player.node){pressNovae.push({node:world.player.node,age:0,seed:(world.player.node.id*48271+world.captures)>>>0});if(pressNovae.length>2)pressNovae.shift();}
   if(type==='capture'&&e.perfect&&!e.steep){
     if(!reducedMotion)pressStrike=0;
     pressEmboss.push({node:e.n,age:0,seed:(e.n.id*7919+world.captures*104729)>>>0});
@@ -62,6 +64,39 @@ function drawPress(dt){
       if(y<-r-4||y>H+r+4)continue;
       ctx.strokeStyle=`rgba(${ink.press.embossLight},${la})`;ctx.beginPath();ctx.arc(x-off,y-off,r,Math.PI*.55,Math.PI*1.95);ctx.stroke();
       ctx.strokeStyle=`rgba(${ink.press.embossDark},${da})`;ctx.beginPath();ctx.arc(x+off,y+off,r,-Math.PI*.45,Math.PI*.95);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // The nova struck across the plate: at full charge the star's primary spokes are cut once more, long,
+  // out past its own gauge and across whatever orbits lie about it — the one mark on the sheet allowed to
+  // cross an orbit — and dry back to nothing in under a second. A stella nova is the brightest thing the
+  // plate ever records, and for that instant the burin says so.
+  // Cut off at the plate's inner rule and above the footer band, the way every other mark on the chart is.
+  const rule=frameBand()*.92;
+  const clipped=pressNovae.length>0;
+  if(clipped){ctx.save();ctx.beginPath();ctx.rect(rule,rule,Math.max(0,W-rule*2),Math.max(0,H-footerBand()-rule));ctx.clip();}
+  for(let i=pressNovae.length-1;i>=0;i--){
+    const v=pressNovae[i];if(running)v.age+=dt;
+    if(v.age>=PRESS_NOVA){pressNovae.splice(i,1);continue;}
+    const n=v.node,x=sx(n.x),y=sy(n.y),t=v.age/PRESS_NOVA,reach=reducedMotion?1:clamp(t/.12,0,1),fade=Math.pow(1-t,1.4);
+    const rng=seeded(v.seed||1),rays=8,len=Math.min(W,H)*.42*(.8+.2*reach),inner=n.r*scale*.55,rgb=ink.marks.slingFill||ink.dark.burstGold;
+    for(let k=0;k<rays;k++){
+      const a=k*TAU/rays-Math.PI/2+(rng()-.5)*.08,l=len*(k%2?.62:1)*(.9+rng()*.2)*reach;
+      burinSegment(ctx,x+Math.cos(a)*inner,y+Math.sin(a)*inner,x+Math.cos(a)*(inner+l),y+Math.sin(a)*(inner+l),rgb,(onPaper()?.55:.62)*fade*(k%2?.7:1),cut('bold')*(k%2?.8:1.1),v.seed^(k*977+13),{segments:6,wobble:.3,hair:false});
+    }
+  }
+  if(clipped)ctx.restore();
+  // The wet ink's sheen, at night: the last fraction of a second of the trail still lies proud of the
+  // sheet and catches a narrow glint along its crest, which dries away as the stroke sinks in. It is the
+  // one light ink really has, so it is the only highlight the night plate ever lays on a line.
+  if(!onPaper()&&!reducedMotion&&world.trail&&world.trail.length>2){
+    const tr=world.trail,now=world.time,off=.55*scale;
+    ctx.save();ctx.lineCap='round';
+    for(let k=tr.length-1;k>0;k--){
+      const a=tr[k],b=tr[k-1],age=now-b.time;if(age>PRESS_SHEEN)break;
+      const wet=1-age/PRESS_SHEEN;
+      ctx.strokeStyle=`rgba(${ink.press.embossLight},${(.42*wet*wet).toFixed(3)})`;ctx.lineWidth=Math.max(.5,.7*scale);
+      ctx.beginPath();ctx.moveTo(sx(a.x)-off,sy(a.y)-off);ctx.lineTo(sx(b.x)-off,sy(b.y)-off);ctx.stroke();
     }
     ctx.restore();
   }
@@ -313,4 +348,42 @@ function drawPageCurl(slide,c){
   ctx.strokeStyle=`rgba(${ink.base.inkStrong},${paper?.22:.18})`;ctx.lineWidth=Math.max(.4,scale*.5);
   ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
   ctx.restore();
+}
+// ---------- Foxing that grows ----------
+// A sheet kept in the hand is a sheet ageing in it. On the paper plate the rust spots and a tide mark
+// spread with the time the run has spent on the chart, so a three-minute plate is visibly older at its
+// end than at its start. The growth is taken in stages — first at thirty seconds, then once a minute,
+// six at most — and each stage is baked once over the whole sheet, so a run re-paints this a handful of
+// times and not once a frame. Seeded from the run's own seed, so the same run ages the same way.
+let foxingLayer=null,foxingKey='';
+const FOXING_STAGES=6;
+function foxingStage(){return world&&world.state!=='ready'?Math.min(FOXING_STAGES,world.elapsed<30?0:1+Math.floor((world.elapsed-30)/60)):0;}
+function drawFoxing(){
+  if(!onPaper()||!renaissanceAtlas()||plainPlate()||!world)return;
+  const stage=foxingStage();if(!stage)return;
+  const key=[world.seed,stage,W,H,DPR,plateName].join('|');
+  if(foxingKey!==key){
+    const c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR))),g=c.getContext('2d');
+    g.scale(DPR,DPR);
+    const rng=seeded(((world.seed^0x6f0c55)>>>0)||1),spots=10+stage*9,k=stage/FOXING_STAGES;
+    for(let i=0;i<spots;i++){
+      // Each spot has its own place and the stage it first appears at; a spot already there grows with
+      // every stage after its own, so the sheet reads as the same spots spreading, not a new scatter.
+      const corner=rng()<.6,x=corner?(rng()<.5?rng()*W*.32:W-rng()*W*.32):rng()*W,y=corner?H*.55+rng()*H*.45:rng()*H;
+      const born=Math.floor(i/9),grow=Math.max(0,stage-born),base=.7+rng()*rng()*3.2,r=base*(1+grow*.45),a=(.05+rng()*.07)*Math.min(1,grow*.6+.4);
+      if(born>=stage)continue;
+      const spot=g.createRadialGradient(x,y,0,x,y,r);
+      spot.addColorStop(0,`rgba(128,80,36,${a*1.4})`);spot.addColorStop(.6,`rgba(140,92,46,${a*.7})`);spot.addColorStop(1,'rgba(140,92,46,0)');
+      g.fillStyle=spot;g.fillRect(x-r,y-r,r*2,r*2);
+    }
+    // A tide mark creeping in from one corner: a pale interior and a darker deposited rim, widening with
+    // each stage.
+    const tx=rng()<.5?-W*.05:W*1.05,ty=H*(.2+rng()*.6),tr=Math.min(W,H)*(.12+.28*k);
+    g.save();g.translate(tx,ty);g.scale(1,.8);
+    const tide=g.createRadialGradient(0,0,0,0,0,tr);
+    tide.addColorStop(0,'rgba(250,244,226,.05)');tide.addColorStop(.9,'rgba(240,228,200,.04)');tide.addColorStop(.97,`rgba(150,108,58,${.06+.08*k})`);tide.addColorStop(1,'rgba(150,108,58,0)');
+    g.fillStyle=tide;g.beginPath();g.arc(0,0,tr,0,TAU);g.fill();g.restore();
+    foxingLayer=c;foxingKey=key;
+  }
+  ctx.drawImage(foxingLayer,0,0,W,H);
 }
