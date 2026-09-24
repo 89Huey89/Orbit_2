@@ -158,13 +158,14 @@ const CEILING_CHANGE_DUR=1.2;
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
 // are otherwise pinned exactly the way this file always pinned the whole wall.
 let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
-// The barque's last known heading side, held between frames so a passing moment of near-zero
-// horizontal speed (the tip of a climb or dive) does not flicker the mirror back and forth.
+// The barque's heading side, held between frames. It changes only once the boat is plainly moving the
+// other way (a fair share of its speed, not a hair past vertical), so the top of a climb, a dive or the
+// flank of an hour-circle never flickers it back and forth.
 let ceilingFacing=1;
-// The angle the hull is actually drawn at, eased toward its target each frame (ceilingDrawPlayer)
-// rather than snapped, so a facing flip reads as a quick turn rather than a pop. null until the
-// first frame draws, which seeds it directly rather than easing in from an arbitrary start.
-let ceilingAngle=null;
+// What is actually drawn, eased toward those targets each frame (ceilingDrawPlayer): ceilingTurn runs
+// from -1 to 1 as the boat comes about, and ceilingTilt is how far its bow is raised or lowered. null
+// until the first frame draws, which seeds both directly rather than easing in from an arbitrary start.
+let ceilingTurn=null,ceilingTilt=0;
 // The one expression that names which of the four watches is current, shared by the wall's own bake
 // (which register to paint) and the running head (which word to print) so the two can never drift.
 function ceilingHour(){return world?clamp(Math.floor(world.progress/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
@@ -175,11 +176,16 @@ function ceilingWatch(){return Math.floor(ceilingHour()/3);}
 function invalidateCeilingArt(){ceilingCartoucheKey='';ceilingWall=null;ceilingWallKey='';ceilingWallWatch=-1;ceilingChangeover=null;ceilingFrameTop=null;ceilingFrameBot=null;ceilingFrameKey='';}
 // The wall is painted into a cached canvas once, and a face that has not arrived yet paints nothing
 // at all — the sign columns would stay blank for the whole visit, which is exactly what they did.
-// Entering the era therefore asks for both of its hands by name and repaints the wall when they land.
+// Entering the era therefore asks for every hand it letters in by name — the signs, the slab upright
+// and italic, and Limelight, whose capitals the cartouche, the running head and the frame are baked in
+// — and repaints the wall when they land. Limelight was left off this list when the capitals moved to
+// it, so a browser slow to decode it (Safari is) baked the fallback into every cached piece of
+// lettering and kept it for the whole visit.
 function ceilingFaceReady(){
   if(!document.fonts||!document.fonts.load)return;
   Promise.all([document.fonts.load('16px "Noto Egyptian Hieroglyphs"',String.fromCodePoint(CEILING_G.w)),
-    document.fonts.load('16px "Zilla Slab"','ORBIT')]).then(()=>{invalidateCeilingArt();if(world)render(0);}).catch(()=>{});
+    document.fonts.load('16px "Zilla Slab"','ORBIT'),document.fonts.load('italic 16px "Zilla Slab"','ORBIT'),
+    document.fonts.load('16px "Limelight"','ORBIT')]).then(()=>{invalidateCeilingArt();if(world)render(0);}).catch(()=>{});
 }
 function ceilingHash(a,b=0){
   let h=Math.imul(((a*1009+b*9176)|0)^0x9e3779b9,2654435761);h^=h>>>15;h=Math.imul(h,2246822519);h^=h>>>13;
@@ -1522,6 +1528,45 @@ function ceilingNodeWheel(g,r,seed,start,alpha,lw,fade,course){
   // arriving by another route.
   if(!spoked){g.beginPath();g.arc(0,0,r*(inner-.02),0,TAU);g.stroke();}
 }
+// The release marks: the same information the atlas engraves on a held orbit (drawNode, src/figures.js)
+// and the Rock presses in ochre (rockReleaseMarks, src/rock.js), taken from the same geometry the
+// shipped code flies by — releaseTargets, orbitTangents, segmentCircle and the real p.rad — and painted
+// in this wall's own hand. The Ceiling never had them: an hour-circle said only where the barque was,
+// never where letting go would carry it anywhere, so the one thing a release is timed against was
+// missing from the one sheet that can be won. On the rim of the circle being held, a painted band marks
+// the arc from which each next circle can be reached — huntite for an ordinary one, the yellow the
+// ceilings keep for what is lit where it is a star of the decan course or a slingshot's shortcut — and
+// a division struck across the rim at the middle of each run that clears every danger, with a pale disc
+// on it. A run with none keeps only its band, so a blocked release reads as an absence, as on the Rock.
+// The atlas's doubled mark for a true transfer is not repeated here: it sits at the traveller's own
+// point, which on this sheet is under the whole hull, and ceilingDrawAim already lays the yellow arc of
+// a true entry on the circle being flown to, where it can be seen.
+function ceilingReleaseStroke(px,py,a,len,w,col){
+  const c=Math.cos(a),sn=Math.sin(a);
+  ctx.lineCap='round';ctx.beginPath();ctx.moveTo(px-c*len,py-sn*len);ctx.lineTo(px+c*len,py+sn*len);
+  ctx.strokeStyle=CEILING_PALETTE.ink;ctx.lineWidth=w+1.4*scale;ctx.globalAlpha=.7;ctx.stroke();
+  ctx.strokeStyle=col;ctx.lineWidth=w;ctx.globalAlpha=1;ctx.stroke();
+}
+function ceilingReleaseDisc(px,py,r,fill,rim){
+  ctx.globalAlpha=1;ctx.fillStyle=fill;ctx.strokeStyle=rim;ctx.lineWidth=Math.max(1,1.1*scale);
+  ctx.beginPath();ctx.arc(px,py,r,0,TAU);ctx.fill();ctx.stroke();
+}
+function ceilingReleaseMarks(n){
+  const p=world.player,rad=p.rad*scale,w=Math.max(2.4,3*scale);
+  ctx.save();
+  for(const next of releaseTargets(n)){
+    const d=Math.hypot(next.x-n.x,next.y-n.y),a=Math.atan2(next.y-n.y,next.x-n.x)-p.dir*Math.acos(clamp(p.rad/d,-1,1)),window=Math.asin(clamp(next.cap/d,0,.8));
+    const lit=next.routeRole==='star'||(n.type==='sling'&&next.id===n.shortcutId);
+    ceilingBrush(ctx,ceilingArcPoints(0,0,rad,a-window,a+window,Math.max(4,Math.round(window*18))),lit?CEILING_PALETTE.yellow:CEILING_PALETTE.white,w,lit?.62:.46,(next.seed||next.id)+1709);
+    for(const path of orbitTangents({...n,r:p.rad},next,p.dir)){
+      if(world.hazards.some(h=>segmentCircle(path.x,path.y,path.bx,path.by,h.x,h.y,gravityRadius(h))!==null))continue;
+      const px=Math.cos(path.angle)*rad,py=Math.sin(path.angle)*rad;
+      ctx.save();ceilingReleaseStroke(px,py,path.angle,6.5*scale,Math.max(1.3,1.6*scale),CEILING_PALETTE.white);
+      ceilingReleaseDisc(px,py,Math.max(2.2,2.7*scale),CEILING_PALETTE.white,CEILING_PALETTE.ink);ctx.restore();
+    }
+  }
+  ctx.restore();
+}
 function ceilingDrawNode(n,aim){
   const x=sx(n.x),y=sy(n.y),r=n.r*scale,cap=(n.cap||n.r)*scale;if(y+cap<-30||y-cap>H+30)return;
   const t=reveal.progress(n,NODE_REVEAL,y>0&&y<H),fade=n.type==='fading'&&world.player.node===n?clamp(1-world.player.orbitTime/4.5,.08,1):1;
@@ -1557,6 +1602,7 @@ function ceilingDrawNode(n,aim){
     ctx.strokeStyle=`rgba(${col},.36)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(0,0,cap+2.6*scale,0,TAU);ctx.stroke();
   }
   ceilingNodeIcon(n,r,t);
+  if(active)ceilingReleaseMarks(n);
   if(retired&&finish>0)ceilingBrush(ctx,[[-r*.7,r*.48],[r*.7,-r*.48]],CEILING_PALETTE.red,.7,.22,700+n.id);
   if(n.difficultyChoice&&t>.6){
     ctx.globalAlpha=clamp((t-.6)/.4,0,1);ctx.font=plateFace(Math.max(8,9.5*scale),'sc');ctx.fillStyle=CEILING_PALETTE.gloss;ctx.textAlign='center';ceilingChisel(ctx,CEILING_COURSES[n.difficultyChoice],0,r+15*scale);
@@ -1639,21 +1685,25 @@ function ceilingDrawNun(g){
 }
 function ceilingDrawPlayer(dt){
   if(world.state==='dead')return;const p=world.player,x=sx(p.x),y=sy(p.y),s=Math.max(.72,scale),speed=Math.hypot(p.vx,p.vy);
-  if(Math.abs(p.vx)>1)ceilingFacing=p.vx<0?-1:1;
-  // The hull rides its own heading now: sx()/sy() never flip the y sign (see src/planets.js), so
-  // the screen heading atan2(vy,vx) is the world heading, and in orbit it is exactly the tangent
-  // positionPlayer() (src/simulation.js) already hands the velocity — one line, drawn and flown
-  // alike, rather than a hull that stays level while the trail it rides climbs and dives past it.
-  // It must still never hang upside down: past vertical the hull is spun the far half-turn and
-  // mirrored across its own long axis instead of inverted, so the mast, disc and uraeus stay above
-  // the deck whichever way the prow ends up pointing. ceilingFacing's existing dead band around
-  // vx===0 decides that mirror and keeps it from chattering at the top of a climb or dive; the
-  // drawn angle is derived from heading and ceilingFacing together (so the two can never disagree)
-  // and then eased toward that target across frames, the short way round the circle, so even a
-  // flip at the latch reads as a quick turn rather than a pop.
-  const heading=Math.atan2(p.vy,p.vx),target=ceilingFacing<0?heading+Math.PI:heading;
-  if(ceilingAngle===null||reducedMotion)ceilingAngle=target;
-  else{let d=(target-ceilingAngle+Math.PI)%TAU;if(d<0)d+=TAU;d-=Math.PI;ceilingAngle+=d*(1-Math.exp(-(dt||0)*14));}
+  // The barque is a boat in profile, the way every barque on a coffin board or a ceiling is painted, and
+  // it is never spun round its own heading. It used to be: the hull rode the tangent exactly, so on an
+  // hour-circle it turned a full revolution every lap, and to keep it off its back it was mirrored and
+  // swung a half-turn each time it crossed vertical — twice a lap, a quick spin at every flank of the
+  // circle, which is what made it read as hectic in the hand. Now the two things are pulled apart.
+  // Which way it faces is the sign of its horizontal travel, changed only once that travel is plainly
+  // the other way and then eased over a third of a second as a boat coming about: the hull narrows to
+  // its end-on silhouette and widens again facing the other way, with no rotation in it at all. How far
+  // it pitches is the elevation of its travel alone — never which side it faces, so coming about never
+  // moves the bow up or down — scaled well short of the truth: kept to a rock on an hour-circle, where
+  // the heading swings through every angle each lap, and let rise further in flight, where it is steady
+  // and says where the barque is climbing to.
+  const sp=Math.max(1,speed);if(p.vx>sp*.3)ceilingFacing=1;else if(p.vx<-sp*.3)ceilingFacing=-1;
+  const tilt=Math.atan2(-p.vy,Math.abs(p.vx))*(p.node?.22:.42),step=dt||0;
+  if(ceilingTurn===null||reducedMotion){ceilingTurn=ceilingFacing;ceilingTilt=tilt;}
+  else{
+    const move=step/.34*2;ceilingTurn=ceilingTurn<ceilingFacing?Math.min(ceilingFacing,ceilingTurn+move):Math.max(ceilingFacing,ceilingTurn-move);
+    ceilingTilt+=(tilt-ceilingTilt)*(1-Math.exp(-step*5));
+  }
   // The barque is flooded in light colours, so it alone is closed in the dark ink rather than the pale
   // line the rest of the night is drawn in; the palette's line is lent to it for the length of the draw.
   const line=CEILING_PALETTE.carbon;CEILING_PALETTE.carbon=CEILING_PALETTE.ink;
@@ -1661,14 +1711,17 @@ function ceilingDrawPlayer(dt){
 }
 function ceilingPaintBarque(x,y,s,speed){
   const p=world.player;
-  ctx.save();ctx.translate(x,y);ctx.rotate(ceilingAngle);ctx.scale(ceilingFacing*s,s);
+  // A constant-rate turn read through a sine is the hull's width as it would be seen swinging round a
+  // vertical axis, so the boat comes about rather than folding flat and springing open again.
+  const turn=Math.sign(ceilingTurn||1)*Math.max(.1,Math.sin(Math.abs(ceilingTurn)*Math.PI/2));
+  ctx.save();ctx.translate(x,y);ctx.save();ctx.scale(turn*s,s);ctx.rotate(-ceilingTilt);
   // What is drawn is the barque of the coffin boards and the Greenfield sheet, and it is rowed and
   // steered, never sailed: a crescent hull with papyrus umbels curling up at both ends, a naos
   // amidships carrying the disc, two steering oars crossed at the stern. The bare post that used to
   // stand here read as a mast the boat kept losing at every turn of the clock, so it is gone and the
   // naos stands where it stood. Everything is laid in the hull's own frame — +x the prow, -y the deck
-  // side — and the mirror above keeps both true whichever way the hull is spun, so the same marks
-  // read as a boat standing on its stern as read level.
+  // side — and the turn above mirrors both together, so the same marks read true whichever way the
+  // boat is heading.
   // The sheer and keel are quartics in x, not arcs: flat and full-bellied amidships, then sweeping up
   // hard only in the last quarter, which is the coffin painters' hull and not the drawn bow a plain
   // arc turns into once a naos is standing on it.
@@ -1715,6 +1768,9 @@ function ceilingPaintBarque(x,y,s,speed){
     ceilingBrush(ctx,[[x0,y0],[x1-ux*3,y1-uy*3]],CEILING_PALETTE.carbon,1.2,.9,seed);
     ceilingPolygon(ctx,[[x1-ux*4.5,y1-uy*4.5],[x1-ux*2+nx*1.7,y1-uy*2+ny*1.7],[x1+ux*1.5+nx*1.3,y1+uy*1.5+ny*1.3],[x1+ux*3,y1+uy*3],[x1+ux*1.5-nx*1.3,y1+uy*1.5-ny*1.3],[x1-ux*2-nx*1.7,y1-uy*2-ny*1.7]],CEILING_PALETTE.yellow,1,seed+5,1);};
   oar(-9,-9.5,-24,9,953);oar(-15,-9.5,-18,11,959);
+  // The charges below are rings round the barque rather than parts of it, so they are laid outside the
+  // hull's own frame: they neither pitch with it nor narrow as it comes about.
+  ctx.restore();ctx.scale(s,s);
   // Defect (e): the reflector's ring was the atlas's dashed convention; the wall marks the same
   // boundary two other ways instead, so the two held charges stay tellable apart by shape as well as
   // by colour and radius. The shield keeps a doubled line, close and smooth, at its own tighter radius

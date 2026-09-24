@@ -327,8 +327,12 @@ function surveyProgress(s){
 // One continuing alphabet for the whole run rather than a fresh a/b/c for every construction: the index
 // is kept on the world itself, not read off world.surveys.length, since that array is pruned from the
 // front as old constructions dry off the sheet and would otherwise make the count run backward. Past z
-// the letters double — aa, bb, cc — the way a surveyor reaches for a second mark rather than a new one.
-function surveyLetterName(n){const letter=String.fromCharCode(97+n%26);return letter.repeat(Math.floor(n/26)+1);}
+// the alphabet is taken again with a prime — a', b', c' — the way a geometer marks the points of a second
+// figure, and again with two and three. Doubling the letter instead grew a word at every pass, and by the
+// thirtieth row the sheet carried points lettered mmmmmmm. After the third prime the plain letters come
+// round again; by then the constructions that used them have long been carried off the sheet. The prime
+// is set as the Fell apostrophe, since none of the three faces cuts a prime of its own.
+function surveyLetterName(n){return String.fromCharCode(97+n%26)+"'".repeat(Math.floor(n/26)%4);}
 function nextSurveyLetters(){
   const base=(world.surveyLetterSeq=(world.surveyLetterSeq||0)+3)-3;
   return [surveyLetterName(base),surveyLetterName(base+1),surveyLetterName(base+2)];
@@ -395,10 +399,15 @@ function surveyNumeral(text,x,y,size,rgb,alpha,t){
 function surveyLetter(text,x,y,size,rgb,alpha,t){
   if(t<=0)return;
   ctx.save();ctx.textAlign='center';ctx.font=plateFace(size,'text','italic');
-  // A small leaf of the sheet's own ground behind the letter — the same clearing the construction
-  // labels cut for themselves — since on a crater's own hatching a bare letter simply vanishes into it.
-  const half=ctx.measureText(text).width*.5+2;
-  ctx.fillStyle=`rgba(${ink.base.paperRgb},${alpha*t*.7})`;ctx.fillRect(x-half,y-size*.65,half*2,size*1.2);
+  // A small reserve of the sheet's own ground behind the letter, since on a crater's own hatching a bare
+  // letter simply vanishes into it. It is a soft clearing that fades out at its rim, as a burnisher lifts
+  // the tone round a letter, and not a filled box: a hard rectangle printed as a label chip on the night
+  // plate rather than as bare sheet.
+  const half=ctx.measureText(text).width*.5+size*.45,cy=y-size*.05;
+  ctx.save();ctx.translate(x,cy);ctx.scale(1,size*.62/half);
+  const clear=ctx.createRadialGradient(0,0,0,0,0,half);
+  clear.addColorStop(0,`rgba(${ink.base.paperRgb},${alpha*t*.8})`);clear.addColorStop(.6,`rgba(${ink.base.paperRgb},${alpha*t*.55})`);clear.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+  ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,half,0,Math.PI*2);ctx.fill();ctx.restore();
   ctx.fillStyle=`rgba(${rgb},${alpha})`;
   writeText(ctx,text,x,y+size*.35,t,{size,nib:false});
   ctx.restore();
@@ -527,31 +536,10 @@ function drawLandingSurvey(s,t,rgb,gold,base){
     surveyLetter(s.letters[1],px+bx*off,py+by*off,ls,rgb,base*.9,revealSpan(t,.3,.44));
     surveyLetter(s.letters[2],px-s.dx*(back+7*scale),py-s.dy*(back+7*scale),ls,rgb,base*.9,revealSpan(t,.5,.62));
   }
-  // (e) The note, set in Fell italic beside the construction on the far side of the ring from the planet.
-  const note=revealSpan(t,.78,1);if(note<=0||plainPlate())return;
-  const lines=[];
-  // This note is set in the sheet's own italic text face, not the small-caps one, so the name is raised
-  // to caps here rather than restated — OBSERVATIONS stays the one place the name itself is spelled.
-  if(s.square)lines.push([OBSERVATIONS.rightAngle.latin.toUpperCase()+' · +'+s.squareBonus,gold]);
-  lines.push(['×'+s.mult.toFixed(1)+'  ·  +'+s.gain,rgb]);
-  if(s.skipped>0)lines.push(['SKIP '+s.skipped,rgb]);
-  // The node prints its own row numeral a little east of the ring, so a contact that landed due east
-  // pushes the note further out rather than setting it on top of the number.
-  const size=Math.max(9,10*scale),step=size*1.28,right=s.ux>=0;
-  const out=(s.ux>.9&&Math.abs(s.uy)<.36?38:22)*scale;
-  const nx=px+s.ux*out+(right?4:-4),ny=py+s.uy*out;
-  ctx.save();ctx.font=plateFace(size,'text','italic');
-  // The note is kept inside the frame's inner rule: its left edge is clamped to the sheet, whichever
-  // side of the ring it was set on, so a landing near the margin never prints into the border.
-  let widest=0;for(const l of lines)widest=Math.max(widest,ctx.measureText(l[0]).width||l[0].length*size*.5);
-  const inset=frameBand()+5*scale,left=clamp(right?nx:nx-widest,inset,Math.max(inset,W-inset-widest));
-  ctx.textAlign='left';
-  for(let i=0;i<lines.length;i++){
-    const from=i/lines.length,step2=1/lines.length;
-    ctx.fillStyle=`rgba(${lines[i][1]},${base*.95})`;
-    writeText(ctx,lines[i][0],left,ny+i*step,revealSpan(note,from,from+step2),{size,nib:false});
-  }
-  ctx.restore();
+  // (e) No note is set beside the construction. It once repeated the landing's speed and gain, and the
+  // square's name and bonus, which the tally in the gutter and the note on the orbit already carry: one
+  // landing then wrote the same figures three times over, and it is the figure itself — the angle and
+  // its numeral, or the right angle — that the construction is for.
 }
 function drawTrail(){
   // A plate whose traveller does not write with a nib names its own trail painter.
@@ -1025,6 +1013,16 @@ const OBSERVER_MARKS={
   // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
   // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
   const mark=OBSERVER_MARKS[activeCosmetic('mark')]||OBSERVER_MARKS.quill;
+  // Round the whole mark the sheet is kept clean, as an engraver keeps a reserve round the one figure the
+  // eye must find first: a soft oval of the plate's own ground under the pen, so a flight across the
+  // graticule, the orbits and the route is not lost among lines drawn in the same pale ink as the quill.
+  {
+    const rx=length*.62+7,ry=7.5,cx=-length*.42;
+    ctx.save();ctx.translate(cx,0);ctx.scale(rx,ry);
+    const clear=ctx.createRadialGradient(0,0,0,0,0,1);
+    clear.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.6:.55})`);clear.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.4:.38})`);clear.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
+    ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
+  }
   if(!mark(length,boost,breath,charge,inkHeld))markHead(boost,charge,inkHeld);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
@@ -1104,10 +1102,13 @@ function darknessPlate(relief){
     // even comb a shoreline's tree line would be. Enough of them, and large enough, to read as the front
     // itself rather than as flecks caught in it. Paper-only: night already carries this reach in its own
     // five void layers, so it does not also need paper's own stain-pool device.
+    // Each pool is laid as ink actually dries in one: a thin body feathered out past its own edge, and
+    // the pigment carried to the rim as a darker tide line. Laid as one flat fill at full strength they
+    // read as dark chips floating over the sheet, a pile of stones rather than a stain.
     for(let i=0;i<16;i++){
       const x=bleed()*w,a=x/w*TAU,edge=29+Math.sin(a*3)*6+Math.sin(a*11)*2.5;
-      const y=edge-1-bleed()*bleed()*13,rx=3+bleed()*bleed()*11,ry=2+bleed()*5,seed=Math.floor(bleed()*1e7);
-      for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.fleckDark},${.38+bleed()*.32})`;g.fill();}
+      const y=edge+2.5-bleed()*bleed()*4,rx=3+bleed()*bleed()*11,ry=2+bleed()*5,seed=Math.floor(bleed()*1e7),strength=.38+bleed()*.32;
+      for(const wrap of [-w,0,w])featheredPool(g,x+wrap,y,rx*1.2,ry*.8,seed,ink.dark.fleckDark,strength*.5);
     }
     }
   }
@@ -1152,7 +1153,8 @@ function darknessPlate(relief){
       const brown=seeded(311977+281);
       for(let i=0;i<13;i++){
         const x=brown()*w,y=38+brown()*brown()*30,rx=6+brown()*22,ry=3+brown()*7,seed=Math.floor(brown()*1e7);
-        for(const wrap of [-w,0,w]){landContour(g,x+wrap,y,rx,ry,seeded(seed));g.fillStyle=`rgba(${ink.dark.corrosion},${.1+brown()*.16})`;g.fill();}
+        const strength=.1+brown()*.16;
+        for(const wrap of [-w,0,w])featheredPool(g,x+wrap,y,rx,ry,seed,ink.dark.corrosion,strength*1.6,false);
       }
       const fox=seeded(311977+367);
       for(let i=0;i<34;i++){
@@ -1215,6 +1217,14 @@ function darknessPlate(relief){
   }
   darknessPlates.set(key,c);return c;
 }
+// A pool of ink as it dries on a sheet: its body laid in three passes, each a little tighter and stronger
+// than the last so the edge fades out into the paper instead of stopping, and — for a liquid that carried
+// its pigment outward as it dried — a darker tide line round the rim. `strength` is what the old single
+// flat fill was laid at, so a caller keeps its own weight.
+function featheredPool(g,x,y,rx,ry,seed,rgb,strength,rim=true){
+  for(const [k,share] of [[1.35,.22],[1.12,.3],[.9,.36]]){landContour(g,x,y,rx*k,ry*k,seeded(seed));g.fillStyle=`rgba(${rgb},${strength*share})`;g.fill();}
+  if(rim){landContour(g,x,y,rx,ry,seeded(seed));g.strokeStyle=`rgba(${rgb},${strength*.55})`;g.lineWidth=.55;g.stroke();}
+}
 // ---------- Marginalia carried on the rising ink ----------
 // A sea-monster and a gloss ride the shoreline, as they do in the empty quarters of an old chart.
 // Both are cut once into sprites: the Leviathan only bobs and fades, it is never re-engraved, and
@@ -1227,40 +1237,113 @@ function leviathanSprite(relief){
   const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
   g.scale(DPR*s,DPR*s);g.lineCap='round';g.lineJoin='round';
   const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment,base=80,rng=seeded(880517);
-  // Three coils breaking the surface, each with its own scaled back.
-  const coils=[[34,17],[66,21],[95,15]];
-  for(const [cx,cr] of coils){
-    burinArc(g,cx,base,cr,Math.PI,TAU,rgb,.85,1.15,Math.floor(rng()*1e6)||3,{segments:16,skips:2});
-    burinArc(g,cx,base+2,cr-5,Math.PI*1.08,Math.PI*1.92,rgb,.4,.6,Math.floor(rng()*1e6)||5,{segments:10,skips:2});
-    for(let i=0;i<7;i++){
-      const a=Math.PI*(1.1+i*.12),x=cx+Math.cos(a)*(cr-2),y=base+Math.sin(a)*(cr-2);
-      burinSegment(g,x,y,x+Math.cos(a)*4,y+Math.sin(a)*4,rgb,.4,.5,Math.floor(rng()*1e6)||7,{segments:2,hair:false});
+  // He is cut the way the monsters in the empty seas of the Carta Marina are cut, not sketched: every
+  // part of him is a body with two contours rather than a single line, washed thinly in the flood's own
+  // pigment, scaled along the back, crested, and shaded on the side away from the light with parallel
+  // strokes running down and to the right, the one slant every other body on the plate is hatched in.
+  // Where a coil breaks the surface the water is cut round it in short curling strokes.
+  // The fluke is thrown out past the first coil, so the whole beast is set a few points in from the left.
+  g.translate(7,0);
+  const tone=(a)=>`rgba(${rgb},${a})`;
+  // A stroke laid along a run of points, swelling and tapering as a burin line does and lifting at its
+  // ends, so a contour drawn through a curve reads as one cut rather than a string of straight pieces.
+  const cutAlong=(pts,alpha,weight,seed,taper=true)=>{
+    const r=seeded(seed),ph=r()*TAU,f=2+Math.floor(r()*2);
+    g.strokeStyle=tone(alpha);
+    for(let i=0;i<pts.length-1;i++){
+      const u=(i+.5)/(pts.length-1),lift=taper?Math.min(1,Math.sin(Math.PI*u)*1.6+.18):1;
+      g.lineWidth=Math.max(.2,weight*lift*(1+Math.sin(f*u*TAU+ph)*.3));
+      g.beginPath();g.moveTo(pts[i][0],pts[i][1]);g.lineTo(pts[i+1][0],pts[i+1][1]);g.stroke();
     }
+  };
+  const arcPts=(cx,cy,rx,ry,a0,a1,n)=>{const p=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;p.push([cx+Math.cos(a)*rx,cy+Math.sin(a)*ry]);}return p;};
+  const bez=(p0,p1,p2,p3,n)=>{const p=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;p.push([u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]);}return p;};
+  // Hatching inside a closed outline: parallel strokes down and to the right, stopped short of the
+  // contour and weighted toward the shaded side (sx,sy is where the shade is deepest).
+  const hatchInside=(outline,sx,sy,reach,alpha,gap,seed)=>{
+    const r=seeded(seed);
+    g.save();g.beginPath();g.moveTo(outline[0][0],outline[0][1]);for(const q of outline)g.lineTo(q[0],q[1]);g.closePath();g.clip();
+    let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;for(const q of outline){x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
+    for(let k=x0-(y1-y0);k<x1;k+=gap){
+      const mx=k+(y1-y0)*.5,my=(y0+y1)*.5,near=clamp(1-Math.hypot(mx-sx,my-sy)/reach,0,1);if(near<=.05||r()<.12)continue;
+      g.strokeStyle=tone(alpha*near);g.lineWidth=.35+.45*near;
+      g.beginPath();g.moveTo(k,y0);g.lineTo(k+(y1-y0),y1);g.stroke();
+    }
+    g.restore();
+  };
+  const wash=(outline,alpha)=>{g.fillStyle=tone(alpha);g.beginPath();g.moveTo(outline[0][0],outline[0][1]);for(const q of outline)g.lineTo(q[0],q[1]);g.closePath();g.fill();};
+  // Three coils breaking the surface, each a hump of body between its back and its belly.
+  const coils=[[40,15,7.6],[70,18,8.6],[98,13,7]];
+  coils.forEach(([cx,cr,t],k)=>{
+    const back=arcPts(cx,base,cr,cr*1.05,Math.PI,TAU,22),belly=arcPts(cx,base,cr-t,(cr-t)*1.02,TAU,Math.PI,18);
+    const body=back.concat(belly);
+    wash(body,.16);
+    hatchInside(body,cx+cr*.55,base-cr*.2,cr*1.25,.62,1.35,9100+k);
+    cutAlong(back,.92,1.3,9200+k);cutAlong(belly.slice().reverse(),.7,.8,9210+k);
+    // Scales: small open arcs in rows along the back, each opening toward the tail.
+    for(let row=0;row<2;row++)for(let i=1;i<10;i++){
+      const a=Math.PI+Math.PI*i/10,rr=cr-t*(.3+row*.38),x=cx+Math.cos(a)*rr,y=base+Math.sin(a)*rr*1.03;
+      if(rng()<.22)continue;
+      burinArc(g,x,y,1.45,a+Math.PI*.5,a+Math.PI*1.5,rgb,.5,.42,Math.floor(rng()*1e6)||3,{segments:4,skips:0});
+    }
+    // The crest: a row of short spines along the back, raking toward the tail.
+    for(let i=1;i<8;i++){
+      const a=Math.PI+Math.PI*i/8,x=cx+Math.cos(a)*cr,y=base+Math.sin(a)*cr*1.05,nx=Math.cos(a-.35),ny=Math.sin(a-.35),len=3+2.2*Math.sin(Math.PI*i/8);
+      burinSegment(g,x,y,x+nx*len,y+ny*len,rgb,.8,.7,9300+k*20+i,{segments:2,hair:false,wobble:.15});
+    }
+    // The water cut round the coil where it breaks the surface: a crest curling away from the body on
+    // each side and a flat hairline running on from it.
+    for(const side of [-1,1]){
+      const fx=cx+side*(cr+1.5);
+      cutAlong(bez([fx,base-.4],[fx+side*2,base-3.2],[fx+side*4.5,base-3],[fx+side*5.2,base-1.4],6),.6,.6,9400+k*3+side);
+      burinSegment(g,fx+side*4,base-.3,fx+side*11,base-.3,rgb,.42,.42,9450+k*3+side,{segments:3,hair:false});
+    }
+  });
+  // The tail thrown up behind the first coil: a tapering body curling over, closed in a forked fluke.
+  {
+    const upper=bez([27,base],[20,base-12],[10,base-20],[9,base-33],16),lower=bez([21,base],[16,base-10],[6,base-18],[5,base-31],16);
+    const body=upper.concat(lower.slice().reverse());
+    wash(body,.16);hatchInside(body,20,base-6,16,.55,1.4,9500);
+    cutAlong(upper,.9,1.15,9510);cutAlong(lower,.72,.8,9520);
+    const lobe=(tipX,tipY,seed)=>{
+      const o=bez([7,base-32],[7+(tipX-7)*.2,base-41],[tipX-2,tipY+3],[tipX,tipY],8).concat(bez([tipX,tipY],[tipX-(tipX-7)*.15,tipY+6],[7+(tipX-7)*.35,base-34],[7,base-32],8));
+      wash(o,.22);cutAlong(o,.85,.8,seed,false);
+      for(let i=1;i<4;i++){const u=i/4;burinSegment(g,7,base-33,lerp(7,tipX,u*1.05),lerp(base-33,tipY,u)+2,rgb,.4,.35,seed+i,{segments:2,hair:false});}
+    };
+    lobe(-6,base-47,9530);lobe(18,base-49,9540);
   }
-  // The tail thrown up at the far end, with its fluke.
-  burinSegment(g,14,base,7,base-24,rgb,.8,1.3,4113,{segments:5,hair:false,wobble:.7});
-  burinSegment(g,7,base-24,-3,base-33,rgb,.75,1,4127,{segments:3,hair:false,wobble:.4});
-  burinSegment(g,7,base-24,15,base-34,rgb,.75,1,4133,{segments:3,hair:false,wobble:.4});
-  burinSegment(g,-3,base-33,15,base-34,rgb,.35,.6,4137,{segments:4,hair:false,wobble:.8});
-  // The neck, rising from the third coil.
-  burinSegment(g,112,base,127,base-34,rgb,.85,1.5,4139,{segments:6,hair:false,wobble:.8});
-  burinSegment(g,121,base,134,base-30,rgb,.6,1,4157,{segments:6,hair:false,wobble:.8});
-  // The head: a long wedge with open jaws, an eye, teeth, and two swept horns.
-  burinArc(g,130,base-38,8.5,Math.PI*.36,Math.PI*1.42,rgb,.85,1.2,4159,{segments:11,skips:1});
-  burinSegment(g,129,base-45,160,base-50,rgb,.9,1.3,4177,{segments:6,hair:false,wobble:.5});
-  burinSegment(g,131,base-32,153,base-40,rgb,.85,1.1,4201,{segments:6,hair:false,wobble:.5});
-  burinSegment(g,153,base-40,160,base-50,rgb,.8,1,4211,{segments:3,hair:false,wobble:.3});
-  for(let i=0;i<5;i++){
-    const u=i/5,x0=lerp(134,152,u),y0=lerp(base-45.6,base-49,u),y1=lerp(base-41,base-44.5,u);
-    burinSegment(g,x0,y0,x0+1.4,y1,rgb,.5,.5,4217+i,{segments:2,hair:false});
-  }
-  g.fillStyle=`rgba(${rgb},.9)`;g.beginPath();g.arc(136,base-42.5,1.6,0,TAU);g.fill();
-  burinArc(g,136,base-42.5,4,0,TAU,rgb,.45,.5,4229,{segments:8,skips:1});
-  for(const [dx,dy] of [[-9,-9],[-13,-4]])burinSegment(g,128,base-44,128+dx,base-44+dy,rgb,.6,.8,4233+dx,{segments:3,hair:false,wobble:.5});
-  // The spout, blown clear of the head.
-  for(let i=0;i<7;i++){
-    const spread=(i-3)/3*.55,len=16+rng()*14;
-    burinSegment(g,133,base-50,133+Math.sin(spread)*len*.85,base-50-Math.cos(spread)*len,rgb,.34,.6,4241+i*3,{segments:4,skips:1,hair:false,wobble:1.2});
+  // The neck rising out of the third coil, and the head at its top turned into the wind.
+  {
+    const front=bez([106,base],[112,base-14],[116,base-28],[126,base-38],16),rear=bez([118,base],[121,base-12],[124,base-22],[133,base-31],16);
+    const body=front.concat(rear.slice().reverse());
+    wash(body,.16);hatchInside(body,124,base-10,22,.62,1.35,9600);
+    cutAlong(front,.9,1.25,9610);cutAlong(rear,.75,.9,9620);
+    // Throat folds across the neck.
+    for(let i=0;i<5;i++){const u=.25+i*.13,a=front[Math.round(u*16)],b=rear[Math.round(u*16)];burinSegment(g,a[0]+.5,a[1],b[0]-.5,b[1],rgb,.38,.4,9630+i,{segments:3,hair:false,wobble:.2});}
+    // The head: skull, long upper jaw, the lower jaw dropped open, teeth, an eye under a heavy brow.
+    const skull=bez([124,base-38],[122,base-50],[136,base-55],[146,base-50],12),snout=bez([146,base-50],[154,base-49],[162,base-47],[168,base-44],10);
+    const upperJaw=bez([168,base-44],[160,base-42],[150,base-42],[138,base-41],10),lowerJaw=bez([140,base-37],[150,base-36],[158,base-33],[164,base-31],10);
+    const chin=bez([164,base-31],[156,base-29],[146,base-29],[133,base-31],10);
+    const headTop=skull.concat(snout,upperJaw),jaw=lowerJaw.concat(chin);
+    wash(headTop.concat([[128,base-36]]),.2);wash(jaw.concat([[138,base-35]]),.18);
+    hatchInside(jaw,152,base-30,16,.6,1.3,9700);hatchInside(headTop.concat([[128,base-36]]),140,base-40,14,.45,1.5,9710);
+    cutAlong(skull,.95,1.3,9720);cutAlong(snout,.9,1.05,9730);cutAlong(upperJaw,.85,.8,9740);cutAlong(lowerJaw,.85,.85,9750);cutAlong(chin,.8,.95,9760);
+    for(let i=0;i<6;i++){const u=.12+i*.14,q=upperJaw[Math.round(u*10)];burinSegment(g,q[0],q[1],q[0]-.5,q[1]+2.1,rgb,.75,.45,9770+i,{segments:2,hair:false});}
+    for(let i=0;i<4;i++){const u=.1+i*.2,q=lowerJaw[Math.round(u*10)];burinSegment(g,q[0],q[1],q[0]+.4,q[1]-1.8,rgb,.7,.42,9780+i,{segments:2,hair:false});}
+    g.fillStyle=tone(.95);g.beginPath();g.ellipse(140,base-46,1.6,1.25,-.2,0,TAU);g.fill();
+    burinArc(g,140,base-46,3.2,Math.PI*.95,Math.PI*2.05,rgb,.6,.5,9790,{segments:7,skips:0});
+    burinArc(g,139.5,base-47,5.2,Math.PI*1.1,Math.PI*1.75,rgb,.8,.9,9791,{segments:6,skips:0});
+    // A nostril, and the fin behind the jaw swept back along the neck.
+    g.beginPath();g.fillStyle=tone(.8);g.ellipse(163,base-46,.9,.6,0,0,TAU);g.fill();
+    const fin=bez([128,base-44],[122,base-52],[116,base-54],[110,base-51],8).concat(bez([110,base-51],[116,base-47],[120,base-42],[126,base-39],8));
+    wash(fin,.2);cutAlong(fin,.8,.7,9800,false);
+    for(let i=1;i<5;i++){const u=i/5,q=fin[Math.round(u*8)];burinSegment(g,127,base-41,q[0],q[1],rgb,.45,.35,9810+i,{segments:2,hair:false});}
+    // The spout blown clear of the head, a fan of fine strokes that fall away at their tips.
+    for(let i=0;i<9;i++){
+      const spread=(i-4)/4*.6,len=13+rng()*9,x0=138,y0=base-54;
+      const tip=[x0+Math.sin(spread)*len,y0-Math.cos(spread)*len],droop=[tip[0]+Math.sin(spread)*4,tip[1]+3.5];
+      cutAlong(bez([x0,y0],[x0+Math.sin(spread)*len*.4,y0-len*.6],[tip[0],tip[1]],droop,6),.42,.5,9820+i);
+    }
   }
   const sprite={canvas:c,w,h};
   darkMarginalia.set(key,sprite);return sprite;
@@ -1848,7 +1931,13 @@ function drawTallies(dt){
     if(!tb)continue;
     if(tb.top>H-footerBand()){tallies.splice(i,1);continue;}
     markGround('tally',tb.l,tb.top,tb.r,tb.bottom,t);
-    const alpha=reducedMotion?1:Math.min(1,t.age*8);
+    // Only the newest tally is wet. Every older one dries back to half its strength over a second once a
+    // later landing has been written, as the trail dries behind the nib: the running SUMMA is the one
+    // figure the eye needs, and a column of equally bright tallies down the gutter outweighed the chart.
+    const newest=i===tallies.length-1;
+    if(newest)t.stale=0;else if(world.state!=='paused')t.stale=(t.stale||0)+dt;
+    const dry=newest?1:reducedMotion?.5:lerp(1,.5,Math.min(1,(t.stale||0)/1.1));
+    const alpha=(reducedMotion?1:Math.min(1,t.age*8))*dry;
     const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';
