@@ -1353,43 +1353,102 @@ function rockChasm(h){
 // ---------- The trail: a finger of wet ochre dragged across the stone ----------
 // Not a row of dots and not a pen's line: the mark a loaded finger leaves as it is drawn along the
 // rock — one continuous stroke, widest and wettest just behind the hand, drying and thinning back along
-// the way it came until it is a dry scrape and gone. It is built as one ribbon (a polygon whose two
-// sides are the path offset by the stroke's half-width at every sample), so it never breaks into beads
-// where pieces overlap, then laid into the wall by multiplying, so the rock's grain runs through it,
-// with a thin darker ridge along one edge where the pigment was pushed.
+// the way it came until it is a dry scrape and gone. It is built as one ribbon (the path offset by the
+// stroke's half-width at every sample), so it never breaks into beads where pieces overlap, and laid
+// into the wall by multiplying, so the rock's grain runs through it.
+//
+// Pigment once laid does not move. Everything about the stroke that varies along it is therefore read
+// off the rock it was laid on, never off its place in the list of samples or off where the hand is now:
+// how wide the finger pressed at a point is a field of the world's own plane and the speed the hand had
+// there, and how wet it still is comes from that sample's own age. The first cut keyed its width to the
+// sample's index and its colour to a gradient strung from the tail to the hand, so every time an old
+// sample dried off the end, or the hand moved on, the swell and the colour slid along the whole stroke
+// and it crawled on the wall like something alive. Now a point on the stroke only ever thins and dries
+// where it lies.
+//
+// What it dries into is what ochre on limestone does: wet, it is dark and deep and glistens where the
+// flame catches it; as the water goes it lightens and turns matte, and the pigment left standing on the
+// rock's tooth breaks where the hollows of the stone were never reached — so the dry part of the stroke
+// is holed by a grain anchored to the wall, and the wet part lies over it whole. A thin darker ridge runs
+// along one edge where the finger pushed the paste aside.
+let rockTrailLayer=null,rockToothArt=null;
+const ROCK_TOOTH_SPAN=96;
+// The tooth the drying stroke breaks on: two octaves of the wall's own value noise, cut to a scatter of
+// holes, one tile of it baked once at one sample to one css px. The lattices wrap, so the tile does too.
+function rockToothSprite(){
+  if(rockToothArt)return rockToothArt;
+  const N=ROCK_TOOTH_SPAN,c=makeCanvas(N,N),g=c.getContext('2d');
+  if(!g||!g.createImageData){rockToothArt=c;return c;}
+  const a=rockLattice(0x70074,24),b=rockLattice(0x70075,48),img=g.createImageData(N,N),d=img.data;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=rockLatticeAt(a,24,x/4,y/4)*.65+rockLatticeAt(b,48,x/2,y/2)*.35,k=(y*N+x)*4;
+    d[k]=d[k+1]=d[k+2]=0;d[k+3]=Math.round(255*rockStep(.56,.72,v));}
+  g.putImageData(img,0,0);rockToothArt=c;return c;
+}
 function rockTrail(){
   const tr=world.trail;if(tr.length<2)return;
-  const pts=[];for(let i=0;i<tr.length;i++){const s=tr[i],life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life<=0)continue;pts.push({x:sx(s.x),y:sy(s.y),life});}
-  const p=world.player;if(world.state!=='dead')pts.push({x:sx(p.x),y:sy(p.y),life:1});
+  const pts=[];for(let i=0;i<tr.length;i++){const s=tr[i],life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life<=0)continue;pts.push({x:sx(s.x),y:sy(s.y),wx:s.x,wy:s.y,life,speed:s.speed||BASE_SPEED});}
+  const p=world.player;if(world.state!=='dead')pts.push({x:sx(p.x),y:sy(p.y),wx:p.x,wy:p.y,life:1,speed:Math.hypot(p.vx,p.vy)});
   if(pts.length<2)return;
-  const L=[],R=[],E=[];
-  for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;
-    const t=pts[i].life,w=(1.6+4*t*t)*scale*(.85+.3*Math.sin(i*.7)),q=pts[i];L.push([q.x+nx*w,q.y+ny*w]);R.push([q.x-nx*w,q.y-ny*w]);E.push([q.x+nx*w*.8,q.y+ny*w*.8,t]);}
-  const ribbon=()=>{ctx.beginPath();ctx.moveTo(L[0][0],L[0][1]);for(let i=1;i<L.length;i++)ctx.lineTo(L[i][0],L[i][1]);for(let i=R.length-1;i>=0;i--)ctx.lineTo(R[i][0],R[i][1]);ctx.closePath();};
-  const head=pts[pts.length-1],tail=pts[0],gr=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
-  gr.addColorStop(0,`rgba(${ink.rock.redOchre},.25)`);gr.addColorStop(.45,`rgba(${ink.rock.redOchre},.8)`);gr.addColorStop(1,`rgba(${ink.rock.redOchre},1)`);
-  // Laid twice into the stone, so the pigment is dense enough to read on the darkest rock the flame reaches.
-  ctx.save();ctx.globalCompositeOperation='multiply';ribbon();ctx.fillStyle=gr;ctx.fill();ctx.fill();
-  // The wet part catches the flame a little, where it is still fresh.
-  ctx.globalCompositeOperation='source-over';const gw=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);
-  gw.addColorStop(0,`rgba(${ink.rock.ochre},0)`);gw.addColorStop(.7,`rgba(${ink.rock.ochre},.08)`);gw.addColorStop(1,`rgba(${ink.rock.ember},.28)`);ribbon();ctx.fillStyle=gw;ctx.fill();
-  // The ridge the finger pushed up along one side.
-  ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=Math.max(.7,.9*scale);
-  const gr2=ctx.createLinearGradient(tail.x,tail.y,head.x,head.y);gr2.addColorStop(0,`rgba(${ink.rock.charcoal},.25)`);gr2.addColorStop(1,`rgba(${ink.rock.charcoal},.75)`);
-  ctx.strokeStyle=gr2;ctx.beginPath();ctx.moveTo(E[0][0],E[0][1]);for(let i=1;i<E.length;i++)ctx.lineTo(E[i][0],E[i][1]);ctx.stroke();
+  const seed=(world.seed>>>0)^0x7a11,L=[],R=[],E=[],Wd=[];
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l,q=pts[i],t=q.life;
+    // Pressure: where the finger bore down (a slow field of the wall's own plane), and the faster it went
+    // the less it laid; drying, it shrinks back toward the dry route it becomes.
+    const press=.78+.44*rockWorldNoise(q.wx,q.wy,10,seed),pace=1.12-.3*clamp((q.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
+    const w=(1.35+3.9*Math.pow(t,1.4)*press*pace)*scale;Wd.push(w);
+    // Each edge rags on its own fine field, as a finger's edge catches on the grain one side at a time.
+    const eL=w*(.88+.24*rockWorldNoise(q.wx,q.wy,3.2,seed+1)),eR=w*(.88+.24*rockWorldNoise(q.wx,q.wy,3.2,seed+2));
+    L.push([q.x+nx*eL,q.y+ny*eL]);R.push([q.x-nx*eR,q.y-ny*eR]);E.push([q.x+nx*eL*.78,q.y+ny*eL*.78]);
+    x0=Math.min(x0,q.x-w);y0=Math.min(y0,q.y-w);x1=Math.max(x1,q.x+w);y1=Math.max(y1,q.y+w);}
+  const pad=4;x0=Math.max(0,Math.floor(x0-pad));y0=Math.max(0,Math.floor(y0-pad));x1=Math.min(W,Math.ceil(x1+pad));y1=Math.min(H,Math.ceil(y1+pad));
+  if(x1<=x0||y1<=y0)return;
+  // Laid first on a layer of its own the size of the stroke, then multiplied into the wall once: the
+  // pieces of the ribbon meet edge to edge there without any seam doubling up in the stone.
+  const bw=Math.ceil((x1-x0)*DPR),bh=Math.ceil((y1-y0)*DPR);
+  if(!rockTrailLayer||rockTrailLayer.width<bw||rockTrailLayer.height<bh)rockTrailLayer=makeCanvas(Math.max(bw,rockTrailLayer?rockTrailLayer.width:0),Math.max(bh,rockTrailLayer?rockTrailLayer.height:0));
+  const g=rockTrailLayer.getContext('2d');if(!g)return;
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,bw+2,bh+2);g.setTransform(DPR,0,0,DPR,-x0*DPR,-y0*DPR);
+  const quad=i=>{g.beginPath();g.moveTo(L[i][0],L[i][1]);g.lineTo(L[i+1][0],L[i+1][1]);g.lineTo(R[i+1][0],R[i+1][1]);g.lineTo(R[i][0],R[i][1]);g.closePath();};
+  const red=ink.rock.redOchre.split(',').map(Number),wet=red.map(v=>Math.round(v*.62)),dry=red.map(v=>Math.round(v+(255-v)*.12));
+  const tint=(c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;
+  // The whole stroke as it dries: lighter, matte, and thinner in its pigment toward the tail.
+  for(let i=0;i+1<pts.length;i++){const t=(pts[i].life+pts[i+1].life)/2;g.fillStyle=tint(dry,.5+.35*t);quad(i);g.fill();}
+  // The rock's tooth lifting out of the dried pigment, anchored to the wall so the breaks stay put.
+  if(g.createPattern){let pat=null;try{pat=g.createPattern(rockToothSprite(),'repeat');const ox=((sx(0)%ROCK_TOOTH_SPAN)+ROCK_TOOTH_SPAN)%ROCK_TOOTH_SPAN,oy=((sy(0)%ROCK_TOOTH_SPAN)+ROCK_TOOTH_SPAN)%ROCK_TOOTH_SPAN;
+    if(pat&&pat.setTransform&&typeof DOMMatrix==='function')pat.setTransform(new DOMMatrix([1,0,0,1,ox,oy]));}catch(e){pat=null;}
+    if(pat){g.save();g.globalCompositeOperation='destination-out';g.globalAlpha=.8;g.fillStyle=pat;g.fillRect(x0,y0,x1-x0,y1-y0);g.restore();}}
+  // The wet reach laid over it whole, deep and dark, fading into the dry as the water goes.
+  for(let i=0;i+1<pts.length;i++){const t=(pts[i].life+pts[i+1].life)/2,k=rockStep(.3,.85,t);if(k<=.01)continue;
+    g.fillStyle=tint(wet.map((v,j)=>Math.round(dry[j]+(v-dry[j])*k)),.95*k);quad(i);g.fill();}
+  // The ridge the finger pushed up along one side, strongest where the paste is still soft.
+  g.lineCap='round';g.lineWidth=Math.max(.6,.8*scale);
+  for(let i=0;i+1<pts.length;i++){const t=pts[i].life;g.strokeStyle=`rgba(${ink.rock.charcoal},${(.2+.5*t).toFixed(3)})`;g.beginPath();g.moveTo(E[i][0],E[i][1]);g.lineTo(E[i+1][0],E[i+1][1]);g.stroke();}
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(rockTrailLayer,0,0,bw,bh,x0,y0,bw/DPR,bh/DPR);
+  // Where it is still wet the paste glistens: a thin light along the side facing the flame, fading as it
+  // dries, so the fresh reach of the stroke reads as wet at a glance and the rest as stone.
+  ctx.globalCompositeOperation='screen';ctx.lineCap='round';ctx.lineWidth=Math.max(.6,.9*scale);
+  const Lh=rockLightAt((x0+x1)/2,(y0+y1)/2);
+  // Wet paste does not shine along its whole length like a tube: it glints where its surface happens to
+  // face the flame, in patches read off the rock under it so they stay where they were laid.
+  for(let i=0;i+1<pts.length;i++){const t=pts[i].life,k=rockStep(.55,1,t)*(.35+.65*Lh.fall)*rockStep(.38,.62,rockWorldNoise(pts[i].wx,pts[i].wy,7,seed+3));if(k<=.02)continue;
+    const o=-Wd[i]*.45,o2=-Wd[i+1]*.45;ctx.strokeStyle=`rgba(${ink.rock.ember},${(.38*k).toFixed(3)})`;
+    ctx.beginPath();ctx.moveTo(pts[i].x+Lh.dx*o,pts[i].y+Lh.dy*o);ctx.lineTo(pts[i+1].x+Lh.dx*o2,pts[i+1].y+Lh.dy*o2);ctx.stroke();}
   ctx.restore();
 }
 
 // The route already flown, once the finger's ochre has dried: a thin, dry scrape of it along the whole
-// way, laid into the rock by multiplying and breaking where the stone's tooth lifted the pigment — read
-// off the path's own length, so it breaks in the same places every frame and scrolls with the wall.
+// way, laid into the rock by multiplying and breaking where the stone's tooth lifted the pigment. Where
+// it breaks is read off the rock under each piece of it, not off its distance from the start of the
+// route: the route's oldest end is pruned as the wall scrolls away, and a break counted from there
+// slid along the whole scrape every time it was.
 function rockInkPath(){
   const P=world.inkPath;if(P.length<2)return;
+  const seed=(world.seed>>>0)^0x71;
   ctx.save();ctx.globalCompositeOperation='multiply';ctx.lineCap='round';ctx.lineJoin='round';
   ctx.strokeStyle=`rgba(${ink.rock.redOchre},.6)`;ctx.lineWidth=Math.max(1.2,2.6*scale);
-  let d=0,on=true;ctx.beginPath();ctx.moveTo(sx(P[0].x),sy(P[0].y));
-  for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];d+=Math.hypot(b.x-a.x,b.y-a.y);
-    const next=rockWorldNoise(d,0,14,(world.seed>>>0)^0x71)>.28;
+  let on=true;ctx.beginPath();ctx.moveTo(sx(P[0].x),sy(P[0].y));
+  for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];
+    const next=rockWorldNoise((a.x+b.x)/2,(a.y+b.y)/2,14,seed)>.28;
     if(next&&!on)ctx.moveTo(sx(a.x),sy(a.y));if(next)ctx.lineTo(sx(b.x),sy(b.y));on=next;}
   ctx.stroke();ctx.restore();
 }
@@ -2271,5 +2330,5 @@ function invalidateRockArt(){
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
-  rockCoreArt=null;rockCoreKey='';
+  rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;
 }
