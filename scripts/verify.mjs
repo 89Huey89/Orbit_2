@@ -15,11 +15,19 @@ const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // populate them (from its own vm sandbox, or from workerData) before calling the task it was asked for.
 let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,RELEASE_GRACE,script;
 
+// A name looked up on a vm context's global object goes through the interceptor V8 installs on every
+// contextified sandbox, which is many times slower than an ordinary global, and the simulation and the
+// page's own bakes ask for Math.min, Math.max and Math.hypot millions of times — that lookup alone was
+// most of the suite's wall time. Binding Math once as a script-scope constant, which every later script
+// in the same context resolves before it ever reaches the global object, puts it back on the fast path.
+// It is the same Math either way, so nothing the code computes changes.
+const FAST_GLOBALS='const Math=globalThis.Math;';
+
 // Runs the extracted `// BEGIN SIMULATION`/`// END SIMULATION` slice of src/simulation.js in its own
 // vm sandbox and returns the named globals verify.mjs needs off it — the same slice-and-pull the file
 // has always done, just callable once per thread instead of once for the whole process.
 function simSandbox(simulation){
-  const sandbox={};vm.createContext(sandbox);
+  const sandbox={};vm.createContext(sandbox);vm.runInContext(FAST_GLOBALS,sandbox);
   vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,RELEASE_GRACE};',sandbox);
   return sandbox.api;
 }
@@ -60,20 +68,26 @@ function taskRoute60(){
 function taskChasmRoute60(){
   let totalChasms=0,firstRow=Infinity;const failures=[],intersections=[];
   for(let seed=1;seed<=60;seed++){
-    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true,true);w.keepAll=true;w.start();
+    // The world prunes as a live run does rather than keeping everything (keepAll): kept, every node
+    // ever dealt stays in aim()'s sweep and stretches its reach, which made this one flight the whole
+    // suite's wall time. The fairness check below still sees every node and chasm the run dealt,
+    // because each is collected here as it appears, before the darkness can prune it.
+    const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,true,true);w.start();
+    const nodes=new Set(w.nodes),chasms=new Set(w.chasms);
     for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
       if(w.player.node){
         const aim=w.aim();
         if(aim&&!aim.steep&&aim.n.type!=='gold'&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
       }
       w.update(step);
+      for(const q of w.nodes)nodes.add(q);for(const c of w.chasms)chasms.add(c);
       assert(Number.isFinite(w.player.x)&&Number.isFinite(w.player.y));
     }
     if(w.progress<48)failures.push({seed,progress:w.progress,reason:w.reason,elapsed:w.elapsed});
-    totalChasms+=w.chasms.length;
-    for(const c of w.chasms){
+    totalChasms+=chasms.size;
+    for(const c of chasms){
       firstRow=Math.min(firstRow,c.row);
-      for(const q of w.nodes){
+      for(const q of nodes){
         const d=pointSegment(q.baseX,q.baseY,c.x0,c.y0,c.x1,c.y1);
         if(d<q.cap+q.amp+c.w)intersections.push({seed,row:c.row,node:q.row,d,need:q.cap+q.amp+c.w});
       }
@@ -254,7 +268,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+  vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
