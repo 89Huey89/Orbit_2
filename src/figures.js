@@ -1001,6 +1001,9 @@ function drawConstellationFigures(){
   for(const chart of world.constellations)revealFigure(chart,figure);
 }
 function drawConstellations(){
+  // A century that strings a figure's stars in its own hand names a `chartRoute` painter and draws the
+  // route, its markers and its live caption itself; the atlas's engraved route stands everywhere else.
+  const own=handFor('chartRoute');if(own){for(const chart of world.constellations)own(chart);return;}
   for(const chart of world.constellations){
     if(!chart.stars.length||sy(chart.entry.y)<-150||sy(chart.stars[chart.stars.length-1].y)>H+170)continue;
     const count=chart.stars.filter(n=>n.visited).length,points=[chart.entry,...chart.stars];if(chart.exit)points.push(chart.exit);

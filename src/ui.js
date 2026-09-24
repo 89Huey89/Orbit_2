@@ -433,6 +433,9 @@ function showEnd(){
   // paints it; this call only exists on that plate, and the typeof guard keeps it safe if that
   // painter's script has not defined it yet.
   if(eraId()===2&&typeof ceilingPaintEndNumerals==='function')ceilingPaintEndNumerals($('end-numerals'),world.score);
+  // Any other century that letters its score in its own numerals names an `endNumerals` painter for the
+  // same canvas (the Astrolabe's Eastern Arabic-Indic digits, src/astrolabe.js).
+  {const paint=handFor('endNumerals');if(paint)paint($('end-numerals'),world);}
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
