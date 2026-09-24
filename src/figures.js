@@ -1909,8 +1909,9 @@ function drawAim(aim){
   ctx.save();ctx.lineCap='round';
   const ax=sx(p.x+dx*12),ay=sy(p.y+dy*12),bx=sx(end.x),by=sy(end.y);
   // The course is pricked, not ruled: small burin wedges are set along the predicted path, spaced and sized
-  // by the plate scale, opening slightly toward the destination. They creep forward with the flight unless
-  // reduced motion is requested, in which case the pricking stands still.
+  // by the plate scale, opening slightly toward the destination. The pricking stands still: it used to creep
+  // forward on the clock, and a line of cuts sliding along the course read as the drawn line itself moving,
+  // which cut lines never do. The wedges already say which way the flight will go.
   const warn=blocked||aim?.steep;
   const guideRgb=warn?ink.marks.aimBlockedStart:aim?ink.marks.aimLocked:ink.marks.aimDefault;
   const guideAlpha=warn?.72:aim?.78:.5,weight=aim?1.15:.92;
@@ -1925,8 +1926,8 @@ function drawAim(aim){
   // pricking is starved to almost nothing: the pen has no ink left to set it down.
   const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   if(total>1){
-    const gap=Math.max(4,8.5*scale),crawl=reducedMotion?0:(world.time*26*scale)%gap;
-    let leg=0,walked=0,d=crawl;
+    const gap=Math.max(4,8.5*scale);
+    let leg=0,walked=0,d=0;
     while(d<total&&leg<legs.length){
       while(leg<legs.length-1&&walked+legs[leg].len<d){walked+=legs[leg].len;leg++;}
       const l=legs[leg],along=clamp(d-walked,0,l.len),f=d/total;

@@ -1527,6 +1527,9 @@ function rockInkPath(){
 // the mouth — so it reads as one intention and not a dashed rule. Warned courses (a rim that would turn
 // the flight away, a hazard in the way) go dark in manganese; past where the ochre would run out the
 // dots are only ghosts; and a clean landing is promised by a pale kaolin dot at the rim it would meet.
+// The dots hold still along the course. They used to breathe forward from the hand on the clock, and a
+// row of pigment creeping along the wall read as the line itself crawling, where pigment once blown
+// stays where it landed.
 function rockAim(aim,preview){
   const p=world.player,points=preview.points,warn=preview.blocked||aim?.steep,end=points[points.length-1];
   // Pale kaolin, the one pigment that reads on every patch of this wall lit or dark; manganese black
@@ -1536,9 +1539,9 @@ function rockAim(aim,preview){
   const P=points.map(q=>[sx(q.x),sy(q.y)]);
   const lens=[0];for(let i=1;i<P.length;i++)lens.push(lens[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
   const at=d=>{let i=1;while(i<P.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return [P[i-1][0]+(P[i][0]-P[i-1][0])*t,P[i-1][1]+(P[i][1]-P[i-1][1])*t];};
-  const breathe=14*scale+(reducedMotion?0:(world.time*18*scale)%(9*scale));
+  const start=14*scale;
   ctx.save();
-  for(let d=breathe,k=0;d<total;k++){const f=d/total,q=at(d),r=(aim?3.4:2.8)*(1-.45*f)*scale,dry=f>dryFrom;
+  for(let d=start,k=0;d<total;k++){const f=d/total,q=at(d),r=(aim?3.4:2.8)*(1-.45*f)*scale,dry=f>dryFrom;
     rockDot(ctx,q[0],q[1],r,dry?ink.rock.stone:col,alpha*(dry?.3:1)*(1-f*.3),k*7+3,pale&&!dry);
     d+=(7+f*9)*scale;}
   if(aim?.perfect&&!preview.fogged){const x=sx(aim.cx+Math.cos(aim.entryAngle)*aim.radius),y=sy(aim.cy+Math.sin(aim.entryAngle)*aim.radius);
