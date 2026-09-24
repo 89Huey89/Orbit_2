@@ -113,8 +113,12 @@ function astroGroove(g,path,w,alpha=1,rgb){
   g.translate(.35,.45);g.strokeStyle=`rgba(${P.brassHi},${(.55*alpha).toFixed(3)})`;g.lineWidth=w*.8;g.beginPath();path();g.stroke();
   g.translate(-.35,-.45);g.strokeStyle=`rgba(${rgb||P.groove},${(.9*alpha).toFixed(3)})`;g.lineWidth=w;g.beginPath();path();g.stroke();g.restore();
 }
+// Set while the instrument is drawn as a construction on the page rather than as metal (a chapter's
+// opening): every brass surface is left unfilled and only the cut lines stand, in ink.
+let astroGhost=false;
 // Brass as a surface: brightest where light and handling concentrate, darkest where neither reaches.
 function astroBrass(g,x0,y0,x1,y1,hi=1){
+  if(astroGhost)return 'rgba(0,0,0,0)';
   const P=ink.astro,gr=g.createLinearGradient(x0,y0,x1,y1);
   gr.addColorStop(0,`rgb(${mixRgb(P.brass.split(',').map(Number),P.brassHi.split(',').map(Number),.7*hi)})`);gr.addColorStop(.45,`rgb(${P.brass})`);gr.addColorStop(1,`rgb(${P.brassLo})`);return gr;
 }
@@ -131,7 +135,7 @@ function astroPointer(g,tx,ty,rx,ry,w,fillRgb,alpha=1){
   g.bezierCurveTo(rx+ux*L*.35+nx*w*1.3,ry+uy*L*.35+ny*w*1.3,rx+ux*L*.7+nx*w*.2,ry+uy*L*.7+ny*w*.2,tx,ty);
   g.bezierCurveTo(rx+ux*L*.6-nx*w*.9,ry+uy*L*.6-ny*w*.9,rx+ux*L*.3-nx*w*.1,ry+uy*L*.3-ny*w*.1,rx+ux*L*.18-nx*w*1.1,ry+uy*L*.18-ny*w*1.1);
   g.quadraticCurveTo(rx-nx*w*.4,ry-ny*w*.4,rx+nx*w,ry+ny*w);g.closePath();
-  g.fillStyle=`rgb(${fillRgb})`;g.fill();g.strokeStyle=`rgba(${P.groove},.85)`;g.lineWidth=Math.max(.35,w*.22);g.stroke();g.restore();
+  g.fillStyle=astroGhost?'rgba(0,0,0,0)':`rgb(${fillRgb})`;g.fill();g.strokeStyle=`rgba(${P.groove},.85)`;g.lineWidth=Math.max(.35,w*.22);g.stroke();g.restore();
 }
 
 // ---------- The instrument: the astrolabe assembling, part by part ----------
@@ -146,6 +150,9 @@ const ASTRO_OBLIQ=23.44*Math.PI/180,ASTRO_LAT=33.3*Math.PI/180;
 // map, and pointers set anywhere else would be decoration.
 const ASTRO_RETE=[[78.6,-8.2,0],[88.8,7.4,1],[69,16.5,2],[79.2,46,3],[279.2,38.8,4],[297.7,8.9,5],[152.1,12,6],[213.9,19.2,7],[101.3,-16.7,8],[201.3,-11.2,9],[310.4,45.3,10],[141.9,-8.7,11]];
 function astroInstrument(g,R,parts,fresh=1,rot=0,gilt=0,opts={}){
+  astroGhost=!!opts.ghost;try{astroInstrumentCut(g,R,parts,fresh,rot,gilt,opts);}finally{astroGhost=false;}
+}
+function astroInstrumentCut(g,R,parts,fresh,rot,gilt,opts){
   const P=ink.astro,rim=R*.13,rc=R-rim,k=rc/Math.tan((Math.PI/2+ASTRO_OBLIQ)/2),dr=d=>k*Math.tan((Math.PI/2-d)/2),big=R>=70;
   const reveal=(i,draw)=>{if(i>=parts)return;if(i<parts-1||fresh>=1){draw();return;}
     g.save();g.beginPath();g.moveTo(0,0);g.arc(0,0,R*1.6,-Math.PI/2,-Math.PI/2+TAU*fresh);g.closePath();g.clip();draw();g.restore();
@@ -158,13 +165,13 @@ function astroInstrument(g,R,parts,fresh=1,rot=0,gilt=0,opts={}){
     g.beginPath();g.moveTo(-tw*.5,-R+rim*.3);g.bezierCurveTo(-tw*.62,ty+th*.1,-tw*.28,ty-th*.2,0,ty-th*.18);g.bezierCurveTo(tw*.28,ty-th*.2,tw*.62,ty+th*.1,tw*.5,-R+rim*.3);g.closePath();
     g.fillStyle=astroBrass(g,-tw,ty-th,tw,-R,1.1);g.fill();g.strokeStyle=`rgba(${P.groove},.85)`;g.lineWidth=lw*1.4;g.stroke();
     // A trefoil pierced through the throne, as the openwork thrones are.
-    g.fillStyle=`rgba(${P.tarnish},.75)`;for(const [ox,oy,rr] of [[0,-.02,.05],[-.075,.045,.036],[.075,.045,.036]]){g.beginPath();g.arc(ox*R,ty+th*.3+oy*R,rr*R,0,TAU);g.fill();}
+    g.fillStyle=`rgba(${P.tarnish},${astroGhost?.3:.75})`;for(const [ox,oy,rr] of [[0,-.02,.05],[-.075,.045,.036],[.075,.045,.036]]){g.beginPath();g.arc(ox*R,ty+th*.3+oy*R,rr*R,0,TAU);g.fill();}
     g.restore();
     g.save();g.beginPath();g.arc(0,0,R,0,TAU);g.fillStyle=astroBrass(g,-R,-R,R,R);g.fill();
     g.strokeStyle=`rgba(${P.groove},.9)`;g.lineWidth=lw*1.6;g.stroke();
     g.beginPath();g.arc(0,0,rc,0,TAU);g.lineWidth=lw*1.3;g.stroke();
-    const well=g.createRadialGradient(-rc*.3,-rc*.35,rc*.1,0,0,rc);well.addColorStop(0,`rgba(${P.brassHi},.28)`);well.addColorStop(1,`rgba(${P.patina},.4)`);
-    g.fillStyle=well;g.beginPath();g.arc(0,0,rc,0,TAU);g.fill();g.restore();}
+    if(!astroGhost){const well=g.createRadialGradient(-rc*.3,-rc*.35,rc*.1,0,0,rc);well.addColorStop(0,`rgba(${P.brassHi},.28)`);well.addColorStop(1,`rgba(${P.patina},.4)`);
+    g.fillStyle=well;g.beginPath();g.arc(0,0,rc,0,TAU);g.fill();}g.restore();}
   // The limb: a degree scale round the rim, a longer stroke every five and ten, and abjad every thirty.
   reveal(1,()=>{g.save();g.lineCap='butt';
     for(let d=0;d<360;d+=big?1:2){const a=-Math.PI/2+d/360*TAU,L=d%10===0?rim*.62:d%5===0?rim*.42:rim*.26,c=Math.cos(a),s=Math.sin(a);
@@ -192,10 +199,10 @@ function astroInstrument(g,R,parts,fresh=1,rot=0,gilt=0,opts={}){
   // The rete, pierced: the ring of Capricorn, the ecliptic ring set eccentric on it, the equatorial bar, and
   // openwork struts; everything else cut away so the plate shows through. It turns on the pin with `rot`.
   const eclR=(rc+dr(ASTRO_OBLIQ))/2,eclC=(rc-dr(ASTRO_OBLIQ))/2;
-  const strap=(path,w)=>{g.lineCap='round';g.lineJoin='round';g.strokeStyle=`rgb(${P.groove})`;g.lineWidth=w+lw*1.6;g.beginPath();path();g.stroke();
+  const strap=(path,w)=>{g.lineCap='round';g.lineJoin='round';if(astroGhost){g.strokeStyle=`rgba(${P.groove},.8)`;g.lineWidth=Math.max(lw*1.4,w*.35);g.beginPath();path();g.stroke();return;}g.strokeStyle=`rgb(${P.groove})`;g.lineWidth=w+lw*1.6;g.beginPath();path();g.stroke();
     g.strokeStyle=astroBrass(g,-R,-R,R,R,1.2);g.lineWidth=w;g.beginPath();path();g.stroke();};
   reveal(3,()=>{g.save();g.rotate(rot);const w=Math.max(1.2,R*.035);
-    g.fillStyle=`rgba(${P.tarnish},.22)`;g.beginPath();g.arc(0,-eclC,eclR+w,0,TAU);g.arc(0,-eclC,eclR-w,0,TAU,true);g.fill('evenodd');
+    if(!astroGhost){g.fillStyle=`rgba(${P.tarnish},.22)`;}else g.fillStyle='rgba(0,0,0,0)';g.beginPath();g.arc(0,-eclC,eclR+w,0,TAU);g.arc(0,-eclC,eclR-w,0,TAU,true);g.fill('evenodd');
     strap(()=>{g.arc(0,0,rc-w*.4,0,TAU);},w*.9);
     strap(()=>{g.arc(0,-eclC,eclR,0,TAU);},w);
     strap(()=>{g.moveTo(-rc+w,0);g.lineTo(rc-w,0);g.moveTo(0,rc-w);g.lineTo(0,-eclC+eclR);},w*.7);
@@ -207,8 +214,9 @@ function astroInstrument(g,R,parts,fresh=1,rot=0,gilt=0,opts={}){
   reveal(4,()=>{g.save();g.rotate(rot);const w=Math.max(1,R*.026);
     for(const [ra,dec,ni] of ASTRO_RETE){const a=-Math.PI/2+ra*Math.PI/180,r=dr(dec*Math.PI/180);if(r>rc*.94)continue;
       const tx=Math.cos(a)*r,ty=Math.sin(a)*r,rr=r+(r<eclR*.8?R*.08:-R*.08),rx=Math.cos(a+.12)*rr,ry=Math.sin(a+.12)*rr;
-      astroPointer(g,tx,ty,rx,ry,w,gilt>0?mixRgb(P.brassHi.split(',').map(Number),P.gilt.split(',').map(Number),gilt):P.brassHi,1);
-      g.fillStyle=`rgb(${gilt>0?P.gilt:P.groove})`;g.beginPath();g.arc(tx,ty,Math.max(.6,R*.008),0,TAU);g.fill();
+      const known=gilt>0||(opts.found&&opts.found&(1<<ni));
+      astroPointer(g,tx,ty,rx,ry,w,known?(gilt>0?mixRgb(P.brassHi.split(',').map(Number),P.gilt.split(',').map(Number),gilt):P.gilt):P.brassHi,1);
+      g.fillStyle=`rgb(${known?P.gilt:P.groove})`;g.beginPath();g.arc(tx,ty,Math.max(.6,R*.008),0,TAU);g.fill();
       if(big){g.save();g.translate(rx,ry);g.rotate(rot*-1);astroNaskh(g,ASTRO_STARS[ni][0],0,R*.045,R*.04,P.groove,.7);g.restore();}}
     g.restore();});
   // The rule: a straight bar across the whole face on the same pin, fiducial edge through the centre, and
@@ -223,14 +231,14 @@ function astroInstrument(g,R,parts,fresh=1,rot=0,gilt=0,opts={}){
   // Gilt over the finished instrument: its rim burnished and a warmth over the whole face.
   if(gilt>0){g.save();g.globalAlpha=gilt;g.strokeStyle=`rgba(${P.gilt},.95)`;g.lineWidth=Math.max(1,R*.02);g.beginPath();g.arc(0,0,R-.5,0,TAU);g.stroke();
     const gg=g.createRadialGradient(-R*.3,-R*.4,R*.05,0,0,R);gg.addColorStop(0,'rgba(255,236,170,.28)');gg.addColorStop(1,'rgba(255,236,170,0)');g.fillStyle=gg;g.beginPath();g.arc(0,0,R,0,TAU);g.fill();g.restore();}
-  if(opts.shade!==false){const sh=g.createRadialGradient(R*.25,R*.3,R*.2,0,0,R*1.05);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(30,20,8,.18)');g.fillStyle=sh;g.beginPath();g.arc(0,0,R,0,TAU);g.fill();}
+  if(opts.shade!==false&&!astroGhost){const sh=g.createRadialGradient(R*.25,R*.3,R*.2,0,0,R*1.05);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(30,20,8,.18)');g.fillStyle=sh;g.beginPath();g.arc(0,0,R,0,TAU);g.fill();}
 }
 // The instrument drawn once into a sprite at a stage, for the places it stands still.
 const astroSprites=new Map();
-function astroInstrumentSprite(R,parts,gilt){
-  const key=R.toFixed(1)+':'+parts+':'+gilt+':'+DPR;let s=astroSprites.get(key);if(s)return s;
+function astroInstrumentSprite(R,parts,gilt,found=0){
+  const key=R.toFixed(1)+':'+parts+':'+gilt+':'+found+':'+DPR;let s=astroSprites.get(key);if(s)return s;
   const size=Math.ceil(R*2.7),c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2+R*.18);
-  astroInstrument(g,R,parts,1,.35,gilt);s={canvas:c,size,dy:R*.18};if(astroSprites.size>6)astroSprites.clear();astroSprites.set(key,s);return s;
+  astroInstrument(g,R,parts,1,.35,gilt,{found});s={canvas:c,size,dy:R*.18};if(astroSprites.size>6)astroSprites.clear();astroSprites.set(key,s);return s;
 }
 
 // ---------- What a hand has built, kept across runs ----------
@@ -250,6 +258,17 @@ function astroRecordRun(w){
   r.furthest=Math.max(r.furthest,Math.min(ASTRO_CHAPTERS.length-1,Math.floor(w.progress/ASTRO_CHAPTER_ROWS)));astroWrite(r);invalidateAstroTitle();
 }
 const astroBest=()=>astroRead().best;
+// The fihrist: every star a run has named off the rete and every figure it has set, counted across all
+// runs, under a key of its own so the run record above keeps its shape. It is what the frontispiece gilds
+// on the instrument's rete — a star once named keeps a gold pointer — and what the leaf counts at the end.
+const ASTRO_FIHRIST_KEY='orbit.fihrist.v1';
+function astroFihrist(){
+  let raw=null;try{raw=JSON.parse(storage.get(ASTRO_FIHRIST_KEY,'null'));}catch(_){raw=null;}
+  const tally=(o,n)=>{const out={};if(o&&typeof o==='object')for(let i=0;i<n;i++){const v=Math.floor(Number(o[i])||0);if(v>0)out[i]=v;}return out;};
+  return{v:1,stars:tally(raw&&raw.stars,ASTRO_STARS.length),figures:tally(raw&&raw.figures,ASTRO_FIGURES.length)};
+}
+function astroFihristNote(kind,i){const f=astroFihrist();f[kind][i]=(f[kind][i]||0)+1;try{storage.set(ASTRO_FIHRIST_KEY,JSON.stringify(f));}catch(_){}invalidateAstroTitle();}
+const astroFihristMask=f=>Object.keys(f.stars).reduce((m,k)=>m|(1<<k),0);
 
 // ---------- The page: sized manuscript paper, baked once as a tile ----------
 // Cream paper sized and burnished smooth, as the scribes of Baghdad prepared it, so it has almost no tooth;
@@ -323,11 +342,13 @@ let astroTitleFade=1;
 function invalidateAstroTitle(){astroSprites.clear();}
 function astroTitleMark(){
   const ready=world.state==='ready';astroTitleFade=ready?1:Math.max(0,astroTitleFade-.03);if(astroTitleFade<=0)return;
-  const P=ink.astro,rec=astroRead(),R=Math.min(W*.14,48*scale+6),x=W/2,y=H*.215,sp=astroInstrumentSprite(R,rec.furthest+1,rec.completed>0?1:0);
+  const P=ink.astro,rec=astroRead(),fih=astroFihrist(),R=Math.min(W*.14,48*scale+6),x=W/2,y=H*.215,sp=astroInstrumentSprite(R,rec.furthest+1,rec.completed>0?1:0,astroFihristMask(fih));
   ctx.save();ctx.globalAlpha=astroTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2-sp.dy,sp.size,sp.size);
   astroNaskh(ctx,'الأسطرلاب',x,y+R+20,22,P.ink,.92,'center',true);
   const done=rec.completed>0?'THE ZIJ IS FINISHED':'PARTS '+(rec.furthest+1)+' OF '+ASTRO_CHAPTERS.length+' · '+ASTRO_CHAPTERS[rec.furthest].en;
   astroGloss(ctx,done,x,y+R+40,8.5,P.inkSoft,.8);
+  const ns=Object.keys(fih.stars).length,nf=Object.keys(fih.figures).length;
+  if(ns||nf)astroGloss(ctx,'FIHRIST · '+ns+' OF '+ASTRO_STARS.length+' STARS · '+nf+' OF '+ASTRO_FIGURES.length+' FIGURES',x,y+R+54,7.5,P.giltDeep,.9);
   ctx.restore();
 }
 // The ground: the paper tile at the camera's own rate, a lamp above the held body, the limb, the title.
@@ -347,20 +368,23 @@ function astroAtmosphere(){
 // Struck early in the paint order, under every orbit and body, the way the atlas cuts its chapter title
 // into the plate: the astrolabe as far as this chapter builds it, faint behind the play, its newest part
 // swept in over two seconds, and the place named in naskh with the curator's English and year beneath.
-let astroRevealCanvas=null,astroRevealKey='';
+let astroRevealCanvas=null,astroRevealKey='',astroRevealOf=null,astroRevealAt=0;
 function astroChapterReveal(dt){
   if(!world||world.state==='ready'||world.state==='dead')return;
-  if(world.state!=='paused')chapterReveal.age+=dt;
-  const age=chapterReveal.age,i=clamp(chapterReveal.index|0,0,ASTRO_CHAPTERS.length-1);if(age>4.8)return;
-  const P=ink.astro,C=ASTRO_CHAPTERS[i],fade=age<.45?age/.45:age>3.8?clamp(1-(age-3.8),0,1):1,R=Math.min(W*.34,128),size=Math.ceil(R*2.7);
+  // Timed off the run's own clock from the moment this chapter's reveal was dealt, rather than by adding up
+  // frame times, so a frame that is never painted (a background tab, a long step) cannot hold it open.
+  if(astroRevealOf!==chapterReveal){astroRevealOf=chapterReveal;astroRevealAt=world.time-chapterReveal.age;}
+  chapterReveal.age=world.time-astroRevealAt;
+  const age=chapterReveal.age,i=clamp(chapterReveal.index|0,0,ASTRO_CHAPTERS.length-1);if(age>3.9)return;
+  const P=ink.astro,C=ASTRO_CHAPTERS[i],fade=age<.4?age/.4:age>3.1?clamp(1-(age-3.1)/.8,0,1):1,R=Math.min(W*.34,128),size=Math.ceil(R*2.7);
   const key=size+':'+DPR;if(!astroRevealCanvas||astroRevealKey!==key){astroRevealCanvas=makeCanvas(Math.round(size*DPR),Math.round(size*DPR));astroRevealKey=key;}
   const g=astroRevealCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,astroRevealCanvas.width,astroRevealCanvas.height);
-  g.setTransform(DPR,0,0,DPR,0,0);g.translate(size/2,size/2+R*.18);astroInstrument(g,R,i+1,astroEase(clamp((age-.35)/2.2,0,1)),.35+age*.04,0);
-  const cx=W/2,cy=H*.45;ctx.save();ctx.globalAlpha=.2*fade;ctx.drawImage(astroRevealCanvas,cx-size/2,cy-size/2-R*.18,size,size);ctx.restore();
+  g.setTransform(DPR,0,0,DPR,0,0);g.translate(size/2,size/2+R*.18);astroInstrument(g,R,i+1,astroEase(clamp((age-.3)/1.8,0,1)),.35+age*.04,0,{ghost:true});
+  const cx=W/2,cy=H*.47;ctx.save();ctx.globalAlpha=.36*fade;ctx.drawImage(astroRevealCanvas,cx-size/2,cy-size/2-R*.18,size,size);ctx.restore();
   const tk=clamp((age-.2)/.8,0,1)*fade;
-  astroNaskh(ctx,C.ar,cx,cy-R-54,30,P.ink,.9*tk,'center',true);
-  astroGloss(ctx,'DOOR '+(i+1)+' OF '+ASTRO_CHAPTERS.length+' · '+C.en+' · '+C.year,cx,cy-R-28,10,P.ink,.78*tk);
-  astroGloss(ctx,C.part,cx,cy+R+22,9,P.inkSoft,.8*clamp((age-1.2)/.8,0,1)*fade);
+  const ty=cy-R*1.5-8;astroNaskh(ctx,C.ar,cx,ty-46,30,P.ink,.9*tk,'center',true);
+  astroGloss(ctx,'DOOR '+(i+1)+' OF '+ASTRO_CHAPTERS.length+' · '+C.en+' · '+C.year,cx,ty-20,10,P.ink,.78*tk);
+  astroGloss(ctx,C.part,cx,ty-4,8.5,P.inkSoft,.85*clamp((age-.9)/.6,0,1)*fade);
 }
 
 // ---------- The node: ring, body or point, and the release marks while it is held ----------
@@ -462,7 +486,7 @@ function astroBody(n,x,y,tier,d,taken){
   if(s3>0&&!n.difficultyChoice){
     const q=astroQadr(n),tx=x+(rm+9*scale)*Math.cos(-.75),ty=y+(rm+9*scale)*Math.sin(-.75);
     astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true);
-    let named=astroNamed.get(tier);if(named===undefined&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(tier,named);}
+    let named=astroNamed.get(tier);if(named===undefined&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(tier,named);astroFihristNote('stars',named.i);}
     if(named&&named.id===n.id){const S=ASTRO_STARS[named.i],k=clamp(s3*2-1,0,1);
       astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true);
       astroGloss(ctx,S[1],x,y+rm+30*scale,Math.max(7.5,8*scale),P.inkSoft,.8*al*k);}
@@ -594,7 +618,7 @@ function astroHazard(h){
 function astroHazardReveal(h,draw,t){
   const x=sx(h.x),y=sy(h.y),R=(gravityRadius(h)+20)*scale,e=1-Math.pow(1-t,3);
   ctx.save();ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,R,-Math.PI/2,-Math.PI/2+TAU*e);ctx.closePath();ctx.clip();draw(h);ctx.restore();
-  if(e<1){const a=-Math.PI/2+TAU*e;ctx.save();ctx.strokeStyle=`rgba(${ink.astro.verm},.6)`;ctx.lineWidth=.8*scale;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*R,y+Math.sin(a)*R);ctx.stroke();ctx.restore();}
+  if(e<1){const a=-Math.PI/2+TAU*e,L=gravityRadius(h)*scale;ctx.save();ctx.strokeStyle=`rgba(${ink.astro.ink},${(.35*(1-e)).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*L,y+Math.sin(a)*L);ctx.stroke();ctx.restore();}
 }
 
 // ---------- The flight: the wet line, the faded construction, the pricked guide ----------
@@ -727,8 +751,8 @@ function astroFigure(chart){
   for(let i=0;i<3;i++){if(!chart.stars[i].visited&&!done)continue;astroPointer(ctx,pts[i][0],pts[i][1],roots[i][0],roots[i][1],1.9*scale,done?P.brassHi:P.brass,1);}
   ctx.restore();
   if(!done||chart.expired)return;
-  let minY=1e9;for(const p of pts)minY=Math.min(minY,p[1]);
-  const F=ASTRO_FIGURES[((chart.catalogueIndex|0)%12+12)%12],x=clamp(cx,60,W-60),y=minY-26*scale;
+  // The name is cut where the strap's arms meet, between the stars rather than over any one of them.
+  const F=ASTRO_FIGURES[((chart.catalogueIndex|0)%12+12)%12],x=clamp(cx,70,W-70),y=cy-6*scale;
   astroNaskh(ctx,F[0],x,y,Math.max(15,17*scale),P.ink,.92,'center',true);
   astroGloss(ctx,F[1],x,y+16*scale,Math.max(7.5,8*scale),P.inkSoft,.8);
 }
@@ -811,6 +835,40 @@ function astroFaceReady(){
     .then(()=>{invalidateAstrolabeArt();if(world)render(0);}).catch(()=>{});
 }
 
+// ---------- A figure's route, before it is set ----------
+// Where the atlas engraves a route with star markers, this sheet strings a figure the way Ibn al-Haytham
+// strings a proof: straight construction lines, dashed while they are only proposed and drawn solid in ink
+// once both ends are measured, each star lettered at its vertex in abjad order (ا, ب, ج), and the figure's
+// Arabic name set small by its middle star while the route is live.
+function astroChartRoute(chart){
+  if(!chart.stars.length||sy(chart.entry.y)<-150||sy(chart.stars[chart.stars.length-1].y)>H+170)return;
+  const P=ink.astro,points=[chart.entry,...chart.stars];if(chart.exit)points.push(chart.exit);
+  ctx.save();revealChartClip(chart);ctx.lineCap='round';
+  for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i],lit=chart.completed||(a.visited&&b.visited),dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    const ax=sx(a.x+dx/d*(a.cap+10)),ay=sy(a.y+dy/d*(a.cap+10)),bx=sx(b.x-dx/d*(b.cap+10)),by=sy(b.y-dy/d*(b.cap+10));
+    ctx.strokeStyle=`rgba(${lit?P.ink:P.faded},${chart.expired?.12:lit?.55:.45})`;ctx.lineWidth=(lit?.7:.55)*scale;ctx.setLineDash(lit?[]:[4*scale,4*scale]);
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  chart.stars.forEach((n,i)=>{const x=sx(n.x)-(n.r*.62+8)*scale,y=sy(n.y)-(n.r*.62+8)*scale;
+    astroNaskh(ctx,ASTRO_VERTICES[i],x,y,Math.max(11,12*scale),n.visited?P.ink:P.faded,chart.expired?.2:n.visited?.85:.6);});
+  if(!chart.expired&&!chart.completed&&!captionsHeld()){const e=chart.stars[1]||chart.stars[0],x=sx(e.x),y=sy(e.y)+e.cap*scale+14*scale;
+    if(y>-40&&y<H+40){const F=ASTRO_FIGURES[((chart.catalogueIndex|0)%12+12)%12];astroNaskh(ctx,F[0],x,y,Math.max(11,12*scale),P.inkSoft,.6);}}
+  ctx.restore();
+}
+// The score on the leaf: the reckoning in the manuscript's own digits, cut over a short graduated arc,
+// and beneath it how far the fihrist has come.
+function astroPaintEndNumerals(canvas,w){
+  if(!canvas)return;const P=ink.astro,f=astroFihrist(),text=astroDigits(w.score),Wd=240,Hd=78,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
+  canvas.width=Math.ceil(Wd*dpr);canvas.height=Math.ceil(Hd*dpr);canvas.style.width=Wd+'px';canvas.style.height=Hd+'px';
+  const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,Wd,Hd);
+  astroNaskh(g,text,Wd/2,28,40,P.ink,.95,'center',true);
+  const R=260,cx=Wd/2,cy=52-R,half=Math.asin(90/R);g.strokeStyle=`rgba(${P.giltDeep},.9)`;g.lineWidth=.8;g.beginPath();g.arc(cx,cy,R,Math.PI/2-half,Math.PI/2+half);g.stroke();
+  g.beginPath();for(let i=0;i<=36;i++){const a=Math.PI/2+half-i/36*half*2,l=i%6===0?6:3;g.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);g.lineTo(cx+Math.cos(a)*(R+l),cy+Math.sin(a)*(R+l));}g.lineWidth=.6;g.stroke();
+  astroGloss(g,'FIHRIST · '+Object.keys(f.stars).length+' / '+ASTRO_STARS.length+' STARS · '+Object.keys(f.figures).length+' / '+ASTRO_FIGURES.length+' FIGURES',Wd/2,70,8,P.giltDeep,.95);
+}
+
 // ---------- The instrument's sound: brass, a burin, dividers ----------
 // A burin's short dry bite into brass on a capture, with the plate ringing under it; the alidade swinging
 // free on its pin at a release, a thin ring quickly damped; a divider's double click for a clean sighting;
@@ -841,6 +899,9 @@ defineHand('astrolabe',{
   ready:astroFaceReady,
   best:astroBest,
   caveRun:astroRecordRun,
+  caveAnimal:i=>astroFihristNote('figures',((i|0)%12+12)%12),
+  chartRoute:astroChartRoute,
+  endNumerals:astroPaintEndNumerals,
   scratch:{band:[3000,1600],q:[1.8,1.6],peak:.05,attack:.002,dur:[.018,.03],gap:[.03,.05],ease:.015},
   start(a){a.tone(392,1.6,0,.2);a.tone(587.33,1.4,.14,.13);a.tone(783.99,1.2,.28,.08);a.brush(5200,.1);},
   release(a){a.tone(1318.51,.45,0,.08,'sine',1296);a.tone(880,.3,0,.07);a.brush(4400,.08);},

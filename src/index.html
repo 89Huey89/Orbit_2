@@ -113,6 +113,10 @@
     #game[data-era="4"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game[data-era="4"] #catalogue-open,#game[data-era="4"] #plate{display:none}
     #game[data-era="4"] #end-score-roman{display:none}
+    /* The score is cut on the leaf in Eastern Arabic-Indic digits over a graduated arc, with the fihrist's
+       count beneath (astroPaintEndNumerals, src/astrolabe.js); the Latin figure stays under it as a gloss. */
+    #game[data-era="4"] #end-numerals{display:block;margin:0 auto 2px;max-width:100%;height:auto}
+    #game[data-era="4"] #end-score{font-size:clamp(24px,6.5vw,30px);opacity:.8;margin:0 0 2px}
     .astrolabe-lore-open{position:absolute;left:16px;right:16px;top:calc(5% + env(safe-area-inset-top));text-align:center}
     .astrolabe-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','Amiri',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2e2415}
     .astrolabe-context{max-width:42em;margin:12px auto 0;color:#5a4a30;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
@@ -847,7 +851,7 @@
       <svg class="ceiling-column right ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#efe2c4" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#efe2c4" stroke-width="1.5"/><path d="M5 27h10" stroke="#4c8a57" stroke-width="1.6"/><path d="M2 69h16" stroke="#efe2c4" stroke-width="2"/></svg>
       <svg class="ceiling-only stela-sundisc" viewBox="0 0 120 30" aria-hidden="true" focusable="false"><g stroke="#efe2c4" stroke-width=".7" stroke-linejoin="round"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/><g transform="translate(120 0) scale(-1 1)"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/></g><path d="M52 23q-3-5 1-8M68 23q3-5-1-8" fill="none" stroke="#e3b447" stroke-width="1.2"/><circle class="sundisc-disc" cx="60" cy="15" r="7" fill="#c24a2f" stroke="#e3b447" stroke-width="1.2"/></g></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
-      <div class="score-frame"><canvas id="end-numerals" class="ceiling-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
+      <div class="score-frame"><canvas id="end-numerals" class="ceiling-only astrolabe-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small" id="end-captures-label">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small" id="end-perfects-label">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small" id="end-flow-label">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small" id="end-row-label">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>

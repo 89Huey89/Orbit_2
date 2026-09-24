@@ -837,9 +837,11 @@ function paintRenaissanceGrid(g,progress,style){
   g.restore();
 }
 function drawRenaissanceGrid(){
-  if(!world||plainPlate())return;
-  // An era whose sky was never measured names a painter here that draws nothing: a sphere lettered in
-  // Latin, printed on a cave wall, read as grey labels stuck to the rock.
+  // The construction under the chart is a cosmetic of the atlas's own ledger, cut in the atlas's Latin; a
+  // century drawn in its own hand has its own ground, and the atlas's sphere has no place on it.
+  if(!world||plainPlate()||eraId()!==0)return;
+  // A plate that rules its own sheet names its own painter here (none do yet on the atlas's side; the
+  // eras that name one, the Rock and the Scroll, are already turned away above).
   const own=handFor('sphere');if(own)return own();
   // An unruled sheet is a selection like any other, and the cheapest one: nothing is painted and no
   // layer is kept, so the construction costs exactly nothing when it is not wanted.

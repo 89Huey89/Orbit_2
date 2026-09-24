@@ -153,7 +153,10 @@ function event(type,e){
       const glosses=plateWords().glosses;
       const gainText='+'+e.gain+(e.angleBonus?fmt(glosses.angleBonus,{bonus:e.angleBonus}):'')+(e.scoreMultiplier>=1.05?fmt(glosses.multiplier,{mult:e.scoreMultiplier.toFixed(1)}):'');
       if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
-      else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,gain:e.gain,angleBonus:e.angleBonus||0,mult:e.scoreMultiplier,age:0});
+      // A plate that writes the gain into its own record of the landing (the Ceiling's red rubric under
+      // its survey) takes it there instead; any it does not take still floats as before, carrying the
+      // gain's parts as well as its line for a plate that cuts the note in marks of its own (the Rock).
+      else if(!(handFor('gainEntry')||(()=>false))(e))floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,gain:e.gain,angleBonus:e.angleBonus||0,mult:e.scoreMultiplier,age:0});
     }
     screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
@@ -431,6 +434,9 @@ function showEnd(){
   // paints it; this call only exists on that plate, and the typeof guard keeps it safe if that
   // painter's script has not defined it yet.
   if(eraId()===2&&typeof ceilingPaintEndNumerals==='function')ceilingPaintEndNumerals($('end-numerals'),world.score);
+  // Any other century that letters its score in its own numerals names an `endNumerals` painter for the
+  // same canvas (the Astrolabe's Eastern Arabic-Indic digits, src/astrolabe.js).
+  {const paint=handFor('endNumerals');if(paint)paint($('end-numerals'),world);}
   $('record').textContent=preview?plateWords().unrecorded:world.score>recordAtStart?'A NEW RECORD':'BEST '+currentBest();
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
