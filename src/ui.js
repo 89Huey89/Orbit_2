@@ -358,10 +358,14 @@ function syncEraChrome(){
 // every browser — Safari never loads a face for fillText — so an era whose lettering lives only on the
 // canvas, or in markup that is hidden while it is flown, could letter its whole visit in the fallback.
 // Entering one asks for every face its type tokens name, upright and italic; each arrival repaints
-// the cached art through the loadingdone listener below.
+// the cached art through the loadingdone listener below. A plate that sets a variant at its own weight
+// (the Rock's cut capitals are bold) is asked for at that weight, since it is a separate face to fetch;
+// its `weight` and `scale` tables name no face and are skipped.
 function loadPlateFaces(){
-  if(!document.fonts||!document.fonts.load||!ink.type)return;
-  for(const stack of new Set(Object.values(ink.type)))for(const style of ['','italic '])document.fonts.load(style+'16px '+stack).catch(()=>{});
+  const t=ink.type;if(!document.fonts||!document.fonts.load||!t)return;
+  const asks=new Set();
+  for(const [variant,stack] of Object.entries(t))if(typeof stack==='string'){const w=t.weight&&t.weight[variant];for(const style of ['','italic '])asks.add(style+(w?w+' ':'')+'16px '+stack);}
+  for(const font of asks)document.fonts.load(font).catch(()=>{});
 }
 function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
