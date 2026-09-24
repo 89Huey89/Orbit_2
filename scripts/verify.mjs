@@ -270,7 +270,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,LENS_KEY,LENS_CHAPTERS,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -989,6 +989,46 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       saved.delete(context.test.ROCK_CAVE_KEY);
     }
     context.test.setPlate(held);
+  }
+  // ---- The Lens: three registers read off the row, a story that ends at row 36, and a record of its own (orbit.lens.v1) ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('lens');
+    assert.equal(context.test.eraId(),6,'The Lens is era VI on the roster, the next door up from the atlas');
+    const words=context.test.plateWords();
+    assert.equal(words.chapters.length,context.test.LENS_CHAPTERS.length,'Every chapter of the story is named');
+    assert.equal(words.chapterRows*words.chapters.length,words.goalRow,'The finale falls at the end of the last chapter');
+    assert.equal(words.chapterLines.length,words.chapters.length,'Every chapter opens with a curator\'s line');
+    assert.equal(words.chartNotes.length,12,'Every field carries a note');
+    for(const key of Object.keys(OBSERVATIONS))assert(words.observations[key],'The Lens names every observation the simulation can record: '+key);
+    for(const painter of ['atmosphere','node','hazard','player','dark','figure','hudLeaf','chapterReveal','trail','aim','floater','tally','chartRoute','endNumerals'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Lens names its own: '+painter);
+    // Two chapters to a register, and the register changes exactly at a chapter pair's boundary.
+    assert.deepEqual([0,11,12,23,24,35,40].map(context.test.lensRegOfRow),[0,0,1,1,2,2,2],'Rows 0-11 are the eyepiece, 12-23 the plate, 24 on the sensor');
+    context.test.LENS_CHAPTERS.forEach((c,i)=>assert.equal(c.reg,context.test.lensRegOfRow(i*words.chapterRows),'Chapter '+i+' is told in the register its rows are drawn in'));
+    // Every register draws, the finale included, without throwing: the HUD, trail and traveller follow the run's row.
+    // Silenced while the run is forced through its chapters: a chapter's sound lays a wash, and a wash
+    // schedules its own disconnect on a timer this sandbox has not got.
+    const heard=context.test.audio.enabled;context.test.audio.enabled=false;
+    context.test.newWorld();context.test.handleInput();
+    for(const row of [0,14,30]){context.test.world.progress=row;context.test.render(1/60);}
+    // The win is set by hand rather than through die(), whose sound schedules a timer this sandbox has not got.
+    Object.assign(context.test.world,{state:'dead',won:true});context.test.world.player.deadTime=2;context.test.render(1/60);
+    context.test.audio.enabled=heard;
+    // The record: empty when unwritten or corrupt, and a run and a field read back as written.
+    if(!storageBlocked){
+      saved.delete(context.test.LENS_KEY);
+      assert.deepEqual(JSON.parse(JSON.stringify(context.test.lensRead())),{v:1,furthest:0,completed:0,best:0,runs:0,worlds:0,fields:0},'A never-written lens record reads empty');
+      context.test.lensRecordRun({progress:19,score:512,won:false});context.test.lensNoteField(15);
+      const r=context.test.lensRead();
+      assert.equal(r.furthest,3,'Row 19 is the fourth chapter');assert.equal(r.best,512);assert.equal(r.runs,1);assert.equal(r.fields,1<<3,'A field index wraps into the twelve');
+      context.test.lensRecordRun({progress:36,score:100,won:true});
+      assert.equal(context.test.lensRead().completed,1);assert.equal(context.test.lensRead().best,512,'A lower score never lowers the best');
+      saved.set(context.test.LENS_KEY,'{not json');
+      assert.equal(context.test.lensRead().runs,0,'Corrupt JSON reads as an empty record, not a throw');
+      saved.delete(context.test.LENS_KEY);
+    }else assert.equal(context.test.lensRead().runs,0,'Blocked storage reads as an empty record');
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
   }
   // ---- A Rock run end writes exactly one run to its own cave, and never touches the atlas's ledger ----
   {

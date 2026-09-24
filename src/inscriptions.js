@@ -337,7 +337,7 @@ function drawInscription(g){
   ctx.textAlign='center';ctx.font=inscriptionFont(g.tone,size);
   // A plate whose lettering is not ink names the passes it is struck in instead — the rock cuts it, a
   // dark shadow a hair below and a pale core on the line — and every pass is one full writing of it.
-  const passes=(handFor('inscriptionInk')||(()=>null))(caps)||[{rgb:caps?ink.inscription.caps:ink.inscription.note,alpha:caps?.94:.82,dx:0,dy:0}];
+  const passes=(handFor('inscriptionInk')||(()=>null))(caps,box)||[{rgb:caps?ink.inscription.caps:ink.inscription.note,alpha:caps?.94:.82,dx:0,dy:0}];
   for(const p of passes){
     ctx.fillStyle=`rgba(${p.rgb},${p.alpha})`;
     for(let i=0;i<g.lines.length;i++){

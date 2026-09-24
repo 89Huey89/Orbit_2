@@ -425,6 +425,11 @@ this section calls the largest gap, and makes choices this file left open, recor
   Meudon 1909, Tucson 1981, Cape Canaveral 1990), each opening with Saturn drawn as that place drew it, won
   at the thirty-sixth row with the signature sheet: the three registers' Saturns side by side, and Vulcan's
   entry struck through beneath them. The transition into the Flyby is not built.
+- **The observation's stages come earlier than on the other eras** (the blur clears by a sixth of the
+  sweep, the first reading is cut by 55%), because a flown run leaves most bodies part-way and the
+  eyepiece's readings were otherwise rarely seen. Only the dated seal asks for the whole observation.
+- **The sensor's channels are labelled R, V and B**, the Johnson broadband filters, rather than the
+  narrowband filter names of a camera fitted in 1993, after this era closes.
 - **Chapter four draws Saturn, not Mars:** Meudon's own story is told in its curator's line and on every
   dune world on the plate, while its Saturn is the Paris plate annotated in ink, so the six openings stay
   one planet.

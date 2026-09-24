@@ -55,9 +55,11 @@ const LENS_REG_ROWS=LENS_CHAPTER_ROWS*2;
 const lensRegOfRow=row=>row<LENS_REG_ROWS?0:row<LENS_REG_ROWS*2?1:2;
 const lensChapterOf=w=>clamp(Math.floor((w?w.progress:0)/LENS_CHAPTER_ROWS),0,LENS_CHAPTERS.length-1);
 const lensRegNow=()=>world?lensRegOfRow(world.progress):0;
-// Where the observation's three stages fall on the observation clock, as on every era: the first reading by
-// a quarter of the sweep, the better one by half, the finished record by two thirds.
-const LENS_STAGE={soft:[0,.375],first:[.375,.75],done:[.75,1]};
+// Where the observation's three stages fall on the observation clock. Earlier than on the other eras: a
+// flown run leaves most bodies part-way through their sweep, and a surface the player never stays long
+// enough to see is art nobody sees, so the blur clears within a sixth of the sweep and the first reading is
+// cut by a little over half; only the dated seal still asks for the whole observation.
+const LENS_STAGE={soft:[0,.16],first:[.16,.55],done:[.55,1]};
 const lensSpan=(t,r)=>clamp((t-r[0])/(r[1]-r[0]),0,1);
 const lensEase=t=>t*t*(3-2*t);
 // World units to one arcminute of the climb, which the margin counts in every register.
@@ -282,14 +284,14 @@ function lensSaturn(g,R,stage,k=1,opts={}){
   if(ch&&ch[0]&&ch[1]&&ch[2]){for(let i=0;i<3;i++){const a=clamp(pass-i,0,1);if(a<=0)continue;const off=(1-clamp(pass-2,0,1))*R*.09*(i-1);g.globalAlpha=a;g.drawImage(ch[i],-S/2+off,-S/2-off*.5,S,S);}}
   else{g.globalAlpha=clamp(pass/3,0,1);g.drawImage(art.canvas,-S/2,-S/2,S,S);}
   g.globalCompositeOperation='source-over';g.globalAlpha=1;
-  if(stage===5){const names=['F658N · R','F502N · G','F469N · B'];for(let i=0;i<3;i++)if(pass>i)lensMono(g,names[i],-w/2+R*.1,-h/2+R*(.18+i*.2),Math.max(6.5,R*.12),[P.sii,P.ha,P.oiii][i],.9);}
+  if(stage===5){const names=['FILTER R','FILTER V','FILTER B'];for(let i=0;i<3;i++)if(pass>i)lensMono(g,names[i],-w/2+R*.1,-h/2+R*(.18+i*.2),Math.max(6.5,R*.12),[P.sii,P.ha,P.oiii][i],.9);}
   if(stage===6){const m=clamp(e*1.5-.5,0,1);
     // scale bar, N/E arrows, filter and epoch: the picture's proof, set only once the picture is whole
     g.strokeStyle=`rgba(${P.instr},${(.9*m).toFixed(3)})`;g.lineWidth=Math.max(.6,R*.02);const bx=w/2-R*.9,by=h/2-R*.2;g.beginPath();g.moveTo(bx,by);g.lineTo(bx+R*.6,by);g.moveTo(bx,by-R*.05);g.lineTo(bx,by+R*.05);g.moveTo(bx+R*.6,by-R*.05);g.lineTo(bx+R*.6,by+R*.05);g.stroke();
     lensMono(g,'10"',bx+R*.3,by-R*.14,Math.max(6.5,R*.12),P.instr,.9*m,'center');
     const nx=-w/2+R*.8,ny=h/2-R*.22;g.beginPath();g.moveTo(nx,ny);g.lineTo(nx,ny-R*.42);g.moveTo(nx,ny);g.lineTo(nx-R*.42,ny);g.stroke();
     lensMono(g,'N',nx,ny-R*.54,Math.max(6.5,R*.12),P.instr,.9*m,'center');lensMono(g,'E',nx-R*.54,ny,Math.max(6.5,R*.12),P.instr,.9*m,'center');
-    lensMono(g,'WFPC · 1990',-w/2+R*.1,-h/2+R*.18,Math.max(6.5,R*.12),P.cyan,.9*m);}
+    lensMono(g,'WF/PC · 1990',-w/2+R*.1,-h/2+R*.18,Math.max(6.5,R*.12),P.cyan,.9*m);}
   g.restore();
 }
 
@@ -361,7 +363,7 @@ function lensBakeGlass(pw,ph){
   const x0=(W/2)%LENS_RESEAU;g.strokeStyle=`rgba(${P.reseau},.34)`;g.lineWidth=.55;g.beginPath();
   for(let x=x0;x<W;x+=LENS_RESEAU){g.moveTo(x,0);g.lineTo(x,TH);}for(let y=LENS_RESEAU/2;y<TH;y+=LENS_RESEAU){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();
   // stars as silver: the faint ones a thin grey deposit, the bright ones a dense black knot with a soft skirt
-  for(let i=0;i<Math.round(W*TH/2600);i++){const x=r()*W,y=r()*TH,m=Math.pow(r(),4),rr=.4+m*2.6,a=.22+m*.45;
+  for(let i=0;i<Math.round(W*TH/4200);i++){const x=r()*W,y=r()*TH,m=Math.pow(r(),4),rr=.35+m*2.2,a=.16+m*.34;
     lensWrapDot(g,x,y,TH,(px,py)=>{if(rr>1.2){const sg=g.createRadialGradient(px,py,0,px,py,rr*2.2);sg.addColorStop(0,`rgba(${P.silver},${a})`);sg.addColorStop(.45,`rgba(${P.silver},${(a*.8).toFixed(3)})`);sg.addColorStop(1,`rgba(${P.silverMid},0)`);g.fillStyle=sg;g.beginPath();g.arc(px,py,rr*2.2,0,TAU);g.fill();}
       else{g.fillStyle=`rgba(${m<.02?P.silverMid:P.silver},${a.toFixed(3)})`;g.beginPath();g.arc(px,py,rr,0,TAU);g.fill();}});}
   // dust that printed clear, each with the slight dark ring round a clear spot, and pits in the gelatin
@@ -652,12 +654,12 @@ function lensBodyEye(n,family,x,y,d,al){
 // the densest middle first and the faint outer wash last, in the shape its family leaves on a plate — and
 // the ink laid on afterwards by a hand at the glass back: a loop round it, and its plate number stamped.
 function lensBodyPlate(n,family,x,y,d,al){
-  const P=ink.lens,R=lensDiscR(n),s1=lensSpan(d,LENS_STAGE.soft),s2=lensSpan(d,LENS_STAGE.first),s3=lensSpan(d,LENS_STAGE.done),e3=lensEase(s3),dev=lensEase(clamp(s1*.4+s2*.6,0,1));
+  const P=ink.lens,R=lensDiscR(n),s1=lensSpan(d,LENS_STAGE.soft),s2=lensSpan(d,LENS_STAGE.first),s3=lensSpan(d,LENS_STAGE.done),e3=lensEase(s3),dev=lensEase(clamp(.25+s1*.35+s2*.5,0,1));
   const shape={ringed:[1.9,1,.95],storm:[1.45,1,.9],ocean:[1,.8,.95],ice:[1,1,.42],volcanic:[1,1.05,1],crater:[1,1,.8],dune:[1,1,.78]}[family]||[1,1,.85];
   ctx.save();ctx.globalAlpha=al;
   if(family==='volcanic'){const hg=ctx.createRadialGradient(x,y,R*.8,x,y,R*2.2);hg.addColorStop(0,`rgba(${P.silverMid},${(.32*dev).toFixed(3)})`);hg.addColorStop(1,`rgba(${P.silverMid},0)`);ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,y,R*2.2,0,TAU);ctx.fill();}
-  ctx.save();ctx.translate(x,y);ctx.scale(shape[0],1);const rr=R*shape[1],outer=rr*(.35+.75*dev),kg=ctx.createRadialGradient(0,0,0,0,0,outer);
-  kg.addColorStop(0,`rgba(${P.silver},${(.97*shape[2]).toFixed(3)})`);kg.addColorStop(clamp(.3+.4*dev,0,.95),`rgba(${P.silver},${(.8*shape[2]*Math.min(1,.3+dev)).toFixed(3)})`);kg.addColorStop(1,`rgba(${P.silverMid},0)`);
+  ctx.save();ctx.translate(x,y);ctx.scale(shape[0],1);const rr=R*shape[1]*1.1,outer=rr*(.45+.7*dev),kg=ctx.createRadialGradient(0,0,0,0,0,outer);
+  kg.addColorStop(0,`rgba(${P.silver},${(.97*shape[2]).toFixed(3)})`);kg.addColorStop(clamp(.45+.35*dev,0,.95),`rgba(${P.silver},${(.92*shape[2]*Math.min(1,.45+dev)).toFixed(3)})`);kg.addColorStop(1,`rgba(${P.silverMid},0)`);
   ctx.fillStyle=kg;ctx.beginPath();ctx.arc(0,0,outer,0,TAU);ctx.fill();
   if(family==='crater'&&dev>.4){ctx.strokeStyle=`rgba(${P.silver},${(.5*(dev-.4)/.6).toFixed(3)})`;ctx.lineWidth=Math.max(.6,R*.12);ctx.beginPath();ctx.arc(0,0,rr*.82,0,TAU);ctx.stroke();}
   if(family==='storm'&&e3>0){ctx.strokeStyle=`rgba(${P.glass},${(.45*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.1);for(const b of[-.3,.05,.35]){ctx.beginPath();ctx.moveTo(-rr,b*rr);ctx.lineTo(rr,b*rr);ctx.stroke();}}
@@ -699,7 +701,7 @@ function lensBodySensor(n,family,x,y,d,al){
   ctx.restore();
   // the filter of the frame being read, and once the composite is whole, the card and a scale bar
   const sz=Math.max(7.5,7.5*scale),by=y+R*(family==='ringed'?1.2:1)+12*scale;
-  if(e3<1){const f=pass<1?['F658N','sii']:pass<2?['F502N','ha']:['F469N','oiii'];lensMono(ctx,'FILTER = '+f[0],x,by,sz,P[f[1]],.85*al,'center');}
+  if(e3<1){const f=pass<1?['R','sii']:pass<2?['V','ha']:['B','oiii'];lensMono(ctx,'FILTER = '+f[0],x,by,sz,P[f[1]],.85*al,'center');}
   else{const card=lensCard('OBJECT',"'"+(LENS_WORLD_NAMES[family]||'SOURCE')+"'");lensMono(ctx,card,x,by,sz,P.instr,.9*al,'center',Math.floor((lensFlourishAge(n))*40));
     ctx.save();ctx.strokeStyle=`rgba(${P.instr},${(.7*al).toFixed(3)})`;ctx.lineWidth=.7;const bx=x-R*.5;ctx.beginPath();ctx.moveTo(bx,by+9*scale);ctx.lineTo(bx+R,by+9*scale);ctx.moveTo(bx,by+7.5*scale);ctx.lineTo(bx,by+10.5*scale);ctx.moveTo(bx+R,by+7.5*scale);ctx.lineTo(bx+R,by+10.5*scale);ctx.stroke();ctx.restore();}
   if(d>=1)lensNoteDone(n,family);
@@ -722,18 +724,18 @@ function lensChoice(n,x,y){
 // The charges, as the things an observatory kept: the objective's dew-cap for the shield; a finder's mirror
 // for the reflector; the dome's shutter opening on a clear sky for the dawn charge; and for the inkwell, a
 // box of fresh plates, still sealed and unexposed. Drawn in whichever register's material they stand in.
-function lensGift(n,reg,x,y,used){
-  const P=ink.lens,r=n.r*scale,k=used?.35:1,col=reg===0?P.ink:reg===1?P.inkBlack:P.instr,acc=reg===0?P.gold:reg===1?P.inkRed:P.cyan;
-  ctx.save();ctx.translate(x,y);ctx.globalAlpha=k;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=`rgb(${col})`;ctx.lineWidth=Math.max(.7,.9*scale);
+function lensGift(n,reg,x,y,used,sc=scale){
+  const P=ink.lens,r=n.r*sc,k=used?.35:1,col=reg===0?P.ink:reg===1?P.inkBlack:P.instr,acc=reg===0?P.gold:reg===1?P.inkRed:P.cyan;
+  ctx.save();ctx.translate(x,y);ctx.globalAlpha=k;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=`rgb(${col})`;ctx.lineWidth=Math.max(.7,.9*sc);
   if(n.type==='shield'){const R=r*.42;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,R*.7,0,TAU);ctx.stroke();
-    ctx.save();ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.arc(0,0,R*.7,0,TAU,true);ctx.clip();ctx.lineWidth=Math.max(.35,.4*scale);ctx.beginPath();for(let i=-6;i<=6;i++){ctx.moveTo(i*R*.2-R,-R);ctx.lineTo(i*R*.2+R,R);}ctx.stroke();ctx.restore();
+    ctx.save();ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.arc(0,0,R*.7,0,TAU,true);ctx.clip();ctx.lineWidth=Math.max(.35,.4*sc);ctx.beginPath();for(let i=-6;i<=6;i++){ctx.moveTo(i*R*.2-R,-R);ctx.lineTo(i*R*.2+R,R);}ctx.stroke();ctx.restore();
     ctx.fillStyle=`rgba(${acc},.8)`;ctx.beginPath();ctx.arc(0,0,R*.28,0,TAU);ctx.fill();}
   else if(n.type==='reflector'){const R=r*.45;ctx.save();ctx.rotate(-.7);ctx.fillStyle=`rgba(${P.mirror},.75)`;ctx.beginPath();ctx.ellipse(0,0,R,R*.32,0,0,TAU);ctx.fill();ctx.stroke();ctx.restore();
-    ctx.lineWidth=Math.max(.5,.55*scale);ctx.beginPath();ctx.moveTo(-R*1.6,R*.1);ctx.lineTo(0,0);ctx.lineTo(R*.2,-R*1.5);ctx.stroke();ctx.beginPath();ctx.moveTo(R*.2,-R*1.5);ctx.lineTo(R*.02,-R*1.2);ctx.moveTo(R*.2,-R*1.5);ctx.lineTo(R*.42,-R*1.25);ctx.stroke();}
+    ctx.lineWidth=Math.max(.5,.55*sc);ctx.beginPath();ctx.moveTo(-R*1.6,R*.1);ctx.lineTo(0,0);ctx.lineTo(R*.2,-R*1.5);ctx.stroke();ctx.beginPath();ctx.moveTo(R*.2,-R*1.5);ctx.lineTo(R*.02,-R*1.2);ctx.moveTo(R*.2,-R*1.5);ctx.lineTo(R*.42,-R*1.25);ctx.stroke();}
   else if(n.type==='dawn'){const R=r*.42;ctx.beginPath();ctx.arc(0,R*.35,R,Math.PI,0);ctx.lineTo(R,R*.35);ctx.lineTo(-R,R*.35);ctx.closePath();ctx.stroke();
-    ctx.fillStyle=`rgba(${acc},.9)`;ctx.fillRect(-R*.14,-R*.64,R*.28,R*.99);ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+(i-2)*.28;ctx.moveTo(Math.cos(a)*R*.8,-R*.6+Math.sin(a)*R*.3);ctx.lineTo(Math.cos(a)*R*1.5,-R*.6+Math.sin(a)*R*.9);}ctx.stroke();}
+    ctx.fillStyle=`rgba(${acc},.9)`;ctx.fillRect(-R*.14,-R*.64,R*.28,R*.99);ctx.lineWidth=Math.max(.4,.45*sc);ctx.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+(i-2)*.28;ctx.moveTo(Math.cos(a)*R*.8,-R*.6+Math.sin(a)*R*.3);ctx.lineTo(Math.cos(a)*R*1.5,-R*.6+Math.sin(a)*R*.9);}ctx.stroke();}
   else{const w=r*.8,h=r*.5;ctx.fillStyle=reg===2?'rgba(20,26,36,.9)':`rgba(${P.paperDeep},.9)`;ctx.fillRect(-w/2,-h/2,w,h);ctx.strokeRect(-w/2,-h/2,w,h);ctx.beginPath();ctx.moveTo(-w/2,-h/2+h*.28);ctx.lineTo(w/2,-h/2+h*.28);ctx.stroke();
-    ctx.strokeStyle=`rgba(${acc},.9)`;ctx.lineWidth=Math.max(.8,1.1*scale);ctx.beginPath();ctx.moveTo(-w/2,h*.15);ctx.lineTo(w/2,h*.15);ctx.stroke();}
+    ctx.strokeStyle=`rgba(${acc},.9)`;ctx.lineWidth=Math.max(.8,1.1*sc);ctx.beginPath();ctx.moveTo(-w/2,h*.15);ctx.lineTo(w/2,h*.15);ctx.stroke();}
   ctx.restore();
 }
 // The slingshot body carries the mount's setting circle round it: a toothed worm wheel, graduated, turned
@@ -1024,7 +1026,7 @@ function lensDark(dt){
   const time=reducedMotion?0:world.time,mh=16*scale,mg=ctx.createLinearGradient(0,0,W,0),sh=(Math.sin(time*.6)*.5+.5)*.3;
   mg.addColorStop(0,`rgba(${P.mirror},.0)`);mg.addColorStop(clamp(.2+sh,0,1),`rgba(${P.mirror},${(.35+near*.2).toFixed(3)})`);mg.addColorStop(clamp(.45+sh,0,1),'rgba(170,150,196,.28)');mg.addColorStop(clamp(.7+sh*.5,0,1),`rgba(${P.mirror},${(.32+near*.2).toFixed(3)})`);mg.addColorStop(1,`rgba(${P.mirror},.05)`);
   ctx.save();ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]-mh);for(const q of pts)ctx.lineTo(q[0],q[1]-mh);for(let i=pts.length-1;i>=0;i--)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.clip();
-  const vg=ctx.createLinearGradient(0,fy-mh-6*scale,0,fy);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,1)');ctx.fillStyle=mg;ctx.globalAlpha=1;ctx.fillRect(0,fy-mh-8*scale,W,mh+14*scale);ctx.restore();
+  ctx.fillStyle=mg;ctx.fillRect(0,fy-mh-8*scale,W,mh+14*scale);ctx.restore();
   // the frilled emulsion below the edge: the gelatin lifted off and gone grey, with the old image drowned in it
   ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();
   const mass=ctx.createLinearGradient(0,fy,0,fy+170*scale);mass.addColorStop(0,`rgba(${massTop},.97)`);mass.addColorStop(1,`rgba(${massBot},1)`);ctx.fillStyle=mass;ctx.fill();
@@ -1149,10 +1151,10 @@ function lensHudLeaf(){
     let rx=right;if(world.combo>1&&world.captures>0){const shown=Math.min(6,world.combo);ctx.strokeStyle=`rgba(${P.cyan},.9)`;ctx.lineWidth=.8;for(let i=0;i<shown;i++){ctx.strokeRect(rx-3.5,top+2.5,7,7);rx-=12;}
       if(world.combo>6)lensMono(ctx,'x'+world.combo,right+4,top+20,8,P.instrSoft,.8,'right');}
   }
-  // the charges held, as small roundels lettered in the register's hand
-  let ix=right;const iy=top+34,p=world.player,roundel=(word)=>{ctx.strokeStyle=reg===2?`rgba(${P.instr},.85)`:`rgba(${reg===0?P.ink:P.inkBlack},.8)`;ctx.lineWidth=.8;ctx.beginPath();ctx.arc(ix,iy,8,0,TAU);ctx.stroke();
-    if(reg===0)lensFell(ctx,word,ix,iy+1,9,P.ink,.9,'center','sc');else if(reg===1)lensTyped(ctx,word,ix,iy+.5,8,P.inkBlack,.9,'center');else lensMono(ctx,word,ix,iy,7,P.instr,.9,'center');ix-=20;};
-  if(p.shielded)roundel('DC');if(p.reflectorArmed)roundel('FM');if(p.dawnArmed)roundel('SH');
+  // the charges held, each as a small picture of the thing itself, drawn as it stands on the chart
+  let ix=right;const iy=top+36,p=world.player,badge=type=>{ctx.save();ctx.strokeStyle=reg===2?`rgba(${P.instr},.6)`:`rgba(${reg===0?P.ink:P.inkBlack},.5)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(ix,iy,9.5,0,TAU);ctx.stroke();ctx.restore();
+    lensGift({type,r:20},reg,ix,iy,false,.85);ix-=24;};
+  if(p.shielded)badge('shield');if(p.reflectorArmed)badge('reflector');if(p.dawnArmed)badge('dawn');
   ctx.restore();
 }
 // The finish: the era file's own signature sheet. The page washes to paper and Saturn is laid out three times —
@@ -1163,7 +1165,7 @@ function lensFinale(){
   const P=ink.lens,time=world.player.deadTime,t=reducedMotion?1:clamp(time/1.2,0,1),e=1-Math.pow(1-t,3);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle=`rgba(${P.paper},${(.9*e).toFixed(3)})`;ctx.fillRect(0,0,W,H);
-  const R=Math.min(W*.085,H*.05,34),y=lerp(H*.5,H*.4,e),gap=Math.min(W/3,R*4.1),stages=[1,3,6],years=['PADUA · 1610','PARIS · 1887','ABOVE THE AIR · 1990'];
+  const R=Math.min(W*.085,H*.05,34),y=lerp(H*.56,H*.47,e),gap=Math.min(W/3,R*4.1),stages=[1,3,6],years=['PADUA · 1610','PARIS · 1887','ABOVE THE AIR · 1990'];
   lensFell(ctx,'SATURN, THREE TIMES',W/2,y-R*2.6-22,Math.min(26,W*.06),P.ink,.95*e,'center','sc');
   lensFell(ctx,'one planet, one era, the same question answered three ways',W/2,y-R*2.6+2,11,P.inkSoft,.85*e,'center','text','italic');
   stages.forEach((s,i)=>{const k=clamp((time-.25-i*.45)/.8,0,1);if(k<=0)return;const x=W/2+(i-1)*gap;ctx.save();ctx.translate(x,y);ctx.scale(.78,.78);lensSaturn(ctx,R,s,reducedMotion?1:k);ctx.restore();
@@ -1176,8 +1178,8 @@ function lensFinale(){
   ctx.restore();
 }
 // What is written on the sheet — a note, a warning, a landing — takes the register's own ink.
-function lensInscriptionInk(caps){
-  const reg=lensRegNow(),P=ink.lens;
+function lensInscriptionInk(caps,box){
+  const reg=box&&isFinite(box.top)?lensRegAtScreen(box.top):lensRegNow(),P=ink.lens;
   if(reg===2)return [{rgb:'0,0,0',alpha:caps?.55:.45,dx:.6,dy:.6},{rgb:P.instr,alpha:caps?.95:.88,dx:0,dy:0}];
   if(reg===1)return [{rgb:P.glassDeep,alpha:.2,dx:.3,dy:.35},{rgb:P.inkBlack,alpha:caps?.92:.86,dx:0,dy:0}];
   return [{rgb:P.wash,alpha:caps?.2:.16,dx:.3,dy:.35},{rgb:P.ink,alpha:caps?.92:.84,dx:0,dy:0}];
