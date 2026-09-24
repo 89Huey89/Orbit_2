@@ -23,7 +23,7 @@ let groundMarks=[],groundPast=[];
 // register becomes the one solvers read, and the frame begins collecting again into the other.
 function groundTurn(){const done=groundMarks;groundMarks=groundPast;groundPast=done;groundMarks.length=0;}
 // `kind` is what sort of type this is — 'title', 'note', 'caption', 'name', 'floater', 'tally', 'gloss',
-// 'head', 'impressum', 'key' — and is how a solver excuses its own kind from its own question. `owner`
+// 'head', 'impressum', 'key', 'legend' (a chapter print's own caption) — and is how a solver excuses its own kind from its own question. `owner`
 // is the particular mark, for a solver that must excuse one note without excusing every note.
 function markGround(kind,left,top,right,bottom,owner){
   if(!(right>left)||!(bottom>top)||!Number.isFinite(left)||!Number.isFinite(top)||!Number.isFinite(right)||!Number.isFinite(bottom))return;
@@ -74,6 +74,19 @@ function groundStanding(box,skip,pad){
   for(const m of groundPast){
     if(groundSkipped(m,skip))continue;
     if(groundSpan(box.left-g,box.right+g,m.left,m.right)>0&&groundSpan(box.top-g,box.bottom+g,m.top,m.bottom)>0)found.push(m);
+  }
+  return found;
+}
+// Every pair of marks in the last complete frame whose lettering overlaps by more than `slack` square
+// points — the promise at the head of this file, asked of the plate after the fact. Two marks of one
+// owner are one piece of type set in parts, and are never a clash with each other.
+function groundCollisions(slack=4){
+  const found=[];
+  for(let i=0;i<groundPast.length;i++)for(let j=i+1;j<groundPast.length;j++){
+    const a=groundPast[i],b=groundPast[j];
+    if(a.owner&&a.owner===b.owner)continue;
+    const area=groundSpan(a.left,a.right,b.left,b.right)*groundSpan(a.top,a.bottom,b.top,b.bottom);
+    if(area>slack)found.push({a,b,area});
   }
   return found;
 }

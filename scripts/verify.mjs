@@ -254,7 +254,7 @@ function runtime(width,height,storageBlocked=false,reduceMotion=false,seed={},ch
     items.set(id,e);return e;
   }
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
-  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
+  vm.createContext(context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
@@ -272,6 +272,22 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   };
   // What the pen has written onto the chart, and the same words as they are spoken.
   const written=()=>context.test.inscriptions;
+  // The plate's own promise (ground.js): nothing it has set down to stay — a title, a note, the running
+  // head, a legend key, a landing's tally — is ever set across another. Two such marks overlapping by more
+  // than a sliver of their gutter is type printed through type, and fails the run it was found in.
+  const settledClashes=(found,where)=>{
+    const fixed=context.test.GROUND_FIXED;
+    for(const {a,b,area} of found){
+      if(!fixed.has(a.kind)||!fixed.has(b.kind))continue;
+      // The running head stands on a ground of its own laid over the chart at the foot of the sheet, and the
+      // notes the sheet carries down pass under it on their way off the plate: that is a leaf over ink, not
+      // two lines of type sharing a place.
+      if(a.kind==='head'||b.kind==='head')continue;
+      const smaller=Math.min((a.right-a.left)*(a.bottom-a.top),(b.right-b.left)*(b.bottom-b.top));
+      const said=m=>`${m.kind}${m.owner&&m.owner.text?' "'+m.owner.text+'"':''}${m.owner&&m.owner.pending?' (still finding its line)':m.owner&&m.owner.name?' "'+m.owner.name+'"':''} [${[m.left,m.top,m.right,m.bottom].map(Math.round)}]`;
+      assert(area<=smaller*.12,`Settled type overlaps in ${where} at ${width}×${height}: ${said(a)} over ${said(b)} (${Math.round(area)} of ${Math.round(smaller)} sq pt)`);
+    }
+  };
   const inscribed=()=>written().map(g=>g.text).join(' | ');
   // Drive real frame callbacks so sampled trail history is rendered in orbit,
   // in flight, after death, and across pause/restart, including reduced motion.
@@ -1056,7 +1072,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       if(aim&&target&&aim.n.id===target.id&&aim.perfect&&run.player.orbitTime>.12)run.release();
     }
     run.update(step);
-    if(i%60===0||captures!==run.captures){context.test.render(step);captures=run.captures;}
+    // Drawn at the page's own sixty frames to the simulation's hundred and twenty, so every note is placed
+    // against the ground the frame before it actually recorded, as it is in play, not a half-second-old one.
+    if(i%2===0||captures!==run.captures){context.test.render(step*2);captures=run.captures;settledClashes(context.test.groundCollisions(),'the constellation run');}
   }
   assert.equal(run.constellationsCompleted,1,'The complete runtime must support the optional route');
   assert(element('announcement').textContent.includes('Darkness retreats'));

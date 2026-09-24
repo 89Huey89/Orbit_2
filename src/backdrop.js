@@ -154,8 +154,10 @@ function paintPaperBackdrop(){
     const y=rng()*H,x=W*(.4+.22*Math.sin(y/H*4.4-1))+(rng()+rng()+rng()-1.5)*W*.18;
     g.fillStyle=`rgba(96,70,40,${rng()*.09})`;g.fillRect(x,y,rng()>.95?1.3:.7,.65);
   }
+  // Lighter than it was: the plate tone the frame layer lays inside the mark (plateTone, src/press.js)
+  // now carries part of the darkening toward the edges, and the two together read as one.
   const vignette=g.createRadialGradient(W/2,H*.46,Math.min(W,H)*.3,W/2,H*.5,Math.max(W,H)*.74);
-  vignette.addColorStop(0,'rgba(120,84,40,0)');vignette.addColorStop(1,'rgba(96,64,28,.34)');g.fillStyle=vignette;g.fillRect(0,0,W,H);
+  vignette.addColorStop(0,'rgba(120,84,40,0)');vignette.addColorStop(1,'rgba(96,64,28,.27)');g.fillStyle=vignette;g.fillRect(0,0,W,H);
   return c;
 }
 function paintNightBackdrop(){

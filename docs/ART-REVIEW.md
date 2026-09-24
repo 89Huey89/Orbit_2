@@ -52,18 +52,43 @@ Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
 | Item | State | What changed |
 |---|---|---|
 | A1 survey letters | Fixed | Past `z` a letter takes a prime (`a'`, `a''`, `a'''`, then round again) instead of doubling; a soft clearing replaces the dark box (`effects.js` `surveyLetterName`, `surveyLetter`) |
-| A2 caption collisions | Fixed for node captions | A node's side caption takes the west side when the east would cross the frame or a note, and drops to a hairline when neither is clear (`figures.js` `drawNode`). A `verify.mjs` check for intersecting text boxes is still to do |
+| A2 caption collisions | Fixed for node captions | A node's side caption takes the west side when the east would cross the frame or a note, and drops to a hairline when neither is clear (`figures.js` `drawNode`). The `verify.mjs` check is the A2 text-box row below |
 | A3 one landing written four times | Fixed | The construction no longer repeats gain, speed and the square's bonus; the tally and the orbit's note carry them (README updated) |
 | A4 paper flood edge | Fixed | Stain pools feathered, weakened and seated on the front; corrosion feathered; the running head's ground fades at its ends and holds over the ink |
 | B2 loud tallies | Fixed | Older tallies dry to half strength once a later landing is written |
 | B3 pen lost in flight | Fixed | A soft reserve of the ground under the pen |
-| B4 soft chapter plates | Partly | Plates are baked at the density they are shown at (capped 1.66×, three held). Printing them as line rather than tone down the channel is still open |
+| B1 empty sheet | Fixed | Unobserved catalogue stars are set out in sanguine chalk at their own magnitude sign under the ink prick; an unobserved world gets a chalk trial circle at its true size and, at night, a star sign of the class its size earns. The chapter plate's line now carries the channel too (B4) |
+| B4 soft chapter plates | Fixed | Plates are baked at the density they are shown at (capped 1.66×, two held). Down the channel only the plate's line is printed, at 0.55, from a second tone-free pull joined into the cached plate; the flat veil is gone, and the next plate is baked a stage a frame before its turn |
+| F screenshot harness | Built | `tools/shots` (`npm run shots`). The `sheet` scenario covers B1/B4 with the chapter plates on; `press` forces D1, D4 and D5 on night and paper. The text-box check is the A2 row below |
+| C3 printer's device | Fixed | An armillary sphere in a double-ruled oval with laurel, at the left of the impressum's first rows (`drawPressDevice`) |
+| C5 colophon shows the plate | Fixed | The end leaf carries the whole run in miniature above FINIS, replayed from its log and folded into up to four strips (`paintEndMiniature`, review.js); dropped first on a leaf too short for it |
+| D2 blind embossing | Fixed | Every captured ring keeps an uninked relief (lit upper left, shadowed lower right) — two plain arcs a ring, drawn with the press's other marks |
+| D6 page curl | Fixed | The rising sheet's corner is turned back (underside, fold, shadow; the old plate shows through) and flattens as it lands |
+| D7 nova across the plate | Fixed | At full charge the star's spokes are struck once more as long rays across the chart, clipped to the inner rule, drying in 0.85 s |
+| D9 foxing that grows | Fixed | Paper only: spots and a tide mark spread in six stages (30 s, then each minute), each baked once; the review shows the age the run reached |
+| D10 wet-ink sheen | Fixed | Night only: the trail's last 0.28 s carries a narrow glint along its crest, drying away; off under reduced motion |
+| D11 haptics | Fixed | `navigator.vibrate` on capture (10 ms), perfect (double) and death (34 ms), on every plate, off under reduced motion |
+| A2 text-box check | Fixed | `groundCollisions()` (ground.js) and a `verify.mjs` assertion that no two pieces of settled type overlap in the runtime playthrough, now rendered at the page's own 60 fps. It found four real clashes, all fixed: a new chapter title set over the last one's (`revealAnchor` excused every title, not just its own); a title and a note choosing the same line in the frame the chart opens; and a standing instruction and a landing's tally each choosing a line the other took a frame earlier. The title and note solvers and the tally's line now ask the live title, notes and tallies directly as well as the one-frame-old register. The chapter prints' captions now register as `legend` ground, so node captions step round them |
 | C1 frontispiece as a web form | Fixed | The menu stands on the sheet wiped clean through a soft oval, ruled as a table of contents |
 | C2 Leviathan | Fixed | Redrawn as an engraved sea monster |
+| C3 cartouches | Fixed | The impressum and the chapter title stand in one strapwork cartouche (`src/press.js`): notched strap, scrolls at the ends, lozenges at head and foot. The printer's device inside the impressum is still open |
+| C4 plate tone | Fixed | Wiping streaks and edge film cut into the cached frame layer, clipped to the plate mark; the paper vignette lightened to match |
+| D1 press strike | Fixed | A perfect transfer sets the sheet down 1 px for 80 ms and embosses the landing ring (lit and shadowed offset strokes) for 0.95 s |
+| D4 second colour pass | Fixed | A completed figure is inked again in one left-to-right sweep, rubric red on paper and gold at night, off register, settling and drying over the completion's 2.4 s flash |
+| D5 death blot | Fixed | A hazard death on the atlas blots the page with the run's own ink, flung away from the nearest hazard, instead of bursting |
+
+Built on `claude/remaining-art-assets-6bf6v4`, with everything new in `src/press.js` and one-line hooks
+elsewhere, so it merges cleanly with the Era I overhaul (`claude/stone-age-deck-conflicts-g0en46`).
+The eras never reach any of it: they draw their own frame, and the event hooks ask `renaissanceAtlas()`.
 
 ![frontispiece after](art-review/17-frontispiece-after.jpg)
 ![leviathan after](art-review/16-leviathan-after.jpg)
 ![survey letters after](art-review/18-survey-letters-after.jpg)
+![cartouches and plate tone](art-review/19-press-paper.jpg)
+![second colour, paper](art-review/20-second-colour-paper.jpg)
+![second colour, night](art-review/21-second-colour-night.jpg)
+![hazard blot](art-review/22-hazard-blot.jpg)
+![strike emboss](art-review/23-strike-emboss.jpg)
 
 ---
 
