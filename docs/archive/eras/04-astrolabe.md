@@ -346,6 +346,24 @@ standard on the second pass. **No spike yet exists for this file's own instrumen
 — the brass mater/limb/rete assembly, the alidade avatar, the struck-division reveal state — and
 that gap is this era's own largest open risk, not a settled one.
 
+A playable preview door is now built on this file's instrument-primary grammar, `src/astrolabe.js`,
+beside the Rock's, the Ceiling's and the Scroll's (root `README.md`, "The eras"). It answers the spike this
+section asked for only in part, and makes choices this file left open, recorded here:
+
+- **Arabic is shaped by the browser, not pre-shaped.** Amiri (OFL) is vendored at two weights and cut
+  to the characters the source sets (`npm run fonts`); canvas text is drawn with `direction='rtl'`, the
+  same fallback the manuscript-primary study used. The fontkit `ArabicShaper` pipeline stays the plan.
+- **The numeral split is built:** abjad on every engraved graduation (the limb, a body's qadr, the
+  instrument's rim), Eastern Arabic-Indic digits for the score. Not yet judged in the hand.
+- **The obscurer is labelled لطخة سحابية** (laṭkha saḥābiyya, "a little cloud"), the phrase usually cited
+  from al-Ṣūfī for the Andromeda nebula, rather than the constructed *al-shayʾ al-saḥābī* above.
+- **A story is added the progression does not plan:** six chapters (Baghdad 927, Isfahan 964, Cairo 1027,
+  Valencia 1085, Marāgha 1259, Samarkand 1428), each giving the assembling astrolabe one part, won at the
+  thirty-sixth row with the Zīj-i Sulṭānī finished — the Ceiling's winnable length. Which place gives
+  which part is the sheet's own telling. The transition into the Engraving is not built.
+- **The alidade is some 46 units long, and the guide is pricked only from 27 units ahead**, clear of its tip, in brass against ink
+  dots; whether the two stay distinct at speed is the first thing to judge on a phone.
+
 ## Risk
 
 The alidade's own geometry is the era's hardest single legibility risk: a real alidade laid along a

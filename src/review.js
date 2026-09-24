@@ -104,3 +104,57 @@ window.addEventListener('keydown',e=>{
 $('review-open').addEventListener('click',()=>openReview());
 $('review-close').addEventListener('click',closeReview);
 $('review-last').addEventListener('click',()=>{const rec=loadLastReplay();if(rec)openReview(rec,'intro');});
+// ---------- The plate in miniature, on the colophon ----------
+// The end leaf used to cover the chart the player had just drawn and show none of it. A period atlas
+// that had a long coast to print laid it across a folding plate, cut into strips and set one under the
+// next; the colophon carries the whole run the same way, small: rebuilt from its own log (replayRun, the
+// same pass the review opens), laid on its side so the climb reads left to right, and folded into as many
+// strips as give it the largest scale. The dried route, every body it was taken on, the figures it closed
+// and where it ended — the image a run is remembered by, and the one worth keeping.
+function paintEndMiniature(){
+  const c=$('end-miniature');if(!c)return;
+  const show=eraId()===0&&!plainPlate()&&!!replayLog&&replayLog.releases&&replayLog.releases.length>0;
+  c.hidden=!show;if(!show||!c.getContext)return;
+  const w=c.clientWidth,h=c.clientHeight;if(!(w>0&&h>0))return;
+  let run;try{run=replayRun(replayLog);}catch(_){c.hidden=true;return;}
+  const path=run.inkPath||[];if(path.length<2){c.hidden=true;return;}
+  c.width=Math.max(1,Math.round(w*DPR));c.height=Math.max(1,Math.round(h*DPR));
+  const g=c.getContext('2d');if(!g)return;
+  g.setTransform(DPR,0,0,DPR,0,0);g.clearRect(0,0,w,h);
+  let y0=Infinity,y1=-Infinity;for(const p of path){y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}
+  const width=run.width||440,length=Math.max(1,y1-y0)+width*.1,pad=3,fold=4;
+  // The number of strips that prints the run largest: more strips buy length, and cost breadth.
+  let strips=1,unit=0;
+  for(let k=1;k<=4;k++){const s=Math.min((h-pad*2-(k-1)*fold)/k/width,(w-pad*2)*k/length);if(s>unit){unit=s;strips=k;}}
+  const bandH=width*unit,seg=length/strips,top=(h-(bandH*strips+fold*(strips-1)))/2;
+  const paper=onPaper(),rgb=paper?ink.base.inkStrong:ink.base.inkSoft,rubric=ink.press.rubric;
+  // A world point to its place in strip k: world x across the strip, the climb (y falling) along it.
+  const at=(x,y,k)=>[pad+((y1+width*.05)-y-k*seg)*unit,top+k*(bandH+fold)+(x+width/2)*unit];
+  for(let k=0;k<strips;k++){
+    const by=top+k*(bandH+fold);
+    burinRect(g,pad-1,by-1,w-pad*2+2,bandH+2,rgb,paper?.5:.38,.5,90901+k);
+    g.save();g.beginPath();g.rect(pad,by,w-pad*2,bandH);g.clip();
+    // Hazards as the small cross a chart marks a danger with, bodies as the rings they were taken on.
+    g.strokeStyle=`rgba(${rgb},${paper?.28:.22})`;g.lineWidth=.5;
+    for(const hz of run.hazards||[]){const [px,py]=at(hz.x,hz.y,k),r=Math.max(1,hz.r*unit*.6);g.beginPath();g.moveTo(px-r,py-r);g.lineTo(px+r,py+r);g.moveTo(px+r,py-r);g.lineTo(px-r,py+r);g.stroke();}
+    for(const n of run.nodes||[]){
+      if(!n.visited)continue;
+      const [px,py]=at(n.x,n.y,k);if(px<-4||px>w+4)continue;
+      g.strokeStyle=`rgba(${rgb},${paper?.55:.45})`;g.lineWidth=.55;g.beginPath();g.arc(px,py,Math.max(.9,n.r*unit),0,TAU);g.stroke();
+    }
+    // The figures the run closed, struck in the rubricator's colour as the press strikes them on the chart.
+    for(const chart of run.constellations||[]){
+      if(!chart.completed)continue;
+      g.strokeStyle=`rgba(${rubric},${paper?.75:.7})`;g.lineWidth=.7;g.beginPath();
+      chart.stars.forEach((s,i)=>{const [px,py]=at(s.x,s.y,k);i?g.lineTo(px,py):g.moveTo(px,py);});g.stroke();
+      g.fillStyle=`rgba(${rubric},.85)`;for(const s of chart.stars){const [px,py]=at(s.x,s.y,k);g.beginPath();g.arc(px,py,1,0,TAU);g.fill();}
+    }
+    // The route, in one continuous dried line.
+    g.strokeStyle=`rgba(${rgb},${paper?.85:.75})`;g.lineWidth=.7;g.lineJoin='round';g.beginPath();
+    path.forEach((p,i)=>{const [px,py]=at(p.x,p.y,k);i?g.lineTo(px,py):g.moveTo(px,py);});g.stroke();
+    g.restore();
+  }
+  // Where it ended: a small blot of the run's own ink at the last point of the route.
+  const last=path[path.length-1],k=clamp(Math.floor(((y1+width*.05)-last.y)/seg),0,strips-1),[ex,ey]=at(last.x,last.y,k);
+  g.fillStyle=`rgba(${mixRgb(trailInk().blotWet,trailInk().blotDry,.4)},.8)`;g.beginPath();g.arc(ex,ey,1.8,0,TAU);g.fill();
+}

@@ -357,6 +357,8 @@ function buildFrameLayer(){
   const markW=Math.max(1,W-pm1*2),markH=Math.max(1,H-pm1*2),markR=Math.max(0,Math.min(pmR,markW*.5,markH*.5));
   g.beginPath();g.roundRect(pm1,pm1,markW,markH,markR);
   g.fillStyle=`rgba(${ink.base.ink},${onPaper()?.05:.045})`;g.fill();
+  // And over the flat film, the tone the wiping hand could not take off (plateTone, src/press.js).
+  if(renaissanceAtlas()&&!plainPlate())plateTone(g,pm1,pm1,markW,markH,markR);
   groove(pm1,pm1,markW,markH,colors.markEdge);
   if(onPaper()){
     groove(pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),colors.mark);
@@ -1126,12 +1128,18 @@ function drawImpressum(){
   // Eleven rows of type in a ruled cartouche is the largest single block of lettering the plate ever sets,
   // so it goes into the register (ground.js) like any other: impressumTop() is what the marginalia in this
   // margin used to consult one at a time, and it stays for the ones that need the line rather than the box.
-  markGround('impressum',left,top,left+m.width,top+m.height);
+  // The rows stand in a strapwork cartouche (drawPressCartouche, src/press.js), whose scrolls and lozenges
+  // reach out past the panel the old ruled box drew; the ground it claims reaches out with them.
+  const out=pressCartoucheInset(m.width,m.height);
+  markGround('impressum',left-out.x,top-out.y,left+m.width+out.x,top+m.height+out.y);
   const colors=ink.frame,rows=impressumRows();
   ctx.save();
   ctx.beginPath();ctx.rect(m.inner,m.inner,Math.max(0,W-m.inner*2),Math.max(0,H-m.inner*2));ctx.clip();
-  burinRect(ctx,left,top,m.width,m.height,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70211);
-  burinRect(ctx,left+4,top+4,m.width-8,m.height-8,ink.base.inkSoft,onPaper()?.36:.25,.6,70217);
+  drawPressCartouche(left-out.x,top-out.y,m.width+out.x*2,m.height+out.y*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70211);
+  // The house's device stands at the left of the rows that name it (place, press, plate, edition — the four
+  // a sheet carries from its first pull), inked with the press's own line (drawPressDevice, src/press.js).
+  {let head=0;for(const key of ['place','printer','plate','edition'])head+=impressumRowSize(key,m.size)*1.48;
+    drawPressDevice(left+m.width*.13,top+m.padY+head*.5,Math.min(44,head*1.02),ink.base.inkStrong,(onPaper()?.62:.46)*impressumRowProgress(rows[1]),70301);}
   ctx.textAlign='center';ctx.textBaseline='middle';
   let ry=top+m.padY;
   for(let i=0;i<rows.length;i++){
@@ -1224,7 +1232,8 @@ function render(dt){
   // all print over the name exactly as they print over the graticule, and the sheet's own grain goes over
   // every one of them last (drawLaidPaper, at the foot of this function). Drawn last, as it was, no amount
   // of care with what was laid under it could stop it reading as a card on the sheet.
-  const aim=world.aim();ctx.setTransform(DPR,0,0,DPR,0,0);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawChapterReveal(dt);drawConstellationFigures();drawGravitationalLenses();
+  // A perfect landing's strike sets the whole sheet down a pixel for a moment (pressShift, src/press.js).
+  const aim=world.aim(),strike=pressShift()*DPR;ctx.setTransform(DPR,0,0,DPR,strike,strike);drawAtmosphere(dt,aim);drawRenaissanceGrid();drawChapterReveal(dt);drawConstellationFigures();drawGravitationalLenses();
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
   for(const g of world.nebulas)revealHazard(g,drawHazard);
   drawConnections();drawConstellations();for(const n of world.nodes)drawNode(n,aim);

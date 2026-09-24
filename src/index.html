@@ -32,6 +32,7 @@
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
     .scroll-only{display:none!important}
+    .astrolabe-only{display:none!important}
     .era-exit{display:none!important}
     /* Era I letters in the same modern slab era II does, and for the same reason: this wall has no
        script of its own, so everything set on it is openly a curator's gloss. The palette is unlit rock
@@ -101,6 +102,20 @@
     #game[data-era="3"] #end-score-roman{display:none}
     .scroll-lore-open{position:absolute;left:16px;right:16px;top:calc(6.5% + env(safe-area-inset-top));text-align:center}
     .scroll-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','LXGW WenKai TC',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2c241b}
+    #game[data-era="4"] .astrolabe-only{display:revert!important}
+    /* Era IV is brass measured on sized cream paper, so its chrome is the paper plate's shape again in the
+       Astrolabe's colours: cream for the ground, lamp-black for the words, gilt where the atlas spends gold.
+       Its English is the curator's slab, and its own words are in naskh (Amiri). The counts are set on the
+       sheet in the manuscript's own hand (astroHudLeaf() in astrolabe.js); the DOM HUD stays for screen
+       readers and is only taken off the screen, as on the Rock and the Scroll. */
+    #game[data-era="4"]{--face-text:'Zilla Slab','Amiri',Georgia,serif;--face-sc:'Zilla Slab','Amiri',Georgia,serif;--face-body:'Zilla Slab','Amiri',Georgia,'Times New Roman',serif;--ink:#efe1c4;--ivory:#241c11;--gold:#9a7424;--muted:#6e5a3c;--copy:#3a2e1c;--best:#241c11;--shield:#4a3b22;--reflector:#5d6a70;--dawn:#9a7424;--copper:#a8392c;--line:rgba(36,28,17,.3);--veil:239,225,196}
+    #game[data-era="4"] .footer{color:#3a2e1c}
+    #game[data-era="4"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    #game[data-era="4"] #catalogue-open,#game[data-era="4"] #plate{display:none}
+    #game[data-era="4"] #end-score-roman{display:none}
+    .astrolabe-lore-open{position:absolute;left:16px;right:16px;top:calc(5% + env(safe-area-inset-top));text-align:center}
+    .astrolabe-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','Amiri',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2e2415}
+    .astrolabe-context{max-width:42em;margin:12px auto 0;color:#5a4a30;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
     #game[data-era] .era-exit{display:revert!important}
     #game[data-era="2"] .footer{color:#c9bb98}
     #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
@@ -444,6 +459,7 @@
     #end.end-compact .exlibris{width:84px;height:50px;margin-top:9px}
     #end.end-compact .finis{margin:8px 0 2px}
     #end.end-compact .finis canvas{width:28px;height:28px}
+    #end.end-compact .finis #end-miniature{width:min(190px,55vw);height:48px;margin-bottom:4px}
     #end.end-compact .end-plate-line{margin-top:9px}
     #end.end-compact #copy-score{padding:6px 12px}
     #end.end-compact .action-copy{font-size:17px;margin-bottom:8px}
@@ -451,6 +467,8 @@
     #end.end-compact #end-score{font-size:clamp(48px,13vw,68px);margin:7px 0 2px}
     #end.end-compact #end-score-roman{font-size:11px;margin:0 0 6px}
     #end.end-compact .score-frame{margin:6px 0 4px;padding:9px 26px 6px}
+    /* The miniature is the first thing a leaf too short for it gives up; the numbers and the way out stay. */
+    #end.end-tight .finis #end-miniature{display:none}
     #end.end-tight #end-daily{display:none}
     #end.end-tight #end-tip{font-size:12px}
     #end.end-tight #end-observations{margin:-9px 0 10px}
@@ -534,6 +552,9 @@
        word — FINIS on an ordinary run, LAVS DEO where the run itself earned a perfect chain. */
     .finis{display:flex;flex-direction:column;align-items:center;gap:1px;margin:12px 0 2px}
     .finis canvas{width:36px;height:36px}
+    /* The whole run in miniature (paintEndMiniature, review.js), laid on its side above the closing device. */
+    .finis #end-miniature{width:min(220px,60vw);height:62px;margin-bottom:6px}
+    .finis #end-miniature[hidden]{display:none}
     .finis span{font-family:var(--face-sc);font-size:10px;letter-spacing:.22em;color:var(--muted);opacity:.85}
     @media(max-height:530px) and (orientation:landscape){
       #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
@@ -747,6 +768,7 @@
     <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">
+    <p class="astrolabe-lore astrolabe-lore-open astrolabe-only" id="astrolabe-lore-open">An instrument remembers every star it was turned toward.<br>Sight a light through the alidade; hold it until its scale closes.<br>Carry the measure from Baghdad to Samarkand.</p>
     <p class="scroll-lore scroll-lore-open scroll-only" id="scroll-lore-open">The Bureau kept the sky's record for nine centuries.<br>Every light gets a place, a colour and a name.<br>Sight it. Hold it. Write it down.</p>
     <p class="rock-lore rock-lore-open rock-only" id="rock-lore-open">The lights come back to the same place in the sky, night after night.<br>Someone has to remember them.<br>Take the torch. Go deeper. Mark what returns.</p>
     <div class="title-group atlas-only">
@@ -790,7 +812,7 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">THE BOOK OF NUT · NEW KINGDOM</p>
     </div>
-    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span><span class="rock-only">Tap the wall to begin</span><span class="scroll-only">Tap the sheet to begin</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
+    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span><span class="rock-only">Tap the wall to begin</span><span class="scroll-only">Tap the sheet to begin</span><span class="astrolabe-only">Tap the plate to begin the journey</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
       <div class="daily-group">
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
@@ -803,6 +825,7 @@
       <div id="more-menu" class="daily-group atlas-only" hidden>
         <div class="action-row" id="more-actions">
           <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+          <button id="astrolabe-open" class="diff-btn era-entry" type="button" aria-label="Play Era IV, The Astrolabe — the sky measured through brass, from Baghdad to Samarkand">ERA IV · THE ASTROLABE</button>
           <button id="scroll-open" class="diff-btn era-entry" type="button" aria-label="Play Era III, The Scroll — the sky as a Tang star chart brushed on paper">ERA III · THE SCROLL</button>
           <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
           <button id="rock-open" class="diff-btn era-entry" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
@@ -811,7 +834,8 @@
         <span id="review-last-note" class="small daily-note"></span>
       </div>
       <p class="ceiling-context ceiling-only">The sky is Nut’s body, after the Book of Nut and the blue star ceilings of the Theban tombs; the decan columns and star signs are Senenmut’s, from TT353. The night barque and its dangers are a gameplay translation from wider Egyptian funerary art.</p>
-      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span><span class="scroll-only">After the Dunhuang star chart · c. 649–684 CE</span></p>
+      <p class="astrolabe-context astrolabe-only">The brass is after the Nastulus astrolabe (Baghdad, 927) and the Valencia globe (1085); the figures and star names are al-Sufi’s, from the Book of the Fixed Stars. The alidade as traveller, and the dragon, the sun, the wind and the little cloud as dangers, are a gameplay translation.</p>
+      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span><span class="scroll-only">After the Dunhuang star chart · c. 649–684 CE</span><span class="astrolabe-only">Baghdad to Samarkand · 927–1437 CE</span></p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
@@ -829,7 +853,7 @@
       <div id="end-observations"></div>
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
-      <div id="end-finis" class="finis atlas-only"><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
+      <div id="end-finis" class="finis atlas-only"><canvas id="end-miniature" aria-hidden="true" hidden></canvas><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="rock-lore rock-only" id="rock-lore-close">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>
@@ -970,12 +994,14 @@
 <script src="figures.js"></script>
 <script src="inscriptions.js"></script>
 <script src="effects.js"></script>
+<script src="press.js"></script>
 <script src="figures-tt353.js"></script>
 <script src="signs-tt353.js"></script>
 <script src="ceiling.js"></script>
 <script src="relight.js"></script>
 <script src="rock.js"></script>
 <script src="scroll.js"></script>
+<script src="astrolabe.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="review.js"></script>

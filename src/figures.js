@@ -88,6 +88,10 @@ function renaissanceStarGlyph(g,cx,cy,magnitude,rgb,alpha,size,seed=0){
 }
 function revealRenaissanceStar(n,pen,rgb){
   const faint=pen.taken<1?pen.ring:0;
+  // Before it is observed a star is set out, not cut: its own sign, at the class its light will earn, laid
+  // in the sanguine chalk the engraver sketches in, so a bright star already reads as a bright one on the
+  // sheet while the only ink on it is the bare prick. The observation inks the sign over its own sketch.
+  if(faint>0&&renaissanceAtlas()&&n.magnitude<6)renaissanceStarGlyph(ctx,0,0,n.magnitude,ink.underdrawing.chalk,(onPaper()?.4:.46)*faint,scale,n.seed);
   if(faint>0)renaissanceStarGlyph(ctx,0,0,6,rgb,.82*faint,scale*.9,n.seed^0x17);
   // The classified point is printed at nearly full strength from the moment the quill commits to it.
   // The old floor of .38 was the pen drying, not the plate: a star already entered in the catalogue is
@@ -963,6 +967,7 @@ function drawConstellationFigure(chart){
   const x=sx(frame.originX),y=sy(frame.originY);
   if(x>W||y>H||x+layer.canvas.width<0||y+layer.canvas.height<0)return;
   ctx.drawImage(layer.canvas,x,y);
+  pressColourPass(chart,layer,x,y);
   figureCorrode(layer.canvas,x,y);
 }
 // The rising ink eats a figure's own contours the way it eats the plate's furniture, and for the same

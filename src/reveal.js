@@ -372,6 +372,21 @@ function punchedMark(g,core,rng,alpha,progress,seed){
 // Each stage composites the cached glyph layers through a mask; when the reveal finishes the finished
 // composite is drawn exactly as before, at no extra cost, plus whatever brief flourish `drawAtlasFlourish`
 // (below) is still marking the crossing into a full observation with.
+// The class a phenomenon is set at before it is observed, read off its size alone: a carried charge or a
+// detour is a small light, an ordinary world a bright one, and the great worlds the brightest the plate sets.
+const phenomenonMagnitude=core=>core>=26?1:core>=20?2:3;
+// The setting-out under an unobserved body: the chalk circle at the size the specimen will be cut to, left
+// open where the hand lifted, and three short strokes of shade at its lower right, all in the red chalk the
+// paper plate's keylines already follow. Drawn in the body's own 60-unit frame (revealPlanet's scale).
+function phenomenonSketch(core,r,lit,seed){
+  const a=(onPaper()?.3:.26)*lit;if(a<.01)return;
+  const rng=seeded((seed^0x3c1a77)>>>0||1),w=Math.max(.5,.8*60/Math.max(1,r)*scale);
+  burinArc(ctx,.6,-.4,core,rng()*TAU,rng()*TAU+TAU*.82,ink.underdrawing.chalk,a,w,seed^0x51c3,{segments:28,skips:3,wobble:.6});
+  for(let i=0;i<3;i++){
+    const x=core*(.18+i*.17),y=core*(.5-i*.13);
+    burinSegment(ctx,x,y,x+core*.18,y+core*.16,ink.underdrawing.chalk,a*.8,w*.8,seed^(0x61d+i*97),{segments:2,wobble:.3,hair:false});
+  }
+}
 function revealPlanet(art,r,time,pen,seed,impression=null){
   if(!pen||pen.done){drawPlanet(art,r,time,impression);drawAtlasFlourish(art,r,seed);drawModernFlourish(art,r,seed);return;}
   const core=art.core,angle=art.tilt+(reducedMotion?0:time*art.spin);
@@ -382,9 +397,15 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
   // as the specimen fills in behind it.
   if(pen.taken<1&&pen.ring>0){
     const lit=(1-pen.taken)*pen.ring;
+    // On the atlas the phenomenon is set down the way the plate sets any light it has not yet catalogued —
+    // as a star of the magnitude its size would earn — over the sanguine trial circle the engraver laid
+    // out at the body's true size before any ink: a world goes here, and this big, without saying which.
+    if(renaissanceAtlas())phenomenonSketch(core,r,lit,seed);
     if(onPaper()){
       const rng=seeded((seed^0x7a41c3)>>>0||1);
       punchedMark(ctx,core,rng,.42*lit,pen.taken,seed^0x19d7);
+    }else if(renaissanceAtlas()){
+      renaissanceStarGlyph(ctx,0,0,phenomenonMagnitude(core),ink.reveal.bead,.9*lit,scale*60/Math.max(1,r),seed^0x2e11);
     }else{
       ctx.fillStyle=`rgba(${ink.reveal.bead},${.16*lit})`;
       ctx.beginPath();ctx.arc(0,0,Math.max(2.4,core*.3),0,TAU);ctx.fill();
