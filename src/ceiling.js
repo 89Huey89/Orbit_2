@@ -506,27 +506,28 @@ function ceilingDecanField(g,xNear,xFar,loY,hiY,side,nSub,cell,rot,avoidY,figCle
 }
 // Egyptian numerals: stroke, heel-bone, coil of rope, lotus. Base ten, additive, no zero, and signs
 // of one value stacked in a block of up to three rows, which is why a small count reads at a glance.
-// The score stays an Arabic figure — it has to be read at speed — but a count the sheet itself makes,
-// like the hour, is written the way the wall would have written it.
-function ceilingNumSign(g,kind,cx,cy,w,h,col){
-  const width=Math.max(1.1,h*.13);
-  if(kind===1)ceilingBrush(g,[[cx,cy-h*.42],[cx+h*.02,cy+h*.42]],col,width,.9,cx+cy);
+// The running score in the cartouche keeps an Arabic figure beside its strokes, since it has to be read
+// at speed; a count the sheet itself makes — the hour, a landing's measure and the rubric of what it
+// earned — is written the way the wall would have written it.
+function ceilingNumSign(g,kind,cx,cy,w,h,col,a=1){
+  const width=Math.max(1.1,h*.13),o=.9*a;
+  if(kind===1)ceilingBrush(g,[[cx,cy-h*.42],[cx+h*.02,cy+h*.42]],col,width,o,cx+cy);
   else if(kind===10){
     // Each heel-bone is a narrow arch standing clear of its neighbour: set shoulder to shoulder, two of
     // them close into one letter M, which is the one thing the count must never be read as.
     const p=[];for(let i=0;i<=14;i++){const a=Math.PI+i/14*Math.PI;p.push([cx+Math.cos(a)*w*.3,cy+h*.32+Math.sin(a)*h*.6]);}
-    ceilingBrush(g,p,col,width,.9,cx*3+cy);
+    ceilingBrush(g,p,col,width,o,cx*3+cy);
   }else if(kind===100){
     const r=Math.min(w,h)*.44,p=[];for(let i=0;i<=26;i++){const t=i/26,a=-1.1+t*8.2,rr=r*(.34+.66*t);p.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]);}
-    ceilingBrush(g,p,col,Math.max(1,h*.1),.9,cx*5+cy);
+    ceilingBrush(g,p,col,Math.max(1,h*.1),o,cx*5+cy);
   }else if(kind===10000){
     // The raised finger: a stroke bent over at its tip, the sign the walls count ten thousands in.
-    ceilingBrush(g,[[cx+w*.05,cy+h*.44],[cx,cy-h*.2],[cx-w*.06,cy-h*.36],[cx-w*.26,cy-h*.42],[cx-w*.3,cy-h*.3]],col,width,.9,cx*19+cy);
+    ceilingBrush(g,[[cx+w*.05,cy+h*.44],[cx,cy-h*.2],[cx-w*.06,cy-h*.36],[cx-w*.26,cy-h*.42],[cx-w*.3,cy-h*.3]],col,width,o,cx*19+cy);
   }else{
-    ceilingBrush(g,[[cx-w*.05,cy+h*.44],[cx,cy+h*.02]],col,width,.9,cx*7+cy);
-    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.16,cy-h*.14],[cx-w*.3,cy-h*.3],[cx-w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*11+cy);
-    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.03,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*13+cy);
-    ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),.9,cx*17+cy);
+    ceilingBrush(g,[[cx-w*.05,cy+h*.44],[cx,cy+h*.02]],col,width,o,cx*7+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.16,cy-h*.14],[cx-w*.3,cy-h*.3],[cx-w*.32,cy-h*.44]],col,Math.max(.9,h*.09),o,cx*11+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx-w*.03,cy-h*.44]],col,Math.max(.9,h*.09),o,cx*13+cy);
+    ceilingBrush(g,[[cx,cy+h*.04],[cx+w*.16,cy-h*.14],[cx+w*.3,cy-h*.3],[cx+w*.32,cy-h*.44]],col,Math.max(.9,h*.09),o,cx*17+cy);
   }
 }
 const CEILING_NW={1:.2,10:.42,100:.36,1000:.44,10000:.3};
@@ -535,12 +536,12 @@ function ceilingNumWidth(n,h){
   let w=0;for(const k of [10000,1000,100,10,1]){const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(c)w+=Math.ceil(c/ceilingNumRows(c))*h*CEILING_NW[k]+h*.1;}
   return Math.max(0,w-h*.1);
 }
-function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false){
+function ceilingNumber(g,n,x,y,h,col=CEILING_PALETTE.carbon,center=false,a=1){
   const total=ceilingNumWidth(n,h);let left=center?x-total/2:x;
   for(const k of [10000,1000,100,10,1]){
     const c=k===10000?Math.min(9,Math.floor(n/k)):Math.floor(n/k)%10;if(!c)continue;
     const rows=ceilingNumRows(c),per=Math.ceil(c/rows),sw=h*CEILING_NW[k],rh=h/rows;
-    for(let i=0;i<c;i++)ceilingNumSign(g,k,left+sw*(i%per+.5),y+rh*(Math.floor(i/per)+.5),sw*.92,rh*.92,col);
+    for(let i=0;i<c;i++)ceilingNumSign(g,k,left+sw*(i%per+.5),y+rh*(Math.floor(i/per)+.5),sw*.92,rh*.92,col,a);
     left+=per*sw+h*.1;
   }
   return total;
@@ -1376,31 +1377,86 @@ function ceilingDrawRoute(){
   ctx.restore();
 }
 // ---------- The wall's survey: the flight measured at both ends ----------
-// The atlas measures every departure and every landing (drawSurveys(), src/effects.js:146-335); the
-// data is recorded here too — src/ui.js calls recordDeparture/recordLanding regardless of plate — it
-// was simply never drawn. The wall answers in its own instruments rather than borrowing the atlas's
-// geometer's arcs: a cord snapped taut along the departure, and a plumb dropped from the hour-circle
-// at the landing, with the arrival's angle set the way the wall sets every other count it keeps
-// itself — Egyptian numerals, stroke by stroke. Both age on the same clock the atlas's constructions
-// do (surveyProgress, defined once in effects.js and shared here), and both stay part of the wall
-// once drawn on, pruned only when `surveys` itself is pruned. Kept deliberately quiet — thin, low
-// alpha — since these sit on the route running up the sheet's own middle and must not compete with
-// the hour-circles, the aim guide or the barque for the eye.
+// The atlas measures every departure and every landing with a geometer's construction (drawSurveys(),
+// src/effects.js); the wall measures the same two moments with what an Egyptian observer actually held,
+// and writes the result the way an Egyptian scribe actually wrote a measure. Nothing here is in degrees:
+// the circle of three hundred and sixty is Babylonian and centuries later, so the arrival is given as a
+// seked, the slope measure of the Rhind papyrus — how many palms the line runs across for every cubit
+// it falls, a cubit being seven palms and a palm four fingers. A landing that met the circle square has
+// no run at all, and is not written as a number; it is marked nfr, "good, complete", the word scribes
+// set against a checked account. What the landing earned is set beneath in red, as a scribe rubricated a
+// total: Egyptian numerals in the red ochre of the route, the flight's own ink. The whole survey is laid
+// in world coordinates at the moment it happens and never moves again, so, like the route, it stays on
+// the wall where it was made and passes down the sheet with it; it ages on the same clock the atlas's
+// constructions do (surveyProgress, effects.js) and is pruned only when `surveys` itself is.
+// The departure is the merkhet and the bay, the pair the star clocks and the temple surveys were sighted
+// with: the palm-rib's slit at the point the barque let go, a sighting line run from it along the flight
+// in red ochre, and at its far end the plumb line hanging true, which is what the slit was aligned on.
+function ceilingPlumbBob(x,y,len,alpha,seed){
+  ceilingBrush(ctx,[[x,y],[x,y+len]],CEILING_PALETTE.carbon,Math.max(.7,.9*scale),.8*alpha,seed);
+  const r=Math.max(2.2,2.7*scale),by=y+len+r*.6;
+  ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle=CEILING_PALETTE.yellow;ctx.strokeStyle=CEILING_PALETTE.ink;ctx.lineWidth=Math.max(.5,.6*scale);
+  ctx.beginPath();ctx.moveTo(x,by-r*1.5);ctx.quadraticCurveTo(x+r*1.2,by-r*.2,x,by+r);ctx.quadraticCurveTo(x-r*1.2,by-r*.2,x,by-r*1.5);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+  return by+r;
+}
 function ceilingDrawDepartureCord(s,t){
-  const px=sx(s.x),py=sy(s.y),reach=24*scale,ex=px+s.dx*reach,ey=py+s.dy*reach,seed=((s.cx|0)*7+(s.cy|0)*11+3)|0;
-  const head=ceilingBrush(ctx,[[px,py],[ex,ey]],CEILING_PALETTE.red,Math.max(.55,.85*scale),.24,seed,t);
-  if(head){ceilingWet(ctx,head.x,head.y,.85*scale,.5,CEILING_PALETTE.red);ceilingReed(ctx,head.x,head.y,head.angle,.7,CEILING_PALETTE.red);}
+  const px=sx(s.x),py=sy(s.y),reach=34*scale,ex=px+s.dx*reach,ey=py+s.dy*reach,seed=((s.cx|0)*7+(s.cy|0)*11+3)|0;
+  // The bay: a short palm rib standing across the line with the V of its slit opening along it.
+  const nx=-s.dy,ny=s.dx,w=5*scale,sight=clamp(t/.25,0,1);
+  if(sight>0){
+    ceilingBrush(ctx,[[px-nx*w,py-ny*w],[px+nx*w,py+ny*w]],CEILING_PALETTE.carbon,Math.max(.8,1.1*scale),.72*sight,seed+1);
+    ceilingBrush(ctx,[[px+s.dx*w*1.1-nx*w*.7,py+s.dy*w*1.1-ny*w*.7],[px,py],[px+s.dx*w*1.1+nx*w*.7,py+s.dy*w*1.1+ny*w*.7]],CEILING_PALETTE.carbon,Math.max(.7,.9*scale),.72*sight,seed+2);
+  }
+  // The sighting line is a cord, not paint: it is laid in the pale drawing line, so it reads apart from
+  // the red route it runs beside rather than vanishing into it.
+  const run=clamp((t-.15)/.6,0,1);if(run<=0)return;
+  const head=ceilingBrush(ctx,[[px,py],[ex,ey]],CEILING_PALETTE.carbon,Math.max(.7,.9*scale),.8,seed,run);
+  if(head){ceilingWet(ctx,head.x,head.y,.8*scale,.5,CEILING_PALETTE.carbon);ceilingReed(ctx,head.x,head.y,head.angle,.7,CEILING_PALETTE.carbon);}
+  const hang=clamp((t-.7)/.3,0,1);if(hang>0)ceilingPlumbBob(ex,ey,12*scale*hang,hang,seed+5);
+}
+// The seked of an arrival: the run in fingers for a cubit's fall, from the arrival angle the simulation
+// measures against the circle's radius (90 is square, and a clean transfer can overshoot it a little, so
+// the angle is folded back about the square first). Capped where a line so shallow it barely crossed
+// would otherwise run to a number no scribe would have had a use for.
+function ceilingSeked(angle){return Math.min(99*4,Math.round(28/Math.tan(clamp(90-Math.abs(angle-90),1,90)*Math.PI/180)));}
+const CEILING_PALM=0x130aa,CEILING_FINGER=0x130ad,CEILING_NFR=0x13124;
+// The unit signs and nfr are set at the size of a numeral, where ceilingSign's four passes close a red
+// sign in the pale drawing line and the pale line is all that is left of it. These are flooded in their
+// own colour and closed in the one dark ink instead, the way the barque is.
+function ceilingUnitSign(cp,x,y,size,col,alpha){
+  ctx.save();ctx.font=plateFace(size,'hiero');ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+  ctx.globalAlpha=alpha*.85;ctx.strokeStyle=CEILING_PALETTE.ink;ctx.lineWidth=Math.max(1,size*.12);ctx.strokeText(String.fromCodePoint(cp),x,y);
+  ctx.globalAlpha=alpha;ctx.fillStyle=col;ctx.fillText(String.fromCodePoint(cp),x,y);ctx.restore();
+}
+// A measure written out: palms then fingers, each count followed by its own unit sign, and the whole
+// line centred on x. Returns nothing drawn when the run is nil — the caller marks that nfr instead.
+function ceilingMeasure(fingers,x,y,h,col,alpha){
+  const palms=Math.floor(fingers/4),rest=fingers%4,unit=h*1.15,gap=h*.28,parts=[];
+  if(palms)parts.push([palms,CEILING_PALM]);if(rest)parts.push([rest,CEILING_FINGER]);
+  const width=parts.reduce((w,[n])=>w+ceilingNumWidth(n,h)+gap*1.3+unit*.8+gap,-gap);
+  let left=x-width/2;
+  for(const [n,cp] of parts){
+    ceilingNumber(ctx,n,left,y-h*.5,h,col,false,alpha);left+=ceilingNumWidth(n,h)+gap*1.3;
+    ceilingUnitSign(cp,left+unit*.4,y,unit,col,alpha);left+=unit*.8+gap;
+  }
 }
 function ceilingDrawLandingPlumb(s,t){
-  const cx=sx(s.cx),cy=sy(s.cy),drop=Math.max(14,s.r*scale*.85),bx=cx,by=cy+drop*t,seed=((s.cx|0)*13+(s.cy|0)*17+5)|0;
-  // The line: a plumb dropped straight down from the centre of the circle the flight landed on — the
-  // wall's own vertical, in place of the atlas's swept arrival angle.
-  ceilingBrush(ctx,[[cx,cy],[bx,by]],CEILING_PALETTE.carbon,Math.max(.5,.7*scale),.22,seed,t);
-  if(t<1){ceilingWet(ctx,bx,by,.75*scale,.45,CEILING_PALETTE.carbon);return;}
-  ctx.save();ctx.globalAlpha=.3;ctx.fillStyle=CEILING_PALETTE.carbon;ctx.beginPath();
-  ctx.moveTo(bx,by+4.4*scale);ctx.lineTo(bx-2.5*scale,by-2.6*scale);ctx.lineTo(bx+2.5*scale,by-2.6*scale);ctx.closePath();ctx.fill();ctx.restore();
-  const n=Math.max(1,Math.round(s.angle||1)),h=Math.max(6,7*scale);
-  ceilingNumber(ctx,n,bx,by+8*scale,h,CEILING_PALETTE.carbon,true);
+  const px=sx(s.x),py=sy(s.y),cx=sx(s.cx),cy=sy(s.cy),rim=cy+(s.nr||s.r)*scale,seed=((s.cx|0)*13+(s.cy|0)*17+5)|0;
+  // The arrival's own line: the last reach of the flight into the contact, in the route's red ochre.
+  const back=26*scale,come=clamp(t/.35,0,1);
+  ceilingBrush(ctx,[[px-s.dx*back,py-s.dy*back],[px,py]],CEILING_PALETTE.red,Math.max(.8,1*scale),.6,seed+3,come);
+  // The plumb, hung from the foot of the hour-circle so it never crosses the body painted at its centre;
+  // the measure is written in a column beneath it, the way the wall writes everything it counts.
+  const hang=clamp((t-.25)/.35,0,1);if(hang<=0)return;
+  // One of the three opening circles carries its course's name under its foot, so the plumb hangs from
+  // below the name rather than through it.
+  const foot=ceilingPlumbBob(cx,rim+(s.caption?19:1.5)*scale,10*scale*hang,hang,seed);
+  const write=clamp((t-.55)/.45,0,1);if(write<=0)return;
+  const h=Math.max(9,11*scale),fingers=s.square?0:ceilingSeked(s.angle||1),y1=foot+h*(fingers?.85:1.25);
+  if(fingers)ceilingMeasure(fingers,cx,y1,h,CEILING_PALETTE.carbon,.92*write);
+  else ceilingUnitSign(CEILING_NFR,cx,y1,h*2.1,CEILING_PALETTE.red,write);
+  // The rubric: what the landing earned, in red, under its measure.
+  if(s.rubric&&s.gain>0)ceilingNumber(ctx,s.gain,cx,y1+h*(fingers?.8:1.25),h,CEILING_PALETTE.red,true,write);
 }
 function ceilingDrawSurveys(){
   if(!world||!world.surveys.length)return;
@@ -1411,6 +1467,14 @@ function ceilingDrawSurveys(){
     if(s.kind==='departure')ceilingDrawDepartureCord(s,t);else ceilingDrawLandingPlumb(s,t);
   }
   ctx.restore();
+}
+// The rubric is kept on the landing's own survey rather than floated up the margin, so it is written
+// once, where the landing was, and stays. Only a landing the wall surveyed can carry one — the opening
+// circle is never flown to — and any other gain falls back to the floater every era shares.
+function ceilingGainEntry(e){
+  const s=world&&world.surveys.at(-1);
+  if(!s||s.kind!=='landing'||s.birth!==world.time||s.cx!==e.n.x||s.cy!==e.n.y)return false;
+  s.rubric=true;s.gain=e.gain;s.caption=!!e.n.difficultyChoice;return true;
 }
 function ceilingDrawDecanCharts(){
   ctx.save();ctx.lineWidth=.7*scale;
@@ -1855,10 +1919,9 @@ function ceilingPointer(x,y,dir,size,alpha){
 // A score is set as a marginal note beside the play field rather than floating up over it: the
 // wall's own reading of the atlas's manicule-and-margin gesture (src/effects.js's floater loop),
 // clamped between hudBand() and footerBand() the same way. It keeps to the wall's small-caps hand
-// and its own red ochre rubric rather than the atlas's Fell italic. The digits themselves stay
-// Arabic — the era file's own rule is that a count read at a run stays Arabic and only a count the
-// wall makes for itself, like the hour, is written in strokes with ceilingNumber(), and a capture's
-// score is exactly a count read at a run — so no Egyptian numerals are used here.
+// and its own red ochre rubric rather than the atlas's Fell italic. A landing's gain no longer comes
+// this way — it is written in Egyptian numerals under that landing's own survey (ceilingGainEntry) —
+// so what still reaches the margin is the rest: a graze, and a gain the wall had no survey to set it by.
 function ceilingFloaterMark(f,alpha){
   const size=Math.max(10,12*scale),margin=Math.max(9,Math.min(15,W*.028)),hand=Math.max(4,5.2*scale);
   // The gutter line is settled once, on the first frame, by the same solver the atlas's own floaters use
@@ -2044,6 +2107,7 @@ function renderCeiling(dt,aim){
 const CEILING_SCALE=[146.83,174.61,196,220,261.63,293.66,349.23,392,440,523.25,587.33];
 defineHand('ceiling',{
   frame:renderCeiling,
+  gainEntry:ceilingGainEntry,
   ready:ceilingFaceReady,
   // In place of the quill: a muller grinding pigment on a stone slab. The grind is the same grain
   // audio.js's scratch() always drew, at a lower, rougher setting — wider, slower and pitched down
