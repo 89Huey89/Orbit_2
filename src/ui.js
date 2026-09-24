@@ -110,6 +110,8 @@ function event(type,e){
   if(type==='start'){audio.start();if(replayLog)replayLog.startedAt=world.time;return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
+    // What the orbit just left had been observed to is banked for the Journey (src/journey.js), and only there.
+    journeyObserve(world.player.launch.sweep/SWEEP_FULL);
     // The departure is surveyed on the orbit just left, and stays on the sheet as dried ink.
     recordDeparture(e);
     rings.push({kind:'blot',x:e.x,y:e.y,size:1.5+e.charge*1.5,age:0,life:1.5,alpha:.6,seed:ringSeed()});
@@ -302,7 +304,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),plateWords().goalRow);
+  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),plateWords().goalRow);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -461,6 +463,7 @@ function showEnd(){
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
   const fresh=preview?[]:[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
+  journeyCommit(true);
   const names=fresh.map(id=>UNLOCK_BY_ID[id]&&UNLOCK_BY_ID[id].name).filter(Boolean);
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
@@ -1368,6 +1371,7 @@ function resume(){
 function leaveRun(){
   if(!world||world.state!=='paused')return;
   if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+  journeyCommit(true);
   newWorld();resetToFrontispiece();render(0);
 }
 document.addEventListener('visibilitychange',()=>{
@@ -1376,6 +1380,7 @@ document.addEventListener('visibilitychange',()=>{
     // A run that is never finished still counts what it did: fold it in now, and keep anything it
     // unlocked for the colophon to name when the run does end.
     if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+    journeyCommit();
     if(audio.ctx)audio.ctx.suspend().catch(()=>{});
   }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
 });
