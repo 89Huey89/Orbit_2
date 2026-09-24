@@ -139,6 +139,14 @@ function placeInscription(g){
   const a=inscriptionAnchor(g),ax=sx(a.x)+inscriptionRest(g),ay=sy(a.y),rad=a.r*scale;
   const w=g.w*scale,h=g.h*scale,p=world.player,sway=inscriptionSway(g);
   const others=inscriptions.filter(q=>q!==g);
+  // The newest chapter title is asked where it stands now as well as where the register last saw it: it
+  // settles its line in the very frame the chart opens, the frame a landing's own note is written in, so
+  // the register can still hold the line it was only trying out a moment before.
+  // A plate that letters its own chapters (handFor('chapterReveal')) has no atlas title to keep off.
+  const title=typeof revealBand==='function'&&!handFor('chapterReveal')?revealBand():null;
+  // A landing's tally settles its line in the very frame a standing instruction may be re-set in, so the
+  // tallies already standing are asked directly too, for the same reason.
+  const standing=typeof tallies!=='undefined'?tallies.map(tallyBox).filter(Boolean):[];
   let best=null;
   // The cost of setting the note with its centre at a point: it is first slid onto the sheet, then judged
   // against the margin, the chart, the traveller and the other notes.
@@ -172,6 +180,8 @@ function placeInscription(g){
     // a line straight across a note, and the note was refused the page for want of anywhere better.
     const fixed=groundFixed(box,'note',2*scale);
     clash+=fixed;
+    if(title)clash+=groundSpan(box.left-2*scale,box.right+2*scale,title.left,title.right)*groundSpan(box.top-2*scale,box.bottom+2*scale,title.top,title.bottom)/100;
+    for(const tb of standing)clash+=groundSpan(box.left-2*scale,box.right+2*scale,tb.l,tb.r)*groundSpan(box.top-2*scale,box.bottom+2*scale,tb.top,tb.bottom)/100;
     cost+=Math.min(24,(groundTaken(box,'note',2*scale)-fixed)*.6);
     for(const q of others)clash+=inscriptionClash(box,sway,q);
     cost+=clash*40;

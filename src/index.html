@@ -444,6 +444,7 @@
     #end.end-compact .exlibris{width:84px;height:50px;margin-top:9px}
     #end.end-compact .finis{margin:8px 0 2px}
     #end.end-compact .finis canvas{width:28px;height:28px}
+    #end.end-compact .finis #end-miniature{width:min(190px,55vw);height:48px;margin-bottom:4px}
     #end.end-compact .end-plate-line{margin-top:9px}
     #end.end-compact #copy-score{padding:6px 12px}
     #end.end-compact .action-copy{font-size:17px;margin-bottom:8px}
@@ -451,6 +452,8 @@
     #end.end-compact #end-score{font-size:clamp(48px,13vw,68px);margin:7px 0 2px}
     #end.end-compact #end-score-roman{font-size:11px;margin:0 0 6px}
     #end.end-compact .score-frame{margin:6px 0 4px;padding:9px 26px 6px}
+    /* The miniature is the first thing a leaf too short for it gives up; the numbers and the way out stay. */
+    #end.end-tight .finis #end-miniature{display:none}
     #end.end-tight #end-daily{display:none}
     #end.end-tight #end-tip{font-size:12px}
     #end.end-tight #end-observations{margin:-9px 0 10px}
@@ -534,6 +537,9 @@
        word — FINIS on an ordinary run, LAVS DEO where the run itself earned a perfect chain. */
     .finis{display:flex;flex-direction:column;align-items:center;gap:1px;margin:12px 0 2px}
     .finis canvas{width:36px;height:36px}
+    /* The whole run in miniature (paintEndMiniature, review.js), laid on its side above the closing device. */
+    .finis #end-miniature{width:min(220px,60vw);height:62px;margin-bottom:6px}
+    .finis #end-miniature[hidden]{display:none}
     .finis span{font-family:var(--face-sc);font-size:10px;letter-spacing:.22em;color:var(--muted);opacity:.85}
     @media(max-height:530px) and (orientation:landscape){
       #game .catalogue-leaf{padding:8px 12px 8px;max-width:min(720px,100%)}
@@ -829,7 +835,7 @@
       <div id="end-observations"></div>
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
-      <div id="end-finis" class="finis atlas-only"><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
+      <div id="end-finis" class="finis atlas-only"><canvas id="end-miniature" aria-hidden="true" hidden></canvas><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="rock-lore rock-only" id="rock-lore-close">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>

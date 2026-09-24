@@ -539,20 +539,26 @@ function drawPlateCaptions(index,weight,place,style){
   // the cartouche down and out of the way, it sits in this same lower margin (see impressumTop()).
   const y=Math.min(place.y+1027*place.fit,H-footerBand()-frameBand()*.92-46*fit,impressumTop()-45*fit-8);
   ctx.save();ctx.globalAlpha=paper?weight*.72:weight;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  // The caption is cut into the print and carried with it, so each of its lines declares its ground
+  // (ground.js) as a 'legend': a planet's caption steps round it rather than printing through it, and a
+  // note would rather stand elsewhere — but, being the print's own whisper and not the chart's, it is never
+  // reason enough to leave a note unwritten, so it is not settled type. A print fading out under a page
+  // turn has stopped being read, and claims nothing. The three lines are one legend, owned together.
+  const legend=(text,size,dy)=>{ctx.fillText(text,x,y+dy);if(weight>.5)markGroundText('legend',x,y+dy,ctx.measureText(text).width,size,'left','legend');};
   ctx.font=plateFace(17*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.captionLatin},${paper?.62:.21})`;
   // A rhumb web is not a figure of anything, so it is captioned as a chart is: by the quarter of the
   // wind its rose is oriented from, and by the ruled scale rather than by a draughtsman.
-  ctx.fillText(figures
+  legend(figures
     ?['Luna · Cava et montes','Saturnus · Ansae','Sol · Obscuratio','Nebula · Profundum · post tempus tabulae'][index]
-    :['Rosa ventorum · Septentrio','Rosa ventorum · Oriens','Rosa ventorum · Meridies','Rosa ventorum · Occidens'][index],x,y);
+    :['Rosa ventorum · Septentrio','Rosa ventorum · Oriens','Rosa ventorum · Meridies','Rosa ventorum · Occidens'][index],17*fit,0);
   // FIG. rather than TAB.: this numbers the hand-drawn figure above the caption, not the plate itself —
   // the plate's own number is the running head's REGIO and the impressum's TAB., and the three used to
   // collide on the one abbreviation.
-  ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;ctx.fillText('FIG. '+numerals[index],x,y+25*fit);
+  ctx.font=plateFace(12*fit);ctx.fillStyle=`rgba(${ink.plates.captionTab},${paper?.5:.18})`;legend('FIG. '+numerals[index],12*fit,25*fit);
   ctx.font=plateFace(11*fit,'text','italic');ctx.fillStyle=`rgba(${ink.plates.figCaption},${paper?.55:.15})`;
-  ctx.fillText(figures
+  legend(figures
     ?['Fig. I · Luna, Galilæus delin. MDCIX','Fig. II · Saturnus, Galilæus delin. MDCX','Fig. III · Sol maculosus, Galilæus delin. MDCXII','Fig. IV · Iuppiter et Medicea sidera, Galilæus delin. MDCX'][index]
-    :'Scala leucarum · XXV ad partem',x,y+45*fit);
+    :'Scala leucarum · XXV ad partem',11*fit,45*fit);
   if(!figures){ctx.restore();return;}
   if(index===1){
     // Galileo's own 1610 sketch of Saturn: a disc with two attached "ears", set above the caption —
@@ -714,6 +720,8 @@ function drawAmbient(dt,aim){
 // of the widest name the atlas sets — so a short name reserved a stretch of plate it never came near. The
 // rule under the name is cut to the title now rather than to the sheet, and the whole assembly is only
 // ever as wide as the words in it.
+// The owner the current turn's title declares its ground under while it is still finding its line.
+const REVEAL_PENDING={pending:'title'};
 const REVEAL_TRACK=2,REVEAL_NAME_TRACK=1,REVEAL_HALF=34,REVEAL_TITLE_CAP=3,REVEAL_CARTOUCHE_H=78;
 let revealMeasure=null;
 // Every chapter title still standing on the sheet, oldest first. Each is struck once — same moment,
@@ -827,7 +835,15 @@ function revealAnchor(){
     // ink, cannot step aside afterward; type only passing through — a caption, the gloss, the impressum —
     // is worth stepping around at the same modest rate a planet's edge is.
     const band={left:W*.5-reach,right:W*.5+reach,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF};
-    cost+=groundFixed(band,'title',3)*8+(groundTaken(band,'title',3)-groundFixed(band,'title',3))*.4;
+    // The title excuses only its own ground — the line it is still trying out — and never an earlier
+    // chapter's title still standing on the sheet: excusing the whole kind let a new chapter's name be
+    // set straight over the last one's as the page turned.
+    // The notes themselves are read from the live list rather than the register: the landing that opens
+    // the chart is the same one that writes its note, and the title settles its line in that frame, before
+    // the note has declared any ground — so the register alone let the two choose the same line at once.
+    const excused=[REVEAL_PENDING,'note'];
+    cost+=groundFixed(band,excused,3)*8+(groundTaken(band,excused,3)-groundFixed(band,excused,3))*.4;
+    for(const q of inscriptions){const b=inscriptionBox(q);cost+=groundSpan(band.left-3,band.right+3,b.left,b.right)*groundSpan(band.top-3,band.bottom+3,b.top,b.bottom)/100*8;}
     if(cost<bestCost-.5){bestCost=cost;bestY=y;}
     if(cost===0)break;
   }
@@ -937,7 +953,7 @@ function drawChapterReveal(dt){
   // title whether or not the last one has left — sees both, and neither is a card laid over the other.
   for(const rt of revealTitles){
     const x=clamp(compact?W*.2:W*.5,Math.min(W*.5,inner+rt.reach),Math.max(W*.5,W-inner-rt.reach)),y=sy(rt.anchorY);
-    if(!compact)markGroundBox('title',{left:x-rt.half,right:x+rt.half,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF});
+    if(!compact)markGroundBox('title',{left:x-rt.half,right:x+rt.half,top:y-REVEAL_HALF,bottom:y+REVEAL_HALF},rt);
     drawRevealTitle(x,y,rt,rt.age);
   }
   // The current turn's own title, still finding its line before chartOpen() lets strikeReveal cut it into
@@ -947,7 +963,7 @@ function drawChapterReveal(dt){
   // a line any more — it is finished, not unclaimed, and must not be drawn a second time from scratch.
   if(!struck&&revealStruckIndex!==chapterReveal.index){
     const place=revealPoint(),m=revealMetrics();
-    if(!compact)markGroundBox('title',{left:place.x-m.half,right:place.x+m.half,top:place.y-REVEAL_HALF,bottom:place.y+REVEAL_HALF});
+    if(!compact)markGroundBox('title',{left:place.x-m.half,right:place.x+m.half,top:place.y-REVEAL_HALF,bottom:place.y+REVEAL_HALF},REVEAL_PENDING);
     drawRevealTitle(place.x,place.y,m,chapterReveal.age);
   }
   ctx.restore();
@@ -1047,16 +1063,19 @@ function plateRegistration(){
 // press. It lands a little before the cross-fade finishes, so the old plate fades away underneath it.
 function pageTurn(mix){const u=clamp(mix/.86,0,1);return u*u*(3-2*u);}
 // The leading edge of the arriving sheet: its shadow, its cut edge, and its own plate-mark.
-function drawSheetEdge(y,strength){
+function drawSheetEdge(y,strength,curl=0){
   if(y<=0||y>=H||strength<=.002)return;
   const colors=ink.frame,band=frameBand(),lift=Math.max(6,14*scale);
   const shade=ctx.createLinearGradient(0,y-lift,0,y);
   shade.addColorStop(0,`rgba(${ink.base.paperRgb},0)`);shade.addColorStop(1,`rgba(${ink.atmosphere.sheetEdgeShade},${.3*strength})`);
   ctx.fillStyle=shade;ctx.fillRect(0,y-lift,W,lift);
-  line(0,y,W,y,`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,Math.max(.7,scale*.9));
+  // The edge and its plate mark stop where the corner is turned back: past the fold there is no sheet.
+  line(0,y,W-curl,y,`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,Math.max(.7,scale*.9));
   const inset=band*.2;
   ctx.save();ctx.globalAlpha=strength;ctx.strokeStyle=colors.markEdge;ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(inset+.5,H);ctx.lineTo(inset+.5,y+inset+.5);ctx.lineTo(W-inset-.5,y+inset+.5);ctx.lineTo(W-inset-.5,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(inset+.5,H);ctx.lineTo(inset+.5,y+inset+.5);
+  if(curl>inset){ctx.lineTo(W-curl-inset,y+inset+.5);ctx.moveTo(W-inset-.5,y+curl+inset);}else ctx.lineTo(W-inset-.5,y+inset+.5);
+  ctx.lineTo(W-inset-.5,H);ctx.stroke();
   ctx.restore();
 }
 function grainSheet(){
@@ -1095,11 +1114,13 @@ function drawAtmosphere(dt=0,aim=null){
     // marginalia riding with it; the old plate stays where it lies and fades away underneath.
     const turn=pageTurn(mix),slide=(1-turn)*H;
     if(distance){drawCelestialScene(first,1-turn*.9);drawRegion(first,1-turn);}
-    ctx.save();ctx.beginPath();ctx.rect(0,slide,W,Math.max(0,H-slide));ctx.clip();
+    // Its leading corner is turned back as it rises (pageCurlSize, src/press.js), and cut from its clip.
+    const curl=pageCurlSize(turn);
+    ctx.save();pageTurnClip(slide,curl);ctx.clip();
     ctx.globalAlpha=(1-turn)*.7;ctx.fillStyle=ink.base.paper;ctx.fillRect(0,slide,W,Math.max(0,H-slide));ctx.globalAlpha=1;
     if(distance){drawCelestialScene(second,1);drawRegion(second,1);}
     ctx.restore();
-    drawSheetEdge(slide,1-turn);
+    drawSheetEdge(slide,1-turn,curl);drawPageCurl(slide,curl);
   }else if(distance){
     drawCelestialScene(first,1);if(mix>0)drawCelestialScene(second,mix);
     drawRegion(first,1-mix);if(mix>0)drawRegion(second,mix);

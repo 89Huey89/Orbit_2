@@ -1133,6 +1133,10 @@ function drawImpressum(){
   ctx.save();
   ctx.beginPath();ctx.rect(m.inner,m.inner,Math.max(0,W-m.inner*2),Math.max(0,H-m.inner*2));ctx.clip();
   drawPressCartouche(left-out.x,top-out.y,m.width+out.x*2,m.height+out.y*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70211);
+  // The house's device stands at the left of the rows that name it (place, press, plate, edition — the four
+  // a sheet carries from its first pull), inked with the press's own line (drawPressDevice, src/press.js).
+  {let head=0;for(const key of ['place','printer','plate','edition'])head+=impressumRowSize(key,m.size)*1.48;
+    drawPressDevice(left+m.width*.13,top+m.padY+head*.5,Math.min(44,head*1.02),ink.base.inkStrong,(onPaper()?.62:.46)*impressumRowProgress(rows[1]),70301);}
   ctx.textAlign='center';ctx.textBaseline='middle';
   let ry=top+m.padY;
   for(let i=0;i<rows.length;i++){

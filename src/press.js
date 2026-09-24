@@ -21,7 +21,17 @@ definePlate('press',{
 const PRESS_STRIKE=.08,PRESS_EMBOSS=.95,PRESS_BLOT=2.4;
 let pressWorld=null,pressStrike=Infinity,pressEmboss=[];
 function pressReset(){pressWorld=world;pressStrike=Infinity;pressEmboss=[];}
+// The press felt in the hand as well as seen: a short tick on a landing, a double one on a perfect, and one
+// longer pulse when the run is lost. Wherever the device can do it (Android; iOS offers no vibration to a
+// page), on every plate, and never under a stiller press (reduced motion), which asks for less of all this.
+const PRESS_HAPTICS={capture:10,perfect:[10,40,12],death:34};
+function pressHaptic(type,e){
+  if(reducedMotion||typeof navigator==='undefined'||typeof navigator.vibrate!=='function')return;
+  const pattern=type==='capture'?(e&&e.perfect&&!e.steep?PRESS_HAPTICS.perfect:PRESS_HAPTICS.capture):type==='death'?PRESS_HAPTICS.death:null;
+  if(pattern)try{navigator.vibrate(pattern);}catch(_){}
+}
 function pressEvent(type,e){
+  pressHaptic(type,e);
   if(typeof world==='undefined'||!world||!renaissanceAtlas())return;
   if(pressWorld!==world||type==='start')pressReset();
   if(type==='capture'&&e.perfect&&!e.steep){
@@ -38,6 +48,23 @@ function drawPress(dt){
   if(pressWorld!==world||!renaissanceAtlas())return;
   const running=world.state!=='paused';
   if(running)pressStrike+=dt;
+  // Blind embossing: every ring a landing was made on keeps the bite of the press after its ink has dried
+  // back, an uninked relief a hair outside the ring — lit on the upper left, shadowed on the lower right —
+  // so the route taken reads on the sheet as a line of pressed circles even where the eye has lost the ink.
+  // Two plain arcs a ring rather than the burin's own cut: it is a dent, not a line, and there may be a
+  // dozen on the sheet at once.
+  if(!plainPlate()){
+    const paper=onPaper(),off=.7*scale,lw=Math.max(.6,.9*scale),la=paper?.34:.06,da=paper?.14:.32;
+    ctx.save();ctx.lineWidth=lw;
+    for(const n of world.nodes){
+      if(!n.visited)continue;
+      const x=sx(n.x),y=sy(n.y),r=n.r*scale+2.2*scale;
+      if(y<-r-4||y>H+r+4)continue;
+      ctx.strokeStyle=`rgba(${ink.press.embossLight},${la})`;ctx.beginPath();ctx.arc(x-off,y-off,r,Math.PI*.55,Math.PI*1.95);ctx.stroke();
+      ctx.strokeStyle=`rgba(${ink.press.embossDark},${da})`;ctx.beginPath();ctx.arc(x+off,y+off,r,-Math.PI*.45,Math.PI*.95);ctx.stroke();
+    }
+    ctx.restore();
+  }
   for(let i=pressEmboss.length-1;i>=0;i--){
     const m=pressEmboss[i];if(running)m.age+=dt;
     if(m.age>=PRESS_EMBOSS){pressEmboss.splice(i,1);continue;}
@@ -192,4 +219,98 @@ function drawPressCartouche(x,y,w,h,rgb,alpha,weight,seed){
     pressCartouches.set(key,c);
   }
   ctx.drawImage(c,x-pad,y-pad,Math.round(w)+pad*2,Math.round(h)+pad*2);
+}
+// ---------- The printer's device ----------
+// The house's own mark, set beside its name in the imprint the way every press of the century signed its
+// sheets: an armillary sphere on its stand — the atlas's whole subject in one instrument — within an oval
+// of two rules, stars pricked in the field around it and a spray of laurel crossed beneath. (cx,cy) is its
+// centre and h its height; baked once per size and ink like the cartouche.
+const pressDevices=new Map();
+function paintPressDevice(g,w,h,rgb,alpha,seed){
+  const cx=w*.5,cy=h*.46,rx=w*.46,ry=h*.42,wt=Math.max(.45,h/60);
+  // The oval, cut twice: the outer rule full, the inner a hair within it and lighter.
+  g.save();g.translate(cx,cy);
+  burinArc(g,0,0,rx,0,TAU,rgb,alpha,wt*1.1,seed+1,{flatten:ry/rx,skips:0,wobble:.15,segments:36});
+  burinArc(g,0,0,rx*.88,0,TAU,rgb,alpha*.55,wt*.6,seed+3,{flatten:ry/rx,skips:2,wobble:.12,segments:32});
+  // The sphere: its meridian ring, the equator and the ecliptic as ellipses across it, the axis through
+  // the poles, all raised a little so the stand has room beneath.
+  const sy=-ry*.12,sr=rx*.5;
+  burinArc(g,0,sy,sr,0,TAU,rgb,alpha,wt,seed+5,{skips:0,wobble:.1,segments:24});
+  burinArc(g,0,sy,sr,0,TAU,rgb,alpha*.8,wt*.8,seed+7,{flatten:.3,skips:0,wobble:.1,segments:24});
+  g.save();g.translate(0,sy);g.rotate(-.42);
+  burinArc(g,0,0,sr,0,TAU,rgb,alpha*.8,wt*.8,seed+9,{flatten:.32,skips:1,wobble:.1,segments:24});
+  g.restore();
+  g.save();g.translate(0,sy);g.rotate(.26);
+  burinSegment(g,0,-sr*1.3,0,sr*1.3,rgb,alpha*.9,wt*.8,seed+11,{segments:4,hair:false,wobble:.1});
+  g.restore();
+  // The earth at the centre, and the stand: a short pillar on a foot.
+  g.fillStyle=`rgba(${rgb},${alpha*.85})`;g.beginPath();g.arc(0,sy,Math.max(.8,sr*.16),0,TAU);g.fill();
+  burinSegment(g,0,sy+sr,0,ry*.62,rgb,alpha,wt,seed+13,{segments:3,hair:false,wobble:.1});
+  burinSegment(g,-rx*.26,ry*.64,rx*.26,ry*.64,rgb,alpha,wt,seed+17,{segments:3,hair:false,wobble:.1});
+  // The laurel crossed beneath the foot: two stems curving up the oval, a few leaves on each.
+  for(const side of [-1,1]){
+    // A stem from under the foot sweeping up the inside of the oval, laid as a quadratic, and four leaves
+    // set along it turning outward.
+    const x0=side*rx*.06,y0=ry*.8,x1=side*rx*.66,y1=ry*.12,qx=side*rx*.62,qy=ry*.78;
+    g.save();g.strokeStyle=`rgba(${rgb},${alpha*.7})`;g.lineWidth=wt*.6;g.lineCap='round';
+    g.beginPath();g.moveTo(x0,y0);g.quadraticCurveTo(qx,qy,x1,y1);g.stroke();g.restore();
+    for(let i=1;i<=4;i++){
+      const t=i/5,u=1-t,lx=u*u*x0+2*u*t*qx+t*t*x1,ly=u*u*y0+2*u*t*qy+t*t*y1;
+      const tx=2*u*(qx-x0)+2*t*(x1-qx),ty=2*u*(qy-y0)+2*t*(y1-qy),a=Math.atan2(ty,tx);
+      g.fillStyle=`rgba(${rgb},${alpha*.55})`;g.beginPath();g.ellipse(lx+Math.cos(a-side*1.2)*w*.035,ly+Math.sin(a-side*1.2)*w*.035,Math.max(.7,w*.05),Math.max(.3,w*.02),a-side*.7,0,TAU);g.fill();
+    }
+  }
+  // Stars pricked in the field above the sphere.
+  const rng=seeded((seed^0x5f17)>>>0||1);
+  for(let i=0;i<7;i++){
+    const a=-Math.PI*.95+i/6*Math.PI*.9,d=rx*(.72+rng()*.08);
+    g.fillStyle=`rgba(${rgb},${alpha*(.5+rng()*.3)})`;g.beginPath();g.arc(Math.cos(a)*d,Math.sin(a)*d*ry/rx*.9+sy*.3,Math.max(.4,w*.018),0,TAU);g.fill();
+  }
+  g.restore();
+}
+function drawPressDevice(cx,cy,h,rgb,alpha,seed){
+  if(!(h>8)||!(alpha>0))return;
+  const w=Math.round(h*.76),hh=Math.round(h),pad=2,key=[w,hh,rgb,seed,DPR].join('|');
+  let c=pressDevices.get(key);
+  if(!c){
+    c=makeCanvas(Math.ceil((w+pad*2)*DPR),Math.ceil((hh+pad*2)*DPR));
+    const g=c.getContext('2d');g.scale(DPR,DPR);g.translate(pad,pad);
+    paintPressDevice(g,w,hh,rgb,1,seed);
+    if(pressDevices.size>6)pressDevices.delete(pressDevices.keys().next().value);
+    pressDevices.set(key,c);
+  }
+  ctx.save();ctx.globalAlpha*=alpha;ctx.drawImage(c,cx-w/2-pad,cy-hh/2-pad,w+pad*2,hh+pad*2);ctx.restore();
+}
+// ---------- The page turn's lifted corner ----------
+// The next chapter's sheet is drawn up from under the frame (drawAtmosphere, celestial.js). A sheet lifted
+// by a hand is never flat: its leading corner turns back on itself, shows its underside, and throws a
+// short shadow on the face beneath, and the fold flattens as the sheet is laid down. `turn` runs 0 to 1
+// over the turn; the corner is largest as the sheet first rises and gone by the time it lies.
+function pageCurlSize(turn){return renaissanceAtlas()?Math.min(W*.2,64*scale)*Math.pow(clamp(1-turn,0,1),.9):0;}
+// The rising sheet's clip, with the lifted corner cut out of it so the plate beneath shows there.
+function pageTurnClip(slide,c){
+  ctx.beginPath();
+  if(!(c>1)){ctx.rect(0,slide,W,Math.max(0,H-slide));return;}
+  ctx.moveTo(0,slide);ctx.lineTo(W-c,slide);ctx.lineTo(W,slide+c);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+}
+// The turned-back flap itself: the corner reflected across the fold, lying on the sheet's face.
+function drawPageCurl(slide,c){
+  if(!(c>1)||slide>=H)return;
+  const ax=W-c,ay=slide,bx=W,by=slide+c,tx=W-c,ty=slide+c,paper=onPaper();
+  ctx.save();
+  // The shadow the flap throws on the face below it, drawn with the flap and offset away from the fold.
+  ctx.shadowColor=`rgba(${ink.atmosphere.sheetEdgeShade},${paper?.28:.5})`;ctx.shadowBlur=7*scale;ctx.shadowOffsetX=-2*scale;ctx.shadowOffsetY=2*scale;
+  // The underside: the sheet's own stock, a shade lighter at the fold where it catches the light and
+  // darker toward the tip that curls away from it.
+  const grad=ctx.createLinearGradient((ax+bx)/2,(ay+by)/2,tx,ty);
+  grad.addColorStop(0,`rgba(${ink.base.paperRgb},1)`);grad.addColorStop(.35,`rgba(${mixRgb(ink.base.paperRgb.split(',').map(Number),paper?[255,251,238]:[70,82,88],.35)},1)`);
+  grad.addColorStop(1,`rgba(${mixRgb(ink.base.paperRgb.split(',').map(Number),paper?[150,120,84]:[4,8,14],.3)},1)`);
+  ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.lineTo(tx,ty);ctx.closePath();ctx.fill();
+  ctx.shadowColor='transparent';
+  // The fold, and the flap's two cut edges, in the frame's own hairline.
+  ctx.strokeStyle=`rgba(${ink.base.inkStrong},${paper?.5:.4})`;ctx.lineWidth=Math.max(.6,scale*.8);
+  ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(tx,ty);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.strokeStyle=`rgba(${ink.base.inkStrong},${paper?.22:.18})`;ctx.lineWidth=Math.max(.4,scale*.5);
+  ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.restore();
 }

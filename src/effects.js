@@ -1443,6 +1443,10 @@ function floaterLine(f,left,h,kind){
     const disc=(x,y,rad)=>{if(x+rad>l&&x-rad<r)boxes.push([y-rad,y+rad]);};
     for(const n of world.nodes)disc(sx(n.x),sy(n.y),(n.cap||n.r)*scale+2);
     for(const hz of world.hazards)disc(sx(hz.x),sy(hz.y),hz.r*scale+6);
+    // The notes are asked directly as well as through the register: a standing instruction is re-set at
+    // the end of a frame, after this frame's lettering has declared its ground, so the register can be one
+    // note short at exactly the moment a tally is choosing its line.
+    for(const q of inscriptions){const b=inscriptionBox(q);if(b.right>l&&b.left<r)boxes.push([b.top,b.bottom]);}
   }
   const clash=y=>{let worst=0;for(const [t,b] of boxes){const o=Math.min(y+h*.55,b)-Math.max(y-h*.55,t);if(o>worst)worst=o;}return worst;};
   const home=clamp(sy(f.y),top,bottom);

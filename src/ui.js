@@ -447,6 +447,9 @@ function showEnd(){
   // The one page a period book always closes in Latin: FINIS on an ordinary run, LAVS DEO where the
   // run itself earned a perfect chain (the same three-in-a-row the 'Tres perfecti' observation marks).
   $('end-finis-word').textContent=world.observed.has('perfectThree')?'LAVS DEO':'FINIS';paintFinisDevice();
+  // The run in miniature is rebuilt from its log, which takes a moment on a long run, so it is struck two
+  // frames after the leaf is laid rather than holding the leaf back for it; the fit is measured again once it stands.
+  {const m=$('end-miniature');if(m)m.hidden=!(eraId()===0&&!plainPlate());requestAnimationFrame(()=>requestAnimationFrame(()=>{if(deathShown){paintEndMiniature();syncEndFit();}}));}
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
