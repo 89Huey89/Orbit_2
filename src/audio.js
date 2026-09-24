@@ -173,6 +173,13 @@ class OrbitAudio {
     if(own){own(this,row,perfect);return;}
     const notes=[220,261.63,293.66,349.23,392,440,523.25];const n=notes[Math.floor(row)%notes.length];this.tone(n,.58,0,.5);this.tone(n*2,.4,.025,.15);if(perfect){this.tone(n*1.5,.7,.08,.2);this.tone(n*2,.6,.14,.12);}this.brush(3500,.14);
   }
+  // A graze rings a single bright tone; an era with its own instrument registers a graze painter to
+  // replace it.
+  graze(){
+    const own=typeof handFor==='function'&&handFor('graze');
+    if(own){own(this);return;}
+    this.tone(698.46,.28,0,.16);
+  }
   // The atlas dies to a dying chord; an era with its own instrument registers a death painter to
   // replace it.
   death(){

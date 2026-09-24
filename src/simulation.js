@@ -4,6 +4,8 @@
    This file is what scripts/verify.mjs runs in isolation, so it must not reference the DOM. */
 // BEGIN SIMULATION
 const TAU = Math.PI * 2;
+// Shared so a caller that never passes chasms (every plate but era I) allocates nothing new per call.
+const EMPTY_ARRAY = [];
 const BASE_SPEED = 150, MAX_SPEED = 360, STAR_GAIN = 90;
 // Two thirds of a turn is what it takes to have looked at a body rather than merely arrived at it: the
 // arc an orbit must hold before the phenomenon is documented. Everything the journey counts as knowledge
@@ -48,6 +50,16 @@ const RELEASE_GRACE = .012, RELEASE_GRACE_STEP = 1/240;
 const INK_REACH = 2000;
 const INK_ORBIT_GAIN = 0.13, INK_SLING_GAIN = 0.85;
 const INK_CAPTURE_GAIN = 0.05, INK_PERFECT_GAIN = 0.12;
+// Era I's own relighting rule (see relightOn below): skimming a Flare's outer field, in flight and
+// clear of its lethal core, refills the same ochre charge at this fixed rate — faster than holding an
+// ordinary orbit (INK_ORBIT_GAIN), since the whole point is a real, risk-priced alternative to one, but
+// well short of a slingshot star's lap (INK_SLING_GAIN), which is the one full-charge guarantee the
+// chart already promises. At this rate a run held continuously in the band refills from empty in about
+// 2.2 seconds — long enough that dipping in still costs the flight time it takes, never nothing.
+const RELIGHT_RATE = 0.45;
+// Relight events are throttled to this many seconds apart so a renderer or sound hook can react to
+// them without being driven at the simulation's own 120 Hz tick rate.
+const RELIGHT_EMIT_PERIOD = 0.25;
 // A skipped orbit also buys a head start on the flood: the floor is allowed to trail this far
 // further behind the camera's bottom edge than its ordinary 25-unit slack, so a traveller who
 // outran the pursuit sees it, rather than finding it re-painted at the sill on the very next frame.
@@ -75,6 +87,14 @@ const HAZARD_CLOSES_ROUTE = 12;
 // arrive after the flares, so each of the three fields is met on its own before any two are: the
 // vortex that draws in, the sunspot that pushes off, and last the gust that simply blows.
 const WIND_FROM_ROW = 20;
+// Era I's own hazard: a long crack across the cave wall, lethal to a flight that crosses it in free
+// flight and to nothing else — generation keeps it clear of every orbit, so it is never a danger to a
+// traveller holding one. The row it may first appear on, and thereafter the 3-4 row cadence it keeps
+// (a period-7 pattern of gaps 3,4,3,4,... starting from CHASM_FROM_ROW), the length and half-width
+// it is cut at, how far it may tilt off the horizontal, and the clearance every check below holds it
+// to beyond the bare geometry it is testing.
+const CHASM_FROM_ROW = 5, CHASM_LEN_MIN = 220, CHASM_LEN_MAX = 420, CHASM_HALFW_MIN = 9, CHASM_HALFW_MAX = 17;
+const CHASM_TILT_MAX = 35 * Math.PI / 180, CHASM_MARGIN = 20;
 // How far along a course the pen will still set it down. At the opening pace the whole transfer is
 // drawn and nothing is hidden; as the chart's speed is earned the far part of a fast crossing is
 // left unset, so a run flown at full pace commits to the last of it unseen. The release marks and
@@ -105,6 +125,50 @@ function segmentCircle(ax, ay, bx, by, cx, cy, radius) {
   if (d < 0) return null;
   const t = (-b - Math.sqrt(d)) / (2 * a);
   return t >= 0 && t <= 1 ? t : null;
+}
+// The chasm is a capsule — a segment (x0,y0)-(x1,y1) with a half-width — rather than a circle, so its
+// swept collision is a moving point against a fixed segment instead of against a fixed centre. The
+// distance from a point moving along a straight line to a fixed segment is a convex function of how
+// far along that line the point has travelled, so the earliest crossing of the capsule's half-width is
+// found the same way a root is bisected either side of the function's one minimum, rather than solved
+// in closed form as the circle is. Returns a fraction of the (ax,ay)-(bx,by) step in [0,1], or null.
+function segmentCapsuleTime(ax, ay, bx, by, x0, y0, x1, y1, w) {
+  const distAt = t => pointSegment(lerp(ax, bx, t), lerp(ay, by, t), x0, y0, x1, y1);
+  const d0 = distAt(0);
+  if (d0 <= w) return 0;
+  const d1 = distAt(1);
+  let tMin = 1, dMin = d1;
+  if (d1 > w) {
+    // Convex, so its one minimum is bracketed by ternary search; if even the minimum clears the
+    // capsule's width the step never enters it at all.
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 30; i++) {
+      const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+      if (distAt(m1) < distAt(m2)) hi = m2; else lo = m1;
+    }
+    tMin = (lo + hi) / 2; dMin = distAt(tMin);
+    if (dMin > w) return null;
+  }
+  // Bisect the falling side, from the known-outside start to the known-inside (or minimum) point.
+  let lo = 0, hi = tMin;
+  for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (distAt(mid) > w) lo = mid; else hi = mid; }
+  return hi;
+}
+// Minimum distance between two segments: 0 where they cross, and otherwise always achieved at one
+// endpoint of one segment against the other, which is what lets four point-to-segment checks answer
+// it exactly rather than needing a general two-segment solver.
+function segmentsCross(ax, ay, bx, by, cx, cy, dx, dy) {
+  const cr = (px, py, qx, qy) => px * qy - py * qx;
+  const d1 = cr(dx - cx, dy - cy, ax - cx, ay - cy), d2 = cr(dx - cx, dy - cy, bx - cx, by - cy);
+  const d3 = cr(bx - ax, by - ay, cx - ax, cy - ay), d4 = cr(bx - ax, by - ay, dx - ax, dy - ay);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+function segmentSegmentDist(ax, ay, bx, by, cx, cy, dx, dy) {
+  if (segmentsCross(ax, ay, bx, by, cx, cy, dx, dy)) return 0;
+  return Math.min(
+    pointSegment(ax, ay, cx, cy, dx, dy), pointSegment(bx, by, cx, cy, dx, dy),
+    pointSegment(cx, cy, ax, ay, bx, by), pointSegment(dx, dy, ax, ay, bx, by)
+  );
 }
 function tangentPaths(a, b) {
   const angle = Math.atan2(b.y - a.y, b.x - a.x);
@@ -296,8 +360,11 @@ function applyNewtonGravity(p,nodes,dt,time) {
   p.vx+=ax*dt;p.vy+=ay*dt;
   return turn;
 }
-// Real flight and prediction share the same steering and swept contacts.
-function flightStep(p,nodes,hazards,time,dt,width,windowMult=1,newtonOn=false) {
+// Real flight and prediction share the same steering and swept contacts. chasms is era I's own
+// addition — a capsule that carries no field of its own (no entry in HAZARD_KINDS, nothing in
+// bendVelocity), so every other plate, which never populates world.chasms, sees no change at all:
+// the parameter defaults to an empty array and the loop below then does nothing.
+function flightStep(p,nodes,hazards,time,dt,width,windowMult=1,newtonOn=false,chasms=EMPTY_ARRAY) {
   let turn=bendVelocity(p,hazards,dt);
   if(newtonOn)turn+=applyNewtonGravity(p,nodes,dt,time);
   const x=p.x,y=p.y,bx=x+p.vx*dt,by=y+p.vy*dt;
@@ -311,6 +378,10 @@ function flightStep(p,nodes,hazards,time,dt,width,windowMult=1,newtonOn=false) {
     if(!hazardKind(h).lethal)continue;
     const t=segmentCircle(x,y,bx,by,h.x,h.y,hazardCore(h)+3);
     if(t!==null&&t*dt<=first){first=t*dt;hit={kind:'hazard',h};}
+  }
+  for(const c of chasms){
+    const t=segmentCapsuleTime(x,y,bx,by,c.x0,c.y0,c.x1,c.y1,c.w);
+    if(t!==null&&t*dt<=first){first=t*dt;hit={kind:'chasm',c};}
   }
   const boundary=width/2+16;
   if(Math.abs(bx)>boundary){
@@ -378,15 +449,23 @@ class OrbitWorld {
   // same two points). Off by default, so an existing fixture, a fixed layout or an ordinary run reads
   // exactly as it always has; the daily plate is the one course dealt with it on, since a showcase of
   // its own is the whole point of a plate everyone is handed the same seed for.
+  // chasmsOn is era I's own switch — see PLATE_STYLES.rock.can.chasms in src/plates.js and newWorld()
+  // in src/ui.js. Off by default, exactly like offerDifficulty/varyOpening/newtonOn, so every existing
+  // fixture, replay and plate keeps generating no chasms at all.
+  // relightOn is gated exactly the same way, via PLATE_STYLES.rock.can.relight: off by default, so it
+  // perturbs nothing generated for a seed (there is no separate random stream to keep isolated, since
+  // the rule reads only the hazards and player state the rest of the tick already produced) and every
+  // atlas, Era II and daily route flies on with p.ink untouched by any Flare it passes.
   // goalRow is the one thing an endless atlas has no use for and a plate with a real finish line
   // does: 0 (every existing caller's default) keeps a run endless exactly as it always was, and a
   // plate that wants a win names the row it is won at, appended last so no existing positional call
   // has to change to keep meaning what it always meant.
-  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false, goalRow = 0) {
-    this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening; this.newtonOn = !!newtonOn;
+  constructor(seed, width = 440, height = 860, emit = () => {}, offerDifficulty = false, varyOpening = false, newtonOn = false, chasmsOn = false, relightOn = false, goalRow = 0) {
+    this.random = seeded(seed); this.seed = seed; this.emit = emit; this.varyOpening = !!varyOpening; this.newtonOn = !!newtonOn; this.chasmsOn = !!chasmsOn;
+    this.relightOn = !!relightOn; this.relightCooldown = 0;
     this.width = width; this.height = height; this.time = 0; this.elapsed = 0; this.goalRow = goalRow; this.won = false;
     this.state = 'ready'; this.cameraY = -height * .62; this.floorY = height * .30 - 16;
-    this.nodes = []; this.hazards = []; this.nebulas = []; this.row = 0; this.serial = 0;
+    this.nodes = []; this.hazards = []; this.nebulas = []; this.chasms = []; this.row = 0; this.serial = 0;
     this.constellations=[];this.constellationsCompleted=0;this.darknessGrace=0;this.darknessLead=0;
     // Figure order and nebula placement use their own streams so the main course
     // generation for a seed is unaffected by them.
@@ -399,6 +478,10 @@ class OrbitWorld {
     this.catalogueOrder=this.varyOpening?deal(CONSTELLATIONS.map((_,i)=>i))
       :[...deal(CONSTELLATIONS.map((_,i)=>i).slice(4)),...deal(CONSTELLATIONS.map((_,i)=>i).slice(0,4))];
     this.nebulaRandom=seeded((seed*40503>>>0)^0x4e65);this.windRandom=seeded((seed*22699>>>0)^0x7715);this.flarePhase=0;
+    // A chasm's own stream, exactly as isolated as the wind's and the nebula's: whether or not
+    // chasmsOn is set, nothing else generated for this seed ever reads from it or is perturbed by it,
+    // so the atlas deals the identical sequence of nodes and hazards whether chasms are on or off.
+    this.chasmRandom=seeded((seed*72347>>>0)^0x1a3f);
     this.perfectStreak=0;this.recklessStreak=0;this.observations=[];this.observed=new Set();
     this.score = 0; this.captures = 0; this.perfects = 0; this.squares = 0; this.combo = 1; this.maxCombo = 1; this.progress = 0;
     this.topY = 0; this.lastCaptureAt = 0; this.shake = 0; this.darknessMult = 1; this.inkMult = 1; this.perfectMult = 1; this.capMult = 1;
@@ -638,6 +721,49 @@ class OrbitWorld {
         this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(90,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
       }
     }
+    // A chasm, era I's own addition, drawn from its own stream exactly as the wind and the cloud are
+    // (this.chasmRandom): whether or not chasmsOn is set, nothing else generated for this seed ever
+    // reads from that stream, so the atlas deals the identical sequence of nodes and hazards whether
+    // chasms are on or off. Placed the way a lethal hazard is — across the crossing between the last
+    // two main nodes — but checked against its own capsule geometry rather than a circle's, and
+    // against a stricter rule than a hazard's own "may close one side": it must clear every node's
+    // capture band and orbit outright, with margin, since an orbit must never be able to touch one at
+    // all. A chasm this long can reach most of the way across the sheet, so what stands between two
+    // nodes is not one idealised tangent but the whole fan of headings a real departure can leave on —
+    // any point on the orbit just released from, toward anywhere on the target's own capture rim — and
+    // it is that fan, sampled rather than solved for in closed form, that a chasm may still narrow but
+    // must leave most of open, so the pilot that only ever asks "is there a landing near where I am
+    // already heading" always has one to find within a lap. At least one exact smooth tangent, in
+    // either winding, is also held to the same clearance, since that is the one heading a perfect
+    // transfer is flown on and the guide promises a tick for.
+    if (this.chasmsOn && k >= CHASM_FROM_ROW && (k%7===5 || k%7===1)) {
+      const gale=this.chasmRandom,smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
+      // A wide-open fan, not a bare majority: the fan is a proxy for how quickly a tangent-seeking
+      // orbit actually finds a landing, and a chasm that only narrowly clears this bar still costs a
+      // real flight extra time hunting for the open slice of its sweep — time the rising dark is
+      // still counting. Tuned against taskChasmRoute60 in scripts/verify.mjs, which flies all 60
+      // seeds to row 48 with the flag on and treats any failure as a fairness bug, not chance.
+      const FAN=24,FAN_MIN_OPEN=Math.ceil(FAN*.82);
+      let chosen=null;
+      for (let tries=0;tries<60&&!chosen;tries++) {
+        const len=CHASM_LEN_MIN+gale()*(CHASM_LEN_MAX-CHASM_LEN_MIN);
+        const halfW=CHASM_HALFW_MIN+gale()*(CHASM_HALFW_MAX-CHASM_HALFW_MIN);
+        const tilt=(gale()-.5)*2*CHASM_TILT_MAX;
+        const cx=(gale()-.5)*Math.min(this.width-72,380),cy=(prev.y+n.y)/2+(gale()-.5)*55;
+        const hx=Math.cos(tilt)*len/2,hy=Math.sin(tilt)*len/2;
+        const x0=cx-hx,y0=cy-hy,x1=cx+hx,y1=cy+hy,clear=halfW+CHASM_MARGIN;
+        if(!this.nodes.every(q=>pointSegment(q.baseX,q.baseY,x0,y0,x1,y1)>=q.cap+q.amp+halfW+CHASM_MARGIN))continue;
+        if(!smooth.some(p=>segmentSegmentDist(p.x,p.y,p.bx,p.by,x0,y0,x1,y1)>=clear))continue;
+        let open=0;
+        for(let i=0;i<FAN;i++){
+          const a=i/FAN*TAU,tx=n.x+Math.cos(a)*n.cap*.85,ty=n.y+Math.sin(a)*n.cap*.85;
+          if(segmentSegmentDist(prev.x,prev.y,tx,ty,x0,y0,x1,y1)>=clear)open++;
+        }
+        if(open<FAN_MIN_OPEN)continue;
+        chosen={x0,y0,x1,y1,w:halfW};
+      }
+      if(chosen)this.chasms.push({...chosen,row:k,seed:Math.floor(gale()*1e8),phase:gale()*TAU});
+    }
   }
   catalogueFor(region) { return this.varyOpening?this.catalogueOrder[region%CONSTELLATIONS.length]:region<4?region:this.catalogueOrder[(region-4)%CONSTELLATIONS.length]; }
   // A named feat, reported and recorded once per run.
@@ -819,6 +945,22 @@ class OrbitWorld {
     const clear=hazardCore(h)+8;if(d<clear){p.x=h.x+nx*clear;p.y=h.y+ny*clear;}
     this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
   }
+  // A chasm's fall is a lethal hazard core's fall in every way the shield cares about — the same
+  // charge, the same reflection off the surface actually touched, the same clearance — except that
+  // what was touched is the nearest point on the capsule's own segment rather than a circle's centre.
+  chasmHit(c) {
+    if(this.state!=='playing')return;
+    const p=this.player;
+    if(!p.shielded){this.die('FELL INTO THE CHASM');return;}
+    p.shielded=false;
+    const dx=c.x1-c.x0,dy=c.y1-c.y0,len2=dx*dx+dy*dy;
+    const t=len2?clamp(((p.x-c.x0)*dx+(p.y-c.y0)*dy)/len2,0,1):0;
+    const nx0=c.x0+t*dx,ny0=c.y0+t*dy;
+    const nx1=p.x-nx0,ny1=p.y-ny0,d=Math.hypot(nx1,ny1)||1,nx=nx1/d,ny=ny1/d,dot=p.vx*nx+p.vy*ny;
+    p.vx-=2*dot*nx;p.vy-=2*dot*ny;
+    const clear=c.w+8;if(d<clear){p.x=nx0+nx*clear;p.y=ny0+ny*clear;}
+    this.shake=3;this.emit('shieldBreak',{x:p.x,y:p.y});
+  }
   // A carried dawn charge is spent on the rising dark itself: it consumes itself, drives the flood back
   // down the sheet and holds it off for a reprieve, instead of ending the run where it stood. The drop is
   // taken from the traveller rather than from the waterline, so the charge is worth the same whether the
@@ -858,6 +1000,10 @@ class OrbitWorld {
     }
     for(const h of this.hazards){const edge=this.inboard(h.r);h.x=clamp(h.x,-edge,edge);}
     for(const g of this.nebulas){const edge=this.inboard(g.r);g.x=clamp(g.x,-edge,edge);}
+    // Each end of the capsule is pulled inboard on its own, exactly as a circular hazard's single
+    // centre is: a narrower sheet may shorten a chasm lying close to the old edge, never leave it
+    // stranded outside the new one.
+    for(const c of this.chasms){const edge=this.inboard(c.w);c.x0=clamp(c.x0,-edge,edge);c.x1=clamp(c.x1,-edge,edge);}
     if(this.player.node)this.positionPlayer();
     this.ensureAhead();
   }
@@ -897,15 +1043,33 @@ class OrbitWorld {
       let remaining=dt,time=this.time-dt;
       while(remaining>1e-9&&this.state==='playing'&&!p.node){
         const step=(this.hazards.length||this.newtonOn)?Math.min(FLIGHT_STEP,remaining):remaining,ax=p.x,ay=p.y;
-        const result=flightStep(p,this.nodes,this.hazards,time,step,this.width,this.perfectMult,this.newtonOn);
+        const result=flightStep(p,this.nodes,this.hazards,time,step,this.width,this.perfectMult,this.newtonOn,this.chasms);
         p.flightTime+=result.dt;remaining-=step;time+=step;
         // The line costs ink by its length. What the step drew is spent before anything else is
         // settled, but the landing is settled first: a transfer that arrives on the last drop stands.
         p.ink=Math.max(0,p.ink-this.inkCost(Math.hypot(p.x-ax,p.y-ay)));
         if(result.hit?.kind==='hazard')this.hazardHit(result.hit.h);
+        else if(result.hit?.kind==='chasm')this.chasmHit(result.hit.c);
         else if(result.hit?.kind==='edge')this.edgeHit();
         else if(result.hit?.kind==='node')this.capture(result.hit.n,result.hit.contact);
         if(this.state==='playing'&&!p.node&&p.ink<=0)this.die('THE NIB RAN DRY');
+        // Relighting at the Flare (era I only, see relightOn above): inside the field but clear of the
+        // core, still in flight, the charge tops back up — the core above still kills exactly as it did
+        // the tick before this rule existed. Only one Flare is credited per tick (break, below) so two
+        // fields overlapping can never stack their refill; which one is irrelevant since the rate is the
+        // same for all of them. this.relightCooldown throttles the accompanying event, not the refill
+        // itself, so the charge always reflects the exact seconds spent in the band, replay included.
+        if(this.state==='playing'&&!p.node&&this.relightOn)for(const h of this.hazards){
+          if(h.kind!=='flare')continue;
+          const d=Math.hypot(h.x-p.x,h.y-p.y);
+          if(d<=hazardCore(h)||d>=gravityRadius(h))continue;
+          const before=p.ink;p.ink=Math.min(1,p.ink+RELIGHT_RATE*step);
+          if(p.ink>before){
+            this.relightCooldown-=step;
+            if(this.relightCooldown<=0){this.relightCooldown=RELIGHT_EMIT_PERIOD;this.emit('relight',{x:p.x,y:p.y});}
+          }
+          break;
+        }
         if(this.state==='playing'&&!p.node)for(const h of this.hazards){
           // A gust cannot be grazed: what a graze pays for is the room left beside something lethal.
           if(!hazardKind(h).lethal)continue;
@@ -940,6 +1104,7 @@ class OrbitWorld {
       if(this.nodes.some(n=>n!==p.node&&n.y>=pruneY))this.nodes=this.nodes.filter(n=>n===p.node||n.y<pruneY);
       if(this.hazards.some(h=>h.y>=pruneY))this.hazards=this.hazards.filter(h=>h.y<pruneY);
       if(this.nebulas.some(g=>g.y-g.r>=pruneY))this.nebulas=this.nebulas.filter(g=>g.y-g.r<pruneY);
+      if(this.chasms.some(c=>Math.max(c.y0,c.y1)>=pruneY))this.chasms=this.chasms.filter(c=>Math.max(c.y0,c.y1)<pruneY);
       if(this.constellations.length>14)this.constellations=this.constellations.slice(-14);
     }
     for(const chart of this.constellations){
@@ -966,6 +1131,10 @@ class OrbitWorld {
     const gravity=this.newtonOn||this.hazards.some(h=>segmentCircle(p.x,p.y,p.x+dx*until,p.y+dy*until,h.x,h.y,gravityRadius(h))!==null);
     if(gravity)return this.curvedAim(launch,reach/speed+4);
     if(best&&this.hazards.some(h=>{if(!hazardKind(h).lethal)return false;const t=segmentCircle(p.x,p.y,bx,by,h.x,h.y,hazardCore(h)+3);return t!==null&&t<=hitAt;}))return null;
+    // A chasm carries no field to have put the guide onto its curved branch, so it is checked here,
+    // against the straight line, exactly as a lethal hazard's core is checked just above: a release
+    // whose path would cross one is refused rather than offered and marked perfect.
+    if(best&&this.chasms.some(c=>{const t=segmentCapsuleTime(p.x,p.y,bx,by,c.x0,c.y0,c.x1,c.y1,c.w);return t!==null&&t<=hitAt;}))return null;
     const length=best?best.distance:p.node.type==='sling'?speed*1.9:83;
     this.flightPreview={points:[{x:p.x,y:p.y,time:0,distance:0},{x:p.x+dx*length,y:p.y+dy*length,time:length/speed,distance:length}],aim:best,curved:false,blocked:false,steps:0};
     this.fogPreview();
@@ -1027,7 +1196,7 @@ class OrbitWorld {
     let time=0,distance=0,bend=0;
     while(time<duration-1e-9&&preview.steps<4096){
       const dt=freeFlightStep(p,this.hazards,duration-time,this.nodes,this.newtonOn),x=p.x,y=p.y;
-      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,this.width,this.perfectMult,this.newtonOn);
+      const result=flightStep(p,this.nodes,this.hazards,this.time+time,dt,this.width,this.perfectMult,this.newtonOn,this.chasms);
       time+=result.dt;distance+=Math.hypot(p.x-x,p.y-y);bend+=Math.abs(result.turn);preview.steps++;
       const last=preview.points[preview.points.length-1];
       if(result.hit||time>=duration-1e-9||(distance-last.distance>=9&&preview.points.length<384))preview.points.push(pooledPoint(preview.points.length,p.x,p.y,time,distance));

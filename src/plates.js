@@ -53,7 +53,7 @@ function playChannel(){return Math.min(W*.5,Math.max(W*.3,168*scale));}
 // force every hazard death answers with a fading flash for, so it gets a single frame of the flood's
 // own tone (see the death handler in ui.js) rather than a wash that lingers and decays.
 let frameTime=0,accumulator=0,deathShown=false,screenFlash=0,darkFlash=0,lastScore=-1;
-let lastChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
+let lastChapter=-1,loreChapter=-1,inkGaugePaint='',recordAtStart=0,runSeed=(Date.now()^Math.floor(Math.random()*0xffffffff))>>>0;
 // A hazard's Latin name (HAZARD_KINDS in simulation.js) is taught once per kind, on the first instance
 // of it the run fully reveals, rather than lettered on every one it ever generates: a run passes
 // dozens of vortices as it climbs, and inscribing all of them would spend the whole plate's inscription
@@ -146,7 +146,10 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-const currentBest=()=>plateOwns('score')?0:dailyOn?dailyBest:best;
+// A preview era (plateOwns('score')) keeps no best of its own here, since it never touches
+// orbit.best.v1 or orbit.bestRow.v1 — but a plate that names its own `best` hand painter (the Rock's
+// rockBest(), read off its own orbit.rock.v1) gets to answer with that instead of a bare 0.
+const currentBest=()=>plateOwns('score')?(handFor('best')?handFor('best')():0):dailyOn?dailyBest:best;
 function recordBest(score){
   // A plate that keeps its own record does not write the atlas's. Its run is playable and scored on
   // its own sheet; what it may never do is rewrite a number the atlas earned.
@@ -363,7 +366,17 @@ const PLATE_STYLES={
   // paper plate only because a light ground is the nearer of the two starting points; every mark on it
   // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  // chasms:true is read by newWorld() (src/ui.js) to decide whether OrbitWorld generates the long
+  // cracks across the wall (see simulation.js's chasmsOn) \u2014 a capability of this plate alone, so no
+  // other century or the atlas itself ever draws one. relight:true is read the same way to set
+  // OrbitWorld's relightOn (see simulation.js): skimming a Flare's field refills the ochre charge on
+  // this wall alone; the atlas, Era II and the daily plate never set it, so a Flare stays inert to them.
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era III is a Tang star chart brushed on hemp paper, after the Dunhuang scroll: a light ground like
+  // the paper plate's, so it is pulled from that one, and every mark on it comes from the hand
+  // `src/scroll.js` registers; the identity transform is here for the same reason as on the two eras
+  // above. It keeps no record of its own yet, like the Ceiling, and asks for none of the Rock's walls.
+  scroll:{base:'paper',wash:0,era:3,render:'scroll',can:{score:true,mode:true},door:{button:'scroll-open',label:'ERA III \u00b7 THE SCROLL'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -466,8 +479,14 @@ function plateWords(){
   voiceHeld=mergeTokens(VOICES.atlas||{},VOICES[plateName]||{});voiceKey=key;return voiceHeld;
 }
 // A sentence with the run's own nouns dropped into it. The whole sentence belongs to the plate, not a
-// stem the code assembles, because word order is the first thing a century changes.
-const spoken=(key,vars)=>String(plateWords()[key]||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
+// stem the code assembles, because word order is the first thing a century changes. `fmt` is the same
+// substitution bare, for a template read off a nested table (plateWords().glosses.foo and the like)
+// rather than a top-level key; `spoken` is just `fmt` applied to one of those.
+const fmt=(tpl,vars)=>String(tpl||'').replace(/\{(\w+)\}/g,(m,name)=>vars&&vars[name]!==undefined?String(vars[name]):'');
+const spoken=(key,vars)=>fmt(plateWords()[key],vars);
+// What a chart is called on the plate on the press: its own catalogue name unless the plate names the
+// catalogue its own way. `chart.name` itself is never changed, because it is the ledger's key.
+const chartTitle=chart=>{const own=plateWords().chartNames;return (own&&own[chart.catalogueIndex])||chart.name;};
 // The hand. A plate that draws in its own names only the painters that differ from the atlas's; every
 // painter it does not name is the atlas's own, so an era is a row in this registry rather than a fork
 // at every mark, and two hands can draw into one frame — which a render branch that returns early
@@ -489,7 +508,10 @@ definePlate('base',{
   // Torchlit limestone, and a palette with two holes in it that are the point rather than an omission:
   // there is no gold, so the reddest ochre stands in and is spent as sparingly as gold ever was, and
   // there is no blue at all, so everything the atlas says in blue this era says in its black.
-  rock:{paper:'#c7bc9e',paperRgb:'199,188,158',ink:'44,38,34',inkStrong:'33,31,30',inkSoft:'105,88,66',gold:'156,59,34',goldBright:'201,150,46',copper:'169,112,31',blue:'33,31,30',shieldBlue:'44,38,34',red:'156,59,34',text:'#2c2622',caption:'105,88,66',shadow:'#8a7f68'}
+  rock:{paper:'#c7bc9e',paperRgb:'199,188,158',ink:'44,38,34',inkStrong:'33,31,30',inkSoft:'105,88,66',gold:'156,59,34',goldBright:'201,150,46',copper:'169,112,31',blue:'33,31,30',shieldBlue:'44,38,34',red:'156,59,34',text:'#2c2622',caption:'105,88,66',shadow:'#8a7f68'},
+  // Aged hemp paper and pine-soot ink, and a palette with no blue and no gold in it: cinnabar is the one
+  // colour, spent on the Shi Shen school's stars and on seals, and it stands in for the atlas's gold.
+  scroll:{paper:'#d8c79b',paperRgb:'216,199,155',ink:'30,26,21',inkStrong:'20,17,13',inkSoft:'90,76,60',gold:'183,49,44',goldBright:'210,73,60',copper:'134,31,27',blue:'30,26,21',shieldBlue:'44,36,26',red:'183,49,44',text:'#1e1a15',caption:'90,76,60',shadow:'#b9a67a'}
 });
 // ---------- The hand the plate letters in ----------
 // Every `ctx.font` in the game is built here. The Fell faces are era V's — the engraved atlas the
@@ -524,19 +546,41 @@ const CEILING_FACES={
 // The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
 // curatorial layer — the same slab the Ceiling's sentences use, for the same reason: it is the type
 // an excavation plate has been captioned in since the trade named the class, and it declares itself
-// modern where the Fell types would claim the wrong century by seventeen thousand years. It keeps
-// the slab for its capitals too, rather than the Ceiling's 1920s Limelight: the Rock is the oldest
-// wall in the atlas and reaches for no marquee lettering that postdates it by twenty millennia.
+// modern where the Fell types would claim the wrong century by seventeen thousand years. It reaches
+// for none of the Ceiling's 1920s Limelight, which postdates this wall by twenty millennia.
+// What the wall itself announces — a loss, a landing, a chamber — is set in a hand that looks cut, not
+// printed: Amatic SC, narrow scratched capitals, bold, the nearest a face comes to the tally notches on
+// the same wall. It is a display hand and too narrow and light to read small, so it is set larger than
+// the slab it replaces (`scale`) and at its bold (`weight`); the running instructions and every small
+// label stay in the slab, where legibility is the whole job.
 const ROCK_FACES={
   text:"'Zilla Slab',Georgia,serif",
-  sc:"'Zilla Slab',Georgia,serif",
+  sc:"'Amatic SC','Zilla Slab',Georgia,serif",
   body:"'Zilla Slab',Georgia,'Times New Roman',serif",
-  hiero:HIERO_FACE
+  hiero:HIERO_FACE,
+  weight:{sc:700},scale:{sc:1.55}
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES});
+// The Scroll's own words are in kaishu (楷書), the standard book hand settled by the Tang, set in LXGW
+// WenKai TC: a kaishu face in the traditional forms a Tang chart used, which the more obvious Noto Serif
+// SC would get wrong on their face (it sets the simplified forms of the 1950s reform). It is set at two
+// weights, the regular for captions, glosses and numerals and the medium for titles, so `kai` and `kaiM`
+// name one family at two weights; `kaiL`, for the smallest glosses, is the regular again, set paler by
+// its caller rather than shipped as a third cut of a face that costs sixty kilobytes a weight. The curator's English beside it is the same
+// modern slab the other eras use, with the kaishu behind it for any character the slab lacks.
+const SCROLL_KAI="'LXGW WenKai TC','Zilla Slab',serif";
+const SCROLL_FACES={
+  text:"'Zilla Slab','LXGW WenKai TC',Georgia,serif",
+  sc:"'Zilla Slab','LXGW WenKai TC',Georgia,serif",
+  body:"'Zilla Slab','LXGW WenKai TC',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE,
+  kai:SCROLL_KAI,kaiL:SCROLL_KAI,kaiM:SCROLL_KAI,
+  weight:{kaiM:500}
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
-const plateFace=(size,variant='text',style='')=>`${style?style+' ':''}${size}px ${ink.type[variant]}`;
+const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
+  return `${style?style+' ':''}${w?w+' ':''}${k===1?size:+(size*k).toFixed(2)}px ${t[variant]}`;};
 function invalidateArt(){
   regionPlates.clear();celestialPlates.clear();darknessPlates.clear();glyphs.clear();
   figureLayers.clear();ringSprites.clear();flareSprites.clear();nebulaSprites.clear();darkMarginalia.clear();
@@ -545,6 +589,7 @@ function invalidateArt(){
   frameLayer=null;
   if(typeof invalidateCeilingArt==='function')invalidateCeilingArt();
   if(typeof invalidateRockArt==='function')invalidateRockArt();
+  if(typeof invalidateScrollArt==='function')invalidateScrollArt();
 }
 // The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
 // is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own

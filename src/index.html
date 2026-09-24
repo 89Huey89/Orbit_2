@@ -31,6 +31,7 @@
     #game[data-plate-id="proof"] .brand,#game[data-plate-id="proof"] .small{color:transparent;text-shadow:0 1px 0 rgba(255,255,255,.45),0 -1px 0 rgba(0,0,0,.1)}
     .ceiling-only{display:none!important}
     .rock-only{display:none!important}
+    .scroll-only{display:none!important}
     .era-exit{display:none!important}
     /* Era I letters in the same modern slab era II does, and for the same reason: this wall has no
        script of its own, so everything set on it is openly a curator's gloss. The palette is unlit rock
@@ -39,7 +40,47 @@
        at the top of the sheet, which is where the torch has already stopped reaching. */
     #game[data-era="1"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#211f1e;--ivory:#eae1cf;--gold:#c9962e;--muted:#a39880;--copy:#d3c8ae;--best:#eae1cf;--shield:#c9962e;--reflector:#d3c8ae;--dawn:#c98b46;--copper:#9c3b22;--line:rgba(234,225,207,.26);--veil:33,31,30}
     #game[data-era="1"] .footer{color:#c7bc9e}
+    /* Era I sets its counts on the rock in its own marks (rockHudLeaf() in rock.js); the DOM HUD stays for
+       screen readers and is only taken off the screen. */
+    #game[data-era="1"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
+    /* The end and pause leaves on this wall are not a printed leaf but a slab of the rock itself, broken
+       off and lying in the torchlight: a chipped edge rather than a rule, warm limestone lit from below
+       where the flame is, its grain from a turbulence field, a shade pooled at its top edge, and the
+       words on it in charcoal with the loss in red ochre. Nothing of the atlas's furniture — no double
+       rule, no gold lozenge, no Roman numeral, no drawn frame — is carried onto it. */
+    #game[data-era="1"] .colophon{--rock-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .17 0 0 0 0 .13 0 0 0 0 .09 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      color:#2c2622;background-color:#9e8666;background-image:var(--rock-grain),radial-gradient(ellipse 70% 40% at 78% 22%,rgba(40,30,22,.22),rgba(40,30,22,0) 70%),radial-gradient(ellipse 60% 35% at 18% 64%,rgba(40,30,22,.16),rgba(40,30,22,0) 70%),radial-gradient(ellipse 120% 90% at 40% 112%,rgba(255,214,160,.5),rgba(255,214,160,0) 62%);background-size:180px 180px,100% 100%,100% 100%,100% 100%;background-repeat:repeat,no-repeat,no-repeat,no-repeat;background-blend-mode:multiply,normal,normal,normal;
+      box-shadow:inset 0 3px 0 rgba(236,214,176,.35),inset 0 14px 22px rgba(236,214,176,.14),inset 0 -4px 0 rgba(26,20,15,.4),inset 0 -22px 30px rgba(26,20,15,.34),inset 4px 0 10px rgba(26,20,15,.2),inset -4px 0 10px rgba(26,20,15,.28);
+      clip-path:polygon(0 7%,4% 0,23% 1.8%,38% 0,61% 2.4%,77% .6%,93% 0,100% 4.5%,98.8% 27%,100% 46%,98.4% 71%,100% 89%,95% 100%,72% 97.8%,54% 100%,31% 98.2%,12% 100%,0 95%,1.4% 70%,0 49%,1.6% 24%)}
+    #game[data-era="1"] .colophon::before,#game[data-era="1"] .colophon::after{display:none}
+    #game[data-era="1"] #end-leaf-frame,#game[data-era="1"] #end-score-roman{display:none}
+    #game[data-era="1"] .colophon .eyebrow{color:#8a2f1a;opacity:1}
+    #game[data-era="1"] .colophon h2,#game[data-era="1"] .colophon strong{color:#2c2622;opacity:1}
+    #game[data-era="1"] .colophon .instruction,#game[data-era="1"] .colophon .small,#game[data-era="1"] .colophon .action-copy{color:#3b322b}
+    #game[data-era="1"] #end-score{color:#2c2622}
+    /* The breathing prompt is its own compositing layer, and over this slab's blended grain that layer
+       showed as a lighter band behind the line; the prompt holds still on stone instead. */
+    #game[data-era="1"] .colophon .action-copy{animation:none;opacity:.8}
+    /* The hand's story, set in the cut hand: one breath on the way in, one on the way out. */
+    .rock-lore-open{position:absolute;left:16px;right:16px;top:calc(9% + env(safe-area-inset-top))}
+    .rock-lore{margin:0 auto 16px;max-width:22em;font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:22px;line-height:1.25;letter-spacing:.06em;color:#eae1cf;text-shadow:1px 1px 0 rgba(2,2,2,.85)}
+    #game[data-era="1"] .colophon .rock-lore{color:#3b322b;text-shadow:1px 1px 0 rgba(236,214,176,.35);font-size:20px;margin:4px auto 10px}
+    /* The wall's own announcements in the cut hand (ROCK_FACES in plates.js): the loss, the title, the
+       halt. Set large and bold, because the face is narrow and light; everything small stays slab. */
+    #game[data-era="1"] #end-reason,#game[data-era="1"] #pause-eyebrow{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:21px;letter-spacing:.14em}
+    #game[data-era="1"] #end h2,#game[data-era="1"] #pause strong{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-style:normal;font-size:clamp(40px,11vw,52px);letter-spacing:.04em;line-height:1}
+    #game[data-era="1"] #end-score{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700}
+    #game[data-era="1"] .colophon .diff-btn{font-family:'Amatic SC','Zilla Slab',serif;font-weight:700;font-size:20px;letter-spacing:.1em}
+    #game[data-era="1"] #end-constellations{color:#7c2c19}
+    #game[data-era="1"] .score-frame{border-color:rgba(44,38,34,.35)}
+    #game[data-era="1"] .score-frame::before{border-color:#8a2f1a;border-radius:50%;transform:none}
+    #game[data-era="1"] .stat+.stat::before{background:rgba(44,38,34,.3)}
+    #game[data-era="1"] .title-rule::before,#game[data-era="1"] .title-rule::after{background:rgba(44,38,34,.45)}
+    #game[data-era="1"] .colophon .diff-btn{color:#2c2622;background:transparent;border:0;border-top:1px solid rgba(26,20,15,.45);box-shadow:0 1px 0 rgba(236,214,176,.3) inset}
+    #game[data-era="1"] .colophon .diff-btn:last-child{border-bottom:1px solid rgba(26,20,15,.45)}
+    #game[data-era="1"] #end{background:radial-gradient(ellipse at center,rgba(2,2,2,.55),rgba(2,2,2,.2) 70%,transparent)}
+    #game[data-era="1"] #pause{background:rgba(2,2,2,.55)}
     #game[data-era="2"]{--face-text:'Zilla Slab',Georgia,serif;--face-sc:'Limelight','Zilla Slab',Georgia,serif;--face-body:'Zilla Slab',Georgia,'Times New Roman',serif;--ink:#152457;--ivory:#efe2c4;--gold:#e3b447;--muted:#c9bb98;--copy:#c9bb98;--best:#efe2c4;--shield:#3e9c92;--reflector:#6b4f9e;--dawn:#b8862a;--copper:#c24a2f;--line:rgba(239,226,196,.24);--veil:13,24,56;--blocks:repeating-linear-gradient(90deg,#c24a2f 0 12%,#efe2c4 12% 25%,#2e7ea3 25% 37%,#efe2c4 37% 50%,#e3b447 50% 62%,#efe2c4 62% 75%,#4c8a57 75% 87%,#efe2c4 87% 100%)}
     #game[data-era] .atlas-only{display:none!important}
     /* Newton mode never rides under the daily plate's own fixed setup (see newWorld() in ui.js), so
@@ -47,6 +88,19 @@
     #game.daily .no-daily{display:none}
     #game[data-era="2"] .ceiling-only{display:revert!important}
     #game[data-era="1"] .rock-only{display:revert!important}
+    #game[data-era="3"] .scroll-only{display:revert!important}
+    /* Era III is ink on hemp paper, so its chrome is the paper plate's own shape in the Scroll's colours:
+       aged amber for the ground, pine soot for the words, cinnabar where the atlas spends gold. Its English
+       is the curator's slab the other eras use, and its own words are in kaishu (LXGW WenKai TC). The counts
+       are set on the sheet in the chart's own hand (scrollHudLeaf() in scroll.js); the DOM HUD stays for
+       screen readers and is only taken off the screen, as on the Rock. */
+    #game[data-era="3"]{--face-text:'Zilla Slab','LXGW WenKai TC',Georgia,serif;--face-sc:'Zilla Slab','LXGW WenKai TC',Georgia,serif;--face-body:'Zilla Slab','LXGW WenKai TC',Georgia,'Times New Roman',serif;--ink:#d8c79b;--ivory:#1e1a15;--gold:#a8302a;--muted:#6b5a44;--copy:#3a3026;--best:#1e1a15;--shield:#44362a;--reflector:#4e6a55;--dawn:#a8302a;--copper:#861f1b;--line:rgba(30,26,21,.3);--veil:216,199,155}
+    #game[data-era="3"] .footer{color:#3a3026}
+    #game[data-era="3"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    #game[data-era="3"] #catalogue-open,#game[data-era="3"] #plate{display:none}
+    #game[data-era="3"] #end-score-roman{display:none}
+    .scroll-lore-open{position:absolute;left:16px;right:16px;top:calc(6.5% + env(safe-area-inset-top));text-align:center}
+    .scroll-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','LXGW WenKai TC',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2c241b}
     #game[data-era] .era-exit{display:revert!important}
     #game[data-era="2"] .footer{color:#c9bb98}
     #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
@@ -693,6 +747,8 @@
     <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">
+    <p class="scroll-lore scroll-lore-open scroll-only" id="scroll-lore-open">The Bureau kept the sky's record for nine centuries.<br>Every light gets a place, a colour and a name.<br>Sight it. Hold it. Write it down.</p>
+    <p class="rock-lore rock-lore-open rock-only" id="rock-lore-open">The lights come back to the same place in the sky, night after night.<br>Someone has to remember them.<br>Take the torch. Go deeper. Mark what returns.</p>
     <div class="title-group atlas-only">
       <p class="subtitle-latin">Sive de Motu Corporum C&aelig;lestium Tabul&aelig;</p>
       <div class="cartouche">
@@ -734,7 +790,7 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">THE BOOK OF NUT · NEW KINGDOM</p>
     </div>
-    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
+    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span><span class="rock-only">Tap the wall to begin</span><span class="scroll-only">Tap the sheet to begin</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
       <div class="daily-group">
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
@@ -747,6 +803,7 @@
       <div id="more-menu" class="daily-group atlas-only" hidden>
         <div class="action-row" id="more-actions">
           <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+          <button id="scroll-open" class="diff-btn era-entry" type="button" aria-label="Play Era III, The Scroll — the sky as a Tang star chart brushed on paper">ERA III · THE SCROLL</button>
           <button id="ceiling-open" class="diff-btn era-entry" type="button">ERA II · THE CEILING</button>
           <button id="rock-open" class="diff-btn era-entry" type="button" aria-label="Play Era I, The Rock — the sky as marks on a torchlit cave wall">ERA I · THE ROCK</button>
           <button id="review-last" class="diff-btn" type="button" hidden>REVIEW LAST PLATE</button>
@@ -754,7 +811,7 @@
         <span id="review-last-note" class="small daily-note"></span>
       </div>
       <p class="ceiling-context ceiling-only">The sky is Nut’s body, after the Book of Nut and the blue star ceilings of the Theban tombs; the decan columns and star signs are Senenmut’s, from TT353. The night barque and its dangers are a gameplay translation from wider Egyptian funerary art.</p>
-      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span></p>
+      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span><span class="scroll-only">After the Dunhuang star chart · c. 649–684 CE</span></p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
@@ -767,13 +824,13 @@
       <svg class="ceiling-only stela-sundisc" viewBox="0 0 120 30" aria-hidden="true" focusable="false"><g stroke="#efe2c4" stroke-width=".7" stroke-linejoin="round"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/><g transform="translate(120 0) scale(-1 1)"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/></g><path d="M52 23q-3-5 1-8M68 23q3-5-1-8" fill="none" stroke="#e3b447" stroke-width="1.2"/><circle class="sundisc-disc" cx="60" cy="15" r="7" fill="#c24a2f" stroke="#e3b447" stroke-width="1.2"/></g></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
       <div class="score-frame"><canvas id="end-numerals" class="ceiling-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
-      <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small">Row</span></div></div>
+      <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small" id="end-captures-label">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small" id="end-perfects-label">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small" id="end-flow-label">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small" id="end-row-label">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>
       <div id="end-unlocked"></div>
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <div id="end-finis" class="finis atlas-only"><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
-      <p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
+      <p class="rock-lore rock-only" id="rock-lore-close">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span></div>
     </div>
   </section>
@@ -917,6 +974,7 @@
 <script src="signs-tt353.js"></script>
 <script src="ceiling.js"></script>
 <script src="rock.js"></script>
+<script src="scroll.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="review.js"></script>

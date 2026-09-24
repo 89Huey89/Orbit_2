@@ -274,6 +274,7 @@ function pruneInkPath(){
 // faster, cut in the ink the pen is charged with. The wet trail dries into its head, so the line the
 // player is drawing now and the line drawn a minute ago are the same line.
 function drawInkPath(){
+  const own=handFor('inkPath');if(own)return own();
   const inkPath=world.inkPath;
   if(inkPath.length<2)return;
   const pen=trailInk(),m=trailMaterial(),rgb=pen.path||ink.dark.pathInk,paper=onPaper();
@@ -541,6 +542,8 @@ function drawLandingSurvey(s,t,rgb,gold,base){
   // its numeral, or the right angle — that the construction is for.
 }
 function drawTrail(){
+  // A plate whose traveller does not write with a nib names its own trail painter.
+  const own=handFor('trail');if(own)return own();
   const trail=world.trail;
   if(trail.length<2)return;
   const pen=trailInk(),m=trailMaterial(),level=world.inkLevel();
