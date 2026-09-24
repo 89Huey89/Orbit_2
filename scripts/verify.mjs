@@ -13,18 +13,18 @@ const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
 // and run in parallel instead of one after another. Every one of them is written exactly as it would
 // be inline — reading these free variables rather than taking parameters — so a worker just needs to
 // populate them (from its own vm sandbox, or from workerData) before calling the task it was asked for.
-let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,script;
+let OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,RELEASE_GRACE,script;
 
 // Runs the extracted `// BEGIN SIMULATION`/`// END SIMULATION` slice of src/simulation.js in its own
 // vm sandbox and returns the named globals verify.mjs needs off it — the same slice-and-pull the file
 // has always done, just callable once per thread instead of once for the whole process.
 function simSandbox(simulation){
   const sandbox={};vm.createContext(sandbox);
-  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE};',sandbox);
+  vm.runInContext(simulation+'\nthis.api={OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,RELEASE_GRACE};',sandbox);
   return sandbox.api;
 }
 function useSimulationApi(api){
-  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE}=api);
+  ({OrbitWorld,segmentCircle,segmentCapsuleTime,segmentSegmentDist,tangentPaths,orbitTangents,transferContact,nodeMotion,pointSegment,gravityRadius,hazardCore,hazardKind,bendVelocity,flightStep,CONSTELLATIONS,OBSERVATIONS,BASE_SPEED,MAX_SPEED,SWEEP_FULL,STAR_GAIN,GRAZE_MINIMUM,INK_PERFECT_GAIN,INK_CAPTURE_GAIN,INK_ORBIT_GAIN,POWERUP_LABELS,DARKNESS_RESCUE_DROP,DARKNESS_RESCUE_GRACE,RELEASE_GRACE}=api);
 }
 
 // A tangent-seeking pilot uses the stars and follows the generated main route.
@@ -524,11 +524,23 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   const beforeDaily=context.test.world;
   const plateBeforeDaily=context.test.plateName,cosmeticsBeforeDaily=JSON.parse(JSON.stringify(context.test.cosmetics));
   const plateStorageBeforeDaily=saved.get('orbit.plate.v1'),cosmeticsStorageBeforeDaily=saved.get('orbit.cosmetics.v1');
+  // Each pressure sets its own release grace alongside its other multipliers: widest on Tiro, the glass's
+  // own noise on Adeptus, and none at all on Magister.
+  {
+    const table=vm.runInContext('RELEASE_GRACE_BY',context),was=context.test.difficulty;
+    assert(table.relaxed>table.classic&&table.classic===RELEASE_GRACE&&table.hardcore===0,'Tiro forgives most, Adeptus the default, Magister nothing: '+JSON.stringify(table));
+    for(const value of ['relaxed','classic','hardcore']){
+      vm.runInContext('setDifficulty('+JSON.stringify(value)+')',context);
+      assert.equal(context.test.world.releaseGrace,table[value],'The '+value+' pressure sets its own release grace');
+    }
+    vm.runInContext('setDifficulty('+JSON.stringify(was)+')',context);
+  }
   events['daily:click']();
   assert.equal(context.test.dailyOn,true);
   assert(/^\d{4}-\d{2}-\d{2}$/.test(context.test.dailyDay),'The daily course is keyed to a UTC date');
   assert.equal(context.test.world.seed,context.test.dailySeed,'The daily course comes from the date, not the clock');
   assert.equal(context.test.world.darknessMult,1,'The daily plate is always played at Classic pressure');
+  assert.equal(context.test.world.releaseGrace,RELEASE_GRACE,'and with Adeptus\'s release grace');
   assert(element('daily-date').textContent.includes('Tabula diei \u00b7 '+context.test.dailyDay));
   assert.equal(new OrbitWorld(context.test.dailySeed,440,860,()=>{},false,true).catalogueOrder.join(),context.test.world.catalogueOrder.join(),'Everyone plays the same daily chart');
   assert.equal(context.test.world.varyOpening,true,'The daily plate draws its own opening rather than the fixed one');
@@ -541,6 +553,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(dailyReplayed.catalogueOrder.join(),context.test.world.catalogueOrder.join(),'A replayed daily plate rebuilds the same varied opening');
     const predatesFlag=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,startedAt:0,releases:[],resizes:[]});
     assert.equal(predatesFlag.varyOpening,false,'A replay log saved before this flag existed falls back to the fixed opening');
+    assert.equal(predatesFlag.releaseGrace,0,'A replay log saved before the release grace existed is read back without it');
+    const graced=context.test.replayRun({seed:context.test.dailySeed,width:440,height:860,offerDifficulty:false,varyOpening:true,startedAt:0,grace:.012,releases:[],resizes:[]});
+    assert.equal(graced.releaseGrace,.012,'A replay starts from the grace its log was dealt with');
   }
   // ---------- The daily's own showcase: a setup drawn from the same date hash ----------
   {
@@ -1048,7 +1063,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   context.test.render(step);
   // Complete a constellation through the full runtime, including presentation,
   // score persistence, pause during the reward, the end screen, and a new run.
-  const run=context.test.world;let captures=run.captures;
+  // Flown without the release grace: this walk checks what the page writes where, and a crowded sheet can
+  // rightly leave a note unwritten, so the course is held to the exact releases it was tuned against.
+  const run=context.test.world;run.releaseGrace=0;let captures=run.captures;
   for(let i=0;i<120*70&&run.state==='playing'&&run.constellationsCompleted===0;i++){
     if(run.player.node){
       const row=Math.floor(run.progress)+1,target=run.nodes.find(n=>n.row===row&&n.routeRole==='star')||run.nodes.find(n=>n.row===row&&n.type!=='gold'),aim=run.aim();
@@ -1423,6 +1440,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       const origin=w.player.node,destination=w.makeNode(0,-300,50,1,'still');
       origin.r=40;origin.x=origin.baseX=offset-origin.r;origin.y=origin.baseY=0;
       w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.ensureAhead=()=>{};w.hazards=[];w.nebulas=[];
+      // Released exactly where it is aimed: whichever pressure the page is on, no grace may carry this
+      // deliberately rough release onto the tangent beside it.
+      w.releaseGrace=0;
       w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();w.start();
       return {w,destination};
     };
@@ -2112,7 +2132,7 @@ function curvedFixture(speed=240,drift=false,angle=-.002){
   origin.x=origin.baseX=-57;const destination=w.makeNode(70,-420,50,2,drift?'drift':'still');
   w.nodes=[origin,destination];w.lastMain=destination;w.row=2;w.ensureAhead=()=>{};
   w.hazards=[{x:70,y:-170,r:24,seed:43,phase:.2,near:false}];
-  w.player.angle=angle;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();w.start();return {w,destination,captures};
+  w.releaseGrace=0;w.player.angle=angle;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();w.start();return {w,destination,captures};
 }
 let curvedCaptures=0,maxPreviewSteps=0;
 for(const [speed,drift,angle] of [[150,false,-.032],[150,true,-.026],[240,false,-.002],[240,true,-.02],[360,false,.016],[360,true,-.014]]){
@@ -2130,13 +2150,15 @@ const blockedPoint=blockedCurve.w.flightPreview.landing;assert(Math.abs(Math.hyp
 blockedCurve.w.release();for(let i=0;i<120*4&&blockedCurve.w.state==='playing';i++)blockedCurve.w.update(step);
 assert.equal(blockedCurve.w.reason,'DRAWN INTO A VORTEX','A warning guide must agree with the real collision');
 
-// The curved guide and real flight must agree through a repulsive field too.
+// The curved guide and real flight must agree through a repulsive field too. Like the fixture above, it
+// is flown with no release grace, since what it compares is the guide's solver against flight at one
+// exact point of the orbit; the grace is proved separately, below.
 function flareFixture(angle){
   const captures=[],w=new OrbitWorld(713,440,860,(type,e)=>{if(type==='capture')captures.push(e);}),origin=w.player.node;
   origin.x=origin.baseX=-57;const destination=w.makeNode(70,-420,50,2,'still');
   w.nodes=[origin,destination];w.lastMain=destination;w.row=2;w.ensureAhead=()=>{};
   w.hazards=[{x:70,y:-170,r:24,kind:'flare',seed:44,phase:.2,near:false}];
-  w.player.angle=angle;w.player.dir=-1;w.player.speed=240;w.positionPlayer();w.start();return {w,destination,captures};
+  w.releaseGrace=0;w.player.angle=angle;w.player.dir=-1;w.player.speed=240;w.positionPlayer();w.start();return {w,destination,captures};
 }
 let flareCaptures=0,flareGrazes=0;
 for(let angle=-.02;angle<=.24;angle+=.004){
@@ -2163,7 +2185,7 @@ function windFixture(angle,dir=Math.PI*.5){
   origin.x=origin.baseX=-57;const destination=w.makeNode(70,-420,50,2,'still');
   w.nodes=[origin,destination];w.lastMain=destination;w.row=2;w.ensureAhead=()=>{};
   w.hazards=[{x:70,y:-170,r:30,kind:'wind',dir,seed:45,phase:.2,near:false}];
-  w.player.angle=angle;w.player.dir=-1;w.player.speed=240;w.positionPlayer();w.start();return {w,destination,captures};
+  w.releaseGrace=0;w.player.angle=angle;w.player.dir=-1;w.player.speed=240;w.positionPlayer();w.start();return {w,destination,captures};
 }
 let windCaptures=0,windBent=0;
 for(let angle=-.02;angle<=.24;angle+=.004){
@@ -2229,6 +2251,9 @@ function transferFixture(offset,speed=240,drift=false){
   const origin=w.player.node,destination=w.makeNode(0,-300,50,1,drift?'drift':'still');
   if(drift){destination.amp=18;destination.phase=.4;}
   origin.x=origin.baseX=offset-origin.r;w.player.angle=0;w.player.dir=-1;w.player.speed=speed;w.positionPlayer();
+  // Flown with no release grace: these are the capture mechanics at one exact release point, and an
+  // angled release a few thousandths from a tangent would otherwise be let go on the tangent instead.
+  w.releaseGrace=0;
   w.nodes=[origin,destination];w.lastMain=destination;w.row=1;w.start();return {w,destination,captures};
 }
 for(const offset of [-50,50])for(const speed of [150,240,360]){
@@ -2241,6 +2266,61 @@ for(const offset of [-50,50])for(const speed of [150,240,360]){
   assert(Math.abs(w.player.vx-incoming.vx)<1e-7&&Math.abs(w.player.vy-incoming.vy)<1e-7,'A perfect join must preserve the entire velocity vector');
   for(let i=0;i<120;i++)w.update(step);
   assert(Math.abs(w.player.speed-speed)<1e-7,'Ordinary orbits must not erase earned momentum or auto-accelerate');
+}
+// The release grace absorbs the screen's and the touch's own noise and nothing more. A tap a few
+// thousandths either side of a perfect release is let go from it, a tap that would have missed is let go
+// from the nearest point that lands, and a tap further off than the grace is flown exactly as asked.
+{
+  const rateOf=w=>w.player.dir*w.player.speed/w.player.rad;
+  const readAt=(w,offset)=>{const angle=w.player.angle;w.player.angle+=rateOf(w)*offset;w.positionPlayer();const aim=w.aim();w.player.angle=angle;w.positionPlayer();return aim;};
+  let upgraded=0,beyond=0;
+  for(const offset of [-50,50])for(const speed of [240,360])for(const sign of [-1,1]){
+    // Walk away from the tangent until the guide stops calling the release perfect, while it still lands.
+    // Walked finely, since the band can be narrower than the grace's own step: the tap is placed where
+    // the release is an ordinary landing but a point one grace step back toward the tangent is perfect.
+    const fixture=transferFixture(offset,speed),probe=fixture.w;let off=null;
+    for(let k=4;k<=Math.round(RELEASE_GRACE*960);k++){
+      const aim=readAt(probe,sign*k/960),back=readAt(probe,sign*(k-4)/960);
+      if(aim&&aim.n===fixture.destination&&!aim.perfect&&back&&back.n===fixture.destination&&back.perfect){off=sign*k/960;break;}
+    }
+    if(off===null)continue;
+    const {w,destination,captures}=transferFixture(offset,speed);w.releaseGrace=RELEASE_GRACE;
+    w.player.angle+=rateOf(w)*off;w.positionPlayer();
+    assert.equal(w.aim()?.perfect,false,'The tap itself is not on the perfect band');
+    w.release();for(let i=0;i<120*3&&!w.player.node;i++)w.update(1/120);
+    assert.equal(w.player.node,destination,'A graced release still lands on the body the tap was aimed at');
+    assert.equal(captures[0].perfect,true,'A tap within the grace of a perfect release is let go from it');upgraded++;
+  }
+  assert(upgraded>=2,'The grace must be exercised on both sides of a perfect band: '+upgraded);
+  // Beyond the grace a tap is the hand's own, and is flown exactly where it was asked for.
+  for(const speed of [240,360]){
+    const probe=transferFixture(50,speed).w;
+    for(let k=Math.round(RELEASE_GRACE*240)+3;k<60;k++){
+      const aim=readAt(probe,k/240);if(!aim||aim.perfect)continue;
+      // Only a point no perfect release lies within the grace of says anything about the grace's edge.
+      let near=false;for(let j=-Math.round(RELEASE_GRACE*240);j<=Math.round(RELEASE_GRACE*240);j++){const a=readAt(probe,(k+j)/240);if(a&&a.perfect)near=true;}
+      if(near)continue;
+      const graced=transferFixture(50,speed),bare=transferFixture(50,speed);graced.w.releaseGrace=RELEASE_GRACE;
+      for(const t of [graced,bare]){t.w.player.angle+=rateOf(t.w)*k/240;t.w.positionPlayer();t.w.release();}
+      assert.deepEqual([graced.w.player.x,graced.w.player.y,graced.w.player.vx,graced.w.player.vy],[bare.w.player.x,bare.w.player.y,bare.w.player.vx,bare.w.player.vy],'A tap beyond the grace is flown exactly as asked');
+      beyond++;break;
+    }
+  }
+  assert(beyond>=1,'The edge of the grace must be exercised');
+  // A tap that would miss outright is let go from the nearest point that lands, if one is within the grace.
+  let rescued=0;
+  for(const speed of [150,240,360]){
+    const fixture=transferFixture(50,speed),probe=fixture.w;
+    for(let k=1;k<120&&!rescued;k++)for(const sign of [-1,1]){
+      if(readAt(probe,sign*k/240))continue;
+      const land=readAt(probe,sign*(k-2)/240);if(!land||land.n!==fixture.destination)continue;
+      const {w,destination}=transferFixture(50,speed);w.releaseGrace=RELEASE_GRACE;
+      w.player.angle+=rateOf(w)*sign*k/240;w.positionPlayer();assert.equal(w.aim(),null,'The tap itself would miss');
+      w.release();for(let i=0;i<120*4&&!w.player.node&&w.state==='playing';i++)w.update(1/120);
+      assert.equal(w.player.node,destination,'A tap that would have missed by less than the grace lands');rescued++;break;
+    }
+  }
+  assert(rescued>=1,'The grace must rescue a near miss');
 }
 // An angled arrival that is not a tangent is still the forgiving ordinary capture it has always been.
 const roughSlow=transferFixture(25,150),roughFast=transferFixture(25,300);
@@ -2517,6 +2597,9 @@ function distantTransfer(boosted=true){
   // Offset enough to cross the rim at about 27 degrees: an ordinary capture, as this fixture wants,
   // but not the near-radial drop the rim now turns away.
   const destination=w.makeNode(origin.x+origin.r+25,-1800,54,8,'still');
+  // No release grace: the hazard case below aims its release into the vortex on purpose, and the grace
+  // would otherwise let it go from the neighbouring point that clears it.
+  w.releaseGrace=0;
   w.nodes=[origin,destination];w.lastMain=destination;w.row=8;w.start();
   return {w,destination,captures};
 }
@@ -2973,8 +3056,12 @@ const wetRun=pressureRun(true,undefined,1);
 assert.equal(wetRun.state,'playing','Tangent entries and charged stars keep the nib paid for');
 assert(wetRun.progress>=220&&wetRun.inkLevel()>0,'A well-flown run reaches row 220 with ink to spare');
 assert(pressureRun(false,undefined,1).inkLevel()>0,'A run that dwells is never short of ink, only of time');
+// The rusher is flown without the release grace. It lets go on the very first frame a landing opens,
+// which is a hand no screen delivers, and that first frame so often sits a few thousandths from the
+// perfect band skimming the same rim that the grace would let most of its releases go on the tangent —
+// flying the strategy this assertion is meant to price out of existence rather than the one it names.
 function rusher(seed){
-  const w=new OrbitWorld(seed,440,860);w.start();
+  const w=new OrbitWorld(seed,440,860);w.releaseGrace=0;w.start();
   for(let i=0;i<120*400&&w.state==='playing'&&w.progress<120;i++){
     if(w.player.node){const aim=w.aim();if(aim&&!aim.steep&&aim.n.row>w.progress&&w.player.orbitTime>.12)w.release();}
     w.update(step);

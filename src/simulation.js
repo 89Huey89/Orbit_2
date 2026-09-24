@@ -29,6 +29,14 @@ const DIFFICULTY_LABELS = {relaxed:'TIRO', classic:'ADEPTUS', hardcore:'MAGISTER
 // know the printed word.
 const POWERUP_LABELS = {shield:'SCUTUM', reflector:'REPULSA', dawn:'AURORA'};
 const FLIGHT_STEP = 1/120;
+// A tap is read on the frame it lands on, but a phone does not deliver it on the instant the finger
+// meant: the screen is only redrawn sixty times a second, and the touch itself arrives a little early
+// or late of that. RELEASE_GRACE is that noise and no more. A release is let go from whichever point
+// within it of the moment it was asked for leaves on a perfect transfer to the body the tap was aimed
+// at, or, if the tap was aimed at nothing, lands at all; a tap further off than the hardware can account
+// for was the hand's, and is flown exactly as asked. This is Adeptus's grace and the world's default; each
+// pressure sets its own (RELEASE_GRACE_BY in plates.js), from a wider one on Tiro to none on Magister.
+const RELEASE_GRACE = .012, RELEASE_GRACE_STEP = 1/240;
 // The nib carries a charge of ink, held as 0..1. Flight spends it by the distance flown, so a
 // transfer costs what it is long rather than what it takes; going faster crosses the same gulf for
 // the same ink. Holding an orbit re-charges the nib slowly, a landing pays a dividend — a clean
@@ -480,6 +488,9 @@ class OrbitWorld {
     // Off by default: the darkness prunes what it has already passed (below), which a live run needs
     // and a replayed one, rebuilding a whole chart to be read back rather than played, does not.
     this.keepAll = false;
+    // How far either side of a tap the release may be let go from (see RELEASE_GRACE). A replay sets it
+    // from its own log, so a run flown before the grace existed is read back under the rule it was flown by.
+    this.releaseGrace = RELEASE_GRACE;
     // The route actually flown and the departure/landing constructions measured along it: kept on the
     // world itself, not a page-level global, so a replayed run builds its own copy rather than writing
     // into whatever the live game happens to be carrying. See recordTrail/sampleInkPath/recordDeparture/
@@ -791,7 +802,9 @@ class OrbitWorld {
   release() {
     if(this.state!=='playing'||!this.player.node)return false;
     const p=this.player,n=p.node;
-    this.positionPlayer();
+    const grace=this.graceOffset();
+    if(grace){p.angle+=p.dir*p.speed/p.rad*grace;p.orbitSweep=Math.max(0,p.orbitSweep+p.speed/p.rad*grace);}
+    this.positionPlayer();this.flightPreview=null;
     const launch=this.launchVelocity();p.vx=launch.vx;p.vy=launch.vy;
     p.launch={x:p.x,y:p.y,vx:p.vx,vy:p.vy,row:n.row,dwell:p.orbitTime,sweep:p.orbitSweep,period:TAU*p.rad/p.speed,charge:launch.charge,sling:n.type==='sling'};
     // What the orbit actually observed, frozen onto the body as the traveller leaves it. The player's own
@@ -800,6 +813,29 @@ class OrbitWorld {
     n.documented=clamp(p.orbitSweep/SWEEP_FULL,0,1);
     p.ignore=n.id; p.node=null; p.flightTime=0;
     this.emit('release',{x:p.x,y:p.y,vx:p.vx,vy:p.vy,charge:launch.charge,factor:launch.factor,sling:n.type==='sling'}); return true;
+  }
+  // Where along the orbit, within the grace either side of now, the release should be let go from: the
+  // nearest point that leaves on a perfect transfer to whatever the tap itself was aimed at, else — when
+  // the tap was aimed at nothing — the nearest that lands at all, else now. Every point is read with the
+  // guide's own solver at the present moment, which is exactly what a release from it will then fly, so
+  // the grace can never promise a landing the flight does not make, and never trades a course the nib can
+  // pay for for one it cannot. It reads only the state in hand, so a replayed release lands on the same
+  // point the live one did.
+  graceOffset() {
+    const p=this.player;if(!p.node||!(this.releaseGrace>0))return 0;
+    const angle=p.angle,rate=p.dir*p.speed/p.rad;
+    const read=offset=>{p.angle=angle+rate*offset;this.positionPlayer();return this.aim();};
+    const here=read(0);let perfect=null,landing=null;
+    if(!here||!here.perfect){
+      const steps=Math.round(this.releaseGrace/RELEASE_GRACE_STEP);
+      for(let k=1;k<=steps&&perfect===null;k++)for(const offset of [-k*RELEASE_GRACE_STEP,k*RELEASE_GRACE_STEP]){
+        const aim=read(offset);if(!aim||aim.dry||(here&&aim.n!==here.n))continue;
+        if(aim.perfect){perfect=offset;break;}
+        if(landing===null)landing=offset;
+      }
+    }
+    p.angle=angle;this.positionPlayer();
+    return perfect??(here?0:landing??0);
   }
   capture(n,contact=null) {
     if(this.state!=='playing'||n.visited)return false;
