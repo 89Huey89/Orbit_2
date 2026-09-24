@@ -636,9 +636,14 @@ function astroTrail(){
   for(let i=tail;i<pts.length;i++)i>tail?ctx.lineTo(pts[i][0]-.4,pts[i][1]-.4):ctx.moveTo(pts[i][0]-.4,pts[i][1]-.4);ctx.stroke();
   ctx.restore();
 }
+// The dashes are phased off each sample's own distance along the whole route (`cd`, the field the ceiling
+// and the scroll keep), not off the oldest sample still held: a dash pattern starts wherever its path
+// starts, so every time the tail was pruned the whole construction line slid along the flight.
 function astroInkPath(){
   const Q=world.inkPath;if(Q.length<2)return;const P=ink.astro;
-  ctx.save();ctx.lineCap='butt';ctx.strokeStyle=`rgba(${P.faded},.62)`;ctx.lineWidth=Math.max(.7,.9*scale);ctx.setLineDash([5*scale,3.5*scale]);
+  if(Q[0].cd===undefined)Q[0].cd=0;
+  for(let i=1;i<Q.length;i++)if(Q[i].cd===undefined)Q[i].cd=Q[i-1].cd+Math.hypot(Q[i].x-Q[i-1].x,Q[i].y-Q[i-1].y);
+  ctx.save();ctx.lineCap='butt';ctx.strokeStyle=`rgba(${P.faded},.62)`;ctx.lineWidth=Math.max(.7,.9*scale);ctx.setLineDash([5*scale,3.5*scale]);ctx.lineDashOffset=(Q[0].cd*scale)%(8.5*scale);
   ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));for(let i=1;i<Q.length;i++)ctx.lineTo(sx(Q[i].x),sy(Q[i].y));ctx.stroke();ctx.restore();
 }
 function astroAim(aim,preview){
@@ -646,7 +651,8 @@ function astroAim(aim,preview){
   const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   const Q=points.map(q=>[sx(q.x),sy(q.y)]),lens=[0];for(let i=1;i<Q.length;i++)lens.push(lens[i-1]+Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
   const at=d=>{let i=1;while(i<Q.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return[Q[i-1][0]+(Q[i][0]-Q[i-1][0])*t,Q[i-1][1]+(Q[i][1]-Q[i-1][1])*t];};
-  ctx.save();const step=6.5*scale,start=27*scale+(reducedMotion?0:(world.time*14*scale)%step);
+  // The pricks hold still; stepped forward on the clock they read as the guide itself crawling.
+  ctx.save();const step=6.5*scale,start=27*scale;
   for(let d=start;d<total;d+=step){const f=d/total,q=at(d),dry=f>dryFrom;
     ctx.fillStyle=dry?`rgba(${P.faded},${(.4*(1-f*.4)).toFixed(3)})`:warn?`rgba(${P.verm},${(.9*(1-f*.3)).toFixed(3)})`:`rgba(${P.ink},${((aim?.85:.6)*(1-f*.35)).toFixed(3)})`;
     ctx.beginPath();ctx.arc(q[0],q[1],(aim?1.05:.85)*(1-.35*f)*scale+.3,0,TAU);ctx.fill();}
