@@ -158,14 +158,6 @@ const CEILING_CHANGE_DUR=1.2;
 // only as tall as the band it actually draws, not a full screen-sized sheet, since the two together
 // are otherwise pinned exactly the way this file always pinned the whole wall.
 let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
-// The barque's heading side, held between frames. It changes only once the boat is plainly moving the
-// other way (a fair share of its speed, not a hair past vertical), so the top of a climb, a dive or the
-// flank of an hour-circle never flickers it back and forth.
-let ceilingFacing=1;
-// What is actually drawn, eased toward those targets each frame (ceilingDrawPlayer): ceilingTurn runs
-// from -1 to 1 as the boat comes about, and ceilingTilt is how far its bow is raised or lowered. null
-// until the first frame draws, which seeds both directly rather than easing in from an arbitrary start.
-let ceilingTurn=null,ceilingTilt=0;
 // The one expression that names which of the four watches is current, shared by the wall's own bake
 // (which register to paint) and the running head (which word to print) so the two can never drift.
 function ceilingHour(){return world?clamp(Math.floor(world.progress/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
@@ -608,10 +600,13 @@ function ceilingBorderStar(g,cx,cy,r,alpha,seed){
 // at a point with no hub and no belly at all. Kept as its own function rather than a size argument to
 // ceilingBorderStar because the two are different signs on the wall, not one sign at two scales.
 function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
-  const rr0=r*(.82+ceilingHash(seed,103)*.4),rot=ceilingHash(seed,7)*TAU;
+  // Set upright, one point down as the column's star sign stands, with its arms kept close to even: a
+  // column of these each at its own free rotation, arms long and short at random, read down the margin
+  // as a strand of wire knots rather than a column of stars.
+  const rr0=r*(.9+ceilingHash(seed,103)*.2),rot=Math.PI/2+(ceilingHash(seed,7)-.5)*.2;
   g.save();g.globalAlpha=alpha*(.72+ceilingHash(seed,131)*.42);g.strokeStyle=CEILING_PALETTE.carbon;g.lineCap='round';
   for(let i=0;i<5;i++){
-    const a=rot+i*TAU/5+(ceilingHash(seed+i*13,139)-.5)*.5,len=rr0*(.7+ceilingHash(seed+i*7,151)*.6);
+    const a=rot+i*TAU/5+(ceilingHash(seed+i*13,139)-.5)*.12,len=rr0*(.88+ceilingHash(seed+i*7,151)*.18);
     g.lineWidth=Math.max(.45,rr0*(.11+ceilingHash(seed+i*3,157)*.07));
     g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(a)*len,cy+Math.sin(a)*len);g.stroke();
   }
@@ -633,17 +628,21 @@ function ceilingAsteriskStar(g,cx,cy,r,alpha,seed){
 // period is a whole number of cycles across the band's own length, so a tiled copy still joins its
 // neighbour exactly, and each star's position wanders a little more besides — opening and closing the
 // pitch instead of holding one constant gap, the same wobble a hand ruling by eye actually makes.
+// In the hand, that crowding was the problem. At phone size a row of thin-armed stars whose tips cross
+// their neighbours', threaded on red rules running straight through their middles, stopped reading as
+// stars at all and read as a coil of barbed wire strung across the sheet at every register change. So
+// the band keeps its rules only at its two edges, where the facsimile's rules bound it, and sets its
+// stars as one file down the middle, each a full solid star with room round it: the pitch is a little
+// over three radii, so arms never touch, and the drift is kept to a hair. rows now thickens the file
+// rather than multiplying it — a band the facsimile draws deeper carries larger stars, not more of them.
 function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
-  const trows=[];for(let c=0;c<rows;c++)trows.push(y-width*.5+(c+.5)*width/rows);
-  for(let e=0;e<=rows;e++)ceilingBrush(g,[[x0,y-width*.5+e*width/rows],[x1,y-width*.5+e*width/rows]],CEILING_PALETTE.red,.6,.34,(y|0)+e*13);
-  const span=x1-x0,cycles=Math.max(2,Math.round(span/230)),r=Math.max(4.2,Math.min(gap*.62,width/rows*1.5));
-  for(let rr=0;rr<rows;rr++){
-    const stagger=rr%2?gap*.5:0,drift=width/rows*.16;
-    for(let x=x0+gap*.5+stagger,i=0;x<x1;x+=gap,i++){
-      const wob=Math.sin((x-x0)/span*TAU*cycles+rr*2.09)*drift,seed=(x|0)*3+i*7+rr*101+(y|0),
-        jy=(ceilingHash(i*7+rr*31,(y|0)+11)-.5)*gap*.24,jx=(ceilingHash(rr*13+i*5,(y|0)+17)-.5)*gap*.16;
-      ceilingBorderStar(g,x+jx,trows[rr]+wob+jy,r,.86,seed);
-    }
+  const top=y-width*.5-1.5,bot=y+width*.5+1.5;
+  ceilingBrush(g,[[x0,top],[x1,top]],CEILING_PALETTE.red,.7,.42,(y|0)+13);
+  ceilingBrush(g,[[x0,bot],[x1,bot]],CEILING_PALETTE.red,.7,.42,(y|0)+29);
+  const r=Math.max(4.2,width*(.42+.04*Math.min(rows,3))),n=Math.max(2,Math.round((x1-x0)/(r*3.3))),pitch=(x1-x0)/n;
+  for(let i=0;i<n;i++){
+    const x=x0+(i+.5)*pitch+(ceilingHash(i,(y|0)+17)-.5)*pitch*.06,yy=y+(ceilingHash(i*7,(y|0)+11)-.5)*width*.08;
+    ceilingBorderStar(g,x,yy,r,.92,(x|0)*3+i*7+(y|0));
   }
 }
 // One of the twelve lunar-month circles, undone back to what the facsimile actually shows: twelve
@@ -906,7 +905,7 @@ function ceilingBakeWall(watch){
   ceilingStarBandH(g,x0+4,x1-4,divide-signsH*.5-clearance-divBandW*.5,divStep,divBandW,DIV.starRows);
   for(let li=0;li<DIV.signLines;li++){
     const ly=divide-signsH*.5+signRowH*(li+.5)+li*signGap;
-    ceilingSignLine(g,x0+4,x1-4,ly,signRowH,perLine,.5,7000+li*97);
+    ceilingSignLine(g,x0+4,x1-4,ly,signRowH,perLine,.36,7000+li*97);
   }
   ceilingStarBandH(g,x0+4,x1-4,divide+signsH*.5+clearance+divBandW*.5,divStep,divBandW,DIV.starRowsBelow);
   // This comment used to say the tile's middle is left to the route "on purpose," written when the
@@ -1340,39 +1339,39 @@ function ceilingDrawSunrise(){
   ctx.beginPath();ctx.ellipse(0,-13*s,7*s,3*s,0,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(0,-24*s,4*s,2*s,0,0,TAU);ctx.fill();
   ctx.restore();
 }
-// The route is a sequence of brush dabs, not a stroke — 02-ceiling.md says so outright, and the aim
-// guide beside it already draws that way. A slow stretch of the flight is a run of close, loaded
-// touches; a fast one thins to a scatter of light ones, which is the speed reading drawInkPath()
-// gets from three line weights, given here instead through dab spacing and size — the way a loaded
-// brush actually runs dry as the hand hurries. Walked once in screen space so the spacing reads the
-// same at any zoom, and cheap regardless of how long inkPath has grown: one pass, two strokes a dab,
-// nothing sampled that is not already on the path.
+// The route is one material and one only: red ochre, the pigment every Egyptian draughtsman laid his
+// setting-out in with the reed before anything else touched the wall. It used to be two — a red dab
+// with a pale one closing over it, walked as a row of short touches — and on lapis the pair read as a
+// striped cord, not a line anyone painted. It is laid now as the reed actually lays it: one continuous
+// line, fuller where the flight was slow and the reed had time to load the plaster, thinner where it
+// hurried, and broken only where the reed ran dry. It also stays exactly where it was laid. The touches
+// used to be counted off from the oldest sample still held, so every time the tail of the path was
+// pruned off the bottom of the sheet the whole row slid along the flight; now every sample carries its
+// own distance along the whole route (`cd`, set once, the first time it is drawn), and the weight and
+// the dry breaks are read off that alone, so a stretch of the line looks the same from the moment it is
+// laid to the moment it leaves the sheet.
+const CEILING_ROUTE_WEIGHTS=[2.6,2,1.5];
 function ceilingDrawRoute(){
-  const inkPath=world.inkPath;
-  if(inkPath.length<2)return;
-  ctx.save();ctx.lineCap='round';
-  let carry=0;
-  for(let i=1;i<inkPath.length;i++){
-    const a=inkPath[i-1],b=inkPath[i],ax=sx(a.x),ay=sy(a.y),bx=sx(b.x),by=sy(b.y),len=Math.hypot(bx-ax,by-ay);
-    if(len<.1)continue;
-    const ux=(bx-ax)/len,uy=(by-ay)/len,t=clamp((b.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);
-    // Weight and alpha were set against the wall this sheet had when the dabs were first laid, which
-    // was mostly bare plaster. The facsimile passes since (the packed decan columns, the foot
-    // procession, the layered divider, a construction wheel on every node) restored real density to
-    // the wall in these same two inks, and the route was never re-struck to hold its own against it —
-    // it was drawn correctly and read as gone anyway. Raised here, not thinned there: the density is
-    // the facsimile's, the route is the flight's, and only the route's own charge was ever this thin.
-    const spacing=lerp(4.5,13,t)*scale,weight=lerp(2.8,1.4,t)*scale,reach=lerp(2.1,1,t)*scale,alpha=lerp(.62,.36,t);
-    for(let d=Math.max(0,spacing-carry);d<len;d+=spacing){
-      const f=d/len,x=ax+(bx-ax)*f,y=ay+(by-ay)*f;
-      // The setting-out rides a hair under the closing dab, off-register, the way the wall's other
-      // two-pass marks already keep their red under the black.
-      ctx.strokeStyle=`rgba(${CEILING_RGB.red},${alpha*.5})`;ctx.lineWidth=weight*1.1;
-      ctx.beginPath();ctx.moveTo(x+1-ux*reach,y-1-uy*reach);ctx.lineTo(x+1+ux*reach,y-1+uy*reach);ctx.stroke();
-      ctx.strokeStyle=`rgba(${CEILING_RGB.carbon},${alpha})`;ctx.lineWidth=weight;
-      ctx.beginPath();ctx.moveTo(x-ux*reach,y-uy*reach);ctx.lineTo(x+ux*reach,y+uy*reach);ctx.stroke();
+  const P=world.inkPath;if(P.length<2)return;
+  if(P[0].cd===undefined)P[0].cd=0;
+  for(let i=1;i<P.length;i++)if(P[i].cd===undefined)P[i].cd=P[i-1].cd+Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y);
+  const band=q=>{const t=clamp((q.speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);return t<.34?0:t<.68?1:2;},
+    dry=q=>ceilingHash(Math.floor(q.cd/4),(world.seed|0)+71)<.012+band(q)*.022;
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  // Two passes of the same pigment: the soak, wider and faint, where the ochre bled into the lime, and
+  // the line itself over it.
+  for(const [widen,alpha] of [[2.2,.16],[1,.78]]){
+    ctx.strokeStyle=`rgba(${CEILING_RGB.red},${alpha})`;
+    for(let w=0;w<3;w++){
+      ctx.lineWidth=CEILING_ROUTE_WEIGHTS[w]*widen*scale;ctx.beginPath();let open=false;
+      for(let i=1;i<P.length;i++){
+        const a=P[i-1],b=P[i];
+        if(band(b)!==w||dry(b)){open=false;continue;}
+        if(!open){ctx.moveTo(sx(a.x),sy(a.y));open=true;}
+        ctx.lineTo(sx(b.x),sy(b.y));
+      }
+      ctx.stroke();
     }
-    carry=(carry+len)%spacing;
   }
   ctx.restore();
 }
@@ -1686,24 +1685,13 @@ function ceilingDrawNun(g){
 function ceilingDrawPlayer(dt){
   if(world.state==='dead')return;const p=world.player,x=sx(p.x),y=sy(p.y),s=Math.max(.72,scale),speed=Math.hypot(p.vx,p.vy);
   // The barque is a boat in profile, the way every barque on a coffin board or a ceiling is painted, and
-  // it is never spun round its own heading. It used to be: the hull rode the tangent exactly, so on an
-  // hour-circle it turned a full revolution every lap, and to keep it off its back it was mirrored and
-  // swung a half-turn each time it crossed vertical — twice a lap, a quick spin at every flank of the
-  // circle, which is what made it read as hectic in the hand. Now the two things are pulled apart.
-  // Which way it faces is the sign of its horizontal travel, changed only once that travel is plainly
-  // the other way and then eased over a third of a second as a boat coming about: the hull narrows to
-  // its end-on silhouette and widens again facing the other way, with no rotation in it at all. How far
-  // it pitches is the elevation of its travel alone — never which side it faces, so coming about never
-  // moves the bow up or down — scaled well short of the truth: kept to a rock on an hour-circle, where
-  // the heading swings through every angle each lap, and let rise further in flight, where it is steady
-  // and says where the barque is climbing to.
-  const sp=Math.max(1,speed);if(p.vx>sp*.3)ceilingFacing=1;else if(p.vx<-sp*.3)ceilingFacing=-1;
-  const tilt=Math.atan2(-p.vy,Math.abs(p.vx))*(p.node?.22:.42),step=dt||0;
-  if(ceilingTurn===null||reducedMotion){ceilingTurn=ceilingFacing;ceilingTilt=tilt;}
-  else{
-    const move=step/.34*2;ceilingTurn=ceilingTurn<ceilingFacing?Math.min(ceilingFacing,ceilingTurn+move):Math.max(ceilingFacing,ceilingTurn-move);
-    ceilingTilt+=(tilt-ceilingTilt)*(1-Math.exp(-step*5));
-  }
+  // it does not turn at all. It has tried three ways of following its course — riding the tangent, which
+  // spun it a full revolution every lap; mirroring at each flank of a circle; and coming about by
+  // narrowing to its end-on silhouette and widening again — and every one of them read as a toy being
+  // twirled rather than a painted figure. The walls never turn one either: a barque sails its register
+  // in the one direction the register runs, level on its line, whichever way the painter's eye travels.
+  // So it is set down level, prow to the east, and is carried along the course as a sign is carried along
+  // a column; where it is going is said by the route under it and the guide ahead of it, not by the hull.
   // The barque is flooded in light colours, so it alone is closed in the dark ink rather than the pale
   // line the rest of the night is drawn in; the palette's line is lent to it for the length of the draw.
   const line=CEILING_PALETTE.carbon;CEILING_PALETTE.carbon=CEILING_PALETTE.ink;
@@ -1711,17 +1699,13 @@ function ceilingDrawPlayer(dt){
 }
 function ceilingPaintBarque(x,y,s,speed){
   const p=world.player;
-  // A constant-rate turn read through a sine is the hull's width as it would be seen swinging round a
-  // vertical axis, so the boat comes about rather than folding flat and springing open again.
-  const turn=Math.sign(ceilingTurn||1)*Math.max(.1,Math.sin(Math.abs(ceilingTurn)*Math.PI/2));
-  ctx.save();ctx.translate(x,y);ctx.save();ctx.scale(turn*s,s);ctx.rotate(-ceilingTilt);
+  ctx.save();ctx.translate(x,y);ctx.save();ctx.scale(s,s);
   // What is drawn is the barque of the coffin boards and the Greenfield sheet, and it is rowed and
   // steered, never sailed: a crescent hull with papyrus umbels curling up at both ends, a naos
   // amidships carrying the disc, two steering oars crossed at the stern. The bare post that used to
   // stand here read as a mast the boat kept losing at every turn of the clock, so it is gone and the
   // naos stands where it stood. Everything is laid in the hull's own frame — +x the prow, -y the deck
-  // side — and the turn above mirrors both together, so the same marks read true whichever way the
-  // boat is heading.
+  // side.
   // The sheer and keel are quartics in x, not arcs: flat and full-bellied amidships, then sweeping up
   // hard only in the last quarter, which is the coffin painters' hull and not the drawn bow a plain
   // arc turns into once a naos is standing on it.
@@ -1763,13 +1747,13 @@ function ceilingPaintBarque(x,y,s,speed){
   ceilingBrush(ctx,[[dx+1.4,-15.4],[dx+2.6,-17.4],[dx+4.2,-17.9],[dx+4.8,-16.6]],CEILING_PALETTE.carbon,.9,.85,923);
   // Two steering oars crossed at the stern, looms standing above the sheer and blades reaching below
   // the keel — the one place the reference boats put anything under the waterline, and the mark that
-  // tells stern from prow when the hull is mirrored.
+  // tells stern from prow.
   const oar=(x0,y0,x1,y1,seed)=>{const L=Math.hypot(x1-x0,y1-y0),ux=(x1-x0)/L,uy=(y1-y0)/L,nx=-uy,ny=ux;
     ceilingBrush(ctx,[[x0,y0],[x1-ux*3,y1-uy*3]],CEILING_PALETTE.carbon,1.2,.9,seed);
     ceilingPolygon(ctx,[[x1-ux*4.5,y1-uy*4.5],[x1-ux*2+nx*1.7,y1-uy*2+ny*1.7],[x1+ux*1.5+nx*1.3,y1+uy*1.5+ny*1.3],[x1+ux*3,y1+uy*3],[x1+ux*1.5-nx*1.3,y1+uy*1.5-ny*1.3],[x1-ux*2-nx*1.7,y1-uy*2-ny*1.7]],CEILING_PALETTE.yellow,1,seed+5,1);};
   oar(-9,-9.5,-24,9,953);oar(-15,-9.5,-18,11,959);
   // The charges below are rings round the barque rather than parts of it, so they are laid outside the
-  // hull's own frame: they neither pitch with it nor narrow as it comes about.
+  // hull's own frame.
   ctx.restore();ctx.scale(s,s);
   // Defect (e): the reflector's ring was the atlas's dashed convention; the wall marks the same
   // boundary two other ways instead, so the two held charges stay tellable apart by shape as well as
