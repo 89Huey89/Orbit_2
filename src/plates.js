@@ -606,9 +606,14 @@ const ASTRO_FACES={
 // any of them: register one's is the atlas's own Fell, because a Huygens or a Herschel paper was set in it;
 // `typed` is Courier Prime, a redrawn IBM Courier, for the plate register's typed labels and log; `mono` is
 // IBM Plex Mono for the rendered register's FITS cards, fixed-width and uppercase with no hand in it.
+// The plate register has two more: `grot` is Libre Franklin, an open Franklin Gothic, for the printed réseau
+// and catalogue labels a survey plate carries; `jacket` is Special Elite, a worn Smith-Corona, kept for the
+// one dramatic label the era file allows it, the plate jacket a chapter opens on.
 const LENS_FACES={...FELL_FACES,
   typed:"'Courier Prime','Courier New',monospace",
-  mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace"
+  mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace",
+  grot:"'Libre Franklin','Helvetica Neue',Arial,sans-serif",
+  jacket:"'Special Elite','Courier Prime','Courier New',monospace"
 };
 definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in

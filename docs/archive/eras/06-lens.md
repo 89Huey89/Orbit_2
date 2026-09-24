@@ -418,9 +418,10 @@ this section calls the largest gap, and makes choices this file left open, recor
 - **Register three is drawn rather than borrowed from `renderedSpecimen()`**, which reads the live plate's
   palette; the sphere here keeps the observatory plate's colours in a table of its own, and is taken apart
   into three channel images so the composite assembles additively on the sensor black.
-- **The faces are vendored:** Courier Prime for the plate register and IBM Plex Mono for the FITS cards,
-  both OFL, from the prototypes' fonts and cut by `npm run fonts`. Libre Franklin and Special Elite are not
-  used; the Fell carries register one.
+- **The faces are vendored** from the prototypes' fonts and cut by `npm run fonts`, as this file names
+  them: Courier Prime (OFL) for the plate register's typed log and labels, Libre Franklin (OFL) for its
+  printed réseau and catalogue labels, Special Elite (Apache 2.0) for the one plate-jacket label a chapter
+  opens on, and IBM Plex Mono (OFL) for the FITS cards; the Fell carries register one.
 - **A story is added the progression does not plan:** six chapters (Padua 1610, The Hague 1659, Paris 1887,
   Meudon 1909, Tucson 1981, Cape Canaveral 1990), each opening with Saturn drawn as that place drew it, won
   at the thirty-sixth row with the signature sheet: the three registers' Saturns side by side, and Vulcan's
