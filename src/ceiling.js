@@ -128,7 +128,10 @@ defineVoice('ceiling',{
   opening:'Night voyage begun. Tap to release the barque. Skim an hour-circle for a clean transfer. Hold a circle to restore the reed.',
   ended:'Preview run complete. Score {score}. Tap to try again or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
-  gainAngle:'TRUE ENTRY',
+  // The bonus a landing earns for how true its angle ran, and the square landing itself, in the
+  // colophon's words rather than the atlas's Latin.
+  glosses:{angleBonus:'  ·  TRUE ENTRY +{bonus}'},
+  squareLanding:CEILING_OBSERVATIONS.rightAngle,
   hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
   chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',endTitleWon:'The barque came through the night.',endActionWon:'Tap to sail the night again',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
     instructions:{head:'THE MANNER OF USE',rules:['Tap to release the flat night barque.','Skim an hour-circle; hold it to restore the reed.','Follow the painted dabs around Apep, the Eye, Shu and Nun.','The first landing sets the course.']}},
