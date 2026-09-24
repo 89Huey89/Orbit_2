@@ -42,6 +42,12 @@ on the frontispiece; see README.md's "The eras".
   levels of hand and reports how deep a run actually gets, what it captures, and what the era
   progression's observation ledger would stand at by each row. Makes no assertions and is not run by
   `npm test`. Its first reading is `docs/archive/eras/MEASUREMENTS.md`.
+- `npm run shots` — the screenshot harness (`tools/shots/`, see its README): pulls named scenarios
+  of the game in headless Chromium on a virtual clock, at any viewport (`--viewport=iphone-se`,
+  `390x844@3`, `all`), plate, era or seed, into `tools/shots/out/` with a contact sheet. Captures are
+  deterministic. Use it for the 430×932 check below instead of building a one-off harness; add a
+  scenario file to `tools/shots/scenarios/` when a new capture is worth keeping. Needs Playwright
+  (not a dependency — the global install is found).
 - `npm run glyphs` — regenerates `src/glyphs.js` from the faces in
   `assets/fonts.source.css` (needs `fontkit`).
 - `npm run fonts` — regenerates `assets/fonts.css`, the same faces cut to the
@@ -92,8 +98,8 @@ but a CSS pixel on a phone is physically about two thirds of one on a desktop mo
 which is why marks that look fine in a desktop browser can be unreadable on the
 device. Size against the target, not against the window you are testing in.
 
-Check a change at 430×932 before calling it done: `npm start`, then a 430×932 viewport
-(devtools device emulation or a headless browser). `npm test` never renders a browser,
+Check a change at 430×932 before calling it done: `npm run shots -- <scenario>` (the reference
+sheet is its default viewport), or `npm start` and a 430×932 viewport in devtools. `npm test` never renders a browser,
 so it cannot catch any of this.
 
 ## Conventions
