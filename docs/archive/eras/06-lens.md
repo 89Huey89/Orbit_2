@@ -401,6 +401,40 @@ Herschel-style hand-inked sketch, staged across the same 0°/90°/180°/240° ch
 register already uses, actually reads as a *resolving* image rather than as era V's own
 construction-circle phenomenon redrawn with a different caption.
 
+A playable preview door is now built on this file, `src/lens.js`, beside the Rock's, the Ceiling's, the
+Scroll's and the Astrolabe's (root `README.md`, "The eras"). It builds all three registers, including the one
+this section calls the largest gap, and makes choices this file left open, recorded here:
+
+- **The register is read off the row, not the ledger.** A preview has no observation ledger, so the thirds
+  rule is read off the run itself: rows 0–11 are the eyepiece, 12–23 the plate, 24–35 the sensor. The line
+  between two registers is drawn on the sheet halfway between the last body of one and the first of the
+  next, and everything is drawn in the register of the ground it stands on; the HUD, the trail and the
+  guide follow the traveller's own row.
+- **Register one is drawn, not prototyped first:** a sepia blot out of focus, then burin hatching toward the
+  limb, then the family's better reading and a dated Fell caption. The readings chosen are Galileo's triform
+  Saturn and Huygens's ring, Venus's phases (*Cynthiae figuras*), Jupiter's bands and a spot dated to 1665,
+  a Martian polar cap dated to 1666, Herschel's comet settling into *Georgium Sidus* (1781), and his three
+  lunar volcanoes (1787). None is judged in the hand yet.
+- **Register three is drawn rather than borrowed from `renderedSpecimen()`**, which reads the live plate's
+  palette; the sphere here keeps the observatory plate's colours in a table of its own, and is taken apart
+  into three channel images so the composite assembles additively on the sensor black.
+- **The faces are vendored** from the prototypes' fonts and cut by `npm run fonts`, as this file names
+  them: Courier Prime (OFL) for the plate register's typed log and labels, Libre Franklin (OFL) for its
+  printed réseau and catalogue labels, Special Elite (Apache 2.0) for the one plate-jacket label a chapter
+  opens on, and IBM Plex Mono (OFL) for the FITS cards; the Fell carries register one.
+- **A story is added the progression does not plan:** six chapters (Padua 1610, The Hague 1659, Paris 1887,
+  Meudon 1909, Tucson 1981, Cape Canaveral 1990), each opening with Saturn drawn as that place drew it, won
+  at the thirty-sixth row with the signature sheet: the three registers' Saturns side by side, and Vulcan's
+  entry struck through beneath them. The transition into the Flyby is not built.
+- **The observation's stages come earlier than on the other eras** (the blur clears by a sixth of the
+  sweep, the first reading is cut by 55%), because a flown run leaves most bodies part-way and the
+  eyepiece's readings were otherwise rarely seen. Only the dated seal asks for the whole observation.
+- **The sensor's channels are labelled R, V and B**, the Johnson broadband filters, rather than the
+  narrowband filter names of a camera fitted in 1993, after this era closes.
+- **Chapter four draws Saturn, not Mars:** Meudon's own story is told in its curator's line and on every
+  dune world on the plate, while its Saturn is the Paris plate annotated in ink, so the six openings stay
+  one planet.
+
 ## Risk
 
 **This is the ladder's biggest authored-art bill, honestly.** Three registers means three palettes,

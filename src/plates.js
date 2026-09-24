@@ -380,7 +380,12 @@ const PLATE_STYLES={
   // Era IV is the sky measured through brass, on the sized cream paper its geometry is constructed on: a
   // light ground again, pulled from the paper plate, and every mark on it from the hand `src/astrolabe.js`
   // registers. Its record is its own (orbit.astrolabe.v1), kept apart from the atlas's like the Rock's cave.
-  astrolabe:{base:'paper',wash:0,era:4,render:'astrolabe',can:{score:true,mode:true},door:{button:'astrolabe-open',label:'ERA IV \u00b7 THE ASTROLABE'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  astrolabe:{base:'paper',wash:0,era:4,render:'astrolabe',can:{score:true,mode:true},door:{button:'astrolabe-open',label:'ERA IV \u00b7 THE ASTROLABE'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era VI is the lens, in three registers the sheet climbs through — laid paper at the eyepiece, a glass
+  // negative, a sensor read out — so no one ground is its own; it opens on the paper, and is pulled from the
+  // paper plate for that reason, with every mark on all three from the hand `src/lens.js` registers. Era V
+  // is the atlas itself, so this is the next door up the ladder. Its record is its own (orbit.lens.v1).
+  lens:{base:'paper',wash:0,era:6,render:'lens',can:{score:true,mode:true},door:{button:'lens-open',label:'ERA VI \u00b7 THE LENS'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -597,7 +602,20 @@ const ASTRO_FACES={
   naskh:ASTRO_NASKH,naskhB:ASTRO_NASKH,
   weight:{naskhB:700}
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES});
+// The Lens letters in three hands, one to a register, and names all three here so any painter can ask for
+// any of them: register one's is the atlas's own Fell, because a Huygens or a Herschel paper was set in it;
+// `typed` is Courier Prime, a redrawn IBM Courier, for the plate register's typed labels and log; `mono` is
+// IBM Plex Mono for the rendered register's FITS cards, fixed-width and uppercase with no hand in it.
+// The plate register has two more: `grot` is Libre Franklin, an open Franklin Gothic, for the printed réseau
+// and catalogue labels a survey plate carries; `jacket` is Special Elite, a worn Smith-Corona, kept for the
+// one dramatic label the era file allows it, the plate jacket a chapter opens on.
+const LENS_FACES={...FELL_FACES,
+  typed:"'Courier Prime','Courier New',monospace",
+  mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace",
+  grot:"'Libre Franklin','Helvetica Neue',Arial,sans-serif",
+  jacket:"'Special Elite','Courier Prime','Courier New',monospace"
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
@@ -612,6 +630,7 @@ function invalidateArt(){
   if(typeof invalidateRockArt==='function')invalidateRockArt();
   if(typeof invalidateScrollArt==='function')invalidateScrollArt();
   if(typeof invalidateAstrolabeArt==='function')invalidateAstrolabeArt();
+  if(typeof invalidateLensArt==='function')invalidateLensArt();
 }
 // The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
 // is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own
