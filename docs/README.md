@@ -21,9 +21,9 @@ repeating it.
 
 ## `archive/eras/` — the eight-era progression plan
 
-Nothing here describes shipped behaviour, with two exceptions: Era I (`01-rock.md`) and Era II
-(`02-ceiling.md`) are already playable, standalone preview doors reached from the frontispiece
-(`src/rock.js`, `src/ceiling.js` — see root `README.md`'s "The eras"). They ship on their own,
+Nothing here describes shipped behaviour, with three exceptions: Era I (`01-rock.md`), Era II
+(`02-ceiling.md`) and Era III (`03-scroll.md`) are already playable, standalone preview doors reached
+from the frontispiece (`src/rock.js`, `src/ceiling.js`, `src/scroll.js` — see root `README.md`'s "The eras"). They ship on their own,
 outside of any progression system; everything else below is the design still to be built.
 
 ```
@@ -49,7 +49,7 @@ archive/
     ├── OPEN-QUESTIONS.md     what has been settled, and what is still open
     ├── 01-rock.md            I    · c. 40,000–3,000 BCE — the cave wall (shipped, `src/rock.js`)
     ├── 02-ceiling.md         II   · c. 1473–1458 BCE — the tomb ceiling (shipped, `src/ceiling.js`)
-    ├── 03-scroll.md          III  · c. 649–684 CE — the star chart on the scroll
+    ├── 03-scroll.md          III  · c. 649–684 CE — the star chart on the scroll (preview, `src/scroll.js`)
     ├── 04-astrolabe.md       IV   · 964–1437 CE — the sky read through the instrument
     ├── 05-engraving.md       V    · c. 1540–1610 — the atlas page
     ├── 06-lens.md            VI   · 1610–1990 — the lens, the plate, the rendered sphere

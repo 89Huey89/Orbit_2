@@ -331,9 +331,11 @@ announced once and cleanly — a new fact, not a process.
 
 ## The prototype
 
-No prototype exists yet for this era. [OVERVIEW.md](OVERVIEW.md)'s build order places the Scroll
-after [The Astrolabe](04-astrolabe.md) and ahead only of [The Rock](01-rock.md)'s own remaining
-work; nothing in this file should be read as describing shipped or even spiked behaviour. The
+A standalone study now exists, [prototypes/scroll.html](prototypes/scroll.html), animating one held
+body through the dot, line, boundary and entry stages against the observation clock; and a playable
+preview door is built from it, `src/scroll.js`, beside the Rock's and the Ceiling's (root `README.md`,
+"The eras"). Neither is the progression this file plans, and neither has yet been judged in the hand
+against the questions below; [PROTOTYPES.md](PROTOTYPES.md)'s verdict row is still to be written. The
 sighting-tube silhouette is the geometry most worth a first pass, for the same reason
 [OBSERVER-CORE.md](OBSERVER-CORE.md) flags the Astrolabe's alidade: a straight barrel laid along
 the flight's own tangent risks visually fusing with Orbit's existing pricked aim guide, and that
