@@ -20,7 +20,7 @@ Options (a comma list on viewport/plate/era crosses every value):
   --viewport=NAME|WxH[@S]  iphone-15-pro-max (default), iphone-se, laptop, 390x844@3, ... or "all"
   --scale=N                device pixel ratio, overriding the viewport's own
   --plate=ID               night, paper, cellarius, verdigris, foxed, azzurra, sepia, proof, modern
-  --era=ID                 rock | ceiling | scroll | astrolabe — enters that era's door after boot
+  --era=ID                 rock | ceiling | scroll | astrolabe | lens — enters that era's door after boot
   --profile=NAME           fresh | returning (default) | full — what localStorage holds at boot
   --storage=JSON           extra localStorage keys, e.g. '{"orbit.difficulty.v1":"hardcore"}'
   --seed=N                 the run's seed (default 7)

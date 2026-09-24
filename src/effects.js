@@ -1953,6 +1953,8 @@ function drawTallies(dt){
     if(newest)t.stale=0;else if(world.state!=='paused')t.stale=(t.stale||0)+dt;
     const dry=newest?1:reducedMotion?.5:lerp(1,.5,Math.min(1,(t.stale||0)/1.1));
     const alpha=(reducedMotion?1:Math.min(1,t.age*8))*dry;
+    // A plate that sets its tallies in its own ink names a `tally` painter, handed the settled box to draw in.
+    const own=handFor('tally');if(own){ctx.save();own(t,tb,alpha);ctx.restore();continue;}
     const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';
