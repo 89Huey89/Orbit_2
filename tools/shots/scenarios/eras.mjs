@@ -1,8 +1,8 @@
 // The standalone era doors: each wall's frontispiece, a run on it, and its own end leaf.
 export default {
   name:'eras',
-  description:'Era I (rock), Era II (ceiling) and Era III (scroll): frontispiece, flight, and end leaf.',
-  defaults:{era:['rock','ceiling','scroll']},
+  description:'Era I (rock), Era II (ceiling), Era III (scroll) and Era IV (astrolabe): frontispiece, flight, and end leaf.',
+  defaults:{era:['rock','ceiling','scroll','astrolabe']},
   async run(g){
     await g.shot('frontispiece');
     await g.start();
