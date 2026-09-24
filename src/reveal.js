@@ -19,8 +19,12 @@ definePlate('reveal',{
     strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178'},
   paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
     strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
-  ceiling:{mode:'wall',sketch:'157,55,36',nib:'36,29,22',bead:'36,29,22',dry:'92,75,53',
-    spatter:'157,55,36',strike:'157,55,36',washRim:'36,29,22',blot:'157,55,36',rule:'36,29,22'},
+  // Repainted for Nut's night sky (2026-09): the wall's ground ink was carbon black on plaster, now
+  // it is cream on lapis, so every token that used to be carbon (nib, bead, washRim, rule) reads
+  // cream and every one that was red ochre (sketch, spatter, strike, blot) reads carnelian — the
+  // sketch-then-correct-then-flood-then-close order this mode animates is unchanged, only its ink.
+  ceiling:{mode:'wall',sketch:'194,74,47',nib:'239,226,196',bead:'239,226,196',dry:'201,187,152',
+    spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196'},
   // blot is the eighth "this means black" token the void-family finding names (see definePlate('dark')
   // in effects.js): the same three plates' own ink-black, not the automatic duotone's lighter reach.
   cellarius:{blot:'6,8,20'},

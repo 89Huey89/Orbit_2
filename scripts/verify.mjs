@@ -202,17 +202,18 @@ function taskVariedOpening(){
 }
 
 // A Web Audio stand-in, just enough of the API surface OrbitAudio and an era's own painters ask for
-// (gains, filters, oscillators, buffer sources, a convolver for a synthetic cave reverb, and the
-// buffers those are built from) to run the real synthesis code end to end with nothing that throws,
+// (gains, filters, oscillators, buffer sources, a convolver for a synthetic cave reverb, the master
+// compressor, and the buffers those are built from) to run the real synthesis code end to end with nothing that throws,
 // rather than skip it outright the way a missing AudioContext makes audio.js itself skip it. Every
 // node is a plain no-op sink: nothing here plays a sound, it only has to survive being asked to.
-class FakeAudioParam{constructor(v=0){this.value=v;}setValueAtTime(v){this.value=v;return this;}linearRampToValueAtTime(v){this.value=v;return this;}exponentialRampToValueAtTime(v){this.value=v;return this;}}
+class FakeAudioParam{constructor(v=0){this.value=v;}setValueAtTime(v){this.value=v;return this;}linearRampToValueAtTime(v){this.value=v;return this;}exponentialRampToValueAtTime(v){this.value=v;return this;}setTargetAtTime(v){this.value=v;return this;}}
 class FakeAudioNode{connect(){return arguments[0];}disconnect(){}}
 class FakeGain extends FakeAudioNode{constructor(){super();this.gain=new FakeAudioParam(1);}}
 class FakeFilter extends FakeAudioNode{constructor(){super();this.type='lowpass';this.frequency=new FakeAudioParam(350);this.Q=new FakeAudioParam(1);}}
 class FakeOscillator extends FakeAudioNode{constructor(){super();this.type='sine';this.frequency=new FakeAudioParam(440);this.onended=null;}start(){}stop(){}}
 class FakeBufferSource extends FakeAudioNode{constructor(){super();this.buffer=null;this.onended=null;}start(){}stop(){}}
 class FakeConvolver extends FakeAudioNode{constructor(){super();this.buffer=null;}}
+class FakeCompressor extends FakeAudioNode{constructor(){super();for(const k of ['threshold','knee','ratio','attack','release'])this[k]=new FakeAudioParam();}}
 class FakeAudioBuffer{
   constructor(channels,length,sampleRate){this.numberOfChannels=channels;this.length=length;this.sampleRate=sampleRate;this.duration=length/sampleRate;this._data=Array.from({length:channels},()=>new Float32Array(length));}
   getChannelData(ch){return this._data[ch];}
@@ -224,6 +225,7 @@ class FakeAudioContext{
   createOscillator(){return new FakeOscillator();}
   createBufferSource(){return new FakeBufferSource();}
   createConvolver(){return new FakeConvolver();}
+  createDynamicsCompressor(){return new FakeCompressor();}
   createBuffer(channels,length,sampleRate){return new FakeAudioBuffer(channels,length,sampleRate);}
   resume(){this.state='running';return Promise.resolve();}
 }
@@ -737,10 +739,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(typeof context.test.handFor('frame'),'function','A plate that draws a whole frame in its own hand must name that painter');
     assert.equal(wall.chart,'DECAN COURSE');
     assert.equal(wall.chartNoun,'decan course');
-    assert.equal(wall.losses['THE DARK CAUGHT UP'],'THE WALL BROKE AWAY BENEATH');
+    assert.equal(wall.losses['THE DARK CAUGHT UP'],'THE WATERS OF NUN ROSE OVER THE BARQUE');
     assert.equal(wall.losses['THE NIB RAN DRY'],'THE REED RAN DRY');
     assert.equal(wall.observations.perfectThree,'THREE CLEAN TRANSFERS');
-    assert.equal(wall.observations.rightAngle,'A RIGHT ANGLE ON THE CANON GRID');
+    assert.equal(wall.observations.rightAngle,'A RIGHT ANGLE OF ARRIVAL');
     assert.equal(wall.pressures.relaxed,'QUIET NIGHT');
     assert.equal(wall.pressures.hardcore,'HARD NIGHT');
     assert.equal(wall.hud.pace,'COURSE \u00d7');
@@ -757,8 +759,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(wall.chrome.pauseLeave,'LEAVE THE VOYAGE');
     assert(!/press|pen|frontispiece/i.test([wall.chrome.pauseEyebrow,wall.chrome.pauseTitle,wall.chrome.pauseNote,wall.chrome.pauseResume,wall.chrome.pauseLeave].join(' ')),'No word of the atlas\'s own workshop is left standing on the pause leaf of another century');
     assert.equal(wall.unrecorded,'ERA PREVIEW \u00b7 NOT RECORDED');
-    assert.equal(wall.chapters[0],'FIRST WATCH');
-    assert.equal(wall.chapters[3],'BEFORE DAWN');
+    assert.equal(wall.chapters.length,12,'The Ceiling divides its night into the Amduat\'s twelve hours');
+    assert.equal(wall.chapters[0],'THE ENTRANCE OF THE WEST');
+    assert.equal(wall.chapters[11],'THE BODY OF THE SERPENT');
+    assert.equal(wall.chapterRows*wall.chapters.length,wall.goalRow,'The Ceiling\'s dawn falls at the end of its last hour');
     assert(/decan course/i.test(wall.chartSaid)&&/wall holds/i.test(wall.chartSaid),'The Ceiling keeps its own completion sentence');
     assert(/barque/i.test(wall.opening),'The Ceiling keeps its own opening line');
     // Every feat the simulation can record must have a word on this sheet. The conversion reads one
@@ -860,7 +864,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // And the atlas keeps its own words exactly as they were: a handful of spot checks against the
     // strings this change actually touched.
     assert.equal(atlasWords.chrome.eraExit,'RETURN TO THE ATLAS');
-    assert.equal(atlasWords.chrome.tryAgain,'Tap to try again');
+    assert.equal(atlasWords.chrome.endAction,'Tap to try again');
     assert.equal(atlasWords.chrome.statFlow,'Best flow');
     assert.equal(atlasWords.hazards.vortex,'VORAGO');
     assert.equal(atlasWords.squareLanding,'Angulus rectus');
@@ -1659,6 +1663,21 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
     context.test.setPlate('night');
   }
+  // ---- The chapter boundary reads chapterRows off the plate, not the atlas's own hard-coded 8 ----
+  // Last of all: stubbing the Ceiling's voice below is a one-way change for the rest of this process
+  // (defineVoice only ever adds to a plate's table), so nothing after this point may depend on the
+  // Ceiling's real chapter words again.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    context.test.enterEra('ceiling');
+    context.defineVoice('ceiling',{chapterRows:3,chapters:['H1','H2','H3','H4','H5']});
+    context.test.world.state='playing';context.test.world.progress=7;
+    context.test.render(1/60);
+    // floor(7/3)=2 -> 'H3'; the atlas's own literal /8 would read floor(7/8)=0 and announce nothing.
+    assert(element('announcement').textContent.includes('H3'),
+      'The chapter boundary must read chapterRows off the plate, not a literal 8: '+element('announcement').textContent);
+    context.test.leaveEra();
+  }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
 }
 
@@ -2334,6 +2353,35 @@ const paused=new OrbitWorld(3);paused.start();paused.state='paused';const old=pa
   for(let i=0;i<120*10&&last.state==='playing'&&!last.player.node;i++)last.update(step);
   assert.equal(last.player.node,target,'A transfer that arrives on the last drop stands');
   assert.equal(last.state,'playing');
+}
+// A goal row (the Ceiling's twelfth hour) ends a run the same way every other ending does — state,
+// reason, deadTime — but as a win rather than a death: no shake, a 'sunrise' event instead of 'death',
+// and never both. goalRow 0, every existing caller's default, must leave a run exactly as endless as
+// it always was.
+{
+  const seen=[];
+  const w=new OrbitWorld(21,440,860,(type,e)=>{seen.push(type);},false,false,false,false,false,5);w.start();
+  // The suite's own tangent-seeking pilot: release the instant the guide reports a clean transfer.
+  for(let i=0;i<120*40&&w.state==='playing';i++){
+    const aim=w.aim();
+    if(aim&&aim.perfect&&w.player.node&&w.player.orbitTime>.12)w.release();
+    w.update(step);
+  }
+  assert.equal(w.won,true,'A goal-row world ends in a win once progress reaches the goal');
+  assert.equal(w.reason,'THE SUN ROSE');
+  assert.equal(w.state,'dead','A win still ends the run through the same state every other ending shares');
+  assert(w.progress>=5,'The winning run must actually have reached its goal row');
+  assert.equal(seen.filter(t=>t==='sunrise').length,1,'The win fires exactly once');
+  assert.equal(seen.includes('death'),false,'A win never also fires a death');
+}
+{
+  const w=new OrbitWorld(22,440,860);
+  assert.equal(w.goalRow,0,'goalRow defaults to 0: every existing caller stays endless');
+  w.state='playing';const n=w.makeNode(0,-400,54,1,'still');
+  w.player.x=0;w.player.y=-400+54;w.player.vx=0;w.player.vy=-150;
+  w.capture(n);
+  assert.equal(w.won,false,'With no goal, a landing however deep never wins the run on its own');
+  assert.equal(w.state,'playing');
 }
 // A skipped orbit is flown past at the same distance-based cost as a landing, so it now pays half the
 // dividend a landing on it would have, rather than the flight paying full price for dividends it

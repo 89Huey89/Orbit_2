@@ -242,7 +242,10 @@ function copyScore(){
   return line;
 }
 const chapters=['THE QUIET','THE DRIFT','THE ECLIPSE','THE DEEP'];
-const numerals=['I','II','III','IV'];
+// The atlas only ever indexes the first four of these (chapters.length above), but the same array
+// answers ui.js's chapterSaid for whatever plate is on the press, and the Ceiling's twelve hours need
+// a numeral through XII.
+const numerals=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 // The running head speaks the plate's own Latin rather than the game's English — REGIO, not TAB., since
 // TAB. already names two other things on the same sheet (the impressum's plate number and, until this
 // pairing landed, the illustrated figure's own caption). PROFVNDVM is the word the Deep's own nebula
@@ -485,7 +488,13 @@ const handFor=name=>plateHand()[name];
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
-  ceiling:{paper:'#ddcfad',paperRgb:'221,207,173',ink:'35,29,22',inkStrong:'24,20,15',inkSoft:'92,75,53',gold:'190,142,40',goldBright:'217,173,55',copper:'157,55,36',blue:'32,74,116',shieldBlue:'55,105,120',red:'157,55,36',text:'#211a12',caption:'91,72,49',shadow:'#b9a77f'},
+  // Repainted for Nut's night sky (2026-09): the wall went from lit lime plaster to a lapis ground, so
+  // every token that used to be a dark mark on a light sheet is now a light mark on a dark one — the
+  // hue families (gold, carnelian, blue) hold, only which end of each is the ink and which is the paper
+  // has flipped. Kept exactly to the agreed night palette so the DOM chrome in index.html (its own,
+  // separate copy — see syncDomPalette's DOM_EXPLICIT_PLATES note) and these shared canvas tokens never
+  // drift apart into two different night skies.
+  ceiling:{paper:'#152457',paperRgb:'21,36,87',ink:'239,226,196',inkStrong:'245,238,220',inkSoft:'201,187,152',gold:'227,180,71',goldBright:'240,205,122',copper:'194,74,47',blue:'46,126,163',shieldBlue:'62,156,146',red:'194,74,47',text:'#efe2c4',caption:'201,187,152',shadow:'#0d1838'},
   // Torchlit limestone, and a palette with two holes in it that are the point rather than an omission:
   // there is no gold, so the reddest ochre stands in and is spent as sparingly as gold ever was, and
   // there is no blue at all, so everything the atlas says in blue this era says in its black.
@@ -506,28 +515,38 @@ const FELL_FACES={
   hiero:HIERO_FACE
 };
 // The Ceiling letters in two hands at once, and neither of them is the atlas's. Its Latin is an
-// openly modern curatorial layer, so it is set in a slab serif — the class the trade named
-// "Egyptian" in the 1810s after the revival Napoleon's expedition set off, and the type an
-// excavation plate has been captioned in ever since. It declares itself modern, where the Fell
-// types would have claimed the wrong century and a screen serif claimed no century at all. Its
-// second hand is the wall's own, and `hiero` is where every plate names the sign face, so a
-// caption in signs asks for a face like any other rather than writing one out at the canvas.
+// openly modern curatorial layer, so its sentences are set in a slab serif — the class the trade
+// named "Egyptian" in the 1810s after the revival Napoleon's expedition set off, and the type an
+// excavation plate has been captioned in ever since. Its capitals go a step further: `sc` — every
+// title, eyebrow, label, and running head — is set in Limelight, the display face cut for 1920s
+// cinema marquees in the "Tutmania" that followed the Tutankhamun dig, the lettering that actually
+// put the find on posters. Zilla trails it in the stack so any glyph Limelight wasn't drawn for
+// still falls back to the slab rather than to the browser's default. Its second hand is the wall's
+// own, and `hiero` is where every plate names the sign face, so a caption in signs asks for a face
+// like any other rather than writing one out at the canvas.
 const CEILING_FACES={
   text:"'Zilla Slab',Georgia,serif",
-  sc:"'Zilla Slab',Georgia,serif",
+  sc:"'Limelight','Zilla Slab',Georgia,serif",
   body:"'Zilla Slab',Georgia,'Times New Roman',serif",
   hiero:HIERO_FACE
 };
 // The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
-// curatorial layer — and that takes the same slab the Ceiling's does, for the same reason: it is the
-// type an excavation plate has been captioned in since the trade named the class, and it declares
-// itself modern where the Fell types would claim the wrong century by seventeen thousand years.
+// curatorial layer — the same slab the Ceiling's sentences use, for the same reason: it is the type
+// an excavation plate has been captioned in since the trade named the class, and it declares itself
+// modern where the Fell types would claim the wrong century by seventeen thousand years. It reaches
+// for none of the Ceiling's 1920s Limelight, which postdates this wall by twenty millennia.
 // What the wall itself announces — a loss, a landing, a chamber — is set in a hand that looks cut, not
 // printed: Amatic SC, narrow scratched capitals, bold, the nearest a face comes to the tally notches on
 // the same wall. It is a display hand and too narrow and light to read small, so it is set larger than
 // the slab it replaces (`scale`) and at its bold (`weight`); the running instructions and every small
 // label stay in the slab, where legibility is the whole job.
-const ROCK_FACES={...CEILING_FACES,sc:"'Amatic SC','Zilla Slab',Georgia,serif",weight:{sc:700},scale:{sc:1.55}};
+const ROCK_FACES={
+  text:"'Zilla Slab',Georgia,serif",
+  sc:"'Amatic SC','Zilla Slab',Georgia,serif",
+  body:"'Zilla Slab',Georgia,'Times New Roman',serif",
+  hiero:HIERO_FACE,
+  weight:{sc:700},scale:{sc:1.55}
+};
 definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
@@ -656,9 +675,13 @@ function regionInk(region){
 }
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
-// The sheet itself, as a seamless tile: laid wires every 1.5 px, heavier chain lines every 27 px, and
-// short fibres. It is multiplied over the finished frame on paper so every stroke breaks across the laid
-// lines instead of lying on top of them; at night the same tile is screened back at a whisper.
+// The sheet itself, as a seamless tile: laid wires every 1.5 px, and short fibres. It is multiplied over
+// the finished frame on paper so every stroke breaks across the laid lines instead of lying on top of
+// them; at night the same tile is screened back at a whisper. Chain lines are not this tile's job: they
+// sit far enough apart (paintPaperBackdrop()'s job, in src/backdrop.js) that a repeating 120px tile would
+// have to pick one fixed pitch for the whole sheet, and that mechanical repeat is exactly what beat
+// against the backdrop's own, wider-set chain lines as visible full-height striping — two rulings fighting
+// each other where paper only ever shows one.
 // Both are held as small maps rather than as one slot apiece. The key already named the plate, so a
 // single slot was correct for as long as only one plate was ever on the press at a time — but these two
 // are on the per-frame path, and a frame carrying two eras at once through one slot is a full rebuild
@@ -667,25 +690,31 @@ const laidTiles=new Map(),laidSheets=new Map();
 function laidPaper(){
   const key=plateName+':'+DPR,held=laidTiles.get(key);
   if(held)return held;
-  // Wires every 4 CSS px and chain lines every 120 — the same reduction the rest of the sheet is judged
-  // at (see "Target viewport" in CLAUDE.md), rather than the 1.5px/27px mould the tile used to carry,
-  // which packed seven-odd grey levels of banding into a texture too fine for the mark to read as wires
-  // at all and left the chain lines close enough to lose the real rhythm a laid sheet has. The tile is
-  // widened to 120 so one chain line per tile is the new 120px pitch exactly, with no seam at the repeat.
+  // A mould's wires are not a ruled grid: they are seen mostly as thinner, lighter patches in the sheet
+  // (less pulp settled where the wire itself held it back), packed close (8-12 to the centimetre — a
+  // wire roughly every 3-4 CSS px at the reduction "Target viewport" in CLAUDE.md judges against),
+  // uneven in spacing and strength, and slightly wavering — never crisp, and under an engraving's ink
+  // barely perceptible. The whole set of wire rows is chosen once, jittered, and drawn as a closed set
+  // across [0,th) so the tile still wraps cleanly top to bottom. Night carries none of this: a heavily
+  // inked ground would not show the mould's wires at all, so night keeps only the loose fibre below.
   const paper=onPaper(),unit=Math.max(1,Math.round(DPR)),tw=120,th=96;
   const c=makeCanvas(tw*unit,th*unit),g=c.getContext('2d'),rng=seeded(30517);
   g.scale(unit,unit);
   g.fillStyle=paper?'#ffffff':'#000000';g.fillRect(0,0,tw,th);
   const dark=a=>paper?`rgba(70,50,26,${a})`:`rgba(206,222,226,${a})`;
   const light=a=>paper?`rgba(255,252,242,${a})`:`rgba(0,0,0,${a})`;
-  g.lineWidth=.45;
-  for(let y=0;y<th;y+=4){
-    g.strokeStyle=dark(paper?.2:.14);g.beginPath();g.moveTo(0,y+.3);g.lineTo(tw,y+.3);g.stroke();
-    if(paper){g.strokeStyle=light(.5);g.beginPath();g.moveTo(0,y+1.05);g.lineTo(tw,y+1.05);g.stroke();}
-  }
-  for(let x=0;x<tw;x+=120){
-    if(paper){g.strokeStyle=light(.4);g.lineWidth=2.4;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();}
-    g.strokeStyle=dark(paper?.11:.07);g.lineWidth=.9;g.beginPath();g.moveTo(x,0);g.lineTo(x,th);g.stroke();
+  if(paper){
+    const rows=Math.round(th/4);
+    for(let i=0;i<rows;i++){
+      const y0=(i+.5)*th/rows+(rng()-.5)*1.6,segs=7,brk=rng()<.25?1+Math.floor(rng()*(segs-1)):-1;
+      g.lineWidth=.3+rng()*.35;g.strokeStyle=light(.12+rng()*.16);g.beginPath();
+      for(let s=0;s<=segs;s++){
+        const x=tw*s/segs,y=y0+Math.sin((s/segs+i*.63)*TAU)*.55+(rng()-.5)*.4;
+        if(s===0||s===brk){g.moveTo(x,y);}else{g.lineTo(x,y);}
+      }
+      g.stroke();
+      if(rng()<.35){g.strokeStyle=dark(.035+rng()*.045);g.lineWidth=.3;g.beginPath();g.moveTo(0,y0);g.lineTo(tw,y0);g.stroke();}
+    }
   }
   for(let i=0;i<90;i++){
     const x=rng()*tw,y=rng()*th,a=rng()*TAU,l=1.5+rng()*5;
@@ -714,7 +743,11 @@ function drawLaidPaper(){
   if(modernPlate())return;
   const sheet=laidSheetFor();if(!sheet||!W||!H)return;
   const chapter=world?clamp(Math.floor(world.progress/8),0,3):0;
-  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=(onPaper()?.35:.055)*CHAPTER_LAID_STRENGTH[chapter];
+  // Paper's own wires are already drawn faint inside the tile; laid here at a lower strength than the
+  // grid this used to be so the sheet reads as texture, not as lines a reader could count. Night carries
+  // no wires in the tile at all (an inked ground would not show them), so its own pass is left as the
+  // whisper it always was, for the loose fibre alone.
+  ctx.save();ctx.globalCompositeOperation=onPaper()?'multiply':'screen';ctx.globalAlpha=(onPaper()?.26:.055)*CHAPTER_LAID_STRENGTH[chapter];
   ctx.drawImage(sheet,0,0,W,H);ctx.restore();
 }
 function grainTexture(){
