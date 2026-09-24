@@ -2289,7 +2289,13 @@ defineVoice('rock',{
     'At the Abri du Poisson a salmon a metre long is carved into the roof of the shelter.'
   ],
   opening:'The hand is raised. Tap to release. Follow the ochre dots for a clean landing. Circle a bright light to gain speed and to fill the hand. Every stroke spends ochre by the distance carried; hold a light to fill it again.',
+  // The Chronicle ends where the fourth chamber does: at Newgrange the midwinter sunrise comes down the
+  // passage to the back of the chamber, which is the one thing the tomb is known to have been built for.
+  // Read Endless, the wall goes on as it always did (LINKING.md).
+  goalRow:32,
+  endless:true,
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
+  won:'Midwinter. The sunrise comes down the passage into the chamber. Tally {score}. Strike again, or return to the atlas.',
   unrecorded:'A PREVIEW · NOT KEPT',
   newRecord:'A NEW DEPTH',
   // The wall's own names for the three fields the atlas prices as a vortex, a flare and a wind-head
@@ -2312,7 +2318,8 @@ defineVoice('rock',{
     'THE NIB RAN DRY':'THE OCHRE RAN OUT',
     'FELL INTO THE CHASM':'THE WALL FELL AWAY',
     'DRAWN INTO A VORTEX':'DRAWN DOWN THE SHAFT',
-    'SEARED BY A SUNSPOT FLARE':'BURNED AT THE FLARE'
+    'SEARED BY A SUNSPOT FLARE':'BURNED AT THE FLARE',
+    'THE SUN ROSE':'THE MIDWINTER SUN CAME IN'
   },
   // Every named feat the simulation can record, captioned in the curator's own gloss rather than the
   // atlas's Latin (see OBSERVATIONS in simulation.js for the keys this table must cover).
@@ -2330,11 +2337,14 @@ defineVoice('rock',{
   // The halt, in the terms this era actually has: nothing here is printed, so there is no press to stand
   // idle and no pen to take up — only a hand holding ochre against a wall, and no frontispiece behind it.
   chrome:{
-    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The hand rests.',pauseTitle:'The torch waits.',
+    brand:'THE ROCK',bestLabel:'Deepest',endTitle:'The hand rests.',endTitleWon:'The sun reaches the chamber.',
+    endLore:'The torch is out. What you marked stays on the rock for the next hand.',endLoreWon:'The sun came in where it was meant to. What you marked stays on the rock for the next hand.',
+    pauseTitle:'The torch waits.',
     pauseEyebrow:'THE HAND IS STAYED',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE CRAYON',
     pauseLeave:'LEAVE THE WALL',pauseLabel:'Rest the hand',gameLabel:'The Rock, a playable Era I preview',
     canvasLabel:'The Rock. Guide a hand of ochre across torchlit stone through painted lights. Tap or press Space to release.',
-    eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to strike again',endActionWon:'Tap to strike again',
+    eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to strike again',endActionWon:'Tap to go in again',
+    readings:{chronicle:'TO NEWGRANGE',endless:'THE ENDLESS WALL',label:'The way: {reading}. Tap to change it'},
     statCaptures:'Lights',statPerfects:'Clean',statFlow:'Best rhythm',statRow:'Depth',
     reduceMotion:'STILL THE DUST',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster run',
     instructions:{head:'HOW TO MARK IT',rules:['Tap to release the hand of ochre.','Circle a light to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first light — {pressures}.']}

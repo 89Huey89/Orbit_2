@@ -40,6 +40,7 @@ defineVoice('atlas',{
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
+    readings:{chronicle:'CHRONICLE',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -53,6 +54,10 @@ defineVoice('atlas',{
   chapterSaid:'Plate {numeral}. {name}.',
   // The atlas never wins, so it names no line for it; a plate with a goalRow overrides this.
   won:'',
+  // Whether a century with a goalRow may also be flown without one: its Chronicle ends at that row, its
+  // Endless reading never ends (docs/archive/eras/LINKING.md). Only a century whose chapters, notes and
+  // record all read sanely past its own last chapter says so; the atlas, having no ending, has no choice.
+  endless:false,
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
   // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
   // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
@@ -299,12 +304,31 @@ function event(type,e){
     recordAnnounced=true;say(plateWords().newRecord);
   }
 }
+// The reading a century is flown in, where it offers two (LINKING.md): its Chronicle, told to an ending
+// at its goalRow, or Endless, the same sheet with no row it is won at. Kept per plate, since a player who
+// likes the Rock's wall endless may still want the Scroll's four palaces; a century that offers no choice
+// is always its Chronicle, and the atlas, having no ending, is unaffected either way.
+const READING_KEY='orbit.reading.v1';
+const readings=(()=>{
+  const out={};
+  try{const raw=JSON.parse(storage.get(READING_KEY,'{}'));if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw)if(raw[k]==='endless')out[k]='endless';}catch(_){}
+  return out;
+})();
+const eraReading=()=>plateWords().endless&&readings[plateName]==='endless'?'endless':'chronicle';
+const eraGoalRow=()=>eraReading()==='endless'?0:plateWords().goalRow;
+// Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
+function toggleReading(){
+  if(!plateWords().endless||(world&&world.state!=='ready'))return;
+  if(eraReading()==='endless')delete readings[plateName];else readings[plateName]='endless';
+  storage.set(READING_KEY,JSON.stringify(readings));
+  newWorld();resetToFrontispiece();syncEraChrome();render(0);
+}
 function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;loreChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),plateWords().goalRow);
+  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -348,6 +372,13 @@ function syncEraChrome(){
   // button and the colophon's own row both carry the same word and the same aria-label.
   const eraExitEnd=$('ceiling-exit-end');if(eraExitEnd)eraExitEnd.textContent=chrome.eraExit;
   const eraExit=$('ceiling-exit');if(eraExit){eraExit.setAttribute('aria-label',chrome.eraExitLabel);eraExit.title=chrome.eraExitLabel;}
+  // The choice of reading stands only on a century that offers one, and names the reading in hand.
+  const reading=$('reading');
+  if(reading){
+    const offered=!!plateWords().endless,now=eraReading(),word=chrome.readings[now];
+    reading.hidden=!offered;reading.textContent=word;
+    reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
+  }
   const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;
   const statPerfects=$('end-perfects-label');if(statPerfects)statPerfects.textContent=chrome.statPerfects;
   const statFlow=$('end-flow-label');if(statFlow)statFlow.textContent=chrome.statFlow;
@@ -425,6 +456,9 @@ function showEnd(){
     if(endTitleEl)endTitleEl.textContent=world.won?(chrome.endTitleWon||chrome.endTitle):chrome.endTitle;
     // The line under it asks for the next run in the same terms: a won night is not something to try again.
     $('end-action').textContent=world.won?chrome.endActionWon:chrome.endAction;
+    // A century that closes its leaf with a line of its own (the Rock's torch going out) says a different
+    // one over a run that reached its ending, since a won run did not end in the dark.
+    const lore=$('end-lore');if(lore&&chrome.endLore)lore.textContent=world.won?(chrome.endLoreWon||chrome.endLore):chrome.endLore;
     // A won leaf's sun is turned gold a beat after the leaf appears, so it is seen to change rather than
     // arriving already turned; a loss clears it at once so it never carries over from a win.
     const leaf=$('end');leaf.classList.remove('won');
@@ -1430,6 +1464,7 @@ for(const id in PLATE_STYLES){
 }
 $('ceiling-exit-end').addEventListener('click',leaveEra);
 $('ceiling-exit').addEventListener('click',leaveEra);
+$('reading').addEventListener('click',toggleReading);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 function syncEffects(){$('reduce-motion').setAttribute('aria-pressed',String(reducedMotion));}

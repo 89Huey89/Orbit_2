@@ -24,12 +24,16 @@ Every one of them runs on the same `OrbitWorld`; the ending is nothing but the `
 everything" is right, because the two answer different wishes. In **Free Play** every era offers two
 readings of itself: the **Chronicle**, its story flown to an ending in one run, and **Endless**, the
 same era flown on the shared driver of `JOURNEY.md` §1.8 for a record of its own. The three endless
-eras are given an ending out of material they already carry:
+eras are given an ending out of material they already carry (I and III landed, row 32 each, with the
+reading chosen on the era's own frontispiece and kept in `orbit.reading.v1`; II, IV and VI stay
+Chronicle-only until their chapters, notes and records are made to read past their last chapter):
 
 - **I** — the fourth chamber is already Newgrange; the Chronicle ends when the winter-solstice light
   comes down the passage into it.
-- **III** — the band already counts the climb round the twenty-eight mansions; the Chronicle ends when
-  the circuit is closed.
+- **III** — the Chronicle ends with the fourth palace, the Vermilion Bird, at row 32, and the scroll
+  is rolled up. (The circuit of the twenty-eight mansions was the first idea, but the band measures the
+  climb in world units, not rows, and closes its circle somewhere near row 23 to 25 depending on pace;
+  a finish line has to be a row.)
 - **V** — the ten stages of the construction completed and the sheet pulled: the atlas printed. Its
   exact row is still to be tuned.
 
@@ -95,7 +99,7 @@ Not built by the first stage and recorded here so it is not lost:
 1. **`src/journey.js`** — the persisted document, `runMode`, the knowledge fold, the milestone rule
    above, `journeyReset()`. Invisible to a player: nothing enters `'journey'` yet. *Landed with this
    file.*
-2. The Chronicle endings for I and III.
+2. The Chronicle endings for I and III, and the reading switch. *Landed.*
 3. A Journey door on the frontispiece that starts a run at the frontier, and the milestones drawn in
    each era's own art.
 4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs.

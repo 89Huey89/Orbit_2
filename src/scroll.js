@@ -718,7 +718,12 @@ defineVoice('scroll',{
   chapters:['THE AZURE DRAGON','THE BLACK TORTOISE','THE WHITE TIGER','THE VERMILION BIRD'],
   chapterSaid:'Palace {numeral}. {name}.',
   opening:'The tube is raised. Tap to release. Follow the pricked line to the next light. Hold a light to file it and to grind more ink; every flight spends ink by the distance it carries.',
+  // The Chronicle ends with the fourth palace: the sky's four quarters passed and the scroll rolled up.
+  // Read Endless, the sheet unrolls as it always did (LINKING.md).
+  goalRow:32,
+  endless:true,
   ended:'The paper gives way. {score} dù. Tap to unroll the scroll again, or return to the atlas.',
+  won:'The four palaces are passed and the scroll is rolled up. {score} dù. Tap to unroll it again, or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
   hazards:{vortex:'熒惑守心 · MARS AT THE HEART',flare:'彗星 · THE BROOM STAR',wind:'風角 · THE WIND ANGLE'},
   labels:{shield:'THE SCREEN',reflector:'THE JADE DISC',dawn:'DAYBREAK'},
@@ -730,7 +735,8 @@ defineVoice('scroll',{
     'THE ORBIT FADED':'THE LIGHT WAS LOST',
     'THE NIB RAN DRY':'THE INK RAN OUT',
     'DRAWN INTO A VORTEX':'HELD BY MARS AT THE HEART',
-    'SEARED BY A SUNSPOT FLARE':'SWEPT BY THE BROOM STAR'
+    'SEARED BY A SUNSPOT FLARE':'SWEPT BY THE BROOM STAR',
+    'THE SUN ROSE':'THE FOUR PALACES WERE PASSED'
   },
   observations:{
     perfectThree:'THREE CLEAN SIGHTINGS',
@@ -745,11 +751,12 @@ defineVoice('scroll',{
   squareLanding:'A SQUARE SIGHTING',
   hud:{pace:'PACE ×',flow:'ORDER ×',shield:'THE SCREEN HELD',reflector:'THE JADE DISC HELD',dawn:'DAYBREAK HELD'},
   chrome:{
-    brand:'天文圖',bestLabel:'Preview',endTitle:'The paper gives way.',pauseTitle:'The Bureau waits.',
+    brand:'天文圖',bestLabel:'Preview',endTitle:'The paper gives way.',endTitleWon:'The scroll is rolled up.',pauseTitle:'The Bureau waits.',
     pauseEyebrow:'THE BRUSH IS RESTED',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE TUBE',
     pauseLeave:'ROLL UP THE SCROLL',pauseLabel:'Rest the tube',gameLabel:'The Scroll, a playable Era III preview',
     canvasLabel:'The Scroll. Guide an armillary sighting tube across a Tang star chart, filing each light you hold. Tap or press Space to release.',
     eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to unroll it again',endActionWon:'Tap to unroll it again',
+    readings:{chronicle:'THE FOUR PALACES',endless:'THE ENDLESS SCROLL',label:'The reading: {reading}. Tap to change it'},
     statCaptures:'Lights',statPerfects:'Clean',statFlow:'Best order',statRow:'Row',
     instructions:{head:'THE MANNER OF SIGHTING',rules:['Tap to release the sighting tube.','Hold a light to file it: joined, closed, coloured, named.','Keep ahead of hundun, the paper failing below.','Choose the first light — {pressures}.']}
   },
