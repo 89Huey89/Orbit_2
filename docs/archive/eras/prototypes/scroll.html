@@ -1,0 +1,514 @@
+<!doctype html>
+<!--
+  Orbit — era prototype III · THE SCROLL (China, Tang, c. 649–684 CE, after the Dunhuang star chart,
+  British Library Or.8210/S.3326). Plan: docs/archive/eras/03-scroll.md, which until this page said
+  "No prototype exists yet for this era". Not shipped. PROTOTYPES.md's table still says the same and
+  is deliberately left as it is: this sheet was added without touching any existing file, so the
+  verdict row is the author's to write once the page has been looked at in a hand.
+
+  What the sheet is. One viewport of the scroll turned upright for a phone held in portrait, the way
+  the game's rows climb: at the top the thirteenth, circumpolar panel — the signature sheet, the pole
+  standing in for the emperor's fixed seat — half catalogued, dense where the Bureau's attention has
+  fallen and bare everywhere it has not; then a paste join where one sheet of the scroll was glued to
+  the next; then one equatorial panel, the Heart's, ruled into three mansions (房 · 心 · 尾), where a
+  run is actually played. Below that the paper gives way: hundun.
+
+  What it is testing, in the order 03-scroll.md's own "The prototype" section asks:
+   · the sighting tube (窺管) — a bronze barrel laid on the flight's tangent with one armillary ring
+     round it, the Observer Core at the forward aperture as the one pure light on the sheet. The aim
+     guide ahead of it is pricked, never ruled, so the solid barrel and the dotted guide cannot fuse:
+     that fusion is the risk the era file and OBSERVER-CORE.md both flag;
+   · the dot → line → boundary reveal, driven by documented = clamp(orbitSweep/240°,0,1) exactly as
+     KNOWLEDGE-HORIZON.md specifies, animated live on the held body rather than painted finished —
+     the gap PROTOTYPES.md names as the single most valuable prototype missing from this folder. At
+     capture a hollow point; by a quarter-turn a brush line grows to the nearest neighbour; by half
+     a turn the boundary closes and the group takes its school's colour; by two thirds the entry
+     closes on a kaishu caption, or — when that school's colour has already been captioned this run
+     — on a cinnabar seal instead. The held body cycles schools by encounter count, and so does the
+     wet stroke drawn round it (03-scroll.md, "Currency and the rule");
+   · the three schools as provenance: Gan De's unmarked black, Shi Shen's cinnabar, Wu Xian's pale
+     disc kept legible on amber paper by a hairline of ink round it;
+   · the ring graduated in dù, 365¼ to the circle. Ticks fall every five dù, so the last division is
+     a quarter of the others — the year's odd quarter-day, visible as a short gap at the top of the rim.
+
+  Materials. Ground: aged hemp/mulberry paper (#D8C79B), baked once at device resolution — mottle,
+  formation cloud, laid lines from the bamboo mould and its chain ties, fibres, foxing, the browning
+  of handled edges and a paste join. Every mark goes through brush(): pressed in fat, lifted thin, ink
+  feathering into the absorbent sheet under it, and the tail breaking into dry-brush flying white
+  (飛白) when the brush runs out. Cinnabar is opaque and granular; seals are pressed, not drawn.
+
+  Omens (03-scroll.md, Dangers — depiction only): 熒惑守心, Mars lingering at the Heart, a baleful red
+  point whose rings draw inward; 彗星, the broom star, head and tail after the Mawangdui comet atlas's
+  own drawn forms; 風角, the wind angle, dry-brush streaks with an eight-direction rosette — captioned
+  as a practice-class, not an incident; 日食, sun-eating, a disc with a bite out of it.
+
+  FACES — both SIL Open Font License 1.1, both cut by scripts to only the characters this page sets:
+    fonts/lxgw-wenkai-tc.scroll.woff2  LXGW WenKai TC (© The LXGW WenKai Project Authors) — a kaishu
+      book-hand in traditional forms, the register 03-scroll.md asks for. The era file names Noto
+      Serif TC, which is a Ming/Song printing face, correct in its forms but a woodblock register six
+      centuries later than the hand; WenKai TC is kaishu and traditional both, and is offered here
+      as the alternative for the author to weigh, not as a settled choice.
+    fonts/noto-serif-tc.scroll.woff2   Noto Serif TC (© Adobe, the Noto Project) — the small Latin of
+      the L legend only, which is out-of-fiction chrome as on every other page in this folder.
+  Seals would be cut in seal script (篆書); no OFL traditional seal-script face was in reach, so the
+  seals set their characters in the kaishu face, reversed white out of cinnabar. That is a
+  compromise, and the first thing to change.
+
+  Text: every caption runs in vertical columns, top to bottom, the historically correct direction
+  (03-scroll.md's open question) — tried here so it can be judged in the hand. Numbers are Chinese
+  numerals: the score 一千二百四十七度, the best 最二千零九十.
+
+  Sourcing, and what is unverified. Asterism names in the Heart's panel (心, 房, 尾, 鍵閉, 罰, 東咸,
+  天江, 傅說) and circumpolar names (紫微垣, 北極, 北斗, 華蓋) are standard names; their positions here
+  are schematic, not plotted. The panel column 「自氐五度至尾九度為大火於辰在卯宋之分野」 is the Jin shu
+  treatise's formula for the Jupiter station Dahuo, the same kind of text the Dunhuang panels carry;
+  its wording has NOT been checked against S.3326's own panel. 司天監印 on the title seal and 志 on the
+  small seal are constructed. The colophon 「觀者 · 圖三 · 種四八二一」 is constructed (player / plate /
+  seed, per the era file's colophon order). The sighting tube is a plausible reconstruction centuries
+  later than the era's window, as the era file says.
+
+  NOT ACHIEVED: the closing bowman is not on the sheet; the Suzhou stele's rubbed register is not
+  tried; the tube's two armillary rings are one; there is no sound, no release on tap and no flight
+  — this is a held orbit on loop, because the question it answers is what a held orbit looks like.
+  Controls: L or a tap toggles the legend. ?t=SECONDS freezes the clock (for screenshots); ?legend
+  opens with it on.
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Scroll — era III prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#16110c;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh;touch-action:manipulation}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+const T={paper:[216,199,155],ink:'#1E1A15',inkRGB:[30,26,21],cin:'#B7312C',cinRGB:[183,49,44],pale:'#E7E0CC',
+  bronze:'#8C6B38',bronzeHi:'#C9A465',bronzeLo:'#5A4020',core:'#FFF7DC',dried:'#4A4036',cave:'#16110c',
+  legend:'#2B4A6B',legendBg:'rgba(239,231,210,.9)'};
+const SCHOOL=[{name:'甘氏',fill:T.ink},{name:'石氏',fill:T.cin},{name:'巫咸',fill:T.pale}];
+const DW=430,DH=932,TAU=Math.PI*2;
+const qs=new URLSearchParams(location.search);
+const FROZEN=qs.has('t')?+qs.get('t'):null;
+let showLegend=qs.has('legend');
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,dpr,k,ox,oy,paperC,inkC;
+
+// A small seeded generator, so the same fibre and the same foxing sit in the same place every load.
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const lerp=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>v<a?a:v>b?b:v,ease=t=>t*t*(3-2*t);
+function hash2(x,y,s){let h=Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(s,982451653)|0;h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296}
+function vnoise(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  return lerp(lerp(hash2(xi,yi,s),hash2(xi+1,yi,s),u),lerp(hash2(xi,yi+1,s),hash2(xi+1,yi+1,s),u),v)*2-1}
+function fbm(x,y,o,s){let a=0,m=.5,f=1;for(let i=0;i<o;i++){a+=vnoise(x*f,y*f,s+i*17)*m;m*=.5;f*=2.03}return a}
+
+/* ================= the ground: aged hemp paper ================= */
+// The colour fields are baked at a quarter of the device resolution and smoothed up, because mottle and
+// formation cloud are broad and the per-pixel cost is what makes a bake stutter; the tooth, the laid
+// lines and the fibres are then laid at full resolution over it, since those are what a quarter-scale
+// bake would smear into fog — the Rock's lesson, that a baked ground is drawn at its native resolution
+// or is not worth baking.
+function bakePaper(){
+  const c=document.createElement('canvas');c.width=W*dpr;c.height=H*dpr;const g=c.getContext('2d');
+  const q=4,lw=Math.ceil(c.width/q),lh=Math.ceil(c.height/q),lo=document.createElement('canvas');lo.width=lw;lo.height=lh;
+  const lg=lo.getContext('2d'),im=lg.createImageData(lw,lh),d=im.data,sc=1/(k*dpr)*q;
+  const tearY=oy+DH*k*.936;
+  for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){
+    const X=(x*q/dpr-ox)/k,Y=(y*q/dpr-oy)/k;
+    const m=fbm(X/140,Y/140,4,11),cl=fbm(X/22,Y/26,3,29),ck=Math.sin(Y/58+fbm(X/200,Y/200,2,5)*2.4);
+    // Handled edges brown and the sheet ambers most where it was most exposed; the centre keeps a
+    // little of the fresh tone 03-scroll.md estimates the paper started at.
+    const ex=Math.min(X,DW-X)/DW,br=clamp(1-ex*6,0,1)*.5;
+    let l=1+m*.075+cl*.04+ck*.018;
+    const r=T.paper[0]*l*(1-br*.08),gg=T.paper[1]*l*(1-br*.13),b=T.paper[2]*l*(1-br*.24);
+    const i=(y*lw+x)*4;d[i]=r;d[i+1]=gg;d[i+2]=b;d[i+3]=255}
+  lg.putImageData(im,0,0);g.imageSmoothingQuality='high';g.drawImage(lo,0,0,c.width,c.height);
+  // Tooth, laid lines and chain ties at full resolution. A Tang mould was a bamboo screen, so the laid
+  // lines are the strips' own close ribbing and the chain lines the threads that tied them, far apart.
+  const fi=g.getImageData(0,0,c.width,c.height),fd=fi.data,cw=c.width;
+  for(let y=0;y<c.height;y++){const Y=(y/dpr-oy)/k,chain=Math.abs(((Y%36)+36)%36-18)<.55?-.022:0;
+    for(let x=0;x<cw;x++){const X=(x/dpr-ox)/k,laid=Math.sin(X/2.3*Math.PI)*.012,t=(hash2(x,y,3)-.5)*.05;
+      const f=1+laid+chain+t,i=(y*cw+x)*4;fd[i]*=f;fd[i+1]*=f;fd[i+2]*=f}}
+  g.putImageData(fi,0,0);
+  g.setTransform(dpr*k,0,0,dpr*k,dpr*ox,dpr*oy);const R=rng(7);
+  // Fibres: many short strands, a few long hemp ones, some lighter than the sheet and some darker.
+  for(let i=0;i<2600;i++){const x=R()*DW*1.2-DW*.1,y=R()*DH,a=R()*TAU,L=3+R()*11,cu=(R()-.5)*.6,lt=R()<.55;
+    g.strokeStyle=lt?`rgba(246,236,206,${.12+R()*.16})`:`rgba(120,92,52,${.06+R()*.1})`;g.lineWidth=.25+R()*.4;
+    g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+Math.cos(a+cu)*L*.5,y+Math.sin(a+cu)*L*.5,x+Math.cos(a)*L,y+Math.sin(a)*L);g.stroke()}
+  for(let i=0;i<70;i++){const x=R()*DW,y=R()*DH,a=R()*TAU,L=30+R()*70;g.strokeStyle=`rgba(${R()<.5?'250,242,214':'110,84,46'},${.08+R()*.08})`;
+    g.lineWidth=.35+R()*.3;g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+Math.cos(a)*L*.3+(R()-.5)*14,y+Math.sin(a)*L*.3+(R()-.5)*14,
+      x+Math.cos(a)*L*.7+(R()-.5)*14,y+Math.sin(a)*L*.7+(R()-.5)*14,x+Math.cos(a)*L,y+Math.sin(a)*L);g.stroke()}
+  // Foxing: iron in the sheet rusting out as brown spots, each with a darker core.
+  for(let i=0;i<34;i++){const x=R()*DW,y=R()*DH*.94,r=1.5+R()*R()*9,gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,`rgba(128,82,38,${.18+R()*.2})`);gr.addColorStop(.5,`rgba(150,104,52,${.08+R()*.08})`);gr.addColorStop(1,'rgba(150,104,52,0)');
+    g.fillStyle=gr;g.beginPath();g.ellipse(x,y,r,r*(.7+R()*.5),R()*TAU,0,TAU);g.fill()}
+  // Water tide-lines, the old ones, pale rings with a browned margin.
+  for(let i=0;i<4;i++){const x=R()*DW,y=100+R()*700,r=24+R()*40;g.strokeStyle='rgba(140,100,50,.10)';g.lineWidth=1.2;
+    g.beginPath();for(let j=0;j<=48;j++){const a=j/48*TAU,rr=r*(1+fbm(Math.cos(a)*2+i,Math.sin(a)*2,2,40)*.35);j?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}g.stroke()}
+  // The paste join: the upper sheet laps the lower by a few pixels, the paste has darkened the lap,
+  // and the upper sheet's cut edge catches a line of light where it stands proud.
+  const sy=368;g.fillStyle='rgba(120,86,40,.11)';g.beginPath();g.moveTo(-40,sy);
+  for(let x=-40;x<=DW+40;x+=6)g.lineTo(x,sy+fbm(x/30,1,2,61)*1.2);for(let x=DW+40;x>=-40;x-=6)g.lineTo(x,sy+6+fbm(x/24,4,2,62)*1.6);g.fill();
+  g.strokeStyle='rgba(90,64,30,.28)';g.lineWidth=.7;g.beginPath();for(let x=-40;x<=DW+40;x+=4){const yy=sy+6.2+fbm(x/24,4,2,62)*1.6;x>-40?g.lineTo(x,yy):g.moveTo(x,yy)}g.stroke();
+  g.strokeStyle='rgba(250,242,216,.45)';g.lineWidth=.5;g.beginPath();for(let x=-40;x<=DW+40;x+=4){const yy=sy+7+fbm(x/24,4,2,62)*1.6;x>-40?g.lineTo(x,yy):g.moveTo(x,yy)}g.stroke();
+  return c}
+
+/* ================= the brush ================= */
+function samp(f,n){const p=[];for(let i=0;i<=n;i++)p.push(f(i/n));return p}
+function lineP(a,b,n=12){return samp(t=>({x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t)}),n)}
+function curveP(a,c,b,n=24){return samp(t=>({x:(1-t)*(1-t)*a.x+2*(1-t)*t*c.x+t*t*b.x,y:(1-t)*(1-t)*a.y+2*(1-t)*t*c.y+t*t*b.y}),n)}
+function arcP(cx,cy,r,a0,a1,n=40){return samp(t=>{const a=lerp(a0,a1,t);return{x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r}},n)}
+function cut(pts,f){if(f>=1)return pts;const n=Math.max(1,Math.round((pts.length-1)*f));return pts.slice(0,n+1)}
+// One stroke of a loaded brush: pressed in fat where it touches down, lifted thin, the ink feathering
+// into the sheet a little wider than the stroke itself, and — when `dry` — its tail breaking into the
+// separate hairs of flying white as the load runs out. `bleed` uses the canvas blur filter and so is
+// for the baked layer only; nothing drawn every frame asks for it.
+function brush(g,pts,o){
+  const n=pts.length;if(n<2)return;const R=rng(o.seed||1),ph=R()*9,w=o.w||1,col=o.col||T.ink,a=o.a??.92,press=o.press??.55,lift=o.lift??.3,dry=o.dry?(o.dryAt??.72):1.01;
+  const L=[0];for(let i=1;i<n;i++)L.push(L[i-1]+Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y));const TL=L[n-1]||1;
+  const wid=i=>{const t=L[i]/TL;return w*(1+press*Math.exp(-t*9))*(t>.7?1-(1-lift)*((t-.7)/.3):1)*(1+.13*Math.sin(t*21+ph)+.06*Math.sin(t*57+ph*2))};
+  const nor=i=>{const p=pts[Math.max(0,i-1)],q=pts[Math.min(n-1,i+1)],dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;return{x:-dy/l,y:dx/l}};
+  const poly=(sc,upto)=>{g.beginPath();const idx=[];for(let i=0;i<n&&L[i]/TL<=upto;i++)idx.push(i);if(idx.length<2)return false;
+    for(const i of idx){const m=nor(i),h=wid(i)*sc/2;g.lineTo(pts[i].x+m.x*h,pts[i].y+m.y*h)}
+    for(let j=idx.length-1;j>=0;j--){const i=idx[j],m=nor(i),h=wid(i)*sc/2;g.lineTo(pts[i].x-m.x*h,pts[i].y-m.y*h)}g.closePath();return true};
+  g.save();g.fillStyle=col;g.strokeStyle=col;
+  if(o.bleed&&'filter'in g){g.filter=`blur(${(.6*w).toFixed(2)}px)`;g.globalAlpha=a*.22;if(poly(1.9,dry))g.fill();g.filter='none'}
+  g.globalAlpha=a;if(poly(1,dry))g.fill();
+  // The bead of ink the brush leaves where it first lands.
+  g.globalAlpha=a*.35;g.beginPath();g.arc(pts[0].x,pts[0].y,wid(0)*.55,0,TAU);g.fill();
+  if(o.dry){const hairs=Math.max(3,Math.round(w*2.2));g.lineCap='round';
+    for(let h=0;h<hairs;h++){const u=(h/(hairs-1)-.5)*.85,end=.84+R()*.16;let on=true;g.globalAlpha=a*(.55+R()*.4);g.lineWidth=Math.max(.25,w*.16);g.beginPath();
+      for(let i=0;i<n;i++){const t=L[i]/TL;if(t<dry-.06)continue;if(t>end)break;const m=nor(i),x=pts[i].x+m.x*wid(i)*u,y=pts[i].y+m.y*wid(i)*u;
+        if(R()<.12)on=!on;on?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()}}
+  g.restore()}
+
+/* ================= stars, seals, lettering ================= */
+function blob(g,x,y,r,s){const R=rng(s);g.beginPath();for(let i=0;i<=16;i++){const a=i/16*TAU,rr=r*(1+(R()-.5)*.14);i?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}g.closePath()}
+// A star as the chart draws it: a small filled disc whose colour is a citation. `school` −1 is a point
+// not yet catalogued — a hollow ring of ink, the same for every uncatalogued light, which is exactly
+// what a guest star's first entry says about it. `fillA` lets the held body take its colour gradually.
+function star(g,x,y,r,school,s=1,fillA=1){
+  g.save();
+  if(school<0||fillA<1){g.globalAlpha=school<0?.85:1-fillA*.6;g.strokeStyle=T.ink;g.lineWidth=Math.max(.6,r*.3);blob(g,x,y,r*.85,s);g.stroke()}
+  if(school>=0&&fillA>0){g.globalAlpha=fillA;
+    if(school===0){g.fillStyle=T.ink;blob(g,x,y,r,s);g.fill();g.globalAlpha=fillA*.18;g.beginPath();g.arc(x,y,r*1.5,0,TAU);g.fill()}
+    else if(school===1){g.fillStyle=T.cin;blob(g,x,y,r,s);g.fill();g.fillStyle='rgba(120,24,20,.55)';blob(g,x,y,r,s+1);g.lineWidth=.5;g.strokeStyle='rgba(110,22,18,.6)';g.stroke();
+      // cinnabar is ground mineral and never lies flat: a few lighter grains catch the light.
+      const R=rng(s*7);g.fillStyle='rgba(236,120,96,.7)';for(let i=0;i<3;i++){const a=R()*TAU,d=R()*r*.6;g.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,.5,.5)}}
+    else{g.fillStyle=T.pale;blob(g,x,y,r,s);g.fill();g.strokeStyle=T.ink;g.lineWidth=.7;g.globalAlpha=fillA*.85;g.stroke()}}
+  g.restore()}
+function kai(sz){return`${sz}px Kai, "LXGW WenKai TC", "Noto Serif TC", serif`}
+function gloss(sz,it){return`${it?'italic ':''}${sz}px Gloss, "Noto Serif TC", Georgia, serif`}
+// A vertical column of characters, top to bottom. `reveal` 0..1 writes them down in order, each one
+// drawn top-first under a growing clip, which is the stroke-order rule's first clause (top before
+// bottom) and nothing more — the honest limit of what a set face can pretend about a brush.
+function vtext(g,str,x,y,sz,col=T.ink,a=.9,reveal=1,lh=1.06){
+  const ch=[...str];g.save();g.font=kai(sz);g.textAlign='center';g.textBaseline='middle';g.fillStyle=col;
+  const tot=ch.length*reveal;
+  ch.forEach((c,i)=>{const f=clamp(tot-i,0,1);if(f<=0)return;const cy=y+i*sz*lh+sz/2;g.save();
+    if(f<1){g.beginPath();g.rect(x-sz,cy-sz/2-1,sz*2,sz*f+1);g.clip()}
+    g.globalAlpha=a;g.fillText(c,x,cy);g.globalAlpha=a*.16;g.fillText(c,x+.35,cy+.4);g.restore()});
+  g.restore();return y+ch.length*sz*lh}
+// A seal pressed in cinnabar paste: a slightly uneven block, the paste taken up unevenly so the paper
+// shows through in specks, the characters carved out of it and so printed as paper (白文).
+function seal(g,x,y,sz,chars,s=3,a=1,rot=-.03){
+  const R=rng(s);g.save();g.translate(x,y);g.rotate(rot);g.globalAlpha=a;g.fillStyle=T.cin;g.beginPath();
+  const h=sz/2,j=()=>(R()-.5)*sz*.035;g.moveTo(-h+j(),-h+j());g.lineTo(h+j(),-h+j());g.lineTo(h+j(),h+j());g.lineTo(-h+j(),h+j());g.closePath();g.fill();
+  const cs=[...chars],n=cs.length===4?2:1,cell=sz/n*.86;g.fillStyle='rgb(222,206,166)';g.font=kai(cell*.92);g.textAlign='center';g.textBaseline='middle';
+  // Seal text reads in columns right to left, as the characters of the title column do.
+  cs.forEach((c,i)=>{const col=n===1?0:(i<2?1:0),row=n===1?0:i%2;g.fillText(c,(col-(n-1)/2)*cell*1.08,(row-(n-1)/2)*cell*1.08+cell*.04)});
+  g.fillStyle='rgb(216,199,155)';for(let i=0;i<sz*sz*.09;i++){const px=(R()-.5)*sz,py=(R()-.5)*sz;g.globalAlpha=a*(.3+R()*.6);g.fillRect(px,py,.5+R()*.8,.5+R()*.6)}
+  g.globalAlpha=a*.5;g.strokeStyle='rgba(120,24,20,.7)';g.lineWidth=.5;g.strokeRect(-h,-h,sz,sz);g.restore()}
+// The boundary a group is closed inside: the group's convex hull grown outward by a pad, traced as one
+// closed loop — for each direction, the member furthest that way, stepped out along it — wobbled so it
+// is a brush's line and not a geometer's.
+function loopP(pts,pad,s,n=64){const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length,cy=pts.reduce((a,p)=>a+p.y,0)/pts.length;
+  return samp(t=>{const a=t*TAU-Math.PI/2,u={x:Math.cos(a),y:Math.sin(a)};let b=pts[0],h=-1e9;for(const p of pts){const d=(p.x-cx)*u.x+(p.y-cy)*u.y;if(d>h){h=d;b=p}}
+    const r=pad+vnoise(t*6,0,s)*1.4;return{x:b.x+u.x*r,y:b.y+u.y*r}},n)}
+function cnum(n){const d='零一二三四五六七八九',u=['','十','百','千'],s=String(n);let o='',z=false;
+  for(let i=0;i<s.length;i++){const c=+s[i],p=s.length-1-i;if(c===0){z=true;continue}if(z&&o)o+='零';z=false;o+=(c===1&&p===1&&i===0?'':d[c])+u[p]}return o||'零'}
+
+/* ================= the chart: what is on the sheet ================= */
+const C0={x:212,y:200},R0=146;
+// Asterisms of the circumpolar panel, offsets from the pole, each at the stage the Bureau has reached:
+// 3 captioned, 2 closed and coloured, 1 joined but uncoloured, 0 bare points not yet catalogued.
+const POLAR=[
+  {name:'北極',stage:3,school:0,pts:[[-2,-8],[6,-3],[12,5],[15,15],[16,26]],links:[[0,1],[1,2],[2,3],[3,4]],cap:[30,-4],sz:11},
+  {name:'紫微垣',stage:3,school:1,pts:[[-40,-58],[-58,-44],[-68,-22],[-70,2],[-66,26],[-56,46],[-40,60]],links:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],cap:[-92,-30],sz:12},
+  {name:'',stage:2,school:1,pts:[[40,-58],[58,-42],[68,-18],[70,6],[64,30],[52,50]],links:[[0,1],[1,2],[2,3],[3,4],[4,5]]},
+  {name:'北斗',stage:3,school:0,pts:[[62,84],[84,98],[102,82],[82,68],[44,96],[30,112],[14,126]],links:[[0,1],[1,2],[2,3],[3,0],[0,4],[4,5],[5,6]],cap:[118,100],sz:12},
+  {name:'華蓋',stage:1,school:-1,pts:[[-6,-100],[-18,-92],[6,-92],[-26,-82],[14,-82],[-4,-118],[-4,-84]],links:[[5,0],[0,1],[0,2],[1,3],[2,4],[0,6]]},
+  {name:'',stage:2,school:2,pts:[[-104,40],[-96,58],[-84,72],[-110,20]],links:[[3,0],[0,1],[1,2]]},
+  {name:'',stage:1,school:-1,pts:[[96,-86],[110,-70],[118,-50]],links:[[0,1],[1,2]]},
+  {name:'',stage:2,school:0,pts:[[-86,-96],[-102,-78],[-72,-104]],links:[[2,0],[0,1]]}];
+// The Heart's panel. F is the held body; its neighbours are members of the same star office.
+const PANEL={x0:12,x1:418,y0:384,col:384,ms:[138,262]};
+const F={x:190,y:612,R:60,mem:[[0,0],[-22,-16],[-38,2],[16,-24]],links:[[0,1],[1,2],[0,3]]};
+const NEXT={x:98,y:452,cap:34};
+const BODIES=[
+  {x:104,y:800,stage:3,school:0,name:'鍵閉',mem:[[0,0],[-18,10],[16,14],[-4,-18]],links:[[0,3],[0,1],[0,2]],cap:[36,-26]},
+  {x:236,y:798,stage:4,school:0,name:'罰',mem:[[0,0],[12,-14],[22,4]],links:[[0,1],[1,2]],seal:[34,24]},
+  {x:62,y:628,stage:1,school:-1,mem:[[0,0],[14,-12],[28,-6],[-6,16]],links:[[0,1],[1,2],[0,3]]}];
+const FOCUS_NAMES=['天江','傅說','東咸'];
+const MARS={x:214,y:494},HEART=[[182,470],[202,462],[222,470]],MOON={x:330,y:462};
+const COMET={x:330,y:652},ECL={x:330,y:792,r:17},WIND={y0:698,y1:732,x0:52,x1:366};
+
+// Where on the held ring a release would carry the traveller into the next body's ring: the tangent
+// the orbit is already building, tested at every graduation — the same test the shipped game's
+// release marks are drawn from, done here by sampling rather than solved.
+function reachable(th){const p={x:F.x+Math.cos(th)*F.R,y:F.y+Math.sin(th)*F.R},d={x:-Math.sin(th),y:Math.cos(th)};
+  const vx=NEXT.x-p.x,vy=NEXT.y-p.y,along=vx*d.x+vy*d.y;if(along<0)return 1e9;return Math.abs(vx*d.y-vy*d.x)}
+const REL=(()=>{let a0=null,a1=null,best=0,bd=1e9;for(let i=0;i<720;i++){const th=i/720*TAU,m=reachable(th);if(m<NEXT.cap*.8){if(a0===null)a0=th;a1=th;if(m<bd){bd=m;best=th}}}return{a0,a1,best}})();
+
+/* ================= the baked ink layer ================= */
+function bakeInk(){
+  const c=document.createElement('canvas');c.width=W*dpr;c.height=H*dpr;const g=c.getContext('2d');
+  g.setTransform(dpr*k,0,0,dpr*k,dpr*ox,dpr*oy);g.lineCap='round';g.lineJoin='round';let s=100;
+  // --- the circumpolar panel: a double rule, the inner circle of stars that never set, and the offices.
+  brush(g,arcP(C0.x,C0.y,R0,-Math.PI/2,Math.PI*1.5,120),{w:1.5,a:.88,press:.08,lift:.9,bleed:true,seed:s++});
+  brush(g,arcP(C0.x,C0.y,R0-4,-Math.PI/2+.1,Math.PI*1.5+.1,120),{w:.55,a:.7,press:.2,lift:.9,bleed:true,seed:s++});
+  g.save();g.setLineDash([2,3.5]);g.strokeStyle='rgba(30,26,21,.35)';g.lineWidth=.6;g.beginPath();g.arc(C0.x,C0.y,82,0,TAU);g.stroke();g.restore();
+  const R=rng(41);
+  // bare, uncatalogued points strewn across the unworked half: the chart has not got to them yet.
+  for(let i=0;i<46;i++){const a=R()*TAU,r=30+Math.sqrt(R())*(R0-38),x=C0.x+Math.cos(a)*r,y=C0.y+Math.sin(a)*r;
+    if(POLAR.some(o=>o.pts.some(p=>Math.hypot(C0.x+p[0]-x,C0.y+p[1]-y)<10)))continue;star(g,x,y,1.3+R()*.9,-1,s++)}
+  for(const o of POLAR){const P=o.pts.map(p=>({x:C0.x+p[0],y:C0.y+p[1]}));
+    if(o.stage>=1)for(const[a,b]of o.links)brush(g,lineP(P[a],P[b],10),{w:.7,a:.8,press:.4,lift:.5,bleed:true,seed:s++});
+    for(const p of P)star(g,p.x,p.y,o.stage>=2?2.4:1.8,o.stage>=2?o.school:-1,s++);
+    if(o.stage>=2)brush(g,loopP(P,7,s),{w:.55,a:.55,press:.3,lift:.8,bleed:true,seed:s++});
+    if(o.stage>=3)vtext(g,o.name,C0.x+o.cap[0],C0.y+o.cap[1],o.sz)}
+  // The pole itself, the one still point the whole chart turns round.
+  g.fillStyle=T.ink;g.beginPath();g.arc(C0.x,C0.y,1.1,0,TAU);g.fill();
+  // --- the title column, the title seal, the colophon: title, then seal, then who/what/which.
+  vtext(g,'天文圖',404,40,27,T.ink,.94);
+  seal(g,404,168,30,'司天監印',5,.95);
+  vtext(g,'觀者',404,196,10.5,T.ink,.8);vtext(g,'圖三',404,222,10.5,T.ink,.8);vtext(g,'種'+cnum(4821),404,248,10.5,T.ink,.8);
+  // --- the HUD, in the chart's own numerals: score in dù, best as 最.
+  vtext(g,cnum(1247)+'度',24,38,15,T.ink,.92);
+  vtext(g,'最'+cnum(2090),44,40,10.5,T.ink,.62);
+  // --- the equatorial panel: double rule, the text column, the mansion divisions.
+  const Pn=PANEL,bot=DH+40;
+  brush(g,lineP({x:Pn.x0,y:Pn.y0},{x:Pn.x1,y:Pn.y0},40),{w:1.4,a:.88,press:.3,lift:.85,bleed:true,seed:s++});
+  brush(g,lineP({x:Pn.x0+3.5,y:Pn.y0+3.5},{x:Pn.x1-3.5,y:Pn.y0+3.5},40),{w:.55,a:.7,press:.2,lift:.8,bleed:true,seed:s++});
+  for(const x of[Pn.x0,Pn.x1])brush(g,lineP({x,y:Pn.y0},{x,y:bot},60),{w:1.4,a:.88,press:.3,lift:1,bleed:true,seed:s++});
+  for(const x of[Pn.x0+3.5,Pn.x1-3.5])brush(g,lineP({x,y:Pn.y0+3.5},{x,y:bot},60),{w:.55,a:.7,press:.2,lift:1,bleed:true,seed:s++});
+  brush(g,lineP({x:Pn.col,y:Pn.y0+3.5},{x:Pn.col,y:bot},60),{w:.8,a:.8,press:.3,lift:1,bleed:true,seed:s++});
+  for(const x of Pn.ms){g.save();g.globalAlpha=.9;brush(g,lineP({x,y:Pn.y0+3.5},{x,y:bot},60),{w:.45,a:.32,press:.2,lift:1,seed:s++});g.restore()}
+  vtext(g,'房',75,394,13,T.ink,.85);vtext(g,'心',200,394,13,T.ink,.85);vtext(g,'尾',323,394,13,T.ink,.85);
+  vtext(g,'大火',401,396,16,T.ink,.92);
+  vtext(g,'自氐五度至尾九度為大火於辰在卯宋之分野',401,440,10,T.ink,.74,1,1.1);
+  // --- the next body: a bare point with no identity, its ring pricked round it so where it can be
+  // taken is never withheld, only what it is.
+  star(g,NEXT.x,NEXT.y,2.6,-1,s++);
+  g.fillStyle='rgba(30,26,21,.55)';for(let i=0;i<40;i++){const a=i/40*TAU;g.beginPath();g.arc(NEXT.x+Math.cos(a)*NEXT.cap,NEXT.y+Math.sin(a)*NEXT.cap,.7,0,TAU);g.fill()}
+  // --- the Heart and the Moon.
+  const Hs=HEART.map(p=>({x:p[0],y:p[1]}));brush(g,lineP(Hs[0],Hs[1]),{w:.7,a:.8,bleed:true,seed:s++});brush(g,lineP(Hs[1],Hs[2]),{w:.7,a:.8,bleed:true,seed:s++});
+  star(g,Hs[0].x,Hs[0].y,2.3,0,s++);star(g,Hs[1].x,Hs[1].y,3.6,1,s++);star(g,Hs[2].x,Hs[2].y,2.3,0,s++);
+  star(g,MOON.x,MOON.y,6.5,2,s++);vtext(g,'月',346,452,12,T.ink,.85);
+  // --- 熒惑守心: the red point itself; its inward-drawing rings are drawn live.
+  g.save();const mg=g.createRadialGradient(MARS.x,MARS.y,0,MARS.x,MARS.y,14);mg.addColorStop(0,'rgba(183,49,44,.28)');mg.addColorStop(1,'rgba(183,49,44,0)');g.fillStyle=mg;g.beginPath();g.arc(MARS.x,MARS.y,14,0,TAU);g.fill();g.restore();
+  star(g,MARS.x,MARS.y,3.4,1,s++);g.fillStyle='rgba(70,10,8,.8)';g.beginPath();g.arc(MARS.x,MARS.y,1.2,0,TAU);g.fill();
+  vtext(g,'熒惑守心',246,470,10.5,T.ink,.82);
+  // --- 彗星: a head drawn as a ring round a point and a tail of straight strokes, the way the
+  // Mawangdui silk draws its twenty-nine; brushed here, so the tail runs out in flying white.
+  g.strokeStyle=T.ink;g.lineWidth=.9;g.beginPath();g.arc(COMET.x,COMET.y,5,0,TAU);g.stroke();g.beginPath();g.arc(COMET.x,COMET.y,1.6,0,TAU);g.fillStyle=T.ink;g.fill();
+  for(let i=0;i<5;i++){const a=-Math.PI/2-.34+i*.17,L=70+i%2*16,b={x:COMET.x+Math.cos(a)*L,y:COMET.y+Math.sin(a)*L},m={x:COMET.x+Math.cos(a)*L*.5+(i-2)*3,y:COMET.y+Math.sin(a)*L*.5};
+    brush(g,curveP({x:COMET.x+Math.cos(a)*6,y:COMET.y+Math.sin(a)*6},m,b,30),{w:1.3-i%2*.4,a:.82,press:.8,lift:.15,dry:true,bleed:true,seed:s++})}
+  vtext(g,'彗星',364,600,10.5,T.ink,.82);
+  // --- 風角: the wind as dry brush dragged across the panel, and the eight-direction rosette the
+  // practice read it against, with the quarter it is blowing from struck in cinnabar.
+  const WR=rng(88);for(let i=0;i<7;i++){const y=lerp(WIND.y0,WIND.y1,WR()),x0=WIND.x0+WR()*90,x1=x0+90+WR()*170,sag=(WR()-.5)*7;
+    brush(g,curveP({x:x0,y},{x:(x0+x1)/2,y:y+sag},{x:x1,y:y-4-WR()*4},40),{w:2.2+WR()*2.4,a:.3+WR()*.25,press:.7,lift:.3,dry:true,dryAt:.12,seed:s++})}
+  const ro={x:32,y:715};g.strokeStyle='rgba(30,26,21,.75)';g.lineWidth=.6;g.beginPath();g.arc(ro.x,ro.y,9,0,TAU);g.stroke();
+  for(let i=0;i<8;i++){const a=i/8*TAU;g.beginPath();g.moveTo(ro.x+Math.cos(a)*3,ro.y+Math.sin(a)*3);g.lineTo(ro.x+Math.cos(a)*(i%2?7:11),ro.y+Math.sin(a)*(i%2?7:11));g.stroke()}
+  brush(g,lineP({x:ro.x-13,y:ro.y},{x:ro.x-2,y:ro.y},6),{w:1.8,col:T.cin,a:.95,press:.4,lift:.4,seed:s++});
+  vtext(g,'風角',364,688,10.5,T.ink,.82);
+  // --- 日食: sun-eating. A cinnabar disc with a bite out of it; the bite is paper, edged in ink.
+  g.save();g.beginPath();g.arc(ECL.x,ECL.y,ECL.r,0,TAU);g.arc(ECL.x+ECL.r*.95,ECL.y-ECL.r*.35,ECL.r*.78,0,TAU,true);g.clip('evenodd');
+  g.fillStyle='rgba(183,49,44,.78)';blob(g,ECL.x,ECL.y,ECL.r,s++);g.fill();g.fillStyle='rgba(236,120,96,.35)';const ER=rng(9);for(let i=0;i<60;i++){const a=ER()*TAU,d=ER()*ECL.r;g.fillRect(ECL.x+Math.cos(a)*d,ECL.y+Math.sin(a)*d,.6,.6)}g.restore();
+  brush(g,arcP(ECL.x,ECL.y,ECL.r,.9,TAU-.95,50),{w:.9,a:.85,press:.4,lift:.4,bleed:true,seed:s++});
+  brush(g,arcP(ECL.x+ECL.r*.95,ECL.y-ECL.r*.35,ECL.r*.78,Math.PI*.62,Math.PI*1.34,30),{w:.9,a:.85,press:.6,lift:.2,bleed:true,seed:s++});
+  vtext(g,'日食',364,760,10.5,T.ink,.82);
+  // --- the dried route: the stroke that came here from the last body, dry now and gone brown.
+  const entry={x:F.x+Math.cos(2.45)*F.R,y:F.y+Math.sin(2.45)*F.R};
+  brush(g,curveP({x:BODIES[0].x,y:BODIES[0].y-6},{x:112,y:700},entry,50),{w:1.1,col:T.dried,a:.55,press:.3,lift:.6,dry:true,bleed:true,seed:s++});
+  // --- the static bodies at their stages.
+  for(const b of BODIES){const P=b.mem.map(p=>({x:b.x+p[0],y:b.y+p[1]}));
+    if(b.stage>=1)for(const[a,c]of b.links)brush(g,lineP(P[a],P[c],10),{w:.8,a:.85,press:.4,lift:.5,bleed:true,seed:s++});
+    P.forEach((p,i)=>star(g,p.x,p.y,i?2.3:3,b.stage>=2?b.school:-1,s++));
+    if(b.stage>=2)brush(g,loopP(P,8,s),{w:.65,a:.7,press:.3,lift:.8,bleed:true,seed:s++});
+    if(b.stage===3){const e=vtext(g,b.name,b.x+b.cap[0],b.y+b.cap[1],13);vtext(g,SCHOOL[b.school].name,b.x+b.cap[0],e+2,9.5,T.ink,.7)}
+    if(b.stage===4)seal(g,b.x+b.seal[0],b.y+b.seal[1],12,'志',b.x|0,.95,.06)}
+  // --- the held body's ring, graduated in dù: 365¼ to the circle, a tick every five, so the last
+  // division is a quarter of the rest. Ticks stand outward so the orbit runs on a clean inner line.
+  brush(g,arcP(F.x,F.y,F.R,-Math.PI/2,Math.PI*1.5,120),{w:.8,a:.8,press:.15,lift:.95,bleed:true,seed:s++});
+  g.strokeStyle='rgba(30,26,21,.8)';g.lineCap='butt';
+  for(let du=0;du<365.25;du+=5){const a=-Math.PI/2+du/365.25*TAU,big=du%30===0,l=big?4.5:2.4;g.lineWidth=big?.8:.5;
+    g.beginPath();g.moveTo(F.x+Math.cos(a)*(F.R+.6),F.y+Math.sin(a)*(F.R+.6));g.lineTo(F.x+Math.cos(a)*(F.R+.6+l),F.y+Math.sin(a)*(F.R+.6+l));g.stroke()}
+  // --- the release band: a cinnabar wash laid outside the rim over the arc from which the next body can
+  // be reached, and a division struck across the rim with a pale disc on it at the best release.
+  if(REL.a0!==null){g.save();g.globalAlpha=.42;brush(g,arcP(F.x,F.y,F.R+9,REL.a0,REL.a1,30),{w:4,col:T.cin,a:.9,press:.2,lift:.6,seed:s++});g.restore();
+    const b=REL.best,cs=Math.cos(b),sn=Math.sin(b);brush(g,lineP({x:F.x+cs*(F.R-4),y:F.y+sn*(F.R-4)},{x:F.x+cs*(F.R+13),y:F.y+sn*(F.R+13)},6),{w:1.1,a:.9,press:.2,lift:.6,seed:s++});
+    star(g,F.x+cs*(F.R+9),F.y+sn*(F.R+9),2.2,2,s++)}
+  // --- the held body's members, as the phenomenon: hollow points, before any sighting.
+  // (drawn live in frame(), since the whole of this body's state is the observation clock's.)
+  bakeFrontier(g);
+  return c}
+
+/* ================= hundun: the frontier ================= */
+// Pine-soot ink bound in glue on hemp, failing: the paper's own cellulose goes first, so the edge is
+// fibrous rather than cut; the binder lets go beside it, so the ink blooms outward into soft stains
+// with a browned tide-line before the sheet thins to nothing. Below it is the cave the scroll lay in.
+function tearAt(x){return 872+fbm(x/40,0,4,77)*14+fbm(x/9,3,2,78)*3}
+function bakeFrontier(g){
+  const R=rng(303);
+  // the bloom: ink running into the wet sheet above the tear, pale and wide with a darker margin.
+  for(let i=0;i<22;i++){const x=R()*DW,y=tearAt(x)-8-R()*44,r=6+R()*16;g.save();g.filter='blur(3px)';g.fillStyle=`rgba(60,44,28,${.05+R()*.06})`;g.beginPath();g.ellipse(x,y,r*1.4,r,R()*.6,0,TAU);g.fill();g.restore();
+    g.strokeStyle=`rgba(98,66,30,${.12+R()*.1})`;g.lineWidth=.7;g.beginPath();for(let j=0;j<=36;j++){const a=j/36*TAU,rr=r*(1+vnoise(Math.cos(a)*2+i,Math.sin(a)*2,5)*.3);j?g.lineTo(x+Math.cos(a)*rr*1.4,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr*1.4,y+Math.sin(a)*rr)}g.stroke()}
+  // thinning: the sheet grows translucent toward the edge, the cave's dark coming through it.
+  const tg=g.createLinearGradient(0,826,0,880);tg.addColorStop(0,'rgba(40,28,16,0)');tg.addColorStop(1,'rgba(40,28,16,.30)');g.fillStyle=tg;g.fillRect(-60,826,DW+120,60);
+  // the loss itself, and the dark under it.
+  g.fillStyle=T.cave;g.beginPath();g.moveTo(-60,tearAt(-60));for(let x=-60;x<=DW+60;x+=2)g.lineTo(x,tearAt(x));g.lineTo(DW+60,DH+400);g.lineTo(-60,DH+400);g.fill();
+  // lacunae: holes eaten through the thinned sheet just above the edge.
+  for(let i=0;i<7;i++){const x=R()*DW,y=tearAt(x)-4-R()*18,r=1.2+R()*3.2;
+    for(let j=0;j<26;j++){const a=R()*TAU,L=1+R()*3;g.strokeStyle=`rgba(236,222,186,${.4+R()*.4})`;g.lineWidth=.25;g.beginPath();g.moveTo(x+Math.cos(a)*r*.8,y+Math.sin(a)*r*.8);g.lineTo(x+Math.cos(a)*(r*.8-L)+(R()-.5),y+Math.sin(a)*(r*.8-L));g.stroke()}
+    g.fillStyle=T.cave;g.beginPath();
+    for(let j=0;j<=20;j++){const a=j/20*TAU,rr=r*(1+vnoise(Math.cos(a)*1.8+i*3,Math.sin(a)*1.8,9)*.5);j?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}g.fill();g.strokeStyle='rgba(236,222,186,.5)';g.lineWidth=.3;g.stroke()}
+  // the fringe: loose fibres standing out over the dark from the broken edge.
+  for(let i=0;i<520;i++){const x=R()*DW*1.1-DW*.05,y=tearAt(x)-1,a=Math.PI/2+(R()-.5)*1.6,L=2+R()*R()*12;
+    g.strokeStyle=`rgba(${200+R()*30|0},${180+R()*26|0},${136+R()*24|0},${.35+R()*.45})`;g.lineWidth=.25+R()*.35;g.beginPath();g.moveTo(x,y);
+    g.quadraticCurveTo(x+Math.cos(a+.4)*L*.5,y+Math.sin(a+.4)*L*.5,x+Math.cos(a)*L,y+Math.sin(a)*L);g.stroke()}
+  // a few scraps drifted free into the dark.
+  for(let i=0;i<14;i++){const x=R()*DW,y=tearAt(x)+8+R()*40,r=.8+R()*2.2;g.fillStyle=`rgba(190,168,122,${.25+R()*.4})`;g.beginPath();g.ellipse(x,y,r*1.4,r,R()*TAU,0,TAU);g.fill()}
+  // the word for it, as the ghost of ink the paper has already given up.
+  vtext(g,'混沌',DW/2,892,14,'rgb(120,100,70)',.35)}
+
+/* ================= the live frame ================= */
+const OMEGA=.75,SWEEP_FULL=TAU*2/3,CYCLE=TAU*1.2+1.2; // radians of held sweep per entry, then a beat
+let t0=performance.now();
+function focusState(t){
+  const total=t*OMEGA,per=CYCLE,kk=Math.floor(total/per),local=total-kk*per;return{k:kk,sweep:local,th:-Math.PI/2+total}}
+function drawFocus(g,t){
+  const st=focusState(t),doc=clamp(st.sweep/SWEEP_FULL,0,1),school=(st.k+1)%3,sealed=st.k>=2,name=FOCUS_NAMES[st.k%FOCUS_NAMES.length];
+  const fade=st.sweep>TAU*1.2?1-clamp((st.sweep-TAU*1.2)/1.2,0,1):1,P=F.mem.map(p=>({x:F.x+p[0],y:F.y+p[1]}));
+  g.save();g.globalAlpha=fade;g.lineCap='round';
+  // stage 1 — up to a quarter-turn: the joining line grows out of the held disc to its nearest neighbour,
+  // then on to the rest of the office.
+  const s1=clamp(doc/.375,0,1);F.links.forEach(([a,b],i)=>{const f=clamp(s1*F.links.length-i,0,1);if(f>0)brush(g,cut(lineP(P[a],P[b],14),ease(f)),{w:.8,a:.85,press:.4,lift:.6,seed:900+i})});
+  // stage 2 — to half a turn: the boundary closes round the group and the group takes its school.
+  const s2=clamp((doc-.375)/.375,0,1);if(s2>0)brush(g,cut(loopP(P,8,31),s2),{w:.65,a:.72,press:.3,lift:.8,seed:950});
+  const fillA=ease(clamp((s2-.35)/.65,0,1));
+  P.forEach((p,i)=>star(g,p.x,p.y,i?2.3:3,fillA>0?school:-1,700+i,fillA));
+  // stage 3 — to two thirds: the entry closes, on a caption the first time this colour is captioned
+  // this run, and on a seal pressed once in cinnabar every time after.
+  const s3=clamp((doc-.75)/.25,0,1);
+  if(s3>0){const cx=F.x+36,cy=F.y-38;
+    if(!sealed){const e=vtext(g,name,cx,cy,13,T.ink,.9,clamp(s3*1.6,0,1));vtext(g,SCHOOL[school].name,cx,e+2,9.5,T.ink,.7,clamp(s3*1.6-.9,0,1))}
+    else{const p=ease(clamp(s3*2,0,1));g.save();g.translate(cx,cy+14);g.scale(1.35-.35*p,1.35-.35*p);seal(g,0,0,12,'志',st.k*13+1,p,.05);g.restore()}}
+  g.restore();
+  // The completion cue: at the crossing into a full observation the rim is struck again, darker, and
+  // settles back to geometry over two thirds of a second.
+  const since=(st.sweep-SWEEP_FULL)/OMEGA;
+  if(since>0&&since<.66){g.save();g.globalAlpha=(1-since/.66)*.9;g.strokeStyle=T.ink;g.lineWidth=2.2*(1-since/.66)+.4;g.beginPath();g.arc(F.x,F.y,F.R,0,TAU);g.stroke();g.restore()}
+  return{st,school}}
+function drawTrail(g,st,school){
+  // The wet stroke laid round the ring behind the tube: glossy while it is wet, and in the colour of
+  // the school this encounter is drawing from.
+  const span=Math.min(st.sweep,TAU*.62),n=40;if(span<.05)return;
+  const pts=arcP(F.x,F.y,F.R,st.th-span,st.th-.2,n);
+  g.save();g.lineCap='round';
+  for(let i=1;i<pts.length;i++){const f=i/pts.length;g.globalAlpha=.15+f*.75;
+    g.strokeStyle=school===0?T.ink:school===1?T.cin:T.pale;g.lineWidth=.9+f*1.2;g.beginPath();g.moveTo(pts[i-1].x,pts[i-1].y);g.lineTo(pts[i].x,pts[i].y);g.stroke();
+    if(school===2){g.strokeStyle=T.ink;g.lineWidth=.35;g.globalAlpha*=.7;for(const sd of[-1,1]){const a=Math.atan2(pts[i].y-F.y,pts[i].x-F.x),o=sd*(.9+f*1.2)/2+.1*sd;
+      g.beginPath();g.moveTo(pts[i-1].x+Math.cos(a)*o,pts[i-1].y+Math.sin(a)*o);g.lineTo(pts[i].x+Math.cos(a)*o,pts[i].y+Math.sin(a)*o);g.stroke()}}}
+  // the gloss on the wet ink, a hairline of light riding the stroke's inner edge near the brush.
+  g.strokeStyle='rgba(255,248,226,.55)';g.lineWidth=.35;g.beginPath();arcP(F.x,F.y,F.R-.45,st.th-Math.min(span,.9),st.th-.25,12).forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));g.stroke();
+  g.restore()}
+// The traveller: an armillary sighting tube laid on the flight's own tangent — a bronze barrel with
+// collars, one graduated ring round it seen nearly edge-on, and the Observer Core at its forward
+// aperture, the one pure light on the sheet. Ahead of it the aim guide is pricked, never ruled.
+function drawTube(g,th,t){
+  const p={x:F.x+Math.cos(th)*F.R,y:F.y+Math.sin(th)*F.R},h=th+Math.PI/2,d={x:Math.cos(h),y:Math.sin(h)},n={x:-d.y,y:d.x};
+  const ap={x:p.x+d.x*14,y:p.y+d.y*14};
+  g.save();
+  for(let i=1;i<=11;i++){const q=6+i*7.2;g.globalAlpha=.78*(1-i/13);g.fillStyle=T.ink;g.beginPath();g.arc(ap.x+d.x*q,ap.y+d.y*q,i<3?1:.85,0,TAU);g.fill()}
+  g.globalAlpha=1;g.translate(p.x,p.y);g.rotate(h);
+  const ring=(back)=>{g.save();g.translate(-2,0);g.strokeStyle=T.bronze;g.lineWidth=1.7;g.beginPath();g.ellipse(0,0,3.2,11.5,0,back?Math.PI/2:-Math.PI/2,back?Math.PI*1.5:Math.PI/2);g.stroke();
+    g.strokeStyle='rgba(30,26,21,.75)';g.lineWidth=.45;g.beginPath();g.ellipse(0,0,4.1,12.4,0,back?Math.PI/2:-Math.PI/2,back?Math.PI*1.5:Math.PI/2);g.stroke();
+    for(let i=0;i<12;i++){const a=(back?Math.PI/2:-Math.PI/2)+i/12*Math.PI;g.beginPath();g.moveTo(Math.cos(a)*3.2,Math.sin(a)*11.5);g.lineTo(Math.cos(a)*4.3,Math.sin(a)*12.7);g.stroke()}g.restore()};
+  ring(true);
+  // the barrel: a slight taper toward the aperture, lit along one flank.
+  const bg=g.createLinearGradient(0,-4,0,4);bg.addColorStop(0,T.bronzeHi);bg.addColorStop(.35,T.bronze);bg.addColorStop(1,T.bronzeLo);
+  g.fillStyle=bg;g.beginPath();g.moveTo(-17,-3.8);g.lineTo(13,-2.8);g.lineTo(13,2.8);g.lineTo(-17,3.8);g.closePath();g.fill();
+  g.strokeStyle='rgba(30,26,21,.9)';g.lineWidth=.7;g.stroke();
+  g.lineWidth=.9;for(const x of[-12,-2,8]){g.beginPath();g.moveTo(x,-3.6+(x+17)*.033);g.lineTo(x,3.6-(x+17)*.033);g.stroke()}
+  g.fillStyle=T.bronzeLo;g.beginPath();g.ellipse(-17,0,1.2,3.8,0,0,TAU);g.fill();g.stroke();
+  ring(false);
+  g.restore();
+  // The Core: a warm white point in a soft halo at the aperture's lip, breathing very slightly.
+  const br=1+.08*Math.sin(t*2.1);g.save();const hg=g.createRadialGradient(ap.x,ap.y,0,ap.x,ap.y,10*br);hg.addColorStop(0,'rgba(255,250,228,.95)');hg.addColorStop(.3,'rgba(255,244,206,.55)');hg.addColorStop(1,'rgba(255,244,206,0)');
+  g.fillStyle=hg;g.beginPath();g.arc(ap.x,ap.y,10*br,0,TAU);g.fill();g.fillStyle=T.core;g.beginPath();g.arc(ap.x,ap.y,2.4,0,TAU);g.fill();
+  g.strokeStyle='rgba(30,26,21,.8)';g.lineWidth=.5;g.beginPath();g.arc(ap.x,ap.y,3.2,0,TAU);g.stroke();g.restore();
+  return{p,ap}}
+function drawMars(g,t){
+  // Mars guarding the Heart: rings of dilute cinnabar that close in on the point and are taken by it —
+  // a pull that does not let go, the opposite gesture from the comet's tail sweeping outward.
+  g.save();for(let i=0;i<3;i++){const f=((t*.28+i/3)%1),r=6+(1-f)*26;g.globalAlpha=f*.5;g.strokeStyle=T.cin;g.lineWidth=.6+f*.5;g.beginPath();g.arc(MARS.x,MARS.y,r,0,TAU);g.stroke()}g.restore()}
+
+/* ================= L — the legend: modern words over a sheet that has none ================= */
+const LEG=[
+  [0,0,'traveller — sighting tube 窺管, Core at aperture',176,572],
+  [F.x-30,F.y+22,'held body — dot, line, boundary, then caption or seal, by documented',24,676],
+  [F.x-42,F.y+42,'ring — capture radius, graduated in dù (365¼)',24,690],
+  [REL.a0!==null?F.x+Math.cos((REL.a0+REL.a1)/2)*(F.R+9):F.x,REL.a0!==null?F.y+Math.sin((REL.a0+REL.a1)/2)*(F.R+9):F.y,'release band + best release (pale disc)',24,540],
+  [NEXT.x,NEXT.y,'next body — a phenomenon: a point, no identity',24,420],
+  [MARS.x,MARS.y,'attractor — 熒惑守心, Mars lingering at the Heart',150,512],
+  [COMET.x,COMET.y-30,'repulsor — 彗星, broom star',250,598],
+  [WIND.x0+40,WIND.y0+16,'crosswind — 風角, the wind angle (a practice)',90,744],
+  [ECL.x,ECL.y,'obscurer — 日食, sun-eating',200,770],
+  [BODIES[0].x,BODIES[0].y,'catalogued + captioned (甘氏, black)',24,836],
+  [BODIES[1].x+34,BODIES[1].y+24,'catalogued, seal (colour already captioned)',150,850],
+  [BODIES[2].x,BODIES[2].y,'joined, not yet coloured',24,660],
+  [MOON.x,MOON.y,'the Moon (月)',300,430],
+  [112,700,'dried route',60,760],
+  [DW/2,892,'the boundary — 混沌 hundun: the paper failing',110,912],
+  [24,60,'score, in dù',60,58],[44,64,'best (最)',60,72],
+  [C0.x,C0.y+10,'chart — circumpolar panel, half catalogued',96,262],
+  [404,60,'title 天文圖, seal, colophon',236,44],
+  [F.x+Math.cos(-Math.PI/2)*F.R,F.y-F.R-2,'the ¼-dù division',160,530]];
+function drawLegend(g,tube){
+  LEG[0][0]=tube.ap.x;LEG[0][1]=tube.ap.y;g.save();g.font=gloss(9.5);g.textBaseline='middle';g.lineWidth=.6;
+  for(const[x,y,s,lx,ly]of LEG){const w=g.measureText(s).width;g.strokeStyle=T.legend;g.globalAlpha=.8;g.beginPath();g.moveTo(x,y);g.lineTo(clamp(x,lx,lx+w),ly);g.stroke();
+    g.beginPath();g.arc(x,y,1.6,0,TAU);g.fillStyle=T.legend;g.fill();g.globalAlpha=1;g.fillStyle=T.legendBg;g.fillRect(lx-3,ly-7,w+6,14);g.fillStyle=T.legend;g.fillText(s,lx,ly)}
+  g.fillStyle=T.legendBg;g.fillRect(96,4,238,13);g.fillStyle=T.legend;g.fillText('L or tap: legend · ?t=seconds freezes the clock',100,10.5);g.restore()}
+
+function frame(now){
+  const t=FROZEN!==null?FROZEN:(now-t0)/1000;
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(paperC,0,0);ctx.drawImage(inkC,0,0);
+  ctx.setTransform(dpr*k,0,0,dpr*k,dpr*ox,dpr*oy);
+  drawMars(ctx,t);
+  const{st,school}=drawFocus(ctx,t);
+  drawTrail(ctx,st,school);
+  const tube=drawTube(ctx,st.th,t);
+  if(showLegend)drawLegend(ctx,tube);
+  if(FROZEN===null)requestAnimationFrame(frame)}
+
+function resize(){
+  dpr=Math.min(3,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;
+  k=Math.min(W/DW,H/DH);ox=(W-DW*k)/2;oy=(H-DH*k)/2;
+  paperC=bakePaper();inkC=bakeInk();
+  if(FROZEN!==null)requestAnimationFrame(frame)}
+addEventListener('keydown',e=>{if(e.key==='l'||e.key==='L'){showLegend=!showLegend;if(FROZEN!==null)requestAnimationFrame(frame)}});
+cv.addEventListener('pointerdown',()=>{showLegend=!showLegend;if(FROZEN!==null)requestAnimationFrame(frame)});
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(resize,150)});
+// Canvas text never triggers a lazy @font-face load, so both faces are loaded by hand before the first
+// bake; if either fails the sheet still draws, in whatever CJK serif the system has.
+Promise.all([['Kai','fonts/lxgw-wenkai-tc.scroll.woff2'],['Gloss','fonts/noto-serif-tc.scroll.woff2']].map(([f,u])=>new FontFace(f,`url(${u})`).load().then(ff=>document.fonts.add(ff)).catch(()=>{})))
+  .then(()=>{resize();if(FROZEN===null)requestAnimationFrame(frame)});
+</script>
+</body>
+</html>
