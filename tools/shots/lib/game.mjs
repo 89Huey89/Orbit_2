@@ -122,13 +122,13 @@ export class Game{
   // Takes one capture, named for what it shows. Files are numbered in the order a scenario takes
   // them, so a folder reads as the sequence it was flown in. `selector` crops to one element;
   // `fullPage` takes the whole scrollable document (the frontispiece leaf is taller than a phone).
-  async shot(name,{selector,fullPage=false,note}={}){
+  async shot(name,{selector,fullPage=false,clip,note}={}){
     const n=String(++this.count).padStart(2,'0'),file=`${n}-${name.replace(/[^a-z0-9-]+/gi,'-').toLowerCase()}.png`;
     await mkdir(this.outDir,{recursive:true});
     const path=join(this.outDir,file);
     const opts={path,animations:'disabled',caret:'hide'};
     if(selector)await this.page.locator(selector).first().screenshot(opts);
-    else await this.page.screenshot({...opts,fullPage});
+    else await this.page.screenshot({...opts,fullPage,...(clip?{clip}:{})});
     const state=await this.state().catch(()=>null);
     this.record({variant:this.variant,name,file:path,state,note:note||null});
     return path;

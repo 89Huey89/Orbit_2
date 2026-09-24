@@ -1018,8 +1018,11 @@ function drawConstellations(){
     }
     // Renaissance stars are drawn at the node itself, where the orbit, point size and letter share one
     // observation clock. Later hands keep the older decorative marker until they claim their own form.
+    // A hand with a marker of its own for a chart's star names it here and draws it in place of this one.
+    const ownStar=handFor('chartStar');
     if(!renaissanceAtlas())for(const n of chart.stars){
       const x=sx(n.x),y=sy(n.y)-(n.r+15)*scale;
+      if(ownStar){ownStar(n,x,y,chart);continue;}
       ctx.strokeStyle=`rgba(${ink.marks.constellationStar},${chart.expired?.2:n.visited?.9:.6})`;ctx.fillStyle=n.visited?ink.marks.constellationFillLit:ink.marks.constellationFillDark;ctx.lineWidth=.8;
       ctx.beginPath();
       for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2,r=(i%2?1.4:4.8)*scale;const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}

@@ -836,6 +836,9 @@ function paintRenaissanceGrid(g,progress,style){
 }
 function drawRenaissanceGrid(){
   if(!world||plainPlate())return;
+  // An era whose sky was never measured names a painter here that draws nothing: a sphere lettered in
+  // Latin, printed on a cave wall, read as grey labels stuck to the rock.
+  const own=handFor('sphere');if(own)return own();
   // An unruled sheet is a selection like any other, and the cheapest one: nothing is painted and no
   // layer is kept, so the construction costs exactly nothing when it is not wanted.
   const style=sphereStyle();if(!SPHERE_HANDS[style])return;

@@ -1425,7 +1425,10 @@ const TALLY_CAP=12;
 // other solver does, and counts only the standing marks of that same kind already in the gutter.
 function floaterLine(f,left,h,kind){
   kind=kind||'floater';
-  const top=hudBand()+16,bottom=H-frameBand()*.92-21,boxes=[];
+  // The atlas's own foot (the running head) keeps its notes above the row of utility buttons; a sheet
+  // with no foot keeps them above that row itself (48px buttons set at least 17px off the bottom, see `.footer`
+  // in index.html), or they settled under the icons and stacked there.
+  const top=hudBand()+16,bottom=renaissanceAtlas()?H-frameBand()*.92-21:H-84,boxes=[];
   for(const m of groundStanding({left:left?0:W*.5,right:left?W*.5:W,top:0,bottom:H},kind))boxes.push([m.top,m.bottom]);
   const list=kind==='tally'?tallies:floaters;
   for(const q of list)if(q!==f&&q.lift!==undefined&&q.left===left){

@@ -258,6 +258,22 @@ before anything else is built on it:
 - **A hazard breaks open from the rock** instead of the atlas's ink-drop reveal (`hazardReveal`
   hand hook).
 
+- **Polish pass (2026-09-24).** The chasm read as a slot stamped into the wall: a pill of even width
+  with evenly spaced teeth and round ends. It is now a crack — an asymmetric throat that swells and
+  pinches, facets at uneven knots, ends narrowing to points past a blunt-pointed black (which still
+  contains the capsule), and a hairline running on into the face past each tip. Niches fade out at
+  the rim and take a soft stacked shadow instead of one crisp crescent, and the lit lip of every
+  hollow, hole and crack is struck in broken lengths. Unreached lights are queued and struck after the
+  torch pass, with a pool of light and a longer cross, so they read in the dark. Three atlas leftovers
+  came off the wall: the armillary sphere and its Latin labels (seen as grey bars on the rock), the
+  pen nib after captions, and the engraved chart-star over each body (now three ochre dots). Era
+  floaters are kept above the utility buttons.
+- **No engraved script (2026-09-24).** Considered and declined: letting the wall's text be cut in live,
+  letter by letter, as the atlas pens its names. No script survives from this era, and a hand
+  inscribing words would invent one — the thing this plan refuses. The era's live "writing" is its
+  marks instead (animal contours, dabs, tally notches), which already arrive stroke by stroke; the
+  words stay the curator's gloss and appear glyph by glyph with no tool at their edge.
+
 ## Progress
 
 Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`:
