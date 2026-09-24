@@ -2,36 +2,34 @@
 
 `README.md` at the root is the authoritative record of what Orbit **does** — every rule and number
 in the game as it stands. `CLAUDE.md` is the map for working on the code. This directory holds
-neither: it is where work that is not being built right now is written down, so a plan survives
-between the sessions that might one day resume it.
+neither: it is where design and planning work is written down before it becomes code.
 
 ## Current focus
 
-The eight-era progression system archived below is **indefinitely postponed** (since 2026-09-08,
-no resumption date set). Active development is exclusively on polishing the shipped Renaissance
-atlas — era V, the only plate a run ships with today (root `README.md`'s "Plates" and "Catalogue"
-sections; `src/plates.js`'s default). Nothing under `archive/` is a live backlog; do not build
-toward it without being explicitly asked to resume it.
+The eight-era progression system archived below is **active again** (resumed 2026-09-24, after
+being postponed since 2026-09-08). Development now includes building it out, alongside continued
+polishing of the shipped Renaissance atlas — era V, the only plate a run ships with today (root
+`README.md`'s "Plates" and "Catalogue" sections; `src/plates.js`'s default).
 
 One piece of live work sits beside that focus, at the user's request: the overhaul of Era II,
 The Ceiling, planned in [CEILING-OVERHAUL.md](CEILING-OVERHAUL.md). It changes the standalone preview
-door only and builds nothing toward the archived progression.
+door only and builds nothing toward the progression.
 
 [ART-REVIEW.md](ART-REVIEW.md) is a review of the atlas as it looks on the reference phone, with
 proposals for fixes, effects and rendering. It adds to the root `ART-AUDIT-TODO.md` rather than
 repeating it.
 
-## `archive/eras/` — the archived eight-era progression plan
+## `archive/eras/` — the eight-era progression plan
 
 Nothing here describes shipped behaviour, with two exceptions: Era I (`01-rock.md`) and Era II
 (`02-ceiling.md`) are already playable, standalone preview doors reached from the frontispiece
 (`src/rock.js`, `src/ceiling.js` — see root `README.md`'s "The eras"). They ship on their own,
-outside of any progression system; everything else below is unbuilt, postponed design.
+outside of any progression system; everything else below is the design still to be built.
 
 ```
 archive/
-└── eras/                     the postponed progression through the history of the star atlas,
-    │                         climbed across many runs
+└── eras/                     the progression through the history of the star atlas, climbed
+    │                         across many runs
     ├── JOURNEY.md             the controlling document: locked progression design, code map, build plan
     ├── OVERVIEW.md           the older entry point; superseded in part by JOURNEY.md
     ├── MEASUREMENTS.md       what the simulation actually measures, for the design above
@@ -66,6 +64,6 @@ The ladder used to be an art-direction problem — nine skins for one mechanic, 
 century. It became a claim about the mechanic itself: a node begins as a bare celestial
 phenomenon, and orbiting it is the act that turns it into knowledge, in the hand of whichever
 century is currently held. `JOURNEY.md` is the controlling statement of that claim and the door to
-open first if the design is ever picked back up; `research/` holds four files behind it —
+open first when working on the design; `research/` holds four files behind it —
 `china.md`, `instruments.md`, `observer-core.md`, and `space-age.md` — reached from the era files
 and cross-cutting docs above that draw on them.

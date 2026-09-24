@@ -5,22 +5,19 @@ authoritative gameplay/design spec — it documents every rule and number in the
 game, in the game's own atlas-engraving prose. Read it for *what the game
 does*; this file is the map for working on *the code*.
 
-**The eight-era progression system is indefinitely postponed** (since 2026-09-08, no
-resumption date set). It was the plan to extend the plate system into an eight-era
+**The eight-era progression system is active again** (resumed 2026-09-24, after being
+postponed since 2026-09-08). It is the plan to extend the plate system into an eight-era
 progression through the history of the star atlas, from a Palaeolithic cave wall to
-a self-replicating probe, climbed across many runs. Its planning documents are
-archived under `docs/archive/eras/` — kept for reference, not a live backlog. Do not
-build toward it, and do not treat anything in that tree as an active plan, unless
-explicitly asked to resume it. `docs/archive/eras/JOURNEY.md` was the controlling
-document for that design; `docs/README.md` maps the rest of the archive.
+a self-replicating probe, climbed across many runs. Its planning documents live under
+`docs/archive/eras/`. `docs/archive/eras/JOURNEY.md` is the controlling document for
+that design; `docs/README.md` maps the rest of the tree.
 
-**Current focus is exclusively the shipped Renaissance atlas** — era V, the only
-plate a run ships with today (see README.md's "Plates" and "Catalogue" sections, and
-`src/plates.js`). Further polish there is the active work, not new eras or
-progression plumbing. Two pieces of that archived plan are already shipped and
-unaffected by the postponement — Era I (`src/rock.js`) and Era II (`src/ceiling.js`),
-standalone preview doors on the frontispiece, outside of any progression system; see
-README.md's "The eras".
+**Current focus now includes building out the eight-era progression**, alongside
+continued polish of the shipped Renaissance atlas — era V, the only plate a run ships
+with today (see README.md's "Plates" and "Catalogue" sections, and `src/plates.js`).
+Two pieces of that plan are already shipped, independent of the progression system
+itself — Era I (`src/rock.js`) and Era II (`src/ceiling.js`), standalone preview doors
+on the frontispiece; see README.md's "The eras".
 
 ## Commands
 

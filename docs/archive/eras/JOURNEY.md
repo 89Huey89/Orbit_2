@@ -1,11 +1,5 @@
 # The Journey — the locked progression design, and the plan to build it
 
-> **Archived — indefinitely postponed (since 2026-09-08, no resumption date set).**
-> The whole eight-era progression system this file plans is not being built. See
-> `CLAUDE.md` and `docs/README.md` for current status; active development is
-> exclusively on polishing the shipped Renaissance atlas (era V). Nothing below is a
-> live plan — it is kept for reference in case the design is picked back up.
-
 This file is the controlling document for the progression system. It supersedes the parts of the
 older era documents listed in *What this overrides*, below, and where it disagrees with them, this
 file is right and they are stale. It is written to be implemented from directly, in the stages given
