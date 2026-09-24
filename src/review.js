@@ -63,6 +63,7 @@ function renderReview(){
   drawConnections();drawConstellations();
   for(const n of world.nodes)drawNode(n,null);
   for(const h of world.hazards)revealHazard(h,drawHazard);
+  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms)paintChasm(c);}
   // The route actually flown, and the angle every departure and landing was measured at — see
   // replayRun() in src/replay.js, which surveys the whole run again as it rebuilds it.
   drawInkPath();drawSurveys();

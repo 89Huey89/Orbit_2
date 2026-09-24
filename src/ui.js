@@ -21,6 +21,11 @@ const WIN_END_DELAY=3.2;
 defineVoice('atlas',{
   chart:'',
   chartNoun:'constellation',
+  chartVerb:'traced',
+  chartNames:null,
+  // Lore a plate may keep for itself: a line set on the sheet as each chapter opens, and a note under a
+  // chart as it closes. The atlas keeps none; its chapters and charts say what they are by their names.
+  chapterLines:null,chartNotes:null,
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',
   observations:{},
   pressures:DIFFICULTY_LABELS,
@@ -32,11 +37,11 @@ defineVoice('atlas',{
   // Struck once beside the traveller the moment a run's score first passes the best it opened with —
   // see event(), below — never on a first run, which breaks no record for want of one to beat.
   newRecord:'NOVUM RECORDUM',
-  // The word for the bonus a landing earns for how true its angle ran, set in the gain line beside the
-  // points themselves (see event()'s capture, below); an era that writes no Latin names its own.
-  gainAngle:'ANGULUS',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
+    eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
+    statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
+    reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
   tips:{first:'Release when the pricked line reaches the next orbit.',dark:'Circle a slingshot star to gain speed. The dark grows faster.',faded:'Copper orbits fade. Release before the ring runs out.',vortex:'Close flybys bend your path. Follow the curved guide and leave room for the dark eye.',angle:'Skim the orbit’s rim for a perfect transfer.',speed:'Perfect transfers keep your speed. Faster earns more points.'},
   chapters,
@@ -48,7 +53,50 @@ defineVoice('atlas',{
   chapterSaid:'Plate {numeral}. {name}.',
   // The atlas never wins, so it names no line for it; a plate with a goalRow overrides this.
   won:'',
-  held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'}
+  held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
+  // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
+  // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
+  // its own has somewhere to put a different word instead.
+  hazards:{vortex:HAZARD_KINDS.vortex.latin,flare:HAZARD_KINDS.flare.latin,wind:HAZARD_KINDS.wind.latin},
+  // The bare currency word, without the ARMED/HELD suffix a capsule's own pickup toast (below) adds to
+  // it — kept apart from POWERUP_LABELS itself so a plate can rename what is carried without touching
+  // the internal type strings every capsule handler already keys on.
+  labels:{shield:POWERUP_LABELS.shield,reflector:POWERUP_LABELS.reflector,dawn:POWERUP_LABELS.dawn},
+  // The one observation whose caption event() reaches for directly rather than through `observations`
+  // (below): the arrival square is announced the instant it lands, ahead of the observation itself
+  // (see the survey fixture in scripts/verify.mjs), so it earns its own key instead of a second, earlier
+  // read of the same table.
+  squareLanding:OBSERVATIONS.rightAngle.latin,
+  // Every other inscription event() strikes onto the chart beside what it is about, kept as one table
+  // so a plate with nothing of its own to say inherits the atlas's words exactly, word for word.
+  glosses:{
+    slingshot:'SLINGSHOT · SPEED ×{factor}',
+    maxSpeed:'MAX SPEED · FIND YOUR LINE',
+    fullCharge:'FULL CHARGE · SPEED IS YOURS',
+    rough:'ROUGH IMPRESSION · BASE {base}',
+    skip:'{count} ORBIT{plural} SKIPPED · +{bonus}',
+    reprieve:'TRACE 3 STARS · +60 & A REPRIEVE',
+    slingOrbit:'ORBIT TO GAIN SPEED · TAP TO LEAVE',
+    fading:'FADING ORBIT · KEEP MOVING',
+    golden:'GOLDEN DETOUR',
+    perfectFlow:'PERFECT · FLOW ×{combo}',
+    perfect:'PERFECT · MOMENTUM KEPT',
+    wandering:'A WANDERING ORBIT',
+    chartProgress:'{chart} · {count} / 3',
+    chartComplete:'{chart} · COMPLETE +60',
+    angleBonus:'  ·  ANGULUS +{bonus}',
+    multiplier:'  ·  ×{mult}',
+    shieldArmed:'{label} ARMED · SURVIVES ONE VORTEX',
+    shieldBreak:'{label} ABSORBED THE IMPACT',
+    reflectorArmed:'{label} ARMED · TURNS BACK THE EDGE',
+    reflectorBreak:'{label} THREW YOU BACK',
+    dawnArmed:'{label} ARMED · TURNS BACK THE DARK',
+    dawnBreak:'{label} DROVE THE DARK BACK',
+    inkwellFound:'A RECKLESS LINE · A NEW COLOUR TAKES',
+    inkwellDry:'THE WELL RUNS DRY · FLY RECKLESS FIRST',
+    observation:'OBSERVATION · {name}',
+    close:'CLOSE +5'
+  }
 });
 // Everything the run has to say is written onto the chart itself, beside whatever it is about: see
 // src/inscriptions.js. `where` names the subject — a planet or star to follow, or the point on the sheet
@@ -66,7 +114,7 @@ function event(type,e){
     if(e.sling&&e.charge>.15){
       audio.tone(155,.45,0,.25,'sine',230+e.charge*200);
       if(!reducedMotion){burst(e.x,e.y,Math.round(8+e.charge*12),'gold',.9);rings.push({x:e.x,y:e.y,start:5,distance:55,age:0,life:.5,alpha:.42,seed:ringSeed()});}
-      say('SLINGSHOT · SPEED ×'+e.factor.toFixed(1),{x:e.x,y:e.y});
+      say(fmt(plateWords().glosses.slingshot,{factor:e.factor.toFixed(1)}),{x:e.x,y:e.y});
     }
   }else if(type==='charged'){
     // The trail ladder counts the star's own band filling, which every charged event means by
@@ -74,7 +122,7 @@ function event(type,e){
     // hand loses the moment its release is a frame late, and the ladder's chalk-to-gold-leaf
     // reading of common-to-rare needs its first rung reachable the way a full charge already is.
     tally('maxSpeedSlings');
-    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(e.max?'MAX SPEED · FIND YOUR LINE':'FULL CHARGE · SPEED IS YOURS',{node:world.player.node});
+    audio.tone(392,.65,0,.16);audio.tone(587.33,.65,.12,.12);say(plateWords().glosses[e.max?'maxSpeed':'fullCharge'],{node:world.player.node});
   }else if(type==='capture'){
     tally('captures');if(e.perfect)tally('perfects');if(e.steep)tally('badAngles');
     // The bodies README:56 hand-colours as worlds — every 'still'/'drift'/'fading'/'sling' capture,
@@ -100,87 +148,97 @@ function event(type,e){
     // gain: the simulation adds it before emitting the event, see OrbitWorld.capture) — while an era
     // still gets the floater it always had, drifting up and fading over a second and change.
     {
-      const gainText='+'+e.gain+(e.angleBonus?'  ·  '+plateWords().gainAngle+' +'+e.angleBonus:'')+(e.scoreMultiplier>=1.05?'  ·  ×'+e.scoreMultiplier.toFixed(1):'');
+      const glosses=plateWords().glosses;
+      const gainText='+'+e.gain+(e.angleBonus?fmt(glosses.angleBonus,{bonus:e.angleBonus}):'')+(e.scoreMultiplier>=1.05?fmt(glosses.multiplier,{mult:e.scoreMultiplier.toFixed(1)}):'');
       if(renaissanceAtlas())tallies.push({x:e.n.x,y:e.n.y-e.n.r-17,line1:gainText,line2:'SUMMA '+world.score,age:0});
       else floaters.push({x:e.n.x,y:e.n.y-e.n.r-17,text:gainText,age:0});
     }
     screenFlash=e.perfect?.28:0;
     rings.push({kind:'capture',node:e.n,x:e.n.x,y:e.n.y,start:e.n.r+2,distance:e.perfect?18:11,angle:Math.atan2(e.y-e.n.y,e.x-e.n.x),perfect:e.perfect,age:0,life:e.perfect?.85:.55,alpha:e.perfect?.86:.56,seed:ringSeed()});
     // The landing is announced on the orbit it was made on, so the note travels with that planet.
-    const at={node:e.n};
-    if(e.steep)say('ROUGH IMPRESSION · BASE '+(e.gain-e.skipBonus),at);
-    else if(e.skip)say(e.skipped+' ORBIT'+(e.skipped===1?'':'S')+' SKIPPED · +'+e.skipBonus,at);
-    else if(e.n.routeRole==='entry')say('TRACE 3 STARS · +60 & A REPRIEVE',at);
-    else if(e.n.type==='sling')say('ORBIT TO GAIN SPEED · TAP TO LEAVE',at);
-    else if(e.n.type==='fading')say('FADING ORBIT · KEEP MOVING',at);
-    else if(e.n.type==='gold')say('GOLDEN DETOUR',at);
-    // The atlas notes a square landing by its Latin name; a plate that renames the observation in its own
-    // voice (the Ceiling does, in its colophon's words) is read in that voice here too, not in the atlas's.
-    else if(e.square)say((plateWords().observations.rightAngle||OBSERVATIONS.rightAngle.latin)+' · +'+e.squareBonus,at);
-    else if(e.perfect)say(e.combo>=3?'PERFECT · FLOW ×'+e.combo:'PERFECT · MOMENTUM KEPT',at);
-    else if(e.n.type==='drift'&&e.n.row<10)say('A WANDERING ORBIT',at);
+    const at={node:e.n},glosses=plateWords().glosses;
+    if(e.steep)say(fmt(glosses.rough,{base:e.gain-e.skipBonus}),at);
+    else if(e.skip)say(fmt(glosses.skip,{count:e.skipped,plural:e.skipped===1?'':'S',bonus:e.skipBonus}),at);
+    else if(e.n.routeRole==='entry')say(glosses.reprieve,at);
+    else if(e.n.type==='sling')say(glosses.slingOrbit,at);
+    else if(e.n.type==='fading')say(glosses.fading,at);
+    else if(e.n.type==='gold')say(glosses.golden,at);
+    // The atlas notes a square landing by its Latin name; a plate that renames it in its own voice (the
+    // Ceiling in its colophon's words, the Rock in the wall's) is read in that voice here too.
+    else if(e.square)say(plateWords().squareLanding+' · +'+e.squareBonus,at);
+    else if(e.perfect)say(e.combo>=3?fmt(glosses.perfectFlow,{combo:e.combo}):glosses.perfect,at);
+    else if(e.n.type==='drift'&&e.n.row<10)say(glosses.wandering,at);
     recordBest(world.score);
   }else if(type==='chartProgress'){
-    say((plateWords().chart||e.chart.name)+' · '+e.count+' / 3',{node:e.chart.stars[e.count-1]||world.player.node});
+    say(fmt(plateWords().glosses.chartProgress,{chart:plateWords().chart||chartTitle(e.chart),count:e.count}),{node:e.chart.stars[e.count-1]||world.player.node});
     audio.tone(e.count===1?523.25:659.25,.6,.1,.13);
   }else if(type==='constellation'){
     tallyMap('constellations',e.chart.name);
-    say((plateWords().chart||e.chart.name)+' · COMPLETE +60',{node:e.chart.stars[1]||e.chart.entry});
+    // A preview era's own record of every animal ever finished (the Rock's cave, G3) is kept here too,
+    // the moment a cluster actually closes, rather than only totalled at the run's end.
+    {const caveAnimal=handFor('caveAnimal');if(caveAnimal)caveAnimal(e.chart.catalogueIndex);}
+    say(fmt(plateWords().glosses.chartComplete,{chart:plateWords().chart||chartTitle(e.chart)}),{node:e.chart.stars[1]||e.chart.entry});
+    {const notes=plateWords().chartNotes,note=notes&&notes[e.chart.catalogueIndex];if(note)say(note,{node:e.chart.stars[2]||e.chart.stars[1],tone:'note'});}
     for(const n of e.chart.stars){
       if(!reducedMotion){burst(n.x,n.y,9,'gold',.5);rings.push({x:n.x,y:n.y,start:n.r,distance:35,age:0,life:1.3,alpha:.5,seed:ringSeed()});}
     }
     audio.medal();
-    $('announcement').textContent=spoken('chartSaid',{chart:e.chart.name});
+    $('announcement').textContent=spoken('chartSaid',{chart:chartTitle(e.chart)});
     recordBest(world.score);
   }else if(type==='shield'){
     audio.tone(660,.4,0,.22,'sine',880);burst(e.x,e.y,10,'blue',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.shield+' ARMED · SURVIVES ONE VORTEX',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.shieldArmed,{label:plateWords().labels.shield}),{x:e.x,y:e.y});
   }else if(type==='shieldBreak'){
     tally('shieldsSpent');
     audio.tone(180,.5,0,.3,'triangle',90);audio.brush(900,.3);
     burst(e.x,e.y,20,'blue',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.shield+' ABSORBED THE IMPACT',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.shieldBreak,{label:plateWords().labels.shield}),{x:e.x,y:e.y});
   }else if(type==='reflector'){
     audio.tone(740,.4,0,.22,'sine',920);burst(e.x,e.y,10,'violet',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.reflector+' ARMED · TURNS BACK THE EDGE',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.reflectorArmed,{label:plateWords().labels.reflector}),{x:e.x,y:e.y});
   }else if(type==='reflectorBreak'){
     tally('reflectorsSpent');
     audio.tone(210,.5,0,.3,'triangle',105);audio.brush(900,.3);
     burst(e.x,e.y,20,'violet',.9);rings.push({x:e.x,y:e.y,start:4,distance:60,age:0,life:.6,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.reflector+' THREW YOU BACK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.reflectorBreak,{label:plateWords().labels.reflector}),{x:e.x,y:e.y});
   }else if(type==='dawn'){
     audio.tone(587.33,.45,0,.2,'sine',784);audio.tone(880,.45,.13,.14);burst(e.x,e.y,10,'gold',.5);
     rings.push({x:e.x,y:e.y,start:4,distance:30,age:0,life:.5,alpha:.45,seed:ringSeed()});
-    say(POWERUP_LABELS.dawn+' ARMED · TURNS BACK THE DARK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.dawnArmed,{label:plateWords().labels.dawn}),{x:e.x,y:e.y});
   }else if(type==='dawnBreak'){
     tally('dawnsSpent');
     // The flood going back down the sheet is the constellation reprieve's own event, so it is answered in
     // the same register: a rising pair rather than the dull note a spent shield or reflector takes.
     audio.tone(392,.6,0,.22);audio.tone(659.25,.6,.14,.18);audio.brush(1200,.25);
     burst(e.x,e.y,24,'gold',1);rings.push({x:e.x,y:e.y,start:4,distance:70,age:0,life:.7,alpha:.6,seed:ringSeed()});
-    say(POWERUP_LABELS.dawn+' DROVE THE DARK BACK',{x:e.x,y:e.y});
+    say(fmt(plateWords().glosses.dawnBreak,{label:plateWords().labels.dawn}),{x:e.x,y:e.y});
   }else if(type==='inkwell'){
     tally('inkwellsFound');
     audio.tone(523.25,.5,0,.16);audio.tone(659.25,.5,.12,.14);
     burst(e.x,e.y,14,'gold',.7);rings.push({x:e.x,y:e.y,start:4,distance:40,age:0,life:.6,alpha:.5,seed:ringSeed()});
-    say('A RECKLESS LINE · A NEW COLOUR TAKES',{x:e.x,y:e.y});
+    say(plateWords().glosses.inkwellFound,{x:e.x,y:e.y});
   }else if(type==='inkwellDry'){
     audio.tone(220,.3,0,.18,'triangle',160);burst(e.x,e.y,5,'red',.3);
-    say('THE WELL RUNS DRY · FLY RECKLESS FIRST',{x:e.x,y:e.y});
+    say(plateWords().glosses.inkwellDry,{x:e.x,y:e.y});
   }else if(type==='observation'){
     tallyMap('observations',e.key);
-    say('OBSERVATION · '+(plateWords().observations[e.key]||e.latin));
+    say(fmt(plateWords().glosses.observation,{name:plateWords().observations[e.key]||e.latin}));
     audio.tone(587.33,.5,0,.15);audio.tone(880,.5,.15,.13);
   }else if(type==='near'){
     tally('grazes');
-    audio.tone(698.46,.28,0,.16);
+    audio.graze();
     // A graze's own +5 is scored before this fires (OrbitWorld's near handling), so the same total the
     // atlas's tally carries after a landing is exactly as true here.
-    if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:'CLOSE +5',line2:'SUMMA '+world.score,age:0});
-    else floaters.push({x:e.x,y:e.y-20,text:'CLOSE +5',age:0});
+    if(renaissanceAtlas())tallies.push({x:e.x,y:e.y-20,line1:plateWords().glosses.close,line2:'SUMMA '+world.score,age:0});
+    else floaters.push({x:e.x,y:e.y-20,text:plateWords().glosses.close,age:0});
     recordBest(world.score);
+  }else if(type==='relight'){
+    // Era-only (relightOn, see PLATE_STYLES.rock.can.relight): the atlas never emits this event, so
+    // this branch is dead code everywhere but the wall. The era draws the effect itself; a plate with
+    // nothing to show for it (the atlas, always) simply has no 'relight' hand and nothing happens.
+    const own=handFor('relight');if(own)own(e);
   }else if(type==='death'){
     audio.death();
     if(e.reason==='LEFT THE STAR CHART'){
@@ -225,11 +283,11 @@ function event(type,e){
   }
 }
 function newWorld(){
-  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
+  reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;loreChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateWords().goalRow);
+  recordAtStart=currentBest();resetRunTally();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),plateWords().goalRow);
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -240,7 +298,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,startedAt:0,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,startedAt:0,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -267,6 +325,16 @@ function syncEraChrome(){
   const pauseNote=$('pause-note');if(pauseNote)pauseNote.textContent=chrome.pauseNote;
   const pauseResume=$('pause-resume');if(pauseResume)pauseResume.textContent=chrome.pauseResume;
   const pauseLeave=$('pause-leave');if(pauseLeave)pauseLeave.textContent=chrome.pauseLeave;
+  const reduceMotion=$('reduce-motion');
+  if(reduceMotion){reduceMotion.textContent=chrome.reduceMotion;reduceMotion.setAttribute('aria-label',chrome.reduceMotionLabel);}
+  // The one door out of every century, wherever it stands on the sheet — the footer's own utility
+  // button and the colophon's own row both carry the same word and the same aria-label.
+  const eraExitEnd=$('ceiling-exit-end');if(eraExitEnd)eraExitEnd.textContent=chrome.eraExit;
+  const eraExit=$('ceiling-exit');if(eraExit){eraExit.setAttribute('aria-label',chrome.eraExitLabel);eraExit.title=chrome.eraExitLabel;}
+  const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;
+  const statPerfects=$('end-perfects-label');if(statPerfects)statPerfects.textContent=chrome.statPerfects;
+  const statFlow=$('end-flow-label');if(statFlow)statFlow.textContent=chrome.statFlow;
+  const statRow=$('end-row-label');if(statRow)statRow.textContent=chrome.statRow;
   // The canones-page rubric: a plate's own head and its four rules, the {pressures} marker in the
   // fourth resolved here rather than baked into the voice map, so a rubricated word is always this
   // plate's own pressure names — TIRO, ADEPTUS, MAGISTER on the atlas — not a copy typed a second time.
@@ -290,10 +358,14 @@ function syncEraChrome(){
 // every browser — Safari never loads a face for fillText — so an era whose lettering lives only on the
 // canvas, or in markup that is hidden while it is flown, could letter its whole visit in the fallback.
 // Entering one asks for every face its type tokens name, upright and italic; each arrival repaints
-// the cached art through the loadingdone listener below.
+// the cached art through the loadingdone listener below. A plate that sets a variant at its own weight
+// (the Rock's cut capitals are bold) is asked for at that weight, since it is a separate face to fetch;
+// its `weight` and `scale` tables name no face and are skipped.
 function loadPlateFaces(){
-  if(!document.fonts||!document.fonts.load||!ink.type)return;
-  for(const stack of new Set(Object.values(ink.type)))for(const style of ['','italic '])document.fonts.load(style+'16px '+stack).catch(()=>{});
+  const t=ink.type;if(!document.fonts||!document.fonts.load||!t)return;
+  const asks=new Set();
+  for(const [variant,stack] of Object.entries(t))if(typeof stack==='string'){const w=t.weight&&t.weight[variant];for(const style of ['','italic '])asks.add(style+(w?w+' ':'')+'16px '+stack);}
+  for(const font of asks)document.fonts.load(font).catch(()=>{});
 }
 function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
@@ -351,11 +423,15 @@ function showEnd(){
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
+  // A preview era keeps no best of its own above (orbit.best.v1/orbit.bestRow.v1 are the atlas's), but
+  // may keep a small record of its own runs under its own key — the Rock's cave (G3), never the atlas's
+  // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
+  {const caveRun=handFor('caveRun');if(caveRun)caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
   // words for nothing rather than as that figure.
-  $('end-constellations').textContent=charts?charts+' '+plateWords().chartNoun+(charts===1?'':'s')+' traced':'no '+plateWords().chartNoun+'s traced';
+  {const w=plateWords(),v=w.chartVerb;$('end-constellations').textContent=charts?charts+' '+w.chartNoun+(charts===1?'':'s')+' '+v:'no '+w.chartNoun+'s '+v;}
   $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(' · ');
   // The one page a period book always closes in Latin: FINIS on an ordinary run, LAVS DEO where the
   // run itself earned a perfect chain (the same three-in-a-row the 'Tres perfecti' observation marks).
@@ -1152,6 +1228,9 @@ function updateUI(dt){
   const chapterVoice=plateWords(),chapter=Math.min(chapterVoice.chapters.length-1,Math.floor(world.progress/chapterVoice.chapterRows));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
+  // A chapter's line of lore is set once the run is actually under way, so the first chapter's is not
+  // spent on the frontispiece; it is tracked apart from lastChapter, which the reveal above keys on.
+  if(chapter!==loreChapter&&world.state==='playing'){loreChapter=chapter;const lines=plateWords().chapterLines,line=lines&&lines[chapter];if(line)say(line,{node:world.player.node,tone:'note'});}
   if(chapter!==lastChapter){
     lastChapter=chapter;
     // A plate may mark the turn of a chapter with a sound of its own (the Ceiling's gates); the atlas has none.
