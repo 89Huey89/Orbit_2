@@ -11,8 +11,8 @@
 const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=25,JOURNEY_ERAS=8;
 // Each era's milestones are the chapters it is already told in (LINKING.md): the Rock's four chambers,
 // the Ceiling's four watches of the night, the Scroll's four palaces, the Astrolabe's six parts, the
-// atlas's four chapters, the Lens's three registers. The two eras not yet drawn keep three until theirs
-// are named. The milestones are the gate and knowledge only paces them: an era of k milestones opens one
+// atlas's four chapters, the Lens's three registers, the Flyby's three legs of the mission — Mars, the
+// Grand Tour, the edge of the planets. The Probe, not yet drawn, keeps three until its own are named. The milestones are the gate and knowledge only paces them: an era of k milestones opens one
 // for every ERA_THRESHOLD/k banked, and stands transition-ready when all of them do.
 const ERA_MILESTONES=[0,4,4,4,6,4,3,3,3];
 let runMode='free',journeyRun=0;

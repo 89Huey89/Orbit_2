@@ -42,7 +42,7 @@ fraction of a second (`--paint-all` paints every frame, for checking animations)
 | `--viewport` | a name from `lib/viewports.mjs`, `WxH[@scale]`, a comma list, or `all`. Default `iphone-15-pro-max` (430×932 @3), the reference sheet. |
 | `--scale` | device pixel ratio, overriding the viewport's own |
 | `--plate` | `night`, `paper`, `cellarius`, `verdigris`, `foxed`, `azzurra`, `sepia`, `proof`, `modern` — set with `setPlate()`, bypassing the unlock check |
-| `--era` | `rock`, `ceiling`, `scroll`, `astrolabe` or `lens`, entered through `enterEra()` after boot |
+| `--era` | `rock`, `ceiling`, `scroll`, `astrolabe`, `lens` or `flyby`, entered through `enterEra()` after boot |
 | `--profile` | what localStorage holds at boot, from `lib/fixtures.mjs`: `fresh` (first visit), `returning` (default), `full` (whole catalogue earned) |
 | `--storage` | extra localStorage keys as JSON, layered over the profile |
 | `--seed` | the run's seed (default 7) |

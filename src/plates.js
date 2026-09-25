@@ -385,7 +385,11 @@ const PLATE_STYLES={
   // negative, a sensor read out — so no one ground is its own; it opens on the paper, and is pulled from the
   // paper plate for that reason, with every mark on all three from the hand `src/lens.js` registers. Era V
   // is the atlas itself, so this is the next door up the ladder. Its record is its own (orbit.lens.v1).
-  lens:{base:'paper',wash:0,era:6,render:'lens',can:{score:true,mode:true},door:{button:'lens-open',label:'ERA VI \u00b7 THE LENS'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  lens:{base:'paper',wash:0,era:6,render:'lens',can:{score:true,mode:true},door:{button:'lens-open',label:'ERA VI \u00b7 THE LENS'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era VII is the flyby, the first century whose point of view has left the Earth: its ground is no material
+  // at all but vacuum, so it is pulled from the night plate, the dark one, and every mark on it comes from the
+  // hand `src/flyby.js` registers. Its record is its own (orbit.flyby.v1), the mission log.
+  flyby:{base:'night',wash:0,era:7,render:'flyby',can:{score:true,mode:true},door:{button:'flyby-open',label:'ERA VII \u00b7 THE FLYBY'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -615,7 +619,15 @@ const LENS_FACES={...FELL_FACES,
   grot:"'Libre Franklin','Helvetica Neue',Arial,sans-serif",
   jacket:"'Special Elite','Courier Prime','Courier New',monospace"
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES});
+// The Flyby letters as mission control did: labels in a grotesque — Libre Franklin, the open Franklin Gothic
+// already cut for the Lens's plates, standing in for the Helvetica NASA's 1976 graphics standard set them in —
+// and anything framed as a literal downlink figure in IBM Plex Mono, fixed-width, ticking a whole glyph at a time.
+const FLYBY_GROT="'Libre Franklin','Helvetica Neue',Arial,sans-serif";
+const FLYBY_FACES={
+  text:FLYBY_GROT,sc:FLYBY_GROT,body:FLYBY_GROT,hiero:HIERO_FACE,grot:FLYBY_GROT,
+  mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace"
+};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES,flyby:FLYBY_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
@@ -631,6 +643,7 @@ function invalidateArt(){
   if(typeof invalidateScrollArt==='function')invalidateScrollArt();
   if(typeof invalidateAstrolabeArt==='function')invalidateAstrolabeArt();
   if(typeof invalidateLensArt==='function')invalidateLensArt();
+  if(typeof invalidateFlybyArt==='function')invalidateFlybyArt();
 }
 // The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
 // is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own
