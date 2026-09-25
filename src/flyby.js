@@ -283,6 +283,8 @@ const flyLayers=[null,null,null];let flyLayerKey='';
 function flyWrapDot(g,x,y,TH,draw){draw(x,y);if(y<24)draw(x,y+TH);if(y>TH-24)draw(x,y-TH);}
 function flyBakeLayer(k){
   const TH=FLY_TILE,pw=Math.max(1,Math.round(W*DPR)),ph=Math.round(TH*DPR),c=makeCanvas(pw,ph),g=c.getContext('2d');g.scale(DPR,DPR);const r=seeded(701+k*13);
+  // the farthest layer is laid on the vacuum itself, so the black costs no fill of its own each frame
+  if(k===0){g.fillStyle=`rgb(${ink.flyby.vac})`;g.fillRect(0,0,W,TH);}
   if(k===0){const a=-.5,cx=W*.5,cy=TH*.5;g.save();g.translate(cx,cy);g.rotate(a);
     for(let i=0;i<40;i++){const px=(r()-.5)*W*2.2,py=(r()-.5)*70,rr=30+r()*70,gg=g.createRadialGradient(px,py,0,px,py,rr);gg.addColorStop(0,'rgba(170,180,210,.035)');gg.addColorStop(1,'rgba(170,180,210,0)');g.fillStyle=gg;g.fillRect(px-rr,py-rr,rr*2,rr*2);}
     g.restore();}
@@ -311,7 +313,7 @@ function flyMargins(){
     for(let k=first;k<=last;k++){const y=sy(k*FLY_UNIT);if(y<-4||y>H+4)continue;const L=k%10===0?B*.5:k%5===0?B*.32:B*.16;ctx.moveTo(inner,y);ctx.lineTo(inner-side*L,y);}
     ctx.strokeStyle=`rgba(${P.dim},.7)`;ctx.lineWidth=.5;ctx.stroke();
     // the trace: SNR on the left, a Doppler residual on the right, read off world height so it scrolls with the climb
-    ctx.beginPath();for(let y=0;y<=H;y+=3){const wy=(y-plateShift.y)/scale+cam,v=side<0?.55+.25*Math.sin(wy*.021)+.12*Math.sin(wy*.093+1.3)+.06*Math.sin(wy*.31+t*2):.5+.2*Math.sin(wy*.013+2)+.1*Math.sin(wy*.061),xx=x0+B*(side<0?clamp(v,0,1):1-clamp(v,0,1))*.8+B*.1;y?ctx.lineTo(xx,y):ctx.moveTo(xx,y);}
+    ctx.beginPath();for(let y=0;y<=H;y+=4){const wy=(y-plateShift.y)/scale+cam,v=side<0?.55+.25*Math.sin(wy*.021)+.12*Math.sin(wy*.093+1.3)+.06*Math.sin(wy*.31+t*2):.5+.2*Math.sin(wy*.013+2)+.1*Math.sin(wy*.061),xx=x0+B*(side<0?clamp(v,0,1):1-clamp(v,0,1))*.8+B*.1;y?ctx.lineTo(xx,y):ctx.moveTo(xx,y);}
     ctx.strokeStyle=`rgba(${P.phos},${side<0?.3:.2})`;ctx.lineWidth=.7;ctx.stroke();
     for(let k=first;k<=last;k++){if(((k%50)+50)%50)continue;const y=sy(k*FLY_UNIT);if(y<-10||y>H+10)continue;ctx.save();ctx.translate(side<0?B*.32:W-B*.32,y);ctx.rotate(side<0?-Math.PI/2:Math.PI/2);
       flyMono(ctx,side<0?'SNR':'DOP',0,0,5.5,P.dim,.9,'center');ctx.restore();}}
@@ -327,8 +329,8 @@ function flyCosmicRays(){
     else{ctx.strokeStyle=`rgba(${P.white},${(a*.8).toFixed(3)})`;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(ang)*L,y+Math.sin(ang)*L);ctx.stroke();}}
 }
 function flyAtmosphere(){
-  plateShift.x=0;plateShift.y=0;const P=ink.flyby;
-  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=`rgb(${P.vac})`;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=false;
+  plateShift.x=0;plateShift.y=0;
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
   for(let k=0;k<3;k++){const th=FLY_TILE,phase=(((-world.cameraY*scale*FLY_DEPTHS[k])%th)+th)%th,tile=flyLayer(k);for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));}
   ctx.restore();
   flyMargins();flyCosmicRays();flyTitleMark();
@@ -369,9 +371,9 @@ function flyFrame(g,R,stage,k=1,opts={}){
     const cw=iw/FLY_CHART_COLS,ch=ih/FLY_CHART_ROWS,N=FLY_CHART_COLS*FLY_CHART_ROWS,num=clamp(e*1.6,0,1)*N,tint=clamp(e*1.5-.4,0,1)*N;
     g.fillStyle='rgba(246,240,226,.95)';g.fillRect(ix,iy,iw,ih);
     for(let i=0;i<N;i++){const c=i%FLY_CHART_COLS,r=Math.floor(i/FLY_CHART_COLS),v=flyChartValue(c,r),x=ix+c*cw,y=iy+r*ch;
-      if(i<tint){const band=clamp(Math.floor(v/10),0,FLY_PASTELS.length-1);g.save();g.beginPath();g.rect(x+.3,y+.3,cw-.6,ch-.6);g.clip();g.strokeStyle=`rgba(${FLY_PASTELS[band]},.8)`;g.lineWidth=Math.max(.8,cw*.16);
+      if(i<tint){const band=clamp(Math.floor(v/10),0,FLY_PASTELS.length-1);g.save();g.beginPath();g.rect(x+.3,y+.3,cw-.6,ch-.6);g.clip();g.fillStyle=`rgba(${FLY_PASTELS[band]},.62)`;g.fill();g.strokeStyle=`rgba(${FLY_PASTELS[band]},.8)`;g.lineWidth=Math.max(.8,cw*.16);
         g.beginPath();for(let s=-ch;s<cw+ch;s+=Math.max(1.2,cw*.2)){const j=(tileHash(i,s|0,63)-.5)*cw*.12;g.moveTo(x+s+j,y+ch);g.lineTo(x+s+ch*.8,y);}g.stroke();g.restore();}
-      if(i<num&&ch>5)flyMono(g,String(v).padStart(2,'0'),x+cw/2,y+ch/2,Math.min(ch*.52,cw*.42),'40,34,30',.85,'center');}
+      if(i<num&&ch>5)flyMono(g,String(v).padStart(2,'0'),x+cw/2,y+ch/2,Math.min(ch*.52,cw*.42),i<tint&&v<30?'226,214,196':'40,34,30',.85,'center');}
     g.strokeStyle='rgba(60,50,40,.25)';g.lineWidth=.5;g.beginPath();for(let c=1;c<FLY_CHART_COLS;c++){g.moveTo(ix+c*cw,iy);g.lineTo(ix+c*cw,iy+ih);}g.stroke();
   }else if(stage===2){
     // The lander's facsimile camera: the scene built a column at a time left to right as the photodiode turned
@@ -399,13 +401,13 @@ function flyFrame(g,R,stage,k=1,opts={}){
     // mosaic at Neptune, four grey frames and then a stated false colour at Pluto
     const Rp=Math.min(ih*.42,iw*.26),art=flyStageArt(stage,Rp),kk=stage===4?clamp((e-.55)/.45,0,1):e;
     if(stage===3){// the long navigation exposure: Io burnt out to white, background stars showing, and the plume
-      g.save();g.globalAlpha=kk;g.drawImage(art.mono||art.canvas,-art.size/2,-art.size/2+R*.1,art.size,art.size);g.globalCompositeOperation='lighter';g.fillStyle=`rgba(255,255,255,${(.45*kk).toFixed(3)})`;g.beginPath();g.arc(0,R*.1,Rp,0,TAU);g.fill();g.restore();
+      g.save();g.globalAlpha=kk;g.drawImage(art.mono||art.canvas,-art.size/2,-art.size/2+R*.1,art.size,art.size);g.globalCompositeOperation='lighter';g.fillStyle=`rgba(255,255,255,${(.62*kk).toFixed(3)})`;g.beginPath();g.arc(0,R*.1,Rp,0,TAU);g.fill();g.restore();
       for(let i=0;i<5;i++){g.fillStyle=`rgba(${P.white},${(.9*kk).toFixed(3)})`;g.fillRect(ix+tileHash(i,1,67)*iw,iy+tileHash(i,2,67)*ih,1.4,1.4);}
       const pk=clamp((kk-.65)/.3,0,1);if(pk>0){g.save();g.strokeStyle=`rgba(210,226,255,${(.7*pk).toFixed(3)})`;g.lineWidth=Math.max(1,Rp*.09);g.beginPath();g.arc(Rp*.62,R*.1-Rp*.78,Rp*.3,Math.PI*1.05,Math.PI*1.95);g.stroke();g.restore();
         g.strokeStyle=`rgba(${P.amber},${(.9*pk).toFixed(3)})`;g.lineWidth=Math.max(.5,R*.012);g.strokeRect(Rp*.62-Rp*.45,R*.1-Rp*1.2,Rp*.9,Rp*.6);flyMono(g,'?',Rp*.62+Rp*.52,R*.1-Rp*1.1,hs,P.amber,.9*pk);}}
     else if(stage===6){const strips=4,sw=art.size/strips,x0=-art.size/2,y0=-art.size/2+R*.08,mono=clamp(kk*1.6,0,1)*strips,col=clamp((kk-.6)/.35,0,1);
       for(let i=0;i<strips;i++){const on=clamp(mono-i,0,1);if(on<=0)continue;g.save();g.beginPath();g.rect(x0+i*sw,y0,sw,art.size);g.clip();g.globalAlpha=on;g.drawImage(art.mono||art.canvas,x0,y0,art.size,art.size);g.restore();}
-      if(col>0){g.save();g.globalAlpha=col;g.drawImage(art.canvas,x0,y0,art.size,art.size);g.restore();flyMono(g,'ENHANCED COLOUR · NOT NATURAL',ix+iw-R*.02,iy+ih-R*.02,hs*.9,P.amber,.9*col,'right');}}
+      if(col>0){g.save();g.globalAlpha=col;g.drawImage(art.canvas,x0,y0,art.size,art.size);g.restore();if(!opts.bare)flyMono(g,'ENHANCED COLOUR · NOT NATURAL',ix+iw-R*.02,iy+ih-R*.02,hs*.9,P.amber,.9*col,'right');}}
     else flyPicture(g,art,0,R*.08,Rp,kk,stage===4?'ringed':'storm',1960+stage,{grid:4});
   }
   g.restore();
@@ -429,9 +431,9 @@ function flyTitleRoom(){
 function flyTitleMark(){
   const ready=world.state==='ready';flyTitleFade=ready?1:Math.max(0,flyTitleFade-.03);if(flyTitleFade<=0)return;
   const P=ink.flyby,rec=flyRead(),stage=rec.completed>0?6:rec.furthest+1,C=FLY_CHAPTERS[stage-1],x=W/2,nw=flyBits(rec.worlds),nt=flyBits(rec.targets),log=nw||nt;
-  const {top,bottom}=flyTitleRoom(),logY=bottom-6,lineY=log?logY-15:logY,titleY=lineY-21,fit=Math.min(W*.1,30*scale+4,(titleY-18-top)/2.5),R=clamp(fit,12,36),y=titleY-18-R*1.2;
+  const {top,bottom}=flyTitleRoom(),logY=bottom-6,lineY=log?logY-15:logY,titleY=lineY-21,fit=Math.min(W*.1,30*scale+4,(titleY-18-top)/2.5),R=clamp(fit,10,36),y=titleY-18-R*1.2;
   ctx.save();ctx.globalAlpha=flyTitleFade;
-  if(fit>=14){const key='title:'+stage+':'+R.toFixed(1)+':'+DPR;let sp=flySprites.get(key);
+  if(fit>=10){const key='title:'+stage+':'+R.toFixed(1)+':'+DPR;let sp=flySprites.get(key);
     if(!sp){const sw=Math.ceil(R*3.6),shh=Math.ceil(R*2.6),c=makeCanvas(Math.round(sw*DPR),Math.round(shh*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(sw/2,shh/2);flyFrame(g,R,stage,1);sp={canvas:c,w:sw,h:shh};if(flySprites.size>8)flySprites.clear();flySprites.set(key,sp);}
     ctx.drawImage(sp.canvas,x-sp.w/2,y-sp.h/2,sp.w,sp.h);}
   flyGrot(ctx,'THE FLYBY',x,titleY,Math.min(22,W*.056),P.white,.95,'center');
@@ -778,8 +780,9 @@ function flyDark(dt){
   ctx.save();
   // the dropout field above the edge, thicker as it nears
   for(let yy=fy-reach,j=0;yy<fy;yy+=pitch,j++){const u=1-(fy-yy)/reach,p=u*u*(.75+near*.2),h=tileHash(j+level*7,tick,101);if(h>p)continue;
-    const x0=tileHash(j+level*7,tick,102)*W*.7,w=W*(.15+tileHash(j,tick+level,103)*.85),dark=tileHash(j,tick,104)<.55;
-    ctx.fillStyle=dark?`rgba(0,0,0,${(.55+u*.4).toFixed(3)})`:`rgba(${P.dim},${(.3+u*.4).toFixed(3)})`;ctx.fillRect(Math.round(x0),Math.round(yy),Math.round(w),Math.max(1,Math.round(pitch*.8)));}
+    // a dropped run of a scan line, not a whole line: short near the top of the field, longer toward the edge
+    const w=W*(.06+tileHash(j,tick+level,103)*(.2+u*.45)),x0=tileHash(j+level*7,tick,102)*(W-w),dark=tileHash(j,tick,104)<.55;
+    ctx.fillStyle=dark?`rgba(0,0,0,${(.35+u*.5).toFixed(3)})`:`rgba(${P.dim},${(.16+u*.34).toFixed(3)})`;ctx.fillRect(Math.round(x0),Math.round(yy),Math.round(w),Math.max(1,Math.round(pitch*.8)));}
   // grey placeholder tiles along the edge, the ones that never came down
   const ts=22*scale;for(let i=0;i<Math.ceil(W/ts)+1;i++){const hh=tileHash(i,level,105);if(hh>.35+near*.3)continue;const tx=i*ts,ty=fy-ts*(1+Math.floor(tileHash(i,level,106)*2));
     ctx.fillStyle=`rgba(${P.faint},.92)`;ctx.fillRect(tx,ty,ts-1,ts-1);ctx.strokeStyle=`rgba(${P.dim},.7)`;ctx.lineWidth=.5;ctx.strokeRect(tx+.5,ty+.5,ts-2,ts-2);ctx.beginPath();ctx.moveTo(tx+3,ty+3);ctx.lineTo(tx+ts-4,ty+ts-4);ctx.moveTo(tx+ts-4,ty+3);ctx.lineTo(tx+3,ty+ts-4);ctx.stroke();}
@@ -793,7 +796,7 @@ function flyDark(dt){
   // the edge: a square-stepped raster line, bright, the sharpest thing in the field
   ctx.strokeStyle=`rgba(${P.white},${(.75+near*.2).toFixed(3)})`;ctx.lineWidth=Math.max(1,1.1*scale);ctx.beginPath();ctx.moveTo(0,edge[0][1]);for(let i=0;i<edge.length;i++){const [x,y]=edge[i];ctx.lineTo(x,y);if(i+1<edge.length)ctx.lineTo(edge[i+1][0],y);}ctx.stroke();
   // what is lost is named plainly: LOS, and the frame counter jumping the frames that never arrived
-  const f0=1200+level*7,lost=2+Math.floor(tileHash(level,1,109)*9);
+  const f0=1200+Math.abs(level)*7%88000,lost=2+Math.floor(tileHash(level,1,109)*9);
   flyMono(ctx,'LOS',W-FLY_BAND-8,fy-9*scale,Math.max(9,10*scale),P.amber,.95,'right');
   flyMono(ctx,'FRM '+String(f0).padStart(5,'0')+' > '+String(f0+lost).padStart(5,'0')+' · '+lost+' LOST',FLY_BAND+8,fy-9*scale,Math.max(6.5,7*scale),P.grey,.85,'left');
   ctx.restore();
