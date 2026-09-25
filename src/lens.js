@@ -513,11 +513,11 @@ function lensGround(reg){
   const th=LENS_TILE,phase=(((-world.cameraY*scale)%th)+th)%th,tile=lensTile(reg);
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
   for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));ctx.restore();
-  const lg=ctx.createRadialGradient(W*.5,H*.45,Math.min(W,H)*.12,W*.5,H*.45,Math.max(W,H)*.8);
-  if(reg===0){lg.addColorStop(0,'rgba(255,250,232,.07)');lg.addColorStop(1,'rgba(80,56,24,.16)');}
-  else if(reg===1){lg.addColorStop(0,'rgba(255,255,255,.08)');lg.addColorStop(1,'rgba(40,44,48,.12)');}
-  else{lg.addColorStop(0,'rgba(40,60,90,.06)');lg.addColorStop(1,'rgba(0,0,0,.35)');}
-  ctx.save();ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);ctx.restore();
+  sheetWash('lens.lamp.'+reg,g=>{const lg=g.createRadialGradient(W*.5,H*.45,Math.min(W,H)*.12,W*.5,H*.45,Math.max(W,H)*.8);
+    if(reg===0){lg.addColorStop(0,'rgba(255,250,232,.07)');lg.addColorStop(1,'rgba(80,56,24,.16)');}
+    else if(reg===1){lg.addColorStop(0,'rgba(255,255,255,.08)');lg.addColorStop(1,'rgba(40,44,48,.12)');}
+    else{lg.addColorStop(0,'rgba(40,60,90,.06)');lg.addColorStop(1,'rgba(0,0,0,.35)');}
+    g.fillStyle=lg;g.fillRect(0,0,W,H);});
   lensMargins(reg,0,H);
 }
 function lensAtmosphere(){

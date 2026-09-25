@@ -1175,9 +1175,10 @@ function ceilingBuildWall(){
 // under the HUD instead: cheap, and it is what actually keeps the reserved band clear.
 // The room is lit by a flame held under it, not evenly: the ceiling is brightest over the middle of
 // the flight and falls away into the vault's corners.
+// Laid up to three times a frame, so it is painted once (sheetWash, src/plates.js) and laid from there.
 function ceilingLampShade(){
-  const gr=ctx.createRadialGradient(W*.5,H*.52,Math.min(W,H)*.25,W*.5,H*.52,Math.hypot(W,H)*.62);
-  gr.addColorStop(0,'rgba(4,6,16,0)');gr.addColorStop(1,'rgba(4,6,16,.42)');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  sheetWash('ceiling.lamp',g=>{const gr=g.createRadialGradient(W*.5,H*.52,Math.min(W,H)*.25,W*.5,H*.52,Math.hypot(W,H)*.62);
+    gr.addColorStop(0,'rgba(4,6,16,0)');gr.addColorStop(1,'rgba(4,6,16,.42)');g.fillStyle=gr;g.fillRect(0,0,W,H);});
 }
 function ceilingDrawHudClear(){
   // Feathered at its foot in a few steps, so where the patch crosses a stain or a worn stretch of the

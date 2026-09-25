@@ -304,7 +304,7 @@ function rockBakeWall(){
 // offscreen a little taller than the screen, rebuilt only when the camera has scrolled past its margin,
 // and laid over the tile as one overlay blit a frame; the tile's own grain and its broad relief show
 // through all of it.
-const ROCK_CHUNK=600,ROCK_REACH=1800,ROCK_FACE_UP=.34,ROCK_FACE_DOWN=.11,ROCK_TONE_Q=4,ROCK_OPENING_Y=-60,ROCK_OPENING_R=330;
+const ROCK_CHUNK=600,ROCK_REACH=1800,ROCK_FACE_UP=.5,ROCK_FACE_DOWN=.11,ROCK_TONE_Q=4,ROCK_OPENING_Y=-60,ROCK_OPENING_R=330;
 function rockHash(a,b,c){let h=Math.imul(a^0x9E3779B1,0x85EBCA77)^Math.imul(b+0x27d4eb2f,0xC2B2AE3D)^Math.imul(c+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
 // Value noise on the world's own plane, one octave, read at a point rather than baked to a lattice. A
 // bake walks this along a grid a great deal finer than most of the cells it reads (see rockBakeFace's
@@ -354,10 +354,26 @@ function rockChunkFissures(seed,ci,cj,out){
   }
 }
 let rockFaceVersion=0,rockFaceH=null,rockFaceLayer=null,rockFace=null,rockFaceKey='',rockFaceY=0,rockFaceTop=0,rockFaceTone=null,rockFaceToneImg=null;
-function rockBakeFace(camY){
+// The sheet the frame actually lays: the tile with the face already overlaid on it, and the job that
+// builds the next one, with the small buffers it builds into kept apart from the ones the relit surface
+// is reading until the moment it is finished.
+let rockGround=null,rockFaceSpare=null,rockFaceJobRun=null,rockFaceJobY=0;
+// A bake of the whole face is seventy milliseconds and more on a phone, and it fell due every couple of
+// seconds of climbing: struck in one piece it was a dropped frame, over and over, which is the one thing a
+// hand following a moving mark feels before anything it sees. So it is a job in steps, yielding between a
+// few rows of the field or one pass of the fissures, begun well before the sheet on screen runs out and
+// worked on a slice of every frame, into buffers of its own; only when it is finished does the frame
+// change over to it. Run straight through, it is exactly the bake it always was.
+// A browser may hold a canvas's drawing back until something reads it, which would put every step's
+// raster on the one frame that first lays the finished sheet; reading a single pixel of it into a
+// one-pixel canvas makes each step pay for its own ink inside its own slice.
+let rockSettleDot=null;
+function rockSettle(c){if(!rockSettleDot)rockSettleDot=makeCanvas(1,1);const g=rockSettleDot.getContext('2d');if(g&&g.drawImage)g.drawImage(c,0,0,1,1,0,0,1,1);}
+function* rockFaceJob(camY){
   const tok=k=>ink.rock[k].split(',').map(Number),pale=tok('facePale'),ironT=tok('faceIron'),ochreT=tok('faceOchre'),calcT=tok('faceCalcite'),flowT=tok('faceFlow'),dampT=tok('faceDamp'),shaft=ink.rock.shaft,crack=ink.rock.crack,lip=ink.rock.kaolin;
   const up=H*ROCK_FACE_UP,down=H*ROCK_FACE_DOWN,sheetH=H+up+down,cw=Math.max(1,Math.ceil(W*DPR)),ch=Math.max(1,Math.ceil(sheetH*DPR));
   if(!rockFace||rockFace.width!==cw||rockFace.height!==ch)rockFace=makeCanvas(cw,ch);
+  if(!rockFaceLayer||rockFaceLayer.width!==cw||rockFaceLayer.height!==ch)rockFaceLayer=makeCanvas(cw,ch);
   const g=rockFace.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);g.globalCompositeOperation='source-over';
   const seed=world.seed>>>0,X=x=>W*.5+x*scale,Y=y=>(y-camY)*scale+up;
   // The material of the plane, read a sample every few pixels and stretched up smooth. A wall that is
@@ -371,8 +387,9 @@ function rockBakeFace(camY){
   // opening plane is still lifted pale around the first screen, where the triad has to read before any
   // caption could, and the plane still darkens toward the sides of a wide sheet.
   const tw=Math.ceil(W/ROCK_TONE_Q),th=Math.ceil(sheetH/ROCK_TONE_Q);
-  if(!rockFaceTone||rockFaceTone.width!==tw||rockFaceTone.height!==th){rockFaceTone=makeCanvas(tw,th);rockFaceToneImg=rockFaceTone.getContext('2d').createImageData(tw,th);rockFaceH=new Float32Array((tw+2)*(th+2));}
-  const td=rockFaceToneImg.data,FH=rockFaceH,fw=tw+2;
+  let T=rockFaceSpare;
+  if(!T||T.tone.width!==tw||T.tone.height!==th){const tone=makeCanvas(tw,th);T=rockFaceSpare={tone,img:tone.getContext('2d').createImageData(tw,th),FH:new Float32Array((tw+2)*(th+2))};}
+  const td=T.img.data,FH=T.FH,fw=tw+2;
   // Each of the seventeen fields below is read on a fine sweep across a cell it barely moves through —
   // every one of the fields is ≥34 world units on a side and the sweep steps by a few world units at a
   // time, so a column, and often several rows, land back in the same lattice cell as the sample before
@@ -403,6 +420,7 @@ function rockBakeFace(camY){
     {const fx=wx/380,fy=wy/380,ix=Math.floor(fx),iy=Math.floor(fy),fxi=fx-ix,fyi=fy-iy,tx=fxi*fxi*(3-2*fxi),ty=fyi*fyi*(3-2*fyi);let a,b,c,d;if(iy16===iy&&ix16===ix){a=a16;b=b16;c=c16;d=d16;}else if(iy16===iy&&ix16+1===ix){a=b16;c=d16;b=rockHash(seed+16,ix+1,iy);d=rockHash(seed+16,ix+1,iy+1);}else{a=rockHash(seed+16,ix,iy);b=rockHash(seed+16,ix+1,iy);c=rockHash(seed+16,ix,iy+1);d=rockHash(seed+16,ix+1,iy+1);}ix16=ix;iy16=iy;a16=a;b16=b;c16=c;d16=d;n16=(a+(b-a)*tx)*(1-ty)+(c+(d-c)*tx)*ty;}
     h+=saw*.15*rockStep(.62,.8,n16);
     FH[j*fw+i]=h;
+    if(i===fw-1&&(j&3)===3)yield;
   }
   const d=ROCK_TONE_Q/scale,K=34/d*.5,tone=(o,c,w)=>{td[o]+=(c[0]-td[o])*w;td[o+1]+=(c[1]-td[o+1])*w;td[o+2]+=(c[2]-td[o+2])*w;};
   for(let j=0;j<th;j++)for(let i=0;i<tw;i++){
@@ -420,8 +438,10 @@ function rockBakeFace(camY){
     const lift=rockStep(.42,1,1-(Math.hypot(wx,wy-ROCK_OPENING_Y)-200)/460)*.3,side=1-.4*Math.min(1,(wx/700)*(wx/700));
     for(let c=0;c<3;c++)td[o+c]=Math.max(0,Math.min(255,(td[o+c]+(pale[c]-td[o+c])*lift)*side));
     td[o+3]=255;
+    if(i===tw-1&&(j&3)===3)yield;
   }
-  rockFaceTone.getContext('2d').putImageData(rockFaceToneImg,0,0);g.drawImage(rockFaceTone,0,0,W,sheetH);
+  T.tone.getContext('2d').putImageData(T.img,0,0);g.drawImage(T.tone,0,0,W,sheetH);
+  rockSettle(rockFace);yield;
   // Every fissure seeded within reach of this sheet, walked again.
   const C=ROCK_CHUNK,R=ROCK_REACH,wx0=-W*.5/scale-R,wx1=W*.5/scale+R,wy0=camY-up/scale-R,wy1=camY+(H+down)/scale+R,walks=[];
   for(let cj=Math.floor(wy0/C);cj<=Math.floor(wy1/C);cj++)for(let ci=Math.floor(wx0/C);ci<=Math.floor(wx1/C);ci++)rockChunkFissures(seed,ci,cj,walks);
@@ -431,6 +451,7 @@ function rockBakeFace(camY){
   const hand=k=>rockHash(0x5ca1e,k,k*7+1);
   rockFissureWalk(-340,-450,.1,760,5,.01,k=>hand(k),1,walks,true,.12);
   rockFissureWalk(360,300,Math.PI+.15,640,4,-.02,k=>hand(k+300),-1,walks,true,.12);
+  yield;
   // The lamp is above and to the right. Where a fissure carries a step, the higher side throws its
   // shadow across the lower where the step faces away from the lamp and shows a lit lip where it faces
   // it; every fissure darkens the rock a little to both sides; and the crack itself goes dark, as wide
@@ -439,7 +460,6 @@ function rockBakeFace(camY){
   // laid down once at its strength: struck straight at that strength, segment by segment, every joint
   // where two round caps overlap took the ink twice and the crack read as a string of beads.
   const LX=.707,LY=-.707;
-  if(!rockFaceLayer||rockFaceLayer.width!==cw||rockFaceLayer.height!==ch)rockFaceLayer=makeCanvas(cw,ch);
   const L=rockFaceLayer.getContext('2d');
   // Every fissure is walked the full length seeded for it, out to ROCK_REACH beyond the sheet so a walk
   // that wanders toward the edge still reads as continuing past it rather than stopping dead — but most
@@ -494,15 +514,55 @@ function rockBakeFace(camY){
     g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=alpha;g.drawImage(rockFaceLayer,px0,py0,pw,ph,px0,py0,pw,ph);g.restore();
   };
   pass(crack,.26,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing>0)return null;return[wd*1.8+4,nx*(wd*.8+2),ny*(wd*.8+2),x0,y0,x1,y1];});
+  rockSettle(rockFace);yield;
   pass(crack,.24,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*2.4+2,0,0,x0,y0,x1,y1]);
+  rockSettle(rockFace);yield;
   pass(lip,.5,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>{if(!w.step||facing<=0||wd<1||rockHash(w.pts.length,i>>1,4)<.35)return null;return[1.3,-nx*(wd*.5+1.2),-ny*(wd*.5+1.2),x0,y0,x1,y1];});
+  rockSettle(rockFace);yield;
   pass(shaft,.78,(w,i,wd,nx,ny,facing,x0,y0,x1,y1)=>[wd*.8,0,0,x0,y0,x1,y1]);
+  rockSettle(rockFace);yield;
+  // The ground itself, struck into the stroke layer now that the passes are done with it: the tile at
+  // one sample to one device pixel, laid where it falls under this sheet's own place on the wall, and the
+  // face overlaid on it once here instead of over the whole screen on every frame. The sheet it replaces
+  // becomes the next job's stroke layer.
+  {const G=rockFaceLayer.getContext('2d'),wall=rockBakeWall(),y0=((Math.round((up-camY*scale)*DPR)%ROCK_NH)+ROCK_NH)%ROCK_NH-ROCK_NH;
+    G.setTransform(1,0,0,1,0,0);G.globalAlpha=1;G.globalCompositeOperation='source-over';
+    for(let x=0;x<cw;x+=ROCK_NW)for(let y=y0;y<ch;y+=ROCK_NH)G.drawImage(wall,x,y);
+    rockSettle(rockFaceLayer);yield;
+    const bands=4,bh=Math.ceil(ch/bands);
+    for(let b=0;b<bands;b++){const by=b*bh,h=Math.min(bh,ch-by);if(h<=0)break;
+      G.globalCompositeOperation='overlay';G.drawImage(rockFace,0,by,cw,h,0,by,cw,h);G.globalCompositeOperation='source-over';
+      rockSettle(rockFaceLayer);yield;}}
+  const spare={tone:rockFaceTone,img:rockFaceToneImg,FH:rockFaceH};
+  rockFaceTone=T.tone;rockFaceToneImg=T.img;rockFaceH=T.FH;rockFaceSpare=spare.tone?spare:null;
+  const done=rockFaceLayer;rockFaceLayer=rockGround;rockGround=done;
   rockFaceY=camY;rockFaceTop=up;rockFaceVersion++;
 }
+// Whether a sheet baked at camY still covers the screen, with the same margins the bake keeps.
+function rockFaceCovers(camY){const dy=(world.cameraY-camY)*scale;return dy>=-H*ROCK_FACE_UP*.85&&dy<=H*ROCK_FACE_DOWN*.85;}
+function rockBakeFace(camY){rockFaceJobRun=null;for(const _ of rockFaceJob(camY));}
+// The next sheet is begun once the climb is a quarter of the way into the margin above, and given a
+// slice of every frame from then on; the camera would have to cover most of the rest of that margin
+// before the job is done for the frame ever to wait on it, and if it does, the job is finished at once
+// rather than begun again. Anything that changes what the sheet is — the size, the ratio, the run —
+// still bakes it whole on the spot, as that frame is already a new picture.
+// A slice is a few steps and never more than a few milliseconds, whichever comes first: the step count
+// holds even where the clock is coarse, or stands still within a frame, as the screenshot harness's does.
+const ROCK_FACE_SLICE=3,ROCK_FACE_STEPS=5;
 function rockPaintFace(){
-  const key=W+'x'+H+'@'+DPR+'/'+scale.toFixed(4)+'#'+(world.seed>>>0),dy=(world.cameraY-rockFaceY)*scale;
-  if(rockFaceKey!==key||dy<-H*ROCK_FACE_UP*.85||dy>H*ROCK_FACE_DOWN*.85){rockBakeFace(world.cameraY);rockFaceKey=key;}
-  ctx.save();ctx.globalCompositeOperation='overlay';ctx.drawImage(rockFace,0,-rockFaceTop-(world.cameraY-rockFaceY)*scale,W,rockFace.height/DPR);ctx.restore();
+  const key=W+'x'+H+'@'+DPR+'/'+scale.toFixed(4)+'#'+(world.seed>>>0);
+  if(rockFaceKey!==key||!rockGround){rockBakeFace(world.cameraY);rockFaceKey=key;}
+  else if(!rockFaceCovers(rockFaceY)){
+    if(rockFaceJobRun&&rockFaceCovers(rockFaceJobY)){const job=rockFaceJobRun;rockFaceJobRun=null;for(const _ of job);}
+    else rockBakeFace(world.cameraY);
+  }else{
+    if(!rockFaceJobRun&&(world.cameraY-rockFaceY)*scale<-H*ROCK_FACE_UP*.25){rockFaceJobY=world.cameraY;rockFaceJobRun=rockFaceJob(rockFaceJobY);}
+    if(rockFaceJobRun){const t0=performance.now();
+      for(let k=0;k<ROCK_FACE_STEPS&&performance.now()-t0<ROCK_FACE_SLICE;k++)if(rockFaceJobRun.next().done){rockFaceJobRun=null;break;}}
+  }
+  // Snapped to a whole device pixel, so the tile inside the sheet stays one sample to one pixel.
+  const y=Math.round((-rockFaceTop-(world.cameraY-rockFaceY)*scale)*DPR)/DPR;
+  ctx.drawImage(rockGround,0,y,rockGround.width/DPR,rockGround.height/DPR);
 }
 
 // The torch is carried. A cave is a dark that one small flame is moved through, and a light pinned to
@@ -650,9 +710,7 @@ function rockPaintWall(){
   // — so drawing this tile at anything but its native resolution smears away exactly the detail it
   // exists to carry, and lands a wall that reads as a fog. The tile still scrolls at the world's own
   // rate: only how much wall a screen holds changes with the pixel ratio, never how fast it passes.
-  const tileW=ROCK_NW/DPR,tileH=ROCK_NH/DPR,snap=v=>Math.round(v*DPR)/DPR;
-  const off=((world.cameraY*scale)%tileH+tileH)%tileH;
-  for(let x=0;x<W;x+=tileW)for(let y=-off;y<H;y+=tileH)ctx.drawImage(rockWall,snap(x),snap(y),tileW,tileH);
+  // The tile is laid inside the ground sheet (rockPaintFace), which lands on whole device pixels itself.
   rockPaintFace();rockRelightPass();
   rockPaintNiches();rockPaintOldHands();
 }
@@ -871,22 +929,25 @@ function rockPressSprite(seed,R,rgb,lobe=.12,fray=.32,holes=.8,bite=0){
 // Lay a pressed mark at a fill between nought and one: the two baked stages either side of it, the
 // later coming in over the earlier. Dark pigments are multiplied into the stone and a share laid over
 // it; a pale one — kaolin — cannot be multiplied into anything, and is laid straight.
-function rockPress(g,x,y,sprite,fill,alpha,pale,over=.3){
+// `k` scales the mark about (x,y) — what a dot at a size between two baked ones needs — without a
+// transform of its own. A dot is laid hundreds of times a frame, so it carries no save and restore
+// either: the two things it changes are put back by hand.
+function rockPress(g,x,y,sprite,fill,alpha,pale,over=.3,k=1){
   if(alpha<=.003||fill<=0)return;
-  const S=ROCK_PRESS_STAGES,sz=sprite.size;let lo=-1;for(let s=0;s<S.length;s++)if(S[s]<=fill)lo=s;
+  const S=ROCK_PRESS_STAGES,sz=sprite.size*k,x0=x-sz/2,y0=y-sz/2;let lo=-1;for(let s=0;s<S.length;s++)if(S[s]<=fill)lo=s;
   const hi=Math.min(S.length-1,lo+1),t=lo<0?fill/S[0]:hi===lo?1:(fill-S[lo])/(S[hi]-S[lo]);
-  const lay=(cv,al)=>{if(al<=.003)return;if(pale){g.globalCompositeOperation='screen';g.globalAlpha=al*.7;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);g.globalCompositeOperation='source-over';g.globalAlpha=al*.45;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);return;}
-    g.globalCompositeOperation='multiply';g.globalAlpha=al;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);
-    g.globalCompositeOperation='source-over';g.globalAlpha=al*over;g.drawImage(cv,x-sz/2,y-sz/2,sz,sz);};
-  g.save();
+  const op=g.globalCompositeOperation,ga=g.globalAlpha;
+  const lay=(cv,al)=>{if(al<=.003)return;if(pale){g.globalCompositeOperation='screen';g.globalAlpha=al*.7;g.drawImage(cv,x0,y0,sz,sz);g.globalCompositeOperation='source-over';g.globalAlpha=al*.45;g.drawImage(cv,x0,y0,sz,sz);return;}
+    g.globalCompositeOperation='multiply';g.globalAlpha=al;g.drawImage(cv,x0,y0,sz,sz);
+    g.globalCompositeOperation='source-over';g.globalAlpha=al*over;g.drawImage(cv,x0,y0,sz,sz);};
   if(lo>=0)lay(sprite.stages[lo],alpha*(hi===lo?1:1));
   if(hi!==lo)lay(sprite.stages[hi],alpha*t);
-  g.restore();
+  g.globalCompositeOperation=op;g.globalAlpha=ga;
 }
 // A fingertip dot: the same pressed mark, small, in a handful of seeded shapes per pigment.
 function rockDot(g,x,y,r,rgb,alpha,seed,pale){
   if(r<=.3)return;const sp=rockPressSprite(((seed>>>0)%6)+1,Math.max(3,Math.round(r)),rgb,.14,.2,0);
-  const sc=r/Math.max(3,Math.round(r));g.save();g.translate(x,y);g.scale(sc,sc);rockPress(g,0,0,sp,1,alpha,pale,rgb===ink.rock.ochre?.62:.34);g.restore();
+  rockPress(g,x,y,sp,1,alpha,pale,rgb===ink.rock.ochre?.62:.34,r/Math.max(3,Math.round(r)));
 }
 
 // ---------- The body: what has been learned, staged over the observation clock alone ----------
@@ -924,32 +985,59 @@ function rockGlint(g,r,alpha,seed){
 // each only ever added to; and last the light. Wet pigment pools in a dish and starves over a rise.
 function rockBody(n,x,y,r,tier,d,taken,relief){
   if(taken<=0)return;
-  const cr=rockCore(r,tier)/scale,tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major';
+  const cr=rockCore(r,tier)/scale,moon=tier==='moon',bright=tier==='bright'||tier==='major';
   const pool=relief<0?1.08:relief>0?.9:1,edge=rockSpan(d,ROCK_STAGE.edge),marks=rockSpan(d,ROCK_STAGE.marks),detail=rockSpan(d,ROCK_STAGE.detail);
-  const al=taken*pool,rnd=seeded((n.seed^0x7e57)>>>0||11);
-  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+  if(taken>=1&&edge>=1&&marks>=1){rockBodySettled(n,x,y,cr,tier,pool);}
+  else{ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);rockBodyMarks(ctx,n,cr,tier,edge,marks,taken*pool);ctx.restore();}
+  if(detail>0){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+    if(moon)ctx.translate(-cr*.42,-cr*.08),rockGlint(ctx,3.2,detail*taken,n.seed);else rockGlint(ctx,bright?3.4:2.6,detail*taken,n.seed);
+    ctx.restore();}
+}
+function rockBodyMarks(g,n,cr,tier,edge,marks,al){
+  const tone=rockTone(tier),moon=tier==='moon',bright=tier==='bright'||tier==='major',rnd=seeded((n.seed^0x7e57)>>>0||11);
   if(moon){
     // A crescent, horns to the upper right, and beside it a tally that counts up as the Moon is watched.
     const sp=rockPressSprite(n.seed,cr*.8,tone,.05,.2,.3,1);
-    rockPress(ctx,-cr*.12,0,sp,Math.min(1,.55+.45*Math.max(edge,marks)),al,true);
+    rockPress(g,-cr*.12,0,sp,Math.min(1,.55+.45*Math.max(edge,marks)),al,true);
     const N=7,shown=marks*N;
     for(let i=0;i<N&&i<shown;i++){const tx=cr*.62+i*cr*.17,ty=cr*.12+(rnd()-.5)*cr*.08,len=cr*(.34+rnd()*.1);
-      rockStroke(ctx,tx,ty-len/2,tx+(rnd()-.5)*3,ty+len/2,1.35,ink.rock.kaolin,.85*al,n.seed+i*31,Math.min(1,shown-i),true);}
-    if(detail>0)ctx.save(),ctx.translate(-cr*.42,-cr*.08),rockGlint(ctx,3.2,detail*taken,n.seed),ctx.restore();
+      rockStroke(g,tx,ty-len/2,tx+(rnd()-.5)*3,ty+len/2,1.35,ink.rock.kaolin,.85*al,n.seed+i*31,Math.min(1,shown-i),true);}
   }else{
     const disc=bright?cr*.5:cr*.36,rays=bright?(tier==='major'?12:10):7,r0=bright?cr*.86:cr*.56,r1=bright?cr*1.32:cr*1.08,w=bright?2.1:1.8;
-    rockPress(ctx,0,0,rockPressSprite(n.seed,disc,tone,.1,.26,.6),Math.min(1,.45+.55*Math.max(edge,marks)),al,false,tier==='faint'?.55:.34);
+    rockPress(g,0,0,rockPressSprite(n.seed,disc,tone,.1,.26,.6),Math.min(1,.45+.55*Math.max(edge,marks)),al,false,tier==='faint'?.55:.34);
     // The ring of the cup-and-ring, walked round the disc as the edge firms; a major light takes two.
     if(bright){const rings=tier==='major'?[.66,.76]:[.68];
       for(const k of rings){const R=cr*k,N=Math.round(TAU*R/3.4),m=Math.round(N*edge);
-        for(let i=0;i<m;i++){const a=i/N*TAU+n.seed*.1;rockDot(ctx,Math.cos(a)*R,Math.sin(a)*R,1.9,tone,.9*al,n.seed+i+200);}}}
+        for(let i=0;i<m;i++){const a=i/N*TAU+n.seed*.1;rockDot(g,Math.cos(a)*R,Math.sin(a)*R,1.9,tone,.9*al,n.seed+i+200);}}}
     // The rays, struck one after another as the hand comes back, each a little off true.
     const shown=marks*rays;
     for(let i=0;i<rays&&i<shown;i++){const a=i/rays*TAU+(n.seed%97)*.07+(rnd()-.5)*.22,a0=r0*(.95+rnd()*.1),a1=r1*(.78+rnd()*.34);
-      rockStroke(ctx,Math.cos(a)*a0,Math.sin(a)*a0,Math.cos(a)*a1,Math.sin(a)*a1,w,tone,.92*al,n.seed+i*37,Math.min(1,shown-i));}
-    if(detail>0)rockGlint(ctx,bright?3.4:2.6,detail*taken,n.seed);
+      rockStroke(g,Math.cos(a)*a0,Math.sin(a)*a0,Math.cos(a)*a1,Math.sin(a)*a1,w,tone,.92*al,n.seed+i*37,Math.min(1,shown-i));}
   }
-  ctx.restore();
+}
+// A finished sign no longer changes, but it is some hundreds of pressed dots, each a multiply and an
+// over (or a screen and an over) on the stone, and every one of them was laid again on every frame. Each
+// of those draws takes what is under it to a*under+b, pixel by pixel, for an a and a b of its own, and a
+// run of them does the same with an a and a b that are simply the run's: so the whole sign is struck
+// once onto white and once onto black, the black giving b and the white less the black giving a, and
+// from then on it is laid as two draws — multiplied by a, then b added — which is the very same result
+// on any stone, the rock's grain through the pigment and all. The light at its middle still breathes live.
+const rockBodySprites=new Map();
+function rockBodySettled(n,x,y,cr,tier,pool){
+  const key=(n.seed>>>0)+':'+tier+':'+pool+':'+Math.round(cr*8)+':'+scale.toFixed(4)+':'+DPR.toFixed(2)+':'+rockTone(tier);
+  let sp=rockBodySprites.get(key);
+  if(!sp){
+    const half=Math.ceil((cr*1.9+4)*scale*DPR),px=half*2,mk=bg=>{const c=makeCanvas(px,px),g=c.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,px,px);
+      g.setTransform(DPR*scale,0,0,DPR*scale,half,half);rockBodyMarks(g,n,cr,tier,1,1,pool);g.setTransform(1,0,0,1,0,0);return {c,g};};
+    const white=mk('#fff'),black=mk('#000');
+    white.g.globalCompositeOperation='difference';white.g.drawImage(black.c,0,0);white.g.globalCompositeOperation='source-over';
+    sp={mul:white.c,add:black.c,half:half/DPR,size:px/DPR};rockBodySprites.set(key,sp);
+    if(rockBodySprites.size>32)rockBodySprites.delete(rockBodySprites.keys().next().value);
+  }
+  const X=Math.round(x*DPR)/DPR-sp.half,Y=Math.round(y*DPR)/DPR-sp.half,op=ctx.globalCompositeOperation,ga=ctx.globalAlpha;
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='multiply';ctx.drawImage(sp.mul,X,Y,sp.size,sp.size);
+  ctx.globalCompositeOperation='lighter';ctx.drawImage(sp.add,X,Y,sp.size,sp.size);
+  ctx.globalCompositeOperation=op;ctx.globalAlpha=ga;
 }
 // A body not yet reached is not a mark at all but the light alone, before any hand has answered it:
 // the same point that shows at the middle of a finished sign, with a cross of light on it at the size a
@@ -993,11 +1081,28 @@ function rockFlourish(n){
   rockFlourishAt.set(n,world.time);
   if(rockFlourishAt.size>40)for(const [key,at] of rockFlourishAt)if(world.time-at>ROCK_FLOURISH_DUR)rockFlourishAt.delete(key);
 }
+// The 28 dots never touch, so laying them one at a time — a multiply and an over for each, 56 draws a
+// ring and several rings a frame — comes to the same as striking them once, whole, into a sprite and
+// laying that with the same two: which is what is done. A dot's shape is its seed mod six (rockDot),
+// so every ring with the same seed mod six, radius and dot size shares one sprite.
+const rockRingSprites=new Map();
+function rockRingSprite(seed,cap,r){
+  const rq=Math.max(3,Math.round(r)),key=(seed%6)+':'+Math.round(cap*4)+':'+Math.round(r*8)+':'+DPR.toFixed(2)+':'+ink.rock.redOchre;
+  const cached=rockRingSprites.get(key);if(cached)return cached;
+  const dot0=rockPressSprite(1,rq,ink.rock.redOchre,.14,.2,0),size=Math.ceil((cap+dot0.size*r/rq)*2+4),px=Math.max(2,Math.ceil(size*DPR));
+  const c=makeCanvas(px,px),g=c.getContext('2d');g.scale(DPR,DPR);
+  for(let i=0;i<ROCK_RING_N;i++){const a=i/ROCK_RING_N*TAU,sp=rockPressSprite(((seed+i)>>>0)%6+1,rq,ink.rock.redOchre,.14,.2,0),sz=sp.size*r/rq;
+    g.drawImage(sp.stages[sp.stages.length-1],size/2+Math.cos(a)*cap-sz/2,size/2+Math.sin(a)*cap-sz/2,sz,sz);}
+  const sprite={canvas:c,size:px/DPR,half:size/2};rockRingSprites.set(key,sprite);
+  if(rockRingSprites.size>64)rockRingSprites.delete(rockRingSprites.keys().next().value);
+  return sprite;
+}
 function rockRing(n,x,y,cap,state){
-  for(let i=0;i<ROCK_RING_N;i++){
-    const a=i/ROCK_RING_N*TAU;
-    rockDot(ctx,x+Math.cos(a)*cap,y+Math.sin(a)*cap,2.6*Math.max(.55,state)*scale,ink.rock.redOchre,.95*state,n.seed+i);
-  }
+  {const al=.95*state;if(al>.003){const sp=rockRingSprite(n.seed>>>0,cap,2.6*Math.max(.55,state)*scale),h=sp.half,
+      X=Math.round((x-h)*DPR)/DPR,Y=Math.round((y-h)*DPR)/DPR,op=ctx.globalCompositeOperation,ga=ctx.globalAlpha;
+    ctx.globalCompositeOperation='multiply';ctx.globalAlpha=al;ctx.drawImage(sp.canvas,X,Y,sp.size,sp.size);
+    ctx.globalCompositeOperation='source-over';ctx.globalAlpha=al*.34;ctx.drawImage(sp.canvas,X,Y,sp.size,sp.size);
+    ctx.globalCompositeOperation=op;ctx.globalAlpha=ga;}}
   const at=rockFlourishAt.get(n);if(at===undefined)return;
   const seal=clamp(1-(world.time-at)/ROCK_FLOURISH_DUR,0,1);if(seal<=0)return;
   const glow=seal*seal;
@@ -2089,7 +2194,7 @@ function rockTitleMark(){
   // strongest, in a widening crowd the way hands gather round a panel at Gargas or Cueva de las Manos;
   // and every animal ever marked here stands faint along the sides of the wall, one for each kind,
   // drawn more firmly the more often it has been found.
-  if(typeof rockCaveRead==='function'){const cave=rockCaveRead(),runs=cave.runs||[],n=runs.length;
+  if(typeof rockCaveView==='function'){const cave=rockCaveView(),runs=cave.runs||[],n=runs.length;
     for(let i=0;i<n&&i<60;i++){const j=n-1-i,hr=rockHash(7,j,1),ring=R*(2.25+Math.floor(i/10)*.5),ang=-Math.PI/2+(hr-.5)*.5+(i%10)/10*TAU+Math.floor(i/10)*.31;
       const hx=x+Math.cos(ang)*ring*1.15,hy=y+Math.sin(ang)*ring*.62;if(Math.abs(hy-y)<R*.5&&Math.abs(hx-x)<R*2.2)continue;
       ctx.save();ctx.translate(hx,hy);ctx.rotate((hr-.5)*.8);for(let q=0;q<2;q++)rockHand(0,0,R*(.5-Math.min(.2,i*.006)),hr<.25?ink.rock.manganese:ink.rock.redOchre,a*(1-Math.min(.55,i*.014)),hr<.5);ctx.restore();}
@@ -2413,6 +2518,15 @@ function rockCaveRead(){
   const animals=raw&&raw.animals&&typeof raw.animals==='object'?raw.animals:{};
   return{v:1,runs,animals};
 }
+// The same record, for the painters that only look at it — the frontispiece reads it on every frame it
+// stands — parsed again only when what storage holds has actually changed. Never to be written through:
+// the recorders below take a fresh copy from rockCaveRead.
+let rockCaveRaw,rockCaveSeen=null;
+function rockCaveView(){
+  let raw=null;try{raw=storage.get(ROCK_CAVE_KEY,'null');}catch(_){raw=null;}
+  if(rockCaveSeen&&raw===rockCaveRaw)return rockCaveSeen;
+  rockCaveRaw=raw;return rockCaveSeen=rockCaveRead();
+}
 function rockCaveWrite(record){try{storage.set(ROCK_CAVE_KEY,JSON.stringify(record));}catch(_){}}
 // Called once a Rock run ends (see showEnd()'s `caveRun` hand hook in ui.js). Appends one run and
 // drops whatever is oldest past the cap, so the record never grows without bound across many runs.
@@ -2434,7 +2548,7 @@ function rockCaveRecordAnimal(catalogueIndex){
 // hands back to currentBest() in plates.js, so the Rock's HUD and end leaf can show a real "Deepest"
 // instead of the atlas's own best score, which a preview era never earns.
 function rockBest(){
-  let best=0;for(const run of rockCaveRead().runs)if(run&&run.row>best)best=run.row;
+  let best=0;for(const run of rockCaveView().runs)if(run&&run.row>best)best=run.row;
   return best;
 }
 
@@ -2443,8 +2557,9 @@ function rockBest(){
 // when the plate or the pixel ratio changes, so the next reach simply rebuilds lazily as it always did.
 function invalidateRockArt(){
   rockWall=null;rockFace=null;rockFaceLayer=null;rockFaceKey='';rockFaceTone=null;rockFaceToneImg=null;rockFaceH=null;rockReliefSprites.clear();
+  rockGround=null;rockFaceSpare=null;rockFaceJobRun=null;
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;rockCaptureSeen=-1;rockStencils=[];
-  rockDabSprites.clear();rockPressSprites.clear();
+  rockDabSprites.clear();rockPressSprites.clear();rockRingSprites.clear();rockBodySprites.clear();
   rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;

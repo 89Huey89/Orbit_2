@@ -12,12 +12,18 @@
 // over enough frames to be sure, switches itself off for the rest of the session: the flame's moving
 // shadows are worth something, but never a stutter in the hand.
 const RELIGHT_BUDGET_MS=4,RELIGHT_WATCH=90;
+// Every surface made, so the frame's own pacer (pacePresent, src/ui.js) can retire them all at once: the
+// watch above sees only what a frame spends handing the work over, never the wait for it to come back or
+// the one frame in ten it runs long, and the pacer sees exactly that — frames arriving late. A surface
+// retired either way stays retired for the session.
+const relightSurfaces=[];
+function relightShed(){let shed=false;for(const s of relightSurfaces)if(s.ok){s.retire();shed=true;}return shed;}
 function relightSurface(fragment){
   let canvas,gl;
   try{
     if(typeof WebGLRenderingContext==='undefined'||typeof document==='undefined')return null;
     canvas=document.createElement('canvas');
-    gl=canvas.getContext('webgl',{alpha:false,antialias:false,depth:false,stencil:false,premultipliedAlpha:false,preserveDrawingBuffer:true});
+    gl=canvas.getContext('webgl',{alpha:false,antialias:false,depth:false,stencil:false,premultipliedAlpha:false,preserveDrawingBuffer:false});
     if(!(gl instanceof WebGLRenderingContext))return null;
   }catch(e){return null;}
   const shader=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){const log=gl.getShaderInfoLog(s);gl.deleteShader(s);throw new Error(log||'shader');}return s;};
@@ -36,9 +42,10 @@ function relightSurface(fragment){
   const textures=new Map();
   let lost=false,spent=0,frames=0,off=false;
   canvas.addEventListener&&canvas.addEventListener('webglcontextlost',e=>{lost=true;if(e.preventDefault)e.preventDefault();});
-  return {
+  const surface={
     canvas,
     get ok(){return !lost&&!off;},
+    retire(){off=true;},
     // A height map, one byte a sample, as a single-channel texture filtered linearly: sampled between
     // its texels, so a map a quarter the size of the screen still gives a smooth slope to be lit.
     // `pair` packs two bytes a sample, high then low, for a map whose slope is lit and so cannot stand
@@ -69,4 +76,6 @@ function relightSurface(fragment){
     // WebGL canvas into the 2D one is where the time really goes, not the shader.
     charge(ms){spent+=ms;}
   };
+  relightSurfaces.push(surface);
+  return surface;
 }

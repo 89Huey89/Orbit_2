@@ -267,9 +267,9 @@ function scrollAtmosphere(){
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
   for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round((y)*DPR));
   ctx.restore();
-  const lg=ctx.createRadialGradient(W*.54,H*.46,Math.min(W,H)*.12,W*.54,H*.46,Math.max(W,H)*.78);
-  lg.addColorStop(0,'rgba(255,248,226,.06)');lg.addColorStop(.6,'rgba(60,40,20,0)');lg.addColorStop(1,'rgba(60,40,20,.2)');
-  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
+  sheetWash('scroll.lamp',g=>{const lg=g.createRadialGradient(W*.54,H*.46,Math.min(W,H)*.12,W*.54,H*.46,Math.max(W,H)*.78);
+    lg.addColorStop(0,'rgba(255,248,226,.06)');lg.addColorStop(.6,'rgba(60,40,20,0)');lg.addColorStop(1,'rgba(60,40,20,.2)');
+    g.fillStyle=lg;g.fillRect(0,0,W,H);});
   scrollBands();
   scrollTitleMark();
 }

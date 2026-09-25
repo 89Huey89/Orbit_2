@@ -746,6 +746,22 @@ function regionInk(region){
 }
 
 function makeCanvas(width,height){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
+// A wash over the whole sheet that does not move with the climb — a vignette, a lamp's fall of light — is
+// a gradient the canvas would otherwise work out again, pixel by pixel, on every frame it is filled, and
+// on a phone that is a whole screen of arithmetic a frame for a picture that never changes. So it is
+// painted once per sheet size into a canvas of its own and laid from there. `key` names the wash and
+// whatever its colours depend on; `paint(g)` fills it in CSS pixels, exactly as it would have filled the
+// sheet itself.
+const sheetWashes=new Map();
+function sheetWash(key,paint){
+  const k=key+'|'+W+'x'+H+'@'+DPR;let c=sheetWashes.get(k);
+  if(!c){
+    c=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR)));const g=c.getContext('2d');
+    if(g){g.setTransform(DPR,0,0,DPR,0,0);paint(g);}
+    sheetWashes.set(k,c);if(sheetWashes.size>6)sheetWashes.delete(sheetWashes.keys().next().value);
+  }
+  ctx.drawImage(c,0,0,c.width/DPR,c.height/DPR);
+}
 // The sheet itself, as a seamless tile: laid wires every 1.5 px, and short fibres. It is multiplied over
 // the finished frame on paper so every stroke breaks across the laid lines instead of lying on top of
 // them; at night the same tile is screened back at a whisper. Chain lines are not this tile's job: they
