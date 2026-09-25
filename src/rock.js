@@ -797,15 +797,6 @@ function rockDab(g,x,y,r,rgb,alpha,seed){
   const sprite=rockDabSprite(rgb,(seed>>>0)%ROCK_DAB_VARIANTS);
   g.globalAlpha=alpha;g.drawImage(sprite.canvas,x-r,y-r,r*2,r*2);
 }
-// A wash: the palm loaded and pressed again and again — never a flat fill, always a scatter of many
-// small dabs so the mark keeps a hand's own unevenness.
-function rockWash(g,x,y,r,rgb,alpha,n,seed){
-  const rnd=seeded((seed>>>0)||3);
-  for(let i=0;i<n;i++){
-    const t=rnd()*TAU,dd=Math.sqrt(rnd());
-    rockDab(g,x+Math.cos(t)*dd*r,y+Math.sin(t)*dd*r,r*(.18+rnd()*.22),rgb,alpha*(.5+.5*(1-dd)),i*7+seed);
-  }
-}
 // A flint scratch: fresh pale stone in the groove, a dark shadow thrown to one side — never a clean
 // ruled line, because nothing this era cut was ruled.
 function rockScratch(g,x0,y0,x1,y1,w,alpha,dash){
@@ -820,38 +811,6 @@ function rockScratch(g,x0,y0,x1,y1,w,alpha,dash){
 function rockPeck(g,x,y,r,alpha){
   g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=`rgba(${ink.rock.manganese},${alpha*.85})`;g.fill();
   g.beginPath();g.arc(x-r*.32,y-r*.32,r*.62,0,TAU);g.fillStyle=`rgba(${ink.rock.kaolin},${alpha*.4})`;g.fill();
-}
-
-// ---------- A hand-walked edge, cached by shape rather than rebuilt by point ----------
-// The radius breathes on a slow harmonic with noise over it, laid through the midpoints so it reads as
-// a wavering line rather than a polygon — seeded off the body, so it is the same edge every frame. The
-// spike rebuilt the 26-point walk on every call, twice per visible body per frame; here the walk's own
-// per-angle multipliers are cached once per seed and the draw call is pure trigonometry over that
-// lookup, so nothing is allocated on the hot path at all.
-const rockEdgeShapes=new Map();
-function rockEdgeShape(seed){
-  const key=seed>>>0;
-  let k=rockEdgeShapes.get(key);if(k)return k;
-  const rnd=seeded(key||5),ph=rnd()*TAU,steps=26;
-  k=new Float32Array(steps);
-  for(let i=0;i<steps;i++){const a=i/steps*TAU;k[i]=1+Math.sin(a*2+ph)*.10+Math.sin(a*5-ph)*.06+(rnd()-.5)*.15;}
-  rockEdgeShapes.set(key,k);
-  if(rockEdgeShapes.size>240)rockEdgeShapes.delete(rockEdgeShapes.keys().next().value);
-  return k;
-}
-function rockEdgePath(g,x,y,r,seed){
-  const k=rockEdgeShape(seed),steps=k.length;
-  // Point 0 sits at angle 0 (cos=1, sin=0), so it is just (x+r*k[0], y); no need to call either
-  // trig function for it. Point[steps-1] is still needed once, to open the path at their midpoint.
-  const a=(steps-1)/steps*TAU,lx=x+Math.cos(a)*r*k[steps-1],ly=y+Math.sin(a)*r*k[steps-1]*.95;
-  let cx=x+r*k[0],cy=y;
-  g.beginPath();g.moveTo((lx+cx)/2,(ly+cy)/2);
-  for(let i=0;i<steps;i++){
-    const j=(i+1)%steps,aj=j/steps*TAU,jx=x+Math.cos(aj)*r*k[j],jy=y+Math.sin(aj)*r*k[j]*.95;
-    g.quadraticCurveTo(cx,cy,(cx+jx)/2,(cy+jy)/2);
-    cx=jx;cy=jy;
-  }
-  g.closePath();
 }
 
 // ---------- The rock's own form under a body ----------
@@ -1244,16 +1203,6 @@ function rockRimEdges(g,pts,L,seed){
     else if(f<-.08){g.globalCompositeOperation='multiply';g.strokeStyle=`rgba(30,24,20,${(.45*-f).toFixed(3)})`;g.lineWidth=1;}
     else continue;
     g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();}
-  g.restore();
-}
-// `pts` is the edge as a closed ring of [x,y]; (LX,LY) points toward the lamp. A piece is lit as far as
-// its outward face turns away from the lamp — the far side of a hollow faces the flame across it.
-function rockBrokenLip(g,pts,LX,LY,rnd,rgb,alpha){
-  const n=pts.length;let cx=0,cy=0;for(const p of pts){cx+=p[0];cy+=p[1];}cx/=n;cy/=n;g.save();g.lineCap='round';
-  for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n],mx=(a[0]+b[0])/2-cx,my=(a[1]+b[1])/2-cy,l=Math.hypot(mx,my)||1,face=-(mx*LX+my*LY)/l;
-    if(face<.2||rnd()<.4)continue;const f0=rnd()*.35,f1=f0+.2+rnd()*.35;
-    g.strokeStyle=`rgba(${rgb},${(alpha*Math.min(1,face*1.2)*(.5+rnd()*.5)).toFixed(3)})`;g.lineWidth=.7+rnd()*.7;
-    g.beginPath();g.moveTo(a[0]+(b[0]-a[0])*f0,a[1]+(b[1]-a[1])*f0);g.lineTo(a[0]+(b[0]-a[0])*f1,a[1]+(b[1]-a[1])*f1);g.stroke();}
   g.restore();
 }
 // The Shaft: a hole in the wall that goes down, and the one place on this sheet the rock opens rather
@@ -2559,7 +2508,6 @@ function invalidateRockArt(){
   rockGround=null;rockFaceSpare=null;rockFaceJobRun=null;
   rockFlame=null;rockFlameKey='';rockLight=null;rockTorchAt=null;rockCaptureSeen=-1;rockStencils=[];
   rockDabSprites.clear();rockPressSprites.clear();rockRingSprites.clear();rockBodySprites.clear();
-  rockEdgeShapes.clear();
   rockShaftSprites.clear();rockChasmSprites.clear();rockNicheSprites.clear();
   rockCrayon=null;rockCrayonKey='';rockHandSprites.clear();rockHudTopPx=null;
   rockCoreArt=null;rockCoreKey='';rockTrailLayer=null;rockWallRelief=null;rockRelitTile=false;rockFaceVersion++;

@@ -964,7 +964,7 @@ function drawRunningHead(){
 // world once, in the lower part of the opening sheet. From then on it is always transformed through
 // sx()/sy(), so a rising camera carries the already engraved cartouche downward with the rest of the
 // sheet. It is never re-created at the viewport edge and never follows the traveller.
-const IMPRESSUM_ROWS=11,IMPRESSUM_REVEAL=.52;
+const IMPRESSUM_REVEAL=.52;
 // The nine — now eleven, with the second state and the edition row — rows read as one flat list before
 // this: a real setter would never give a princely dedication and a place-line the same weight. Place
 // and printer carry the cartouche's headline size; plate, year, the second state and the title stand at

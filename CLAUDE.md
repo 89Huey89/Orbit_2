@@ -36,7 +36,7 @@ see README.md's "The eras".
   the branch left `origin/main` (committed, staged, unstaged or untracked);
   `--quick=force` skips that check. Run the full `npm test` before pushing anything
   that touches gameplay, the ledger's migrations, the daily log, or the playthrough
-  tasks in verify.mjs themselves. CI always runs the full suite.
+  tasks in `scripts/verify/tasks.mjs` themselves. CI always runs the full suite.
 - `npm run build` — bundles into `dist/index.html` + `dist/assets/` via
   `scripts/bundle.mjs`.
 - `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
@@ -61,9 +61,9 @@ see README.md's "The eras".
   `subset-font`). The charset is read off `src/` rather than kept as a list, so
   run this after adding a character the atlas had not set before.
 
-Those two are the only commands needing a dependency. `assets/fonts.source.css`
-holds the full faces, is the input to both, and is never served; the build ships
-only the cut `assets/fonts.css`.
+Beside the build's own esbuild, those two are the only commands needing a
+dependency. `assets/fonts.source.css` holds the full faces, is the input to both,
+and is never served; the build ships only the cut `assets/fonts.css`.
 
 Run `npm test` (the full suite, not `test:quick`) before `npm run build` — CI (`.github/workflows/deploy-pages.yml`)
 does the same before deploying `dist/` to GitHub Pages on every push to `main`.
@@ -78,12 +78,12 @@ does the same before deploying `dist/` to GitHub Pages on every push to `main`.
 - `scripts/bundle.mjs` is the single source of truth for turning those script
   tags into one inline `<script>`; `build.mjs` and `verify.mjs` both call it,
   so the tested code and the shipped code are always the same bundle.
-- `src/simulation.js` must stay **DOM-free**: `verify.mjs` extracts only the
+- `src/simulation.js` must stay **DOM-free**: the test suite extracts only the
   code between its `// BEGIN SIMULATION` / `// END SIMULATION` markers, runs
   that slice alone in a `vm` sandbox, and pulls specific named globals off it
   (`OrbitWorld`, `segmentCircle`, `flightStep`, `CONSTELLATIONS`, ...). Keep
-  those markers in place, and update verify.mjs's destructuring list if you
-  rename or add to what it needs.
+  those markers in place, and update the destructuring lists in
+  `scripts/verify/sandbox.mjs` if you rename or add to what it needs.
 - No runtime dependencies and no external resources of any kind: `build.mjs`
   fails the build if the bundled page contains any
   `<script|link|img|audio|video src/href="https?:...">`. Fonts, art, and

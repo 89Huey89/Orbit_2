@@ -102,10 +102,6 @@ const ASTRO_PLANETS=[['زحل','SATURN'],['المشتري','JUPITER'],['المر
 const ASTRO_VERTICES=['ا','ب','ج','د','ه','ز','ح','ط','ي','ك','ل','م'];
 
 // ---------- Small tools ----------
-function astroHash(a,b=0,c=0){let h=Math.imul((a|0)^0x9E3779B1,0x85EBCA77)^Math.imul((b|0)+0x27d4eb2f,0xC2B2AE3D)^Math.imul((c|0)+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
-function astroNoise(x,y,seed,period){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=q=>((q%period)+period)%period;
-  const h=(i,j)=>astroHash(i,w(j),seed);return lerp(lerp(h(xi,yi),h(xi+1,yi),u),lerp(h(xi,yi+1),h(xi+1,yi+1),u),v)*2-1;}
-function astroFbm(x,y,cell,oct,seed,tileH){let a=0,m=.5,c=cell;for(let i=0;i<oct;i++){a+=astroNoise(x/c,y/c,seed+i*17,Math.round(tileH/c))*m;m*=.5;c/=2;}return a;}
 // Naskh, set right to left in Amiri; the browser shapes the joins. Bold is the heavier cut, for titles.
 // `halo` sets the lettering the way an engraver letters over ruled work: the lines it crosses are
 // burnished back to the paper for a hair round every stroke, so a name laid over its own orbit still reads.
@@ -119,13 +115,6 @@ function astroGloss(g,str,x,y,size,rgb,alpha,align='center',halo=false){
   if(halo)astroHalo(g,str,x,y,size,alpha);g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
 }
 function astroHalo(g,str,x,y,size,alpha){g.strokeStyle=`rgba(${ink.astro.paper},${(.92*alpha).toFixed(3)})`;g.lineWidth=Math.max(2.5,size*.34);g.lineJoin='round';g.strokeText(str,x,y);}
-// A line cut into brass: the groove itself dark, and a hair of burr beside it catching the light, offset
-// down and right the way a lit groove's lower lip shows. `path` builds the path; it is stroked twice.
-function astroGroove(g,path,w,alpha=1,rgb){
-  const P=ink.astro;g.save();g.lineCap='round';g.lineJoin='round';
-  g.translate(.35,.45);g.strokeStyle=`rgba(${P.brassHi},${(.55*alpha).toFixed(3)})`;g.lineWidth=w*.8;g.beginPath();path();g.stroke();
-  g.translate(-.35,-.45);g.strokeStyle=`rgba(${rgb||P.groove},${(.9*alpha).toFixed(3)})`;g.lineWidth=w;g.beginPath();path();g.stroke();g.restore();
-}
 // Set while the instrument is drawn as a construction on the page rather than as metal (a chapter's
 // opening): every brass surface is left unfilled and only the cut lines stand, in ink.
 let astroGhost=false;
@@ -298,7 +287,7 @@ function astroBakeTile(){
   const P=ink.astro,TH=ASTRO_TILE,pw=Math.max(1,Math.round(W*DPR)),ph=Math.round(TH*DPR),c=makeCanvas(pw,ph),g=c.getContext('2d');
   const q=4,lw=Math.ceil(pw/q),lh=Math.ceil(ph/q),lo=makeCanvas(lw,lh),lg=lo.getContext('2d'),im=lg.createImageData?lg.createImageData(lw,lh):null,d=im&&im.data,base=P.paper.split(',').map(Number);
   if(d){for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){
-    const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=astroFbm(X,Y,225,4,13,TH),cl=astroFbm(X,Y,45,3,31,TH),l=1+m*.05+cl*.022;
+    const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=tileFbm(X,Y,225,4,13,TH),cl=tileFbm(X,Y,45,3,31,TH),l=1+m*.05+cl*.022;
     d[i]=base[0]*l;d[i+1]=base[1]*l*(1-Math.max(0,-m)*.03);d[i+2]=base[2]*l*(1-Math.max(0,-m)*.08);d[i+3]=255;}
     lg.putImageData(im,0,0);g.imageSmoothingQuality='high';g.drawImage(lo,0,0,pw,ph);}
   else{g.fillStyle=`rgb(${P.paper})`;g.fillRect(0,0,pw,ph);}
@@ -501,8 +490,8 @@ function astroWanderer(n){
   if(n.difficultyChoice||n.routeId!=null||(n.type!=='still'&&n.type!=='drift')||n.row!==Math.floor(n.row))return -1;
   const c=Math.floor(n.row/ASTRO_CHAPTER_ROWS);if(c<1||c>ASTRO_PLANETS.length)return -1;
   const seed=(world.seed|0)>>>0,rows=[];for(let k=c*ASTRO_CHAPTER_ROWS;k<(c+1)*ASTRO_CHAPTER_ROWS;k++)if(astroPlainRow(k))rows.push(k);
-  if(!rows.length||n.row!==rows[Math.floor(astroHash(seed,c,11)*rows.length)])return -1;
-  const order=[0,1,2,3,4];for(let i=order.length-1;i>0;i--){const j=Math.floor(astroHash(seed,i,29)*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  if(!rows.length||n.row!==rows[Math.floor(tileHash(seed,c,11)*rows.length)])return -1;
+  const order=[0,1,2,3,4];for(let i=order.length-1;i>0;i--){const j=Math.floor(tileHash(seed,i,29)*(i+1));[order[i],order[j]]=[order[j],order[i]];}
   return order[c-1];
 }
 // A wanderer's track: its places pricked night by night as a zīj's observer reduced them, eastward along
@@ -696,8 +685,8 @@ function astroWind(h,x,y){
   const t=reducedMotion?0:world.time,dir=h.dir||0;
   ctx.save();ctx.translate(x,y);ctx.rotate(dir);ctx.beginPath();ctx.arc(0,0,reach,0,TAU);ctx.clip();
   ctx.lineCap='round';
-  for(let i=0;i<7;i++){const lane=(astroHash(h.seed,i,1)-.5)*reach*1.5,len=reach*(.5+astroHash(h.seed,i,3)*.5),x0=((t*26*scale+astroHash(h.seed,i,2)*reach*2)%(reach*2.6))-reach*1.3;
-    ctx.strokeStyle=`rgba(${P.ink},${(.3+astroHash(h.seed,i,5)*.2).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.setLineDash([6*scale,3*scale]);ctx.beginPath();ctx.moveTo(x0,lane);ctx.lineTo(x0+len,lane);ctx.stroke();
+  for(let i=0;i<7;i++){const lane=(tileHash(h.seed,i,1)-.5)*reach*1.5,len=reach*(.5+tileHash(h.seed,i,3)*.5),x0=((t*26*scale+tileHash(h.seed,i,2)*reach*2)%(reach*2.6))-reach*1.3;
+    ctx.strokeStyle=`rgba(${P.ink},${(.3+tileHash(h.seed,i,5)*.2).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.setLineDash([6*scale,3*scale]);ctx.beginPath();ctx.moveTo(x0,lane);ctx.lineTo(x0+len,lane);ctx.stroke();
     ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x0+len,lane);ctx.lineTo(x0+len-3*scale,lane-1.6*scale);ctx.moveTo(x0+len,lane);ctx.lineTo(x0+len-3*scale,lane+1.6*scale);ctx.stroke();}
   ctx.restore();
   const rx=x-Math.cos(dir)*reach*.78,ry=y-Math.sin(dir)*reach*.78,R=10*scale;ctx.save();ctx.strokeStyle=`rgba(${P.ink},.62)`;ctx.lineWidth=.5*scale;
@@ -712,8 +701,8 @@ function astroCloud(h,x,y){
   const P=ink.astro,R=h.r*scale;if(y+R<-20||y-R>H+20)return;
   ctx.save();const wg=ctx.createRadialGradient(x,y,0,x,y,R);wg.addColorStop(0,`rgba(${P.paperDeep},.55)`);wg.addColorStop(1,`rgba(${P.paperDeep},0)`);ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
   const t=reducedMotion?0:world.time;
-  for(let i=0;i<46;i++){const a=astroHash(h.seed,i,1)*TAU+Math.sin(t*.1+i)*.02,d=Math.sqrt(astroHash(h.seed,i,2))*R*.92,r=(.5+astroHash(h.seed,i,3)*1.1)*scale;
-    ctx.strokeStyle=`rgba(${P.faded},${(.35+astroHash(h.seed,i,4)*.35).toFixed(3)})`;ctx.lineWidth=.45*scale;ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,r,0,TAU);ctx.stroke();}
+  for(let i=0;i<46;i++){const a=tileHash(h.seed,i,1)*TAU+Math.sin(t*.1+i)*.02,d=Math.sqrt(tileHash(h.seed,i,2))*R*.92,r=(.5+tileHash(h.seed,i,3)*1.1)*scale;
+    ctx.strokeStyle=`rgba(${P.faded},${(.35+tileHash(h.seed,i,4)*.35).toFixed(3)})`;ctx.lineWidth=.45*scale;ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,r,0,TAU);ctx.stroke();}
   astroNaskh(ctx,'لطخة سحابية',x,y-R-8*scale,Math.max(10,11*scale),P.ink,.72);
   ctx.restore();
 }
@@ -818,7 +807,7 @@ function astroPlayer(){
 // So the page above the loss pales and browns, and the loss itself is tarnished brass rising: a dark patina
 // with verdigris blooming in it and the grooves of an old graduation drowned in it, its edge uneven where
 // the patina creeps. Its position, rate and grace are untouched: read straight off the state drawDark reads.
-function astroFrontAt(xw,level){const lv=Math.floor(level/60);return (astroHash(Math.floor(xw/36),lv,5)-.5)*12*(1-(xw/36%1))+(astroHash(Math.floor(xw/36)+1,lv,5)-.5)*12*(xw/36%1)+Math.sin(xw*.17+lv)*1.8;}
+function astroFrontAt(xw,level){const lv=Math.floor(level/60);return (tileHash(Math.floor(xw/36),lv,5)-.5)*12*(1-(xw/36%1))+(tileHash(Math.floor(xw/36)+1,lv,5)-.5)*12*(xw/36%1)+Math.sin(xw*.17+lv)*1.8;}
 function astroDark(dt){
   const P=ink.astro,fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
@@ -837,7 +826,7 @@ function astroDark(dt){
   const lv=Math.floor(level/60);
   // drowned graduation: old cut lines running across the patina, darker than it, catching no light
   ctx.strokeStyle='rgba(10,8,4,.55)';ctx.lineWidth=.7;ctx.beginPath();for(let y=fy+10*scale;y<H+10;y+=9*scale){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();
-  for(let i=0;i<14;i++){const x=astroHash(i,lv,21)*W,y=fy+(12+astroHash(i,lv,22)*120)*scale,r=(6+astroHash(i,lv,23)*16)*scale,g=ctx.createRadialGradient(x,y,0,x,y,r);
+  for(let i=0;i<14;i++){const x=tileHash(i,lv,21)*W,y=fy+(12+tileHash(i,lv,22)*120)*scale,r=(6+tileHash(i,lv,23)*16)*scale,g=ctx.createRadialGradient(x,y,0,x,y,r);
     g.addColorStop(0,`rgba(${P.verdigris},.45)`);g.addColorStop(1,`rgba(${P.verdigris},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
   ctx.restore();
   // the creeping edge: a lip of pale oxide and a line of verdigris pooled in it
