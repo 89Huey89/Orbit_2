@@ -281,7 +281,7 @@ before anything else is built on it:
 
 ## Progress
 
-Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`:
+Built and pushed on `claude/stone-age-deck-overhaul-ibtaij`, since merged to `main` (pull request #74):
 
 | Step | State |
 |---|---|

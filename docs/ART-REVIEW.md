@@ -10,7 +10,8 @@ capable of?** Where a proposal here overlaps an item still open in that file, th
 Nothing here builds toward the archived era progression. Era II is touched on only where it shares a
 problem with the atlas. Era I, The Rock, is reviewed in its own section
 ([R](#r--era-i-the-rock-on-its-overhaul-branch)) against its overhaul branch,
-`claude/stone-age-deck-overhaul-ibtaij`, since what `main` ships of it is out of date.
+`claude/stone-age-deck-overhaul-ibtaij`, since what `main` shipped of it at the time was out of date. (That
+branch has since merged to `main`, in pull request #74.)
 
 ## How it was looked at
 

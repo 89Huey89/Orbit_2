@@ -961,7 +961,9 @@ function drawConstellationFigure(chart){
   const bucket=Math.round(scale*20),key=chart.id+':'+plateName+':'+activeCosmetic('figures')+':'+frame.side+':'+bucket;
   let layer=figureLayers.get(key);
   if(!layer||layer.count!==count||layer.completed!==chart.completed||layer.expired!==chart.expired){
-    if(figureLayers.size>10)figureLayers.clear();
+    // The oldest layer goes, not the whole cache: a resize or a plate change with three figures on the
+    // sheet would otherwise wipe and re-bake every one of them in turn.
+    figureLayers.delete(key);if(figureLayers.size>10)figureLayers.delete(figureLayers.keys().next().value);
     layer=buildFigureLayer(chart,frame,count,scale);figureLayers.set(key,layer);
   }
   const x=sx(frame.originX),y=sy(frame.originY);

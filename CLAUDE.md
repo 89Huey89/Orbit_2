@@ -61,9 +61,9 @@ see README.md's "The eras".
   `subset-font`). The charset is read off `src/` rather than kept as a list, so
   run this after adding a character the atlas had not set before.
 
-Those two are the only commands needing a dependency. `assets/fonts.source.css`
-holds the full faces, is the input to both, and is never served; the build ships
-only the cut `assets/fonts.css`.
+Beside the build's own esbuild, those two are the only commands needing a
+dependency. `assets/fonts.source.css` holds the full faces, is the input to both,
+and is never served; the build ships only the cut `assets/fonts.css`.
 
 Run `npm test` (the full suite, not `test:quick`) before `npm run build` — CI (`.github/workflows/deploy-pages.yml`)
 does the same before deploying `dist/` to GitHub Pages on every push to `main`.
