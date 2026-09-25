@@ -952,23 +952,40 @@ function lensHazardReveal(h,draw,t){
 // on the plate a star trail, a streak of silver that is densest where the tube was last; off the sensor a
 // telemetry track of sampled points. The course already flown dries to a construction line; the guide ahead
 // is pricked in dots at the eyepiece, grease-pencil dashes on the plate, and reticle ticks off the sensor.
+// Every sample is drawn in the register of the ground it lies on, not the one the traveller has reached: a line
+// already on the sheet is never restyled because the row counter moved on, and while a register grows out
+// from its body the line changes medium exactly where the ground under it does.
 function lensTrail(){
-  const tr=world.trail;if(tr.length<2)return;const P=ink.lens,reg=lensRegNow();
-  const pts=[];for(const s of tr){const life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life>0)pts.push([sx(s.x),sy(s.y),life]);}
-  const p=world.player;if(world.state!=='dead')pts.push([sx(p.x),sy(p.y),1]);if(pts.length<2)return;
-  ctx.save();ctx.lineCap='round';
-  if(reg===2){for(let i=0;i<pts.length;i+=2){const f=pts[i][2];ctx.fillStyle=`rgba(${P.cyan},${(.15+f*.75).toFixed(3)})`;ctx.fillRect(pts[i][0]-.9*scale,pts[i][1]-.9*scale,1.8*scale,1.8*scale);}}
-  else{const col=reg===0?P.ink:P.silver;for(let i=1;i<pts.length;i++){const f=pts[i][2];ctx.strokeStyle=`rgba(${col},${(.12+f*(reg===1?.7:.78)).toFixed(3)})`;ctx.lineWidth=(reg===1?1.1+f*1.8:.7+f*1.2)*scale;ctx.beginPath();ctx.moveTo(pts[i-1][0],pts[i-1][1]);ctx.lineTo(pts[i][0],pts[i][1]);ctx.stroke();}
-    if(reg===1){ctx.strokeStyle=`rgba(${P.silverMid},.25)`;ctx.lineWidth=5*scale;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke();}}
+  const tr=world.trail;if(tr.length<2)return;const P=ink.lens;
+  const pts=[];for(const s of tr){const life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life>0)pts.push([sx(s.x),sy(s.y),life,lensRegAt(s.x,s.y),s.n||0]);}
+  const p=world.player;if(world.state!=='dead')pts.push([sx(p.x),sy(p.y),1,lensRegAt(p.x,p.y),-1]);if(pts.length<2)return;
+  // Butt caps, not round ones: every piece is stroked on its own to fade along the line, and round caps
+  // would paint each joint twice and bead the line at every sample (see drawTrail in effects.js).
+  ctx.save();ctx.lineCap='butt';ctx.lineJoin='round';
+  // The plate's silver spreads a little into the emulsion round the streak: one soft stroke under the
+  // plate's stretch of the line, laid as a single path so it has no joints to bead.
+  ctx.strokeStyle=`rgba(${P.silverMid},.2)`;ctx.lineWidth=3.6*scale;ctx.lineCap='round';let open=false;
+  ctx.beginPath();for(let i=1;i<pts.length;i++){if(pts[i][3]!==1){open=false;continue;}if(!open){ctx.moveTo(pts[i-1][0],pts[i-1][1]);open=true;}ctx.lineTo(pts[i][0],pts[i][1]);}ctx.stroke();ctx.lineCap='butt';
+  for(let i=1;i<pts.length;i++){const q=pts[i],reg=q[3],f=q[2];if(reg===2)continue;
+    ctx.strokeStyle=reg===0?`rgba(${P.ink},${(.1+f*.75).toFixed(3)})`:`rgba(${P.silver},${(.1+f*.62).toFixed(3)})`;
+    ctx.lineWidth=(reg===0?.6+f*1.1:.8+f*1.3)*scale;ctx.beginPath();ctx.moveTo(pts[i-1][0],pts[i-1][1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}
+  // Off the sensor, every other sample by its own count, so the same points stay lit frame after frame.
+  const d=.8*scale;for(const q of pts){if(q[3]!==2||q[4]<0||q[4]%2)continue;ctx.fillStyle=`rgba(${P.cyan},${(.15+q[2]*.75).toFixed(3)})`;ctx.fillRect(q[0]-d,q[1]-d,d*2,d*2);}
   ctx.restore();
 }
+// The course flown is laid in runs, one per register it crosses, each dashed from the point's own distance
+// along the route so the dashes stay where they were printed as the oldest points are pruned below the sheet.
 function lensInkPath(){
-  const Q=world.inkPath;if(Q.length<2)return;const P=ink.lens,reg=lensRegNow();
-  ctx.save();ctx.lineCap='butt';ctx.strokeStyle=reg===0?`rgba(${P.wash},.6)`:reg===1?`rgba(${P.silverMid},.6)`:`rgba(${P.instrSoft},.5)`;ctx.lineWidth=Math.max(.7,.9*scale);ctx.setLineDash(reg===2?[1.5*scale,4*scale]:[5*scale,3.5*scale]);
-  ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));for(let i=1;i<Q.length;i++)ctx.lineTo(sx(Q[i].x),sy(Q[i].y));ctx.stroke();ctx.restore();
+  const Q=world.inkPath;if(Q.length<2)return;const P=ink.lens;
+  const pen=[[`rgba(${P.wash},.6)`,[5,3.5]],[`rgba(${P.silverMid},.6)`,[5,3.5]],[`rgba(${P.instrSoft},.5)`,[1.5,4]]];
+  ctx.save();ctx.lineCap='butt';ctx.lineJoin='round';ctx.lineWidth=Math.max(.7,.9*scale);
+  for(let i=0;i<Q.length-1;){const reg=lensRegAt(Q[i+1].x,Q[i+1].y);let j=i+1;while(j<Q.length-1&&lensRegAt(Q[j+1].x,Q[j+1].y)===reg)j++;
+    ctx.strokeStyle=pen[reg][0];ctx.setLineDash(pen[reg][1].map(v=>v*scale));ctx.lineDashOffset=(Q[i].d||0)*scale;
+    ctx.beginPath();ctx.moveTo(sx(Q[i].x),sy(Q[i].y));for(let k=i+1;k<=j;k++)ctx.lineTo(sx(Q[k].x),sy(Q[k].y));ctx.stroke();i=j;}
+  ctx.restore();
 }
 function lensAim(aim,preview){
-  const P=ink.lens,reg=lensRegNow(),points=preview.points,warn=preview.blocked||aim?.steep,end=points[points.length-1];
+  const P=ink.lens,reg=lensRegAt(world.player.x,world.player.y),points=preview.points,warn=preview.blocked||aim?.steep,end=points[points.length-1];
   const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   const Q=points.map(q=>[sx(q.x),sy(q.y)]),lens=[0];for(let i=1;i<Q.length;i++)lens.push(lens[i-1]+Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
   const at=d=>{let i=1;while(i<Q.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return[Q[i-1][0]+(Q[i][0]-Q[i-1][0])*t,Q[i-1][1]+(Q[i][1]-Q[i-1][1])*t,Math.atan2(Q[i][1]-Q[i-1][1],Q[i][0]-Q[i-1][0])];};
