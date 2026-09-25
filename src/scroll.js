@@ -62,12 +62,6 @@ const SCROLL_MANSIONS=[['角',12],['亢',9],['氐',15],['房',5],['心',5],['尾
 const SCROLL_DU=14;// world units to one dù of the climb.
 
 // ---------- Small tools ----------
-function scrollHash(a,b=0,c=0){let h=Math.imul((a|0)^0x9E3779B1,0x85EBCA77)^Math.imul((b|0)+0x27d4eb2f,0xC2B2AE3D)^Math.imul((c|0)+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
-// Value noise that repeats every `period` lattice cells down the sheet, so the paper can be baked once as
-// a tile and laid end to end with no seam.
-function scrollNoise(x,y,seed,period){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=q=>((q%period)+period)%period;
-  const h=(i,j)=>scrollHash(i,w(j),seed);return lerp(lerp(h(xi,yi),h(xi+1,yi),u),lerp(h(xi,yi+1),h(xi+1,yi+1),u),v)*2-1;}
-function scrollFbm(x,y,cell,oct,seed,tileH){let a=0,m=.5,c=cell;for(let i=0;i<oct;i++){a+=scrollNoise(x/c,y/c,seed+i*17,Math.round(tileH/c))*m;m*=.5;c/=2;}return a;}
 function scrollNum(n){const d='零一二三四五六七八九',u=['','十','百','千'],s=String(Math.max(0,n|0));let o='',z=false;
   for(let i=0;i<s.length;i++){const c=+s[i],p=s.length-1-i;if(p>3){o+=d[c];continue;}if(c===0){z=true;continue;}if(z&&o)o+='零';z=false;o+=(c===1&&p===1&&i===0?'':d[c])+u[p];}return o||'零';}
 // One stroke of a loaded brush, as a filled ribbon: pressed in fat where it lands, lifted thin, and —
@@ -101,8 +95,8 @@ function scrollLoop(pts,pad,seed,n=56){
 }
 // The dot stroke (點): the brush comes in from the upper left, presses and turns, so a star is a disc with
 // a short tapered entry on one side — a mark with a direction, not a stamped circle.
-function scrollDotPath(g,x,y,r,seed){const ea=-Math.PI*.78+(scrollHash(seed,1)-.5)*.3;g.beginPath();
-  for(let i=0;i<=22;i++){const a=ea+i/22*TAU,rr=r*(1+(scrollHash(seed,i+3)-.5)*.1),tip=Math.max(0,Math.cos(a-ea));g.lineTo(x+Math.cos(a)*(rr+r*.28*tip**8),y+Math.sin(a)*(rr+r*.28*tip**8));}g.closePath();}
+function scrollDotPath(g,x,y,r,seed){const ea=-Math.PI*.78+(tileHash(seed,1)-.5)*.3;g.beginPath();
+  for(let i=0;i<=22;i++){const a=ea+i/22*TAU,rr=r*(1+(tileHash(seed,i+3)-.5)*.1),tip=Math.max(0,Math.cos(a-ea));g.lineTo(x+Math.cos(a)*(rr+r*.28*tip**8),y+Math.sin(a)*(rr+r*.28*tip**8));}g.closePath();}
 // A star as the chart draws it. `school` −1 is a point not yet catalogued — a hollow ring of ink, the
 // same for every unfiled light, which is exactly what a guest star's first entry says about it.
 function scrollStar(g,x,y,r,school,seed,alpha=1,fill=1){
@@ -115,7 +109,7 @@ function scrollStar(g,x,y,r,school,seed,alpha=1,fill=1){
     else if(school===1){const gr=g.createRadialGradient(x-r*.25,y-r*.3,0,x,y,r*1.05);gr.addColorStop(0,`rgb(${P.cinLight})`);gr.addColorStop(.65,`rgb(${P.cin})`);gr.addColorStop(1,`rgb(${P.cinDeep})`);
       g.fillStyle='rgba(120,40,24,.18)';g.beginPath();g.arc(x+.35,y+.45,r*1.1,0,TAU);g.fill();g.fillStyle=gr;scrollDotPath(g,x,y,r,seed);g.fill();
       g.strokeStyle='rgba(100,20,16,.55)';g.lineWidth=.4;g.stroke();
-      for(let i=0;i<Math.max(2,r*2);i++){const a=scrollHash(seed,i,7)*TAU,d=scrollHash(seed,i,8)*r*.7;g.fillStyle=scrollHash(seed,i,9)<.6?'rgba(246,150,120,.75)':'rgba(96,16,12,.6)';g.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,.45,.45);}}
+      for(let i=0;i<Math.max(2,r*2);i++){const a=tileHash(seed,i,7)*TAU,d=tileHash(seed,i,8)*r*.7;g.fillStyle=tileHash(seed,i,9)<.6?'rgba(246,150,120,.75)':'rgba(96,16,12,.6)';g.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,.45,.45);}}
     else{g.fillStyle='rgba(90,66,34,.28)';g.beginPath();g.arc(x+.45,y+.55,r,0,TAU);g.fill();
       const gr=g.createRadialGradient(x-r*.3,y-r*.3,0,x,y,r);gr.addColorStop(0,'#F6F0DE');gr.addColorStop(1,'#DCD2B6');g.fillStyle=gr;scrollDotPath(g,x,y,r,seed);g.fill();
       g.strokeStyle=`rgb(${P.soot})`;g.lineWidth=.6;g.globalAlpha=alpha*fill*.85;g.stroke();}}
@@ -136,11 +130,11 @@ function scrollColumn(g,str,x,y,size,rgb,alpha,reveal=1,variant='kai'){
 // stands in, reversed out — a compromise the era file names.
 function scrollSeal(g,x,y,size,chars,seed,alpha=1,rot=-.03,hw=1){
   const P=ink.scroll;g.save();g.translate(x,y);g.rotate(rot);g.globalAlpha=alpha;
-  const h=size/2,hx=h*hw,j=k=>(scrollHash(seed,k,3)-.5)*size*.035;g.beginPath();g.moveTo(-hx+j(1),-h+j(2));g.lineTo(hx+j(3),-h+j(4));g.lineTo(hx+j(5),h+j(6));g.lineTo(-hx+j(7),h+j(8));g.closePath();
+  const h=size/2,hx=h*hw,j=k=>(tileHash(seed,k,3)-.5)*size*.035;g.beginPath();g.moveTo(-hx+j(1),-h+j(2));g.lineTo(hx+j(3),-h+j(4));g.lineTo(hx+j(5),h+j(6));g.lineTo(-hx+j(7),h+j(8));g.closePath();
   const gr=g.createRadialGradient(0,0,size*.1,0,0,size*.75);gr.addColorStop(0,'#BE3A30');gr.addColorStop(1,'#96231e');g.fillStyle=gr;g.fill();
   const cs=[...chars],n=cs.length===4?2:1,cell=size/n*.86;g.fillStyle='rgb(226,210,170)';g.font=plateFace(cell*.94,'kaiM');g.textAlign='center';g.textBaseline='middle';
   cs.forEach((c,i)=>{const col=n===1?0:(i<2?1:0),row=n===1?0:i%2;g.fillText(c,(col-(n-1)/2)*cell*1.08*hw,(row-(n-1)/2)*cell*1.08+cell*.04);});
-  g.fillStyle=`rgb(${P.paper})`;const k=Math.round(size*size*hw*.1);for(let i=0;i<k;i++){g.globalAlpha=alpha*(.3+scrollHash(seed,i,5)*.6);g.fillRect((scrollHash(seed,i,6)-.5)*size*hw,(scrollHash(seed,i,7)-.5)*size,.4+scrollHash(seed,i,8)*.8,.4+scrollHash(seed,i,9)*.6);}
+  g.fillStyle=`rgb(${P.paper})`;const k=Math.round(size*size*hw*.1);for(let i=0;i<k;i++){g.globalAlpha=alpha*(.3+tileHash(seed,i,5)*.6);g.fillRect((tileHash(seed,i,6)-.5)*size*hw,(tileHash(seed,i,7)-.5)*size,.4+tileHash(seed,i,8)*.8,.4+tileHash(seed,i,9)*.6);}
   g.globalAlpha=alpha*.6;g.strokeStyle='rgba(110,22,18,.8)';g.lineWidth=.6;g.strokeRect(-hx,-h,size*hw,size);g.restore();
 }
 
@@ -162,13 +156,13 @@ function scrollBakeTile(){
   const q=4,lw=Math.ceil(pw/q),lh=Math.ceil(ph/q),lo=makeCanvas(lw,lh),lg=lo.getContext('2d'),im=lg.createImageData?lg.createImageData(lw,lh):null,d=im&&im.data,base=P.paper.split(',').map(Number);
   if(d){for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){
     const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4;
-    const m=scrollFbm(X,Y,180,4,11,TH),cl=scrollFbm(X,Y,22.5,3,29,TH),ck=Math.sin(Y/TH*TAU*4+scrollFbm(X,Y,225,2,5,TH)*2.4);
+    const m=tileFbm(X,Y,180,4,11,TH),cl=tileFbm(X,Y,22.5,3,29,TH),ck=Math.sin(Y/TH*TAU*4+tileFbm(X,Y,225,2,5,TH)*2.4);
     const ed=Math.min(X,W-X),br=clamp(1-ed/26,0,1),l=1+m*.075+cl*.04+ck*.016;
     d[i]=base[0]*l*(1-br*.1);d[i+1]=base[1]*l*(1-br*.17);d[i+2]=base[2]*l*(1-br*.3);d[i+3]=255;}
   lg.putImageData(im,0,0);g.imageSmoothingQuality='high';g.drawImage(lo,0,0,pw,ph);}
   const fi=d&&g.getImageData?g.getImageData(0,0,pw,ph):null,fd=fi&&fi.data,chainStep=36*DPR,laidStep=2.3*DPR;
   if(fd){for(let y=0;y<ph;y++){const chain=Math.abs((y%chainStep)-chainStep/2)<.55*DPR?-.022:0;
-    for(let x=0;x<pw;x++){const f=1+Math.sin(x/laidStep*Math.PI)*.012+chain+(scrollHash(x,y,3)-.5)*.05,i=(y*pw+x)*4;fd[i]*=f;fd[i+1]*=f;fd[i+2]*=f;}}
+    for(let x=0;x<pw;x++){const f=1+Math.sin(x/laidStep*Math.PI)*.012+chain+(tileHash(x,y,3)-.5)*.05,i=(y*pw+x)*4;fd[i]*=f;fd[i+1]*=f;fd[i+2]*=f;}}
   g.putImageData(fi,0,0);}g.scale(DPR,DPR);
   const rnd=seeded(7),wrap=(fn)=>{for(const o of[-TH,0,TH]){g.save();g.translate(0,o);fn();g.restore();}};
   // The verso, set on its own layer and blurred once — a filter per character would be a full blur pass each.
@@ -244,7 +238,7 @@ function scrollTitleSprite(R){
     {school:-1,pts:[[-6,-100],[-18,-92],[6,-92],[-26,-82],[14,-82],[-4,-118]],links:[[5,0],[0,1],[0,2],[1,3],[2,4]]},
     {school:2,pts:[[-104,40],[-96,58],[-84,72],[-110,20]],links:[[3,0],[0,1],[1,2]]}];
   let s=20;
-  for(let i=0;i<40;i++){const a=scrollHash(i,1,41)*TAU,r=(28+Math.sqrt(scrollHash(i,2,41))*(146-44))*k;scrollStar(g,Math.cos(a)*r,Math.sin(a)*r,1.1,-1,s++,.8);}
+  for(let i=0;i<40;i++){const a=tileHash(i,1,41)*TAU,r=(28+Math.sqrt(tileHash(i,2,41))*(146-44))*k;scrollStar(g,Math.cos(a)*r,Math.sin(a)*r,1.1,-1,s++,.8);}
   for(const o of groups){const pts=o.pts.map(p=>[p[0]*k,p[1]*k]);
     for(const[a,b]of o.links)scrollBrush(g,scrollLine(pts[a],pts[b]),.6,o.school<0?P.soot2:P.soot,.85,{seed:s++});
     for(const p of pts)scrollStar(g,p[0],p[1],o.school<0?1.5:2.1,o.school,s++);
@@ -314,7 +308,7 @@ function scrollReleaseMarks(n,p,x,y){
 // round it by its magnitude, seeded so the same office sits the same way every frame.
 function scrollMembers(n,x,y,tier){
   const count=tier==='major'?3:tier==='bright'?2:1,R=n.r*scale,out=[{x,y,r:(tier==='major'?3.6:tier==='bright'?3:2.3)*scale}];
-  for(let i=0;i<count;i++){const a=scrollHash(n.seed,i,1)*TAU,d=R*(.55+scrollHash(n.seed,i,2)*.3);out.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,r:(1.7+scrollHash(n.seed,i,3)*.8)*scale});}
+  for(let i=0;i<count;i++){const a=tileHash(n.seed,i,1)*TAU,d=R*(.55+tileHash(n.seed,i,2)*.3);out.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,r:(1.7+tileHash(n.seed,i,3)*.8)*scale});}
   return out;
 }
 // Which school has already been captioned this run, and by which body: the first body of each colour
@@ -417,7 +411,7 @@ function scrollMars(h,x,y){
   ctx.restore();
 }
 function scrollComet(h,x,y){
-  const P=ink.scroll,core=hazardCore(h)*scale,reach=gravityRadius(h)*scale,t=reducedMotion?0:world.time,base=scrollHash(h.seed,1)*TAU;
+  const P=ink.scroll,core=hazardCore(h)*scale,reach=gravityRadius(h)*scale,t=reducedMotion?0:world.time,base=tileHash(h.seed,1)*TAU;
   ctx.save();
   const wg=ctx.createRadialGradient(x,y,0,x,y,core);wg.addColorStop(0,`rgba(${P.soot},.16)`);wg.addColorStop(1,`rgba(${P.soot},.03)`);ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
   scrollBrush(ctx,scrollArc(x,y,core,base,base+TAU*.97,50),1*scale,P.soot,.85,{press:.5,lift:.5,seed:h.seed});
@@ -433,9 +427,9 @@ function scrollWind(h,x,y){
   const t=reducedMotion?0:world.time,drift=(t*18*scale)%(reach*.5);
   ctx.save();ctx.translate(x,y);ctx.rotate(h.dir||0);
   ctx.beginPath();ctx.arc(0,0,reach,0,TAU);ctx.clip();
-  for(let i=0;i<6;i++){const lane=(scrollHash(h.seed,i,1)-.5)*reach*1.3,x0=-reach+scrollHash(h.seed,i,2)*reach*.6+drift-reach*.25,len=reach*(.9+scrollHash(h.seed,i,3)*.7);
+  for(let i=0;i<6;i++){const lane=(tileHash(h.seed,i,1)-.5)*reach*1.3,x0=-reach+tileHash(h.seed,i,2)*reach*.6+drift-reach*.25,len=reach*(.9+tileHash(h.seed,i,3)*.7);
     const pts=[];for(let k=0;k<=40;k++){const u=k/40;pts.push([x0+len*u,lane+Math.sin(u*3+i)*2.5*scale-u*4*scale]);}
-    scrollBrush(ctx,pts,(3+scrollHash(h.seed,i,4)*3)*scale,P.soot,.42+scrollHash(h.seed,i,5)*.2,{press:.5,lift:.55,dry:true,dryAt:0,seed:h.seed+i});}
+    scrollBrush(ctx,pts,(3+tileHash(h.seed,i,4)*3)*scale,P.soot,.42+tileHash(h.seed,i,5)*.2,{press:.5,lift:.55,dry:true,dryAt:0,seed:h.seed+i});}
   ctx.restore();
   // The rosette the practice read the wind against, the quarter it blows from struck in cinnabar.
   const rx=x-Math.cos(h.dir||0)*reach*.78,ry=y-Math.sin(h.dir||0)*reach*.78,R=9*scale;ctx.save();ctx.strokeStyle=`rgba(${P.soot},.62)`;ctx.lineWidth=.55*scale;
@@ -465,7 +459,7 @@ function scrollHazard(h){
 // edge soft and irregular, fast and then settling.
 function scrollHazardReveal(h,draw,t){
   const x=sx(h.x),y=sy(h.y),R=(gravityRadius(h)+12)*scale*(1-Math.pow(1-t,3)),n=20;
-  ctx.save();ctx.beginPath();for(let i=0;i<=n;i++){const a=i/n*TAU,r=R*(.84+scrollHash(h.seed,i,2)*.22);i?ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r):ctx.moveTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}
+  ctx.save();ctx.beginPath();for(let i=0;i<=n;i++){const a=i/n*TAU,r=R*(.84+tileHash(h.seed,i,2)*.22);i?ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r):ctx.moveTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}
   ctx.closePath();ctx.clip();draw(h);ctx.restore();
 }
 
@@ -499,7 +493,7 @@ function scrollInkPath(){
   for(let i=1;i<Q.length;i++)if(Q[i].cd===undefined)Q[i].cd=Q[i-1].cd+Math.hypot(Q[i].x-Q[i-1].x,Q[i].y-Q[i-1].y);
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=`rgba(${P.dried},.55)`;ctx.lineWidth=Math.max(.9,1.3*scale);
   let on=true;ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));
-  for(let i=1;i<Q.length;i++){const a=Q[i-1],b=Q[i];const next=scrollHash(Math.floor(b.cd/9),world.seed|0,71)>.2;
+  for(let i=1;i<Q.length;i++){const a=Q[i-1],b=Q[i];const next=tileHash(Math.floor(b.cd/9),world.seed|0,71)>.2;
     if(next&&!on)ctx.moveTo(sx(a.x),sy(a.y));if(next)ctx.lineTo(sx(b.x),sy(b.y));on=next;}
   ctx.stroke();ctx.restore();
 }
@@ -566,7 +560,7 @@ function scrollPlayer(){
 // tide-line before the sheet thins to nothing. Below it is the cave the scroll lay sealed in for nine
 // centuries — this is what resumes the moment the seal is broken. The boundary's own position, rate and
 // grace are untouched: read straight off the same world state drawDark reads.
-function scrollTearAt(xw,level){const lv=Math.floor(level/50);return (scrollHash(Math.floor(xw/40),lv,5)-.5)*14*(1-(xw/40%1))+(scrollHash(Math.floor(xw/40)+1,lv,5)-.5)*14*(xw/40%1)+Math.sin(xw*.21+lv)*1.6+Math.sin(xw*.53)*1;}
+function scrollTearAt(xw,level){const lv=Math.floor(level/50);return (tileHash(Math.floor(xw/40),lv,5)-.5)*14*(1-(xw/40%1))+(tileHash(Math.floor(xw/40)+1,lv,5)-.5)*14*(xw/40%1)+Math.sin(xw*.21+lv)*1.6+Math.sin(xw*.53)*1;}
 function scrollDark(dt){
   const P=ink.scroll,fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
@@ -579,14 +573,14 @@ function scrollDark(dt){
   tg.addColorStop(0,`rgba(${P.bloom},0)`);tg.addColorStop(.75,`rgba(${P.bloom},${(.16+near*.14).toFixed(3)})`);tg.addColorStop(1,`rgba(${P.bloom},.42)`);ctx.fillStyle=tg;ctx.fillRect(0,fy-reach,W,reach+10*scale);
   // ink running into the wet margin: soft stains with a browned tide-line, anchored to the world.
   const lv=Math.floor(level/60);
-  for(let i=0;i<9;i++){const xw=(scrollHash(i,lv,11)-.5)*W/scale*1.1,x=W/2+xw*scale,y=fy-(8+scrollHash(i,lv,12)*34)*scale,rx=(14+scrollHash(i,lv,13)*22)*scale,ry=(6+scrollHash(i,lv,14)*8)*scale;
+  for(let i=0;i<9;i++){const xw=(tileHash(i,lv,11)-.5)*W/scale*1.1,x=W/2+xw*scale,y=fy-(8+tileHash(i,lv,12)*34)*scale,rx=(14+tileHash(i,lv,13)*22)*scale,ry=(6+tileHash(i,lv,14)*8)*scale;
     const g=ctx.createRadialGradient(x,y,0,x,y,rx);g.addColorStop(0,`rgba(${P.bloom},.07)`);g.addColorStop(1,`rgba(${P.bloom},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill();
-    ctx.strokeStyle=`rgba(${P.tide},${(.12+near*.06).toFixed(3)})`;ctx.lineWidth=.6;ctx.beginPath();for(let j=0;j<=28;j++){const a=j/28*TAU,k=1+(scrollHash(i*31+j,lv,15)-.5)*.2;j?ctx.lineTo(x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k):ctx.moveTo(x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k);}ctx.stroke();}
+    ctx.strokeStyle=`rgba(${P.tide},${(.12+near*.06).toFixed(3)})`;ctx.lineWidth=.6;ctx.beginPath();for(let j=0;j<=28;j++){const a=j/28*TAU,k=1+(tileHash(i*31+j,lv,15)-.5)*.2;j?ctx.lineTo(x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k):ctx.moveTo(x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k);}ctx.stroke();}
   // the loss itself, and the cave below it.
   ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();ctx.fillStyle=`rgba(${P.cave},.97)`;ctx.fill();
   // the fringe: loose fibres standing out over the dark from the broken edge, and scraps drifting down.
   ctx.lineCap='round';
-  for(let i=0;i<pts.length;i+=1){for(let k=0;k<3;k++){const h=scrollHash(i,k,lv+17);if(h<.25)continue;const a=Math.PI/2+(scrollHash(i,k,lv+18)-.5)*1.6,L=(2+scrollHash(i,k,lv+19)**2*11)*scale,x=pts[i][0]+(scrollHash(i,k,20)-.5)*step,y=pts[i][1]-.5;
+  for(let i=0;i<pts.length;i+=1){for(let k=0;k<3;k++){const h=tileHash(i,k,lv+17);if(h<.25)continue;const a=Math.PI/2+(tileHash(i,k,lv+18)-.5)*1.6,L=(2+tileHash(i,k,lv+19)**2*11)*scale,x=pts[i][0]+(tileHash(i,k,20)-.5)*step,y=pts[i][1]-.5;
     ctx.strokeStyle=`rgba(${205+(h*25|0)},${184+(h*20|0)},${140+(h*20|0)},${(.35+h*.4).toFixed(3)})`;ctx.lineWidth=.3+h*.3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*L,y+Math.sin(a)*L);ctx.stroke();}}
   const time=reducedMotion?0:world.time;
   for(let k=0;k<10;k++){const ph=((k*.618+time*(.15+(k%5)*.04))%1+1)%1,x=((k*.3819+lv*.137)%1)*W,y=fy+(scrollTearAt((x-W*.5)/scale+1000,level)+ph*ph*34+2)*scale,r=(.6+(k%4)*.35)*scale,al=(1-ph)*(.4+near*.2);

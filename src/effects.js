@@ -222,6 +222,13 @@ function sheetNoise(x,y,span){
   const fu=u-i,fv=v-j,su=fu*fu*(3-2*fu),sv=fv*fv*(3-2*fv);
   return lerp(lerp(sheetHash(i,j),sheetHash(i+1,j),su),lerp(sheetHash(i,j+1),sheetHash(i+1,j+1),su),sv);
 }
+// The tiled value noise the era sheets bake their paper from: hashed on an integer lattice, smoothed,
+// and wrapped every `period` cells down the sheet, so a tile lays end to end with no seam. Shared by
+// scroll.js, astrolabe.js and lens.js, whose sheets all want the same paper grain.
+function tileHash(a,b=0,c=0){let h=Math.imul((a|0)^0x9E3779B1,0x85EBCA77)^Math.imul((b|0)+0x27d4eb2f,0xC2B2AE3D)^Math.imul((c|0)+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
+function tileNoise(x,y,seed,period){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=q=>((q%period)+period)%period;
+  const h=(i,j)=>tileHash(i,w(j),seed);return lerp(lerp(h(xi,yi),h(xi+1,yi),u),lerp(h(xi,yi+1),h(xi+1,yi+1),u),v)*2-1;}
+function tileFbm(x,y,cell,oct,seed,tileH){let a=0,m=.5,c=cell;for(let i=0;i<oct;i++){a+=tileNoise(x/c,y/c,seed+i*17,Math.max(1,Math.round(tileH/c)))*m;m*=.5;c/=2;}return a;}
 // How coarse each field is, in world units: the tooth the stroke rides, the wander it takes across the
 // sheet, and the far finer drift of settled mineral inside the line.
 const TOOTH_SPAN=12,WANDER_SPAN=9,GRAIN_SPAN=4.5;

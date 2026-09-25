@@ -99,10 +99,6 @@ const LENS_WORLD={
 };
 
 // ---------- Small tools ----------
-function lensHash(a,b=0,c=0){let h=Math.imul((a|0)^0x9E3779B1,0x85EBCA77)^Math.imul((b|0)+0x27d4eb2f,0xC2B2AE3D)^Math.imul((c|0)+0x165667b1,0x27D4EB2F);h=Math.imul(h^(h>>>15),0x2C1B3C6D);h^=h>>>13;h=Math.imul(h,0x297A2D39);h^=h>>>16;return (h>>>0)/4294967296;}
-function lensNoise(x,y,seed,period){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=q=>((q%period)+period)%period;
-  const h=(i,j)=>lensHash(i,w(j),seed);return lerp(lerp(h(xi,yi),h(xi+1,yi),u),lerp(h(xi,yi+1),h(xi+1,yi+1),u),v)*2-1;}
-function lensFbm(x,y,cell,oct,seed,tileH){let a=0,m=.5,c=cell;for(let i=0;i<oct;i++){a+=lensNoise(x/c,y/c,seed+i*17,Math.max(1,Math.round(tileH/c)))*m;m*=.5;c/=2;}return a;}
 const lensRgb=(a,k=1)=>`rgba(${a[0]|0},${a[1]|0},${a[2]|0},${k})`;
 // Register one sets its words in the Fell types, roman and italic, because a Huygens or a Herschel paper was
 // set in them; `variant` 'sc' is the Fell small capitals.
@@ -114,7 +110,7 @@ function lensFell(g,str,x,y,size,rgb,alpha,align='center',variant='text',style='
 function lensTyped(g,str,x,y,size,rgb,alpha,align='left',shown=Infinity,face='typed'){
   if(alpha<=0||!str)return;g.save();g.font=plateFace(size,face);g.direction='ltr';g.textAlign='left';g.textBaseline='middle';
   const cw=g.measureText('M').width,n=str.length,x0=align==='center'?x-cw*n/2:align==='right'?x-cw*n:x,seed=n*31+str.charCodeAt(0);
-  for(let i=0;i<n&&i<shown;i++){const ch=str[i];if(ch===' ')continue;const h=lensHash(seed,i,7);g.fillStyle=`rgba(${rgb},${(alpha*(.74+.26*h)).toFixed(3)})`;g.fillText(ch,x0+i*cw,y+(lensHash(seed,i,9)-.5)*.6);}
+  for(let i=0;i<n&&i<shown;i++){const ch=str[i];if(ch===' ')continue;const h=tileHash(seed,i,7);g.fillStyle=`rgba(${rgb},${(alpha*(.74+.26*h)).toFixed(3)})`;g.fillText(ch,x0+i*cw,y+(tileHash(seed,i,9)-.5)*.6);}
   g.restore();
 }
 // The plate's printed labels — the réseau's numbers, a field's catalogue entry, the survey's zone — are set
@@ -136,8 +132,8 @@ const lensCard=(key,value)=>(key+'        ').slice(0,8)+'= '+value;
 // A line drawn once, loosely, by a hand holding a loupe: a closed loop that overshoots where it began, the
 // Harvard computers' circle round a star. Seeded so it is the same loop every frame; `k` draws it on.
 function lensLoop(g,x,y,r,seed,k=1,w=1){
-  if(k<=0)return;const n=40,end=Math.floor(n*1.12*k),a0=lensHash(seed,1)*TAU;
-  g.beginPath();for(let i=0;i<=end;i++){const u=i/n,a=a0+u*TAU,rr=r*(1+(lensHash(seed,i%n,3)-.5)*.05+.04*Math.sin(u*TAU*2+seed));const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.94;i?g.lineTo(px,py):g.moveTo(px,py);}
+  if(k<=0)return;const n=40,end=Math.floor(n*1.12*k),a0=tileHash(seed,1)*TAU;
+  g.beginPath();for(let i=0;i<=end;i++){const u=i/n,a=a0+u*TAU,rr=r*(1+(tileHash(seed,i%n,3)-.5)*.05+.04*Math.sin(u*TAU*2+seed));const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.94;i?g.lineTo(px,py):g.moveTo(px,py);}
   g.lineWidth=w;g.lineCap='round';g.lineJoin='round';g.stroke();
 }
 // The engraver's shading of a sphere lit from the upper left: a sepia wash under it, parallel burin lines
@@ -276,7 +272,7 @@ function lensSaturn(g,R,stage,k=1,opts={}){
     g.fillStyle=`rgba(${P.glass},.97)`;g.fillRect(-w/2,-h/2,w,h);g.strokeStyle=`rgba(${P.reseau},.8)`;g.lineWidth=Math.max(.6,R*.02);g.strokeRect(-w/2,-h/2,w,h);
     g.strokeStyle=`rgba(${P.reseau},.35)`;g.lineWidth=Math.max(.35,R*.008);const sp=R*.42;g.beginPath();
     for(let x=-w/2+sp*.5;x<w/2;x+=sp){g.moveTo(x,-h/2);g.lineTo(x,h/2);}for(let y=-h/2+sp*.5;y<h/2;y+=sp){g.moveTo(-w/2,y);g.lineTo(w/2,y);}g.stroke();
-    for(let i=0;i<22;i++){const sx0=(lensHash(i,3,11)-.5)*w*.94,sy0=(lensHash(i,4,11)-.5)*h*.9,sr=R*(.015+lensHash(i,5,11)*.05);g.fillStyle=`rgba(${P.silver},${(.35+lensHash(i,6,11)*.5)*Math.min(1,e*1.6)})`;g.beginPath();g.arc(sx0,sy0,sr,0,TAU);g.fill();}
+    for(let i=0;i<22;i++){const sx0=(tileHash(i,3,11)-.5)*w*.94,sy0=(tileHash(i,4,11)-.5)*h*.9,sr=R*(.015+tileHash(i,5,11)*.05);g.fillStyle=`rgba(${P.silver},${(.35+tileHash(i,6,11)*.5)*Math.min(1,e*1.6)})`;g.beginPath();g.arc(sx0,sy0,sr,0,TAU);g.fill();}
     const dev=stage===3?e:1;
     g.save();g.scale(1.9,1);const kg=g.createRadialGradient(0,0,0,0,0,R*.5);
     kg.addColorStop(0,`rgba(${P.silver},${(.95*Math.min(1,dev*2)).toFixed(3)})`);kg.addColorStop(clamp(.25+dev*.35,0,1),`rgba(${P.silver},${(.75*dev).toFixed(3)})`);kg.addColorStop(1,`rgba(${P.silverMid},0)`);
@@ -349,7 +345,7 @@ function lensWrapDot(g,x,y,TH,draw){draw(x,y);if(y<24)draw(x,y+TH);if(y>TH-24)dr
 // shadowed craters along it, set in the ground where a proof of his plate might have offset onto the next.
 function lensBakeEye(pw,ph){
   const P=ink.lens,TH=LENS_TILE,c=makeCanvas(pw,ph),g=c.getContext('2d'),q=4,lw=Math.ceil(pw/q),lh=Math.ceil(ph/q),lo=makeCanvas(lw,lh),lg=lo.getContext('2d'),im=lg.createImageData?lg.createImageData(lw,lh):null,base=P.paper.split(',').map(Number);
-  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=lensFbm(X,Y,180,4,41,TH),f=lensFbm(X,Y,30,2,43,TH),l=1+m*.06+f*.025;
+  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=tileFbm(X,Y,180,4,41,TH),f=tileFbm(X,Y,30,2,43,TH),l=1+m*.06+f*.025;
     d[i]=base[0]*l;d[i+1]=base[1]*l*(1-Math.max(0,-m)*.03);d[i+2]=base[2]*l*(1-Math.max(0,-m)*.1);d[i+3]=255;}lg.putImageData(im,0,0);g.imageSmoothingQuality='high';g.drawImage(lo,0,0,pw,ph);}
   else{g.fillStyle=`rgb(${P.paper})`;g.fillRect(0,0,pw,ph);}
   g.scale(DPR,DPR);const r=seeded(61);
@@ -374,7 +370,7 @@ function lensBakeEye(pw,ph){
 // own wear — dust that prints clear, a scratch through the gelatin, a few pits.
 function lensBakeGlass(pw,ph){
   const P=ink.lens,TH=LENS_TILE,c=makeCanvas(pw,ph),g=c.getContext('2d'),q=2,lw=Math.ceil(pw/q),lh=Math.ceil(ph/q),lo=makeCanvas(lw,lh),lg=lo.getContext('2d'),im=lg.createImageData?lg.createImageData(lw,lh):null,base=P.glass.split(',').map(Number),cast=P.cast.split(',').map(Number);
-  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=lensFbm(X,Y,260,3,71,TH),b=lensFbm(X,Y,120,2,73,TH),gr=(lensHash(x,y,77)-.5)*.05,l=1+m*.035+gr,t=clamp(.2+b*.5,0,1);
+  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const X=x*q/DPR,Y=y*q/DPR,i=(y*lw+x)*4,m=tileFbm(X,Y,260,3,71,TH),b=tileFbm(X,Y,120,2,73,TH),gr=(tileHash(x,y,77)-.5)*.05,l=1+m*.035+gr,t=clamp(.2+b*.5,0,1);
     for(let k=0;k<3;k++)d[i+k]=lerp(base[k],cast[k],t*.5)*l;d[i+3]=255;}lg.putImageData(im,0,0);g.imageSmoothingQuality='high';g.drawImage(lo,0,0,pw,ph);}
   else{g.fillStyle=`rgb(${P.glass})`;g.fillRect(0,0,pw,ph);}
   g.scale(DPR,DPR);const r=seeded(83);
@@ -395,7 +391,7 @@ function lensBakeGlass(pw,ph){
 // functions, a few hot pixels, and the jagged track a cosmic ray leaves across an exposure.
 function lensBakeSensor(pw,ph){
   const P=ink.lens,TH=LENS_TILE,c=makeCanvas(pw,ph),g=c.getContext('2d'),q=Math.max(2,Math.round(2*DPR)),lw=Math.ceil(pw/q),lh=Math.ceil(ph/q),lo=makeCanvas(lw,lh),lg=lo.getContext('2d'),im=lg.createImageData?lg.createImageData(lw,lh):null,base=P.sensor.split(',').map(Number);
-  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const i=(y*lw+x)*4,n=lensHash(x,y,97),col=lensHash(x,0,98)*3,sky=lensFbm(x*q/DPR,y*q/DPR,220,3,99,TH)*5,v=n*n*9+col+sky;
+  if(im){const d=im.data;for(let y=0;y<lh;y++)for(let x=0;x<lw;x++){const i=(y*lw+x)*4,n=tileHash(x,y,97),col=tileHash(x,0,98)*3,sky=tileFbm(x*q/DPR,y*q/DPR,220,3,99,TH)*5,v=n*n*9+col+sky;
     d[i]=base[0]+v*.8;d[i+1]=base[1]+v*.95;d[i+2]=base[2]+v*1.2;d[i+3]=255;}lg.putImageData(im,0,0);g.imageSmoothingEnabled=false;g.drawImage(lo,0,0,lw*q,lh*q);}
   else{g.fillStyle=`rgb(${P.sensor})`;g.fillRect(0,0,pw,ph);}
   g.imageSmoothingEnabled=true;g.scale(DPR,DPR);const r=seeded(101);
@@ -598,7 +594,7 @@ function lensRing(n,reg,x,y,cap,state,drawn){
     ctx.lineWidth=Math.max(.5,.6*scale);ctx.strokeStyle=`rgba(${P.ink},${(.7*state).toFixed(3)})`;ctx.beginPath();for(let i=0;i<4;i++){const a=i*Math.PI/2;if(a-(-Math.PI/2)>TAU*drawn+1e-3&&drawn<1)continue;ctx.moveTo(x+Math.cos(a)*cap,y+Math.sin(a)*cap);ctx.lineTo(x+Math.cos(a)*(cap+5*scale),y+Math.sin(a)*(cap+5*scale));}ctx.stroke();}
   else if(reg===1){ctx.strokeStyle=`rgba(${P.inkRed},${(.72*state).toFixed(3)})`;ctx.beginPath();
     // a grease pencil wanders a little, but never off the true radius by more than a fraction of a unit
-    const N=64;for(let i=0;i<=N*drawn;i++){const a=a0+i/N*TAU,rr=cap+(lensHash(n.id,i,5)-.5)*.8+.4*Math.sin(i*.7+n.id);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}
+    const N=64;for(let i=0;i<=N*drawn;i++){const a=a0+i/N*TAU,rr=cap+(tileHash(n.id,i,5)-.5)*.8+.4*Math.sin(i*.7+n.id);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}
     ctx.lineWidth=Math.max(.9,1.25*scale);ctx.stroke();}
   else{ctx.strokeStyle=`rgba(${P.cyan},${(.62*state).toFixed(3)})`;ctx.lineWidth=Math.max(.6,.65*scale);ctx.beginPath();ctx.arc(x,y,cap,a0,a1);ctx.stroke();
     ctx.lineCap='butt';ctx.beginPath();for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;ctx.moveTo(x+Math.cos(a)*(cap+2*scale),y+Math.sin(a)*(cap+2*scale));ctx.lineTo(x+Math.cos(a)*(cap+6*scale),y+Math.sin(a)*(cap+6*scale));}ctx.stroke();}
@@ -675,15 +671,15 @@ function lensBodyEye(n,family,x,y,d,al){
   }else{
     lensHatchDisc(ctx,x,y,R,e2,P,1,family==='volcanic'?{angle:.9}:{});
     if(family==='crater'&&e2>0){ctx.strokeStyle=`rgba(${P.ink},${(.75*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.045);
-      for(let i=0;i<6;i++){const a=-1.1+i*.42,d0=R*(.2+lensHash(n.id,i,3)*.55),cr=R*(.08+lensHash(n.id,i,4)*.12);ctx.beginPath();ctx.arc(x+Math.cos(a)*d0*.3+d0*.2,y+Math.sin(a)*d0,cr,Math.PI*.9,Math.PI*1.9);ctx.stroke();}
+      for(let i=0;i<6;i++){const a=-1.1+i*.42,d0=R*(.2+tileHash(n.id,i,3)*.55),cr=R*(.08+tileHash(n.id,i,4)*.12);ctx.beginPath();ctx.arc(x+Math.cos(a)*d0*.3+d0*.2,y+Math.sin(a)*d0,cr,Math.PI*.9,Math.PI*1.9);ctx.stroke();}
       // lit peaks standing out in the dark beyond the terminator, the mountains Galileo measured by their shadows
-      ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+lensHash(n.id,i,6)*.3),y+R*(lensHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
+      ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+tileHash(n.id,i,6)*.3),y+R*(tileHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
     if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();ctx.strokeStyle=`rgba(${P.ink},${(.8*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.8,R*.13);
       for(const b of[-.28,.22]){ctx.beginPath();ctx.ellipse(x,y+b*R,R*1.1,R*.1,0,0,TAU);ctx.stroke();}ctx.restore();
       if(e3>0){ctx.strokeStyle=`rgba(${P.rubric},${(.9*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.07);ctx.beginPath();ctx.ellipse(x+R*.25,y+R*.42,R*.26,R*.13,0,0,TAU);ctx.stroke();}}
     if(family==='dune'&&e2>0){ctx.fillStyle=`rgba(${P.paper},${(.95*e2).toFixed(3)})`;ctx.beginPath();ctx.ellipse(x-R*.05,y-R*.8,R*.38,R*.16,-.1,0,TAU);ctx.fill();ctx.strokeStyle=`rgba(${P.ink},${(.6*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.04);ctx.stroke();
-      ctx.fillStyle=`rgba(${P.ink},${(.4*e3).toFixed(3)})`;for(let i=0;i<14;i++){ctx.beginPath();ctx.arc(x+(lensHash(n.id,i,8)-.6)*R*1.2,y+(lensHash(n.id,i,9)-.3)*R,Math.max(.5,R*.06),0,TAU);ctx.fill();}}
-    if(family==='volcanic'&&e3>0){for(let i=0;i<3;i++){const vx=x+R*(-.35+lensHash(n.id,i,10)*.5),vy=y+R*(-.3+lensHash(n.id,i,11)*.6),gg=ctx.createRadialGradient(vx,vy,0,vx,vy,R*.28);
+      ctx.fillStyle=`rgba(${P.ink},${(.4*e3).toFixed(3)})`;for(let i=0;i<14;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,8)-.6)*R*1.2,y+(tileHash(n.id,i,9)-.3)*R,Math.max(.5,R*.06),0,TAU);ctx.fill();}}
+    if(family==='volcanic'&&e3>0){for(let i=0;i<3;i++){const vx=x+R*(-.35+tileHash(n.id,i,10)*.5),vy=y+R*(-.3+tileHash(n.id,i,11)*.6),gg=ctx.createRadialGradient(vx,vy,0,vx,vy,R*.28);
       gg.addColorStop(0,`rgba(${P.rubric},${(.95*e3).toFixed(3)})`);gg.addColorStop(1,`rgba(${P.rubric},0)`);ctx.fillStyle=gg;ctx.beginPath();ctx.arc(vx,vy,R*.28,0,TAU);ctx.fill();}}
   }
   ctx.restore();
@@ -710,9 +706,9 @@ function lensBodyPlate(n,family,x,y,d,al){
   // Mars on the plate: Lowell's canals ruled straight across it in ink, and then Antoniadi's irregular patches
   // with his correction written beside the first annotation rather than over it
   if(family==='dune'){const ck=clamp(s2*2-.4,0,1);if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
-      for(let i=0;i<6;i++){const a=lensHash(n.id,i,21)*Math.PI,o=(lensHash(n.id,i,22)-.5)*R*.9,c=Math.cos(a),s=Math.sin(a);ctx.moveTo(x-s*o-c*R*.9,y+c*o-s*R*.9);ctx.lineTo(x-s*o+c*R*.9,y+c*o+s*R*.9);}ctx.stroke();
+      for(let i=0;i<6;i++){const a=tileHash(n.id,i,21)*Math.PI,o=(tileHash(n.id,i,22)-.5)*R*.9,c=Math.cos(a),s=Math.sin(a);ctx.moveTo(x-s*o-c*R*.9,y+c*o-s*R*.9);ctx.lineTo(x-s*o+c*R*.9,y+c*o+s*R*.9);}ctx.stroke();
       lensTyped(ctx,'LOWELL 1895',x+R*1.2,y-R*.9,Math.max(8,8.5*scale),P.inkBlack,.8*ck*al,'left');}
-    if(e3>0){ctx.fillStyle=`rgba(${P.silver},${(.55*e3).toFixed(3)})`;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(x+(lensHash(n.id,i,23)-.5)*R*1.1,y+(lensHash(n.id,i,24)-.5)*R*1.1,R*(.14+lensHash(n.id,i,25)*.18),R*(.08+lensHash(n.id,i,26)*.12),lensHash(n.id,i,27)*TAU,0,TAU);ctx.fill();}
+    if(e3>0){ctx.fillStyle=`rgba(${P.silver},${(.55*e3).toFixed(3)})`;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(x+(tileHash(n.id,i,23)-.5)*R*1.1,y+(tileHash(n.id,i,24)-.5)*R*1.1,R*(.14+tileHash(n.id,i,25)*.18),R*(.08+tileHash(n.id,i,26)*.12),tileHash(n.id,i,27)*TAU,0,TAU);ctx.fill();}
       lensTyped(ctx,'NOT CANALS · A. 1909',x+R*1.2,y-R*.9+11*scale,Math.max(8,8.5*scale),P.inkRed,.9*e3*al,'left');}}
   // the hand at the glass back: a loose loop, then a stamped number
   if(e3>0){ctx.strokeStyle=`rgba(${P.inkRed},${(.85*al).toFixed(3)})`;lensLoop(ctx,x,y,R*(shape[0]>1.2?shape[0]*1.05:1.45),n.id|0,e3,Math.max(.8,1.05*scale));
@@ -729,7 +725,7 @@ const lensBodyArts=new Map();
 function lensBodyArt(n,family,R){
   const key=n.id+':'+R.toFixed(1)+':'+DPR;let a=lensBodyArts.get(key);if(a)return a;
   const S=Math.ceil(R*(family==='ringed'?5:2.8)),c=makeCanvas(Math.round(S*DPR),Math.round(S*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);
-  const tilt=-.18+(lensHash(n.id,1,31)-.5)*.3;
+  const tilt=-.18+(tileHash(n.id,1,31)-.5)*.3;
   if(family==='ringed')lensRenderRings(g,S/2,S/2,R,tilt,'back');
   lensRenderSphere(g,S/2,S/2,R,family,(n.seed|0)^0x1990,family==='ringed'?tilt:undefined);
   if(family==='ringed'){g.save();g.beginPath();g.arc(S/2,S/2,R,0,TAU);g.clip();g.translate(S/2,S/2);g.rotate(tilt);g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(0,R*.3,R*1.6,R*.1,0,0,TAU);g.fill();g.restore();lensRenderRings(g,S/2,S/2,R,tilt,'front');}
@@ -759,9 +755,9 @@ function lensChoice(n,x,y){
   const P=ink.lens,R=lensDiscR(n),c=n.difficultyChoice;
   if(c==='relaxed'){lensBodyEye(n,'crater',x,y,1,1);lensFell(ctx,'LUNA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
   else if(c==='classic'){lensBodyEye(n,'ringed',x,y,1,1);lensFell(ctx,'SATURNUS',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
-  else{ctx.save();for(let i=0;i<5;i++){const a=lensHash(n.id,i,41)*TAU,dd=R*.5*lensHash(n.id,i,42),gx=x+Math.cos(a)*dd,gy=y+Math.sin(a)*dd,gr=ctx.createRadialGradient(gx,gy,0,gx,gy,R*1.1);
+  else{ctx.save();for(let i=0;i<5;i++){const a=tileHash(n.id,i,41)*TAU,dd=R*.5*tileHash(n.id,i,42),gx=x+Math.cos(a)*dd,gy=y+Math.sin(a)*dd,gr=ctx.createRadialGradient(gx,gy,0,gx,gy,R*1.1);
       gr.addColorStop(0,`rgba(${P.sepia},.32)`);gr.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(gx,gy,R*1.1,0,TAU);ctx.fill();}
-    ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(lensHash(n.id,i,43)-.5)*R*.7,y+(lensHash(n.id,i,44)-.5)*R*.5,Math.max(.7,.9*scale),0,TAU);ctx.fill();}
+    ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,43)-.5)*R*.7,y+(tileHash(n.id,i,44)-.5)*R*.5,Math.max(.7,.9*scale),0,TAU);ctx.fill();}
     ctx.restore();lensFell(ctx,'NEBULA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
 }
 // The charges, as the things an observatory kept: the objective's dew-cap for the shield; a finder's mirror
@@ -852,9 +848,9 @@ function lensVoid(h,reg,x,y){
     {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Nihil visum',lx,ly,sz,P.ink,.8,al,'text','italic'),'Nihil visum',x,y-core-5*scale,core+8*scale,sz,'text');}}
   else if(reg===1){
     // the lifted silver: clear glass inside a torn edge, the edge itself darker where the gelatin rolled up
-    ctx.beginPath();const N=40;for(let i=0;i<=N;i++){const a=i/N*TAU,rr=core*(1+(lensHash(h.seed,i%N,1)-.5)*.14);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();
+    ctx.beginPath();const N=40;for(let i=0;i<=N;i++){const a=i/N*TAU,rr=core*(1+(tileHash(h.seed,i%N,1)-.5)*.14);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();
     ctx.fillStyle='rgba(252,252,250,.97)';ctx.fill();ctx.strokeStyle=`rgba(${P.silver},.8)`;ctx.lineWidth=1.4*scale;ctx.stroke();ctx.strokeStyle=`rgba(${P.silverMid},.5)`;ctx.lineWidth=3*scale;ctx.stroke();
-    ctx.fillStyle=`rgba(${P.silver},.6)`;for(let i=0;i<14;i++){const a=lensHash(h.seed,i,2)*TAU,d=core*(1.05+lensHash(h.seed,i,3)*.2);ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,(.4+lensHash(h.seed,i,4))*scale,0,TAU);ctx.fill();}
+    ctx.fillStyle=`rgba(${P.silver},.6)`;for(let i=0;i<14;i++){const a=tileHash(h.seed,i,2)*TAU,d=core*(1.05+tileHash(h.seed,i,3)*.2);ctx.beginPath();ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,(.4+tileHash(h.seed,i,4))*scale,0,TAU);ctx.fill();}
     {const sz=Math.max(8,8.5*scale);lensHazardLabel((lx,ly,al)=>lensTyped(ctx,'EMULSION LIFTED',lx,ly,sz,P.inkRed,.85,al),'EMULSION LIFTED',x,y-core-5*scale,core+8*scale,sz,'typed');}}
   else{ctx.fillStyle='rgb(0,0,0)';ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
     const sp=h.seed%7+t*.12,rg=ctx.createConicGradient?ctx.createConicGradient(sp,x,y):null;
@@ -873,14 +869,14 @@ function lensHalation(h,reg,x,y){
   if(reg===0){ctx.lineCap='butt';for(let i=0;i<36;i++){const a=i/36*TAU+h.seed%5,long=i%3===0,r2=long?reach*.95:lerp(core*1.4,reach*.7,.5+.5*Math.sin(i*1.7));ctx.strokeStyle=`rgba(${P.ink},${long?.55:.3})`;ctx.lineWidth=(long?.7:.45)*scale;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*core*1.12,y+Math.sin(a)*core*1.12);ctx.lineTo(x+Math.cos(a)*r2,y+Math.sin(a)*r2);ctx.stroke();}
     for(let i=0;i<3;i++){const f=((t*.3+i/3)%1),r=core+f*(reach-core);ctx.strokeStyle=`rgba(${P.rubric},${((1-f)*.4).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();}
     ctx.fillStyle=`rgba(${P.paper},1)`;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();lensHatchDisc(ctx,x,y,core,1,P,.35,{noCross:true});
-    ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(lensHash(h.seed,i,5)-.5)*core*1.1,y+(lensHash(h.seed,i,6)-.5)*core*.6,Math.max(.8,core*(.05+lensHash(h.seed,i,7)*.06)),0,TAU);ctx.fill();}
+    ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(h.seed,i,5)-.5)*core*1.1,y+(tileHash(h.seed,i,6)-.5)*core*.6,Math.max(.8,core*(.05+tileHash(h.seed,i,7)*.06)),0,TAU);ctx.fill();}
     ctx.strokeStyle=`rgba(${P.ink},.95)`;ctx.lineWidth=1*scale;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.stroke();
     {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Sol · maculae',lx,ly,sz,P.ink,.8,al,'text','italic'),'Sol · maculae',x,y-core-4*scale,core+10*scale,sz,'text');}}
   else if(reg===1){for(let i=4;i>=1;i--){const rr=core+(reach-core)*i/4.4;ctx.strokeStyle=`rgba(${P.silverMid},${(.14+.08*(4-i)).toFixed(3)})`;ctx.lineWidth=(reach-core)/5;ctx.beginPath();ctx.arc(x,y,rr,0,TAU);ctx.stroke();}
     for(let i=0;i<3;i++){const f=((t*.3+i/3)%1),r=core+f*(reach-core);ctx.strokeStyle=`rgba(${P.silver},${((1-f)*.35).toFixed(3)})`;ctx.lineWidth=.7*scale;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();}
     const kg=ctx.createRadialGradient(x,y,0,x,y,core);kg.addColorStop(0,`rgb(${P.silver})`);kg.addColorStop(.85,`rgb(${P.silver})`);kg.addColorStop(1,`rgba(${P.silver},.8)`);ctx.fillStyle=kg;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
     {const sz=Math.max(8,8.5*scale);lensHazardLabel((lx,ly,al)=>lensTyped(ctx,'HALATION',lx,ly,sz,P.inkRed,.85,al),'HALATION',x,y-core-4*scale,core+10*scale,sz,'typed');}}
-  else{for(let i=0;i<9;i++){const a=lensHash(h.seed,i,8)*TAU+Math.sin(t*.2+i)*.03,L=reach*(.7+lensHash(h.seed,i,9)*.3),w=core*(.25+lensHash(h.seed,i,10)*.35);
+  else{for(let i=0;i<9;i++){const a=tileHash(h.seed,i,8)*TAU+Math.sin(t*.2+i)*.03,L=reach*(.7+tileHash(h.seed,i,9)*.3),w=core*(.25+tileHash(h.seed,i,10)*.35);
       const sg=ctx.createLinearGradient(x,y,x+Math.cos(a)*L,y+Math.sin(a)*L);sg.addColorStop(0,'rgba(236,244,255,.5)');sg.addColorStop(1,'rgba(236,244,255,0)');ctx.fillStyle=sg;ctx.beginPath();
       ctx.moveTo(x+Math.cos(a+Math.PI/2)*w,y+Math.sin(a+Math.PI/2)*w);ctx.quadraticCurveTo(x+Math.cos(a)*L*.5,y+Math.sin(a)*L*.5,x+Math.cos(a)*L,y+Math.sin(a)*L);ctx.quadraticCurveTo(x+Math.cos(a)*L*.5,y+Math.sin(a)*L*.5,x+Math.cos(a-Math.PI/2)*w,y+Math.sin(a-Math.PI/2)*w);ctx.closePath();ctx.fill();}
     for(let i=0;i<3;i++){const f=((t*.3+i/3)%1),r=core+f*(reach-core);ctx.strokeStyle=`rgba(${P.cyan},${((1-f)*.3).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();}
@@ -896,7 +892,7 @@ function lensDrift(h,reg,x,y){
   const P=ink.lens,reach=gravityRadius(h)*scale;if(x+reach<0||x-reach>W||y+reach<0||y-reach>H)return;
   const t=reducedMotion?0:world.time,dir=h.dir||0,col=reg===0?P.ink:reg===1?P.silver:P.cyan;
   ctx.save();ctx.translate(x,y);ctx.rotate(dir);ctx.beginPath();ctx.arc(0,0,reach,0,TAU);ctx.clip();ctx.lineCap='round';
-  for(let i=0;i<16;i++){const lane=(lensHash(h.seed,i,1)-.5)*reach*1.8,len=reach*(.18+lensHash(h.seed,i,3)*.2),x0=((t*24*scale+lensHash(h.seed,i,2)*reach*2.6)%(reach*2.6))-reach*1.3;
+  for(let i=0;i<16;i++){const lane=(tileHash(h.seed,i,1)-.5)*reach*1.8,len=reach*(.18+tileHash(h.seed,i,3)*.2),x0=((t*24*scale+tileHash(h.seed,i,2)*reach*2.6)%(reach*2.6))-reach*1.3;
     const tg=ctx.createLinearGradient(x0,0,x0+len,0);tg.addColorStop(0,`rgba(${col},0)`);tg.addColorStop(1,`rgba(${col},${reg===2?.55:.7})`);ctx.strokeStyle=tg;ctx.lineWidth=(reg===1?1.3:.8)*scale;
     ctx.beginPath();if(reg===2){ctx.moveTo(x0,lane);ctx.quadraticCurveTo(x0+len*.5,lane-len*.18,x0+len,lane);}else{ctx.moveTo(x0,lane);ctx.lineTo(x0+len,lane);}ctx.stroke();
     ctx.fillStyle=`rgba(${col},${reg===2?.8:.9})`;ctx.beginPath();ctx.arc(x0+len,lane,(reg===1?1.1:.8)*scale,0,TAU);ctx.fill();}
@@ -920,7 +916,7 @@ function lensDarkNebula(h,reg,x,y){
     lensTyped(ctx,'B '+(33+(h.seed%330|0)),x,y-R*.82-8*scale,Math.max(8,8.5*scale),P.inkBlack,.85,'center');}
   else{const gg=ctx.createRadialGradient(x,y,0,x,y,R*1.15);gg.addColorStop(0,`rgba(${P.sii},.2)`);gg.addColorStop(.45,`rgba(${P.ha},.08)`);gg.addColorStop(.75,`rgba(${P.oiii},.07)`);gg.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gg;ctx.beginPath();ctx.arc(x,y,R*1.15,0,TAU);ctx.fill();
     // one sinuous lane of dust, laid as soft strokes of narrowing width so its edge has no line
-    const a0=lensHash(h.seed,1,12)*Math.PI,c=Math.cos(a0),sn=Math.sin(a0),bend=(lensHash(h.seed,2,12)-.5)*R*.9,drift=Math.sin(t*.05)*R*.02;
+    const a0=tileHash(h.seed,1,12)*Math.PI,c=Math.cos(a0),sn=Math.sin(a0),bend=(tileHash(h.seed,2,12)-.5)*R*.9,drift=Math.sin(t*.05)*R*.02;
     ctx.save();ctx.beginPath();ctx.arc(x,y,R*1.05,0,TAU);ctx.clip();ctx.lineCap='round';
     for(let i=6;i>=1;i--){ctx.strokeStyle=`rgba(2,3,6,${(.16+.1*(6-i)/5).toFixed(3)})`;ctx.lineWidth=R*.1*i;ctx.beginPath();ctx.moveTo(x-c*R*1.1,y-sn*R*1.1);ctx.bezierCurveTo(x-c*R*.4-sn*bend,y-sn*R*.4+c*bend+drift,x+c*R*.4+sn*bend*.6,y+sn*R*.4-c*bend*.6,x+c*R*1.1,y+sn*R*1.1);ctx.stroke();}
     ctx.restore();
@@ -1094,7 +1090,7 @@ function lensPlayer(){
 // emulsion frilling at the edge itself, the gelatin lifting and curling off its support. The shoreline stays
 // the sharpest edge in the field, drawn over the grain rather than folded into it. Its position, rate and
 // grace are untouched: read straight off the state drawDark reads.
-function lensFrontAt(xw,level){const lv=Math.floor(level/60),u=xw/30,i=Math.floor(u),f=u-i;return lerp((lensHash(i,lv,5)-.5)*10,(lensHash(i+1,lv,5)-.5)*10,f*f*(3-2*f))+Math.sin(xw*.21+lv)*1.6;}
+function lensFrontAt(xw,level){const lv=Math.floor(level/60),u=xw/30,i=Math.floor(u),f=u-i;return lerp((tileHash(i,lv,5)-.5)*10,(tileHash(i+1,lv,5)-.5)*10,f*f*(3-2*f))+Math.sin(xw*.21+lv)*1.6;}
 function lensDark(dt){
   const P=ink.lens,fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
   if(fy>H+100)return;
@@ -1115,10 +1111,10 @@ function lensDark(dt){
   ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();
   const mass=ctx.createLinearGradient(0,fy,0,fy+170*scale);mass.addColorStop(0,`rgba(${massTop},.97)`);mass.addColorStop(1,`rgba(${massBot},1)`);ctx.fillStyle=mass;ctx.fill();
   ctx.save();ctx.clip();const lv=Math.floor(level/60);
-  for(let i=0;i<22;i++){const x=lensHash(i,lv,21)*W,y=fy+(10+lensHash(i,lv,22)*150)*scale,r=(5+lensHash(i,lv,23)*18)*scale,g=ctx.createRadialGradient(x,y,0,x,y,r);
+  for(let i=0;i<22;i++){const x=tileHash(i,lv,21)*W,y=fy+(10+tileHash(i,lv,22)*150)*scale,r=(5+tileHash(i,lv,23)*18)*scale,g=ctx.createRadialGradient(x,y,0,x,y,r);
     g.addColorStop(0,`rgba(${reg===2?'90,96,108':'196,190,176'},.28)`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();}
   // wrinkles in the lifted gelatin: short curved crests running along the edge
-  ctx.strokeStyle='rgba(255,255,250,.18)';ctx.lineWidth=.8;for(let i=0;i<30;i++){const x=lensHash(i,lv,24)*W,y=fy+(6+lensHash(i,lv,25)*90)*scale,L=(8+lensHash(i,lv,26)*22)*scale;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+L*.5,y-3*scale,x+L,y+lensHash(i,lv,27)*3*scale);ctx.stroke();}
+  ctx.strokeStyle='rgba(255,255,250,.18)';ctx.lineWidth=.8;for(let i=0;i<30;i++){const x=tileHash(i,lv,24)*W,y=fy+(6+tileHash(i,lv,25)*90)*scale,L=(8+tileHash(i,lv,26)*22)*scale;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+L*.5,y-3*scale,x+L,y+tileHash(i,lv,27)*3*scale);ctx.stroke();}
   ctx.restore();
   // the curled lip: a lit crest on the edge and its shadow under it, and here and there a curl turned back
   ctx.strokeStyle='rgba(255,255,250,.75)';ctx.lineWidth=1.1*scale;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]-1*scale):ctx.moveTo(q[0],q[1]-1*scale));ctx.stroke();
