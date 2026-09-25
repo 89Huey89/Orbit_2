@@ -553,7 +553,7 @@
     .cat-group h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0;padding-bottom:4px;border-bottom:1.4px solid var(--line);font-family:var(--face-sc);font-weight:400;font-size:10.5px;letter-spacing:.2em;color:var(--gold)}
     .cat-group ul{margin:0;padding:0;list-style:none}
     .cat-row{border-bottom:1px solid var(--line)}
-    .cat-item,.cat-granted{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;padding:7px 2px;margin:0;background:none;border:0;border-radius:0;text-align:left;font:inherit;color:var(--copy)}
+    .cat-item{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;padding:7px 2px;margin:0;background:none;border:0;border-radius:0;text-align:left;font:inherit;color:var(--copy)}
     .cat-item{pointer-events:auto;cursor:pointer;transition:color .2s}
     .cat-item:hover,.cat-item:focus-visible{color:var(--ivory)}
     .cat-item:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
@@ -562,7 +562,6 @@
     .cat-name{font-size:14.5px;letter-spacing:.02em}
     .cat-latin{flex:0 0 auto;font-style:italic;font-size:11px;color:var(--muted)}
     .cat-row.locked{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:7px 2px}
-    .cat-blank{flex:0 0 74px;height:1px;background:var(--line)}
     .cat-cond{font-style:italic;font-size:11px;line-height:1.5;text-align:right;color:var(--muted);opacity:.72}
     .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
     .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:var(--face-text);font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
@@ -675,7 +674,6 @@
     .cat-card.locked{display:flex;flex-direction:column;gap:8px;padding:9px;min-height:205px}
     .cat-card.locked .cat-card-copy{flex:1}
     .cat-card.locked .cat-name{color:var(--copy)}
-    .cat-granted{display:block}
     .cat-initials{min-height:44px;margin:14px 0 0;padding:8px 0;font-size:9px}
     .cat-initials input{min-height:40px;width:4.6em}
     #catalogue-close{min-height:44px;margin:9px auto 0;padding:8px 16px}
@@ -1043,6 +1041,7 @@
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="review.js"></script>
+<script src="catalogue.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>
