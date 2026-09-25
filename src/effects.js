@@ -250,11 +250,11 @@ let trailSampledAt=-1;
 // The dry route alone, distance-gated rather than time-gated so it reads the same whatever is
 // sampling it: a live frame here and there, or, replaying a finished run, every physics tick it took.
 function sampleInkPath(){
-  // Each point carries how far along the route it lies, so a painter that dashes or ticks the route can
-  // anchor the pattern to the sheet: counted from the first point still kept, every dash would slide back
+  // Each point carries how far along the route it lies (`cd`), so a painter that dashes or ticks the route
+  // can anchor the pattern to the sheet: counted from the first point still kept, every dash would slide back
   // along the line each time the oldest point is pruned off the bottom of the chart.
   const p=world.player,last=world.inkPath[world.inkPath.length-1],gap=last?Math.hypot(p.x-last.x,p.y-last.y):0;
-  if(!last||gap>.6)world.inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy),d:last?(last.d||0)+gap:0});
+  if(!last||gap>.6)world.inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy),cd:last?(last.cd||0)+gap:0});
   pruneInkPath();
 }
 function recordTrail(){

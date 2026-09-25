@@ -699,7 +699,7 @@ function flyInkPath(){
   ctx.save();ctx.strokeStyle=`rgba(${P.dim},.7)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.setLineDash([1.5*scale,4*scale]);
   // Dashed from the first point's own distance along the route, so pruning the oldest points off the bottom of
   // the chart does not slide every dash along the line.
-  ctx.lineDashOffset=(Q[0].d||0)*scale;
+  ctx.lineDashOffset=(Q[0].cd||0)*scale;
   ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));for(let i=1;i<Q.length;i++)ctx.lineTo(sx(Q[i].x),sy(Q[i].y));ctx.stroke();ctx.restore();
 }
 function flyAim(aim,preview){

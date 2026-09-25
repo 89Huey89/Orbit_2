@@ -980,7 +980,7 @@ function lensInkPath(){
   const pen=[[`rgba(${P.wash},.6)`,[5,3.5]],[`rgba(${P.silverMid},.6)`,[5,3.5]],[`rgba(${P.instrSoft},.5)`,[1.5,4]]];
   ctx.save();ctx.lineCap='butt';ctx.lineJoin='round';ctx.lineWidth=Math.max(.7,.9*scale);
   for(let i=0;i<Q.length-1;){const reg=lensRegAt(Q[i+1].x,Q[i+1].y);let j=i+1;while(j<Q.length-1&&lensRegAt(Q[j+1].x,Q[j+1].y)===reg)j++;
-    ctx.strokeStyle=pen[reg][0];ctx.setLineDash(pen[reg][1].map(v=>v*scale));ctx.lineDashOffset=(Q[i].d||0)*scale;
+    ctx.strokeStyle=pen[reg][0];ctx.setLineDash(pen[reg][1].map(v=>v*scale));ctx.lineDashOffset=(Q[i].cd||0)*scale;
     ctx.beginPath();ctx.moveTo(sx(Q[i].x),sy(Q[i].y));for(let k=i+1;k<=j;k++)ctx.lineTo(sx(Q[k].x),sy(Q[k].y));ctx.stroke();i=j;}
   ctx.restore();
 }
