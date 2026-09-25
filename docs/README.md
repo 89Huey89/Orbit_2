@@ -21,10 +21,11 @@ repeating it.
 
 ## `archive/eras/` — the eight-era progression plan
 
-Nothing here describes shipped behaviour, with six exceptions: Era I (`01-rock.md`), Era II
-(`02-ceiling.md`), Era III (`03-scroll.md`), Era IV (`04-astrolabe.md`), Era VI (`06-lens.md`) and Era VII (`07-flyby.md`) are already
-playable, standalone preview doors reached from the frontispiece (`src/rock.js`, `src/ceiling.js`, `src/scroll.js`,
-`src/astrolabe.js`, `src/lens.js`, `src/flyby.js` — see root `README.md`'s "The eras"). They ship on their own,
+Nothing here describes shipped behaviour, with seven exceptions: Era I (`01-rock.md`), Era II
+(`02-ceiling.md`), Era III (`03-scroll.md`), Era IV (`04-astrolabe.md`), Era VI (`06-lens.md`), Era VII (`07-flyby.md`) and
+Era VIII (`08-probe.md`) are already playable, standalone preview doors reached from the frontispiece (`src/rock.js`,
+`src/ceiling.js`, `src/scroll.js`, `src/astrolabe.js`, `src/lens.js`, `src/flyby.js`, `src/probe.js` — see root
+`README.md`'s "The eras"). They ship on their own,
 outside of any progression system; everything else below is the design still to be built.
 
 ```
@@ -56,7 +57,7 @@ archive/
     ├── 05-engraving.md       V    · c. 1540–1610 — the atlas page
     ├── 06-lens.md            VI   · 1610–1990 — the lens, the plate, the rendered sphere (preview, `src/lens.js`)
     ├── 07-flyby.md           VII  · 1965–present — the mission mosaic (preview, `src/flyby.js`)
-    ├── 08-probe.md           VIII · the far future — the self-replicating probe
+    ├── 08-probe.md           VIII · the far future — the self-replicating probe (preview, `src/probe.js`)
     ├── candidates/           eras argued for and set aside, kept rather than deleted
     ├── research/             the long research file under each era, with sources and doubts
     └── prototypes/           one standalone canvas page per era, its faces, and its screenshots
