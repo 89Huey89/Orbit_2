@@ -21,10 +21,11 @@ export async function loadPlaywright(){
 }
 
 // A sandbox that already ships a Chromium (PLAYWRIGHT_BROWSERS_PATH) needs nothing; anywhere else an
-// explicit binary can be named, and the harness never downloads one of its own.
-export async function launchChromium({executablePath,headed=false}={}){
+// explicit binary can be named, and the harness never downloads one of its own. The timing instrument
+// (scripts/perf.mjs) launches through here too, with its own flags in place of the harness's.
+export async function launchChromium({executablePath,headed=false,args=['--disable-gpu-vsync','--autoplay-policy=no-user-gesture-required']}={}){
   const {chromium}=await loadPlaywright();
-  const opts={headless:!headed,args:['--disable-gpu-vsync','--autoplay-policy=no-user-gesture-required']};
+  const opts={headless:!headed,args};
   const exe=executablePath||process.env.CHROMIUM_PATH;
   if(exe)opts.executablePath=exe;
   return chromium.launch(opts);

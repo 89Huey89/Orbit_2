@@ -22,7 +22,7 @@
 import {pageInit} from '../tools/shots/lib/page-init.mjs';
 import {resolveProfile} from '../tools/shots/lib/fixtures.mjs';
 import {Game} from '../tools/shots/lib/game.mjs';
-import {loadPlaywright} from '../tools/shots/lib/playwright.mjs';
+import {launchChromium} from '../tools/shots/lib/playwright.mjs';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {join,extname,resolve} from 'node:path';
@@ -39,8 +39,7 @@ const server=createServer(async(req,res)=>{
     const file=join(root,p);if(!file.startsWith(root))throw 0;res.writeHead(200,{'content-type':TYPES[extname(p)]||'application/octet-stream'});res.end(await readFile(file));}
   catch(_){res.writeHead(404);res.end();}
 }).listen(0);
-const {chromium}=await loadPlaywright();
-const browser=await chromium.launch({args:['--disable-accelerated-2d-canvas',...(webgl?[]:['--disable-webgl'])]});
+const browser=await launchChromium({args:['--disable-accelerated-2d-canvas',...(webgl?[]:['--disable-webgl'])]});
 const round=v=>+v.toFixed(1);
 
 try{

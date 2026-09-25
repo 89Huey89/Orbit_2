@@ -432,7 +432,7 @@ searches and restore links once confirmed live.
 - "Near-term self-replicating probes – A concept design," *Acta Astronautica*, ScienceDirect.
 - "von Neumann probe," summary of the 1966 *Theory of Self-Reproducing Automata* and the 1980 NASA
   study *Advanced Automation for Space Missions*, daviddarling.info.
-- Repository sources read directly this session: [`README.md`](../../../README.md),
-  [`src/effects.js`](../../../src/effects.js), [`src/marks.js`](../../../src/marks.js),
+- Repository sources read directly this session: [`README.md`](../../../../README.md),
+  [`src/effects.js`](../../../../src/effects.js), [`src/marks.js`](../../../../src/marks.js),
   [`docs/archive/eras/ERA-AUDIT.md`](../ERA-AUDIT.md), [`docs/archive/eras/OVERVIEW.md`](../OVERVIEW.md),
   [`docs/archive/eras/research/globe.md`](globe.md), [`docs/archive/eras/research/rock.md`](rock.md).
