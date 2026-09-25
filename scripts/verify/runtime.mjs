@@ -63,7 +63,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -838,6 +838,49 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.test.lensRead().runs,0,'Corrupt JSON reads as an empty record, not a throw');
       saved.delete(context.test.LENS_KEY);
     }else assert.equal(context.test.lensRead().runs,0,'Blocked storage reads as an empty record');
+    context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
+  }
+  // ---- The Flyby: six encounters to row 36, a picture that comes home in stages, and a mission log of its own (orbit.flyby.v1) ----
+  {
+    const held=context.test.plateName;
+    context.test.setPlate('flyby');
+    assert.equal(context.test.eraId(),7,'The Flyby is era VII on the roster, the next door up from the Lens');
+    const words=context.test.plateWords();
+    assert.equal(words.chapters.length,context.test.FLY_CHAPTERS.length,'Every encounter of the story is named');
+    assert.equal(words.chapterRows*words.chapters.length,words.goalRow,'The finale falls at the end of the last encounter');
+    assert.equal(words.goalRow,36,'Six encounters of six rows');
+    assert.equal(words.chapterLines.length,words.chapters.length,'Every encounter opens with a curator\'s line');
+    assert.equal(words.chartNotes.length,12,'Every target carries a note');assert.equal(words.chartNames.length,12,'Every target is named');
+    for(const key of Object.keys(OBSERVATIONS))assert(words.observations[key],'The Flyby names every observation the simulation can record: '+key);
+    assert.equal(JSON.stringify(words.transitionRows),'[]','The Flyby keeps one ground, vacuum, the whole way');
+    for(const painter of ['atmosphere','node','hazard','player','dark','figure','hudLeaf','chapterReveal','trail','aim','floater','tally','chartRoute','endNumerals','journeyMark'])
+      assert.equal(typeof context.test.handFor(painter),'function','The Flyby names its own: '+painter);
+    // The strip chart's numbers are six-bit values, as Mariner 4's pixels were.
+    for(let c=0;c<12;c++)for(let r=0;r<8;r++){const v=context.test.flyChartValue(c,r);assert(Number.isInteger(v)&&v>=0&&v<=63,'A strip-chart value is six bits: '+v);}
+    // Every stage draws without throwing: the opening choice, a run through every encounter with a body held at
+    // every stage of its picture, the loss of signal close under the craft, and the finale.
+    const heard=context.test.audio.enabled;context.test.audio.enabled=false;
+    context.test.newWorld();context.test.render(1/60);context.test.handleInput();
+    const w=context.test.world;
+    for(const row of [0,7,13,19,25,31]){w.progress=row;for(const d of [0,.1,.3,.6,.85,1])for(const n of w.nodes)if(!n.difficultyChoice){n.documented=d;n.visited=true;}context.test.render(1/60);}
+    w.floorY=w.player.y+20;context.test.render(1/60);
+    Object.assign(w,{state:'dead',won:true});w.player.deadTime=1.9;context.test.render(1/60);
+    // the finale's later lines, painted straight rather than through render(), whose leaf would open here
+    w.player.deadTime=4;context.test.handFor('hudLeaf')();w.player.deadTime=1.9;
+    context.test.audio.enabled=heard;
+    // The mission log: empty when unwritten or corrupt, and a run, a world and a target read back as written.
+    if(!storageBlocked){
+      saved.delete(context.test.FLY_KEY);
+      assert.deepEqual(JSON.parse(JSON.stringify(context.test.flyRead())),{v:1,furthest:0,completed:0,best:0,runs:0,worlds:0,targets:0},'A never-written mission log reads empty');
+      context.test.flyRecordRun({progress:19,score:512,won:false});context.test.flyNoteTarget(15);context.test.flyNoteWorld('volcanic');context.test.flyNoteWorld('nowhere');
+      const r=context.test.flyRead();
+      assert.equal(r.furthest,3,'Row 19 is the fourth encounter');assert.equal(r.best,512);assert.equal(r.runs,1);assert.equal(r.targets,1<<3,'A target index wraps into the twelve');assert.equal(r.worlds,1<<5,'Only a real family is logged');
+      context.test.flyRecordRun({progress:36,score:100,won:true});
+      assert.equal(context.test.flyRead().completed,1);assert.equal(context.test.flyRead().best,512,'A lower downlink never lowers the best');
+      saved.set(context.test.FLY_KEY,'{not json');
+      assert.equal(context.test.flyRead().runs,0,'Corrupt JSON reads as an empty log, not a throw');
+      saved.delete(context.test.FLY_KEY);
+    }else assert.equal(context.test.flyRead().runs,0,'Blocked storage reads as an empty log');
     context.test.setPlate(held);context.test.newWorld();context.test.world.start();context.test.setPlaying();
   }
   // ---- A Rock run end writes exactly one run to its own cave, and never touches the atlas's ledger ----
@@ -1670,7 +1713,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.runMode,'free','The door pressed again on the atlas leaves the Journey');
     // Every century on the ladder draws its own milestones, and draws them at every stage of the climb.
     const mark=element('journey-mark');
-    for(const era of [1,2,3,4,5,6]){
+    for(const era of [1,2,3,4,5,6,7]){
       t.journey.era=era;t.journey.knowledge=0;events['journey-open:click']();
       assert.equal(t.eraId()||5,era,'The door opens on the frontier era: '+era);
       if(era!==5)assert.equal(typeof t.handFor('journeyMark'),'function','Every century paints its own milestones: era '+era);
