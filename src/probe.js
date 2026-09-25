@@ -162,6 +162,14 @@ function prbPlaquePaths(){
   P.push(prbCirclePath(-1.34,py,.07,16));xs.forEach((x,i)=>P.push(prbCirclePath(x,py,rs[i],rs[i]>.03?14:8)));P.push([[-.06-.1,py+.018],[-.06+.1,py-.018]]);
   const cr=[];for(let i=0;i<=16;i++){const t=i/16,a=1-t;cr.push([a*a*-.74+2*a*t*-.36+t*t*.98,a*a*(py-.03)+2*a*t*(py-.34)+t*t*(py-.2)]);}P.push(cr);
   P.push([[.98,py-.2],[1.08,py-.22],[1.0,py-.14]],[[.98,py-.2],[1.0,py-.14]]);
+  // the craft's own outline behind the two figures, drawn to the same scale as them: the dish, its bus and booms
+  P.push(prbCirclePath(1.12,-.3,.3,22),[[1.12,-.3],[1.12,-.02]],[[.98,-.02],[1.26,-.02],[1.26,.08],[.98,.08],[.98,-.02]],[[.98,.03],[.8,.12]],[[1.26,.03],[1.44,.1]]);
+  // the two figures, in outline only, as the plate gives them: one raising a hand in greeting
+  const fig=(x0,h,wave)=>{const k=h/1.0,f=(x,y)=>[x0+x*k,.42-y*k];
+    P.push(prbCirclePath(x0,.42-.9*k,.065*k,12));
+    P.push([f(-.03,.82),f(-.13,.78),f(-.16,.6),f(-.14,.42),f(-.1,.38),f(-.09,.08),f(-.06,0),f(-.02,0),f(-.02,.34),f(.02,.34),f(.02,0),f(.06,0),f(.09,.08),f(.1,.38),f(.14,.42),f(.16,.6),f(.13,.78),f(.03,.82)]);
+    if(wave)P.push([f(.13,.76),f(.26,.86),f(.3,1.0)]);else P.push([f(-.15,.58),f(-.17,.44)],[f(.15,.58),f(.17,.44)]);};
+  fig(1.02,.9,true);fig(1.24,.82,false);
   let total=0;const lens=P.map(p=>{let L=0;for(let i=1;i<p.length;i++)L+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);total+=L;return L;});
   return prbPlaqueCache={paths:P,lens,total};
 }
@@ -274,6 +282,26 @@ function prbBakeLayer(k){
     // the log as a watermark: rows of bytes, eight to a word, in the self-log hand
     g.font=plateFace(7,'mono');g.textBaseline='top';g.fillStyle=`rgba(${P.white},.045)`;const cw=g.measureText('M').width||4.2;
     for(let y=6,row=0;y<TH-10;y+=11,row++){let s='';const words=Math.floor((W-24)/(cw*18));for(let w=0;w<words;w++){for(let b=0;b<8;b++)s+=(Math.floor(r()*256)).toString(16).toUpperCase().padStart(2,'0');s+='  ';}g.fillText(s,18,y);}}
+  if(k===0){
+    // the galaxy's own disc across the tile, as star counts rather than a glow: a band of faint points, densest
+    // on its axis and split by a dust lane where the counts fall away, the way a survey's density map shows it
+    const ang=-.42,ca=Math.cos(ang),sa=Math.sin(ang),cx0=W*.5,cy0=TH*.46;
+    for(let i=0;i<Math.round(W*TH/170);i++){const along=(r()-.5)*(W+TH)*1.3,off=(r()+r()+r()-1.5)*70,x=cx0+along*ca-off*sa,y=cy0+along*sa+off*ca;if(x<0||x>W||y<0||y>=TH)continue;
+      const lane=Math.abs(off+12*Math.sin(along*.013)+tileNoise(along*.02,0,811,4096)*14);if(lane<9&&r()<.85)continue;
+      const a=(.06+.2*r())*(1-Math.min(1,Math.abs(off)/110));g.fillStyle=`rgba(${r()<.3?'255,226,196':'214,222,240'},${a.toFixed(3)})`;g.fillRect(x,y,.8,.8);}
+    // a few galaxies far beyond it, each a small tilted ellipse of light, catalogued in the log's hand
+    for(let i=0;i<4;i++){const x=40+r()*(W-80),y=40+r()*(TH-80),rr=3+r()*6,t=r()*Math.PI,e=.25+r()*.5;g.save();g.translate(x,y);g.rotate(t);g.scale(1,e);
+      const gg=g.createRadialGradient(0,0,0,0,0,rr);gg.addColorStop(0,'rgba(236,230,214,.55)');gg.addColorStop(.3,'rgba(210,214,230,.2)');gg.addColorStop(1,'rgba(210,214,230,0)');g.fillStyle=gg;g.beginPath();g.arc(0,0,rr,0,TAU);g.fill();g.restore();
+      g.font=plateFace(5.5,'mono');g.fillStyle='rgba(232,236,242,.22)';g.fillText('PGC '+(10000+Math.floor(r()*89999)),x+rr+3,y-2);}
+    // the galactic graticule, dotted, every so far across and down, labelled at its edge
+    g.fillStyle='rgba(232,236,242,.07)';for(let gy=0;gy<TH;gy+=150){for(let x=PRB_BAND;x<W-PRB_BAND;x+=6)g.fillRect(x,gy,1,.6);g.font=plateFace(5.5,'mono');g.fillStyle='rgba(232,236,242,.16)';g.fillText('B '+(gy/150*6-24>=0?'+':'')+(gy/150*6-24)+'°',PRB_BAND+4,gy-3);g.fillStyle='rgba(232,236,242,.07)';}
+    for(let gx=PRB_BAND+60;gx<W-PRB_BAND;gx+=Math.max(90,W/4))for(let y=0;y<TH;y+=6)g.fillRect(gx,y,.6,1);}
+  if(k===1){
+    // the brighter stars, each struck with its catalogue tick and, now and then, its number
+    for(let i=0;i<Math.round(W*TH/60000);i++){const x=20+r()*(W-40),y=10+r()*(TH-20),tone=r()<.3?'255,206,170':r()<.5?'196,214,255':'244,244,248',sz=1.6+r()*1.2;
+      const gg=g.createRadialGradient(x,y,0,x,y,sz*2.2);gg.addColorStop(0,`rgba(${tone},.9)`);gg.addColorStop(.4,`rgba(${tone},.25)`);gg.addColorStop(1,`rgba(${tone},0)`);g.fillStyle=gg;g.beginPath();g.arc(x,y,sz*2.2,0,TAU);g.fill();
+      g.strokeStyle='rgba(232,236,242,.28)';g.lineWidth=.5;g.beginPath();g.moveTo(x+sz*2.4,y);g.lineTo(x+sz*4.4,y);g.moveTo(x,y+sz*2.4);g.lineTo(x,y+sz*4.4);g.stroke();
+      if(r()<.5){g.font=plateFace(5.5,'mono');g.fillStyle='rgba(232,236,242,.3)';g.fillText('HIP '+(1000+Math.floor(r()*118000)),x+sz*3,y+sz*4.6);}}}
   const count=[W*TH/1300,W*TH/9000][k];
   for(let i=0;i<Math.round(count);i++){const x=r()*W,y=r()*TH,m=Math.pow(r(),3),s=k?.8+m*1.4:.5+m*.7,a=k?.55+m*.45:.28+m*.4,warm=r();
     g.fillStyle=`rgba(${warm<.12?'255,214,180':warm<.35?'200,216,255':'236,238,244'},${a.toFixed(3)})`;g.fillRect(x-s/2,y-s/2,s,s);if(y<3)g.fillRect(x-s/2,y+TH-s/2,s,s);}
@@ -314,6 +342,10 @@ function prbAtmosphere(){
   prbMargins();prbUpsets();prbTitleMark();
 }
 
+// The probe itself inside a drawing, at any length along its spine and at any heading.
+function prbFrameCraft(g,x,y,len,ang,alpha){
+  if(alpha<=0)return;const sp=prbCraftSprite(),k=len/(sp.size*.52);g.save();g.globalAlpha*=alpha;g.translate(x,y);g.rotate(ang);g.drawImage(sp.canvas,-sp.size*k/2,-sp.size*k/2,sp.size*k,sp.size*k);g.restore();
+}
 // ---------- The six drawings: what each phase is logged as ----------
 // One function draws each phase's drawing, at any size, so the frontispiece, a phase opening, the finale and the
 // Journey's milestones are the same drawing at different stages. `stage` is 1 to 6; `k` 0–1 is how far it has
@@ -322,8 +354,8 @@ function prbFrame(g,R,stage,k=1,opts={}){
   const P=ink.probe,e=clamp(k,0,1),w=R*3.4,h=R*2.4,C=PRB_CHAPTERS[stage-1],hs=Math.max(5.5,R*.1);
   g.save();g.fillStyle=`rgba(${P.vac},${opts.clear?0:.96})`;g.fillRect(-w/2,-h/2,w,h);g.strokeStyle=`rgba(${P.grey},.5)`;g.lineWidth=Math.max(.5,R*.012);g.strokeRect(-w/2,-h/2,w,h);
   g.beginPath();g.rect(-w/2,-h/2,w,h);g.clip();
-  // a few stars, single points, in every drawing but the plaque's own
-  if(stage!==1)for(let i=0;i<14;i++){g.fillStyle=`rgba(${P.white},${(.25+tileHash(i,stage,251)*.5).toFixed(3)})`;g.fillRect(-w/2+tileHash(i,1,252)*w,-h/2+tileHash(i,2,252)*h,1,1);}
+  // stars in every drawing but the plaque's own: many faint points, a few brighter
+  if(stage!==1)for(let i=0;i<46;i++){const br=tileHash(i,stage,253)<.12,sz=br?1.6:.9;g.fillStyle=`rgba(${tileHash(i,3,252)<.3?'255,214,190':P.white},${(br?.85:.2+tileHash(i,stage,251)*.45).toFixed(3)})`;g.fillRect(-w/2+tileHash(i,1,252)*w,-h/2+tileHash(i,2,252)*h,sz,sz);}
   const ix=-w/2+R*.12,iy=-h/2+R*.3,iw=w-R*.24,ih=h-R*.46,cy=iy+ih/2;
   g.lineCap='round';g.lineJoin='round';
   if(stage===1){
@@ -331,48 +363,89 @@ function prbFrame(g,R,stage,k=1,opts={}){
     prbPlaque(g,0,cy+R*.02,Math.min(iw*.46,ih*.72),e);
     if(!opts.bare)prbMono(g,'INHERITED · NOT EDITED',0,h/2-R*.1,hs*.9,P.gold,.85*clamp(e*3-2,0,1),'center');
   }else if(stage===2){
-    // Cruise: the sail unfolding from the hull, a bright point at its centre, pushed from behind by the beam
-    const u=prbEase(clamp(e/.7,0,1)),s=Math.min(iw,ih)*.46*(.12+.88*u),c0=cy-R*.04;
-    g.strokeStyle=`rgba(${P.sail},.18)`;g.lineWidth=Math.max(.5,R*.01);g.beginPath();for(let i=-3;i<=3;i++){g.moveTo(i*R*.07,h/2);g.lineTo(i*R*.012,c0+s*.2);}g.stroke();
+    // Cruise: the Sun already a bright star astern, the beam from home running up to the sail, and the sail
+    // unfolding round the hull; the stars ahead crowd toward the bow, streaked by the aberration of 0.12 c
+    const u=prbEase(clamp(e/.7,0,1)),s=Math.min(iw,ih)*.4*(.12+.88*u),c0=cy-R*.1,sunY=h/2-R*.2;
+    g.strokeStyle=`rgba(${P.white},.35)`;g.lineWidth=Math.max(.4,R*.008);g.beginPath();for(let i=0;i<22;i++){const a=tileHash(i,7,254)*TAU,d0=R*(.5+tileHash(i,8,254)*1.2),L=R*(.04+.1*tileHash(i,9,254))*u,x=Math.cos(a)*d0,y=c0-R*.6+Math.sin(a)*d0*.7;g.moveTo(x,y);g.lineTo(x+Math.cos(a)*L,y+Math.sin(a)*L*.7);}g.stroke();
+    const sg0=g.createRadialGradient(0,sunY,0,0,sunY,R*.35);sg0.addColorStop(0,'rgba(255,248,228,.95)');sg0.addColorStop(.12,'rgba(255,230,180,.5)');sg0.addColorStop(1,'rgba(255,230,180,0)');g.fillStyle=sg0;g.beginPath();g.arc(0,sunY,R*.35,0,TAU);g.fill();
+    const bm=g.createLinearGradient(0,sunY,0,c0);bm.addColorStop(0,`rgba(${P.sail},.05)`);bm.addColorStop(1,`rgba(${P.sail},.3)`);g.fillStyle=bm;g.beginPath();g.moveTo(-R*.02,sunY);g.lineTo(-s*.5,c0+s*.3);g.lineTo(s*.5,c0+s*.3);g.lineTo(R*.02,sunY);g.closePath();g.fill();
+    g.strokeStyle=`rgba(${P.sail},.2)`;g.lineWidth=Math.max(.3,R*.006);g.beginPath();for(let i=-4;i<=4;i++){g.moveTo(i*R*.004,sunY);g.lineTo(i*s*.11,c0+s*.3);}g.stroke();
+    for(let i=0;i<5;i++){const t=((e*3+i/5)%1),yy=lerp(sunY,c0+s*.3,t);g.fillStyle=`rgba(${P.sail},${(.5*(1-t)).toFixed(3)})`;g.fillRect(-s*.5*t-R*.02,yy,(s*t+R*.04),Math.max(.6,R*.01));}
     g.save();g.translate(0,c0);g.rotate(Math.PI/4*(1-u));
-    const sg=g.createLinearGradient(-s,-s,s,s);sg.addColorStop(0,`rgba(${P.sail},.5)`);sg.addColorStop(.5,`rgba(${P.sail},.16)`);sg.addColorStop(1,`rgba(${P.sail},.42)`);
-    g.fillStyle=sg;g.beginPath();g.moveTo(0,-s);g.lineTo(s,0);g.lineTo(0,s);g.lineTo(-s,0);g.closePath();g.fill();g.strokeStyle=`rgba(${P.sail},.85)`;g.lineWidth=Math.max(.5,R*.014);g.stroke();
-    g.strokeStyle=`rgba(${P.sail},.35)`;g.lineWidth=Math.max(.4,R*.008);g.beginPath();g.moveTo(-s,0);g.lineTo(s,0);g.moveTo(0,-s);g.lineTo(0,s);g.stroke();g.restore();
-    const hg=g.createRadialGradient(0,c0,0,0,c0,R*.12);hg.addColorStop(0,`rgba(${P.core},1)`);hg.addColorStop(1,`rgba(${P.core},0)`);g.fillStyle=hg;g.beginPath();g.arc(0,c0,R*.12,0,TAU);g.fill();
-    const m=clamp((e-.6)/.3,0,1);prbMono(g,'SAIL 4.1 M · 0.12 C',ix+R*.02,iy+ih-R*.08,hs,P.white,.9*m,'left',Math.floor(m*20));prbMono(g,'BEAM',0,h/2-R*.1,hs*.9,P.grey,.8*m,'center');
+    const sg=g.createLinearGradient(-s,-s,s,s);sg.addColorStop(0,`rgba(${P.sail},.62)`);sg.addColorStop(.45,`rgba(${P.sail},.14)`);sg.addColorStop(.6,`rgba(255,255,255,.4)`);sg.addColorStop(1,`rgba(${P.sail},.35)`);
+    g.fillStyle=sg;g.beginPath();g.moveTo(0,-s);g.lineTo(s,0);g.lineTo(0,s);g.lineTo(-s,0);g.closePath();g.fill();
+    g.save();g.clip();g.strokeStyle=`rgba(${P.sail},.2)`;g.lineWidth=Math.max(.3,R*.005);g.beginPath();for(let i=-8;i<=8;i++){const o=i*s/8;g.moveTo(o-s,-s);g.lineTo(o+s,s);g.moveTo(o-s,s);g.lineTo(o+s,-s);}g.stroke();g.restore();
+    g.strokeStyle=`rgba(${P.sail},.9)`;g.lineWidth=Math.max(.5,R*.014);g.beginPath();g.moveTo(0,-s);g.lineTo(s,0);g.lineTo(0,s);g.lineTo(-s,0);g.closePath();g.stroke();g.restore();
+    // shroud lines from the four corners down to the hull riding behind the sail, and the hull itself
+    const hy=c0+s*.62;g.strokeStyle=`rgba(${P.sail},.45)`;g.lineWidth=Math.max(.3,R*.006);g.beginPath();for(const [px,py] of[[0,-s],[s,0],[0,s],[-s,0]]){const rx=px*Math.cos(Math.PI/4*(1-u))-py*Math.sin(Math.PI/4*(1-u)),ry=px*Math.sin(Math.PI/4*(1-u))+py*Math.cos(Math.PI/4*(1-u));g.moveTo(rx,c0+ry);g.lineTo(0,hy);}g.stroke();
+    prbFrameCraft(g,0,hy+R*.12,R*.5,-Math.PI/2,1);
+    const m=clamp((e-.6)/.3,0,1);prbMono(g,'SAIL 4.1 M · 0.12 C',ix+R*.02,iy+R*.02,hs,P.white,.9*m,'left',Math.floor(m*20));prbMono(g,'BEAM 100 GW',ix+iw-R*.02,iy+R*.02,hs*.9,P.grey,.85*m,'right');prbMono(g,'SOL · 0.8 LY',R*.28,sunY,hs*.85,P.grey,.8*m,'left');
   }else if(stage===3){
-    // Arrival: the system read as Keplerian conics, one after another round the star at their focus, each tagged,
-    // and the probe's own hyperbola bending into a captured ellipse at the orbit insertion
-    const fx=-iw*.12,fy=cy,orb=[[.18,.1,'CLASS-REG'],[.3,.2,'CLASS-AEOL'],[.46,.08,'CLASS-ATM'],[.64,.24,'CLASS-CRYO']];
-    g.fillStyle=`rgba(${P.white},.95)`;g.beginPath();g.arc(fx,fy,R*.05,0,TAU);g.fill();g.strokeStyle=`rgba(${P.white},.6)`;g.lineWidth=Math.max(.4,R*.01);g.beginPath();g.moveTo(fx-R*.1,fy);g.lineTo(fx+R*.1,fy);g.moveTo(fx,fy-R*.1);g.lineTo(fx,fy+R*.1);g.stroke();
-    orb.forEach(([a,ec,tag],i)=>{const q=clamp(e*5-i,0,1);if(q<=0)return;const A=a*iw*.62,B=A*Math.sqrt(1-ec*ec),c=A*ec;g.strokeStyle=`rgba(${P.white},${(.55*q).toFixed(3)})`;g.beginPath();g.ellipse(fx+c,fy,A,B,0,-Math.PI/2,-Math.PI/2+TAU*q);g.stroke();
-      const pa=i*1.7+.6,px=fx+c+Math.cos(pa)*A,py=fy+Math.sin(pa)*B;if(q>=1){g.fillStyle=`rgb(${P.white})`;g.fillRect(px-1.2,py-1.2,2.4,2.4);prbMono(g,tag,px+R*.06,py-R*.08,hs*.8,P.grey,.85);}});
-    const q=clamp((e-.72)/.28,0,1);if(q>0){g.strokeStyle=`rgba(${P.amber},${(.9*q).toFixed(3)})`;g.lineWidth=Math.max(.5,R*.014);g.setLineDash([R*.04,R*.03]);g.beginPath();g.moveTo(ix+iw,iy+R*.05);g.quadraticCurveTo(fx+iw*.5,fy-ih*.5,fx+iw*.42,fy);g.stroke();g.setLineDash([]);prbMono(g,'OI',fx+iw*.42+R*.06,fy,hs,P.amber,.95*q);}
+    // Arrival: Barnard's Star at the focus, a red dwarf's granulated disc; the system read as Keplerian conics one
+    // after another, each world set on its orbit once the conic closes, with the habitable zone marked; and the
+    // probe's own hyperbola bending into a captured ellipse at the orbit insertion
+    const fx=-iw*.14,fy=cy,sr=R*.17,orb=[[.2,.1,'CLASS-REG','crater'],[.32,.2,'CLASS-AEOL','dune'],[.48,.08,'CLASS-ATM','storm'],[.66,.24,'CLASS-CRYO','ice']];
+    const hz=g.createRadialGradient(fx,fy,iw*.14,fx,fy,iw*.24);hz.addColorStop(0,'rgba(51,255,102,0)');hz.addColorStop(.5,'rgba(51,255,102,.06)');hz.addColorStop(1,'rgba(51,255,102,0)');g.fillStyle=hz;g.beginPath();g.arc(fx,fy,iw*.24,0,TAU);g.fill();
+    const glow=g.createRadialGradient(fx,fy,sr*.6,fx,fy,sr*3.2);glow.addColorStop(0,`rgba(${P.radHi},.4)`);glow.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=glow;g.beginPath();g.arc(fx,fy,sr*3.2,0,TAU);g.fill();
+    const disc=g.createRadialGradient(fx-sr*.25,fy-sr*.25,sr*.1,fx,fy,sr);disc.addColorStop(0,'rgb(255,214,160)');disc.addColorStop(.55,`rgb(${P.radHi})`);disc.addColorStop(1,'rgb(120,34,14)');g.fillStyle=disc;g.beginPath();g.arc(fx,fy,sr,0,TAU);g.fill();
+    g.save();g.beginPath();g.arc(fx,fy,sr,0,TAU);g.clip();for(let i=0;i<60;i++){const a=tileHash(i,1,255)*TAU,d=Math.sqrt(tileHash(i,2,255))*sr;g.fillStyle=`rgba(90,24,8,${(.25+.3*tileHash(i,3,255)).toFixed(3)})`;g.beginPath();g.arc(fx+Math.cos(a)*d,fy+Math.sin(a)*d,sr*.06,0,TAU);g.fill();}g.restore();
+    g.strokeStyle=`rgba(${P.radHi},.7)`;g.lineWidth=Math.max(.5,R*.012);g.beginPath();g.arc(fx+sr*.7,fy-sr*.75,sr*.3,Math.PI*.9,Math.PI*2.05);g.stroke();
+    orb.forEach(([a,ec,tag,fam],i)=>{const q=clamp(e*5-i,0,1);if(q<=0)return;const A=a*iw*.62,B=A*Math.sqrt(1-ec*ec),c=A*ec;g.strokeStyle=`rgba(${P.white},${(.5*q).toFixed(3)})`;g.lineWidth=Math.max(.4,R*.01);g.beginPath();g.ellipse(fx+c,fy,A,B,0,-Math.PI/2,-Math.PI/2+TAU*q);g.stroke();
+      const pa=i*1.7+.6,px=fx+c+Math.cos(pa)*A,py=fy+Math.sin(pa)*B;if(q>=1){const pr=R*(.045+.012*i),art=prbWorldArt({id:880+i,seed:1970+i},fam,pr);g.drawImage(art.canvas,px-art.size/2,py-art.size/2,art.size,art.size);prbMono(g,tag,px+pr+R*.05,py-R*.08,hs*.8,P.grey,.85);}});
+    prbMono(g,'HZ',fx+iw*.19,fy+R*.03,hs*.8,P.green,.6*clamp(e*2,0,1),'left');
+    const q=clamp((e-.72)/.28,0,1);if(q>0){g.strokeStyle=`rgba(${P.amber},${(.9*q).toFixed(3)})`;g.lineWidth=Math.max(.5,R*.014);g.setLineDash([R*.04,R*.03]);g.beginPath();g.moveTo(ix+iw,iy+R*.05);g.quadraticCurveTo(fx+iw*.5,fy-ih*.5,fx+iw*.42,fy);g.stroke();g.setLineDash([]);prbFrameCraft(g,fx+iw*.42,fy,R*.3,Math.PI/2,q);prbMono(g,'OI',fx+iw*.42+R*.1,fy+R*.1,hs,P.amber,.95*q);}
+    prbMono(g,'M4V · 0.14 MSUN',fx,fy+sr+R*.1,hs*.8,P.radHi,.8*clamp(e*2,0,1),'center');
   }else if(stage===4){
-    // Seed: the limb of the world below, the seed coming down on its retro burn, and once it is down the mine
-    // opening out across the regolith in a fan of survey lines while the feedstock counter starts to turn
-    const gy=iy+ih*.82,gr=iw*1.6,dn=clamp(e/.5,0,1),sy0=lerp(iy+ih*.05,gy-R*.06,prbEase(dn));
-    g.strokeStyle=`rgba(${P.white},.8)`;g.lineWidth=Math.max(.5,R*.014);g.beginPath();g.arc(0,gy+gr,gr,-Math.PI/2-.6,-Math.PI/2+.6);g.stroke();
-    g.strokeStyle=`rgba(${P.white},.12)`;for(let i=1;i<5;i++){g.beginPath();g.arc(0,gy+gr,gr-i*R*.08,-Math.PI/2-.6,-Math.PI/2+.6);g.stroke();}
-    g.strokeStyle=`rgba(${P.grey},.5)`;g.setLineDash([R*.02,R*.03]);g.beginPath();g.moveTo(0,iy);g.lineTo(0,sy0);g.stroke();g.setLineDash([]);
-    g.strokeStyle=`rgba(${P.white},.95)`;g.beginPath();g.moveTo(-R*.06,sy0);g.lineTo(0,sy0-R*.08);g.lineTo(R*.06,sy0);g.closePath();g.stroke();
-    if(dn<1){const fl=g.createLinearGradient(0,sy0,0,sy0+R*.18);fl.addColorStop(0,`rgba(${P.radHi},.9)`);fl.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=fl;g.beginPath();g.moveTo(-R*.035,sy0);g.lineTo(0,sy0+R*.18);g.lineTo(R*.035,sy0);g.fill();}
-    const fan=clamp((e-.5)/.4,0,1);if(fan>0){g.strokeStyle=`rgba(${P.white},${(.5*fan).toFixed(3)})`;g.beginPath();for(let i=0;i<9;i++){const u=Math.sin((i-4)*.24),L=R*(.3+tileHash(i,4,253)*.4)*fan;g.moveTo(0,gy);g.lineTo(u*L*2.2,gy+Math.abs(u)*L*.18+R*.02);}g.stroke();
+    // Seed: the mother probe in orbit above; the seed coming down on its retro burn to a cratered limb, raising
+    // dust as it lands; and once it is down the first plant opening out across the regolith — a dome, a
+    // conveyor, a spoil heap and a fan of survey lines — while the feedstock counter starts to turn
+    const gy=iy+ih*.8,gr=iw*1.4,dn=clamp(e/.5,0,1),sy0=lerp(iy+ih*.1,gy-R*.07,prbEase(dn)),ox=-iw*.3;
+    g.save();g.beginPath();g.arc(0,gy+gr,gr,0,TAU);g.clip();
+    for(let i=0;i<900;i++){const x=(tileHash(i,1,256)-.5)*iw*1.1,yy=gy+Math.pow(tileHash(i,2,256),1.4)*(h/2-gy+R*.1),lit=(.12+.5*tileHash(i,3,256))*(1-(yy-gy)/(h/2-gy+R*.2));g.fillStyle=`rgba(226,222,214,${lit.toFixed(3)})`;g.fillRect(x,yy,.9,.9);}
+    g.restore();
+    g.strokeStyle=`rgba(${P.white},.85)`;g.lineWidth=Math.max(.5,R*.014);g.beginPath();for(let i=0;i<=60;i++){const u=(i/60-.5)*1.2,a=-Math.PI/2+u,rr=gr+R*.03*Math.max(0,Math.sin(i*.7+1))*(tileHash(i,5,256)<.3?2:.4);g.lineTo(Math.cos(a)*rr,gy+gr+Math.sin(a)*rr);}g.stroke();
+    g.strokeStyle=`rgba(${P.white},.3)`;g.setLineDash([R*.02,R*.03]);g.beginPath();g.ellipse(ox,iy+ih*.12,iw*.22,ih*.06,0,0,TAU);g.stroke();g.setLineDash([]);prbFrameCraft(g,ox+iw*.22*Math.cos(.4),iy+ih*.12+ih*.06*Math.sin(.4),R*.36,0,1);
+    g.strokeStyle=`rgba(${P.grey},.45)`;g.setLineDash([R*.02,R*.03]);g.beginPath();g.moveTo(ox+iw*.2,iy+ih*.16);g.quadraticCurveTo(R*.2,iy+ih*.1,0,sy0);g.stroke();g.setLineDash([]);
+    // the seed: a squat lander with three legs and a dish
+    const ls=R*.07;g.fillStyle='rgb(190,194,202)';g.fillRect(-ls,sy0-ls*1.2,ls*2,ls*1.1);g.strokeStyle=`rgba(${P.white},.95)`;g.lineWidth=Math.max(.4,R*.01);g.strokeRect(-ls,sy0-ls*1.2,ls*2,ls*1.1);
+    g.beginPath();g.moveTo(-ls,sy0-ls*.2);g.lineTo(-ls*1.7,sy0+ls*.6);g.moveTo(ls,sy0-ls*.2);g.lineTo(ls*1.7,sy0+ls*.6);g.moveTo(0,sy0-ls*.1);g.lineTo(0,sy0+ls*.6);g.moveTo(ls*.4,sy0-ls*1.2);g.lineTo(ls*.9,sy0-ls*2);g.stroke();g.beginPath();g.ellipse(ls*.95,sy0-ls*2.1,ls*.5,ls*.2,-.5,0,TAU);g.stroke();
+    if(dn<1){const fl=g.createLinearGradient(0,sy0+ls*.6,0,sy0+R*.3);fl.addColorStop(0,`rgba(${P.radHi},.95)`);fl.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=fl;g.beginPath();g.moveTo(-R*.035,sy0+ls*.6);g.lineTo(0,sy0+R*.3);g.lineTo(R*.035,sy0+ls*.6);g.fill();}
+    const dust=clamp((e-.42)/.3,0,1)*(1-clamp((e-.8)/.2,0,1));if(dust>0)for(let i=0;i<50;i++){const a=Math.PI+tileHash(i,1,257)*Math.PI,d=R*(.1+.5*tileHash(i,2,257))*dust;g.fillStyle=`rgba(210,200,184,${(.5*(1-dust*.6)).toFixed(3)})`;g.fillRect(Math.cos(a)*d*1.6,gy-R*.02+Math.sin(a)*d*.35,1,1);}
+    const fan=clamp((e-.5)/.4,0,1);if(fan>0){g.strokeStyle=`rgba(${P.white},${(.45*fan).toFixed(3)})`;g.lineWidth=Math.max(.4,R*.008);g.beginPath();for(let i=0;i<9;i++){const u=Math.sin((i-4)*.24),L=R*(.3+tileHash(i,4,253)*.4)*fan;g.moveTo(0,gy);g.lineTo(u*L*2.2,gy+Math.abs(u)*L*.18+R*.02);}g.stroke();
+      g.fillStyle=`rgba(${P.white},${(.8*fan).toFixed(3)})`;g.beginPath();g.arc(-R*.35,gy+R*.01,R*.1*fan,Math.PI,TAU);g.fill();g.strokeStyle=`rgba(${P.white},${fan.toFixed(3)})`;g.beginPath();g.moveTo(R*.1,gy-R*.02);g.lineTo(R*.1+R*.6*fan,gy+R*.02);g.stroke();
+      g.fillStyle=`rgba(150,146,138,${fan.toFixed(3)})`;g.beginPath();g.moveTo(R*.6,gy+R*.03);g.lineTo(R*.72,gy-R*.1*fan);g.lineTo(R*.86,gy+R*.04);g.closePath();g.fill();
+      for(let i=0;i<4;i++){g.fillStyle=`rgba(${P.radHi},${(fan*(.5+.5*tileHash(i,6,257))).toFixed(3)})`;g.fillRect(-R*.4+i*R*.07,gy-R*.03,1.2,1.2);}
       prbMono(g,'FEED '+String(Math.round(fan*412)).padStart(4,'0')+' T',ix+R*.02,iy+R*.02,hs,P.white,.9,'left');}
   }else if(stage===5){
-    // Factory: the manifest itself, part after part, until the hull closes and the core is copied into it
-    const f=clamp(e/.8,0,1),fill={SIL:clamp(f*2.2,0,1),VOL:clamp(f*2.2-.5,0,1),MET:clamp(f*2.2-.8,0,1),FUEL:clamp(f*2.2-1.2,0,1)};
-    prbHull(g,0,cy,Math.min(iw*.36,ih*.9),fill,clamp((e-.82)/.12,0,1));
-    const m=clamp((e-.9)/.1,0,1);if(m>0){const bw=R*1.1,bh=R*.26,by=iy+ih-bh*.9;g.strokeStyle=`rgba(${P.amber},${m.toFixed(3)})`;g.lineWidth=Math.max(.6,R*.02);g.strokeRect(-bw/2,by-bh/2,bw,bh);prbMono(g,'CLOSURE',0,by,hs*1.3,P.amber,m,'center');}
+    // Factory: five centuries on, the plant has grown over the ground — furnaces lit, mirrors turned to the star —
+    // and inside a scaffold the manifest is built part by part by two arms, sparks at each weld, until the hull
+    // closes and the core is copied into it
+    const f=clamp(e/.8,0,1),fill={SIL:clamp(f*2.2,0,1),VOL:clamp(f*2.2-.5,0,1),MET:clamp(f*2.2-.8,0,1),FUEL:clamp(f*2.2-1.2,0,1)},hs0=Math.min(iw*.3,ih*.72),hy=cy-R*.06,gy=iy+ih*.94;
+    g.strokeStyle=`rgba(${P.white},.7)`;g.lineWidth=Math.max(.5,R*.012);g.beginPath();g.moveTo(-w/2,gy);g.lineTo(w/2,gy);g.stroke();
+    for(let i=0;i<9;i++){const bx=-iw/2+i*iw/8.5,bw=R*(.12+.12*tileHash(i,1,258)),bh=R*(.08+.22*tileHash(i,2,258));g.fillStyle='rgba(30,31,36,.95)';g.fillRect(bx,gy-bh,bw,bh);g.strokeStyle=`rgba(${P.white},.45)`;g.lineWidth=Math.max(.3,R*.006);g.strokeRect(bx,gy-bh,bw,bh);
+      for(let j=0;j<3;j++)if(tileHash(i,j,259)<.6){g.fillStyle=`rgba(${tileHash(i,j,260)<.4?P.radHi:P.amber},.8)`;g.fillRect(bx+bw*(.2+.25*j),gy-bh*.7,1,1);}}
+    for(let i=0;i<5;i++){const mx=iw*.28+i*R*.12,my=gy-R*.02;g.strokeStyle=`rgba(${P.sail},.7)`;g.lineWidth=Math.max(.5,R*.012);g.beginPath();g.moveTo(mx-R*.05,my-R*.06);g.lineTo(mx+R*.05,my-R*.1);g.stroke();}
+    g.strokeStyle=`rgba(${P.grey},.3)`;g.lineWidth=Math.max(.3,R*.006);g.beginPath();const sx0=-hs0*1.3,sx1=hs0*1.3,sy0=hy-hs0*.55,sy1=gy;for(let x=sx0;x<=sx1;x+=hs0*.26){g.moveTo(x,sy0);g.lineTo(x,sy1);}for(let y=sy0;y<=sy1;y+=hs0*.26){g.moveTo(sx0,y);g.lineTo(sx1,y);}g.stroke();
+    prbHull(g,0,hy,hs0,fill,clamp((e-.82)/.12,0,1));
+    const wx=[-.9,.4],t=e*9;for(let i=0;i<2;i++){const bx=i?sx1:sx0,by=gy,tx=hs0*(wx[i]+.25*Math.sin(t+i*2)),ty=hy+hs0*(i?.1:-.1),mx=(bx+tx)/2+(i?1:-1)*hs0*.25,my=(by+ty)/2-hs0*.35;
+      g.strokeStyle=`rgba(${P.white},.85)`;g.lineWidth=Math.max(.6,R*.016);g.beginPath();g.moveTo(bx,by);g.lineTo(mx,my);g.lineTo(tx,ty);g.stroke();g.fillStyle=`rgb(${P.white})`;g.beginPath();g.arc(mx,my,R*.018,0,TAU);g.fill();
+      if(e<.9)for(let k=0;k<6;k++){const a=tileHash(i,k+Math.floor(t*3),261)*TAU,d=R*.05*tileHash(i,k,262);g.fillStyle=`rgba(${P.radHi},.9)`;g.fillRect(tx+Math.cos(a)*d,ty+Math.sin(a)*d,1,1);}}
+    const m=clamp((e-.9)/.1,0,1);if(m>0){const bw=R*1.1,bh=R*.26,by=iy+R*.1;g.fillStyle=`rgba(5,5,5,${(.85*m).toFixed(3)})`;g.fillRect(-bw/2,by-bh/2,bw,bh);g.strokeStyle=`rgba(${P.amber},${m.toFixed(3)})`;g.lineWidth=Math.max(.6,R*.02);g.strokeRect(-bw/2,by-bh/2,bw,bh);prbMono(g,'CLOSURE',0,by,hs*1.3,P.amber,m,'center');}
   }else{
-    // Replication: the daughter peeling off the mother's line on its escape burn, the plaque copied in miniature
-    const u=prbEase(clamp(e/.8,0,1)),s=Math.min(iw*.2,ih*.5),mx=-iw*.18,my=cy+ih*.18,dx=lerp(mx,iw*.26,u),dy=lerp(my,iy+ih*.22,u);
-    prbHull(g,mx,my,s,{SIL:1,VOL:1,MET:1,FUEL:1},1,.7);
-    g.strokeStyle=`rgba(${P.white},.35)`;g.setLineDash([R*.03,R*.03]);g.beginPath();g.moveTo(mx+s*.2,my);g.quadraticCurveTo(mx+s*1.2,my-R*.1,dx,dy);g.stroke();g.setLineDash([]);
-    g.save();g.translate(dx,dy);g.rotate(-.5*u);prbHull(g,0,0,s*.8,{SIL:1,VOL:1,MET:1,FUEL:1},1,1);
-    const fl=g.createLinearGradient(-s*1.2,0,-s*.95,0);fl.addColorStop(0,`rgba(${P.rad},0)`);fl.addColorStop(1,`rgba(${P.radHi},${(.8*u).toFixed(3)})`);g.fillStyle=fl;g.fillRect(-s*1.5,-s*.08,s*.56,s*.16);g.restore();
-    if(u>.6){prbMono(g,'ESC',dx+s*.5,dy-R*.12,hs,P.amber,.9);}
-    prbMono(g,'GEN 1',mx,my+s*.52,hs*.9,P.grey,.85,'center');prbMono(g,'GEN 2',dx,dy+s*.5,hs*.9,P.white,.9*clamp(u*2-1,0,1),'center');
+    // Replication: the world the factory grew on below, its star low in the corner, and the daughter peeling off
+    // the mother's line on its escape burn, both hulls whole, the plaque copied onto the new one in miniature
+    const u=prbEase(clamp(e/.8,0,1)),mx=-iw*.2,my=cy+ih*.14,dx=lerp(mx+R*.2,iw*.28,u),dy=lerp(my-R*.1,iy+ih*.14,u),gy=h/2-R*.12;
+    const sc0=g.createRadialGradient(-w/2+R*.2,-h/2+R*.25,0,-w/2+R*.2,-h/2+R*.25,R*.9);sc0.addColorStop(0,`rgba(${P.radHi},.7)`);sc0.addColorStop(.15,`rgba(${P.rad},.3)`);sc0.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=sc0;g.fillRect(-w/2,-h/2,w,h);
+    g.save();g.beginPath();g.arc(0,gy+iw*1.3,iw*1.3,0,TAU);g.clip();for(let i=0;i<700;i++){const x=(tileHash(i,1,263)-.5)*w,yy=gy+Math.pow(tileHash(i,2,263),1.5)*R*.5;g.fillStyle=`rgba(240,214,186,${(.1+.4*tileHash(i,3,263)).toFixed(3)})`;g.fillRect(x,yy,.9,.9);}g.restore();
+    g.strokeStyle=`rgba(${P.white},.6)`;g.lineWidth=Math.max(.4,R*.01);g.beginPath();g.arc(0,gy+iw*1.3,iw*1.3,-Math.PI/2-.5,-Math.PI/2+.5);g.stroke();
+    for(let i=0;i<4;i++)if(tileHash(i,1,264)<.8){g.fillStyle=`rgba(${P.amber},.8)`;g.fillRect(-iw*.2+i*R*.16,gy+R*.02,1.2,1.2);}
+    g.strokeStyle=`rgba(${P.white},.35)`;g.setLineDash([R*.03,R*.03]);g.lineWidth=Math.max(.4,R*.01);g.beginPath();g.moveTo(mx+R*.1,my-R*.05);g.quadraticCurveTo(mx+R*.9,my-R*.25,dx,dy);g.stroke();g.setLineDash([]);
+    prbFrameCraft(g,mx,my,R*.95,-.15,1);
+    const ang=lerp(-.15,-.55,u);if(u>.05){g.save();g.translate(dx,dy);g.rotate(ang);const L=R*.8,fl=g.createLinearGradient(-L*.5,0,-L*1.1,0);fl.addColorStop(0,`rgba(${P.core},${(.9*u).toFixed(3)})`);fl.addColorStop(.3,`rgba(${P.radHi},${(.7*u).toFixed(3)})`);fl.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=fl;g.beginPath();g.moveTo(-L*.5,-L*.07);g.lineTo(-L*1.15,0);g.lineTo(-L*.5,L*.07);g.fill();g.restore();}
+    prbFrameCraft(g,dx,dy,R*.8,ang,clamp(u*3,0,1));
+    g.fillStyle=`rgba(${P.goldHi},${(.9*u).toFixed(3)})`;g.beginPath();g.arc(dx-Math.cos(ang)*R*.1,dy-Math.sin(ang)*R*.1+R*.05,R*.018,0,TAU);g.fill();
+    if(u>.6){prbMono(g,'ESC',dx+R*.3,dy-R*.16,hs,P.amber,.9);}
+    prbMono(g,'GEN 1',mx,my+R*.3,hs*.9,P.grey,.85,'center');prbMono(g,'GEN 2',dx,dy+R*.28,hs*.9,P.white,.9*clamp(u*2-1,0,1),'center');
   }
   g.restore();
   // header: the phase and its elapsed-time tally, typed; once whole, a checksum on the lower edge
@@ -464,6 +537,10 @@ function prbPhenomenon(n,x,y){
   const P=ink.probe,fading=n.type==='fading',t=reducedMotion?0:world.time,col=fading?P.amber:P.white,s=(3+clamp((n.r-18)/34,0,1)*2.4)*scale;
   ctx.save();ctx.strokeStyle=`rgba(${col},.85)`;ctx.lineWidth=Math.max(.6,.75*scale);ctx.beginPath();ctx.moveTo(x-s*1.8,y);ctx.lineTo(x-s*.6,y);ctx.moveTo(x+s*.6,y);ctx.lineTo(x+s*1.8,y);ctx.moveTo(x,y-s*1.8);ctx.lineTo(x,y-s*.6);ctx.moveTo(x,y+s*.6);ctx.lineTo(x,y+s*1.8);ctx.stroke();
   ctx.fillStyle=`rgb(${col})`;ctx.fillRect(x-.9*scale,y-.9*scale,1.8*scale,1.8*scale);
+  // the return itself: a cloud of range samples scattered about the fix, thicker where the echo is strongest,
+  // re-drawn a few times a second as a live return would be
+  const fr=reducedMotion?0:Math.floor(t*6),sp=s*(1.1+clamp((n.r-18)/34,0,1)*.9);
+  for(let i=0;i<34;i++){const u=tileHash(n.id,i,421+fr),v=tileHash(n.id,i,431+fr),rr=Math.sqrt(-2*Math.log(Math.max(1e-4,u)))*sp*.55,a=v*TAU;ctx.fillStyle=`rgba(${col},${(.18+.4*tileHash(n.id,i,441)).toFixed(3)})`;ctx.fillRect(x+Math.cos(a)*rr-.5*scale,y+Math.sin(a)*rr*.8-.5*scale,scale,scale);}
   const f=(t*.55+n.id*.37)%1;ctx.strokeStyle=`rgba(${col},${((1-f)*.4).toFixed(3)})`;ctx.lineWidth=.6*scale;ctx.beginPath();ctx.arc(x,y,s*(1.2+f*2.4),0,TAU);ctx.stroke();
   prbMono(ctx,fading?'M ? · DECAYING':'M ?',x+s*2.1,y-s*1.4,Math.max(6.5,6.5*scale),col,fading?.8:.5,'left');
   ctx.restore();
@@ -484,11 +561,73 @@ function prbIcon(g,family,x,y,R,k,col){
   if(family==='volcanic'){const vg=g.createRadialGradient(x,y-s*.2,0,x,y-s*.2,s*.35);vg.addColorStop(0,`rgba(${P.radHi},${(.9*k).toFixed(3)})`);vg.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=vg;g.beginPath();g.arc(x,y-s*.2,s*.35,0,TAU);g.fill();}
   g.restore();
 }
+// ---------- A world, as the probe maps it ----------
+// Not a photograph — the probe has no eye — but a surface scan: the disc sampled on a fine raster and every
+// sample set as one point, its brightness the laser altimeter's return (the body's own albedo, lit from the
+// star), so a world reads as solid and detailed while every mark on it is still a measurement. Each class has
+// its own geography: Europa's lineae, a cratered highland, a giant's belts, an ice giant's cap, dune fields, Io's
+// vents glowing the radiator's colour, a storm giant's great oval. Baked once per body into a sprite.
+const PRB_TINT={ocean:'236,234,228',crater:'226,222,214',moon:'226,222,214',ringed:'232,226,206',ice:'206,226,242',dune:'240,214,186',volcanic:'240,228,178',storm:'204,216,244'};
+function prbNoise(u,v,seed,oct=3){let a=0,m=.55,f=1;for(let i=0;i<oct;i++){a+=tileNoise(u*f,v*f,seed+i*31,4096)*m;m*=.5;f*=2.1;}return a;}
+// unit vector for a longitude/latitude, and the angular distance between two
+const prbVec=(lo,la)=>[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)];
+// A sample's albedo, and where a feature is its own material, the colour the return comes back in: Europa's
+// reddish lineae, Io's sulphur and its vents, a desert's dark basalt, a giant's belts and its storm.
+function prbAlbedo(family,lo,la,p,seed,F){
+  const n=prbNoise(lo*2.2,la*2.2,seed);let A,warm=0,tint=null;
+  if(family==='ocean'){A=.9+.06*n;let cr=0;for(const c of F.cracks){const d=Math.abs(p[0]*c[0]+p[1]*c[1]+p[2]*c[2]);if(d<c[3])cr=Math.max(cr,1-d/c[3]);}if(cr>0){A-=.4*cr;tint='196,120,84';}else if(n>.25){A-=.16;tint='214,190,168';}}
+  else if(family==='crater'||family==='moon'){A=.62+.2*n;if(family==='moon'&&prbNoise(lo*.9,la*.9,seed^9,2)>.1){A-=.3;}
+    for(const c of F.craters){const d=Math.acos(clamp(p[0]*c[0]+p[1]*c[1]+p[2]*c[2],-1,1));if(d<c[3]*1.3){const t=d/c[3];if(t<.8){const side=(p[0]-c[0])*.8+(p[1]-c[1])*.9;A=A*.6+clamp(side*2.5,-.25,.3);}else if(t<1.05)A+=.35;else A+=.1*(1.3-t)/.25;}}}
+  else if(family==='ringed'){const b=Math.sin(la*10+n*1.3);A=.7+.22*b+.05*n;if(b<-.4)tint='200,170,120';if(Math.abs(la)>1.15)A=.55+.1*n;}
+  else if(family==='ice'){const b=Math.sin(la*6+n*.8);A=.72+.12*b+.05*n;if(b>.5)tint='176,214,240';if(la<-.95){A=.98;tint='240,248,255';}}
+  else if(family==='dune'){A=.66+.1*n;if(Math.abs(la)<1.05)A+=.18*Math.sin(lo*18+la*4+n*4);if(prbNoise(lo*1.4,la*1.4,seed^3,2)<-.15){A=.34+.06*n;tint='150,92,62';}if(Math.abs(la)>1.22){A=.98;tint='250,250,250';}}
+  else if(family==='volcanic'){A=.76+.18*n;tint='236,210,96';if(prbNoise(lo*3,la*3,seed^5,2)>.2){A=.56;tint='224,128,52';}for(const v of F.vents){const d=Math.acos(clamp(p[0]*v[0]+p[1]*v[1]+p[2]*v[2],-1,1));if(d<v[3]){A=.12;warm=1-d/v[3];}else if(d<v[3]*2.4){A-=.3*(1-(d-v[3])/(v[3]*1.4));tint='200,80,40';}}}
+  else{const b=Math.sin(la*8+n*1.6);A=.68+.2*b+.05*n;if(b<-.3)tint='120,150,220';const o=F.oval,dl=(lo-o[0])*1.6,da=(la-o[1])*3.2,dd=Math.hypot(dl,da);if(dd<.55){const sw=Math.sin(Math.atan2(da,dl)*2+dd*9);A=.3+.18*sw+.3*dd;tint='70,90,170';}else if(dd<.75){A=.95;tint='240,244,255';}}
+  return {A:clamp(A,0,1),warm,tint};
+}
+const prbWorldArts=new Map();
+function prbWorldArt(n,family,R){
+  const key=(n.id|0)+':'+family+':'+R.toFixed(1)+':'+DPR;let a=prbWorldArts.get(key);if(a)return a;
+  const P=ink.probe,S=Math.ceil(R*(family==='ringed'?4.4:2.8)),c=makeCanvas(Math.round(S*DPR),Math.round(S*DPR)),g=c.getContext('2d'),cx=S/2,cy=S/2,seed=((n.seed|0)^0x4e1)>>>0,r=seeded(seed);g.scale(DPR,DPR);
+  // the class's own features, dealt once per body from its seed
+  const F={cracks:[],craters:[],vents:[],oval:[(r()-.5)*1.2,.25+r()*.3]};
+  for(let i=0;i<9;i++){const a=r()*TAU,b=(r()-.5)*2;const v=[Math.cos(a)*Math.sqrt(1-b*b),b,Math.sin(a)*Math.sqrt(1-b*b)];F.cracks.push([...v,.012+r()*.018]);}
+  for(let i=0;i<22;i++){const lo=(r()-.5)*3.4,la=(r()-.5)*2.6,v=prbVec(lo,la);F.craters.push([...v,.06+r()*r()*.34]);}
+  for(let i=0;i<6;i++){const v=prbVec((r()-.5)*2.6,(r()-.5)*2);F.vents.push([...v,.05+r()*.06]);}
+  const tilt=family==='ringed'?-.3:(r()-.5)*.3,ct=Math.cos(tilt),st=Math.sin(tilt),L=[-.56,-.62,.55],Ln=Math.hypot(...L),tint=PRB_TINT[family]||P.white;
+  // the rings behind the globe, as a band of returns
+  const ring=(half)=>{if(family!=='ringed')return;g.save();g.translate(cx,cy);g.rotate(-.3);for(let i=0;i<1400;i++){const t=tileHash(seed,i,401)*TAU,rr=R*(1.35+Math.pow(tileHash(seed,i,402),.8)*.62),x=Math.cos(t)*rr,y=Math.sin(t)*rr*.26;if(half==='back'?y>0:y<=0)continue;
+    if(Math.abs(rr/R-1.72)<.035)continue;const lit=.35+.45*tileHash(seed,i,403);g.fillStyle=`rgba(${tint},${lit.toFixed(3)})`;g.fillRect(x-.35,y-.35,.7,.7);}g.restore();};
+  ring('back');
+  // the disc's own dark body, so a world occludes what lies behind it
+  const bg=g.createRadialGradient(cx-R*.35,cy-R*.4,R*.1,cx,cy,R);bg.addColorStop(0,'rgba(24,24,26,1)');bg.addColorStop(1,'rgba(6,6,7,1)');g.fillStyle=bg;g.beginPath();g.arc(cx,cy,R,0,TAU);g.fill();
+  // the raster: a clean grid of returns, each a little square a touch smaller than its pitch, so the scan reads
+  // as a scan at any size and as a solid, shaded world from arm's length
+  const step=Math.max(.8,R/26),dot=step*.8;
+  for(let y=-R+step/2;y<=R;y+=step)for(let x=-R+step/2;x<=R;x+=step){const nx=x/R,ny=y/R,q=nx*nx+ny*ny;if(q>=1)continue;
+    const nz=Math.sqrt(1-q),py=ny*ct-nz*st,pz=ny*st+nz*ct,p=[nx,py,pz],lo=Math.atan2(nx,pz),la=Math.asin(clamp(py,-1,1)),al=prbAlbedo(family,lo,la,p,seed,F);
+    const lam=Math.max(0,(nx*L[0]+ny*L[1]+nz*L[2])/Ln),b=al.A*(.08+1.05*Math.pow(lam,.7))*(.7+.3*nz);
+    if(al.warm>0){g.fillStyle=`rgba(${P.radHi},${(.55+.45*al.warm).toFixed(3)})`;g.fillRect(cx+x-dot*.6,cy+y-dot*.6,dot*1.2,dot*1.2);continue;}
+    if(b<.04)continue;g.fillStyle=`rgba(${al.tint||tint},${Math.min(1,b).toFixed(3)})`;g.fillRect(cx+x-dot/2,cy+y-dot/2,dot,dot);}
+  // the volcanic class carries the sheet's one warm accent as a glow at each vent the scan found
+  if(family==='volcanic'){for(const v of F.vents){const vy=v[1]*ct+v[2]*st,vz=-v[1]*st+v[2]*ct;if(vz<.15)continue;const px=cx+v[0]*R,pyy=cy+vy*R,gg=g.createRadialGradient(px,pyy,0,px,pyy,R*.22);gg.addColorStop(0,`rgba(${P.radHi},.55)`);gg.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=gg;g.beginPath();g.arc(px,pyy,R*.22,0,TAU);g.fill();}}
+  // a thin atmosphere's scattered return on the lit limb, where the class has air
+  if(['storm','ringed','ice','dune'].includes(family)){g.save();g.lineCap='round';const a0=Math.PI*1.02,a1=Math.PI*1.72,rg=g.createLinearGradient(cx+Math.cos(a0)*R,cy+Math.sin(a0)*R,cx+Math.cos(a1)*R,cy+Math.sin(a1)*R);rg.addColorStop(0,`rgba(${tint},0)`);rg.addColorStop(.5,`rgba(${tint},.55)`);rg.addColorStop(1,`rgba(${tint},0)`);g.strokeStyle=rg;g.lineWidth=Math.max(.6,R*.07);g.beginPath();g.arc(cx,cy,R*1.02,a0,a1);g.stroke();g.restore();}
+  g.strokeStyle=`rgba(${P.white},.35)`;g.lineWidth=Math.max(.35,R*.02);g.beginPath();g.arc(cx,cy,R,0,TAU);g.stroke();
+  ring('front');
+  a={canvas:c,size:S};if(prbWorldArts.size>40)prbWorldArts.delete(prbWorldArts.keys().next().value);prbWorldArts.set(key,a);return a;
+}
+// The scan comes in as a swath: the raster filled from the sunward limb across, a bright scan line at its edge.
+function prbScan(g,art,x,y,R,q,col){
+  if(q<=0)return;const S=art.size,x0=x-S/2,y0=y-S/2,e=x-R*1.05+R*2.1*q,full=q>=1;
+  g.save();if(!full){g.beginPath();g.rect(x0,y0,e-x0,S);g.clip();}g.drawImage(art.canvas,x0,y0,S,S);g.restore();
+  if(!full){g.save();g.beginPath();g.arc(x,y,R*1.06,0,TAU);g.clip();const sg=g.createLinearGradient(e-R*.25,0,e,0);sg.addColorStop(0,`rgba(${col},0)`);sg.addColorStop(1,`rgba(${col},.55)`);g.fillStyle=sg;g.fillRect(e-R*.25,y-R*1.1,R*.25,R*2.2);g.fillStyle=`rgba(${col},.9)`;g.fillRect(e-.4,y-R*1.1,.8,R*2.2);g.restore();}
+}
 // A world as a machine sees it: a wireframe globe, meridians closing round it as the reading runs, turning
 // slowly under the probe, with no shading and no light — a measurement, not a picture.
-function prbGlobe(g,x,y,R,k,spin,col,alpha=1){
+function prbGlobe(g,x,y,R,k,spin,col,alpha=1,fill=true){
   if(k<=0)return;g.save();g.lineWidth=Math.max(.5,R*.055);g.strokeStyle=`rgba(${col},${(.9*alpha).toFixed(3)})`;g.beginPath();g.arc(x,y,R,-Math.PI/2,-Math.PI/2+TAU*clamp(k*1.6,0,1));g.stroke();
-  g.fillStyle=`rgba(5,5,5,${(.7*alpha).toFixed(3)})`;g.beginPath();g.arc(x,y,R*.98,0,TAU);g.fill();
+  if(fill){g.fillStyle=`rgba(5,5,5,${(.7*alpha).toFixed(3)})`;g.beginPath();g.arc(x,y,R*.98,0,TAU);g.fill();}
   g.lineWidth=Math.max(.4,R*.03);const m=clamp(k*1.6-.4,0,1);
   for(let i=0;i<4;i++){const ph=(i/4+spin)%1,cx=Math.cos(ph*Math.PI),q=clamp(m*4-i,0,1);if(q<=0)continue;g.strokeStyle=`rgba(${col},${(.35*q*alpha*(.4+.6*Math.abs(Math.sin(ph*Math.PI)))).toFixed(3)})`;g.beginPath();g.ellipse(x,y,Math.abs(cx)*R,R,0,0,TAU);g.stroke();}
   for(const la of[-.5,0,.5]){const q=clamp(m*2-.5,0,1);if(q<=0)continue;const yy=y+la*R,rr=Math.sqrt(1-la*la)*R;g.strokeStyle=`rgba(${col},${(.3*q*alpha).toFixed(3)})`;g.beginPath();g.ellipse(x,yy,rr,rr*.18,0,0,TAU);g.stroke();}
@@ -502,9 +641,14 @@ function prbNoteDone(n,family){if(n.difficultyChoice||prbNoted.has(n.id))return;
 function prbBody(n,family,x,y,d,al,cap){
   const P=ink.probe,R=prbDiscR(n),s1=prbSpan(d,PRB_STAGE.spec),s2=prbSpan(d,PRB_STAGE.mass),s3=prbSpan(d,PRB_STAGE.apse),s4=prbSpan(d,PRB_STAGE.seal),seed=(n.seed|0)^0x8,spin=reducedMotion?.2:(world.time*.05+n.id*.13)%1;
   ctx.save();ctx.globalAlpha=al;
-  prbGlobe(ctx,x,y,R,Math.max(.15,s1*.3+s2*.7),spin,P.white);
-  prbIcon(ctx,family,x,y,R,s2,P.white);
-  if(family==='ringed'&&s3>0){ctx.strokeStyle=`rgba(${P.white},${(.55*s3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,.6*scale);ctx.beginPath();ctx.ellipse(x,y,R*1.9,R*.5,-.3,Math.PI*.05,Math.PI*.95+Math.PI*s3);ctx.stroke();}
+  // the wireframe first, while nothing but mass and position is known; then the surface scan sweeping across it,
+  // the wireframe fading to a faint graticule over the finished map
+  const q=prbEase(clamp((d-.06)/.46,0,1)),art=prbWorldArt(n,family,R);
+  prbGlobe(ctx,x,y,R,Math.max(.15,s1*.3+s2*.7),spin,P.white,1-.75*q,true);
+  prbScan(ctx,art,x,y,R,q,P.white);
+  if(q>0)prbGlobe(ctx,x,y,R,1,spin,P.white,.22*q,false);
+  // the class icon, set as a tag at the body's shoulder as the mass locks
+  if(s2>0){const bx=x-R*.82-6*scale,by=y-R*.82-6*scale,bs=5.5*scale;ctx.fillStyle=`rgba(5,5,5,${(.8*s2).toFixed(3)})`;ctx.fillRect(bx-bs,by-bs,bs*2,bs*2);ctx.strokeStyle=`rgba(${P.white},${(.6*s2).toFixed(3)})`;ctx.lineWidth=Math.max(.5,.6*scale);ctx.strokeRect(bx-bs,by-bs,bs*2,bs*2);prbIcon(ctx,family,bx,by,bs*.8,s2,P.white);}
   // the apsides, struck on the ring the probe is actually holding
   if(s3>0&&cap){const a=(n.seed|0)%628/100,pe=[x+Math.cos(a)*cap,y+Math.sin(a)*cap],ap=[x-Math.cos(a)*cap,y-Math.sin(a)*cap];
     ctx.strokeStyle=`rgba(${P.white},${(.8*s3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,.7*scale);ctx.beginPath();for(const q of[pe,ap]){ctx.moveTo(q[0]-3*scale,q[1]-3*scale);ctx.lineTo(q[0]+3*scale,q[1]+3*scale);ctx.moveTo(q[0]+3*scale,q[1]-3*scale);ctx.lineTo(q[0]-3*scale,q[1]+3*scale);}ctx.stroke();
@@ -692,42 +836,66 @@ function prbAim(aim,preview){
 let prbCraft=null,prbCraftKey='';
 function prbCraftSprite(){
   const key=DPR.toFixed(2);if(prbCraft&&prbCraftKey===key)return prbCraft;prbCraftKey=key;
-  const S=1.1,size=84,c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d'),P=ink.probe;g.scale(DPR,DPR);g.translate(size/2,size/2);g.scale(S,S);
-  const L=18;g.lineJoin='round';g.lineCap='round';
-  // radiator fins, glowing
-  for(const s of[-1,1]){const rg=g.createLinearGradient(0,s*1.2,0,s*8.6);rg.addColorStop(0,`rgba(${P.radHi},.95)`);rg.addColorStop(1,`rgba(${P.rad},.55)`);g.fillStyle=rg;g.beginPath();g.moveTo(-.56*L,s*1.1);g.lineTo(-.46*L,s*8);g.lineTo(-.2*L,s*8);g.lineTo(-.26*L,s*1.1);g.closePath();g.fill();g.strokeStyle='rgba(40,14,6,.8)';g.lineWidth=.3;g.stroke();
-    g.strokeStyle='rgba(60,20,8,.5)';g.beginPath();for(let i=1;i<4;i++){const y=s*(1.1+i*1.7);g.moveTo(-.55*L+i*.02*L,y);g.lineTo(-.25*L,y);}g.stroke();}
-  // the spine
-  g.fillStyle='rgb(150,154,162)';g.fillRect(-.92*L,-.7,2*L,1.4);g.strokeStyle='rgba(30,32,36,.9)';g.lineWidth=.25;g.beginPath();for(let x=-.9*L;x<1.05*L;x+=2.4){g.moveTo(x,-.7);g.lineTo(x+1.2,.7);}g.stroke();
-  // the drive bell
-  const bg=g.createLinearGradient(0,-4.8,0,4.8);bg.addColorStop(0,'rgb(90,92,98)');bg.addColorStop(.4,'rgb(196,198,204)');bg.addColorStop(1,'rgb(40,42,46)');g.fillStyle=bg;g.beginPath();g.moveTo(-.9*L,-1.3);g.lineTo(-1.2*L,-4.8);g.lineTo(-1.2*L,4.8);g.lineTo(-.9*L,1.3);g.closePath();g.fill();g.strokeStyle='rgba(20,22,26,.9)';g.lineWidth=.3;g.stroke();
-  // three tanks
-  for(const tx of[.66,.36,.06]){const tg=g.createRadialGradient(tx*L-.9,-1,0,tx*L,0,2.8);tg.addColorStop(0,'rgb(246,248,252)');tg.addColorStop(.6,'rgb(170,176,186)');tg.addColorStop(1,'rgb(60,64,72)');g.fillStyle=tg;g.beginPath();g.arc(tx*L,0,2.7,0,TAU);g.fill();g.strokeStyle='rgba(20,22,26,.85)';g.lineWidth=.3;g.stroke();}
-  // the Whipple shield at the bow, seen edge-on
-  g.fillStyle='rgb(214,218,226)';g.fillRect(1.08*L,-6.4,.9,12.8);g.fillStyle='rgb(150,156,166)';g.fillRect(1.16*L+.6,-5.4,.6,10.8);
-  // the replication core amidships, and the plaque bolted beside it
-  const cg=g.createRadialGradient(-.28*L,0,0,-.28*L,0,2.4);cg.addColorStop(0,'rgb(250,250,252)');cg.addColorStop(1,'rgb(110,114,122)');g.fillStyle=cg;g.beginPath();g.arc(-.28*L,0,2.3,0,TAU);g.fill();g.strokeStyle='rgba(20,22,26,.9)';g.lineWidth=.3;g.stroke();
-  g.fillStyle=`rgb(${P.gold})`;g.fillRect(-.2*L,1.3,2.4,1.5);g.strokeStyle=`rgb(${P.goldHi})`;g.lineWidth=.2;g.strokeRect(-.2*L,1.3,2.4,1.5);
-  // a thin rim of starlight along the upper edge, so the craft is never lost against the black
-  g.strokeStyle='rgba(220,230,255,.4)';g.lineWidth=.3;g.beginPath();g.moveTo(-.9*L,-.9);g.lineTo(1.05*L,-.9);g.stroke();
-  prbCraft={canvas:c,size,S,core:-.28*L*S};return prbCraft;
+  const S=1.1,size=120,c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d'),P=ink.probe;g.scale(DPR,DPR);g.translate(size/2,size/2);g.scale(S,S);
+  const L=22,X=u=>u*L,metal=(y0,y1,a,b,d)=>{const gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,a);gr.addColorStop(.38,b);gr.addColorStop(1,d);return gr;},edge='rgba(14,15,18,.9)';
+  g.lineJoin='round';g.lineCap='round';
+  // radiator panels, two pairs, the fore pair larger: the waste heat of the drive, glowing the one warm colour
+  // aboard, ribbed with their coolant loops and hottest where they meet the spine
+  for(const [x0,x1,span,tilt] of[[-.64,-.22,9.2,.12],[-.18,.06,5.6,.08]])for(const sd of[-1,1]){
+    const ya=sd*1.4,yb=sd*span,rg=g.createLinearGradient(0,ya,0,yb);rg.addColorStop(0,`rgba(${P.radHi},.98)`);rg.addColorStop(.55,`rgba(${P.rad},.9)`);rg.addColorStop(1,'rgba(92,30,14,.9)');
+    g.fillStyle=rg;g.beginPath();g.moveTo(X(x0),ya);g.lineTo(X(x0)+X(tilt),yb);g.lineTo(X(x1)-X(tilt*.4),yb);g.lineTo(X(x1),ya);g.closePath();g.fill();g.strokeStyle='rgba(50,16,6,.9)';g.lineWidth=.3;g.stroke();
+    g.strokeStyle='rgba(60,18,6,.55)';g.lineWidth=.22;g.beginPath();const n=7;for(let i=1;i<n;i++){const u=i/n,xx=lerp(X(x0),X(x1),u);g.moveTo(xx,ya);g.lineTo(xx+X(tilt)*(1-u)-X(tilt*.4)*u,yb);}g.stroke();
+    g.strokeStyle='rgba(255,196,150,.35)';g.lineWidth=.25;g.beginPath();g.moveTo(X(x0)+X(tilt),yb);g.lineTo(X(x1)-X(tilt*.4),yb);g.stroke();}
+  // the spine: a lattice truss, two chords, diagonals and a node at every bay
+  g.fillStyle='rgba(40,42,48,.9)';g.fillRect(X(-.92),-1.1,X(2),2.2);
+  g.strokeStyle='rgb(176,180,190)';g.lineWidth=.35;g.beginPath();g.moveTo(X(-.92),-1.1);g.lineTo(X(1.08),-1.1);g.moveTo(X(-.92),1.1);g.lineTo(X(1.08),1.1);
+  for(let x=X(-.92),k=0;x<X(1.06);x+=2.2,k++){g.moveTo(x,k%2?-1.1:1.1);g.lineTo(x+2.2,k%2?1.1:-1.1);}g.stroke();
+  g.fillStyle='rgb(214,218,226)';for(let x=X(-.92);x<X(1.08);x+=2.2){g.fillRect(x-.25,-1.35,.5,.5);g.fillRect(x-.25,.85,.5,.5);}
+  // the drive: a magnetic nozzle's three field coils, then the bell, glowing inside
+  const bell=metal(-6,6,'rgb(84,86,92)','rgb(206,208,214)','rgb(34,36,40)');g.fillStyle=bell;g.beginPath();g.moveTo(X(-.9),-1.8);g.quadraticCurveTo(X(-1.06),-2.6,X(-1.22),-6);g.lineTo(X(-1.22),6);g.quadraticCurveTo(X(-1.06),2.6,X(-.9),1.8);g.closePath();g.fill();g.strokeStyle=edge;g.lineWidth=.3;g.stroke();
+  g.strokeStyle='rgba(20,22,26,.5)';g.lineWidth=.2;g.beginPath();for(let i=1;i<5;i++){const u=i/5,xx=lerp(X(-.9),X(-1.22),u),hh=lerp(1.8,6,u*u);g.moveTo(xx,-hh);g.lineTo(xx,hh);}g.stroke();
+  const ig=g.createLinearGradient(X(-1.22),0,X(-1.0),0);ig.addColorStop(0,`rgba(${P.radHi},.75)`);ig.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=ig;g.beginPath();g.ellipse(X(-1.22),0,1.2,5.6,0,0,TAU);g.fill();
+  for(let i=0;i<3;i++){const xx=X(-.88+i*.05);g.fillStyle=metal(-2.6,2.6,'rgb(150,120,70)','rgb(236,200,120)','rgb(70,52,24)');g.beginPath();g.ellipse(xx,0,.8,2.6,0,0,TAU);g.fill();g.strokeStyle=edge;g.lineWidth=.25;g.stroke();}
+  // the replication core amidships: a shielded sphere with its equatorial band, the plaque bolted beneath it
+  const cx=X(-.3);const cg=g.createRadialGradient(cx-1,-1.2,.2,cx,0,3.4);cg.addColorStop(0,'rgb(250,251,253)');cg.addColorStop(.55,'rgb(160,166,176)');cg.addColorStop(1,'rgb(46,50,58)');g.fillStyle=cg;g.beginPath();g.arc(cx,0,3.3,0,TAU);g.fill();g.strokeStyle=edge;g.lineWidth=.3;g.stroke();
+  g.strokeStyle='rgba(40,44,52,.8)';g.lineWidth=.35;g.beginPath();g.ellipse(cx,0,3.3,.9,0,0,TAU);g.stroke();
+  g.fillStyle=metal(2.2,4.4,`rgb(${P.goldHi})`,`rgb(${P.gold})`,`rgb(${P.goldDk})`);g.fillRect(cx-1.9,3.6,3.8,2.3);g.strokeStyle=`rgb(${P.goldDk})`;g.lineWidth=.2;g.strokeRect(cx-1.9,3.6,3.8,2.3);
+  g.strokeStyle=`rgba(${P.goldDk},.9)`;g.lineWidth=.12;g.beginPath();for(let i=0;i<5;i++){const a=i*1.2;g.moveTo(cx-.8,4.7);g.lineTo(cx-.8+Math.cos(a)*.8,4.7+Math.sin(a)*.6);}g.moveTo(cx-1.5,5.5);g.lineTo(cx+1.5,5.5);g.moveTo(cx+.9,4.1);g.lineTo(cx+.9,5.2);g.moveTo(cx+1.3,4.1);g.lineTo(cx+1.3,5.2);g.stroke();
+  // three propellant tanks with weld bands and a highlight, and a sail canister riding above the forward one
+  for(const tx of[.1,.4,.7]){const x=X(tx),tg=g.createRadialGradient(x-1.1,-1.3,.2,x,0,3.2);tg.addColorStop(0,'rgb(250,251,253)');tg.addColorStop(.6,'rgb(174,180,190)');tg.addColorStop(1,'rgb(52,56,64)');g.fillStyle=tg;g.beginPath();g.arc(x,0,3,0,TAU);g.fill();g.strokeStyle=edge;g.lineWidth=.3;g.stroke();
+    g.strokeStyle='rgba(60,64,74,.7)';g.lineWidth=.25;g.beginPath();g.moveTo(x,-3);g.lineTo(x,3);g.stroke();g.fillStyle='rgba(255,255,255,.7)';g.beginPath();g.ellipse(x-1.1,-1.3,.6,.35,-.6,0,TAU);g.fill();}
+  g.fillStyle=metal(-5.8,-3.4,'rgb(236,242,246)','rgb(196,208,216)','rgb(96,104,114)');g.fillRect(X(.58),-5.6,X(.3),2.2);g.strokeStyle=edge;g.lineWidth=.25;g.strokeRect(X(.58),-5.6,X(.3),2.2);
+  g.strokeStyle=`rgba(${P.sail},.7)`;g.lineWidth=.2;g.beginPath();for(let i=1;i<6;i++){const xx=X(.58)+i*X(.3)/6;g.moveTo(xx,-5.6);g.lineTo(xx-.4,-3.4);}g.stroke();g.strokeStyle='rgb(150,156,166)';g.lineWidth=.3;g.beginPath();g.moveTo(X(.73),-3.4);g.lineTo(X(.73),-1.1);g.stroke();
+  // a sensor turret and a small high-gain dish on a boom forward, turned to nobody in particular
+  g.strokeStyle='rgb(170,176,186)';g.lineWidth=.35;g.beginPath();g.moveTo(X(.92),1.1);g.lineTo(X(.98),4.6);g.stroke();
+  g.fillStyle=metal(3,7,'rgb(240,242,246)','rgb(200,204,212)','rgb(90,96,106)');g.beginPath();g.ellipse(X(.98),5.2,1,2.4,.5,0,TAU);g.fill();g.strokeStyle=edge;g.lineWidth=.25;g.stroke();
+  g.fillStyle='rgb(60,64,72)';g.fillRect(X(.9),-2.2,1.6,1.2);g.fillStyle='rgba(120,170,220,.9)';g.beginPath();g.arc(X(.9)+1.6,-1.6,.4,0,TAU);g.fill();
+  // the Whipple shield at the bow, seen edge-on: three spaced plates, the outer one pitted by dust
+  for(let i=0;i<3;i++){const xx=X(1.1)+i*.9,h=7.6-i*.9;g.fillStyle=metal(-h,h,'rgb(236,238,244)','rgb(196,200,208)','rgb(90,94,104)');g.fillRect(xx,-h,.55,h*2);g.strokeStyle=edge;g.lineWidth=.18;g.strokeRect(xx,-h,.55,h*2);}
+  g.fillStyle='rgba(40,40,46,.8)';for(let i=0;i<9;i++)g.fillRect(X(1.1)+.15,-7+tileHash(i,1,411)*14,.3,.3);
+  g.strokeStyle='rgb(150,156,166)';g.lineWidth=.3;g.beginPath();g.moveTo(X(1.06),-.6);g.lineTo(X(1.1),-.6);g.moveTo(X(1.06),.6);g.lineTo(X(1.1),.6);g.stroke();
+  // reaction-control quads at bow and stern
+  g.strokeStyle='rgb(206,210,218)';g.lineWidth=.3;for(const xx of[X(-.8),X(.95)])for(const sd of[-1,1]){const yy=sd*1.9;g.beginPath();g.moveTo(xx-.7,yy);g.lineTo(xx+.7,yy);g.moveTo(xx,yy-.5);g.lineTo(xx,yy+.5);g.stroke();}
+  // a thin rim of starlight along the upper edges, so the craft is never lost against the black
+  g.strokeStyle='rgba(220,232,255,.45)';g.lineWidth=.3;g.beginPath();g.moveTo(X(-.92),-1.25);g.lineTo(X(1.06),-1.25);g.moveTo(X(1.1),-7.6);g.lineTo(X(1.1)+.55,-7.6);g.stroke();
+  prbCraft={canvas:c,size,S,core:X(-.3)*S};return prbCraft;
 }
 function prbPlayer(){
   prbDaughters();
   if(world.state==='dead')return;
-  const P=ink.probe,p=world.player,sp=prbCraftSprite(),{x,y,ang}=heldPose(-22*sp.S,22*sp.S),t=reducedMotion?0:world.time;
+  const P=ink.probe,p=world.player,sp=prbCraftSprite(),{x,y,ang}=heldPose(-27*sp.S,26*sp.S),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
   // the drive's plume while in flight: a short radiator-coloured cone from the bell
-  if(world.state==='playing'&&!p.node){const fl=ctx.createLinearGradient(-22,0,-34,0);fl.addColorStop(0,`rgba(${P.radHi},.85)`);fl.addColorStop(1,`rgba(${P.rad},0)`);ctx.fillStyle=fl;ctx.beginPath();ctx.moveTo(-22,-3.2);ctx.lineTo(-34-2*Math.sin(t*20),0);ctx.lineTo(-22,3.2);ctx.closePath();ctx.fill();}
+  if(world.state==='playing'&&!p.node){const fl=ctx.createLinearGradient(-29,0,-48,0);fl.addColorStop(0,`rgba(${P.core},.9)`);fl.addColorStop(.25,`rgba(${P.radHi},.75)`);fl.addColorStop(1,`rgba(${P.rad},0)`);ctx.fillStyle=fl;ctx.beginPath();ctx.moveTo(-29,-5.4);ctx.quadraticCurveTo(-38,-2.4,-48-3*Math.sin(t*20),0);ctx.quadraticCurveTo(-38,2.4,-29,5.4);ctx.closePath();ctx.fill();}
   ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
   // the Observer Core: omnidirectional, three thin rings breathing out from it rather than a beam forward
   const cx=sp.core;ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(cx,0,1.5,0,TAU);ctx.fill();
   for(let i=0;i<3;i++){const f=((t*.5+i/3)%1);ctx.strokeStyle=`rgba(${P.core},${((1-f)*.45).toFixed(3)})`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(cx,0,3+f*9,0,TAU);ctx.stroke();}
   // the charges held: the shield plate as a hexagon, the sail segment as a diamond astern, the scrub as a ring of bits
   const cr=6;
-  if(p.shielded){ctx.strokeStyle=`rgba(${P.white},.7)`;ctx.lineWidth=1.1;ctx.beginPath();for(let i=0;i<=6;i++){const a=i*TAU/6;i?ctx.lineTo(Math.cos(a)*(26+cr),Math.sin(a)*(26+cr)):ctx.moveTo(Math.cos(a)*(26+cr),Math.sin(a)*(26+cr));}ctx.stroke();}
-  if(p.reflectorArmed){ctx.strokeStyle=`rgba(${P.sail},.85)`;ctx.lineWidth=1.1;const q=10;ctx.beginPath();ctx.moveTo(-30,-q);ctx.lineTo(-30+q,0);ctx.lineTo(-30,q);ctx.lineTo(-30-q,0);ctx.closePath();ctx.stroke();}
-  if(p.dawnArmed){ctx.fillStyle=`rgba(${P.green},.75)`;for(let i=0;i<16;i++){if(tileHash(i,3,291)<.45)continue;const a=i*TAU/16+t*.3;ctx.fillRect(Math.cos(a)*(22+cr)-1,Math.sin(a)*(22+cr)-1,2,2);}}
+  if(p.shielded){ctx.strokeStyle=`rgba(${P.white},.7)`;ctx.lineWidth=1.1;ctx.beginPath();for(let i=0;i<=6;i++){const a=i*TAU/6;i?ctx.lineTo(Math.cos(a)*(34+cr),Math.sin(a)*(34+cr)):ctx.moveTo(Math.cos(a)*(34+cr),Math.sin(a)*(34+cr));}ctx.stroke();}
+  if(p.reflectorArmed){ctx.strokeStyle=`rgba(${P.sail},.85)`;ctx.lineWidth=1.1;const q=10;ctx.beginPath();ctx.moveTo(-40,-q);ctx.lineTo(-40+q,0);ctx.lineTo(-40,q);ctx.lineTo(-40-q,0);ctx.closePath();ctx.stroke();}
+  if(p.dawnArmed){ctx.fillStyle=`rgba(${P.green},.75)`;for(let i=0;i<16;i++){if(tileHash(i,3,291)<.45)continue;const a=i*TAU/16+t*.3;ctx.fillRect(Math.cos(a)*(30+cr)-1,Math.sin(a)*(30+cr)-1,2,2);}}
   ctx.restore();
 }
 // A daughter launched: peeling from the traveller's own line toward the top of the frame on its escape burn,
@@ -907,7 +1075,7 @@ function prbTally(t,tb,alpha){
   prbNoteMark(tb.x+(t.left?-hand*1.2:hand*1.9),tb.y-hand*.62,hand,alpha*.85);
 }
 function prbNone(){}
-function invalidateProbeArt(){prbLayers[0]=prbLayers[1]=null;prbLayerKey='';prbSprites.clear();prbCraft=null;prbCraftKey='';prbHudTopPx=null;prbRevealCanvas=null;prbRevealKey='';}
+function invalidateProbeArt(){prbWorldArts.clear();prbLayers[0]=prbLayers[1]=null;prbLayerKey='';prbSprites.clear();prbCraft=null;prbCraftKey='';prbHudTopPx=null;prbRevealCanvas=null;prbRevealKey='';}
 function prbFaceReady(){
   if(!document.fonts||!document.fonts.load)return;
   document.fonts.load(plateFace(16,'mono'),'GEN 0123456789').then(()=>{invalidateProbeArt();if(world)render(0);}).catch(()=>{});
