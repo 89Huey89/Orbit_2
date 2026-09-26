@@ -160,6 +160,26 @@ function lensRibbon(g,pts,w,rgb,alpha,taper=.65){
 // goes into the shadow, and last the outline: heavy on the shadowed side, a hair on the lit one, the engraver's
 // shade line, drawn round by hand past its start. Everything is seeded by `opts.seed`, never by time or place,
 // so a drawing on the sheet never shivers; `k` cuts it on, stroke by stroke, from the dark limb inward.
+// The observer's own sketch at the eyepiece, before any engraver touched it: Galileo's brown washes of the
+// Moon in 1609, Harriot's and Huygens's notebook pages. Brown ink let down with water and laid in one go, so it
+// dries with a darker tide line at its edge and pools deeper on the shadowed side; over it a quick pen outline
+// in two or three strokes that do not quite join, one going a little wide; and a handful of fast, straight
+// hatching strokes into the shadow, all one way and none of them finished. Seeded like the engraving, never by
+// time or place. Cheap enough to draw live, since it only ever stands on the sheet while a body is being read.
+function lensSketchDisc(g,x,y,R,k,P,seed=0,opts={}){
+  if(k<=0||R<=0)return;const h=(i,j)=>tileHash(seed*17+3,i,j),dark=(opts.angle??-.42)+Math.PI/2,c=Math.cos(dark),s=Math.sin(dark);
+  const blob=(cx,cy,r,j)=>{const p=h(j,1)*TAU,n=20;g.beginPath();for(let i=0;i<=n;i++){const a=i/n*TAU,rr=r*(1+.05*Math.sin(a*3+p)+.03*Math.sin(a*5+p*2)+(h(j*31+i%n,2)-.5)*.05);i?g.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):g.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}g.closePath();};
+  g.save();g.globalAlpha*=k;g.lineCap='round';g.lineJoin='round';
+  blob(x+c*R*.05,y+s*R*.05,R*.97,1);g.fillStyle=`rgba(${P.sepia},.2)`;g.fill();g.strokeStyle=`rgba(${P.sepia},.32)`;g.lineWidth=Math.max(.5,R*.045);g.stroke();
+  g.save();g.beginPath();g.arc(x,y,R,0,TAU);g.clip();blob(x+c*R*.5,y+s*R*.5,R*.82,2);g.fillStyle=`rgba(${P.sepia},.22)`;g.fill();blob(x+c*R*.78,y+s*R*.78,R*.55,3);g.fillStyle=`rgba(${P.sepia},.2)`;g.fill();g.restore();
+  for(let j=0;j<3;j++){const a0=h(j,4)*TAU,sw=TAU*(j===2?.28:.5+h(j,5)*.3),rr=R*(1+(h(j,6)-.5)*.07),pts=[];
+    for(let i=0;i<=16;i++){const a=a0+sw*i/16,q=rr*(1+.02*Math.sin(a*4+j));pts.push([x+Math.cos(a)*q,y+Math.sin(a)*q]);}
+    lensRibbon(g,pts,Math.max(.55,R*.05)*(j===2?.6:1),P.inkSoft,j===2?.45:.85,.35);}
+  if(!opts.noHatch){const la=(opts.angle??-.42)+(h(9,7)-.5)*.2,lc=Math.cos(la),ls=Math.sin(la);
+    for(let i=0;i<6;i++){const o=R*(.2+i*.13+(h(i,8)-.5)*.06);if(o>=R*.95)break;const L=Math.sqrt(R*R-o*o)*(.45+h(i,9)*.4),sh=(h(i,10)-.5)*L*.4,cx=x+c*o+lc*sh,cy=y+s*o+ls*sh;
+      lensRibbon(g,[[cx-lc*L,cy-ls*L],[cx,cy],[cx+lc*L,cy+ls*L]],Math.max(.45,R*.035),P.inkSoft,.4+h(i,11)*.25,.5);}}
+  g.restore();
+}
 const lensEngravings=new Map();
 function lensHatchDisc(g,x,y,R,k,P,alpha=1,opts={}){
   if(k<=0||R<=0)return;const seed=(opts.seed|0)*13+7;
@@ -301,8 +321,9 @@ function lensSaturn(g,R,stage,k=1,opts={}){
     const vg=g.createRadialGradient(0,0,R*.4,0,0,R*2.1);vg.addColorStop(0,`rgba(${P.paper},${opts.card===false?0:.92})`);vg.addColorStop(1,`rgba(${P.paper},0)`);g.fillStyle=vg;g.beginPath();g.arc(0,0,R*2.1,0,TAU);g.fill();
     if(stage===1){
       // Galileo, 1610: the highest planet triform — one body and two smaller ones touching it at either side.
-      lensHatchDisc(g,0,0,R*.55,e,P,1,{seed:1610});
-      for(const s of[-1,1])lensHatchDisc(g,s*R*.93,R*(s<0?.0:.04),R*(s<0?.3:.28),clamp(e*1.4-.3,0,1),P,1,{noCross:true,seed:1611+s});
+      // Drawn as Galileo drew it in his letter, a sketch rather than a plate: the reading was never engraved.
+      lensSketchDisc(g,0,0,R*.55,e,P,1610);
+      for(const s of[-1,1])lensSketchDisc(g,s*R*.93,R*(s<0?.0:.04),R*(s<0?.3:.28),clamp(e*1.4-.3,0,1),P,1611+s,{noHatch:true});
     }else{
       // Huygens, 1659: a thin flat ring, touching nowhere, inclined to the ecliptic — his own diagram's
       // lines: the far arc of the ring behind the globe, the globe, the near arc across it.
@@ -705,15 +726,18 @@ function lensBodyEye(n,family,x,y,d,al){
   ctx.save();ctx.globalAlpha=al;
   // the blot before focus, fading as the lines take over
   if(s2<1){const b=R*(1.7-.6*s1),gr=ctx.createRadialGradient(x,y,0,x,y,b);gr.addColorStop(0,`rgba(${P.sepia},${(.55*(1-e2)).toFixed(3)})`);gr.addColorStop(.6,`rgba(${P.sepia},${(.3*(1-e2)).toFixed(3)})`);gr.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,b,0,TAU);ctx.fill();}
+  // The first reading is the observer's sketch; the better reading is the engraving made from it for the book,
+  // cut over the sketch as the sketch fades, so every body is seen going from the eye to the printed page.
+  const sd=n.id|0,sk=e2*(1-e3),disc=(r,o={})=>{lensSketchDisc(ctx,x,y,r,sk,P,sd,o);lensHatchDisc(ctx,x,y,r,e3,P,1,{...o,seed:sd});};
   let reach=R;
   if(family==='ringed'){
     // Galileo's two companions, and then Huygens's ring where they stood
-    const side=R*.46,off=R*1.62;const sd=n.id|0;for(const s of[-1,1])lensHatchDisc(ctx,x+s*off,y+(s<0?-.04:.05)*R,side*(s<0?1:.92),e2*(1-e3),P,1-e3,{noCross:true,seed:sd+(s<0?1:2)});
+    const side=R*.46,off=R*1.62;for(const s of[-1,1])lensSketchDisc(ctx,x+s*off,y+(s<0?-.04:.05)*R,side*(s<0?1:.92),sk,P,sd+(s<0?1:2),{noHatch:s>0});
     // Each of the ring's two outlines is one hand-drawn ellipse cut into its far and near halves with the same
     // seed, so the halves meet where the globe hides the join; the near half is gone over a second time.
     const rx=R*2.25,ry=R*.72,ix=R*1.45,iy=R*.46,ring=(a0,a1,w,al)=>{ctx.strokeStyle=`rgba(${P.ink},${al.toFixed(3)})`;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x,y,rx,ry,-.12,a0,a1,sd+11);ctx.stroke();ctx.beginPath();lensHandEllipse(ctx,x,y,ix,iy,-.12,a0,a1,sd+12);ctx.stroke();};
     if(e3>0)ring(Math.PI,TAU,Math.max(.45,R*.035),.8*e3);
-    lensHatchDisc(ctx,x,y,R,e2,P,1,{seed:sd});
+    disc(R);
     // The near half of the ring passes in front of the globe, so it is laid on as the paper first, hiding the
     // globe behind it, and then engraved: lengthwise strokes following the ring, swelling and tapering, thicker
     // toward its outer edge, and the outlines last at the shade line's weight.
@@ -726,34 +750,40 @@ function lensBodyEye(n,family,x,y,d,al){
     reach=Math.max(R*.75,R*.72*e3)+R*.1;
   }else if(family==='ocean'){
     // Venus in her phases, as Galileo's anagram has it: the mother of loves imitates the shapes of Cynthia
-    lensHatchDisc(ctx,x,y,R,e2,P,1,{angle:.2,seed:n.id|0});
+    disc(R,{angle:.2});
     if(e2>0){const tw=R*(.35+.3*(1-e3));ctx.fillStyle=`rgba(${P.paper},${(.92*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(x,y,R*.97,Math.PI*.55,Math.PI*1.45);ctx.ellipse(x,y,tw,R*.97,0,Math.PI*1.5,Math.PI*.5,true);ctx.closePath();ctx.fill();
       // the terminator is the one line of the phase the hand draws; the limb is the disc's own outline
       ctx.strokeStyle=`rgba(${P.ink},${(.7*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.03);ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x,y,tw,R*.97,0,Math.PI*.5+.08,Math.PI*1.5-.06,(n.id|0)+31,1.6);ctx.stroke();}
   }else if(family==='ice'){
     // Herschel's comet that would not move like one: a coma at first, then a clean small disc
     if(e2>0&&e3<1){const cg=ctx.createRadialGradient(x,y,R*.3,x+R*1.4,y-R*.4,R*2.6);cg.addColorStop(0,`rgba(${P.sepia},${(.35*e2*(1-e3)).toFixed(3)})`);cg.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(x+R*.9,y-R*.25,R*2.2,R*.9,-.25,0,TAU);ctx.fill();}
-    lensHatchDisc(ctx,x,y,R*.72,e2,P,1,{noCross:true,seed:n.id|0});
+    disc(R*.72,{noCross:true});
   }else{
-    lensHatchDisc(ctx,x,y,R,e2,P,1,{angle:family==='volcanic'?.9:undefined,seed:n.id|0});
+    disc(R,family==='volcanic'?{angle:.9}:{});
     if(family==='crater'&&e2>0){ctx.strokeStyle=`rgba(${P.ink},${(.75*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.35,R*.025);
       // Craters spread over the lit face, each a rim cut as the arc of its wall that faces away from the light
       // with the shadow it throws laid inside, the way Galileo's wash drawings of the Moon set them.
       // They are dealt round the disc a sector each, so they never pile into one clump whatever the seed.
       ctx.lineWidth=Math.max(.35,R*.03);
-      for(let i=0;i<7;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
-        ctx.fillStyle=`rgba(${P.ink},${(.35*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(cx,cy,cr,Math.PI*.95,Math.PI*1.85);ctx.quadraticCurveTo(cx+cr*.1,cy-cr*.1,cx-cr*.95,cy+cr*.15);ctx.fill();
+      // in the sketch a crater is a quick pen ring with a dab of shadow; the engraving cuts it properly after
+      for(let i=0;i<7&&sk>0;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
+        ctx.fillStyle=`rgba(${P.sepia},${(.35*sk).toFixed(3)})`;ctx.beginPath();ctx.arc(cx+cr*.2,cy+cr*.2,cr*.8,0,TAU);ctx.fill();
+        ctx.strokeStyle=`rgba(${P.inkSoft},${(.7*sk).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.03);ctx.beginPath();lensHandEllipse(ctx,cx,cy,cr,cr,0,tileHash(n.id,i,9)*TAU,tileHash(n.id,i,9)*TAU+TAU*.85,(n.id|0)*7+i,3);ctx.stroke();}
+      for(let i=0;i<7&&e3>0;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
+        ctx.fillStyle=`rgba(${P.ink},${(.35*e3).toFixed(3)})`;ctx.beginPath();ctx.arc(cx,cy,cr,Math.PI*.95,Math.PI*1.85);ctx.quadraticCurveTo(cx+cr*.1,cy-cr*.1,cx-cr*.95,cy+cr*.15);ctx.fill();
         // the rim at the shade line's weight: a hair on the wall that faces the light, swelling on the far one
         const rp=[],fl=.9+tileHash(n.id,i,6)*.15;for(let j=0;j<=20;j++){const q=-1+j/20*TAU*1.05;rp.push([cx+Math.cos(q)*cr,cy+Math.sin(q)*cr*fl,.3+1.4*Math.max(0,Math.cos(q-1.15))]);}
-        lensRibbon(ctx,rp,Math.max(.5,R*.035),P.ink,.8*e2,.15);}
+        lensRibbon(ctx,rp,Math.max(.5,R*.035),P.ink,.8*e3,.15);}
       // lit peaks standing out in the dark beyond the terminator, the mountains Galileo measured by their shadows
       ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+tileHash(n.id,i,6)*.3),y+R*(tileHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
     if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();
+      // sketched, each belt is one broad stroke of the brush across the disc
+      if(sk>0){ctx.lineCap='round';for(const [bi,b] of[[0,-.28],[1,.22]]){ctx.strokeStyle=`rgba(${P.sepia},${(.45*sk).toFixed(3)})`;ctx.lineWidth=R*(.13+tileHash(n.id,bi,58)*.05);ctx.beginPath();ctx.moveTo(x-R*.95,y+R*(b+.03));ctx.quadraticCurveTo(x,y+R*(b+.09+(tileHash(n.id,bi,59)-.5)*.06),x+R*.9,y+R*(b+.02));ctx.stroke();}}
       // Each belt is engraved as a close run of strokes along the latitude, bowed a little as a parallel on a
       // globe seen from just above the equator, swelling in the middle and thinning to nothing at the limb.
       for(const [bi,b] of[[0,-.28],[1,.22]])for(let j=0;j<5;j++){const q=bi*5+j,yo=R*(b+(j-2)*.032+(tileHash(n.id,q,51)-.5)*.02);if(Math.abs(yo)>=R*.98)continue;const half=Math.sqrt(R*R-yo*yo)*(1-tileHash(n.id,q,53)*.12),pts=[];
         for(let t=0;t<=12;t++){const u=-1+2*t/12;pts.push([x+u*half,y+yo+R*.06*(1-u*u)+Math.sin(u*3+tileHash(n.id,q,52)*6)*R*.012]);}
-        lensRibbon(ctx,pts,Math.max(.5,R*(.04+tileHash(n.id,q,55)*.03)),P.ink,(.45+.4*tileHash(n.id,q,57))*e2*(j===0||j===4?.6:1));}ctx.restore();
+        lensRibbon(ctx,pts,Math.max(.5,R*(.04+tileHash(n.id,q,55)*.03)),P.ink,(.45+.4*tileHash(n.id,q,57))*e3*(j===0||j===4?.6:1));}ctx.restore();
       if(e3>0){const sp=[];for(let j=0;j<=24;j++){const q=-.6+j/24*TAU*1.08;sp.push([x+R*.25+Math.cos(q)*R*.26,y+R*.42+Math.sin(q)*R*.13,.4+1.2*Math.max(0,Math.sin(q))]);}lensRibbon(ctx,sp,Math.max(.6,R*.06),P.rubric,.9*e3,.15);}}
     if(family==='dune'&&e2>0){ctx.fillStyle=`rgba(${P.paper},${(.95*e2).toFixed(3)})`;ctx.beginPath();lensHandEllipse(ctx,x-R*.05,y-R*.8,R*.38,R*.16,-.1,0,TAU,(n.id|0)+43,2);ctx.fill();ctx.strokeStyle=`rgba(${P.ink},${(.6*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.04);ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x-R*.05,y-R*.8,R*.38,R*.16,-.1,2.4,2.4+TAU*1.06,(n.id|0)+43,2);ctx.stroke();
       ctx.fillStyle=`rgba(${P.ink},${(.4*e3).toFixed(3)})`;for(let i=0;i<14;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,8)-.6)*R*1.2,y+(tileHash(n.id,i,9)-.3)*R,Math.max(.5,R*.06),0,TAU);ctx.fill();}}
