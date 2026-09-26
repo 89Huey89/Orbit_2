@@ -250,7 +250,9 @@ const prbSprites=new Map();
 // the same fraction, so a half-read ice world pays half the volatiles a whole reading would. A pickup pays one
 // unit of the part it is. When every material meets the bill, a daughter launches and the bill starts again.
 let prbRunWorld=null,prbState=null,prbNoted=new Set();
-function prbFresh(){return{gen:1,got:{VOL:0,SIL:0,MET:0,FUEL:0},paid:new Map(),launches:[],closureAt:-1};}
+// `teach` holds for a player who has never reached closure: the first material paid is then pointed out on the
+// manifest, since nothing else on the sheet says that reading a world is building the next probe.
+function prbFresh(){return{gen:1,got:{VOL:0,SIL:0,MET:0,FUEL:0},paid:new Map(),launches:[],closureAt:-1,firstPayAt:-1,teach:prbRead().maxGen<2};}
 function prbRun(){if(prbRunWorld!==world){prbRunWorld=world;prbState=prbFresh();prbNoted=new Set();prbFlourishAt.clear();prbDoneAt.clear();prbShown=0;}}
 const prbFamily=n=>n.difficultyChoice?PRB_CHOICE[n.difficultyChoice].fam:planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice);
 function prbHarvest(){
@@ -261,6 +263,7 @@ function prbHarvest(){
     else if(n.routeRole==='star'||n.type==='gold'||n.type==='fading')mat=n.type==='gold'?'MET':'SIL';
     else{const fam=prbFamily(n);mat=PRB_MAT_OF[fam]||'SIL';side=PRB_SIDE_OF[fam]||null;}
     const had=S.paid.get(n.id)||0;if(f>had+1e-4){S.got[mat]+=(f-had)*k;if(side)S.got[side[0]]+=(f-had)*k*side[1];S.paid.set(n.id,f);}}
+  if(S.firstPayAt<0&&PRB_MATS.reduce((a,m)=>a+S.got[m],0)>.05)S.firstPayAt=world.time;
   if(S.paid.size>400){const keep=new Set(world.nodes.map(n=>n.id));for(const k of S.paid.keys())if(!keep.has(k)&&S.paid.size>200)S.paid.delete(k);}
   if(world.state==='playing'&&prbPay(S.got,prbBill(S.gen))){
     S.gen++;prbNoteGen(S.gen);
@@ -1003,6 +1006,11 @@ function prbHudLeaf(){
   const mw=86,mx=right-mw,my=top-9;ctx.fillStyle='rgba(3,3,3,.78)';ctx.fillRect(mx-4,my,mw+4,58);ctx.strokeStyle=`rgba(${P.grey},.45)`;ctx.strokeRect(mx-4,my,mw+4,58);
   prbMono(ctx,'GEN',mx,my+7,6.5,P.grey,.9);prbMono(ctx,String(S.gen),mx+22,my+8,11,S.gen>1?P.amber:P.white,.98);prbMono(ctx,'MANIFEST',right-2,my+7,6.5,P.grey,.9,'right');
   const fill=prbFill();prbHull(ctx,mx+mw/2-2,my+23,mw*.34,fill,0,1);
+  if(S.teach&&S.firstPayAt>=0){const age=world.time-S.firstPayAt,k=age<.3?age/.3:age>5.5?clamp(1-(age-5.5)/.6,0,1):1;if(k>0){const pulse=reducedMotion?1:.6+.4*Math.sin(age*7);
+    ctx.strokeStyle=`rgba(${P.amber},${(.9*k*pulse).toFixed(3)})`;ctx.lineWidth=1.2;ctx.strokeRect(mx-5,my-1,mw+6,60);
+    const tx=right-2,ty=my+72;ctx.strokeStyle=`rgba(${P.amber},${(.8*k).toFixed(3)})`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(mx+mw/2,my+60);ctx.lineTo(mx+mw/2,ty-7);ctx.stroke();
+    ctx.fillStyle=`rgba(3,3,3,${(.85*k).toFixed(3)})`;ctx.fillRect(tx-150,ty-7,152,28);
+    prbMono(ctx,'EVERY WORLD YOU READ',tx,ty,7.5,P.amber,.95*k,'right');prbMono(ctx,'BUILDS THE NEXT PROBE',tx,ty+12,7.5,P.amber,.95*k,'right');}}
   const bill=prbBill(S.gen);PRB_MATS.forEach((mat,i)=>{const bx=mx+(i%2)*(mw/2),by=my+37+Math.floor(i/2)*10,bw=mw/2-24;prbMono(ctx,mat,bx,by,6,P.grey,.9);
     ctx.fillStyle=`rgba(${P.faint},.95)`;ctx.fillRect(bx+19,by-2,bw,4);ctx.fillStyle=fill[mat]>=1?`rgb(${P.green})`:`rgba(${P.white},.85)`;ctx.fillRect(bx+19,by-2,bw*fill[mat],4);
     ctx.fillStyle=`rgba(${P.vac},1)`;for(let q=1;q<bill[mat];q++)ctx.fillRect(bx+19+bw*q/bill[mat]-.4,by-2,.8,4);});
@@ -1019,22 +1027,25 @@ function prbFinale(){
   const P=ink.probe,time=world.player.deadTime,t=reducedMotion?1:clamp(time/1.2,0,1),e=1-Math.pow(1-t,3);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle=`rgba(${P.vac},${(.93*e).toFixed(3)})`;ctx.fillRect(0,0,W,H);
+  // The sheet tells the run it was given, not the one the story hoped for: closure and the daughter's departure
+  // only where a bill was actually met; otherwise the factory as far as this run's harvest built it, still open.
+  prbRun();const closed=prbState.gen>=2,fill=prbFill(),built=PRB_MATS.reduce((a,m)=>a+fill[m],0)/PRB_MATS.length;
   const R=Math.min(W*.2,H*.1,84),y=lerp(H*.42,H*.33,e);
-  prbMono(ctx,'CLOSURE',W/2,y-R*1.2-26,Math.min(20,W*.05),P.amber,.95*e,'center');
-  prbMono(ctx,'EVERY PART OF ITSELF, BUILT FROM WHAT IT READ',W/2,y-R*1.2-9,Math.min(8,W*.019),P.grey,.9*e,'center');
-  ctx.save();ctx.translate(W/2,y);ctx.globalAlpha=e;prbFrame(ctx,R,6,reducedMotion?1:clamp((time-.15)/1.4,0,1));ctx.restore();
+  prbMono(ctx,closed?'CLOSURE':'THE FACTORY IS STILL BUILDING',W/2,y-R*1.2-26,Math.min(closed?20:14,W*(closed?.05:.034)),P.amber,.95*e,'center');
+  prbMono(ctx,closed?'EVERY PART OF ITSELF, BUILT FROM WHAT IT READ · GEN '+prbState.gen:'THE FIRST BILL IS '+Math.round(built*100)+'% MET · NO DAUGHTER HAS LEFT',W/2,y-R*1.2-9,Math.min(8,W*.019),P.grey,.9*e,'center');
+  ctx.save();ctx.translate(W/2,y);ctx.globalAlpha=e;if(closed)prbFrame(ctx,R,6,reducedMotion?1:clamp((time-.15)/1.4,0,1));else prbFrame(ctx,R,5,Math.min(.78,built*.8)*(reducedMotion?1:clamp((time-.15)/1.4,0,1)));ctx.restore();
   // the plaque, copied: the original and the copy side by side, the same line, cut once. The whole sheet is laid
   // out inside the three seconds and a bit before the leaf opens over it (WIN_END_DELAY in ui.js).
   const ps=Math.min(W*.16,60),py=y+R*1.2+ps*.66+26,ck=clamp((time-.7)/.3,0,1);
-  prbMono(ctx,'THE PLAQUE · ANCESTOR AND COPY',W/2,py-ps*.66-10,7.5,P.gold,.9*ck,'center');
-  prbPlaque(ctx,W/2-ps*1.15,py,ps,reducedMotion?1:clamp((time-.75)/.8,0,1),ck);prbPlaque(ctx,W/2+ps*1.15,py,ps,reducedMotion?1:clamp((time-1.15)/.8,0,1),clamp((time-1.05)/.3,0,1));
+  prbMono(ctx,closed?'THE PLAQUE · ANCESTOR AND COPY':'THE PLAQUE · ITS COPY NOT YET CUT',W/2,py-ps*.66-10,7.5,P.gold,.9*ck,'center');
+  prbPlaque(ctx,W/2-ps*1.15,py,ps,reducedMotion?1:clamp((time-.75)/.8,0,1),ck);prbPlaque(ctx,W/2+ps*1.15,py,ps,closed?(reducedMotion?1:clamp((time-1.15)/.8,0,1)):0,clamp((time-1.05)/.3,0,1)*(closed?1:.5));
   // the ladder: eight small marks, each in its own era's manner, the eighth a blinking cursor
   const ly=py+ps*.66+34,gap=Math.min(34,W/10),lk=clamp((time-1.7)/.4,0,1);
   if(lk>0){prbMono(ctx,'THE LADDER',W/2,ly-16,7,P.grey,.85*lk,'center');
     for(let i=0;i<8;i++){const k=clamp((time-1.7-i*.08)/.25,0,1);if(k<=0)continue;const x=W/2+(i-3.5)*gap;ctx.save();ctx.globalAlpha=k;prbLadderMark(ctx,i,x,ly,7);ctx.restore();prbMono(ctx,['I','II','III','IV','V','VI','VII','VIII'][i],x,ly+13,6,P.dim,.9*k,'center');}}
   const vk=.9*clamp((time-2.5)/.4,0,1),vy=ly+36;
   prbMono(ctx,'THE FIRST HAND MARKED THE ROCK SO THE SKY WOULD OUTLAST IT.',W/2,vy,Math.min(8,W*.0185),P.white,vk,'center');
-  prbMono(ctx,'THE LAST IS NOT A HAND. IT KEEPS LOOKING.',W/2,vy+14,Math.min(8,W*.0185),P.grey,vk,'center');
+  prbMono(ctx,closed?'THE LAST IS NOT A HAND. IT KEEPS LOOKING.':'THE LAST IS NOT A HAND. IT IS STILL BUILDING.',W/2,vy+14,Math.min(8,W*.0185),P.grey,vk,'center');
   ctx.restore();
 }
 // One mark per rung, each in its own century's material, for the finale's ladder and the Journey's leaf.
@@ -1053,13 +1064,14 @@ function prbLadderMark(g,i,x,y,s){
 function prbInscriptionInk(caps){const P=ink.probe;return [{rgb:'0,0,0',alpha:caps?.6:.5,dx:.6,dy:.6},{rgb:P.white,alpha:caps?.95:.88,dx:0,dy:0}];}
 // The mass on the leaf: a self-log card with the count on an odometer and the log's progress beneath it.
 function prbPaintEndNumerals(canvas,w){
-  if(!canvas)return;const P=ink.probe,rec=prbRead(),Wd=240,Hd=80,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
+  if(!canvas)return;const P=ink.probe,rec=prbRead(),Wd=240,Hd=92,dpr=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);
   canvas.width=Math.ceil(Wd*dpr);canvas.height=Math.ceil(Hd*dpr);canvas.style.width=Wd+'px';canvas.style.height=Hd+'px';
   const g=canvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,Wd,Hd);
   g.fillStyle='rgba(3,3,3,.96)';g.fillRect(34,4,Wd-68,50);g.strokeStyle=`rgba(${P.grey},.7)`;g.lineWidth=.8;g.strokeRect(34,4,Wd-68,50);
   g.save();g.font=plateFace(20,'mono');const cw=g.measureText('M').width*1.08;g.restore();prbOdometer(g,w.score|0,7,Wd/2-cw*3.5,24,20,P.white,.98);prbMono(g,'TONNES PROCESSED',Wd/2,44,7.5,P.grey,.9,'center');
   const gen=prbRunWorld===w&&prbState?prbState.gen:1;
   prbMono(g,'GEN '+gen+' · MAX '+Math.max(1,rec.maxGen)+' · '+prbBits(rec.classes)+'/7 CLASSES · '+prbBits(rec.systems)+'/12 SYSTEMS',Wd/2,68,6.5,P.white,.85,'center');
+  prbMono(g,gen>=2?'CLOSURE REACHED · '+(gen-1)+(gen>2?' DAUGHTERS':' DAUGHTER')+' LEFT':'CLOSURE NOT YET REACHED',Wd/2,83,7,gen>=2?P.green:P.amber,.9,'center');
 }
 // A landing's note and its running tally, in the log's white, marked with a small bracket.
 function prbNoteMark(x,y,hand,alpha){ctx.strokeStyle=`rgba(${ink.probe.white},${alpha})`;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(x-hand*.3,y);ctx.lineTo(x-hand*.6,y);ctx.lineTo(x-hand*.6,y+hand*1.1);ctx.lineTo(x-hand*.3,y+hand*1.1);ctx.stroke();}
@@ -1166,7 +1178,7 @@ defineVoice('probe',{
   ],
   opening:'The probe is under way. Tap to release. Follow the trajectory solution to the next mass. Hold a body until it is catalogued; what it is made of pays toward the next daughter, and holding it refills the feed. Every flight spends feed by the distance it carries.',
   ended:'The flux overtook the log. {score} tonnes processed. Tap to begin again, or return to the atlas.',
-  won:'Closure. The first daughter has left. {score} tonnes processed. Tap to begin again, or return to the atlas.',
+  won:'The sixth phase is logged, and the log goes on. {score} tonnes processed. Tap to begin again, or return to the atlas.',
   unrecorded:'ERA PREVIEW · NOT RECORDED',
   newRecord:'A NEW MASS RECORD',
   hazards:{vortex:'WELL',flare:'BEAM',wind:'ISM FLUX'},
@@ -1180,7 +1192,7 @@ defineVoice('probe',{
     'THE NIB RAN DRY':'FEEDSTOCK EXHAUSTED',
     'DRAWN INTO A VORTEX':'LOST DOWN A WELL',
     'SEARED BY A SUNSPOT FLARE':'BURNT IN THE BEAM',
-    'THE SUN ROSE':'CLOSURE'
+    'THE SUN ROSE':'THE SIXTH PHASE IS LOGGED'
   },
   observations:{
     perfectThree:'THREE CLEAN INSERTIONS',
@@ -1195,7 +1207,7 @@ defineVoice('probe',{
   squareLanding:'A SQUARE INSERTION',
   hud:{pace:'V ×',flow:'OI ×',shield:'SHLD HOLDS',reflector:'DEFL HOLDS',dawn:'SCRUB HOLDS'},
   chrome:{
-    brand:'THE PROBE',bestLabel:'Max mass',endTitle:'The flux overtook the log.',endTitleWon:'Closure.',pauseTitle:'Dormant.',
+    brand:'THE PROBE',bestLabel:'Max mass',endTitle:'The flux overtook the log.',endTitleWon:'Phase VI is logged.',pauseTitle:'Dormant.',
     pauseEyebrow:'THE PROBE IS IN SAFE HOLD',pauseNote:'Tap the sheet to continue',pauseResume:'RESUME THE LOG',
     pauseLeave:'END THE LOG',pauseLabel:'Put the probe in safe hold',gameLabel:'The Probe, a playable Era VIII preview',
     canvasLabel:'The Probe. Fly a self-replicating probe from the Sun to Barnard’s Star, cataloguing each world you hold and building the next probe from what you read. Tap or press Space to release.',
@@ -1211,7 +1223,7 @@ defineVoice('probe',{
     vortex:'A well bends the course toward it. Give its core room.',
     angle:'Meet the rim along its curve for a clean insertion.',
     speed:'Clean insertions keep your velocity.',
-    won:'Closure: the probe has built its first daughter.'
+    won:'Six phases logged. Hold each world longer, and more daughters leave.'
   },
   glosses:{
     slingshot:'DV ASSIST · V ×{factor}',

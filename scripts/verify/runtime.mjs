@@ -928,7 +928,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       w.nodes.length=base;}
     w.floorY=w.player.y+20;context.test.render(1/60);
     Object.assign(w,{state:'dead',won:true});w.player.deadTime=1.9;context.test.render(1/60);
-    for(const t of [3,4.2])w.player.deadTime=t,context.test.handFor('hudLeaf')();w.player.deadTime=1.9;
+    // The finale tells the run it was given: closure only where a bill was met, the open factory otherwise.
+    for(const gen of [1,2]){context.test.prbState.gen=gen;for(const t of [1,3,4.2])w.player.deadTime=t,context.test.handFor('hudLeaf')();}w.player.deadTime=1.9;
     context.test.audio.enabled=heard;
     // The self-log: empty when unwritten or corrupt, and a run, a class, a system and a generation read back as written.
     if(!storageBlocked){
