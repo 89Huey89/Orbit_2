@@ -136,29 +136,48 @@ function lensLoop(g,x,y,r,seed,k=1,w=1){
   g.beginPath();for(let i=0;i<=end;i++){const u=i/n,a=a0+u*TAU,rr=r*(1+(tileHash(seed,i%n,3)-.5)*.05+.04*Math.sin(u*TAU*2+seed));const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.94;i?g.lineTo(px,py):g.moveTo(px,py);}
   g.lineWidth=w;g.lineCap='round';g.lineJoin='round';g.stroke();
 }
+// An ellipse drawn by hand rather than by compass: its radius breathes a little round the curve, at a slow
+// swell and a quicker tremor, with the phases seeded so the same hand draws the same line every frame — a line
+// already on the sheet must never shiver. Appends to the current path; the caller strokes it.
+function lensHandEllipse(g,x,y,rx,ry,rot,a0,a1,seed,wob=1){
+  const n=Math.max(10,Math.ceil(Math.abs(a1-a0)/TAU*56)),p1=tileHash(seed,1,61)*TAU,p2=tileHash(seed,2,61)*TAU,c=Math.cos(rot),s=Math.sin(rot);
+  for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n,k=1+wob*(.028*Math.sin(a*2+p1)+.012*Math.sin(a*7+p2)),ex=Math.cos(a)*rx*k,ey=Math.sin(a)*ry*k,px=x+ex*c-ey*s,py=y+ex*s+ey*c;i?g.lineTo(px,py):g.moveTo(px,py);}
+}
+// A drawn outline: the pen comes round a little past where it began, and a second, lighter pass goes back
+// over part of it, as a draughtsman firms up a contour — never the one clean stroke of a printed circle.
+function lensHandRing(g,x,y,rx,ry,rot,seed,k,w,rgb,alpha){
+  if(k<=0)return;const a0=-Math.PI*.9+(tileHash(seed,3,61)-.5)*1.2,sweep=TAU*(1.04+tileHash(seed,4,61)*.08)*k;
+  g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle=`rgba(${rgb},${alpha.toFixed(3)})`;g.lineWidth=w;g.beginPath();lensHandEllipse(g,x,y,rx,ry,rot,a0,a0+sweep,seed);g.stroke();
+  if(k>.6){const b0=a0+TAU*(.3+tileHash(seed,5,61)*.4),bk=(k-.6)/.4;g.strokeStyle=`rgba(${rgb},${(alpha*.4).toFixed(3)})`;g.lineWidth=w*.6;g.beginPath();lensHandEllipse(g,x,y,rx*1.015,ry*1.015,rot,b0,b0+TAU*.35*bk,seed+7,1.4);g.stroke();}
+  g.restore();
+}
 // The engraver's shading of a sphere lit from the upper left: a sepia wash under it, parallel burin lines
 // across the disc that thicken and darken toward the shadowed limb, a second set crossing them only where
 // the shadow is deepest, and the keyline last. `k` cuts it on, line by line, so a drawing is seen being made.
 function lensHatchDisc(g,x,y,R,k,P,alpha=1,opts={}){
-  if(k<=0||R<=0)return;const ang=opts.angle??-.42,step=Math.max(1.05,R*.14),c=Math.cos(ang),s=Math.sin(ang);
+  if(k<=0||R<=0)return;const ang=opts.angle??-.42,step=Math.max(1.05,R*.14),seed=(opts.seed|0)*13+7,h=(i,j)=>tileHash(seed,i,j);
   g.save();g.globalAlpha*=alpha;
-  const wg=g.createRadialGradient(x-R*.35,y-R*.4,R*.1,x,y,R);wg.addColorStop(0,`rgba(${P.wash},0)`);wg.addColorStop(1,`rgba(${P.wash},${(.38*k).toFixed(3)})`);
-  g.fillStyle=wg;g.beginPath();g.arc(x,y,R,0,TAU);g.fill();
-  g.beginPath();g.arc(x,y,R,0,TAU);g.clip();g.lineCap='round';
+  // the wash is laid with a brush, so it pools a little off centre and never quite fills a perfect circle
+  const wx=x-R*(.3+(h(0,81)-.5)*.2),wy=y-R*(.4+(h(1,81)-.5)*.2),wg=g.createRadialGradient(wx,wy,R*.1,x+(h(2,81)-.5)*R*.12,y+(h(3,81)-.5)*R*.12,R*1.02);wg.addColorStop(0,`rgba(${P.wash},0)`);wg.addColorStop(1,`rgba(${P.wash},${(.38*k).toFixed(3)})`);
+  g.fillStyle=wg;g.beginPath();lensHandEllipse(g,x,y,R,R,0,0,TAU,seed+3,.6);g.fill();
+  g.beginPath();g.arc(x,y,R*1.01,0,TAU);g.clip();g.lineCap='round';
+  // Every stroke is the hand's, not the ruling machine's: its spacing, its angle and its pressure drift a
+  // little from the last; it bows faintly as a wrist does across a stroke; and it starts and stops short of
+  // the outline by a different amount each time, so the edge of the shading is ragged inside the contour.
   const lines=Math.ceil(R*2/step),shown=Math.ceil(lines*k);
-  for(let i=0;i<shown;i++){const o=-R+(i+.5)*step,shade=clamp((o/R*.8+.55),0,1);if(shade<.12)continue;
-    // the line runs across the disc perpendicular to the light, darker as it goes toward the dark limb
-    const px=x-s*o,py=y+c*o,L=Math.sqrt(Math.max(0,R*R-o*o));
-    g.strokeStyle=`rgba(${P.ink},${(.18+shade*.6).toFixed(3)})`;g.lineWidth=Math.max(.35,.28+shade*.55*(R/12));
-    g.beginPath();g.moveTo(px-c*L,py-s*L);g.lineTo(px+c*L,py+s*L);g.stroke();}
-  if(k>.5&&!opts.noCross){const ck=clamp((k-.5)*2,0,1),a2=ang+1.15,c2=Math.cos(a2),s2=Math.sin(a2);
-    for(let i=0;i<lines*ck;i++){const o=-R+(i+.5)*step*1.2,px=x-s2*o,py=y+c2*o,L=Math.sqrt(Math.max(0,R*R-o*o));
-      // only on the side away from the light: offset measured along the light direction
-      const t0=.35;g.strokeStyle=`rgba(${P.ink},.32)`;g.lineWidth=Math.max(.3,.3*(R/12));g.beginPath();
-      for(let u=-L;u<L;u+=Math.max(1,R*.12)){const qx=px+c2*u,qy=py+s2*u,lit=((qx-x)*.62+(qy-y)*.78)/R;if(lit>t0){g.moveTo(qx,qy);g.lineTo(qx+c2*Math.max(1,R*.12),qy+s2*Math.max(1,R*.12));}}
+  for(let i=0;i<shown;i++){const o=-R+(i+.5+(h(i,71)-.5)*.4)*step,shade=clamp((o/R*.8+.55),0,1);if(shade<.12+h(i,77)*.08)continue;
+    const a=ang+(h(i,72)-.5)*.07,c=Math.cos(a),s=Math.sin(a),px=x-s*o,py=y+c*o,L=Math.sqrt(Math.max(0,R*R-o*o));if(L<.6)continue;
+    const l0=L*(1-h(i,73)*.16),l1=L*(1-h(i,74)*.16),bow=(h(i,75)-.5)*step*.6,mx=px+c*(l1-l0)/2-s*bow,my=py+s*(l1-l0)/2+c*bow;
+    g.strokeStyle=`rgba(${P.ink},${((.18+shade*.6)*(.8+.35*h(i,76))).toFixed(3)})`;g.lineWidth=Math.max(.35,(.28+shade*.55*(R/12))*(.8+.4*h(i,78)));
+    g.beginPath();g.moveTo(px-c*l0,py-s*l0);g.quadraticCurveTo(mx,my,px+c*l1,py+s*l1);g.stroke();}
+  if(k>.5&&!opts.noCross){const ck=clamp((k-.5)*2,0,1);
+    for(let i=0;i<lines*ck;i++){const a2=ang+1.15+(h(i,91)-.5)*.09,c2=Math.cos(a2),s2=Math.sin(a2),o=-R+(i+.5+(h(i,92)-.5)*.5)*step*1.2,px=x-s2*o,py=y+c2*o,L=Math.sqrt(Math.max(0,R*R-o*o));
+      // only on the side away from the light, and where it stops is the hand's judgement, not a threshold
+      const t0=.3+h(i,93)*.12,seg=Math.max(1,R*.12);g.strokeStyle=`rgba(${P.ink},${(.26+.14*h(i,94)).toFixed(3)})`;g.lineWidth=Math.max(.3,.3*(R/12));g.beginPath();
+      for(let u=-L;u<L;u+=seg){const qx=px+c2*u,qy=py+s2*u,lit=((qx-x)*.62+(qy-y)*.78)/R;if(lit>t0){g.moveTo(qx,qy);g.lineTo(qx+c2*seg,qy+s2*seg);}}
       g.stroke();}}
   g.restore();
-  if(!opts.noKey){g.save();g.globalAlpha*=alpha;g.strokeStyle=`rgba(${P.ink},${(.85*Math.min(1,k*1.6)).toFixed(3)})`;g.lineWidth=Math.max(.5,R*.06);g.beginPath();g.arc(x,y,R,-Math.PI*.9,-Math.PI*.9+TAU*Math.min(1,k*1.4));g.stroke();g.restore();}
+  if(!opts.noKey)lensHandRing(g,x,y,R,R,0,seed,Math.min(1,k*1.4),Math.max(.5,R*.06),P.ink,.85*alpha);
 }
 // A lit sphere, rendered rather than engraved: albedo, bands, a terminator from the upper left, limb
 // darkening and a scattering rim. Drawn once into a sprite per world; the painters only ever blit it.
@@ -260,17 +279,17 @@ function lensSaturn(g,R,stage,k=1,opts={}){
     const vg=g.createRadialGradient(0,0,R*.4,0,0,R*2.1);vg.addColorStop(0,`rgba(${P.paper},${opts.card===false?0:.92})`);vg.addColorStop(1,`rgba(${P.paper},0)`);g.fillStyle=vg;g.beginPath();g.arc(0,0,R*2.1,0,TAU);g.fill();
     if(stage===1){
       // Galileo, 1610: the highest planet triform — one body and two smaller ones touching it at either side.
-      lensHatchDisc(g,0,0,R*.55,e,P);
-      for(const s of[-1,1])lensHatchDisc(g,s*R*.93,R*.02,R*.3,clamp(e*1.4-.3,0,1),P,1,{noCross:true});
+      lensHatchDisc(g,0,0,R*.55,e,P,1,{seed:1610});
+      for(const s of[-1,1])lensHatchDisc(g,s*R*.93,R*(s<0?.0:.04),R*(s<0?.3:.28),clamp(e*1.4-.3,0,1),P,1,{noCross:true,seed:1611+s});
     }else{
       // Huygens, 1659: a thin flat ring, touching nowhere, inclined to the ecliptic — his own diagram's
       // lines: the far arc of the ring behind the globe, the globe, the near arc across it.
       const rx=R*1.3,ry=R*.44,ix=R*.86,iy=R*.29,rk=clamp(e*1.3,0,1);
       g.save();g.strokeStyle=`rgba(${P.ink},.85)`;g.lineWidth=Math.max(.6,R*.03);
-      g.beginPath();g.ellipse(0,0,rx,ry,-.12,Math.PI,Math.PI+Math.PI*rk);g.stroke();g.beginPath();g.ellipse(0,0,ix,iy,-.12,Math.PI,Math.PI+Math.PI*rk);g.stroke();g.restore();
-      lensHatchDisc(g,0,0,R*.5,e,P);
+      g.lineCap='round';g.beginPath();lensHandEllipse(g,0,0,rx,ry,-.12,Math.PI,Math.PI+Math.PI*rk,1659);g.stroke();g.beginPath();lensHandEllipse(g,0,0,ix,iy,-.12,Math.PI,Math.PI+Math.PI*rk,1660);g.stroke();g.restore();
+      lensHatchDisc(g,0,0,R*.5,e,P,1,{seed:1659});
       g.save();g.strokeStyle=`rgba(${P.ink},.9)`;g.lineWidth=Math.max(.6,R*.035);
-      g.beginPath();g.ellipse(0,0,rx,ry,-.12,0,Math.PI*rk);g.stroke();g.beginPath();g.ellipse(0,0,ix,iy,-.12,0,Math.PI*rk);g.stroke();
+      g.lineCap='round';g.beginPath();lensHandEllipse(g,0,0,rx,ry,-.12,-.05,(Math.PI+.1)*rk-.05,1659);g.stroke();g.beginPath();lensHandEllipse(g,0,0,ix,iy,-.12,-.05,(Math.PI+.1)*rk-.05,1660);g.stroke();
       // the near half of the ring hatched lengthwise, and the globe's shadow falling across the far half
       g.beginPath();g.ellipse(0,0,rx,ry,-.12,0,Math.PI);g.ellipse(0,0,ix,iy,-.12,Math.PI,0,true);g.closePath();g.save();g.clip();
       g.strokeStyle=`rgba(${P.ink},${(.4*rk).toFixed(3)})`;g.lineWidth=Math.max(.35,R*.012);for(let i=1;i<5;i++){const t=i/5;g.beginPath();g.ellipse(0,0,lerp(ix,rx,t),lerp(iy,ry,t),-.12,0,Math.PI);g.stroke();}g.restore();
@@ -663,26 +682,28 @@ function lensBodyEye(n,family,x,y,d,al){
   let reach=R;
   if(family==='ringed'){
     // Galileo's two companions, and then Huygens's ring where they stood
-    const side=R*.46,off=R*1.62;for(const s of[-1,1])lensHatchDisc(ctx,x+s*off,y,side,e2*(1-e3),P,1-e3,{noCross:true});
-    if(e3>0){const rx=R*2.25,ry=R*.72,ix=R*1.45,iy=R*.46;ctx.strokeStyle=`rgba(${P.ink},${(.85*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.6,R*.07);
-      ctx.beginPath();ctx.ellipse(x,y,rx,ry,-.12,Math.PI,TAU);ctx.stroke();ctx.beginPath();ctx.ellipse(x,y,ix,iy,-.12,Math.PI,TAU);ctx.stroke();}
-    lensHatchDisc(ctx,x,y,R,e2,P);
-    if(e3>0){const rx=R*2.25,ry=R*.72,ix=R*1.45,iy=R*.46;ctx.strokeStyle=`rgba(${P.ink},${(.9*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.6,R*.08);
-      ctx.beginPath();ctx.ellipse(x,y,rx,ry,-.12,0,Math.PI);ctx.stroke();ctx.beginPath();ctx.ellipse(x,y,ix,iy,-.12,0,Math.PI);ctx.stroke();
+    const side=R*.46,off=R*1.62;const sd=n.id|0;for(const s of[-1,1])lensHatchDisc(ctx,x+s*off,y+(s<0?-.04:.05)*R,side*(s<0?1:.92),e2*(1-e3),P,1-e3,{noCross:true,seed:sd+(s<0?1:2)});
+    // Each of the ring's two outlines is one hand-drawn ellipse cut into its far and near halves with the same
+    // seed, so the halves meet where the globe hides the join; the near half is gone over a second time.
+    const rx=R*2.25,ry=R*.72,ix=R*1.45,iy=R*.46,ring=(a0,a1,w,al)=>{ctx.strokeStyle=`rgba(${P.ink},${al.toFixed(3)})`;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x,y,rx,ry,-.12,a0,a1,sd+11);ctx.stroke();ctx.beginPath();lensHandEllipse(ctx,x,y,ix,iy,-.12,a0,a1,sd+12);ctx.stroke();};
+    if(e3>0)ring(Math.PI,TAU,Math.max(.6,R*.07),.85*e3);
+    lensHatchDisc(ctx,x,y,R,e2,P,1,{seed:sd});
+    if(e3>0){ring(-.05,Math.PI+.05,Math.max(.6,R*.08),.9*e3);
       ctx.save();ctx.beginPath();ctx.ellipse(x,y,rx,ry,-.12,0,Math.PI);ctx.ellipse(x,y,ix,iy,-.12,Math.PI,0,true);ctx.closePath();ctx.clip();ctx.strokeStyle=`rgba(${P.ink},${(.35*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.35,R*.03);
-        for(let i=1;i<4;i++){const t=i/4;ctx.beginPath();ctx.ellipse(x,y,lerp(ix,rx,t),lerp(iy,ry,t),-.12,0,Math.PI);ctx.stroke();}ctx.restore();}
+        for(let i=1;i<4;i++){const t=i/4+(tileHash(sd,i,63)-.5)*.08,a0=tileHash(sd,i,64)*.5,a1=Math.PI-tileHash(sd,i,65)*.5;ctx.beginPath();lensHandEllipse(ctx,x,y,lerp(ix,rx,t),lerp(iy,ry,t),-.12,a0,a1,sd+20+i,1.5);ctx.stroke();}ctx.restore();}
     reach=Math.max(R*.75,R*.72*e3)+R*.1;
   }else if(family==='ocean'){
     // Venus in her phases, as Galileo's anagram has it: the mother of loves imitates the shapes of Cynthia
-    lensHatchDisc(ctx,x,y,R,e2,P,1,{angle:.2});
-    if(e2>0){ctx.fillStyle=`rgba(${P.paper},${(.92*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(x,y,R*.97,Math.PI*.55,Math.PI*1.45);ctx.ellipse(x,y,R*(.35+.3*(1-e3)),R*.97,0,Math.PI*1.5,Math.PI*.5,true);ctx.closePath();ctx.fill();
-      ctx.strokeStyle=`rgba(${P.ink},${(.7*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.05);ctx.stroke();}
+    lensHatchDisc(ctx,x,y,R,e2,P,1,{angle:.2,seed:n.id|0});
+    if(e2>0){const tw=R*(.35+.3*(1-e3));ctx.fillStyle=`rgba(${P.paper},${(.92*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(x,y,R*.97,Math.PI*.55,Math.PI*1.45);ctx.ellipse(x,y,tw,R*.97,0,Math.PI*1.5,Math.PI*.5,true);ctx.closePath();ctx.fill();
+      // the terminator is the one line of the phase the hand draws; the limb is the disc's own outline
+      ctx.strokeStyle=`rgba(${P.ink},${(.7*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.05);ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x,y,tw,R*.97,0,Math.PI*.5+.08,Math.PI*1.5-.06,(n.id|0)+31,1.6);ctx.stroke();}
   }else if(family==='ice'){
     // Herschel's comet that would not move like one: a coma at first, then a clean small disc
     if(e2>0&&e3<1){const cg=ctx.createRadialGradient(x,y,R*.3,x+R*1.4,y-R*.4,R*2.6);cg.addColorStop(0,`rgba(${P.sepia},${(.35*e2*(1-e3)).toFixed(3)})`);cg.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(x+R*.9,y-R*.25,R*2.2,R*.9,-.25,0,TAU);ctx.fill();}
-    lensHatchDisc(ctx,x,y,R*.72,e2,P,1,{noCross:true});
+    lensHatchDisc(ctx,x,y,R*.72,e2,P,1,{noCross:true,seed:n.id|0});
   }else{
-    lensHatchDisc(ctx,x,y,R,e2,P,1,family==='volcanic'?{angle:.9}:{});
+    lensHatchDisc(ctx,x,y,R,e2,P,1,{angle:family==='volcanic'?.9:undefined,seed:n.id|0});
     if(family==='crater'&&e2>0){ctx.strokeStyle=`rgba(${P.ink},${(.75*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.045);
       // Craters spread over the lit face, each a rim cut as the arc of its wall that faces away from the light
       // with the shadow it throws laid inside, the way Galileo's wash drawings of the Moon set them.
@@ -690,13 +711,16 @@ function lensBodyEye(n,family,x,y,d,al){
       ctx.lineWidth=Math.max(.35,R*.03);
       for(let i=0;i<7;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
         ctx.fillStyle=`rgba(${P.ink},${(.35*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(cx,cy,cr,Math.PI*.95,Math.PI*1.85);ctx.quadraticCurveTo(cx+cr*.1,cy-cr*.1,cx-cr*.95,cy+cr*.15);ctx.fill();
-        ctx.beginPath();ctx.arc(cx,cy,cr,0,TAU);ctx.stroke();}
+        ctx.beginPath();lensHandEllipse(ctx,cx,cy,cr,cr*(.9+tileHash(n.id,i,6)*.15),tileHash(n.id,i,7)*3,-1,-1+TAU*1.08,(n.id|0)*7+i,2.2);ctx.stroke();}
       // lit peaks standing out in the dark beyond the terminator, the mountains Galileo measured by their shadows
       ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+tileHash(n.id,i,6)*.3),y+R*(tileHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
-    if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();ctx.strokeStyle=`rgba(${P.ink},${(.8*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.8,R*.13);
-      for(const b of[-.28,.22]){ctx.beginPath();ctx.ellipse(x,y+b*R,R*1.1,R*.1,0,0,TAU);ctx.stroke();}ctx.restore();
-      if(e3>0){ctx.strokeStyle=`rgba(${P.rubric},${(.9*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.07);ctx.beginPath();ctx.ellipse(x+R*.25,y+R*.42,R*.26,R*.13,0,0,TAU);ctx.stroke();}}
-    if(family==='dune'&&e2>0){ctx.fillStyle=`rgba(${P.paper},${(.95*e2).toFixed(3)})`;ctx.beginPath();ctx.ellipse(x-R*.05,y-R*.8,R*.38,R*.16,-.1,0,TAU);ctx.fill();ctx.strokeStyle=`rgba(${P.ink},${(.6*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.04);ctx.stroke();
+    if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();ctx.strokeStyle=`rgba(${P.ink},${(.8*e2).toFixed(3)})`;ctx.lineCap='round';
+      // Each belt is laid as a few loose side-by-side strokes that wander a little up and down the disc and
+      // thin out toward the limb, the way a belt is shaded in at the eyepiece rather than ruled across it.
+      for(const [bi,b] of[[0,-.28],[1,.22]])for(let j=0;j<3;j++){const q=bi*3+j,yo=y+R*(b+(j-1)*.065+(tileHash(n.id,q,51)-.5)*.04),ph=tileHash(n.id,q,52)*TAU,x0=x-R*(1.05-tileHash(n.id,q,53)*.2),x1=x+R*(1.05-tileHash(n.id,q,54)*.2);
+        ctx.globalAlpha=al*(.55+.4*tileHash(n.id,q,57));ctx.lineWidth=Math.max(.5,R*(.04+tileHash(n.id,q,55)*.03));ctx.beginPath();for(let t=0;t<=12;t++){const px=lerp(x0,x1,t/12),py=yo+Math.sin(t*.9+ph)*R*.03+(px-x)*(tileHash(n.id,bi,56)-.5)*.06;t?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();}ctx.restore();
+      if(e3>0){ctx.strokeStyle=`rgba(${P.rubric},${(.9*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.07);ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x+R*.25,y+R*.42,R*.26,R*.13,-.08,-.6,-.6+TAU*1.1,(n.id|0)+41,2);ctx.stroke();}}
+    if(family==='dune'&&e2>0){ctx.fillStyle=`rgba(${P.paper},${(.95*e2).toFixed(3)})`;ctx.beginPath();lensHandEllipse(ctx,x-R*.05,y-R*.8,R*.38,R*.16,-.1,0,TAU,(n.id|0)+43,2);ctx.fill();ctx.strokeStyle=`rgba(${P.ink},${(.6*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.04);ctx.lineCap='round';ctx.beginPath();lensHandEllipse(ctx,x-R*.05,y-R*.8,R*.38,R*.16,-.1,2.4,2.4+TAU*1.06,(n.id|0)+43,2);ctx.stroke();
       ctx.fillStyle=`rgba(${P.ink},${(.4*e3).toFixed(3)})`;for(let i=0;i<14;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,8)-.6)*R*1.2,y+(tileHash(n.id,i,9)-.3)*R,Math.max(.5,R*.06),0,TAU);ctx.fill();}}
     // Herschel's three volcanoes, three separate points of red light set well apart on the dark of the disc,
     // each a small glow round a pricked core, so the caption's count can be read off the drawing.
