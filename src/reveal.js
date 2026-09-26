@@ -16,15 +16,15 @@ definePlate('reveal',{
   // as the brightest mark on the plate, ahead of the ink it was supposedly laying — the tool must sit
   // under the ink it carries, not over it.
   night:{mode:'pen',nib:'177,192,183',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
-    strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178'},
+    strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178',graver:'150,162,160',groove:'236,226,198'},
   paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
-    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
+    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16',graver:'62,60,58',groove:'255,249,234'},
   // Repainted for Nut's night sky (2026-09): the wall's ground ink was carbon black on plaster, now
   // it is cream on lapis, so every token that used to be carbon (nib, bead, washRim, rule) reads
   // cream and every one that was red ochre (sketch, spatter, strike, blot) reads carnelian — the
   // sketch-then-correct-then-flood-then-close order this mode animates is unchanged, only its ink.
   ceiling:{mode:'wall',sketch:'194,74,47',nib:'239,226,196',bead:'239,226,196',dry:'201,187,152',
-    spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196'},
+    spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196',graver:'239,226,196',groove:'239,226,196'},
   // The Rock writes nothing of its own: what it sets is the curator's gloss, and a gloss does not arrive
   // behind a quill. Its captions come up a glyph at a time with no tool at their edge, the wall's own
   // order, and the red setting-out is its red ochre.
@@ -235,18 +235,46 @@ function penNibDraw(x,y,angle,alpha,rgb){
     }
   }
 }
+// The atlas holds two tools, because it has two registers. What is written — inscriptions, surveys,
+// floaters, the trail, the impressum — is pen work, and the quill above cuts it. What is engraved — an
+// orbit's ring and the arms of a hazard — was cut in copper, and a graver leaves no bead of wet ink: a
+// short lozenge point at the cut, a curl of swarf thrown forward off it and tightening as it falls away,
+// and the fresh groove behind it standing a value brighter than the finished line for a short way, as
+// burnished copper does before the ink goes into it. One tool is on the page at a time, as ever.
+function burinHeadDraw(x,y,angle,alpha){
+  const c=ink.reveal,k=Math.max(6,7*scale)/7,time=reducedMotion?0:(world?world.time:0);
+  ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.lineCap='round';
+  const groove=ctx.createLinearGradient(0,0,-20*k,0);
+  groove.addColorStop(0,`rgba(${c.groove},${.55*alpha})`);groove.addColorStop(1,`rgba(${c.groove},0)`);
+  ctx.strokeStyle=groove;ctx.lineWidth=1.1*k;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-20*k,0);ctx.stroke();
+  // The point: a steel lozenge with its face toward the cut, and the tang behind it.
+  ctx.fillStyle=`rgba(${c.graver},${.8*alpha})`;
+  ctx.beginPath();ctx.moveTo(2.2*k,0);ctx.lineTo(-1.6*k,-1.35*k);ctx.lineTo(-5.4*k,0);ctx.lineTo(-1.6*k,1.35*k);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=`rgba(${c.graver},${.5*alpha})`;ctx.lineWidth=1.3*k;
+  ctx.beginPath();ctx.moveTo(-5.4*k,-.6*k);ctx.lineTo(-13*k,-2.9*k);ctx.stroke();
+  // The swarf: two or three hairline turns curling up off the point and tightening, each one lifted
+  // and dropped on its own quarter-second so the curl keeps coming off rather than hanging there.
+  ctx.lineWidth=.45;
+  for(let i=0;i<3;i++){
+    const age=((time*4+i/3)%1),r0=(2.2-age*1.2)*k,cx=(1.6+age*2.2)*k,cy=(-1.4-age*1.6-i*.3)*k;
+    ctx.strokeStyle=`rgba(${c.graver},${(.55*(1-age)*alpha).toFixed(3)})`;
+    ctx.beginPath();ctx.arc(cx,cy,Math.max(.4,r0),Math.PI*.2+age*2,Math.PI*1.5+age*2);ctx.stroke();
+  }
+  ctx.restore();
+}
 function nibClaimDraw(){
   if(!nibClaim)return;
   // A hand that holds no pen names its own tool here, or none at all.
   const own=handFor('nib');if(own)return own(nibClaim);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
-  penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
+  if(nibClaim.tool==='burin')burinHeadDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha);
+  else penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
   ctx.restore();
 }
-function penNib(x,y,angle,alpha=1,rgb,priority=NIB_TIER_STROKE){
+function penNib(x,y,angle,alpha=1,rgb,priority=NIB_TIER_STROKE,tool='quill'){
   if(reducedMotion||alpha<=.02||(nibClaim&&priority<=nibClaim.priority))return;
   const m=ctx.getTransform();
-  nibClaim={x:(m.a*x+m.c*y+m.e)/DPR,y:(m.b*x+m.d*y+m.f)/DPR,angle:angle+Math.atan2(m.b,m.a),alpha,rgb,priority};
+  nibClaim={x:(m.a*x+m.c*y+m.e)/DPR,y:(m.b*x+m.d*y+m.f)/DPR,angle:angle+Math.atan2(m.b,m.a),alpha,rgb,priority,tool};
 }
 // A bead of wet ink at the end of a stroke, drying back to the line's own colour behind the point.
 function penBead(x,y,angle,size,alpha=1){
@@ -274,12 +302,12 @@ function penWedgeEnd(pen,n,r,clock=pen.ring){
   if(clock<=0||clock>=1)return;
   const a=n.phase+TAU*clock,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.globalAlpha=1;
-  penBead(x,y,a+Math.PI/2,1.5*scale,.9);
+  // A ring is cut, not written: the graver goes round it and leaves no bead (burinHeadDraw).
   // The node actually being orbited outranks every other stroke on the sheet, however recent — the pilot's
   // own hand is always the one on the page. Any other node still cutting its ring or capture line is an
   // ordinary stroke, ranked by how far into its own clock it is like every other candidate.
   const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(clock);
-  penNib(x,y,a+Math.PI/2,.9,undefined,priority);
+  penNib(x,y,a+Math.PI/2,.9,undefined,priority,'burin');
   ctx.restore();
 }
 // A pen lifts off the page rather than blinking out: for NIB_LIFT_DUR after a wedge has closed (`key`
@@ -296,7 +324,7 @@ function penNibLift(key,span,n,r){
   const u=since/NIB_LIFT_DUR,a=n.phase,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.translate(x,y);ctx.scale(1+u*.12,1+u*.12);ctx.translate(-x,-y);
   const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(u);
-  penNib(x,y,a+Math.PI/2,.9*(1-u),undefined,priority);
+  penNib(x,y,a+Math.PI/2,.9*(1-u),undefined,priority,'burin');
   ctx.restore();
 }
 // A circle gone round once by a hand that was not being careful: the radius breathes by a few per cent
@@ -601,7 +629,7 @@ function revealHazard(h,draw){
   }
   if(cut>0&&cut<1){
     const a=(h.phase||0)+TAU*cut,rr=r*1.8;
-    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8,undefined,nibRecency(cut));
+    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8,undefined,nibRecency(cut),'burin');
   }
 }
 // ---------- Cached rasters swept along their own axis ----------
