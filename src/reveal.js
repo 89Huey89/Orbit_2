@@ -16,15 +16,15 @@ definePlate('reveal',{
   // as the brightest mark on the plate, ahead of the ink it was supposedly laying — the tool must sit
   // under the ink it carries, not over it.
   night:{mode:'pen',nib:'177,192,183',bead:'250,242,216',dry:'209,190,146',spatter:'232,220,186',
-    strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178'},
+    strike:'214,197,155',washRim:'34,32,26',blot:'6,10,17',rule:'226,213,178',graver:'150,162,160',groove:'236,226,198'},
   paper:{mode:'pen',nib:'34,24,16',bead:'22,15,8',dry:'58,42,28',spatter:'58,42,28',
-    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16'},
+    strike:'58,42,28',washRim:'26,18,11',blot:'23,15,8',rule:'34,24,16',graver:'62,60,58',groove:'255,249,234'},
   // Repainted for Nut's night sky (2026-09): the wall's ground ink was carbon black on plaster, now
   // it is cream on lapis, so every token that used to be carbon (nib, bead, washRim, rule) reads
   // cream and every one that was red ochre (sketch, spatter, strike, blot) reads carnelian — the
   // sketch-then-correct-then-flood-then-close order this mode animates is unchanged, only its ink.
   ceiling:{mode:'wall',sketch:'194,74,47',nib:'239,226,196',bead:'239,226,196',dry:'201,187,152',
-    spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196'},
+    spatter:'194,74,47',strike:'194,74,47',washRim:'239,226,196',blot:'194,74,47',rule:'239,226,196',graver:'239,226,196',groove:'239,226,196'},
   // The Rock writes nothing of its own: what it sets is the curator's gloss, and a gloss does not arrive
   // behind a quill. Its captions come up a glyph at a time with no tool at their edge, the wall's own
   // order, and the red setting-out is its red ochre.
@@ -184,14 +184,14 @@ function revealLabel(pen,text){
 // actually cut (`nibClaimDraw`, called from render() in frame.js, which also clears the claim at the top
 // of every frame via `nibClaimReset`). Priority is explicit rather than 'nearest the traveller': the ring
 // or capture wedge of the node actually being orbited (NIB_TIER_ORBIT) outranks every other in-progress
-// stroke (NIB_TIER_STROKE), which outranks the frame's own reveal (NIB_TIER_FRAME), the plate's least
-// urgent mark. Within the stroke tier, `nibRecency(t)` ranks by how recently a stroke began — the local
+// stroke (NIB_TIER_STROKE); the frame, printed by the press rather than drawn (revealFrame), takes no
+// nib at all. Within the stroke tier, `nibRecency(t)` ranks by how recently a stroke began — the local
 // 0..1 clock every call site already reads to decide whether to claim at all — so the most recently
 // begun stroke wins over one nearer its own finish. A candidate's x/y/angle are read off the canvas's own
 // current transform at claim time (`ctx.getTransform()`), not off whatever local, often-rotated frame the
 // call site happens to be drawing in, so the one winning nib can be cut in plain, unrotated screen space
 // long after every local `ctx.save()`/`ctx.restore()` around it has already unwound.
-const NIB_TIER_FRAME=0,NIB_TIER_STROKE=1,NIB_TIER_ORBIT=2;
+const NIB_TIER_STROKE=1,NIB_TIER_ORBIT=2;
 const nibRecency=t=>NIB_TIER_STROKE-clamp(t,0,1)*.9;
 let nibClaim=null;
 function nibClaimReset(){nibClaim=null;}
@@ -235,18 +235,46 @@ function penNibDraw(x,y,angle,alpha,rgb){
     }
   }
 }
+// The atlas holds two tools, because it has two registers. What is written — inscriptions, surveys,
+// floaters, the trail, the impressum — is pen work, and the quill above cuts it. What is engraved — an
+// orbit's ring and the arms of a hazard — was cut in copper, and a graver leaves no bead of wet ink: a
+// short lozenge point at the cut, a curl of swarf thrown forward off it and tightening as it falls away,
+// and the fresh groove behind it standing a value brighter than the finished line for a short way, as
+// burnished copper does before the ink goes into it. One tool is on the page at a time, as ever.
+function burinHeadDraw(x,y,angle,alpha){
+  const c=ink.reveal,k=Math.max(6,7*scale)/7,time=reducedMotion?0:(world?world.time:0);
+  ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.lineCap='round';
+  const groove=ctx.createLinearGradient(0,0,-20*k,0);
+  groove.addColorStop(0,`rgba(${c.groove},${.55*alpha})`);groove.addColorStop(1,`rgba(${c.groove},0)`);
+  ctx.strokeStyle=groove;ctx.lineWidth=1.1*k;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-20*k,0);ctx.stroke();
+  // The point: a steel lozenge with its face toward the cut, and the tang behind it.
+  ctx.fillStyle=`rgba(${c.graver},${.8*alpha})`;
+  ctx.beginPath();ctx.moveTo(2.2*k,0);ctx.lineTo(-1.6*k,-1.35*k);ctx.lineTo(-5.4*k,0);ctx.lineTo(-1.6*k,1.35*k);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=`rgba(${c.graver},${.5*alpha})`;ctx.lineWidth=1.3*k;
+  ctx.beginPath();ctx.moveTo(-5.4*k,-.6*k);ctx.lineTo(-13*k,-2.9*k);ctx.stroke();
+  // The swarf: two or three hairline turns curling up off the point and tightening, each one lifted
+  // and dropped on its own quarter-second so the curl keeps coming off rather than hanging there.
+  ctx.lineWidth=.45;
+  for(let i=0;i<3;i++){
+    const age=((time*4+i/3)%1),r0=(2.2-age*1.2)*k,cx=(1.6+age*2.2)*k,cy=(-1.4-age*1.6-i*.3)*k;
+    ctx.strokeStyle=`rgba(${c.graver},${(.55*(1-age)*alpha).toFixed(3)})`;
+    ctx.beginPath();ctx.arc(cx,cy,Math.max(.4,r0),Math.PI*.2+age*2,Math.PI*1.5+age*2);ctx.stroke();
+  }
+  ctx.restore();
+}
 function nibClaimDraw(){
   if(!nibClaim)return;
   // A hand that holds no pen names its own tool here, or none at all.
   const own=handFor('nib');if(own)return own(nibClaim);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
-  penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
+  if(nibClaim.tool==='burin')burinHeadDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha);
+  else penNibDraw(nibClaim.x,nibClaim.y,nibClaim.angle,nibClaim.alpha,nibClaim.rgb);
   ctx.restore();
 }
-function penNib(x,y,angle,alpha=1,rgb,priority=NIB_TIER_STROKE){
+function penNib(x,y,angle,alpha=1,rgb,priority=NIB_TIER_STROKE,tool='quill'){
   if(reducedMotion||alpha<=.02||(nibClaim&&priority<=nibClaim.priority))return;
   const m=ctx.getTransform();
-  nibClaim={x:(m.a*x+m.c*y+m.e)/DPR,y:(m.b*x+m.d*y+m.f)/DPR,angle:angle+Math.atan2(m.b,m.a),alpha,rgb,priority};
+  nibClaim={x:(m.a*x+m.c*y+m.e)/DPR,y:(m.b*x+m.d*y+m.f)/DPR,angle:angle+Math.atan2(m.b,m.a),alpha,rgb,priority,tool};
 }
 // A bead of wet ink at the end of a stroke, drying back to the line's own colour behind the point.
 function penBead(x,y,angle,size,alpha=1){
@@ -274,12 +302,12 @@ function penWedgeEnd(pen,n,r,clock=pen.ring){
   if(clock<=0||clock>=1)return;
   const a=n.phase+TAU*clock,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.globalAlpha=1;
-  penBead(x,y,a+Math.PI/2,1.5*scale,.9);
+  // A ring is cut, not written: the graver goes round it and leaves no bead (burinHeadDraw).
   // The node actually being orbited outranks every other stroke on the sheet, however recent — the pilot's
   // own hand is always the one on the page. Any other node still cutting its ring or capture line is an
   // ordinary stroke, ranked by how far into its own clock it is like every other candidate.
   const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(clock);
-  penNib(x,y,a+Math.PI/2,.9,undefined,priority);
+  penNib(x,y,a+Math.PI/2,.9,undefined,priority,'burin');
   ctx.restore();
 }
 // A pen lifts off the page rather than blinking out: for NIB_LIFT_DUR after a wedge has closed (`key`
@@ -296,7 +324,7 @@ function penNibLift(key,span,n,r){
   const u=since/NIB_LIFT_DUR,a=n.phase,x=Math.cos(a)*r,y=Math.sin(a)*r;
   ctx.save();ctx.translate(x,y);ctx.scale(1+u*.12,1+u*.12);ctx.translate(-x,-y);
   const priority=world&&world.player&&world.player.node===n?NIB_TIER_ORBIT:nibRecency(u);
-  penNib(x,y,a+Math.PI/2,.9*(1-u),undefined,priority);
+  penNib(x,y,a+Math.PI/2,.9*(1-u),undefined,priority,'burin');
   ctx.restore();
 }
 // A circle gone round once by a hand that was not being careful: the radius breathes by a few per cent
@@ -443,9 +471,10 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     const a0=art.phase,a1=a0+TAU*pen.survey;
     ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,100,a0,a1);ctx.closePath();ctx.clip();
     ctx.drawImage(art.back,-72,-72,144,144);
-    if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
     ctx.restore();
   }
+  const saturn=art.family==='ringed'&&art.ringBack?saturnStage(art,pen):null;
+  if(saturn)saturnBehind(art,saturn);
   // (c) The wash blooms as an irregular blot from a seeded point off the centre, its wet rim drying lighter
   // over the last third of the stage.
   if(pen.wash>0){
@@ -458,6 +487,7 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.save();ctx.clip();ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
     ctx.strokeStyle=`rgba(${ink.reveal.washRim},${.42*(1-dry)+.06})`;ctx.lineWidth=1.2;ctx.stroke();
     ctx.restore();
+    colouristPatches(art,impression,dry);
   }
   // (a) The keyline is cut around the disc by angle — a genuine hairline band, not the wide annulus this
   // used to clip to — and it reveals `art.key` alone: the colourist's correction (the keyline circle, its
@@ -480,6 +510,51 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.beginPath();ctx.rect(-core*1.9,-core*2.3,core*3.8*pen.hatch,core*4.6);ctx.clip();
     ctx.rotate(HATCH_TILT);
     ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
+  }
+  if(saturn&&saturn.open>0)saturnSweep(art,saturn.open,art.ringFront);
+  ctx.restore();
+}
+// ---------- Saturn, as the century actually saw it ----------
+// A ringed body is not a ring from the first glance. What Galileo saw in 1610 was a planet in three parts,
+// altissimum planetam tergeminum: a disc with a round body pressed against it on either side. So while the
+// observation is young the handles grow out of the limb as two attached lobes; past the middle of it they
+// come away from the limb, lengthen and thin, and open a darkness between themselves and the globe; and
+// only when the observation closes does the figure resolve into a ring — one band, no division, which is
+// Cassini's and 1675 — swept round from the body's own phase as the survey arcs are. A Saturn let go early
+// keeps the stage it was left at, so an unfinished observation reads as what it is: the handles of 1610,
+// not the ring of 1659. The opening pressure's Adeptus is drawn whole and is a ring from the start.
+function saturnStage(art,pen){
+  const grow=revealSpan(pen.d,.05,.4),part=revealSpan(pen.d,.55,.9),open=revealSpan(pen.d,.86,1);
+  return {grow,part,open};
+}
+function saturnSweep(art,open,layer){
+  if(!layer||open<=0)return;
+  const a0=art.phase;
+  ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,100,a0,a0+TAU*open);ctx.closePath();ctx.clip();
+  ctx.drawImage(layer,-72,-72,144,144);ctx.restore();
+}
+function saturnBehind(art,{grow,part,open}){
+  saturnSweep(art,open,art.ringBack);
+  const show=grow*(1-open);if(show<=.01)return;
+  const core=art.core,paper=onPaper(),keyRgb=paper?'26,18,11':'31,29,23';
+  const dist=core*(1.1+part*.46),rl=core*.4*(1-part*.18),rx=rl*(1+part*.55),ry=rl*(1-part*.58);
+  ctx.save();ctx.rotate(art.tilt);ctx.lineCap='round';
+  for(const side of [-1,1]){
+    const x=side*dist;
+    ctx.beginPath();ctx.ellipse(x,0,rx*show,ry*Math.max(.35,show),0,0,TAU);
+    ctx.fillStyle=`rgba(${art.rgb},${(paper?.42:.5)*show})`;ctx.fill();
+    ctx.strokeStyle=`rgba(${keyRgb},${(paper?.72:.62)*show})`;ctx.lineWidth=.9;ctx.stroke();
+    // Shade on the side away from the light, in the slant every body on the plate is hatched in.
+    ctx.save();ctx.clip();ctx.strokeStyle=`rgba(${keyRgb},${.3*show})`;ctx.lineWidth=.4;
+    for(let i=0;i<4;i++){const hx=x-rx+rx*(.9+i*.34);ctx.beginPath();ctx.moveTo(hx,-ry);ctx.lineTo(hx+ry*.9,ry);ctx.stroke();}
+    ctx.restore();
+    // Coming away from the globe, a handle opens a darkness of sheet between itself and the limb.
+    if(part>.25){
+      const k=revealSpan(part,.25,1),hx=x-side*rx*.28;
+      ctx.beginPath();ctx.ellipse(hx,0,rx*.42*k,ry*.38*k,0,0,TAU);
+      ctx.fillStyle=`rgba(${ink.base.paperRgb},${.85*show*k})`;ctx.fill();
+      ctx.strokeStyle=`rgba(${keyRgb},${.45*show*k})`;ctx.lineWidth=.5;ctx.stroke();
+    }
   }
   ctx.restore();
 }
@@ -601,7 +676,7 @@ function revealHazard(h,draw){
   }
   if(cut>0&&cut<1){
     const a=(h.phase||0)+TAU*cut,rr=r*1.8;
-    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8,undefined,nibRecency(cut));
+    penNib(x+Math.cos(a)*rr,y+Math.sin(a)*rr,a+Math.PI/2,.8,undefined,nibRecency(cut),'burin');
   }
 }
 // ---------- Cached rasters swept along their own axis ----------
@@ -642,59 +717,46 @@ function revealFigure(chart,draw){
   ctx.restore();
 }
 // ---------- The plate frame ----------
-// Once per run: the double rule draws itself round by dash offset, the graduated ticks follow the pen
-// around the perimeter, and the marginal ornaments come up last. A restart redraws it briskly.
-function penDashRect(x,y,w,h,color,weight,t){
-  if(t<=0||t>=1||w<=0||h<=0)return;
-  const length=(w+h)*2;
-  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=weight;
-  ctx.setLineDash([length,length]);ctx.lineDashOffset=length*(1-t);
-  ctx.strokeRect(x,y,w,h);ctx.restore();
-}
-function framePerimeterPath(t,depth){
-  const perimeter=(W+H)*2,run=perimeter*t;
-  if(run>0)ctx.rect(0,0,Math.min(W,run),depth);
-  if(run>W)ctx.rect(W-depth,0,depth,Math.min(H,run-W));
-  if(run>W+H){const across=Math.min(W,run-W-H);ctx.rect(W-across,H-depth,across,depth);}
-  if(run>W*2+H){const down=Math.min(H,run-W*2-H);ctx.rect(0,H-down,depth,down);}
-}
-function framePerimeterClip(t,depth){
-  ctx.beginPath();
-  framePerimeterPath(t,depth);
-  ctx.clip();
-}
-function penPerimeterPoint(t){
-  const run=((W+H)*2)*t;
-  if(run<=W)return {x:run,y:0,angle:0};
-  if(run<=W+H)return {x:W,y:run-W,angle:Math.PI/2};
-  if(run<=W*2+H)return {x:W-(run-W-H),y:H,angle:Math.PI};
-  return {x:0,y:H-(run-W*2-H),angle:-Math.PI/2};
-}
+// A rolling press lays the whole copper in one pull, so the frame is not drawn line by line: it is
+// printed. The plate-mark presses in first — the plate's edge biting into the damp sheet, a hairline of
+// raised paper along its inner lip and a faint bruise outside it — and then the whole engraved layer lands
+// in a single roll from the head of the sheet to its foot, a point off register, and creeps into register
+// as the sheet settles. No nib touches it. Once per run: over nine tenths of a second on the opening sheet,
+// briskly on a restart.
 function revealFrame(layer){
-  const t=reveal.progress('frame',reveal.runs>0?.5:1.4,true);
+  const t=reveal.progress('frame',reveal.runs>0?.45:.9,true);
   if(t>=1){blitFrameLayer(layer);return 1;}
-  const band=frameBand(),wide=frameWide(),outer=band*.56,inner=band*.92;
-  // Read straight off the same ink.base tokens buildFrameLayer's own double rule is cut in, at the same
-  // alphas, rather than a second rule/ruleFaint pair tuned to look close: the animated rule the pen
-  // draws and the printed rule it hands off to are then provably one ink, not two.
-  const ruleColor=`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,faintColor=`rgba(${ink.base.inkSoft},${onPaper()?.34:.26})`;
-  penDashRect(outer+.5,outer+.5,Math.max(1,W-outer*2-1),Math.max(1,H-outer*2-1),ruleColor,wide?1.4:1,revealSpan(t,0,.5));
-  penDashRect(inner+.5,inner+.5,Math.max(1,W-inner*2-1),Math.max(1,H-inner*2-1),faintColor,wide?1:.7,revealSpan(t,.12,.6));
-  const sweep=revealSpan(t,.25,.85);
-  if(sweep>0){ctx.save();framePerimeterClip(sweep,band*1.5);ctx.drawImage(layer,0,0,W,H);ctx.restore();}
-  const settle=revealSpan(t,.72,1);
-  if(settle>0){
-    ctx.save();ctx.globalAlpha=settle;
-    // The sweep above has already cut the perimeter band opaque; settle only ever needs to lay the
-    // rest of the layer (the corner ornaments reaching past that band), so its blit is clipped to the
-    // band's own complement rather than composited over ground the sweep already finished.
-    if(sweep>0){ctx.beginPath();ctx.rect(0,0,W,H);framePerimeterPath(sweep,band*1.5);ctx.clip('evenodd');}
-    blitFrameLayer(layer);
+  const band=frameBand(),pm=band*.2,paper=onPaper(),bite=revealSpan(t,0,.36),roll=revealSpan(t,.3,.64),settle=revealSpan(t,.64,1);
+  if(bite>0&&roll<1){
+    const x=pm,y=pm,w=Math.max(1,W-pm*2),h=Math.max(1,H-pm*2),r=Math.min(band*.25,w*.5,h*.5);
+    const edge=(inset,weight,rgba)=>{ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x+inset,y+inset,w-inset*2,h-inset*2,r);else ctx.rect(x+inset,y+inset,w-inset*2,h-inset*2);ctx.lineWidth=weight;ctx.strokeStyle=rgba;ctx.stroke();};
+    ctx.save();
+    edge(-2.2,4,`rgba(${ink.press.embossDark},${(paper?.07:.14)*bite})`);
+    edge(0,1,`rgba(${ink.press.embossDark},${(paper?.34:.4)*bite})`);
+    edge(1.1,.8,`rgba(${ink.press.embossLight},${(paper?.6:.22)*bite})`);
     ctx.restore();
   }
-  // The frame is the plate's own least urgent mark: it claims the nib only when nothing else on the
-  // sheet wants it.
-  if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8,undefined,NIB_TIER_FRAME);}
+  if(roll>0){
+    const off=1-settle;
+    // The pull is laid with a soft leading edge rather than a guillotine: the layer carries the plate tone
+    // as well as the lines, and a hard cut across it read as a seam rather than as ink taking to paper.
+    const feather=18,front=H*roll,steps=roll<1?6:0;
+    ctx.save();
+    if(roll<1){ctx.beginPath();ctx.rect(0,0,W,Math.max(0,front-feather));ctx.clip();}
+    ctx.translate(1.3*off,.9*off);blitFrameLayer(layer);
+    ctx.restore();
+    for(let i=0;i<steps;i++){
+      const y0=front-feather+i*feather/steps;
+      ctx.save();ctx.globalAlpha=1-(i+.5)/steps;ctx.beginPath();ctx.rect(0,y0,W,feather/steps);ctx.clip();
+      ctx.translate(1.3*off,.9*off);blitFrameLayer(layer);ctx.restore();
+    }
+    // The roller's own line, where the pressure is on the sheet as the pull goes down it.
+    if(roll<1){
+      const ry=front-feather*.5,shade=ctx.createLinearGradient(0,ry-10,0,ry+2);
+      shade.addColorStop(0,`rgba(${ink.press.embossDark},0)`);shade.addColorStop(1,`rgba(${ink.press.embossDark},${paper?.08:.16})`);
+      ctx.fillStyle=shade;ctx.fillRect(0,ry-10,W,12);
+    }
+  }
   return t;
 }
 // ---------- Canvas captions, a glyph at a time ----------

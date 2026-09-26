@@ -267,11 +267,6 @@ function engravedRing(radius,rgb,alpha,weight,seed,sketch){
   const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
   const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
   g.scale(DPR,DPR);g.translate(size/2,size/2);
-  // On paper the ring was first tried in red chalk: a broken sanguine arc a little off true, under the ink.
-  if(onPaper()){
-    const chalkR=rBucket+((seed>>>2)&1?1:-1)*.8,from=((seed>>>9)%997)/997*TAU;
-    burinArc(g,.5,-.4,chalkR,from,from+TAU*.62,ink.underdrawing.chalk,Number((aBucket*.55).toFixed(3)),Math.max(.5,weight*.9),seed^0x3d9,{segments:40,skips:6,wobble:.8});
-  }
   // An orbit no traveller has taken is not engraved yet, only set down: the hand goes round it more than
   // once, well off true and open in more places than a cut ring is ever left. Taking it closes the line.
   if(sketch){
@@ -287,6 +282,23 @@ function engravedRing(radius,rgb,alpha,weight,seed,sketch){
   for(let k=0;k<hairGaps;k++)burinArc(g,0,0,hairR,startOffset+k*slot,startOffset+k*slot+slot*.7,rgb,Number((aBucket*.4).toFixed(3)),Math.max(.25,weight*.35),seed+k*37,{skips:0,wobble:.12});
   }
   const sprite={canvas:c,size,radius:rBucket};
+  ringSprites.set(key,sprite);
+  if(ringSprites.size>96)ringSprites.delete(ringSprites.keys().next().value);
+  return sprite;
+}
+// On paper the ring was first tried in red chalk: a broken sanguine arc a little off true, under the ink.
+// It is its own sprite rather than baked under the ring, because the setting-out is laid before the ink
+// and has to be seen being laid: drawNode sweeps it on from its own start angle, ahead of the pen.
+function chalkRing(radius,alpha,weight,seed){
+  const rBucket=ringRadiusStep(radius),aBucket=Math.round(alpha/.05)*.05;
+  const key='chalk|'+rBucket+'|'+aBucket.toFixed(2)+'|'+weight+'|'+plateName+'|'+scale.toFixed(3)+'|'+seed;
+  const cached=ringSprites.get(key);if(cached)return cached;
+  const pad=Math.max(6,weight*2.6+3),size=Math.max(2,Math.ceil((rBucket+pad)*2));
+  const c=makeCanvas(Math.max(1,Math.round(size*DPR)),Math.max(1,Math.round(size*DPR))),g=c.getContext('2d');
+  g.scale(DPR,DPR);g.translate(size/2,size/2);
+  const chalkR=rBucket+((seed>>>2)&1?1:-1)*.8,from=((seed>>>9)%997)/997*TAU,span=TAU*.62;
+  burinArc(g,.5,-.4,chalkR,from,from+span,ink.underdrawing.chalk,Number((aBucket*.55).toFixed(3)),Math.max(.5,weight*.9),seed^0x3d9,{segments:40,skips:6,wobble:.8});
+  const sprite={canvas:c,size,radius:rBucket,from,span,chalkR};
   ringSprites.set(key,sprite);
   if(ringSprites.size>96)ringSprites.delete(ringSprites.keys().next().value);
   return sprite;

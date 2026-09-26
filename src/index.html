@@ -263,6 +263,10 @@
     .utility:focus-visible{outline:1px solid var(--gold);outline-offset:-4px;border-radius:50%}
     /* Keylined light-on-dark like the pen's own nib, rather than a flat button chip: a doubled soft-edge
        shadow of the sheet's own ground (--veil) so the ink reads over whatever the plate draws behind it. */
+    #fullscreen .fs-cross,#fullscreen .fs-sheet{transition:transform .25s ease,opacity .25s ease}
+    #fullscreen[aria-pressed="true"] .fs-cross{transform:translate(var(--dx),var(--dy))}
+    #fullscreen[aria-pressed="true"] .fs-sheet{opacity:0}
+    @media(prefers-reduced-motion:reduce){#fullscreen .fs-cross,#fullscreen .fs-sheet{transition:none}}
     .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1.5px rgba(var(--veil),1))}
     .utility .mute-mark{display:none}
     .utility.muted .mute-mark{display:block}
@@ -616,7 +620,15 @@
     .cat-initials{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0 0;font-family:var(--face-sc);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted)}
     .cat-initials input{width:4.6em;padding:2px 0;background:none;border:0;border-bottom:1px solid var(--line);color:var(--gold);font-family:var(--face-text);font-size:17px;letter-spacing:.32em;text-align:center;text-transform:uppercase}
     .cat-initials input:focus-visible{outline:none;border-color:var(--gold)}
-    #catalogue-close{flex:0 0 auto;margin:11px auto 0}
+    /* The way out of a leaf is the foot of a printed page: a rule, the signature at the left and, at the
+       right, the catchword — the first word of the page the reader goes back to, which is the frontispiece.
+       The whole foot is the target, at least 44px tall, and the button names what it does to a reader
+       that cannot see the word. */
+    .catchword{flex:0 0 auto;display:flex;align-items:flex-end;justify-content:space-between;width:100%;min-height:44px;margin:10px 0 0;padding:9px 2px 1px;background:none;border:0;border-top:1px solid var(--line);border-radius:0;font:inherit;color:var(--muted);text-align:left;cursor:pointer;pointer-events:auto}
+    .catch-sig{font-family:var(--face-text);font-size:11px;letter-spacing:.12em;opacity:.62}
+    .catch-word{font-family:var(--face-text);font-style:italic;font-size:16px;line-height:1;color:var(--gold);transition:color .2s}
+    .catchword:hover .catch-word,.catchword:focus-visible .catch-word{color:var(--ivory)}
+    .catchword:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
     #game.playing #catalogue-open{display:none}
     /* — The catalogue's marks on the colophon: what a run has just granted, and the library stamp — */
     #end-unlocked{margin:-9px 0 13px;font-family:var(--face-sc);font-size:10px;letter-spacing:.19em;color:var(--gold)}
@@ -726,7 +738,6 @@
     .cat-card.locked .cat-name{color:var(--copy)}
     .cat-initials{min-height:44px;margin:14px 0 0;padding:8px 0;font-size:9px}
     .cat-initials input{min-height:40px;width:4.6em}
-    #catalogue-close{min-height:44px;margin:9px auto 0;padding:8px 16px}
     @media(min-width:720px){
       #catalogue{padding:28px 28px 84px}
       #catalogue .catalogue-leaf{width:min(920px,100%);height:min(720px,100%);padding:22px 25px 15px}
@@ -748,6 +759,11 @@
        and this second, smaller hand names the Julian month bleeding into the grid's own first ten days. */
     .eph-title-old{font-family:var(--face-text);font-style:italic;font-size:8.5px;letter-spacing:.06em;color:var(--muted);opacity:.62;margin-left:-2px}
     .eph-title-old::before{content:'/ '}
+    /* The sun's place, the first column of every printed ephemeris, set under the month in the same
+       small italic hand as the old-style month beside it, with the sun's own sign cut in gold. */
+    .eph-sun{flex:0 0 auto;margin:5px 0 0;font-family:var(--face-text);font-style:italic;font-size:9.5px;letter-spacing:.04em;text-align:center;color:var(--muted);opacity:.82}
+    .eph-sun svg{width:1.1em;height:1.1em;margin-right:.4em;vertical-align:-.18em;fill:none;stroke:var(--gold);stroke-width:1}
+    .eph-sun .eph-sun-point{fill:var(--gold);stroke:none}
     .eph-arrow{pointer-events:auto;padding:2px 11px;background:none;border:0;border-radius:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;transition:color .2s,opacity .2s}
     .eph-arrow:hover,.eph-arrow:focus-visible{color:var(--gold)}
     .eph-arrow:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
@@ -759,6 +775,12 @@
     .eph-head,.eph-cell{border-width:0 1px 1px 0;border-style:solid;border-color:var(--line)}
     .eph-head{padding:5px 1px;font-family:var(--face-sc);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
     .eph-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:46px;margin:0;padding:5px 2px;background:none;border-radius:0;font:inherit;color:inherit;text-align:center}
+    /* The planetary characters heading the columns and the moon's roundel in each square, both drawn as
+       burin figures in the caption ink rather than set, since the cut faces carry neither. */
+    .eph-head svg{display:block;width:12px;height:12px;margin:0 auto;fill:none;stroke:currentColor;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round}
+    .eph-head .eph-sign-fill,.eph-moon .eph-sign-fill{fill:currentColor;stroke:none}
+    .eph-moon{position:absolute;top:4px;right:4px;width:8px;height:8px;fill:none;stroke:currentColor;stroke-width:.7;color:var(--muted);opacity:.7}
+    .eph-hence .eph-moon{opacity:.45}
     .eph-num{font-family:var(--face-text);font-size:15px;line-height:1;font-variant-numeric:tabular-nums;color:var(--copy)}
     /* The day cell's second, paler numeral: the same date read stylo veteri, ten days behind the one
        set large above it — the plate's own gloss on which calendar an Augsburg reader actually kept. */
@@ -779,14 +801,13 @@
     .eph-cell[aria-pressed="true"]::before{content:'';position:absolute;top:3px;left:50%;width:4px;height:4px;margin-left:-2px;border:1px solid var(--gold);transform:rotate(45deg)}
     .eph-stylo{flex:0 0 auto;margin:9px 0 0;font-family:var(--face-sc);font-size:8px;letter-spacing:.2em;text-align:center;color:var(--muted);opacity:.5}
     .eph-note{flex:0 0 auto;margin:10px 0 0;font-style:italic;font-size:10.5px;line-height:1.5;text-align:center;color:var(--muted);opacity:.75}
-    #ephemeris-close{flex:0 0 auto;margin:11px auto 0}
     @media(max-height:530px) and (orientation:landscape){
       #game .eph-leaf{padding:8px 12px 8px;max-width:min(560px,100%)}
       #ephemeris h2{font-size:19px}
       #ephemeris .title-rule{margin-top:5px}
       #game .eph-month{margin-top:7px}
       #game .eph-body{margin-top:7px}
-      #game .eph-title-old,#game .eph-stylo,#game .eph-julian{display:none}
+      #game .eph-title-old,#game .eph-sun,#game .eph-stylo,#game .eph-julian{display:none}
       #game .eph-cell{min-height:34px;gap:1px}
       #game .eph-num{font-size:13px}
       #game .eph-note{display:none}
@@ -827,9 +848,15 @@
        nearly twice as long, and takes the same clearance measured against its own band. That second rule
        is cut at 781px rather than at the 800px the rest of the wide furniture uses, since what it has to
        clear is the deeper band itself, and frameWide() (src/frame.js) begins cutting that at 780. */
-    #review-close{position:absolute;z-index:6;top:max(30px,calc(env(safe-area-inset-top) + 20px));right:max(30px,calc(env(safe-area-inset-right) + 22px));display:none}
-    @media(min-width:781px){#review-close{top:max(48px,calc(env(safe-area-inset-top) + 38px));right:max(54px,calc(env(safe-area-inset-right) + 46px))}}
-    #game.reviewing #review-close{display:inline-block}
+    /* The review is the finished plate itself, so it is left the way the rest of the atlas leaves a page:
+       by the catchword at the foot on the right, beside the running head and clear of the wind-head in
+       that corner (about 23px in and 39px up at a narrow sheet, nearly twice that on a wide one), naming
+       the page it returns to — the colophon, or the frontispiece when the plate was opened from there. A
+       small clearing of the sheet's own stock holds the word over whatever part of the chart is under it. */
+    #review-close{position:absolute;z-index:6;top:auto;bottom:max(30px,calc(env(safe-area-inset-bottom) + 22px));right:max(50px,calc(env(safe-area-inset-right) + 44px));width:auto;margin:0;padding:6px 10px;border-top:0;display:none;background:radial-gradient(closest-side,rgba(var(--veil),.72),rgba(var(--veil),0))}
+    #review-close .catch-word{padding-top:5px;border-top:1px solid var(--line)}
+    @media(min-width:781px){#review-close{bottom:max(46px,calc(env(safe-area-inset-bottom) + 38px));right:max(84px,calc(env(safe-area-inset-right) + 76px))}}
+    #game.reviewing #review-close{display:inline-flex}
     #game.reviewing .hud{opacity:0}
     #game.reviewing .footer{visibility:hidden;pointer-events:none}
     #game.reviewing #sky{cursor:grab}
@@ -948,7 +975,7 @@
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
     </div>
   </section>
-  <button id="review-close" class="diff-btn" type="button">CLOSE</button>
+  <button id="review-close" class="catchword" type="button" aria-label="Close the review"><span id="review-catch" class="catch-word" aria-hidden="true">Colophon.</span></button>
   <section id="pause" class="screen hidden" aria-label="Paused">
     <div class="colophon pause-leaf">
       <p class="eyebrow" id="pause-eyebrow">THE PRESS STANDS IDLE</p>
@@ -971,7 +998,7 @@
         <div class="title-rule"><span></span></div>
       </div>
       <div id="catalogue-body" class="catalogue-body"></div>
-      <button id="catalogue-close" class="diff-btn" type="button">CLOSE</button>
+      <button id="catalogue-close" class="catchword" type="button" aria-label="Close the catalogue"><span class="catch-sig" aria-hidden="true">A ij</span><span class="catch-word" aria-hidden="true">Orbit.</span></button>
     </div>
   </section>
   <section id="ephemeris" class="screen hidden" aria-label="Ephemeris of the daily plates" aria-hidden="true">
@@ -988,10 +1015,11 @@
         <span id="eph-title-old" class="eph-title-old"></span>
         <button id="eph-next" class="eph-arrow" type="button" aria-label="The month after">&rsaquo;</button>
       </div>
+      <p id="eph-sun" class="eph-sun" role="note"></p>
       <div id="ephemeris-body" class="eph-body"></div>
       <p class="eph-stylo">STYLO NOVO &middot; STYLO VETERI</p>
       <p id="eph-note" class="eph-note"></p>
-      <button id="ephemeris-close" class="diff-btn" type="button">CLOSE</button>
+      <button id="ephemeris-close" class="catchword" type="button" aria-label="Close the ephemeris"><span class="catch-sig" aria-hidden="true">B ij</span><span class="catch-word" aria-hidden="true">Orbit.</span></button>
     </div>
   </section>
   <div class="footer">
@@ -1047,16 +1075,19 @@
         <path d="M5.4 3.4H18.8V20.6H5.5C5.5 19.3 4.7 19.3 4.7 18S6 16.6 6 15.2 4.8 13.6 4.8 12 5.9 10.5 5.9 9 4.8 7.6 4.8 6.2 5.4 4.8 5.4 3.4Z" transform="translate(.5,.4) rotate(-4 12 12)" opacity=".3" stroke-width=".45"/>
       </svg>
     </button>
-    <button id="fullscreen" class="utility" aria-label="Enter fullscreen" title="Fullscreen">
+    <button id="fullscreen" class="utility" aria-label="Enter fullscreen" aria-pressed="false" title="Fullscreen">
       <svg viewBox="0 0 24 24" aria-hidden="true">
+        <!-- The small sheet the four register crosses are cut at the corners of. Pressed, the page fills the
+             frame: the sheet drops away and the crosses stand out at the corners of the whole field. -->
+        <rect class="fs-sheet" x="5.4" y="5.4" width="13.2" height="13.2" stroke-width=".55" opacity=".55"/>
         <g stroke-width=".95">
-          <circle cx="5.4" cy="5.4" r="2.45"/><path d="M5.4 1.9v7M1.9 5.4h7" stroke-width=".75"/>
-          <circle cx="18.6" cy="5.4" r="2.45"/><path d="M18.6 1.9v7M15.1 5.4h7" stroke-width=".75"/>
-          <circle cx="5.4" cy="18.6" r="2.45"/><path d="M5.4 15.1v7M1.9 18.6h7" stroke-width=".75"/>
-          <circle cx="18.6" cy="18.6" r="2.45"/><path d="M18.6 15.1v7M15.1 18.6h7" stroke-width=".75"/>
+          <g class="fs-cross" style="--dx:-1.5px;--dy:-1.5px"><circle cx="5.4" cy="5.4" r="2.45"/><path d="M5.4 1.9v7M1.9 5.4h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:1.5px;--dy:-1.5px"><circle cx="18.6" cy="5.4" r="2.45"/><path d="M18.6 1.9v7M15.1 5.4h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:-1.5px;--dy:1.5px"><circle cx="5.4" cy="18.6" r="2.45"/><path d="M5.4 15.1v7M1.9 18.6h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:1.5px;--dy:1.5px"><circle cx="18.6" cy="18.6" r="2.45"/><path d="M18.6 15.1v7M15.1 18.6h7" stroke-width=".75"/></g>
         </g>
         <g transform="translate(.5,.4)" opacity=".3" stroke-width=".5">
-          <circle cx="5.4" cy="5.4" r="2.45"/><circle cx="18.6" cy="5.4" r="2.45"/><circle cx="5.4" cy="18.6" r="2.45"/><circle cx="18.6" cy="18.6" r="2.45"/>
+          <circle class="fs-cross" style="--dx:-1.5px;--dy:-1.5px" cx="5.4" cy="5.4" r="2.45"/><circle class="fs-cross" style="--dx:1.5px;--dy:-1.5px" cx="18.6" cy="5.4" r="2.45"/><circle class="fs-cross" style="--dx:-1.5px;--dy:1.5px" cx="5.4" cy="18.6" r="2.45"/><circle class="fs-cross" style="--dx:1.5px;--dy:1.5px" cx="18.6" cy="18.6" r="2.45"/>
         </g>
       </svg>
     </button>

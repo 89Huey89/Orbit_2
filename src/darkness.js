@@ -415,6 +415,63 @@ function floaterLine(f,left,h,kind){
   // over whatever is already there, the same call placeInscription makes when no clear ground is found.
   return cost>0?null:best;
 }
+// ---------- The cul-de-lampe the flood uncovers ----------
+// The foot of a printed plate is closed with a tailpiece, and this one is cut into the flood itself, in its
+// own pigment: an ink bottle knocked over on its side, the spill pooling under its mouth and running out
+// in two scrolls to either hand, and one drop hanging from the pool as the point of the inverted triangle
+// every cul-de-lampe is built on. It stands at the foot of the sheet, above the running head, and is
+// printed only where the ink has risen well over it, so it is seen exactly when the run is deepest and
+// most pressed and never on a sheet the flood has barely touched. Cut once into a sprite per plate and
+// scale, like the Leviathan, with a relief pull for the pale gold of a reprieve.
+function culDeLampeSprite(relief){
+  const s=Math.max(.55,Math.min(1.6,scale)),key='cul:'+plateName+':'+(relief?'r':'n')+':'+s.toFixed(2)+':'+DPR.toFixed(2);
+  const cached=darkMarginalia.get(key);if(cached)return cached;
+  const w=Math.ceil(172*s),h=Math.ceil(66*s);
+  const c=makeCanvas(Math.max(1,Math.round(w*DPR)),Math.max(1,Math.round(h*DPR))),g=c.getContext('2d');
+  g.scale(DPR*s,DPR*s);g.lineCap='round';g.lineJoin='round';
+  const rgb=relief?ink.dark.shorelineRelief:ink.dark.pigment,tone=a=>`rgba(${rgb},${a})`;
+  const cutAlong=(pts,alpha,weight,seed)=>{
+    const r=seeded(seed),ph=r()*TAU;g.strokeStyle=tone(alpha);
+    for(let i=0;i<pts.length-1;i++){
+      const u=(i+.5)/(pts.length-1),lift=Math.min(1,Math.sin(Math.PI*u)*1.6+.18);
+      g.lineWidth=Math.max(.2,weight*lift*(1+Math.sin(2*u*TAU+ph)*.3));
+      g.beginPath();g.moveTo(pts[i][0],pts[i][1]);g.lineTo(pts[i+1][0],pts[i+1][1]);g.stroke();
+    }
+  };
+  const bez=(p0,p1,p2,p3,n=16)=>{const p=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;p.push([u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]);}return p;};
+  const spiral=(cx,cy,r0,turns,dir,n=22)=>{const p=[];for(let i=0;i<=n;i++){const t=i/n,a=dir*t*turns*TAU,r=r0*(1-t*.82);p.push([cx+Math.cos(a+Math.PI/2*dir)*r,cy+Math.sin(a+Math.PI/2*dir)*r]);}return p;};
+  const shape=(pts,alpha)=>{g.fillStyle=tone(alpha);g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(const q of pts)g.lineTo(q[0],q[1]);g.closePath();g.fill();};
+  // The bottle, on its side with its mouth to the right: a squat body, a short neck and the lip.
+  const body=[];for(let i=0;i<=28;i++){const a=i/28*TAU;body.push([76+Math.cos(a)*14,17+Math.sin(a)*9.5]);}
+  shape(body,.1);cutAlong(body,.62,.95,31);
+  g.save();g.beginPath();g.moveTo(body[0][0],body[0][1]);for(const q of body)g.lineTo(q[0],q[1]);g.closePath();g.clip();
+  g.strokeStyle=tone(.34);g.lineWidth=.45;for(let x=58;x<92;x+=2.4){if(x<70)continue;g.beginPath();g.moveTo(x,8);g.lineTo(x+9,27);g.stroke();}
+  g.restore();
+  cutAlong(bez([89,11],[93,12],[96,13],[98,15],6),.6,.8,33);cutAlong(bez([89,23],[93,22],[96,21],[98,19],6),.6,.8,35);
+  const lip=[];for(let i=0;i<=16;i++){const a=i/16*TAU;lip.push([99+Math.cos(a)*2.2,17+Math.sin(a)*4.6]);}cutAlong(lip,.7,.8,37);
+  // The spill: a lobed pool under the mouth, washed and cut round, and its two runs out to the scrolls.
+  const pool=bez([62,29],[74,40],[100,41],[112,29],18).concat(bez([112,29],[104,32],[96,24],[100,22],8)).concat(bez([100,22],[88,31],[70,33],[62,29],10));
+  shape(pool,.26);cutAlong(pool,.5,.7,41);
+  cutAlong(bez([64,31],[48,40],[26,36],[17,26]),.58,1,43);cutAlong(spiral(17,21,5.4,.95,-1),.55,.8,45);
+  cutAlong(bez([110,31],[126,40],[148,36],[156,26]),.58,1,47);cutAlong(spiral(156,21,5.4,.95,1),.55,.8,49);
+  // Smaller inner scrolls and a leaf on each arm, so the triangle reads as ornament and not as a puddle.
+  cutAlong(bez([52,36],[44,45],[34,46],[30,41]),.44,.7,51);cutAlong(spiral(31,38,2.8,.8,-1,14),.4,.6,53);
+  cutAlong(bez([122,36],[130,45],[140,46],[144,41]),.44,.7,55);cutAlong(spiral(143,38,2.8,.8,1,14),.4,.6,57);
+  for(const [x,y,d] of [[40,34,-1],[134,34,1]]){const leaf=bez([x,y],[x+d*4,y-6],[x+d*10,y-6],[x+d*12,y-2],8).concat(bez([x+d*12,y-2],[x+d*8,y+1],[x+d*4,y+1],[x,y],8));shape(leaf,.18);cutAlong(leaf,.46,.55,61+d);}
+  // The drop that hangs from the pool: the point of the triangle.
+  cutAlong(bez([86,40],[86,45],[87,50],[86,55],8),.55,.8,63);
+  const drop=[];for(let i=0;i<=18;i++){const a=i/18*TAU,r=2.4*(1-.45*Math.max(0,-Math.sin(a)));drop.push([86+Math.cos(a)*r,58.5+Math.sin(a)*r*1.25]);}
+  shape(drop,.55);
+  const sprite={canvas:c,w,h};darkMarginalia.set(key,sprite);return sprite;
+}
+function drawCulDeLampe(fy,alpha){
+  if(world.state==='ready'||plainPlate())return;
+  const cul=culDeLampeSprite(false),x=(W-cul.w)/2,y=marginaliaFloor()-cul.h-4*scale;
+  const shown=clamp((y-fy-24*scale)/(56*scale),0,1);if(shown<=0)return;
+  ctx.save();ctx.globalAlpha=alpha*shown;ctx.drawImage(cul.canvas,x,y,cul.w,cul.h);
+  if(darknessRelief>.001){const r=culDeLampeSprite(true);ctx.globalAlpha=alpha*shown*darknessRelief;ctx.drawImage(r.canvas,x,y,r.w,r.h);}
+  ctx.restore();
+}
 function drawDarkMarginalia(fy,time,alpha){
   // Neither the monster nor the gloss has anything to be carried by while the run is still to be
   // dealt: the flood is only its ready-state resting level, not a rising tide, and drawing them here
@@ -594,12 +651,56 @@ function corrodeBand(){
   const top=q(Math.max(0,fy-lead-wave)),bottom=q(Math.min(H,fy+drag+wave));
   return bottom-top>2?{top,bottom}:null;
 }
+// A reprieve drives the flood back, and the retreat leaves a stain: at the highest point the ink reached
+// before it turned, a dried tide mark in the flood's own pigment — a broken, wobbled contour with a faint
+// band of settled fleck under it, on paper in the browning the corrosion leaves rather than the shoreline's alarm red (night keeps the flood's own pigment, having no corrosion) — kept on the sheet in world coordinates for the rest of the run, so it
+// scrolls up and away as an orbit does. A run with three reprieves carries three old tide lines up the
+// page, and they show how close the dark came each time. The mark is written the first frame the grace
+// is seen to open, which is also the frame the floor stood highest; it dries in over the first stretch of
+// the retreat, and a flood that climbs back over it simply covers it again. Render-side only, kept per world.
+const TIDE_MARKS_KEPT=6;
+let tideWorld=null,tideMarks=[],tideGraceSeen=0;
+function noteTideMark(){
+  if(tideWorld!==world){tideWorld=world;tideMarks=[];tideGraceSeen=0;}
+  if(world.darknessGrace>0&&tideGraceSeen<=0&&world.elapsed>1.5){
+    tideMarks.push({floor:world.floorY,seed:(Math.round(world.floorY*7)^0x7a3e1)>>>0});
+    if(tideMarks.length>TIDE_MARKS_KEPT)tideMarks.shift();
+  }
+  tideGraceSeen=world.darknessGrace;
+}
+function drawTideMarks(fy){
+  const s=scale,inner=frameBand()*.92,paper=onPaper(),rgb=paper&&ink.dark.corrosion||ink.dark.pigment;
+  for(const mark of tideMarks){
+    const y=fy+sy(mark.floor)-sy(world.floorY),dry=clamp((fy-y)/(26*s),0,1);
+    if(dry<=0||y<-20||y>H+20)continue;
+    const rng=seeded(mark.seed),ph=rng()*TAU,ph2=rng()*TAU,base=(paper?.46:.3)*dry;
+    ctx.save();ctx.lineCap='round';
+    // The water stood here a while, so the sheet under the line is stained in a band that fades downward.
+    const band=ctx.createLinearGradient(0,y,0,y+13*s);
+    band.addColorStop(0,`rgba(${rgb},${(base*.26).toFixed(3)})`);band.addColorStop(1,`rgba(${rgb},0)`);
+    ctx.fillStyle=band;ctx.fillRect(inner,y-1.5*s,W-inner*2,14.5*s);
+    for(let x=inner;x<W-inner;x+=9*s){
+      const gap=rng()<.16,yy=y+(Math.sin(x/(41*s)+ph)*1.6+Math.sin(x/(13*s)+ph2)*.7)*s;
+      const x2=Math.min(W-inner,x+9*s),y2=y+(Math.sin(x2/(41*s)+ph)*1.6+Math.sin(x2/(13*s)+ph2)*.7)*s;
+      if(gap)continue;
+      ctx.strokeStyle=`rgba(${rgb},${(base*(.7+rng()*.5)).toFixed(3)})`;ctx.lineWidth=(.5+rng()*.55)*s;
+      ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x2,y2);ctx.stroke();
+    }
+    ctx.fillStyle=`rgba(${rgb},${(base*.55).toFixed(3)})`;
+    for(let i=0;i<46;i++){
+      const x=inner+rng()*(W-inner*2),d=(1.5+rng()*rng()*11)*s,r=(.35+rng()*.55)*s;
+      ctx.beginPath();ctx.arc(x,y+d,r,0,TAU);ctx.fill();
+    }
+    ctx.restore();
+  }
+}
 function drawDark(dt=0){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('dark');if(own)return own(dt);
   // Match the visible hairline to the simulation's exact loss threshold.
   const fy=darkWaterline(),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
+  noteTideMark();drawTideMarks(fy);
   if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);
   if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));
@@ -612,9 +713,14 @@ function drawDark(dt=0){
   ctx.fillStyle=body;ctx.fillRect(0,fy,W,Math.max(0,H-fy));
   const tileWidth=640*s,tileHeight=180*s,drift=(time*2.3*s)%tileWidth;
   const normal=darknessPlate(false),relief=darknessPlate(true);
+  // The plate is only a tile deep, and its foot is denser than the solid wash below it, so once the flood
+  // stands high on the sheet its lower edge showed as a seam straight across. Its last rows are carried
+  // on down to the foot of the sheet instead, so the ink below the tile is the tile's own deepest tone.
+  const tileFoot=fy-24*s+tileHeight,carry=H-tileFoot;
   for(let x=-drift-tileWidth;x<W;x+=tileWidth){
     ctx.drawImage(normal,x,fy-24*s,tileWidth,tileHeight);
-    if(darknessRelief>.001){ctx.globalAlpha=darknessRelief;ctx.drawImage(relief,x,fy-24*s,tileWidth,tileHeight);ctx.globalAlpha=1;}
+    if(carry>0)ctx.drawImage(normal,0,normal.height-2,normal.width,2,x,tileFoot-1,tileWidth,carry+1);
+    if(darknessRelief>.001){ctx.globalAlpha=darknessRelief;ctx.drawImage(relief,x,fy-24*s,tileWidth,tileHeight);if(carry>0)ctx.drawImage(relief,0,relief.height-2,relief.width,2,x,tileFoot-1,tileWidth,carry+1);ctx.globalAlpha=1;}
   }
   // One fine shoreline communicates danger; softer sediment lines stay below it. Both are cut with the
   // same burin as every other mark on the sheet rather than ruled straight — the waterline is the one
@@ -635,6 +741,7 @@ function drawDark(dt=0){
     const x=mote.x*W+Math.sin(time*.3+mote.drift)*2*s,y=fy-(4+phase*25)*s;
     line(x,y,x+.3*s,y+mote.length*s,`rgba(${rgb},${alpha})`,.55*s);
   }
+  drawCulDeLampe(fy,.5+near*.25+darknessRelief*.15);
   drawDarkMarginalia(fy,time,.55+near*.3+darknessRelief*.15);
   if(near>.2&&world.state==='playing'){
     // The gradient runs from nothing to one alpha, so it is painted once at full strength (sheetWash,

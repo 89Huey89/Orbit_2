@@ -570,6 +570,9 @@ function drawConstellations(){
         // Latin over it: the Latin is the atlas's, and a century that never wrote it has no gloss to give.
         const own=chartTitle(chart)!==chart.name,dir=below?Math.PI/2:-Math.PI/2,latin=!own&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
         const alpha=chart.completed?.34:.52;
+        // A finished figure is named the way the printed atlas names one, across itself (drawFigureName),
+        // and the rim caption that announced the route gives way to it.
+        if(chart.completed&&latin&&renaissanceAtlas())drawFigureName(chart,latin);else{
         ctx.save();ctx.translate(ex,ey);
         ctx.font=plateFace(size,'sc');
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${alpha})`;
@@ -581,6 +584,7 @@ function drawConstellations(){
           textAlongArc(ctx,chart.name,0,0,glossRing,dir,{align:'center',size:glossSize,spacing:glossSize*.22,inward:below});
         }
         ctx.restore();
+        }
       }
       // The entry still announces that a route begins there, at a bare pricked arc well clear of the
       // node's own tick fence and dashed capture ring — a coarser, wider prick than either, so it
@@ -604,10 +608,15 @@ function drawConstellations(){
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
       const y=star+captionOffset(sx(label.x),star,r,46*scale,60);
       const side=label.x>0?'right':'left';
-      ctx.textAlign=side;ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;
-      markGroundText('caption',x,y,ctx.measureText(chart.name).width,14,side);ctx.fillText(chart.name,x,y);
+      // Where the figure is already named across itself (drawFigureName) the flash is only the event, in
+      // the game's English: the name above it would say the figure's name a second time in the other voice.
+      const named=renaissanceAtlas()&&chartTitle(chart)===chart.name&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin,note=`COMPLETE · +${chart.bonus}`;
+      ctx.textAlign=side;
+      if(!named){ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;
+        markGroundText('caption',x,y,ctx.measureText(chart.name).width,14,side);ctx.fillText(chart.name,x,y);}
+      const ny=named?y+8:y+16;
       ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;
-      markGroundText('caption',x,y+16,ctx.measureText('COMPLETE · +60').width,13,side);ctx.fillText('COMPLETE · +60',x,y+16);
+      markGroundText('caption',x,ny,ctx.measureText(note).width,13,side);ctx.fillText(note,x,ny);
     }
     // Skipped where the node already carries the early-run "NEXT" caption (see drawNode in figures.js):
     // the wide-orbit hint sits on the same main-line node right after a constellation's entry, and the
@@ -621,6 +630,44 @@ function drawConstellations(){
     }
     ctx.restore();
   }
+}
+// Bayer letters a constellation's name across the figure itself, in a large italic set level on the sheet
+// rather than turned along the figure's spine, and on this plate that is how a completed figure is named:
+// the Latin across the middle of its three stars, the English gloss small beneath it (CLAUDE.md, the two
+// voices), swept on left to right by the pen as the completion lands and kept while the figure is on the
+// sheet. The line starts level with the stars' centre and steps a line and a half up or down at a time
+// until it stands clear of the stars' own rings and of settled type; failing that, clear of their punches
+// alone, so it is never printed through a star; and when no step is clear it keeps the centre line, drawn
+// down to a hairline. The gloss is set in the vernacular's own case, since the ledger keeps it in capitals.
+const FIGURE_NAME_PUNCH=7;
+function drawFigureName(chart,latin){
+  const pts=chart.stars.filter(Boolean).map(s=>({x:sx(s.x),y:sy(s.y),ring:s.r*scale+8}));if(!pts.length)return;
+  const glossText=chart.name.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+  const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length,cy=pts.reduce((a,p)=>a+p.y,0)/pts.length;
+  const size=Math.max(14,17*scale),gloss=Math.max(8,9*scale),inner=frameBand()*.92+8,punch=FIGURE_NAME_PUNCH*scale;
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.font=plateFace(gloss,'text','italic');const gw=ctx.measureText(glossText).width;
+  ctx.font=plateFace(size,'text','italic');const w=Math.max(ctx.measureText(latin).width,gw);
+  const x=clamp(cx,inner+w/2,Math.max(inner+w/2,W-inner-w/2));
+  const boxAt=y=>({left:x-w/2-3,right:x+w/2+3,top:y-size*.86,bottom:y+gloss*1.55});
+  const crosses=(b,reach)=>pts.some(p=>{const d=reach?p.ring:punch;return p.x+d>b.left&&p.x-d<b.right&&p.y+d>b.top&&p.y-d<b.bottom;});
+  let y=cy+size*.35,clear=false;
+  for(const reach of [true,false]){
+    for(const step of [0,-1,1,-2,2,-3,3,-4,4,-5,5]){const t=cy+size*.35+step*size*1.5,b=boxAt(t);if(t>inner+size&&t<H-inner-gloss*2&&!crosses(b,reach)&&groundFixed(b,chart,2)<=0){y=t;clear=true;break;}}
+    if(clear)break;
+  }
+  const box=boxAt(y);markGroundBox('name',box,chart);
+  const k=reveal.progress('figname:'+chart.id,.9,true),front=box.left+(box.right-box.left)*k;
+  if(!clear)ctx.globalAlpha*=.3;
+  ctx.beginPath();ctx.rect(box.left-2,box.top-4,front-box.left+2,box.bottom-box.top+8);ctx.clip();
+  // The ground round the letters is reserved first, a narrow margin of the sheet's own stock, the way an
+  // engraver left the plate clean round a name he meant to cut across a figure's lines.
+  ctx.lineJoin='round';ctx.strokeStyle=`rgba(${ink.base.paperRgb},.7)`;ctx.lineWidth=3.2;ctx.strokeText(latin,x,y);
+  ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.68)`;ctx.fillText(latin,x,y);
+  ctx.font=plateFace(gloss,'text','italic');ctx.lineWidth=2.4;ctx.strokeText(glossText,x,y+gloss*1.3);
+  ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.5)`;ctx.fillText(glossText,x,y+gloss*1.3);
+  ctx.restore();
+  if(k<1)penNib(front,y-size*.3,0,.6,undefined,nibRecency(k));
 }
 // How far either side of the middle the DOM HUD's centre column — the score, the pace and the flow — can
 // reach. A caption printed inside it has to keep below the whole HUD band rather than merely inside the frame.
@@ -777,6 +824,9 @@ function drawChargeDevice(kind,r,rgb,pen){
   ctx.drawImage(sprite,-reach,-reach,reach*2,reach*2);
   ctx.restore();
 }
+// The species a full observation names, one per geological family: the atlas's own Latin for what the
+// specimen shows, in the manner of the century's descriptive names rather than any later nomenclature.
+const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus annulatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
 function drawNode(n,aim){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -868,10 +918,28 @@ function drawNode(n,aim){
     }
   }
   if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
+  const ringAlpha=active?.59:target?.57:.25;
+  // The setting-out goes down first. On paper the sanguine trial arc is laid by a blunt chalk stub a beat
+  // ahead of the ink — over the first third of the pen's pass where the ring takes six tenths — outside
+  // the burin's wedge, so it is seen being laid rather than uncovered with the ring, and it stays wherever
+  // the ink does not agree with it. The stub leaves no bead: only a few grains where it bears on the tooth.
+  if(paper){
+    const chalk=chalkRing(r,ringAlpha,cut('line'),n.seed),k=r/(chalk.radius||r),cfit=chalk.size*k,lead=pen.t>=1?1:revealSpan(pen.t,0,.34);
+    if(lead>0){
+      ctx.save();
+      if(lead<1){ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,cfit/2,chalk.from,chalk.from+chalk.span*lead);ctx.closePath();ctx.clip();}
+      ctx.drawImage(chalk.canvas,-cfit/2,-cfit/2,cfit,cfit);
+      ctx.restore();
+      if(lead<1){
+        const a=chalk.from+chalk.span*lead,tx=.5*k+Math.cos(a)*chalk.chalkR*k,ty=-.4*k+Math.sin(a)*chalk.chalkR*k,rng=seeded(n.seed^Math.floor(lead*40));
+        ctx.fillStyle=`rgba(${ink.underdrawing.chalk},.55)`;
+        for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(tx+(rng()-.5)*2.4,ty+(rng()-.5)*2.4,.35+rng()*.45,0,TAU);ctx.fill();}
+      }
+    }
+  }
   const reach=Math.max(r,n.cap*scale)*2+30,wedged=penWedgeBegin(pen,n,reach);
   if(paper)drawHalo();
   {
-    const ringAlpha=active?.59:target?.57:.25;
     if(pen.taken<1){
       // The capture is an act of drawing, not a swap: the sketch — broken, doubled, off true, exactly
       // as an orbit no traveller has taken is cut elsewhere — is laid down whole first, then the cut
@@ -921,6 +989,27 @@ function drawNode(n,aim){
     const written=revealLabel(pen,word);
     const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
     if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
+  }
+  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Fell italic,
+  // written round the top of the rim by the pen once the observation closes and left there after release,
+  // so a finished chart reads as a lettered plate rather than a field of anonymous circles. It is a name,
+  // so it is the plate's Latin (CLAUDE.md, the two voices); the seven are plain enough to need no gloss.
+  // The top is tried first, the foot second when no rim caption stands there, and where both stand on
+  // other type the name is still written, drawn down to a hairline the way a crowded side caption is. A
+  // star and a slingshot are not worlds and have no species, so they are left as they are.
+  const species=renaissanceAtlas()&&!n.difficultyChoice&&!PICKUP_FAMILIES.has(n.type)&&!sling&&n.routeRole!=='star'&&pen.d>=1?SPECIMEN_NAMES[planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice)]:null;
+  if(species&&!captionsHeld()){
+    const written=reveal.progress('specimen:'+n.id,species.length*.05,true),size=Math.max(8,8.6*scale),radius=r+8*scale;
+    ctx.font=plateFace(size,'text','italic');
+    const width=ctx.measureText(species).width||species.length*size*.5,rimTaken=!active&&n.row>0&&n.row%4===0;
+    const boxAt=top=>{const edge=top?y-radius:y+radius;return {left:x-width/2-2,right:x+width/2+2,top:top?edge-size*1.05:edge-size*.2,bottom:top?edge+size*.2:edge+size*1.05};};
+    const clear=b=>groundClear(b,n,2),top=clear(boxAt(true))||rimTaken||!clear(boxAt(false)),box=boxAt(top);
+    markGroundBox('caption',box,n);
+    ctx.save();if(!clear(box))ctx.globalAlpha*=.3;
+    ctx.fillStyle=paper?`rgba(${ink.base.ink},.62)`:`rgba(${rgb},.5)`;
+    const arc=textAlongArc(ctx,species,0,0,top?radius:radius+size*.72,top?-Math.PI/2:Math.PI/2,{align:'center',size,spacing:size*.06,inward:!top,progress:written});
+    if(written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
+    ctx.restore();
   }
   if(active){
     for(const next of releaseTargets(n)){

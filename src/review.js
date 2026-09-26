@@ -3,7 +3,7 @@
    The finished plate, read back rather than played: a free-scrolling camera over a world rebuilt by
    replayRun(), with nothing on it that only made sense while the ink was still wet. */
 // ---------- Reviewing a finished run ----------
-let reviewWorld=null,reviewCameraY=0,reviewReturnScreen='end';
+let reviewWorld=null,reviewCameraY=0,reviewReturnScreen='end',reviewOpenedAt=0,reviewTakenAt=0;
 // The one thing kept between visits: not the run, which the darkness has already taken apart, but the
 // list of moments it was flown from. A seed and a handful of numbers outlive the tab that drew them.
 const LAST_REPLAY_KEY='orbit.lastReplay.v1';
@@ -39,8 +39,9 @@ function panReviewBy(delta){
 function openReview(log,returnTo){
   if(reviewing)return;
   const l=log||replayLog;if(!l)return;
-  reviewWorld=replayRun(l);
+  reviewWorld=replayRun(l);reviewOpenedAt=performance.now();reviewTakenAt=Number(l.capturedAt)||Date.now();
   reviewing=true;reviewReturnScreen=returnTo||'end';
+  $('review-catch').textContent=reviewReturnScreen==='end'?'Colophon.':'Orbit.';
   const b=reviewBounds(reviewWorld);
   // Opens on where the run ended, not the start — the one fixed position review is allowed, since
   // nothing after this moves the camera on its own. Free scrolling from here is the whole point.
@@ -67,7 +68,7 @@ function renderReview(){
   // The route actually flown, and the angle every departure and landing was measured at — see
   // replayRun() in src/replay.js, which surveys the whole run again as it rebuilds it.
   drawInkPath();drawSurveys();
-  drawImpressum();
+  drawImpressum();drawReviewTablet(w);
   ctx.restore();
   // The folio and the grain, in the order render() itself cuts them: a finished plate is still a page
   // of the atlas, and a page with no number on it and no wires in its stock is not a sheet at all.
@@ -75,6 +76,47 @@ function renderReview(){
   // is no longer playing, and over a finished plate that is a blank scraped in the chart for nothing.
   drawPlateFrame();drawRunningHead();drawLaidPaper();
   world=savedWorld;
+}
+// ---------- The finished plate's title tablet ----------
+// A finished plate is titled the way the imprint titles the opening one: a strapwork tablet cut into the
+// sheet just below where the run ended, which is where review opens, carrying the plate as an impression
+// taken — the table and region reached, the day it was drawn, the pressure, the orbits, the sum and the
+// figures traced, and the engraver's credit. It is lettered in the plate's Latin (CLAUDE.md, the two
+// voices) and inks on row by row as the review opens, and it rides with the sheet in world coordinates, so
+// panning down toward the opening plate leaves it behind. The stock inside it is cleared first, so the
+// chart under it never runs through the lettering.
+function reviewTabletRows(w){
+  const chapter=clamp(Math.floor(w.progress/8),0,3),d=new Date(reviewTakenAt);
+  const pressure=Object.keys(DARKNESS_MULT).find(k=>DARKNESS_MULT[k]===w.darknessMult)||'classic';
+  const words=plateWords().pressures||{};
+  return [
+    {text:'TAB. '+numerals[chapter]+' · '+chaptersLatin[chapter],face:'sc',size:1.2},
+    {text:'die '+roman(d.getUTCDate())+' '+MONTHS_LATIN_GEN[d.getUTCMonth()]+' · anno '+roman(d.getUTCFullYear()),face:'italic',size:.92},
+    {text:(words[pressure]||pressure.toUpperCase())+' · ORBITÆ '+roman(Math.max(1,Math.floor(w.progress)+1)),face:'sc',size:1},
+    {text:'SUMMA '+commas(w.score)+' · ASTERISMI '+(w.constellationsCompleted?roman(w.constellationsCompleted):'—'),face:'sc',size:1},
+    {text:engraverCredit(),face:'italic',size:.84}
+  ];
+}
+function drawReviewTablet(w){
+  if(eraId()!==0||plainPlate())return;
+  const rows=reviewTabletRows(w),size=Math.max(8.5,9.6*scale),lineH=size*1.5,padY=size*.9;
+  ctx.save();
+  let width=0;for(const r of rows){ctx.font=r.face==='italic'?plateFace(size*r.size,'text','italic'):plateFace(size*r.size,'sc');width=Math.max(width,ctx.measureText(r.text).width);}
+  width=Math.min(W-frameBand()*2-60,width+size*3);
+  const height=rows.reduce((h,r)=>h+lineH*r.size,0)+padY*2,cx=W*.5,top=sy(w.player.y+w.height*.28);
+  if(top>H||top+height<0){ctx.restore();return;}
+  const out=pressCartoucheInset(width,height),left=cx-width*.5,t=(performance.now()-reviewOpenedAt)/1000;
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},${onPaper()?.9:.86})`;ctx.fillRect(left,top,width,height);
+  drawPressCartouche(left-out.x,top-out.y,width+out.x*2,height+out.y*2,ink.base.inkStrong,onPaper()?.6:.42,frameWide()?1:.75,70219);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=ink.frame.text;
+  let y=top+padY;
+  rows.forEach((r,i)=>{
+    const rs=size*r.size,lh=lineH*r.size;
+    ctx.font=r.face==='italic'?plateFace(rs,'text','italic'):plateFace(rs,'sc');
+    writeText(ctx,r.text,cx,y+lh*.5,reducedMotion?1:clamp((t-.25-i*.22)/.5,0,1),{size:rs,nib:false});
+    y+=lh;
+  });
+  ctx.restore();
 }
 // ---------- Input: drag or wheel, nothing automatic ----------
 let reviewPointerId=null,reviewLastY=0;

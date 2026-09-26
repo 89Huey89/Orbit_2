@@ -1,5 +1,5 @@
 // The colophon: a short run ended by the dark, and a longer one ended with more on the sheet, then the
-// finished plate read back in review.
+// finished plate read back in review, before and after its title tablet is lettered.
 export default {
   name:'end',
   description:'The colophon after a short and a longer run, and the review of the plate.',
@@ -15,5 +15,7 @@ export default {
     await g.shot('colophon-long');
     await g.openReview();
     await g.shot('review');
+    // The title tablet inks on row by row as review opens; this is the sheet once it is lettered.
+    await g.advance(2);await g.shot('review-titled');
   }
 };
