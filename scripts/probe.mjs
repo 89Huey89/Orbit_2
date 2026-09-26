@@ -79,8 +79,11 @@ const plates=await readFile(new URL('../src/plates.js',import.meta.url),'utf8');
 const pressureTable=name=>{const m=plates.match(new RegExp('const '+name+'=(\\{[^}]*\\});'));return m?vm.runInNewContext('('+m[1]+')'):null;};
 const MULTS=PRESSURE?{darknessMult:pressureTable('DARKNESS_MULT'),inkMult:pressureTable('INK_MULT'),perfectMult:pressureTable('PERFECT_MULT'),capMult:pressureTable('CAP_MULT'),releaseGrace:pressureTable('RELEASE_GRACE_BY')}:null;
 if(PRESSURE&&!(PRESSURE in MULTS.darknessMult))throw new Error('Unknown pressure '+PRESSURE);
+// Whether the endless driver is felt. The live game turns it on for every run with no row it is won at,
+// which is every run the probe flies, so it is on unless `--flat` asks for the chart as it was before it.
+const DRIVEN=!args.includes('--flat');
 function dealWorld(seed){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.driven=DRIVEN;
   if(MULTS)for(const key in MULTS)if(MULTS[key])w[key]=MULTS[key][PRESSURE];
   if(GRACE!==null)w.releaseGrace=GRACE;
   return w;
@@ -265,7 +268,7 @@ for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
 if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,patience:PATIENCE/TAU,sweepFull:SWEEP_FULL,ledgerFloor:LEDGER_FLOOR,ledgerSpan:LEDGER_SPAN,report},null,2));process.exit(0);}
 
 console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s');
-console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms'));
+console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms')+', endless driver '+(DRIVEN?'on':'off'));
 console.log('knowledge per encounter = '+LEDGER_FLOOR+' + '+LEDGER_SPAN+' × documented\n');
 console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('perf',6)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
 console.log('-'.repeat(89));

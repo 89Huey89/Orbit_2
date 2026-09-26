@@ -107,7 +107,8 @@ Not built by the first stage and recorded here so it is not lost:
    exists, a known era is turned over **between** runs: the leaf says so and the next tap opens the next
    century's frontispiece (`journeyAdvance()`), which stage 5 replaces with the in-run transition. The
    frontier never climbs onto a century that has no plate yet, so it stops at VI for now.
-4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs.
+4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs. *Landed*: every run
+   with no row it is won at is dealt under it (`world.driven`).
 5. `JOURNEY.md` stage 5, the transition. *Its first step landed inside one century*: the Lens's registers no
    longer arrive as an edge but grow out of the body landed on past rows 12 and 24 (the simulation's
    `transition` event and `TRANSITION_GRACE`, which holds the dark for three seconds and holds no input).

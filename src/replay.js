@@ -4,7 +4,7 @@
    its seed and when the traveller released, so the finished chart can be read back long after the
    run that drew it, without a frame of it ever having played again. */
 // ---------- Replaying a run from its own log ----------
-// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, grace, releases,
+// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, driven, grace, releases,
 // resizes}: releases and resizes are ordered lists of the world.time each one happened at (see replayLog
 // in ui.js, where one is kept). varyOpening, chasmsOn and relightOn are all read the same permissive way
 // an older saved log already reads a field it predates — undefined falls through to OrbitWorld's own
@@ -32,6 +32,8 @@ function replayRun(log){
   // One that has it starts from the grace it was dealt with and takes the chosen pressure's own grace
   // when the opening orbit settles it, exactly as the live run did.
   world=w;w.keepAll=true;w.releaseGrace=graced?log.grace:0;
+  // The endless driver the same way: a log that predates it was flown on the flat chart and reads back on it.
+  w.driven=log.driven===true;
   const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
   let ri=0,zi=0,guard=0,started=false;
   // The live clock keeps running while the traveller is still reading the frontispiece (nodes wobble

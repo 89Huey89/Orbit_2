@@ -110,6 +110,33 @@ function chartPace(row) { return BASE_SPEED+(MAX_SPEED-BASE_SPEED)*clamp((row-3)
 // How much wider the chart is cut at this row than at the opening: 1 at the start, about 2.1 once
 // the chart is drawn for its full pace.
 function chartGrowth(row) { return chartPace(row)/BASE_SPEED; }
+// The shared endless driver (JOURNEY.md §1.8). Every curve above settles: the pace by row 28, the
+// flood's own clock by about four minutes, and the hazards, the clouds and the winds never had a row
+// term to begin with, so a deep run was the same chart repeated and a hand good enough for row 40 was
+// good enough for row 400. The driver is one number that starts where the last of those curves has
+// settled and keeps rising for as long as the run does, on a logarithm so that it never stops and never
+// runs away: a unit by row 68, two by row 148, three by row 308, and still climbing at row 500. Below
+// row 28 and inside the first four minutes it is nothing, so every chart a run of ordinary depth is
+// dealt is the chart it always was. It reads the row and the clock and nothing else — never a plate, a
+// pressure or an era — so two runs at the same row mean the same thing whatever sheet they are drawn on.
+const DRIVE_FROM_ROW = 28, DRIVE_ROW_SPAN = 40;
+// The flood's own clock settles when its 128 units of growth have been paid at .55 a second, a second
+// and a half in; the driver's clock starts there and rises on the same logarithm, a unit every two
+// minutes at first.
+const DRIVE_FROM_SECONDS = 1.5+128/.55, DRIVE_SECONDS_SPAN = 120;
+function rowDrive(row) { return Math.log2(1+Math.max(0,row-DRIVE_FROM_ROW)/DRIVE_ROW_SPAN); }
+function clockDrive(seconds) { return Math.log2(1+Math.max(0,seconds-DRIVE_FROM_SECONDS)/DRIVE_SECONDS_SPAN); }
+// What one unit of the driver buys on each thing it feeds. They are kept small, because each is felt on
+// top of the others: the pace a crossing is cut for (so the gulfs keep opening past the speed a star can
+// give, and the nib and the dark both feel the extra distance), the flood's rise, a hazard's size and
+// the strength of its field, and the largest cloud the chart may hang.
+const DRIVE_PACE = 18, DRIVE_FLOOD = 16, DRIVE_HAZARD_RADIUS = 4, DRIVE_FIELD = .12, DRIVE_NEBULA = 10;
+// The growth a capture band is widened by stops where the pace stopped. The band opens with the gulf
+// only so that the release window stays as wide in the hand as it was; past row 28 the gulf goes on
+// opening under the driver while the band does not, and that is the one tightening of the landing the
+// driver makes — as gradual as the pace that causes it. (The number is chartGrowth past row 28, written
+// out because clamp is not yet defined up here.)
+const PLATEAU_GROWTH = (BASE_SPEED+(MAX_SPEED-BASE_SPEED)*.78)/BASE_SPEED;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 function seeded(seed) {
@@ -324,8 +351,10 @@ function bendVelocity(p,hazards,dt) {
     const d=Math.sqrt(d2),edge=1-d/reach,kind=hazardKind(h);
     // A wind-head blows one steady way over the whole of its reach instead of toward or away from a
     // centre, so its is the one field that does not lie along the radius.
-    if(kind.sign===0){const gust=WIND_FORCE*edge*edge;ax+=Math.cos(h.dir||0)*gust;ay+=Math.sin(h.dir||0)*gust;continue;}
-    const pull=kind.sign*1800*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
+    // A field's strength is cut into it with the rest of the chart (h.force, set by the driver), so the
+    // guide and the flight read the same field; a hazard placed without one blows at its old strength.
+    if(kind.sign===0){const gust=WIND_FORCE*(h.force||1)*edge*edge;ax+=Math.cos(h.dir||0)*gust;ay+=Math.sin(h.dir||0)*gust;continue;}
+    const pull=kind.sign*1800*(h.force||1)*h.r*h.r/(d2+h.r*h.r*.36)*edge*edge;
     ax+=dx/d*pull;ay+=dy/d*pull;
   }
   // This local arcade field turns momentum while preserving earned speed.
@@ -496,6 +525,12 @@ class OrbitWorld {
     // Off by default: the darkness prunes what it has already passed (below), which a live run needs
     // and a replayed one, rebuilding a whole chart to be read back rather than played, does not.
     this.keepAll = false;
+    // Whether the endless driver (DRIVE_FROM_ROW above) is felt. Off by default, exactly like chasmsOn and
+    // newtonOn, so every fixture and every replay logged before the driver existed keeps the flat chart
+    // it was flown on; the live game turns it on for every run with no row it is won at (newWorld() in
+    // src/ui.js), and a replay reads it back off its own log. It changes nothing before row 28 or four
+    // minutes, which is also why setting it after construction, as both do, is early enough.
+    this.driven = false;
     // How far either side of a tap the release may be let go from (see RELEASE_GRACE). A replay sets it
     // from its own log, so a run flown before the grace existed is read back under the rule it was flown by.
     this.releaseGrace = RELEASE_GRACE;
@@ -528,11 +563,24 @@ class OrbitWorld {
   // The furthest from the middle a node of this radius may be cut and still keep its whole orbit —
   // and the traveller riding it — inside the chart's edge, which is where a run is lost.
   inboard(r) { return Math.max(40, this.width/2 - r - 22); }
+  // The driver's row term for this chart, which is all generation may read: a seed must deal one chart
+  // however it is flown, so what a row is cut with can depend on the row and never on the clock.
+  rowDrive(row) { return this.driven?rowDrive(row):0; }
+  // The pace a row is cut for on this chart: chartPace's settled curve, and past it the driver's.
+  pace(row) { return chartPace(row)+DRIVE_PACE*this.rowDrive(row); }
+  growth(row) { return this.pace(row)/BASE_SPEED; }
+  // The whole driver as it stands: the deepest row reached and the run's own clock, each on its own
+  // logarithm. 0 through any run of ordinary depth and length, and never saturating.
+  difficultyDriver() { return this.driven?rowDrive(this.progress)+clockDrive(this.elapsed):0; }
   generateRow() {
     const k = ++this.row, prev = this.lastMain, rng = this.random;
     const region=Math.floor(k/8),local=k%8,fork=local>=3&&local<=7;
     const side=((this.seed>>region)&1)?1:-1;
-    const grow = chartGrowth(k);
+    // The driver's whole units are steps in how busy the chart is, not only how hard each thing on it is:
+    // from the first a second wind-head in every five rows, from the second a hazard may shut a route on
+    // any row it stands on, from the third a hazard stands on every row. Each is a rule the chart already
+    // has, met more often; none is new.
+    const grow = this.growth(k),drive=this.rowDrive(k),tier=Math.floor(drive);
     // The orbits open with the chart, up to half as wide again. A wider ring is swept more slowly at
     // the same pace and presents a larger rim from further off, which is what keeps the release
     // window about as wide in the hand as it was when the orbits sat close together.
@@ -550,7 +598,7 @@ class OrbitWorld {
     if ((!fixedStart) && Math.abs(x - prev.baseX) < apart) x = clamp(x + (x < 0 ? apart*1.24 : -apart*1.24), -spread, spread);
     // Every transfer is cut to about TRANSFER_SECONDS at the pace the chart is drawn for, so the
     // gulf between two orbits grows with that pace rather than with the row number.
-    let y = prev.baseY - (fixedStart ? 207 : chartPace(k)*TRANSFER_SECONDS + rng()*30);
+    let y = prev.baseY - (fixedStart ? 207 : this.pace(k)*TRANSFER_SECONDS + rng()*30);
     let radius = fixedStart ? 54 : (54 - Math.min(13,k*.39) + rng()*7)*size;
     if(fork){x=local===3||local===7?0:-side*Math.min([0,0,0,0,100,82,106][local]*grow,spread);radius=(local===3||local===7?55:55-Math.min(region,4)*2)*size;}
     const type = k===2||k>=7&&k%8===7?'sling':k >= 14 && k%7===0 ? 'fading' : k>=8 && k%4===0 ? 'drift' : 'still';
@@ -567,12 +615,12 @@ class OrbitWorld {
     const n = this.makeNode(x,y,radius,k,type);
     // The star's own shortcut stays about two and a half rows deep, so it opens up with the chart:
     // the reach a full nib and a full lap buy together is always the same number of orbits skipped.
-    if(type==='sling'&&k>=7)n.shortcut={x:-side*Math.min(98*grow,this.inboard(54*size)),y:y-chartPace(k)*TRANSFER_SECONDS*2.55,r:54*size};
+    if(type==='sling'&&k>=7)n.shortcut={x:-side*Math.min(98*grow,this.inboard(54*size)),y:y-this.pace(k)*TRANSFER_SECONDS*2.55,r:54*size};
     if(slingOrigin&&k===slingOrigin.row+2)slingOrigin.shortcutId=n.id;
     // The capture band opens with the chart. A long crossing is aimed from further off, so the
     // angle that finds the rim is finer; the band grows with the gulf to keep the release window
     // about as wide in the hand as it was when the orbits were close together.
-    n.cap = (n.r + Math.max(6, 12-k*.13)*grow)*this.capMult;
+    n.cap = (n.r + Math.max(6, 12-k*.13)*Math.min(grow,PLATEAU_GROWTH))*this.capMult;
     this.lastMain = n;
     if(fork){
       n.routeId=region;n.routeRole=local===3?'entry':local===7?'exit':'main';
@@ -640,14 +688,14 @@ class OrbitWorld {
     // side you cross on becomes a decision instead of a formality. What is never allowed is closing
     // the last way through — at least one smooth tangent, the route a perfect transfer is flown on,
     // is always left open, and the slingshot's own shortcut is never touched.
-    if (!fork && k >= 6 && k%3 !== 1) {
-      const r = 18+rng()*11+Math.min(8,k*.14);
+    if (!fork && k >= 6 && (k%3 !== 1 || tier >= 3)) {
+      const r = 18+rng()*11+Math.min(8,k*.14)+DRIVE_HAZARD_RADIUS*drive;
       const direct=tangentPaths(prev,n),smooth=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)];
       // Two margins, because a hazard reaches further than it kills. A route closer than `kill` is
       // shut; the route left open has to be clear of the whole gravity field, or it would be bent
       // into the hazard it was supposed to avoid.
       const kill=r+prev.amp+n.amp+25,free=gravityRadius({r})+prev.amp+n.amp+10;
-      const mayClose=k>=HAZARD_CLOSES_ROUTE&&k%3===2;
+      const mayClose=k>=HAZARD_CLOSES_ROUTE&&(k%3===2||tier>=2);
       let chosen=null,clearOf=null;
       for (let tries=0;tries<12&&!chosen;tries++) {
         const hx=(rng()-.5)*Math.min(this.width-72,380), hy=(prev.y+n.y)/2+(rng()-.5)*55;
@@ -675,7 +723,7 @@ class OrbitWorld {
         // From the third region, sunspot flares alternate with vortices under the
         // same placement rules: they repel instead of pulling and only their core kills.
         const kind=k>=16&&(this.flarePhase=(this.flarePhase+1)&1)?'flare':'vortex';
-        this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false});
+        this.hazards.push({x:place.hx,y:place.hy,r,kind,row:k,seed:Math.floor(rng()*1e8),phase:rng()*TAU,near:false,force:1+DRIVE_FIELD*drive});
       }
     }
     // A wind-head sits across one of the tangent routes between the last two main nodes and blows
@@ -683,7 +731,7 @@ class OrbitWorld {
     // placement above, because it is the one hazard that cannot shut a route: it kills nothing, so
     // a crossing through it stays flyable and only has to be led into. It keeps clear of every
     // capture band, drift envelope and other hazard field so the two fields are never read at once.
-    if (k >= WIND_FROM_ROW && k%5 === 3) {
+    if (k >= WIND_FROM_ROW && (k%5 === 3 || tier >= 1 && k%5 === 0)) {
       const gale=this.windRandom,routes=[...orbitTangents(prev,n,1),...orbitTangents(prev,n,-1)],reach=HAZARD_KINDS.wind.reach;
       for (let tries=0;tries<12&&routes.length;tries++) {
         const path=routes[Math.floor(gale()*routes.length)],t=.36+gale()*.28;
@@ -703,7 +751,7 @@ class OrbitWorld {
         // led into it is never led into the chart's own edge.
         const along=Math.atan2(path.by-path.y,path.bx-path.x);
         const dir=along+(wx>0?-1:1)*Math.PI/2;
-        this.hazards.push({x:wx,y:wy,r:room,kind:'wind',dir,row:k,seed:Math.floor(gale()*1e8),phase:gale()*TAU,near:false});
+        this.hazards.push({x:wx,y:wy,r:room,kind:'wind',dir,row:k,seed:Math.floor(gale()*1e8),phase:gale()*TAU,near:false,force:1+DRIVE_FIELD*drive});
         break;
       }
     }
@@ -717,7 +765,7 @@ class OrbitWorld {
         const gx=lerp(path.x,path.bx,t),gy=lerp(path.y,path.by,t);
         // The cloud is grown to the largest size that still clears every capture band,
         // drift envelope and hazard field around it, and dropped if that is under 60.
-        let room=90;
+        const most=90+DRIVE_NEBULA*drive;let room=most;
         for(const q of this.nodes)room=Math.min(room,Math.hypot(gx-q.baseX,gy-q.baseY)-q.cap-q.amp-8);
         // The 30 units of slack are allowed against a lethal hazard, whose outer field a cloud may
         // just overlap without hiding anything that matters there. A gust is given none: a cloud
@@ -726,7 +774,7 @@ class OrbitWorld {
         for(const h of this.hazards)room=Math.min(room,Math.hypot(gx-h.x,gy-h.y)-gravityRadius(h)+(hazardKind(h).lethal?30:0));
         for(const g of this.nebulas)room=Math.min(room,Math.hypot(gx-g.x,gy-g.y)-g.r);
         if(room<60)continue;
-        this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(90,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
+        this.nebulas.push({kind:'nebula',row:k,x:gx,y:gy,r:Math.min(most,room),seed:Math.floor(fog()*1e8),phase:fog()*TAU});break;
       }
     }
     // A chasm, era I's own addition, drawn from its own stream exactly as the wind and the cloud are
@@ -801,7 +849,8 @@ class OrbitWorld {
   // as the run climbs, so a tide fixed in world units would slacken exactly where the chart opens
   // up; a quarter of that growth keeps the squeeze roughly even without letting the tide outrun what
   // even a skilled run can climb, so the fully developed pursuit reaches about 191 rather than 150.
-  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55))*(1+(chartGrowth(this.progress)-1)*.25)*this.darknessMult*this.darknessRelief(); }
+  // Past four minutes the driver's clock goes on adding to the tide rather than letting it settle.
+  darknessSpeed() { return (22+Math.min(128,Math.max(0,this.elapsed-1.5)*.55)+(this.driven?DRIVE_FLOOD*clockDrive(this.elapsed):0))*(1+(this.growth(this.progress)-1)*.25)*this.darknessMult*this.darknessRelief(); }
   launchVelocity() {
     const p=this.player,rawSpeed=Math.hypot(p.vx,p.vy),speed=Math.min(MAX_SPEED,rawSpeed),ratio=speed/Math.max(1e-8,rawSpeed);
     // Bound repeated assists from moving planets without changing the heading.

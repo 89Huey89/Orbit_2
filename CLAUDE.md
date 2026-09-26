@@ -41,7 +41,8 @@ see README.md's "The eras".
   `scripts/bundle.mjs`.
 - `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
   levels of hand and reports how deep a run actually gets, what it captures, and what the era
-  progression's observation ledger would stand at by each row. Makes no assertions and is not run by
+  progression's observation ledger would stand at by each row; it flies the endless driver as the live game
+  does, and `--flat` reads the chart as it was before it. Makes no assertions and is not run by
   `npm test`. Its first reading is `docs/archive/eras/MEASUREMENTS.md`.
 - `node scripts/perf.mjs` — a timing instrument, not a test: flies a seeded run on each era in headless
   Chromium at 430×932 with the canvas rasterised on the CPU (the nearest a desktop comes to Safari's

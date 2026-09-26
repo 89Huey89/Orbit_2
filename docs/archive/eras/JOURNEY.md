@@ -245,7 +245,7 @@ From `scripts/probe.mjs` (see `MEASUREMENTS.md`), 150 seeds per hand:
 - **The release window is about one frame wide.** The same pilot costed a single 8 ms frame collapses
   from surviving the cap to a median of row 26. 57–80 % of runs die by leaving the star chart.
   Nothing in the era work may narrow that window.
-- **Endless is flat today**, which is why §1.8 is stage 4 and not stage 7: `chartPace`'s clamp
+- **Endless was flat** until stage 4 landed, which is why §1.8 was stage 4 and not stage 7: `chartPace`'s clamp
   plateaus near row 28; `darknessSpeed()` has a *second*, independent wall-clock clamp that saturates
   around 236 s; hazard radius caps near k≈57; nebula radius is hard-capped with no row term; wind
   reach/force and the gravity pull coefficient have **no** row dependence at all.
@@ -545,7 +545,35 @@ entry; an old saved ledger and an old `orbit.best.v1` both survive migration; `j
 never called in Free Play or Daily. *Must not break*: the `plateIds` loops (`:842`,`:1078`) — extend
 them to loop era ids so a new era is smoke-tested the moment it is registered.
 
-### Stage 4 — the shared endless driver · *parallel-safe once §6 exists*
+### Stage 4 — the shared endless driver · *landed*
+
+**Built** (2026-09-26): `world.difficultyDriver()` in `src/simulation.js`, a row term and a clock term, each
+`log₂(1 + over/span)` from the point the last flat curve settled (row 28, and the flood's clock at
+≈234 s), so it is nothing through any run of ordinary depth and is still rising at rows 200 and 500. It
+feeds the pace a crossing is cut for, the flood, the lethal hazard radius, a field strength cut into each
+hazard (`h.force`, read by `bendVelocity`, so the guide and the flight agree), the nebula cap, and — on
+its whole units — the wind cadence, route-closing and hazard cadence. The capture band stops widening at
+the plateau growth, the one tightening of the landing. It is behind `world.driven`, off by default like
+every other world flag; `newWorld()` sets it for every run with `goalRow` 0 and the replay log carries
+it, so a log from before it replays flat. The README's gameplay section states every number.
+
+Two things the plan below asked for were deliberately left out, and why:
+
+- **Gravity and wind with no row term** are fed through the per-hazard field strength rather than the
+  two global coefficients (`1800`, `WIND_FORCE`), so a field is the strength it was dealt with and a
+  guide can never read a different chart from the flight. Newton mode's node pull is untouched: it is an
+  optional plate of its own and was not part of the flat-curve census in §3.
+- **The chapter cap (L6)** is presentation, not difficulty: no simulation value reads `chapter`, so the
+  driver does not need it lifted. What a fifth chapter onward *looks* like on each plate is an art
+  question for stage 7, and the five call shapes are still as L6 lists them.
+
+Measured with `scripts/probe.mjs --seeds=40 --rows=600 --seconds=1500` (and `--flat` for the chart
+before it): the hands at σ 20–30 ms are unchanged (median rows 24 and 21), σ 10 ms goes from a median
+of row 71 to 63, and the oracle from a median of row 190 (p90 421, one run in twenty surviving to the
+cap) to a median of 150 (p90 209, none surviving), dying 60 % of the time to the dark.
+
+The plan as it was written:
+
 
 One normalised, non-saturating scalar — `world.difficultyDriver()` — rising with run duration and
 progression, feeding chart pace, boundary speed, transfer distance, capture tolerance, hazard

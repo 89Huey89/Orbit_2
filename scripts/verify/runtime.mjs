@@ -1615,7 +1615,11 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       log=context.test.replayLog;
     }while(log.releases.length<4&&++attempts<20);
     assert(log.releases.length>=4,'The fixture must record a real handful of releases: '+width+'x'+height);
+    assert.equal(live.driven,true,'The atlas is endless, so its run feels the endless driver');
+    assert.equal(log.driven,true,'The log keeps whether the run it records felt the driver');
     const replayed=context.test.replayRun(log);
+    assert.equal(replayed.driven,true,'A replay reads the driver back off its log');
+    assert.equal(context.test.replayRun({...log,driven:undefined}).driven,false,'A log from before the driver replays on the flat chart it was flown on');
     assert.equal(replayed.state,'dead','A replayed run must reach the same end the live one did: '+width+'x'+height);
     assert.equal(replayed.reason,live.reason,'A replayed run must die of the same cause: '+width+'x'+height);
     for(const key of ['score','captures','perfects','squares','maxCombo','progress','constellationsCompleted'])
@@ -1706,8 +1710,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(reading.hidden,true,'The atlas has no ending, and so no choice of reading');
     context.test.enterEra('rock');
     assert.equal(context.test.world.goalRow,32,'The Rock\'s Chronicle ends with the fourth chamber, Newgrange');
+    assert.equal(context.test.world.driven,false,'A Chronicle keeps the flat chart its finish was read off');
     events['reading:click']();
     assert.equal(context.test.world.goalRow,0,'Read Endless, the wall has no row it is won at');
+    assert.equal(context.test.world.driven,true,'Read Endless, the wall feels the endless driver');
     assert.equal(reading.textContent,context.test.plateWords().chrome.readings.endless);
     assert.equal(reading.hidden,false);
     if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).rock,'endless','The reading is kept, per century');
