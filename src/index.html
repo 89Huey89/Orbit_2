@@ -263,6 +263,10 @@
     .utility:focus-visible{outline:1px solid var(--gold);outline-offset:-4px;border-radius:50%}
     /* Keylined light-on-dark like the pen's own nib, rather than a flat button chip: a doubled soft-edge
        shadow of the sheet's own ground (--veil) so the ink reads over whatever the plate draws behind it. */
+    #fullscreen .fs-cross,#fullscreen .fs-sheet{transition:transform .25s ease,opacity .25s ease}
+    #fullscreen[aria-pressed="true"] .fs-cross{transform:translate(var(--dx),var(--dy))}
+    #fullscreen[aria-pressed="true"] .fs-sheet{opacity:0}
+    @media(prefers-reduced-motion:reduce){#fullscreen .fs-cross,#fullscreen .fs-sheet{transition:none}}
     .utility svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1.5px rgba(var(--veil),1))}
     .utility .mute-mark{display:none}
     .utility.muted .mute-mark{display:block}
@@ -844,9 +848,15 @@
        nearly twice as long, and takes the same clearance measured against its own band. That second rule
        is cut at 781px rather than at the 800px the rest of the wide furniture uses, since what it has to
        clear is the deeper band itself, and frameWide() (src/frame.js) begins cutting that at 780. */
-    #review-close{position:absolute;z-index:6;top:max(30px,calc(env(safe-area-inset-top) + 20px));right:max(30px,calc(env(safe-area-inset-right) + 22px));display:none}
-    @media(min-width:781px){#review-close{top:max(48px,calc(env(safe-area-inset-top) + 38px));right:max(54px,calc(env(safe-area-inset-right) + 46px))}}
-    #game.reviewing #review-close{display:inline-block}
+    /* The review is the finished plate itself, so it is left the way the rest of the atlas leaves a page:
+       by the catchword at the foot on the right, beside the running head and clear of the wind-head in
+       that corner (about 23px in and 39px up at a narrow sheet, nearly twice that on a wide one), naming
+       the page it returns to — the colophon, or the frontispiece when the plate was opened from there. A
+       small clearing of the sheet's own stock holds the word over whatever part of the chart is under it. */
+    #review-close{position:absolute;z-index:6;top:auto;bottom:max(30px,calc(env(safe-area-inset-bottom) + 22px));right:max(50px,calc(env(safe-area-inset-right) + 44px));width:auto;margin:0;padding:6px 10px;border-top:0;display:none;background:radial-gradient(closest-side,rgba(var(--veil),.72),rgba(var(--veil),0))}
+    #review-close .catch-word{padding-top:5px;border-top:1px solid var(--line)}
+    @media(min-width:781px){#review-close{bottom:max(46px,calc(env(safe-area-inset-bottom) + 38px));right:max(84px,calc(env(safe-area-inset-right) + 76px))}}
+    #game.reviewing #review-close{display:inline-flex}
     #game.reviewing .hud{opacity:0}
     #game.reviewing .footer{visibility:hidden;pointer-events:none}
     #game.reviewing #sky{cursor:grab}
@@ -965,7 +975,7 @@
       <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
     </div>
   </section>
-  <button id="review-close" class="diff-btn" type="button">CLOSE</button>
+  <button id="review-close" class="catchword" type="button" aria-label="Close the review"><span id="review-catch" class="catch-word" aria-hidden="true">Colophon.</span></button>
   <section id="pause" class="screen hidden" aria-label="Paused">
     <div class="colophon pause-leaf">
       <p class="eyebrow" id="pause-eyebrow">THE PRESS STANDS IDLE</p>
@@ -1065,16 +1075,19 @@
         <path d="M5.4 3.4H18.8V20.6H5.5C5.5 19.3 4.7 19.3 4.7 18S6 16.6 6 15.2 4.8 13.6 4.8 12 5.9 10.5 5.9 9 4.8 7.6 4.8 6.2 5.4 4.8 5.4 3.4Z" transform="translate(.5,.4) rotate(-4 12 12)" opacity=".3" stroke-width=".45"/>
       </svg>
     </button>
-    <button id="fullscreen" class="utility" aria-label="Enter fullscreen" title="Fullscreen">
+    <button id="fullscreen" class="utility" aria-label="Enter fullscreen" aria-pressed="false" title="Fullscreen">
       <svg viewBox="0 0 24 24" aria-hidden="true">
+        <!-- The small sheet the four register crosses are cut at the corners of. Pressed, the page fills the
+             frame: the sheet drops away and the crosses stand out at the corners of the whole field. -->
+        <rect class="fs-sheet" x="5.4" y="5.4" width="13.2" height="13.2" stroke-width=".55" opacity=".55"/>
         <g stroke-width=".95">
-          <circle cx="5.4" cy="5.4" r="2.45"/><path d="M5.4 1.9v7M1.9 5.4h7" stroke-width=".75"/>
-          <circle cx="18.6" cy="5.4" r="2.45"/><path d="M18.6 1.9v7M15.1 5.4h7" stroke-width=".75"/>
-          <circle cx="5.4" cy="18.6" r="2.45"/><path d="M5.4 15.1v7M1.9 18.6h7" stroke-width=".75"/>
-          <circle cx="18.6" cy="18.6" r="2.45"/><path d="M18.6 15.1v7M15.1 18.6h7" stroke-width=".75"/>
+          <g class="fs-cross" style="--dx:-1.5px;--dy:-1.5px"><circle cx="5.4" cy="5.4" r="2.45"/><path d="M5.4 1.9v7M1.9 5.4h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:1.5px;--dy:-1.5px"><circle cx="18.6" cy="5.4" r="2.45"/><path d="M18.6 1.9v7M15.1 5.4h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:-1.5px;--dy:1.5px"><circle cx="5.4" cy="18.6" r="2.45"/><path d="M5.4 15.1v7M1.9 18.6h7" stroke-width=".75"/></g>
+          <g class="fs-cross" style="--dx:1.5px;--dy:1.5px"><circle cx="18.6" cy="18.6" r="2.45"/><path d="M18.6 15.1v7M15.1 18.6h7" stroke-width=".75"/></g>
         </g>
         <g transform="translate(.5,.4)" opacity=".3" stroke-width=".5">
-          <circle cx="5.4" cy="5.4" r="2.45"/><circle cx="18.6" cy="5.4" r="2.45"/><circle cx="5.4" cy="18.6" r="2.45"/><circle cx="18.6" cy="18.6" r="2.45"/>
+          <circle class="fs-cross" style="--dx:-1.5px;--dy:-1.5px" cx="5.4" cy="5.4" r="2.45"/><circle class="fs-cross" style="--dx:1.5px;--dy:-1.5px" cx="18.6" cy="5.4" r="2.45"/><circle class="fs-cross" style="--dx:-1.5px;--dy:1.5px" cx="5.4" cy="18.6" r="2.45"/><circle class="fs-cross" style="--dx:1.5px;--dy:1.5px" cx="18.6" cy="18.6" r="2.45"/>
         </g>
       </svg>
     </button>

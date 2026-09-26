@@ -608,10 +608,15 @@ function drawConstellations(){
       const x=clamp(sx(label.x),20,W-20),star=sy(label.y),r=label.r*scale;
       const y=star+captionOffset(sx(label.x),star,r,46*scale,60);
       const side=label.x>0?'right':'left';
-      ctx.textAlign=side;ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;
-      markGroundText('caption',x,y,ctx.measureText(chart.name).width,14,side);ctx.fillText(chart.name,x,y);
+      // Where the figure is already named across itself (drawFigureName) the flash is only the event, in
+      // the game's English: the name above it would say the figure's name a second time in the other voice.
+      const named=renaissanceAtlas()&&chartTitle(chart)===chart.name&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin,note=`COMPLETE · +${chart.bonus}`;
+      ctx.textAlign=side;
+      if(!named){ctx.font=plateFace(14);ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.8)`;
+        markGroundText('caption',x,y,ctx.measureText(chart.name).width,14,side);ctx.fillText(chart.name,x,y);}
+      const ny=named?y+8:y+16;
       ctx.font=plateFace(13,'sc');ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.78)`;
-      markGroundText('caption',x,y+16,ctx.measureText('COMPLETE · +60').width,13,side);ctx.fillText('COMPLETE · +60',x,y+16);
+      markGroundText('caption',x,ny,ctx.measureText(note).width,13,side);ctx.fillText(note,x,ny);
     }
     // Skipped where the node already carries the early-run "NEXT" caption (see drawNode in figures.js):
     // the wide-orbit hint sits on the same main-line node right after a constellation's entry, and the

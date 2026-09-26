@@ -874,7 +874,7 @@ $('fullscreen').addEventListener('click',()=>{
   else enterFullscreen();
 });
 if(!game.requestFullscreen&&!game.webkitRequestFullscreen)$('fullscreen').style.visibility='hidden';
-document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('aria-label',document.fullscreenElement?'Exit fullscreen':'Enter fullscreen');resize();});
+document.addEventListener('fullscreenchange',()=>{const on=!!document.fullscreenElement;$('fullscreen').setAttribute('aria-label',on?'Exit fullscreen':'Enter fullscreen');$('fullscreen').setAttribute('aria-pressed',String(on));resize();});
 if('ResizeObserver'in window)new ResizeObserver(resize).observe(game);else window.addEventListener('resize',resize);
 // ---------- Presenting: painting the sheet only as often as it can actually be laid down ----------
 // A phone with a 120 Hz screen asks for a frame every eight milliseconds. This chart is a wide,

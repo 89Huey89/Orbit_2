@@ -41,6 +41,7 @@ function openReview(log,returnTo){
   const l=log||replayLog;if(!l)return;
   reviewWorld=replayRun(l);
   reviewing=true;reviewReturnScreen=returnTo||'end';
+  $('review-catch').textContent=reviewReturnScreen==='end'?'Colophon.':'Orbit.';
   const b=reviewBounds(reviewWorld);
   // Opens on where the run ended, not the start — the one fixed position review is allowed, since
   // nothing after this moves the camera on its own. Free scrolling from here is the whole point.
