@@ -449,9 +449,10 @@ function paintCelestialPlate(index,cut,density,lineOnly){
       g.fillStyle=`rgba(${i%5===0?ink.plates.stippleWarm:ink.plates.stippleCool},${(.035+rng()*.2)*(1-t*.42)})`;
       g.fillRect(x,y,.5+rng()*.9,.6+rng()*.6);
     }
+    // The core's isophotes wind with the arms rather than nesting as compass ellipses.
     for(let i=0;i<22;i++){
       g.strokeStyle=`rgba(${ink.plates.coreRing},${.09-i*.003})`;g.lineWidth=.5;
-      g.beginPath();g.ellipse(0,0,8+i*1.7,4+i*.8,-.2,0,TAU);g.stroke();
+      swirlRing(g,0,0,8+i*1.7,4+i*.8,-.2+i*.045,rng,.06);g.stroke();
     }
     g.restore();
   }

@@ -21,6 +21,38 @@ function traceContour(g,points){
   for(let i=0;i<points.length;i++){const p=points[i],q=points[(i+1)%points.length];g.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2);}
   g.closePath();
 }
+// One ring of a storm as a hand draws it, not as a compass does: the oval's radius wanders on three low
+// harmonics, so no two rings of a nest share a curve and none of them closes on the clean geometric line
+// that made the eye read as a sticker laid on the globe. Traced, not stroked, so the caller fills or cuts it.
+function swirlRing(g,x,y,rx,ry,rot,rng,amp=.07){
+  const p1=rng()*TAU,p2=rng()*TAU,p3=rng()*TAU,c=Math.cos(rot),s=Math.sin(rot),points=[];
+  for(let i=0;i<30;i++){
+    const a=i/30*TAU,k=1+amp*(Math.sin(2*a+p1)*.5+Math.sin(3*a+p2)*.32+Math.sin(5*a+p3)*.18);
+    const px=Math.cos(a)*rx*k,py=Math.sin(a)*ry*k;points.push({x:x+px*c-py*s,y:y+px*s+py*c});
+  }
+  g.beginPath();traceContour(g,points);
+}
+// A storm is a vortex, so its nest of rings is not concentric: each ring inward is carried a little
+// further downstream and turned a little further with the spin, the way the eye of a cyclone is drawn
+// into the flow round it, and the innermost rings are the most turned. `k` runs from 1 at the outer ring
+// to 0 at the eye.
+function vortexRing(g,x,y,w,h,rot,k,rng){
+  const q=1-k;
+  swirlRing(g,x+q*w*.3,y+q*h*.12,w*k,h*k*(.78+.22*k),rot-q*.6,rng,.05+q*.08);
+}
+// The same vortex as one stroke rather than a nest: the pen comes in along the belt the storm sits in,
+// is caught by it and winds inward two and a half turns, tightening and wandering as it goes, which is
+// how an engraver writes a whirl rather than how a compass sets one. Traced, not stroked.
+function vortexSpiral(g,x,y,w,h,rot,phase,rng){
+  const c=Math.cos(rot),s=Math.sin(rot),asp=h/w,turns=2.5,p1=rng()*TAU,p2=rng()*TAU,pts=[];
+  for(let i=0;i<=8;i++){const u=i/8;pts.push({x:-w*(2.1-u*1.1),y:(phase?1:-1)*h*.55*(1-u)*(1-u)+h*.12*Math.sin(u*3+p1)});}
+  for(let i=1;i<=90;i++){
+    const t=i/90,a=phase+Math.PI+t*turns*TAU,r=w*Math.pow(1-t,.85)*(1+.08*Math.sin(a*2+p1)+.05*Math.sin(a*3.3+p2));
+    pts.push({x:Math.cos(a)*r+t*w*.18,y:Math.sin(a)*r*asp*(1-.15*t)});
+  }
+  g.beginPath();
+  for(let i=0;i<pts.length;i++){const p=pts[i],X=x+p.x*c-p.y*s,Y=y+p.x*s+p.y*c;if(i)g.lineTo(X,Y);else g.moveTo(X,Y);}
+}
 function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
   const paper=onPaper();
   if(family==='ocean'){
@@ -88,20 +120,32 @@ function paintPlanetSurface(g,front,core,family,palette,rng,fissures=[]){
       // lines — the same ellipse geometry the meridian graticule below draws, narrowing toward the poles
       // exactly as a circle of latitude does — rather than a near-straight line crossing the diagonal
       // hatch at a right angle. The two still meet the limb at each end, since a latitude line does too.
+      // Each edge is pushed about by its own sines and the band thins toward the limb, so a belt wanders
+      // and swells as a real one does instead of lying on the globe as one ruled lozenge.
+      const bw=seeded((core*7919)>>>0||1);
       for(const band of [{lat:-.34,h:core*.09,c:stormMajor},{lat:.22,h:core*.11,c:stormMinor}]){
-        const rx=core*Math.sqrt(Math.max(0,1-band.lat*band.lat));
-        g.fillStyle=band.c;g.beginPath();g.ellipse(0,core*band.lat,rx,band.h,0,0,TAU);g.fill();
+        const rx=core*Math.sqrt(Math.max(0,1-band.lat*band.lat)),yc=core*band.lat,top=[],foot=[];
+        const f1=bw()*TAU,f2=bw()*TAU,f3=bw()*TAU;
+        for(let i=0;i<=24;i++){
+          const u=i/24,x=-rx*1.02+u*rx*2.04,env=Math.sqrt(Math.max(0,1-(x/(rx*1.02))**2));
+          const drift=(Math.sin(u*5.2+f1)*.6+Math.sin(u*11+f2)*.2)*band.h;
+          const half=band.h*env*(.7+.45*Math.sin(u*7.3+f3));
+          top.push({x,y:yc+drift-half});foot.push({x,y:yc+drift+half*(.85+.3*Math.sin(u*9.1+f1))});
+        }
+        g.fillStyle=band.c;g.beginPath();g.moveTo(top[0].x,top[0].y);
+        for(let i=1;i<top.length;i++){const a=top[i-1],b=top[i];g.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);}
+        for(let i=foot.length-1;i>0;i--){const a=foot[i],b=foot[i-1];g.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);}
+        g.closePath();g.fill();
       }
     }
-    // The atmospheric eye: a stack of concentric ellipses, kept for both bodies — a gas giant carries one
-    // whether or not it is banded — but the ring system alone now carries the ringed body's silhouette.
+    // The atmospheric eye: two interleaved spiral strokes winding into the storm from the flow it sits
+    // in (vortexSpiral), kept for both bodies — a gas giant carries one whether or not it is banded — but
+    // the ring system alone now carries the ringed body's silhouette.
     const x=-core*.24,y=core*.12,w=core*(storm?.43:.25),h=w*.53;
     const spotA=storm?(paper?'rgba(220,214,198,.4)':'rgba(207,201,208,.4)'):ink.surface.ringMajor;
     const spotB=storm?(paper?'rgba(52,84,120,.55)':'rgba(76,71,89,.52)'):ink.surface.ringMinor;
-    for(let i=9;i>0;i--){
-      g.strokeStyle=i%2===0?spotA:spotB;g.lineWidth=.8;
-      g.beginPath();g.ellipse(x+Math.sin(i*.5)*.55,y,w*i/9,h*i/9,-.12,0,TAU);g.stroke();
-    }
+    const er=seeded((core*104729)>>>0||1);
+    for(let arm=0;arm<2;arm++){g.strokeStyle=arm?spotB:spotA;g.lineWidth=.7+er()*.35;vortexSpiral(g,x,y,w,h,-.12,arm*Math.PI,er);g.stroke();}
   }else if(family==='ice'){
     for(let i=0;i<8;i++){
       landContour(g,(rng()-.5)*core*1.7,(rng()-.5)*core*1.6,core*(.2+rng()*.4),core*(.25+rng()*.3),rng);
@@ -324,13 +368,32 @@ function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
       px=qx;py=qy;
     }
   }
+  if(crossHatch){
+    // The crossing set: circles of latitude laid across the first set where the body is darkest,
+    // entered past the middle of the disc (past the terminator on the moon) and carried out to the limb,
+    // bowed as a parallel is on a globe tipped a little toward the viewer, and struck heavier toward the
+    // limb, so the tone builds from single hatching to crossed the way a burin deepens a shadow.
+    const x0=moon?core*.34:core*.12;
+    for(let h=-core*.94;h<core*.94;h+=1.7*(.85+rng()*.3)){
+      if(rng()<.08)continue;
+      const w=Math.sqrt(core*core-h*h)*1.01;if(w<=x0+1)continue;
+      const bow=core*.07,M=6,hs=(rng()*4294967296)>>>0||1,weight=(paper?.45:.32)+rng()*(paper?.35:.24);
+      let px=0,py=0;
+      for(let k=0;k<=M;k++){
+        const x=x0+(w-x0)*k/M,y=h+bow*Math.sqrt(Math.max(0,1-(x/w)**2)),qx=x*cl-y*sl,qy=x*sl+y*cl;
+        const a=(paper?.1:.08)+((x-x0)/(core-x0))*(paper?.45:.3);
+        if(k>0)burinSegment(g,px,py,qx,qy,hatchInk,a*(.35+.65*Math.sin(Math.PI*(k-.5)/M)),weight,hs+k,{segments:2,skips:0,wobble:.5,hair:false});
+        px=qx;py=qy;
+      }
+    }
+  }
   g.strokeStyle=paper?'rgba(26,18,11,.42)':'rgba(37,33,25,.32)';g.lineWidth=paper?.5:.38;
   for(let i=0;i<19;i++){
     const y=-core+i*core*.12;
     g.beginPath();g.moveTo(core*.4,y);g.bezierCurveTo(core*.66,y+.08*core,core*.86,y+.35*core,core*1.1,y+.45*core);g.stroke();
   }
-  if(paper){
-    // No cross-hatch: the dark limb is deepened with a second set of parallel strokes that curve with the
+  if(paper&&!crossHatch){
+    // Without the crossing set, the dark limb is deepened with a second set of parallel strokes that curve with the
     // form, concentric with the limb itself, the way a pen follows a rounded body rather than crossing it.
     for(let i=0;i<14;i++){
       const rr=core*(.5+i*.036),reach=.55+i*.03;
@@ -439,12 +502,12 @@ function modernBands(g,core,rng,palette,turbulent){
     g.closePath();g.fill();
   }
   g.globalAlpha=1;
-  // The one storm every such world is known by, drawn as a set of nested ovals that shear as they go in.
+  // The one storm every such world is known by, drawn as a nest of ovals drawn into a vortex (vortexRing).
   const sx=-core*.2+rng()*core*.3,sy=core*(.1+rng()*.3),sw=core*(turbulent?.36:.22),sh=sw*.52;
   for(let i=10;i>0;i--){
     const k=i/10;
     g.fillStyle=i>7?palette.dark:i>3?palette.body:palette.light;g.globalAlpha=.1+(1-k)*.24;
-    g.beginPath();g.ellipse(sx+Math.sin(i*.7)*sw*.06,sy,sw*k,sh*k,-.14,0,TAU);g.fill();
+    vortexRing(g,sx,sy,sw,sh,-.14,k,rng);g.fill();
   }
   g.globalAlpha=1;
 }
