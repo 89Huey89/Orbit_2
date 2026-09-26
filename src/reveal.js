@@ -471,9 +471,10 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     const a0=art.phase,a1=a0+TAU*pen.survey;
     ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,100,a0,a1);ctx.closePath();ctx.clip();
     ctx.drawImage(art.back,-72,-72,144,144);
-    if(art.ringFront)ctx.drawImage(art.ringFront,-72,-72,144,144);
     ctx.restore();
   }
+  const saturn=art.family==='ringed'&&art.ringBack?saturnStage(art,pen):null;
+  if(saturn)saturnBehind(art,saturn);
   // (c) The wash blooms as an irregular blot from a seeded point off the centre, its wet rim drying lighter
   // over the last third of the stage.
   if(pen.wash>0){
@@ -509,6 +510,51 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.beginPath();ctx.rect(-core*1.9,-core*2.3,core*3.8*pen.hatch,core*4.6);ctx.clip();
     ctx.rotate(HATCH_TILT);
     ctx.drawImage(art.front,-72,-72,144,144);ctx.restore();
+  }
+  if(saturn&&saturn.open>0)saturnSweep(art,saturn.open,art.ringFront);
+  ctx.restore();
+}
+// ---------- Saturn, as the century actually saw it ----------
+// A ringed body is not a ring from the first glance. What Galileo saw in 1610 was a planet in three parts,
+// altissimum planetam tergeminum: a disc with a round body pressed against it on either side. So while the
+// observation is young the handles grow out of the limb as two attached lobes; past the middle of it they
+// come away from the limb, lengthen and thin, and open a darkness between themselves and the globe; and
+// only when the observation closes does the figure resolve into a ring — one band, no division, which is
+// Cassini's and 1675 — swept round from the body's own phase as the survey arcs are. A Saturn let go early
+// keeps the stage it was left at, so an unfinished observation reads as what it is: the handles of 1610,
+// not the ring of 1659. The opening pressure's Adeptus is drawn whole and is a ring from the start.
+function saturnStage(art,pen){
+  const grow=revealSpan(pen.d,.05,.4),part=revealSpan(pen.d,.55,.9),open=revealSpan(pen.d,.86,1);
+  return {grow,part,open};
+}
+function saturnSweep(art,open,layer){
+  if(!layer||open<=0)return;
+  const a0=art.phase;
+  ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,100,a0,a0+TAU*open);ctx.closePath();ctx.clip();
+  ctx.drawImage(layer,-72,-72,144,144);ctx.restore();
+}
+function saturnBehind(art,{grow,part,open}){
+  saturnSweep(art,open,art.ringBack);
+  const show=grow*(1-open);if(show<=.01)return;
+  const core=art.core,paper=onPaper(),keyRgb=paper?'26,18,11':'31,29,23';
+  const dist=core*(1.1+part*.46),rl=core*.4*(1-part*.18),rx=rl*(1+part*.55),ry=rl*(1-part*.58);
+  ctx.save();ctx.rotate(art.tilt);ctx.lineCap='round';
+  for(const side of [-1,1]){
+    const x=side*dist;
+    ctx.beginPath();ctx.ellipse(x,0,rx*show,ry*Math.max(.35,show),0,0,TAU);
+    ctx.fillStyle=`rgba(${art.rgb},${(paper?.42:.5)*show})`;ctx.fill();
+    ctx.strokeStyle=`rgba(${keyRgb},${(paper?.72:.62)*show})`;ctx.lineWidth=.9;ctx.stroke();
+    // Shade on the side away from the light, in the slant every body on the plate is hatched in.
+    ctx.save();ctx.clip();ctx.strokeStyle=`rgba(${keyRgb},${.3*show})`;ctx.lineWidth=.4;
+    for(let i=0;i<4;i++){const hx=x-rx+rx*(.9+i*.34);ctx.beginPath();ctx.moveTo(hx,-ry);ctx.lineTo(hx+ry*.9,ry);ctx.stroke();}
+    ctx.restore();
+    // Coming away from the globe, a handle opens a darkness of sheet between itself and the limb.
+    if(part>.25){
+      const k=revealSpan(part,.25,1),hx=x-side*rx*.28;
+      ctx.beginPath();ctx.ellipse(hx,0,rx*.42*k,ry*.38*k,0,0,TAU);
+      ctx.fillStyle=`rgba(${ink.base.paperRgb},${.85*show*k})`;ctx.fill();
+      ctx.strokeStyle=`rgba(${keyRgb},${.45*show*k})`;ctx.lineWidth=.5;ctx.stroke();
+    }
   }
   ctx.restore();
 }

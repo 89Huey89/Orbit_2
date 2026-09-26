@@ -826,7 +826,7 @@ function drawChargeDevice(kind,r,rgb,pen){
 }
 // The species a full observation names, one per geological family: the atlas's own Latin for what the
 // specimen shows, in the manner of the century's descriptive names rather than any later nomenclature.
-const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus ansatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
+const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus annulatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
 function drawNode(n,aim){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.

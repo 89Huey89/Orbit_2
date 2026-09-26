@@ -641,7 +641,10 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   let g=back.ink;
   const core=palette.size+rng()*3,rgb=palette.rgb,tilt=(rng()-.5)*1.35,flatten=.23+rng()*.14;
   if(!PICKUP_FAMILIES.has(family))paintSurvey(g,core,family,tilt);
-  if(family==='ringed')paintPlanetRings(g,core,tilt,flatten,false,rgb);
+  // The ring's far half is cut on a layer of its own, like its near half below, so a Saturn still being
+  // observed can show Galileo's handles in its place and the ring can open only when the observation does.
+  let ringBack=null;
+  if(family==='ringed'){const layer=planetLayer();ringBack=layer.image;paintPlanetRings(layer.ink,core,tilt,flatten,false,rgb);}
   g=surface.ink;
   // Paper: the body colour is a dilute wash on the sheet, not a printed flat, so the engraving above it
   // carries the form. Night keeps the original solid body tone. A cool pigment (verdigris, slate,
@@ -699,9 +702,6 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     g.strokeStyle=paper?'rgba(26,18,11,.55)':'rgba(30,26,20,.5)';g.lineWidth=1.6;g.lineCap='round';
     g.beginPath();g.moveTo(-core*1.1,-core*.14);g.bezierCurveTo(-core*.2,-core*.5,-core*.14,core*.58,core*1.05,core*.32);g.stroke();
   }
-  if(family==='ringed'){
-    g.save();g.rotate(tilt);g.strokeStyle=`rgba(${ink.surface.ringShade},${paper?.32:.3})`;g.lineWidth=2.6;g.beginPath();g.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);g.stroke();g.restore();
-  }
   g.restore();
   // Slightly misregistered outlines retain the character of a printed plate. On paper the hand colouring is
   // laid first and overruns the plate by a pixel or two in the off-register direction, then the burin keyline
@@ -739,6 +739,8 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   let ringFront=null;
   if(family==='ringed'){
     const layer=planetLayer();ringFront=layer.image;
+    // The shadow the ring throws across the globe belongs to the ring, so it arrives with it.
+    layer.ink.save();layer.ink.rotate(tilt);layer.ink.strokeStyle=`rgba(${ink.surface.ringShade},${paper?.32:.3})`;layer.ink.lineWidth=2.6;layer.ink.beginPath();layer.ink.ellipse(0,1.5,core*1.38,core*1.38*flatten,0,0,Math.PI);layer.ink.stroke();layer.ink.restore();
     paintPlanetRings(layer.ink,core,tilt,flatten,true,rgb);
   }
   if(family==='gold'){
@@ -755,8 +757,8 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
     }
   }
   const weather=planetWeather(family,core,seed);
-  for(const layer of [back.image,surface.image,front.image,keyLayer.image,weather,embers,ringFront])pressPixels(layer);
-  const art={back:back.image,surface:surface.image,front:front.image,key:keyLayer.image,weather,embers,ringFront,core,tilt,family,rgb,seed,spin:palette.spin,phase:seed*.017};
+  for(const layer of [back.image,surface.image,front.image,keyLayer.image,weather,embers,ringBack,ringFront])pressPixels(layer);
+  const art={back:back.image,surface:surface.image,front:front.image,key:keyLayer.image,weather,embers,ringBack,ringFront,core,tilt,flatten,family,rgb,seed,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
   return cacheGlyph(key,art);
 }
@@ -799,6 +801,7 @@ function colouristPatches(art,impression,alpha=1){
 function drawPlanet(art,r,time,impression=null){
   const t=reducedMotion?0:time,angle=art.tilt+t*art.spin;
   ctx.save();ctx.scale(r/60,r/60);ctx.drawImage(art.back,-72,-72,144,144);
+  if(art.ringBack)ctx.drawImage(art.ringBack,-72,-72,144,144);
   // The disc is only clipped when something is laid over it that could run past its edge: the weather
   // scrolls across the body, and the embers are stroked over the fissures on an unclipped layer. The
   // surface itself was already cut to the disc when it was engraved, and turning a circle leaves it a
