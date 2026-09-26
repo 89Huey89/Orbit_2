@@ -731,7 +731,9 @@ function astroTrail(){
   const tr=world.trail;if(tr.length<2)return;const P=ink.astro;
   const pts=[];for(const s of tr){const life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life>0)pts.push([sx(s.x),sy(s.y),life]);}
   const p=world.player;if(world.state!=='dead')pts.push([sx(p.x),sy(p.y),1]);if(pts.length<2)return;
-  ctx.save();ctx.lineCap='round';
+  // Butt caps: each piece is stroked on its own to fade along the line, and round caps would paint every
+  // joint twice and bead the wet line at each sample (see drawTrail in effects.js).
+  ctx.save();ctx.lineCap='butt';ctx.lineJoin='round';
   for(let i=1;i<pts.length;i++){const f=pts[i][2];ctx.strokeStyle=`rgba(${P.ink},${(.12+f*.78).toFixed(3)})`;ctx.lineWidth=(.7+f*1.2)*scale;ctx.beginPath();ctx.moveTo(pts[i-1][0],pts[i-1][1]);ctx.lineTo(pts[i][0],pts[i][1]);ctx.stroke();}
   const tail=Math.max(0,pts.length-10);ctx.strokeStyle='rgba(255,248,226,.5)';ctx.lineWidth=.35;ctx.beginPath();
   for(let i=tail;i<pts.length;i++)i>tail?ctx.lineTo(pts[i][0]-.4,pts[i][1]-.4):ctx.moveTo(pts[i][0]-.4,pts[i][1]-.4);ctx.stroke();

@@ -685,15 +685,21 @@ function flyHazardReveal(h,draw,t){
 // a faint plotted line; the guide ahead is the navigation team's prediction, ticked at even intervals.
 function flyTrail(){
   const tr=world.trail;if(tr.length<2)return;const P=ink.flyby;
-  const pts=[];for(const s of tr){const life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life>0)pts.push([sx(s.x),sy(s.y),life]);}
-  const p=world.player;if(world.state!=='dead')pts.push([sx(p.x),sy(p.y),1]);if(pts.length<2)return;
-  ctx.save();ctx.strokeStyle=`rgba(${P.phosDim},.35)`;ctx.lineWidth=.6*scale;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke();
-  for(let i=0;i<pts.length;i+=2){const f=pts[i][2];ctx.fillStyle=`rgba(${P.phos},${(.12+f*.75).toFixed(3)})`;ctx.fillRect(pts[i][0]-.9*scale,pts[i][1]-.9*scale,1.8*scale,1.8*scale);}
+  const pts=[];for(const s of tr){const life=clamp(1-(world.time-s.time)/TRAIL_LIFE,0,1);if(life>0)pts.push([sx(s.x),sy(s.y),life,s.n||0]);}
+  const p=world.player;if(world.state!=='dead')pts.push([sx(p.x),sy(p.y),1,-1]);if(pts.length<2)return;
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=`rgba(${P.phosDim},.3)`;ctx.lineWidth=.6*scale;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke();
+  // Every other sample by its own count, not its place in the array: the head of the array is spliced off
+  // as fast as its tail grows, so marking by index lit the other half of the points on every new sample
+  // and the whole track shimmered backward along itself.
+  const d=.8*scale;for(const q of pts){if(q[3]<0||q[3]%2)continue;ctx.fillStyle=`rgba(${P.phos},${(.12+q[2]*.75).toFixed(3)})`;ctx.fillRect(q[0]-d,q[1]-d,d*2,d*2);}
   ctx.restore();
 }
 function flyInkPath(){
   const Q=world.inkPath;if(Q.length<2)return;const P=ink.flyby;
   ctx.save();ctx.strokeStyle=`rgba(${P.dim},.7)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.setLineDash([1.5*scale,4*scale]);
+  // Dashed from the first point's own distance along the route, so pruning the oldest points off the bottom of
+  // the chart does not slide every dash along the line.
+  ctx.lineDashOffset=(Q[0].cd||0)*scale;
   ctx.beginPath();ctx.moveTo(sx(Q[0].x),sy(Q[0].y));for(let i=1;i<Q.length;i++)ctx.lineTo(sx(Q[i].x),sy(Q[i].y));ctx.stroke();ctx.restore();
 }
 function flyAim(aim,preview){
@@ -701,11 +707,13 @@ function flyAim(aim,preview){
   const dryFrom=preview.inkRange>=0&&end.distance>0?clamp(preview.inkRange/end.distance,0,1):1;
   const Q=points.map(q=>[sx(q.x),sy(q.y)]),lens=[0];for(let i=1;i<Q.length;i++)lens.push(lens[i-1]+Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]));const total=lens[lens.length-1];if(total<2)return;
   const at=d=>{let i=1;while(i<Q.length-1&&lens[i]<d)i++;const t=(d-lens[i-1])/((lens[i]-lens[i-1])||1);return[Q[i-1][0]+(Q[i][0]-Q[i-1][0])*t,Q[i-1][1]+(Q[i][1]-Q[i-1][1])*t,Math.atan2(Q[i][1]-Q[i-1][1],Q[i][0]-Q[i-1][0])];};
-  ctx.save();const step=6.5*scale,start=27*scale+(reducedMotion?0:(world.time*14*scale)%step);let k=0;
+  // The samples march outward; each keeps its own count as it goes (k less the steps already marched), so the
+  // time marks march with them instead of snapping back a sample every time the march wraps.
+  ctx.save();const step=6.5*scale,run=reducedMotion?0:world.time*14*scale,start=27*scale+run%step;let k=-Math.floor(run/step);
   for(let d=start;d<total;d+=step,k++){const f=d/total,q=at(d),dry=f>dryFrom,a=dry?.4*(1-f*.4):warn?.9*(1-f*.3):(aim?.88:.6)*(1-f*.35),col=dry?P.dim:warn?P.amber:P.phos;
     ctx.fillStyle=`rgba(${col},${a.toFixed(3)})`;const s=(aim?1.3:1.05)*scale;ctx.fillRect(q[0]-s/2,q[1]-s/2,s,s);
     // every sixth sample a tick across the line, the plot's own time marks
-    if(k%6===5){const nx=-Math.sin(q[2]),ny=Math.cos(q[2]);ctx.strokeStyle=`rgba(${col},${(a*.9).toFixed(3)})`;ctx.lineWidth=.7*scale;ctx.beginPath();ctx.moveTo(q[0]-nx*2.6*scale,q[1]-ny*2.6*scale);ctx.lineTo(q[0]+nx*2.6*scale,q[1]+ny*2.6*scale);ctx.stroke();}}
+    if((k%6+6)%6===5){const nx=-Math.sin(q[2]),ny=Math.cos(q[2]);ctx.strokeStyle=`rgba(${col},${(a*.9).toFixed(3)})`;ctx.lineWidth=.7*scale;ctx.beginPath();ctx.moveTo(q[0]-nx*2.6*scale,q[1]-ny*2.6*scale);ctx.lineTo(q[0]+nx*2.6*scale,q[1]+ny*2.6*scale);ctx.stroke();}}
   if(aim?.perfect&&!preview.fogged){const x=sx(aim.cx+Math.cos(aim.entryAngle)*aim.radius),y=sy(aim.cy+Math.sin(aim.entryAngle)*aim.radius),q=3.2*scale;
     ctx.strokeStyle=`rgb(${P.white})`;ctx.lineWidth=1*scale;ctx.strokeRect(x-q,y-q,q*2,q*2);ctx.beginPath();for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.moveTo(x+Math.cos(a)*4.6*scale,y+Math.sin(a)*4.6*scale);ctx.lineTo(x+Math.cos(a)*6.8*scale,y+Math.sin(a)*6.8*scale);}ctx.stroke();}
   ctx.restore();

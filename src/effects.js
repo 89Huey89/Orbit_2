@@ -250,8 +250,11 @@ let trailSampledAt=-1;
 // The dry route alone, distance-gated rather than time-gated so it reads the same whatever is
 // sampling it: a live frame here and there, or, replaying a finished run, every physics tick it took.
 function sampleInkPath(){
-  const p=world.player,last=world.inkPath[world.inkPath.length-1];
-  if(!last||Math.hypot(p.x-last.x,p.y-last.y)>.6)world.inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy)});
+  // Each point carries how far along the route it lies (`cd`), so a painter that dashes or ticks the route
+  // can anchor the pattern to the sheet: counted from the first point still kept, every dash would slide back
+  // along the line each time the oldest point is pruned off the bottom of the chart.
+  const p=world.player,last=world.inkPath[world.inkPath.length-1],gap=last?Math.hypot(p.x-last.x,p.y-last.y):0;
+  if(!last||gap>.6)world.inkPath.push({x:p.x,y:p.y,speed:Math.hypot(p.vx,p.vy),cd:last?(last.cd||0)+gap:0});
   pruneInkPath();
 }
 function recordTrail(){
@@ -259,7 +262,10 @@ function recordTrail(){
   const p=world.player;
   if(trailSampledAt<0||world.time<trailSampledAt||world.time-trailSampledAt>=TRAIL_STEP){
     trailSampledAt=world.time;
-    world.trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy)});
+    // A running count, so a painter that marks every other sample picks the same samples every frame
+    // rather than by their place in an array whose head is spliced off as fast as its tail grows.
+    const prev=world.trail[world.trail.length-1];
+    world.trail.push({x:p.x,y:p.y,time:world.time,air:!p.node,speed:Math.hypot(p.vx,p.vy),n:prev?(prev.n||0)+1:0});
     const limit=reducedMotion?32:Math.ceil(TRAIL_LIFE/TRAIL_STEP);
     if(world.trail.length>limit)world.trail.splice(0,world.trail.length-limit);
   }
