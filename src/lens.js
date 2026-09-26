@@ -760,22 +760,41 @@ function lensBodyEye(n,family,x,y,d,al){
     disc(R*.72,{noCross:true});
   }else{
     disc(R,family==='volcanic'?{angle:.9}:{});
-    if(family==='crater'&&e2>0){ctx.strokeStyle=`rgba(${P.ink},${(.75*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.35,R*.025);
-      // Craters spread over the lit face, each a rim cut as the arc of its wall that faces away from the light
-      // with the shadow it throws laid inside, the way Galileo's wash drawings of the Moon set them.
-      // They are dealt round the disc a sector each, so they never pile into one clump whatever the seed.
-      ctx.lineWidth=Math.max(.35,R*.03);
-      // in the sketch a crater is a quick pen ring with a dab of shadow; the engraving cuts it properly after
-      for(let i=0;i<7&&sk>0;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
-        ctx.fillStyle=`rgba(${P.sepia},${(.35*sk).toFixed(3)})`;ctx.beginPath();ctx.arc(cx+cr*.2,cy+cr*.2,cr*.8,0,TAU);ctx.fill();
-        ctx.strokeStyle=`rgba(${P.inkSoft},${(.7*sk).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.03);ctx.beginPath();lensHandEllipse(ctx,cx,cy,cr,cr,0,tileHash(n.id,i,9)*TAU,tileHash(n.id,i,9)*TAU+TAU*.85,(n.id|0)*7+i,3);ctx.stroke();}
-      for(let i=0;i<7&&e3>0;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
-        ctx.fillStyle=`rgba(${P.ink},${(.35*e3).toFixed(3)})`;ctx.beginPath();ctx.arc(cx,cy,cr,Math.PI*.95,Math.PI*1.85);ctx.quadraticCurveTo(cx+cr*.1,cy-cr*.1,cx-cr*.95,cy+cr*.15);ctx.fill();
-        // the rim at the shade line's weight: a hair on the wall that faces the light, swelling on the far one
-        const rp=[],fl=.9+tileHash(n.id,i,6)*.15;for(let j=0;j<=20;j++){const q=-1+j/20*TAU*1.05;rp.push([cx+Math.cos(q)*cr,cy+Math.sin(q)*cr*fl,.3+1.4*Math.max(0,Math.cos(q-1.15))]);}
-        lensRibbon(ctx,rp,Math.max(.5,R*.035),P.ink,.8*e3,.15);}
-      // lit peaks standing out in the dark beyond the terminator, the mountains Galileo measured by their shadows
-      ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+tileHash(n.id,i,6)*.3),y+R*(tileHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
+    if(family==='crater'&&e2>0){
+      // Craters as the Moon shows them, not as a compass makes them: many small and a few large, each rim a
+      // little out of round, foreshortened into an ellipse the nearer it lies to the limb, as a circle on a
+      // turning sphere is. The sun is on the upper left, so the shadow lies inside against the wall nearest it
+      // and the far wall catches the light. Seeded per body; nothing here reads the clock.
+      // They are dealt in turn and a crater that would overlap one already placed is let go, so they never pile up.
+      const craters=[];for(let i=0;i<24&&craters.length<12;i++){const big=craters.length<3,a=tileHash(n.id,i,3)*TAU,dd=R*(big?.2+tileHash(n.id,i,5)*.45:.12+tileHash(n.id,i,5)*.78),cr=R*(big?.13+tileHash(n.id,i,4)*.06:.035+Math.pow(tileHash(n.id,i,4),2)*.075);
+        if(dd+cr*.4>R*.96)continue;const cx=x+Math.cos(a)*dd,cy=y+Math.sin(a)*dd;if(craters.some(o=>Math.hypot(o.cx-cx,o.cy-cy)<(o.cr+cr)*1.08))continue;
+        const dn=dd/R;craters.push({i,cx,cy,cr,fs:Math.max(.35,Math.sqrt(1-dn*dn)),rot:a,big,p:[tileHash(n.id,i,6)*TAU,tileHash(n.id,i,7)*TAU,tileHash(n.id,i,8)*TAU]});}
+      // A rim is out of round the way a real one is, in slow swells rather than a jagged edge: three low
+      // harmonics with seeded phases, so it is a crater and not a pebble.
+      const rim=(c,sh=0)=>{const pts=[],N=28,cs=Math.cos(c.rot),sn=Math.sin(c.rot);for(let j=0;j<=N;j++){const q=j/N*TAU,w=1+.07*Math.sin(q*2+c.p[0])+.045*Math.sin(q*3+c.p[1])+.025*Math.sin(q*5+c.p[2]),ex=Math.cos(q)*c.cr*c.fs*w,ey=Math.sin(q)*c.cr*w;pts.push([c.cx+ex*cs-ey*sn+Math.cos(-2.24)*-sh,c.cy+ex*sn+ey*cs+Math.sin(-2.24)*-sh,q]);}return pts;};
+      const trace=pts=>{ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.closePath();};
+      const lightA=-2.24;
+      // the sketch: a pen ring that does not close and a dab of wash where the shadow falls
+      if(sk>0)for(const c of craters){const pts=rim(c),open=Math.floor(tileHash(n.id,c.i,72)*28);
+        ctx.fillStyle=`rgba(${P.sepia},${(.32*sk).toFixed(3)})`;ctx.beginPath();ctx.ellipse(c.cx+Math.cos(lightA)*c.cr*.25,c.cy+Math.sin(lightA)*c.cr*.25,c.cr*.7*c.fs,c.cr*.6,c.rot,0,TAU);ctx.fill();
+        const arc=[];for(let j=0;j<23;j++)arc.push(pts[(open+j)%28]);lensRibbon(ctx,arc,Math.max(.4,c.cr*.22),P.inkSoft,.75*sk,.5);}
+      if(e3>0){
+        // Galileo's terminator: a ragged edge of tone across the disc rather than a drawn line, the night side beyond it laid
+        // darker, and a few peaks standing lit in the dark beyond it, the mountains he measured by their shadows.
+        const dark=-.42+Math.PI/2,dc=Math.cos(dark),ds=Math.sin(dark),tp=[];for(let j=0;j<=16;j++){const v=-1+2*j/16,half=Math.sqrt(Math.max(0,1-v*v)),u=.34+.05*Math.sin(v*4+(n.id|0))+.03*(tileHash(n.id,j,74)-.5);tp.push([x+dc*u*R-ds*v*R*half*.98,y+ds*u*R+dc*v*R*half*.98]);}
+        ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();ctx.beginPath();ctx.moveTo(tp[0][0],tp[0][1]);for(const q of tp)ctx.lineTo(q[0],q[1]);ctx.lineTo(x+dc*R*1.2+ds*R,y+ds*R*1.2-dc*R);ctx.lineTo(x+dc*R*1.2-ds*R,y+ds*R*1.2+dc*R);ctx.closePath();
+        ctx.fillStyle=`rgba(${P.ink},${(.2*e3).toFixed(3)})`;ctx.fill();ctx.restore();
+        ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let j=0;j<5;j++){const v=(tileHash(n.id,j,75)-.5)*1.4,u=.42+tileHash(n.id,j,76)*.3;if(u*u+v*v>.9)continue;ctx.beginPath();ctx.arc(x+dc*u*R-ds*v*R,y+ds*u*R+dc*v*R,Math.max(.5,R*(.03+tileHash(n.id,j,77)*.025)),0,TAU);ctx.fill();}
+        for(const c of craters){const pts=rim(c);
+          // the shadow on the floor: the crescent between the rim and the rim shifted away from the sun, laid in
+          // ink and gone over with a stroke or two along it, lying against the wall nearest the light
+          ctx.save();ctx.beginPath();trace(pts);ctx.clip();ctx.beginPath();trace(pts);trace(rim(c,c.cr*.38));ctx.fillStyle=`rgba(${P.ink},${(.5*e3).toFixed(3)})`;ctx.fill('evenodd');
+          if(c.big){const sp=rim(c,c.cr*.12).filter(q=>Math.cos(q[2]+c.rot+2.24)>.2);if(sp.length>2)lensRibbon(ctx,sp,Math.max(.4,c.cr*.12),P.ink,.6*e3);}
+          ctx.restore();
+          // the rim: a little heavier on the shadowed wall, a hair on the lit one, the far inner wall picked out in light
+          lensRibbon(ctx,pts.map(q=>[q[0],q[1],.35+.9*Math.max(0,Math.cos(q[2]+c.rot+2.24))]),Math.max(.4,c.cr*.16),P.ink,.85*e3,.1);
+          const lit=pts.filter(q=>Math.cos(q[2]+c.rot+2.24)<-.45).map(q=>[q[0]+(c.cx-q[0])*.2,q[1]+(c.cy-q[1])*.2]);if(lit.length>2)lensRibbon(ctx,lit,Math.max(.4,c.cr*.14),P.paper,.75*e3);
+          if(c.big){ctx.fillStyle=`rgba(${P.ink},${(.7*e3).toFixed(3)})`;ctx.beginPath();ctx.arc(c.cx+c.cr*.1,c.cy+c.cr*.1,Math.max(.4,c.cr*.09),0,TAU);ctx.fill();}}}}
     if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();
       // sketched, each belt is one broad stroke of the brush across the disc
       if(sk>0){ctx.lineCap='round';for(const [bi,b] of[[0,-.28],[1,.22]]){ctx.strokeStyle=`rgba(${P.sepia},${(.45*sk).toFixed(3)})`;ctx.lineWidth=R*(.13+tileHash(n.id,bi,58)*.05);ctx.beginPath();ctx.moveTo(x-R*.95,y+R*(b+.03));ctx.quadraticCurveTo(x,y+R*(b+.09+(tileHash(n.id,bi,59)-.5)*.06),x+R*.9,y+R*(b+.02));ctx.stroke();}}
