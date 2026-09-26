@@ -5,6 +5,11 @@
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
+// The press crosses its hatching in the darkest ground, as a 1603 copperplate did: a single slant over
+// the half-tones, a second set laid across it toward the dark limb. Chosen against the old single-slant
+// house rule by pulling both side by side; `orbit.crosshatch.trial` set to `off` (written only by the
+// screenshot harness) still pulls the single-slant reading for comparison.
+const crossHatch=storage.get('orbit.crosshatch.trial','')!=='off';
 // Seeded from the OS accessibility signal, but a reader who wants a lighter, faster plate without
 // asking the whole system for it can say so directly (see the pause menu's REDUCE MOTION button in
 // ui.js); once they have, that explicit choice is what's kept, in either direction.
