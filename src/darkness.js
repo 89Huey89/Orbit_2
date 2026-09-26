@@ -594,12 +594,56 @@ function corrodeBand(){
   const top=q(Math.max(0,fy-lead-wave)),bottom=q(Math.min(H,fy+drag+wave));
   return bottom-top>2?{top,bottom}:null;
 }
+// A reprieve drives the flood back, and the retreat leaves a stain: at the highest point the ink reached
+// before it turned, a dried tide mark in the flood's own pigment — a broken, wobbled contour with a faint
+// band of settled fleck under it, on paper in the browning the corrosion leaves rather than the shoreline's alarm red (night keeps the flood's own pigment, having no corrosion) — kept on the sheet in world coordinates for the rest of the run, so it
+// scrolls up and away as an orbit does. A run with three reprieves carries three old tide lines up the
+// page, and they show how close the dark came each time. The mark is written the first frame the grace
+// is seen to open, which is also the frame the floor stood highest; it dries in over the first stretch of
+// the retreat, and a flood that climbs back over it simply covers it again. Render-side only, kept per world.
+const TIDE_MARKS_KEPT=6;
+let tideWorld=null,tideMarks=[],tideGraceSeen=0;
+function noteTideMark(){
+  if(tideWorld!==world){tideWorld=world;tideMarks=[];tideGraceSeen=0;}
+  if(world.darknessGrace>0&&tideGraceSeen<=0&&world.elapsed>1.5){
+    tideMarks.push({floor:world.floorY,seed:(Math.round(world.floorY*7)^0x7a3e1)>>>0});
+    if(tideMarks.length>TIDE_MARKS_KEPT)tideMarks.shift();
+  }
+  tideGraceSeen=world.darknessGrace;
+}
+function drawTideMarks(fy){
+  const s=scale,inner=frameBand()*.92,paper=onPaper(),rgb=paper&&ink.dark.corrosion||ink.dark.pigment;
+  for(const mark of tideMarks){
+    const y=fy+sy(mark.floor)-sy(world.floorY),dry=clamp((fy-y)/(26*s),0,1);
+    if(dry<=0||y<-20||y>H+20)continue;
+    const rng=seeded(mark.seed),ph=rng()*TAU,ph2=rng()*TAU,base=(paper?.46:.3)*dry;
+    ctx.save();ctx.lineCap='round';
+    // The water stood here a while, so the sheet under the line is stained in a band that fades downward.
+    const band=ctx.createLinearGradient(0,y,0,y+13*s);
+    band.addColorStop(0,`rgba(${rgb},${(base*.26).toFixed(3)})`);band.addColorStop(1,`rgba(${rgb},0)`);
+    ctx.fillStyle=band;ctx.fillRect(inner,y-1.5*s,W-inner*2,14.5*s);
+    for(let x=inner;x<W-inner;x+=9*s){
+      const gap=rng()<.16,yy=y+(Math.sin(x/(41*s)+ph)*1.6+Math.sin(x/(13*s)+ph2)*.7)*s;
+      const x2=Math.min(W-inner,x+9*s),y2=y+(Math.sin(x2/(41*s)+ph)*1.6+Math.sin(x2/(13*s)+ph2)*.7)*s;
+      if(gap)continue;
+      ctx.strokeStyle=`rgba(${rgb},${(base*(.7+rng()*.5)).toFixed(3)})`;ctx.lineWidth=(.5+rng()*.55)*s;
+      ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x2,y2);ctx.stroke();
+    }
+    ctx.fillStyle=`rgba(${rgb},${(base*.55).toFixed(3)})`;
+    for(let i=0;i<46;i++){
+      const x=inner+rng()*(W-inner*2),d=(1.5+rng()*rng()*11)*s,r=(.35+rng()*.55)*s;
+      ctx.beginPath();ctx.arc(x,y+d,r,0,TAU);ctx.fill();
+    }
+    ctx.restore();
+  }
+}
 function drawDark(dt=0){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('dark');if(own)return own(dt);
   // Match the visible hairline to the simulation's exact loss threshold.
   const fy=darkWaterline(),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
+  noteTideMark();drawTideMarks(fy);
   if(fy>H+100)return;
   const target=clamp(world.darknessGrace/.65,0,1);
   if(world.state!=='paused')darknessRelief=lerp(darknessRelief,target,1-Math.exp(-dt*6));
