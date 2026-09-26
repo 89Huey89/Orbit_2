@@ -918,10 +918,28 @@ function drawNode(n,aim){
     }
   }
   if(shield||reflector||inkwell||dawn)drawChargeDevice(n.type,r,rgb,pen);
+  const ringAlpha=active?.59:target?.57:.25;
+  // The setting-out goes down first. On paper the sanguine trial arc is laid by a blunt chalk stub a beat
+  // ahead of the ink — over the first third of the pen's pass where the ring takes six tenths — outside
+  // the burin's wedge, so it is seen being laid rather than uncovered with the ring, and it stays wherever
+  // the ink does not agree with it. The stub leaves no bead: only a few grains where it bears on the tooth.
+  if(paper){
+    const chalk=chalkRing(r,ringAlpha,cut('line'),n.seed),k=r/(chalk.radius||r),cfit=chalk.size*k,lead=pen.t>=1?1:revealSpan(pen.t,0,.34);
+    if(lead>0){
+      ctx.save();
+      if(lead<1){ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,cfit/2,chalk.from,chalk.from+chalk.span*lead);ctx.closePath();ctx.clip();}
+      ctx.drawImage(chalk.canvas,-cfit/2,-cfit/2,cfit,cfit);
+      ctx.restore();
+      if(lead<1){
+        const a=chalk.from+chalk.span*lead,tx=.5*k+Math.cos(a)*chalk.chalkR*k,ty=-.4*k+Math.sin(a)*chalk.chalkR*k,rng=seeded(n.seed^Math.floor(lead*40));
+        ctx.fillStyle=`rgba(${ink.underdrawing.chalk},.55)`;
+        for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(tx+(rng()-.5)*2.4,ty+(rng()-.5)*2.4,.35+rng()*.45,0,TAU);ctx.fill();}
+      }
+    }
+  }
   const reach=Math.max(r,n.cap*scale)*2+30,wedged=penWedgeBegin(pen,n,reach);
   if(paper)drawHalo();
   {
-    const ringAlpha=active?.59:target?.57:.25;
     if(pen.taken<1){
       // The capture is an act of drawing, not a swap: the sketch — broken, doubled, off true, exactly
       // as an orbit no traveller has taken is cut elsewhere — is laid down whole first, then the cut
