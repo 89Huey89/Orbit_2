@@ -34,6 +34,7 @@
     .scroll-only{display:none!important}
     .astrolabe-only{display:none!important}
     .flyby-only{display:none!important}
+    .probe-only{display:none!important}
     .lens-only{display:none!important}
     .era-exit{display:none!important}
     /* Era I letters in the same modern slab era II does, and for the same reason: this wall has no
@@ -164,6 +165,30 @@
     .flyby-lore-open{position:absolute;left:16px;right:16px;top:calc(5% + env(safe-area-inset-top));text-align:center}
     .flyby-lore{margin:0 auto 12px;max-width:24em;font-family:'Libre Franklin','Helvetica Neue',Arial,sans-serif;font-size:14.5px;line-height:1.45;color:#d6dee6}
     .flyby-context{font-family:'Libre Franklin','Helvetica Neue',Arial,sans-serif;max-width:42em;margin:12px auto 0;color:#8a96a4;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
+    #game[data-era="8"] .probe-only{display:revert!important}
+    /* Era VIII is the last rung and the blackest: instrument white on interstellar black, telemetry amber where
+       the atlas spends gold, and every word in B612 Mono, since nothing aboard has a hand left to letter with.
+       Its gold is the inherited plaque's alone, so the chrome never borrows it. The counts are set on the sheet
+       as the self-log block (prbHudLeaf() in probe.js); the DOM HUD stays for screen readers, off the screen. */
+    #game[data-era="8"]{--face-text:'B612 Mono','IBM Plex Mono','Courier New',monospace;--face-sc:'B612 Mono','IBM Plex Mono','Courier New',monospace;--face-body:'B612 Mono','IBM Plex Mono','Courier New',monospace;--ink:#050505;--ivory:#e8ecf2;--gold:#ffb000;--muted:#8a8e96;--copy:#b4b8c0;--best:#e8ecf2;--shield:#b4bcc8;--reflector:#d9e4ea;--dawn:#ffb000;--copper:#b8451f;--line:rgba(232,236,242,.2);--veil:5,5,5}
+    #game[data-era="8"] .footer{color:#8a8e96}
+    #game[data-era="8"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    #game[data-era="8"] #catalogue-open,#game[data-era="8"] #plate{display:none}
+    #game[data-era="8"] #end-score-roman,#game[data-era="8"] #end-leaf-frame{display:none}
+    #game[data-era="8"] .colophon{background:rgba(5,5,5,.94);border:1px solid rgba(232,236,242,.18)}
+    #game[data-era="8"] .colophon::before,#game[data-era="8"] .colophon::after{display:none}
+    #game[data-era="8"] #end{background:rgba(2,2,2,.58)}
+    #game[data-era="8"] #pause{background:rgba(2,2,2,.72)}
+    #game[data-era="8"] .colophon .diff-btn{letter-spacing:.06em}
+    #game[data-era="8"] .end-stats .stat>span:first-child{font-family:'B612 Mono','IBM Plex Mono','Courier New',monospace;color:#e8ecf2}
+    #game[data-era="8"] #end-reason,#game[data-era="8"] #pause-eyebrow{color:#ffb000;letter-spacing:.1em}
+    /* The mass is set on a self-log card on the leaf, on an odometer, with the generation and the log's count
+       beneath (prbPaintEndNumerals, src/probe.js); the plain figure stays under it. */
+    #game[data-era="8"] #end-numerals{display:block;margin:0 auto 2px;max-width:100%;height:auto}
+    #game[data-era="8"] #end-score{font-size:clamp(22px,6vw,28px);opacity:.8;margin:0 0 2px}
+    .probe-lore-open{position:absolute;left:16px;right:16px;top:calc(5% + env(safe-area-inset-top));text-align:center}
+    .probe-lore{margin:0 auto 12px;max-width:26em;font-family:'B612 Mono','IBM Plex Mono','Courier New',monospace;font-size:12.5px;line-height:1.5;color:#d4d8e0;letter-spacing:.01em}
+    .probe-context{font-family:'B612 Mono','IBM Plex Mono','Courier New',monospace;max-width:44em;margin:12px auto 0;color:#8a8e96;font-size:9.5px;line-height:1.55;letter-spacing:.02em}
     #game[data-era] .era-exit{display:revert!important}
     #game[data-era="2"] .footer{color:#c9bb98}
     #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
@@ -820,6 +845,7 @@
     <div class="best-block"><span class="small" id="best-label">Best</span><span id="best">0</span></div>
   </header>
   <section id="intro" class="screen frontispiece" aria-label="Start game">
+    <p class="probe-lore probe-lore-open probe-only" id="probe-lore-open">Nobody is left at the other end.<br>Hold a world until it is catalogued; build the next probe from what it is made of.<br>From the Sun to the first daughter, and on.</p>
     <p class="flyby-lore flyby-lore-open flyby-only" id="flyby-lore-open">For the first time, the eye is sent.<br>Hold a light until its picture comes home, line by line.<br>Fly from Mars in 1965 to Pluto.</p>
     <p class="lens-lore lens-lore-open lens-only" id="lens-lore-open">For the first time, a light could be seen as a place.<br>Hold it in the tube until it resolves into a surface.<br>Draw it, photograph it, read it out: Padua to 1990.</p>
     <p class="astrolabe-lore astrolabe-lore-open astrolabe-only" id="astrolabe-lore-open">An instrument remembers every star it was turned toward.<br>Sight a light through the alidade; hold it until its scale closes.<br>Carry the measure from Baghdad to Samarkand.</p>
@@ -866,7 +892,7 @@
       <div class="title-rule"><span></span></div>
       <p class="eyebrow">THE BOOK OF NUT · NEW KINGDOM</p>
     </div>
-    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span><span class="rock-only">Tap the wall to begin</span><span class="scroll-only">Tap the sheet to begin</span><span class="astrolabe-only">Tap the plate to begin the journey</span><span class="lens-only">Tap the sheet to raise the tube</span><span class="flyby-only">Tap to launch the mission</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
+    <div class="start-copy" id="start-copy"><p class="action-copy"><span class="atlas-only">Tap to begin</span><span class="ceiling-only">Begin the night voyage</span><span class="rock-only">Tap the wall to begin</span><span class="scroll-only">Tap the sheet to begin</span><span class="astrolabe-only">Tap the plate to begin the journey</span><span class="lens-only">Tap the sheet to raise the tube</span><span class="flyby-only">Tap to launch the mission</span><span class="probe-only">Tap to begin the log</span></p><div class="instruction rubric" id="instructions" hidden><p class="rubric-head" id="instructions-head"></p><ol class="rubric-rules" id="instructions-rules"></ol></div>
       <div class="daily-group">
         <div class="action-row" id="daily-actions">
           <button id="instructions-toggle" class="diff-btn" type="button" aria-expanded="false" aria-controls="instructions">HOW TO PLAY</button>
@@ -883,6 +909,7 @@
       <div id="more-menu" class="daily-group atlas-only" hidden>
         <div class="action-row" id="more-actions">
           <button id="ephemeris-open" class="diff-btn" type="button" aria-expanded="false" aria-label="Open the ephemeris of past daily plates">EPHEMERIS</button>
+          <button id="probe-open" class="diff-btn era-entry" type="button" aria-label="Play Era VIII, The Probe — a self-replicating probe, from the Sun to its first daughter and on">ERA VIII · THE PROBE</button>
           <button id="flyby-open" class="diff-btn era-entry" type="button" aria-label="Play Era VII, The Flyby — the sky reached, from Mariner 4 at Mars to New Horizons at Pluto">ERA VII · THE FLYBY</button>
           <button id="lens-open" class="diff-btn era-entry" type="button" aria-label="Play Era VI, The Lens — the sky resolved into surfaces, from Galileo's eyepiece to a telescope above the air">ERA VI · THE LENS</button>
           <button id="astrolabe-open" class="diff-btn era-entry" type="button" aria-label="Play Era IV, The Astrolabe — the sky measured through brass, from Baghdad to Samarkand">ERA IV · THE ASTROLABE</button>
@@ -897,7 +924,8 @@
       <p class="astrolabe-context astrolabe-only">The brass is after the Nastulus astrolabe (Baghdad, 927) and the Valencia globe (1085); the figures and star names are al-Sufi’s, from the Book of the Fixed Stars. The alidade as traveller, and the dragon, the sun, the wind and the little cloud as dangers, are a gameplay translation.</p>
       <p class="lens-context lens-only">The drawings are after Galileo’s Sidereus Nuncius (1610) and Huygens’s Systema Saturnium (1659); the glass after the Carte du Ciel and the Harvard plates; the cards after the FITS standard (1981). The telescope as traveller, and the void, the halation, the drift and the dark cloud as dangers, are a gameplay translation.</p>
       <p class="flyby-context flyby-only">The frames are after Mariner 4’s hand-tinted strip chart (1965), the Viking lander scans (1976), the Voyager mosaics (1979–1989) and New Horizons at Pluto (2015). The spacecraft as traveller, a generic deep-space layout rather than any one mission’s, and the well, the belt, the wind and the dropout as dangers, are a gameplay translation.</p>
-      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span><span class="scroll-only">After the Dunhuang star chart · c. 649–684 CE</span><span class="astrolabe-only">Baghdad to Samarkand · 927–1437 CE</span><span class="lens-only">Padua to the air above it · 1610–1990</span><span class="flyby-only">Mars to Pluto · 1965–2015</span></p>
+      <p class="probe-context probe-only">After Freitas’s REPRO (1980), NASA’s self-replicating factory study (1980), Project Daedalus and Breakthrough Starshot; it carries the Pioneer plaque (1972) unread. No such probe has been built: the craft, its harvest and its dangers are a gameplay translation.</p>
+      <p class="printer-line" id="printer-line"><span id="atlas-impressum" class="atlas-only">Impressum &middot; AUGUSTA VINDELICORUM</span><span class="ceiling-only">Thebes &amp; Abydos · c. 1473–1150 BCE</span><span class="scroll-only">After the Dunhuang star chart · c. 649–684 CE</span><span class="astrolabe-only">Baghdad to Samarkand · 927–1437 CE</span><span class="lens-only">Padua to the air above it · 1610–1990</span><span class="flyby-only">Mars to Pluto · 1965–2015</span><span class="probe-only">Sol to Barnard’s Star · T+0 to T+612 Y</span></p>
     </div>
   </section>
   <section id="end" class="screen hidden" aria-label="Run complete">
@@ -909,7 +937,7 @@
       <svg class="ceiling-column right ceiling-only" viewBox="0 0 20 72" aria-hidden="true" focusable="false"><path d="M10 70V29" stroke="#efe2c4" stroke-width="2"/><path d="M7 29C3 23 1 16 1 9Q10 2 19 9C19 16 17 23 13 29Z" fill="none" stroke="#efe2c4" stroke-width="1.5"/><path d="M5 27h10" stroke="#4c8a57" stroke-width="1.6"/><path d="M2 69h16" stroke="#efe2c4" stroke-width="2"/></svg>
       <svg class="ceiling-only stela-sundisc" viewBox="0 0 120 30" aria-hidden="true" focusable="false"><g stroke="#efe2c4" stroke-width=".7" stroke-linejoin="round"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/><g transform="translate(120 0) scale(-1 1)"><path d="M53 12Q30 3 3 7Q28 11 53 16Z" fill="#2e7ea3"/><path d="M53 15Q32 11 9 14Q30 18.5 53 19.5Z" fill="#c24a2f"/><path d="M53 18.5Q36 17 17 21Q34 23.5 53 23Z" fill="#e3b447"/></g><path d="M52 23q-3-5 1-8M68 23q3-5-1-8" fill="none" stroke="#e3b447" stroke-width="1.2"/><circle class="sundisc-disc" cx="60" cy="15" r="7" fill="#c24a2f" stroke="#e3b447" stroke-width="1.2"/></g></svg>
       <p class="eyebrow" id="end-reason">LOST TO THE DARK</p><h2 id="end-title">One more orbit.</h2>
-      <div class="score-frame"><canvas id="end-numerals" class="ceiling-only astrolabe-only lens-only flyby-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
+      <div class="score-frame"><canvas id="end-numerals" class="ceiling-only astrolabe-only lens-only flyby-only probe-only" aria-hidden="true"></canvas><div id="end-score">0</div><div id="end-score-roman">—</div><div id="record">BEST 0</div><div id="end-row-note"></div></div>
       <div class="end-stats"><div class="stat"><span id="end-captures">0</span><span class="small" id="end-captures-label">Orbits</span></div><div class="stat"><span id="end-perfects">0</span><span class="small" id="end-perfects-label">Perfects</span></div><div class="stat"><span id="end-flow">1×</span><span class="small" id="end-flow-label">Best flow</span></div><div class="stat"><span id="end-row">0</span><span class="small" id="end-row-label">Row</span></div></div>
       <div id="end-constellations" class="instruction">0 constellations traced</div>
       <div id="end-observations"></div>
@@ -1069,6 +1097,7 @@
 <script src="astrolabe.js"></script>
 <script src="lens.js"></script>
 <script src="flyby.js"></script>
+<script src="probe.js"></script>
 <script src="frame.js"></script>
 <script src="ephemeris.js"></script>
 <script src="review.js"></script>

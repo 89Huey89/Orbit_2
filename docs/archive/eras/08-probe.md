@@ -336,6 +336,20 @@ on closure.
 
 ## The prototype
 
+**Update, 2026-09-25: a playable preview now ships** as `src/probe.js`, a standalone door on the frontispiece
+(root `README.md`, "The eras"). It keeps the prototype's instrument white and B612 Mono for the self-log, now
+vendored and cut by `npm run fonts`, and trades its lit spheres for the class-first reading this file asks for:
+a sensed mass, then a wireframe globe with the plaque's line-and-tick class icon, the apsides struck on the held
+ring, and the class tag printed whole. The plaque is drawn from a fixed table as one gilt line, not loaded
+Hershey data; the dangers are the mesh, the wedge, the flux-vector field and a dithered extinction; the frontier
+is the flux as bits flipping into one flat null. The manifest is built as presentation only — the harvest reads
+the same captures the simulation counts and pays a daughter and a `GEN` without touching the score or the
+darkness — with three provisional choices past this file: each class pays a smaller attested share of a second
+material, a surplus refines into a shortfall at two for one, and the bill is `2/1/1/1` times the generation,
+measured so the fast oracle pilot reaches closure between rows 18 and 30. It tells the era as six phases from the
+departure to the first daughter, closing on closure as its signature sheet, and offers an Endless reading with no
+row it is won at, as "Where the ladder ends" asks. What follows is the original note, kept as written.
+
 `docs/archive/eras/prototypes/probe.html` draws bodies as low-detail lit spheres wrapped in their data
 rather than the research's untested icon-plus-readout pair, hand-builds the plaque hand as
 single-stroke polyline glyphs rather than loaded Hershey data (a licence-and-pipeline question this

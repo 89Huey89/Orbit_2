@@ -29,7 +29,7 @@ import {join,extname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const args=process.argv.slice(2),flag=(name,fallback)=>{const a=args.find(x=>x.startsWith('--'+name+'='));return a?a.slice(name.length+3):args.includes('--'+name)?true:fallback;};
-const eras=(args.find(a=>!a.startsWith('--'))||'atlas,rock,ceiling,scroll,astrolabe,lens,flyby').split(',');
+const eras=(args.find(a=>!a.startsWith('--'))||'atlas,rock,ceiling,scroll,astrolabe,lens,flyby,probe').split(',');
 const seconds=+flag('seconds',8),warm=+flag('warm',3),breakdown=!!flag('breakdown',false),webgl=!!flag('webgl',false);
 const root=resolve(flag('root',fileURLToPath(new URL('..',import.meta.url))));
 

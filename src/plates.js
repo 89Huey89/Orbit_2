@@ -389,7 +389,11 @@ const PLATE_STYLES={
   // Era VII is the flyby, the first century whose point of view has left the Earth: its ground is no material
   // at all but vacuum, so it is pulled from the night plate, the dark one, and every mark on it comes from the
   // hand `src/flyby.js` registers. Its record is its own (orbit.flyby.v1), the mission log.
-  flyby:{base:'night',wash:0,era:7,render:'flyby',can:{score:true,mode:true},door:{button:'flyby-open',label:'ERA VII \u00b7 THE FLYBY'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
+  flyby:{base:'night',wash:0,era:7,render:'flyby',can:{score:true,mode:true},door:{button:'flyby-open',label:'ERA VII \u00b7 THE FLYBY'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  // Era VIII is the probe, the last rung: a self-replicating machine with nobody left at the other end, whose
+  // ground is interstellar black and its own log, so it too is pulled from the night plate, with every mark from
+  // the hand `src/probe.js` registers. Its record is its own (orbit.probe.v1), the self-log.
+  probe:{base:'night',wash:0,era:8,render:'probe',can:{score:true,mode:true},door:{button:'probe-open',label:'ERA VIII \u00b7 THE PROBE'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]}
 };
 const PLATES={night:{},paper:{}};
 for(const id in PLATE_STYLES)PLATES[id]={};
@@ -627,7 +631,12 @@ const FLYBY_FACES={
   text:FLYBY_GROT,sc:FLYBY_GROT,body:FLYBY_GROT,hiero:HIERO_FACE,grot:FLYBY_GROT,
   mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace"
 };
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES,flyby:FLYBY_FACES});
+// The Probe has no hand left to letter with: every word and figure on its sheet is set in B612 Mono, the face
+// Airbus drew with ENAC for cockpit displays read under vibration and glare (08-probe.md, "Lettering and the
+// hand"), the one face on the ladder chosen for a machine's legibility rather than a scribe's.
+const PROBE_MONO="'B612 Mono','IBM Plex Mono','Courier New',monospace";
+const PROBE_FACES={text:PROBE_MONO,sc:PROBE_MONO,body:PROBE_MONO,hiero:HIERO_FACE,grot:PROBE_MONO,mono:PROBE_MONO};
+definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES,flyby:FLYBY_FACES,probe:PROBE_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
@@ -644,6 +653,7 @@ function invalidateArt(){
   if(typeof invalidateAstrolabeArt==='function')invalidateAstrolabeArt();
   if(typeof invalidateLensArt==='function')invalidateLensArt();
   if(typeof invalidateFlybyArt==='function')invalidateFlybyArt();
+  if(typeof invalidateProbeArt==='function')invalidateProbeArt();
 }
 // The DOM's own hand-authored accent palette — index.html's --ink/--gold/--ivory/... custom properties —
 // is a second palette beside the canvas tokens, not derived from them (the two are not 1:1: night's own
