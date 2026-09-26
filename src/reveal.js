@@ -184,14 +184,14 @@ function revealLabel(pen,text){
 // actually cut (`nibClaimDraw`, called from render() in frame.js, which also clears the claim at the top
 // of every frame via `nibClaimReset`). Priority is explicit rather than 'nearest the traveller': the ring
 // or capture wedge of the node actually being orbited (NIB_TIER_ORBIT) outranks every other in-progress
-// stroke (NIB_TIER_STROKE), which outranks the frame's own reveal (NIB_TIER_FRAME), the plate's least
-// urgent mark. Within the stroke tier, `nibRecency(t)` ranks by how recently a stroke began — the local
+// stroke (NIB_TIER_STROKE); the frame, printed by the press rather than drawn (revealFrame), takes no
+// nib at all. Within the stroke tier, `nibRecency(t)` ranks by how recently a stroke began — the local
 // 0..1 clock every call site already reads to decide whether to claim at all — so the most recently
 // begun stroke wins over one nearer its own finish. A candidate's x/y/angle are read off the canvas's own
 // current transform at claim time (`ctx.getTransform()`), not off whatever local, often-rotated frame the
 // call site happens to be drawing in, so the one winning nib can be cut in plain, unrotated screen space
 // long after every local `ctx.save()`/`ctx.restore()` around it has already unwound.
-const NIB_TIER_FRAME=0,NIB_TIER_STROKE=1,NIB_TIER_ORBIT=2;
+const NIB_TIER_STROKE=1,NIB_TIER_ORBIT=2;
 const nibRecency=t=>NIB_TIER_STROKE-clamp(t,0,1)*.9;
 let nibClaim=null;
 function nibClaimReset(){nibClaim=null;}
@@ -642,59 +642,46 @@ function revealFigure(chart,draw){
   ctx.restore();
 }
 // ---------- The plate frame ----------
-// Once per run: the double rule draws itself round by dash offset, the graduated ticks follow the pen
-// around the perimeter, and the marginal ornaments come up last. A restart redraws it briskly.
-function penDashRect(x,y,w,h,color,weight,t){
-  if(t<=0||t>=1||w<=0||h<=0)return;
-  const length=(w+h)*2;
-  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=weight;
-  ctx.setLineDash([length,length]);ctx.lineDashOffset=length*(1-t);
-  ctx.strokeRect(x,y,w,h);ctx.restore();
-}
-function framePerimeterPath(t,depth){
-  const perimeter=(W+H)*2,run=perimeter*t;
-  if(run>0)ctx.rect(0,0,Math.min(W,run),depth);
-  if(run>W)ctx.rect(W-depth,0,depth,Math.min(H,run-W));
-  if(run>W+H){const across=Math.min(W,run-W-H);ctx.rect(W-across,H-depth,across,depth);}
-  if(run>W*2+H){const down=Math.min(H,run-W*2-H);ctx.rect(0,H-down,depth,down);}
-}
-function framePerimeterClip(t,depth){
-  ctx.beginPath();
-  framePerimeterPath(t,depth);
-  ctx.clip();
-}
-function penPerimeterPoint(t){
-  const run=((W+H)*2)*t;
-  if(run<=W)return {x:run,y:0,angle:0};
-  if(run<=W+H)return {x:W,y:run-W,angle:Math.PI/2};
-  if(run<=W*2+H)return {x:W-(run-W-H),y:H,angle:Math.PI};
-  return {x:0,y:H-(run-W*2-H),angle:-Math.PI/2};
-}
+// A rolling press lays the whole copper in one pull, so the frame is not drawn line by line: it is
+// printed. The plate-mark presses in first — the plate's edge biting into the damp sheet, a hairline of
+// raised paper along its inner lip and a faint bruise outside it — and then the whole engraved layer lands
+// in a single roll from the head of the sheet to its foot, a point off register, and creeps into register
+// as the sheet settles. No nib touches it. Once per run: over nine tenths of a second on the opening sheet,
+// briskly on a restart.
 function revealFrame(layer){
-  const t=reveal.progress('frame',reveal.runs>0?.5:1.4,true);
+  const t=reveal.progress('frame',reveal.runs>0?.45:.9,true);
   if(t>=1){blitFrameLayer(layer);return 1;}
-  const band=frameBand(),wide=frameWide(),outer=band*.56,inner=band*.92;
-  // Read straight off the same ink.base tokens buildFrameLayer's own double rule is cut in, at the same
-  // alphas, rather than a second rule/ruleFaint pair tuned to look close: the animated rule the pen
-  // draws and the printed rule it hands off to are then provably one ink, not two.
-  const ruleColor=`rgba(${ink.base.inkStrong},${onPaper()?.62:.46})`,faintColor=`rgba(${ink.base.inkSoft},${onPaper()?.34:.26})`;
-  penDashRect(outer+.5,outer+.5,Math.max(1,W-outer*2-1),Math.max(1,H-outer*2-1),ruleColor,wide?1.4:1,revealSpan(t,0,.5));
-  penDashRect(inner+.5,inner+.5,Math.max(1,W-inner*2-1),Math.max(1,H-inner*2-1),faintColor,wide?1:.7,revealSpan(t,.12,.6));
-  const sweep=revealSpan(t,.25,.85);
-  if(sweep>0){ctx.save();framePerimeterClip(sweep,band*1.5);ctx.drawImage(layer,0,0,W,H);ctx.restore();}
-  const settle=revealSpan(t,.72,1);
-  if(settle>0){
-    ctx.save();ctx.globalAlpha=settle;
-    // The sweep above has already cut the perimeter band opaque; settle only ever needs to lay the
-    // rest of the layer (the corner ornaments reaching past that band), so its blit is clipped to the
-    // band's own complement rather than composited over ground the sweep already finished.
-    if(sweep>0){ctx.beginPath();ctx.rect(0,0,W,H);framePerimeterPath(sweep,band*1.5);ctx.clip('evenodd');}
-    blitFrameLayer(layer);
+  const band=frameBand(),pm=band*.2,paper=onPaper(),bite=revealSpan(t,0,.36),roll=revealSpan(t,.3,.64),settle=revealSpan(t,.64,1);
+  if(bite>0&&roll<1){
+    const x=pm,y=pm,w=Math.max(1,W-pm*2),h=Math.max(1,H-pm*2),r=Math.min(band*.25,w*.5,h*.5);
+    const edge=(inset,weight,rgba)=>{ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x+inset,y+inset,w-inset*2,h-inset*2,r);else ctx.rect(x+inset,y+inset,w-inset*2,h-inset*2);ctx.lineWidth=weight;ctx.strokeStyle=rgba;ctx.stroke();};
+    ctx.save();
+    edge(-2.2,4,`rgba(${ink.press.embossDark},${(paper?.07:.14)*bite})`);
+    edge(0,1,`rgba(${ink.press.embossDark},${(paper?.34:.4)*bite})`);
+    edge(1.1,.8,`rgba(${ink.press.embossLight},${(paper?.6:.22)*bite})`);
     ctx.restore();
   }
-  // The frame is the plate's own least urgent mark: it claims the nib only when nothing else on the
-  // sheet wants it.
-  if(sweep>0&&sweep<1){const head=penPerimeterPoint(sweep);penNib(head.x,head.y,head.angle,.8,undefined,NIB_TIER_FRAME);}
+  if(roll>0){
+    const off=1-settle;
+    // The pull is laid with a soft leading edge rather than a guillotine: the layer carries the plate tone
+    // as well as the lines, and a hard cut across it read as a seam rather than as ink taking to paper.
+    const feather=18,front=H*roll,steps=roll<1?6:0;
+    ctx.save();
+    if(roll<1){ctx.beginPath();ctx.rect(0,0,W,Math.max(0,front-feather));ctx.clip();}
+    ctx.translate(1.3*off,.9*off);blitFrameLayer(layer);
+    ctx.restore();
+    for(let i=0;i<steps;i++){
+      const y0=front-feather+i*feather/steps;
+      ctx.save();ctx.globalAlpha=1-(i+.5)/steps;ctx.beginPath();ctx.rect(0,y0,W,feather/steps);ctx.clip();
+      ctx.translate(1.3*off,.9*off);blitFrameLayer(layer);ctx.restore();
+    }
+    // The roller's own line, where the pressure is on the sheet as the pull goes down it.
+    if(roll<1){
+      const ry=front-feather*.5,shade=ctx.createLinearGradient(0,ry-10,0,ry+2);
+      shade.addColorStop(0,`rgba(${ink.press.embossDark},0)`);shade.addColorStop(1,`rgba(${ink.press.embossDark},${paper?.08:.16})`);
+      ctx.fillStyle=shade;ctx.fillRect(0,ry-10,W,12);
+    }
+  }
   return t;
 }
 // ---------- Canvas captions, a glyph at a time ----------
