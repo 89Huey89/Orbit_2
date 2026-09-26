@@ -712,7 +712,8 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   // already uncovered.
   g=keyLayer.ink;
   if(paper){
-    g.strokeStyle=`rgba(${rgb},.3)`;g.lineWidth=1.9;g.beginPath();g.arc(-1.05,-.75,core+.2,0,TAU);g.stroke();
+    // The colourist's own overrun is not baked here: it is laid live by colouristPatches(), below, because
+    // how far it runs past this line depends on how the body was landed on.
     // The circle was first tried in red chalk, a little off and broken where the chalk skipped, and the pen
     // then followed it: the sanguine underdrawing shows beside the ink wherever the two do not agree.
     burinArc(g,.9,-.6,core+1.1,0,TAU,ink.underdrawing.chalk,.34,1,seed^0x2c71,{segments:60,skips:9,wobble:.9});
@@ -755,7 +756,7 @@ function glyph(seed,type,row,runSeed,difficultyChoice){
   }
   const weather=planetWeather(family,core,seed);
   for(const layer of [back.image,surface.image,front.image,keyLayer.image,weather,embers,ringFront])pressPixels(layer);
-  const art={back:back.image,surface:surface.image,front:front.image,key:keyLayer.image,weather,embers,ringFront,core,tilt,family,spin:palette.spin,phase:seed*.017};
+  const art={back:back.image,surface:surface.image,front:front.image,key:keyLayer.image,weather,embers,ringFront,core,tilt,family,rgb,seed,spin:palette.spin,phase:seed*.017};
   // Only cached layer blits animate. No surface generation runs per frame.
   return cacheGlyph(key,art);
 }
@@ -770,6 +771,30 @@ function prewarmGlyph(){
     if(glyphs.has(glyphKey(n.seed,n.type,n.row,world.seed,n.difficultyChoice)))continue;
     glyph(n.seed,n.type,n.row,world.seed,n.difficultyChoice);return;
   }
+}
+// The colourist does not lay a planet's colour as one ring a fixed pixel off the line: the body colour
+// goes on in six to ten brush patches, each with a loaded, rounded start, carried the way the landing's own
+// impression drifted and jittered by how rough that landing was. A clean tangent keeps every patch inside
+// the printed keyline; a hard radial strike leaves colour standing visibly past it on the side the pull
+// slipped toward, and bare sheet inside the line on the other. Paper only, and never on the uncoloured proof
+// or on a charge, which is an offer rather than a specimen. `alpha` lets the reveal's wash stage lay them
+// in with the rest of the colour.
+function colouristPatches(art,impression,alpha=1){
+  if(!onPaper()||!impression||plainPlate()||PICKUP_FAMILIES.has(art.family)||!art.rgb||alpha<=0)return;
+  const rough=impression.perfect?0:clamp(1-(impression.quality??1),0,1),rng=seeded((art.seed^0x70a1c)>>>0||1);
+  const ox=impression.x||0,oy=impression.y||0,lean=Math.atan2(oy,ox),count=6+Math.floor(rng()*5);
+  ctx.save();ctx.translate(ox,oy);ctx.rotate(impression.rotation||0);ctx.lineCap='round';
+  for(let i=0;i<count;i++){
+    // Most patches gather on the side the pull slipped toward; one or two go anywhere round the rim.
+    const a0=(i<count-2&&rough>0?lean+(rng()-.5)*2.6:rng()*TAU),span=.45+rng()*.5,w=1.5+rng()*.9;
+    const reach=rough>0?art.core+.3+rough*(1+rng()*1.4):art.core-1.2-rng()*.8;
+    const jx=(rng()-.5)*rough*1.6,jy=(rng()-.5)*rough*1.6,a=(.2+rng()*.14)*alpha;
+    ctx.strokeStyle=`rgba(${art.rgb},${a.toFixed(3)})`;ctx.lineWidth=w;
+    ctx.beginPath();ctx.arc(jx,jy,reach,a0,a0+span);ctx.stroke();
+    ctx.fillStyle=`rgba(${art.rgb},${(a*.8).toFixed(3)})`;
+    ctx.beginPath();ctx.arc(jx+Math.cos(a0)*reach,jy+Math.sin(a0)*reach,w*.62,0,TAU);ctx.fill();
+  }
+  ctx.restore();
 }
 function drawPlanet(art,r,time,impression=null){
   const t=reducedMotion?0:time,angle=art.tilt+t*art.spin;
@@ -793,6 +818,7 @@ function drawPlanet(art,r,time,impression=null){
     ctx.drawImage(art.weather,wind-40,-40,80,80);ctx.drawImage(art.weather,wind-120,-40,80,80);
   }
   ctx.restore();
+  colouristPatches(art,impression);
   if(art.family==='ice'){
     const paper=onPaper();
     ctx.save();ctx.rotate(art.tilt);

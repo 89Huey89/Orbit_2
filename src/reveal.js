@@ -486,6 +486,7 @@ function revealPlanet(art,r,time,pen,seed,impression=null){
     ctx.save();ctx.clip();ctx.rotate(angle);ctx.drawImage(art.surface,-40,-40,80,80);ctx.restore();
     ctx.strokeStyle=`rgba(${ink.reveal.washRim},${.42*(1-dry)+.06})`;ctx.lineWidth=1.2;ctx.stroke();
     ctx.restore();
+    colouristPatches(art,impression,dry);
   }
   // (a) The keyline is cut around the disc by angle — a genuine hairline band, not the wide annulus this
   // used to clip to — and it reveals `art.key` alone: the colourist's correction (the keyline circle, its
