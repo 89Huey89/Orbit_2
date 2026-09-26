@@ -964,7 +964,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* Nothing borrowed — this is the sheet's own idiom, already fully invented and argued in `inkSplat` (src/effects.js:1332-1400) for the death off the side of the chart, whose comment states the thesis outright: 'A run lost off the side of the chart is not a burst but a spill.' The point is that the atlas answers its two commonest losses in one language.
 
-- [ ] **A cut comet** `medium effort` — src/celestial.js:615-619, the comet branch of the ambient draw.
+- [x] **A cut comet** `medium effort` — *Done (2026-09-26): `drawAmbientComet()` (celestial.js) drops the three translucent tail washes and the filled hood: the head is a punched nucleus on a small reserved disc with eleven coma hairs off its limb, and the tail six tapering strokes in five pieces that fan, lean with the curl and each break once, cut outward from the head over the event's first second. Volume and clearance rules unchanged; no pen nib, since an ambient event should never take the pen from the chart. Scenario: `npm run shots -- comet`.* src/celestial.js:615-619, the comet branch of the ambient draw.
 
   Replace the gradient streak with a struck comet in the plate's own hand: a punched head on a small reserved disc, a coma of ten to twelve short radiating hairs leaving the coma's limb rather than the nucleus, and a tail of six tapering `burinSegment` strokes that fan, lean off the axis and break as they go — drawn on by the pen over about a second with the nib riding the tail's leading edge, held, then lifted. Keep it quiet and keep every one of the existing clearance rules; the change is the medium, not the volume.
 

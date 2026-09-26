@@ -638,45 +638,41 @@ function makeAmbientEvent(chapter){
   }
   return null;
 }
-// The ambient comet, cut in the same hand as the observer mark's own (OBSERVER_MARKS.comet,
-// effects.js) rather than as a gradient-stroked motion streak: a bundle of divergent rays leaving
-// the coma's own limb, widening and leaning off the axis as a real tail's dust lags behind its
-// motion, each walked in four fading pieces so the tail ends ragged instead of closing to a point.
-// `length` here is read straight off the distance already travelled between the delayed tail sample
-// and the head, so the mark's own scale answers to how far the comet has actually moved.
-function drawAmbientComet(point,tail,alpha){
+// The comet is struck in the plate's own hand, as the cometary broadsides of 1577 and 1618 cut one and as
+// the comet observer mark already is (ui.js): a punched head on a small reserved disc, a coma of short
+// hairs leaving the limb rather than the nucleus, and a tail of six tapering burin strokes that fan, lean
+// off the axis as the tail curls and break as they go — no wash anywhere, since nothing on this plate is
+// laid in as light. The tail is cut outward from the head over its first second, so it arrives drawn
+// rather than shown; its volume and every clearance rule are the ones the gradient streak kept. `length`
+// is read straight off the distance already travelled between the delayed tail sample and the head, so
+// the mark's own scale answers to how far the comet has actually moved.
+const COMET_RAYS=[{v:-1,run:.72},{v:-.55,run:.9},{v:-.18,run:1},{v:.2,run:.96},{v:.58,run:.82},{v:1,run:.66}];
+function drawAmbientComet(point,tail,alpha,age=Infinity){
   const dx=point.x-tail.x,dy=point.y-tail.y,length=Math.max(4,Math.hypot(dx,dy)),ang=Math.atan2(dy,dx);
-  const k=length/28,spread=3+k*1.2,curl=1.3+k*.6,RAYS=9,STEPS=4;
-  ctx.save();ctx.translate(point.x,point.y);ctx.rotate(ang);
-  for(let i=0;i<3;i++){
-    const far=length*(.3+i*.17),u=far/length;
-    ctx.fillStyle=`rgba(${ink.atmosphere.cometTrail},${alpha*.16})`;
-    ctx.beginPath();ctx.moveTo(1.2*k,-.7*k);
-    ctx.quadraticCurveTo(-far*.5,-spread*u*.44+curl*.2,-far,-spread*u*.78+curl*u);
-    ctx.lineTo(-far,spread*u+curl*u);
-    ctx.quadraticCurveTo(-far*.5,spread*u*.5+curl*.2,1.2*k,.7*k);ctx.fill();
-  }
-  for(let s=0;s<STEPS;s++){
-    const t0=s/STEPS,t1=(s+1)/STEPS;
-    ctx.strokeStyle=`rgba(${s<2?ink.atmosphere.cometHead:ink.atmosphere.cometTrail},${alpha*(.85-s*.16)})`;
-    ctx.lineWidth=.6-s*.1;
-    ctx.beginPath();
-    for(let i=0;i<RAYS;i++){
-      const v=i/(RAYS-1)*2-1,rv=v*(.42+.58*Math.abs(v)),run=.62+(i%3)*.14+(i&1)*.08;
-      const sx0=-1.2*k-Math.abs(rv)*1.1*k,sy0=rv*2.4*k;
-      const ex=-length*run,ey=rv*spread+curl*run,ccx=-length*.36,ccy=rv*spread*.3+curl*.3;
-      ctx.moveTo(qAt(t0,sx0,ccx,ex),qAt(t0,sy0,ccy,ey));
-      ctx.lineTo(qAt(t1,sx0,ccx,ex),qAt(t1,sy0,ccy,ey));
+  const k=length/28,spread=3+k*1.2,curl=1.3+k*.6,STEPS=5,cut=clamp(age/1,0,1);
+  ctx.save();ctx.translate(point.x,point.y);ctx.rotate(ang);ctx.lineCap='round';
+  COMET_RAYS.forEach((ray,i)=>{
+    const v=ray.v,rv=v*(.42+.58*Math.abs(v)),sx0=-1.9*k-Math.abs(rv)*.8*k,sy0=rv*1.6*k;
+    const ex=-length*ray.run,ey=rv*spread+curl*ray.run,ccx=-length*.36,ccy=rv*spread*.3+curl*.3;
+    for(let s=0;s<STEPS;s++){
+      const t0=s/STEPS,t1=(s+1)/STEPS;if(t0>=cut)break;
+      // Each stroke breaks once, at its own place, the way a burin lifts on a long cut.
+      if(s>0&&(i*3+s*2)%5===0)continue;
+      const w=(.75-s*.12)*(1-Math.abs(v)*.25),a=alpha*(.95-s*.15);
+      ctx.strokeStyle=`rgba(${s<2?ink.atmosphere.cometHead:ink.atmosphere.cometTrail},${a})`;ctx.lineWidth=Math.max(.15,w);
+      ctx.beginPath();ctx.moveTo(qAt(t0,sx0,ccx,ex),qAt(t0,sy0,ccy,ey));ctx.lineTo(qAt(Math.min(t1,cut),sx0,ccx,ex),qAt(Math.min(t1,cut),sy0,ccy,ey));ctx.stroke();
     }
-    ctx.stroke();
-  }
-  // The coma: the head's own hood of light, and the beard of short rays off its sunward limb.
-  ctx.fillStyle=`rgba(${ink.atmosphere.cometDot},${alpha*.55})`;
-  ctx.beginPath();ctx.ellipse(-.4*k,0,2.2*k,1.9*k,0,0,TAU);ctx.fill();
-  ctx.strokeStyle=`rgba(${ink.atmosphere.cometHead},${alpha*.6})`;ctx.lineWidth=.35;
+  });
+  // The head: the sheet reserved clean round it, the nucleus punched, and the coma's hairs off its limb.
+  const r=1.9*k;
+  ctx.fillStyle=`rgba(${ink.base.paperRgb},${Math.min(1,alpha*2.4)})`;
+  ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgba(${ink.atmosphere.cometDot},${Math.min(1,alpha*2.2)})`;
+  ctx.beginPath();ctx.arc(0,0,clamp(.55*k,.8,1.8),0,TAU);ctx.fill();
+  ctx.strokeStyle=`rgba(${ink.atmosphere.cometHead},${alpha*.8})`;ctx.lineWidth=.4;
   ctx.beginPath();
-  for(let i=0;i<9;i++){
-    const a=(i/8-.5)*2.1,r=2*k,out=(.5+((i*5)%4)*.3)*k;
+  for(let h=0;h<11;h++){
+    const a=Math.PI+(h/10-.5)*3.6,out=(.45+((h*5)%4)*.22)*k;
     ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+out),Math.sin(a)*(r+out));
   }
   ctx.stroke();
@@ -705,7 +701,7 @@ function drawAmbient(dt,aim){
   if(alpha<.003)return;
   ctx.save();ctx.lineCap='round';
   if(e.kind==='comet'){
-    drawAmbientComet(point,tail,alpha);
+    drawAmbientComet(point,tail,alpha,e.age);
   }else{
     const reach=1.7+envelope*1.5,rgb=e.chapter===3?ink.atmosphere.glintBlue:ink.atmosphere.glintWarm;
     line(point.x-reach,point.y,point.x+reach,point.y,`rgba(${rgb},${alpha*.65})`,.5);
