@@ -181,11 +181,24 @@ function lensRenderSphere(g,x,y,r,family,seed,tilt){
       g.fillStyle='rgba(20,18,16,.28)';g.beginPath();g.arc(cx+cr*.2,cy+cr*.25,cr,0,TAU);g.fill();g.fillStyle='rgba(255,250,236,.22)';g.beginPath();g.arc(cx-cr*.15,cy-cr*.2,cr*.8,0,TAU);g.fill();}
     for(let i=0;i<3;i++){g.fillStyle='rgba(40,38,34,.18)';g.beginPath();g.ellipse(x+(rng()-.5)*r,y+(rng()-.5)*r,r*(.2+rng()*.25),r*(.14+rng()*.2),rng()*TAU,0,TAU);g.fill();}}
   else if(family==='ocean'){for(let i=0;i<5;i++){g.fillStyle=`rgba(96,120,72,${(.35+rng()*.2).toFixed(3)})`;g.beginPath();g.ellipse(x+(rng()-.5)*r*1.3,y+(rng()-.5)*r*1.3,r*(.12+rng()*.22),r*(.08+rng()*.18),rng()*TAU,0,TAU);g.fill();}
-    for(let i=0;i<9;i++){g.strokeStyle=`rgba(255,255,255,${(.3+rng()*.3).toFixed(3)})`;g.lineWidth=r*(.04+rng()*.06);g.lineCap='round';const cy=y+(rng()-.5)*r*1.7,cx=x+(rng()-.5)*r;g.beginPath();g.arc(cx,cy,r*(.25+rng()*.4),rng()*TAU,rng()*TAU+1.2);g.stroke();}}
+    // Cloud lies along the latitudes, as weather is sheared into streaks by the planet's turning: long thin
+    // lenses of white, overlapping and a little leaned, never the loops of a pen, and brightest at the poles.
+    for(let i=0;i<10;i++){const cy=y+(rng()-.5)*r*1.7,cx=x+(rng()-.5)*r*.9,rx=r*(.3+rng()*.55),ry=r*(.03+rng()*.05);
+      g.fillStyle=`rgba(255,255,255,${(.16+rng()*.24).toFixed(3)})`;g.beginPath();g.ellipse(cx,cy,rx,ry,(rng()-.5)*.35,0,TAU);g.fill();}
+    for(const sgn of[-1,1]){const pg=g.createLinearGradient(x,y+sgn*r,x,y+sgn*r*.55);pg.addColorStop(0,'rgba(255,255,255,.55)');pg.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=pg;g.fillRect(x-r,sgn<0?y-r:y+r*.55,r*2,r*.45);}}
   else if(family==='dune'){for(let i=0;i<6;i++){g.fillStyle=`rgba(${C.dark.join(',')},${(.2+rng()*.2).toFixed(3)})`;g.beginPath();g.ellipse(x+(rng()-.5)*r*1.2,y+(rng()-.3)*r*1.1,r*(.15+rng()*.25),r*(.06+rng()*.1),rng()*TAU,0,TAU);g.fill();}
     g.fillStyle='rgba(255,252,246,.85)';g.beginPath();g.ellipse(x-r*.08,y-r*.9,r*.34,r*.14,-.1,0,TAU);g.fill();}
-  else if(family==='volcanic'){g.strokeStyle='rgba(255,150,70,.7)';g.lineWidth=Math.max(.5,r*.035);for(let i=0;i<7;i++){let px=x+(rng()-.5)*r*1.4,py=y+(rng()-.5)*r*1.4;g.beginPath();g.moveTo(px,py);for(let j=0;j<4;j++){px+=(rng()-.5)*r*.4;py+=(rng()-.5)*r*.4;g.lineTo(px,py);}g.stroke();}
-    for(let i=0;i<4;i++){const gx=x+(rng()-.5)*r,gy=y+(rng()-.5)*r,gg=g.createRadialGradient(gx,gy,0,gx,gy,r*.25);gg.addColorStop(0,'rgba(255,170,90,.5)');gg.addColorStop(1,'rgba(255,120,50,0)');g.fillStyle=gg;g.fillRect(gx-r*.3,gy-r*.3,r*.6,r*.6);}}
+  else if(family==='volcanic'){
+    // Old flows first, darker basalt laid over the body in broad tongues; then a few calderas, each a dark pit
+    // with a warm lip; then the live flows, smooth curves that glow at their source and cool along their
+    // length, drawn wide and faint under narrow and bright so they read as heat rather than as a scribble.
+    for(let i=0;i<5;i++){g.fillStyle=`rgba(${C.dark.join(',')},${(.25+rng()*.2).toFixed(3)})`;g.beginPath();g.ellipse(x+(rng()-.5)*r*1.3,y+(rng()-.5)*r*1.3,r*(.2+rng()*.25),r*(.08+rng()*.12),rng()*TAU,0,TAU);g.fill();}
+    const vents=[];for(let i=0;i<3;i++){const a=i/3*TAU+rng()*.8,d=r*(.25+rng()*.35);vents.push([x+Math.cos(a)*d,y+Math.sin(a)*d,r*(.07+rng()*.05)]);}
+    g.lineCap='round';for(const [vx,vy] of vents){const a=rng()*TAU,L=r*(.35+rng()*.35),ex=vx+Math.cos(a)*L,ey=vy+Math.sin(a)*L,bx=(vx+ex)/2+Math.cos(a+1.57)*L*(rng()-.5)*.6,by=(vy+ey)/2+Math.sin(a+1.57)*L*(rng()-.5)*.6;
+      const fl=g.createLinearGradient(vx,vy,ex,ey);fl.addColorStop(0,'rgba(255,190,110,.9)');fl.addColorStop(.6,'rgba(236,96,40,.55)');fl.addColorStop(1,'rgba(160,50,20,0)');
+      for(const [w,k] of[[.12,.3],[.035,1]]){g.globalAlpha=k;g.strokeStyle=fl;g.lineWidth=Math.max(.5,r*w);g.beginPath();g.moveTo(vx,vy);g.quadraticCurveTo(bx,by,ex,ey);g.stroke();}g.globalAlpha=1;}
+    for(const [vx,vy,vr] of vents){const gg=g.createRadialGradient(vx,vy,0,vx,vy,vr*3);gg.addColorStop(0,'rgba(255,200,120,.6)');gg.addColorStop(1,'rgba(255,120,50,0)');g.fillStyle=gg;g.beginPath();g.arc(vx,vy,vr*3,0,TAU);g.fill();
+      g.fillStyle='rgba(18,10,6,.85)';g.beginPath();g.arc(vx,vy,vr,0,TAU);g.fill();g.strokeStyle='rgba(255,150,70,.8)';g.lineWidth=Math.max(.4,r*.02);g.stroke();}}
   else if(family==='ice'){for(let i=0;i<5;i++){g.fillStyle=`rgba(255,255,255,${(.06+rng()*.08).toFixed(3)})`;g.beginPath();g.ellipse(x,y+(-.8+i*.4)*r,r*1.1,r*.08,0,0,TAU);g.fill();}}
   // the terminator: night from the lower right, a soft band where the light grazes
   const lx=-.62,ly=-.78,tg=g.createLinearGradient(x+lx*r,y+ly*r,x-lx*r,y-ly*r);
@@ -671,7 +684,13 @@ function lensBodyEye(n,family,x,y,d,al){
   }else{
     lensHatchDisc(ctx,x,y,R,e2,P,1,family==='volcanic'?{angle:.9}:{});
     if(family==='crater'&&e2>0){ctx.strokeStyle=`rgba(${P.ink},${(.75*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.045);
-      for(let i=0;i<6;i++){const a=-1.1+i*.42,d0=R*(.2+tileHash(n.id,i,3)*.55),cr=R*(.08+tileHash(n.id,i,4)*.12);ctx.beginPath();ctx.arc(x+Math.cos(a)*d0*.3+d0*.2,y+Math.sin(a)*d0,cr,Math.PI*.9,Math.PI*1.9);ctx.stroke();}
+      // Craters spread over the lit face, each a rim cut as the arc of its wall that faces away from the light
+      // with the shadow it throws laid inside, the way Galileo's wash drawings of the Moon set them.
+      // They are dealt round the disc a sector each, so they never pile into one clump whatever the seed.
+      ctx.lineWidth=Math.max(.35,R*.03);
+      for(let i=0;i<7;i++){const a=(i+tileHash(n.id,i,3)*.7)/7*TAU,d0=R*(i===6?.12:.38+tileHash(n.id,i,5)*.3),cx=x+Math.cos(a)*d0,cy=y+Math.sin(a)*d0,cr=R*(.07+tileHash(n.id,i,4)*.08);
+        ctx.fillStyle=`rgba(${P.ink},${(.35*e2).toFixed(3)})`;ctx.beginPath();ctx.arc(cx,cy,cr,Math.PI*.95,Math.PI*1.85);ctx.quadraticCurveTo(cx+cr*.1,cy-cr*.1,cx-cr*.95,cy+cr*.15);ctx.fill();
+        ctx.beginPath();ctx.arc(cx,cy,cr,0,TAU);ctx.stroke();}
       // lit peaks standing out in the dark beyond the terminator, the mountains Galileo measured by their shadows
       ctx.fillStyle=`rgba(${P.paper},${(.95*e3).toFixed(3)})`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+R*(.45+tileHash(n.id,i,6)*.3),y+R*(tileHash(n.id,i,7)-.5)*1.1,Math.max(.6,R*.05),0,TAU);ctx.fill();}}
     if(family==='storm'&&e2>0){ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.clip();ctx.strokeStyle=`rgba(${P.ink},${(.8*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.8,R*.13);
@@ -679,8 +698,11 @@ function lensBodyEye(n,family,x,y,d,al){
       if(e3>0){ctx.strokeStyle=`rgba(${P.rubric},${(.9*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.07);ctx.beginPath();ctx.ellipse(x+R*.25,y+R*.42,R*.26,R*.13,0,0,TAU);ctx.stroke();}}
     if(family==='dune'&&e2>0){ctx.fillStyle=`rgba(${P.paper},${(.95*e2).toFixed(3)})`;ctx.beginPath();ctx.ellipse(x-R*.05,y-R*.8,R*.38,R*.16,-.1,0,TAU);ctx.fill();ctx.strokeStyle=`rgba(${P.ink},${(.6*e2).toFixed(3)})`;ctx.lineWidth=Math.max(.4,R*.04);ctx.stroke();
       ctx.fillStyle=`rgba(${P.ink},${(.4*e3).toFixed(3)})`;for(let i=0;i<14;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,8)-.6)*R*1.2,y+(tileHash(n.id,i,9)-.3)*R,Math.max(.5,R*.06),0,TAU);ctx.fill();}}
-    if(family==='volcanic'&&e3>0){for(let i=0;i<3;i++){const vx=x+R*(-.35+tileHash(n.id,i,10)*.5),vy=y+R*(-.3+tileHash(n.id,i,11)*.6),gg=ctx.createRadialGradient(vx,vy,0,vx,vy,R*.28);
-      gg.addColorStop(0,`rgba(${P.rubric},${(.95*e3).toFixed(3)})`);gg.addColorStop(1,`rgba(${P.rubric},0)`);ctx.fillStyle=gg;ctx.beginPath();ctx.arc(vx,vy,R*.28,0,TAU);ctx.fill();}}
+    // Herschel's three volcanoes, three separate points of red light set well apart on the dark of the disc,
+    // each a small glow round a pricked core, so the caption's count can be read off the drawing.
+    if(family==='volcanic'&&e3>0){for(let i=0;i<3;i++){const a=.35+i/3*TAU+(tileHash(n.id,i,10)-.5)*.6,dd=R*(.42+tileHash(n.id,i,11)*.18),vx=x+Math.cos(a)*dd,vy=y+Math.sin(a)*dd,gr=R*.2,gg=ctx.createRadialGradient(vx,vy,0,vx,vy,gr);
+      gg.addColorStop(0,`rgba(${P.rubric},${(.75*e3).toFixed(3)})`);gg.addColorStop(1,`rgba(${P.rubric},0)`);ctx.fillStyle=gg;ctx.beginPath();ctx.arc(vx,vy,gr,0,TAU);ctx.fill();
+      ctx.fillStyle=`rgba(${P.rubric},${e3.toFixed(3)})`;ctx.beginPath();ctx.arc(vx,vy,Math.max(.8,R*.055),0,TAU);ctx.fill();}}
   }
   ctx.restore();
   // the reading, then the dated caption that seals the drawing
@@ -694,15 +716,35 @@ function lensBodyEye(n,family,x,y,d,al){
 // the ink laid on afterwards by a hand at the glass back: a loop round it, and its plate number stamped.
 function lensBodyPlate(n,family,x,y,d,al){
   const P=ink.lens,R=lensDiscR(n),s1=lensSpan(d,LENS_STAGE.soft),s2=lensSpan(d,LENS_STAGE.first),s3=lensSpan(d,LENS_STAGE.done),e3=lensEase(s3),dev=lensEase(clamp(.25+s1*.35+s2*.5,0,1));
-  const shape={ringed:[1.9,1,.95],storm:[1.45,1,.9],ocean:[1,.8,.95],ice:[1,1,.42],volcanic:[1,1.05,1],crater:[1,1,.8],dune:[1,1,.78]}[family]||[1,1,.85];
+  // [horizontal stretch, size, density]: Jupiter prints a little oblate, Uranus small and thin, the Moon and a
+  // lava world a mid grey so what is laid on them afterwards can still be read against the silver.
+  const shape={ringed:[1,.95,.95],storm:[1.12,1,.9],ocean:[1,.95,.95],ice:[1,.74,.5],volcanic:[1,1,.62],crater:[1,1,.66],dune:[1,1,.78]}[family]||[1,1,.85];
   ctx.save();ctx.globalAlpha=al;
   if(family==='volcanic'){const hg=ctx.createRadialGradient(x,y,R*.8,x,y,R*2.2);hg.addColorStop(0,`rgba(${P.silverMid},${(.32*dev).toFixed(3)})`);hg.addColorStop(1,`rgba(${P.silverMid},0)`);ctx.fillStyle=hg;ctx.beginPath();ctx.arc(x,y,R*2.2,0,TAU);ctx.fill();}
-  ctx.save();ctx.translate(x,y);ctx.scale(shape[0],1);const rr=R*shape[1]*1.1,outer=rr*(.45+.7*dev),kg=ctx.createRadialGradient(0,0,0,0,0,outer);
+  const rr=R*shape[1]*1.1,outer=rr*(.45+.7*dev);
+  // Saturn's ring prints as dense as the globe: a flattened annulus of silver, soft-edged like everything on
+  // the glass, with Cassini's division showing as a clear line through it once the plate is fully developed.
+  if(family==='ringed'&&dev>.2){const rk=clamp((dev-.2)/.8,0,1);ctx.save();ctx.translate(x,y);ctx.rotate(-.12);
+    for(const [w,k] of[[R*.5,.22],[R*.26,.8]]){ctx.strokeStyle=`rgba(${P.silver},${(k*rk).toFixed(3)})`;ctx.lineWidth=w;ctx.beginPath();ctx.ellipse(0,0,R*1.9,R*.6,0,0,TAU);ctx.stroke();}
+    if(e3>0){ctx.strokeStyle=`rgba(${P.glass},${(.7*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.05);ctx.beginPath();ctx.ellipse(0,0,R*1.95,R*.615,0,0,TAU);ctx.stroke();}
+    ctx.restore();}
+  // Venus prints only where she is lit: the silver is laid inside her phase, the gibbous shape narrowing to
+  // the crescent as the plate develops, over a faint ghost of the whole disc.
+  if(family==='ocean'){const w=.3+.35*(1-e3);ctx.save();ctx.beginPath();ctx.arc(x,y,outer,-Math.PI/2,Math.PI/2);ctx.ellipse(x,y,outer*w,outer,0,Math.PI/2,Math.PI*1.5);ctx.closePath();ctx.clip();}
+  ctx.save();ctx.translate(x,y);ctx.scale(shape[0],1);const kg=ctx.createRadialGradient(0,0,0,0,0,outer);
   kg.addColorStop(0,`rgba(${P.silver},${(.97*shape[2]).toFixed(3)})`);kg.addColorStop(clamp(.45+.35*dev,0,.95),`rgba(${P.silver},${(.92*shape[2]*Math.min(1,.45+dev)).toFixed(3)})`);kg.addColorStop(1,`rgba(${P.silverMid},0)`);
   ctx.fillStyle=kg;ctx.beginPath();ctx.arc(0,0,outer,0,TAU);ctx.fill();
-  if(family==='crater'&&dev>.4){ctx.strokeStyle=`rgba(${P.silver},${(.5*(dev-.4)/.6).toFixed(3)})`;ctx.lineWidth=Math.max(.6,R*.12);ctx.beginPath();ctx.arc(0,0,rr*.82,0,TAU);ctx.stroke();}
   if(family==='storm'&&e3>0){ctx.strokeStyle=`rgba(${P.glass},${(.45*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.5,R*.1);for(const b of[-.3,.05,.35]){ctx.beginPath();ctx.moveTo(-rr,b*rr);ctx.lineTo(rr,b*rr);ctx.stroke();}}
   ctx.restore();
+  if(family==='ocean'){ctx.restore();ctx.fillStyle=`rgba(${P.silverMid},${(.16*dev).toFixed(3)})`;ctx.beginPath();ctx.arc(x,y,rr*.95,0,TAU);ctx.fill();}
+  // The Moon's seas print lighter than its highlands on the negative, as broad pale patches on the grey.
+  if(family==='crater'&&dev>.4){const mk=(dev-.4)/.6;ctx.fillStyle=`rgba(${P.glass},${(.4*mk).toFixed(3)})`;for(let i=0;i<4;i++){const ma=(i+tileHash(n.id,i,28)*.6)/4*TAU+.4,md=rr*(.3+tileHash(n.id,i,29)*.25);ctx.beginPath();ctx.ellipse(x+Math.cos(ma)*md,y+Math.sin(ma)*md,rr*(.14+tileHash(n.id,i,30)*.16),rr*(.1+tileHash(n.id,i,31)*.1),tileHash(n.id,i,32)*TAU,0,TAU);ctx.fill();}}
+  // The lava world's three hot vents burn through as knots denser than the rest of its disc.
+  if(family==='volcanic'&&e3>0){for(let i=0;i<3;i++){const a=.35+i/3*TAU+(tileHash(n.id,i,10)-.5)*.6,dd=rr*(.4+tileHash(n.id,i,11)*.15),vx=x+Math.cos(a)*dd,vy=y+Math.sin(a)*dd,kr=rr*.2,vg=ctx.createRadialGradient(vx,vy,0,vx,vy,kr);
+    vg.addColorStop(0,`rgba(${P.silver},${e3.toFixed(3)})`);vg.addColorStop(1,`rgba(${P.silver},0)`);ctx.fillStyle=vg;ctx.beginPath();ctx.arc(vx,vy,kr,0,TAU);ctx.fill();}}
+  // A bright body over-exposes the glass and scatters light back off the plate's back face: the halation ring,
+  // a faint circle clear of the image, which is what tells a world on a plate from a star.
+  if(e3>0&&family!=='ice'){ctx.strokeStyle=`rgba(${P.silverMid},${(.3*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.8,1.4*scale);ctx.beginPath();ctx.arc(x,y,rr*(family==='ringed'?2.5:1.6),0,TAU);ctx.stroke();}
   // Mars on the plate: Lowell's canals ruled straight across it in ink, and then Antoniadi's irregular patches
   // with his correction written beside the first annotation rather than over it
   if(family==='dune'){const ck=clamp(s2*2-.4,0,1);if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
@@ -711,8 +753,8 @@ function lensBodyPlate(n,family,x,y,d,al){
     if(e3>0){ctx.fillStyle=`rgba(${P.silver},${(.55*e3).toFixed(3)})`;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(x+(tileHash(n.id,i,23)-.5)*R*1.1,y+(tileHash(n.id,i,24)-.5)*R*1.1,R*(.14+tileHash(n.id,i,25)*.18),R*(.08+tileHash(n.id,i,26)*.12),tileHash(n.id,i,27)*TAU,0,TAU);ctx.fill();}
       lensTyped(ctx,'NOT CANALS · A. 1909',x+R*1.2,y-R*.9+11*scale,Math.max(8,8.5*scale),P.inkRed,.9*e3*al,'left');}}
   // the hand at the glass back: a loose loop, then a stamped number
-  if(e3>0){ctx.strokeStyle=`rgba(${P.inkRed},${(.85*al).toFixed(3)})`;lensLoop(ctx,x,y,R*(shape[0]>1.2?shape[0]*1.05:1.45),n.id|0,e3,Math.max(.8,1.05*scale));
-    const num='No '+(214+((n.id|0)*37)%760),bx=x-R*1.2,by=y+R*1.55+6*scale,sz=Math.max(8,8.5*scale);
+  if(e3>0){ctx.strokeStyle=`rgba(${P.inkRed},${(.85*al).toFixed(3)})`;lensLoop(ctx,x,y,R*(family==='ringed'?2.2:1.45),n.id|0,e3,Math.max(.8,1.05*scale));
+    const num='No '+(214+((n.id|0)*37)%760),bx=x-R*1.2,by=y+R*(family==='ringed'?2.3:1.55)+6*scale,sz=Math.max(8,8.5*scale);
     ctx.save();ctx.globalAlpha=al*e3;ctx.strokeStyle=`rgba(${P.inkBlack},.75)`;ctx.lineWidth=.8;ctx.font=plateFace(sz,'typed');const tw=ctx.measureText(num).width;ctx.strokeRect(bx-3,by-sz*.7,tw+6,sz*1.4);ctx.restore();
     lensTyped(ctx,num,bx,by,sz,P.inkBlack,.9*al*e3,'left');}
   ctx.restore();
