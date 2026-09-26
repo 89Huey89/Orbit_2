@@ -310,6 +310,30 @@ function frameOrnaments(g,wide,innerR){
 // degrees, in two five-degree panels — the bar agrees with the graduation instead of contradicting
 // it, and a small pair of open dividers stepping off one panel is the period's own cheap, standard
 // way of saying an angle was measured here rather than a length.
+// Outside the plate mark the engraver tried his tools before he cut the plate itself: a short hatched
+// patch, a test of a curve, a slipped stroke and a compass prick, pricked into the sheet at the faintest
+// weight it carries and set asymmetrically round the margin. They are seeded off the plate's name, so a
+// plate keeps its own trials across every resize. Only a wide sheet has the margin for them: on a phone
+// the band outside the mark is under three points deep. The proof plate, pulled before the lettering,
+// carries more of them and heavier, and one is a trial of a magnitude sign.
+function frameTrials(g,pm){
+  let h=2166136261;for(const ch of plateName)h=Math.imul(h^ch.charCodeAt(0),16777619);
+  const rng=seeded(h>>>0||1),proof=plateName==='proof',count=proof?7:4,a=proof?.34:.2,rgb=ink.base.inkSoft,m=pm*.5;
+  const spot=i=>{const side=(i+Math.floor(rng()*4))%4,u=.08+rng()*.84;
+    return side===0?{x:u*W,y:m,rot:0}:side===1?{x:W-m,y:u*H,rot:Math.PI/2}:side===2?{x:u*W,y:H-m,rot:0}:{x:m,y:u*H,rot:Math.PI/2};};
+  g.save();g.lineCap='round';
+  for(let i=0;i<count;i++){
+    const p=spot(i),kind=i%4;
+    g.save();g.translate(p.x,p.y);g.rotate(p.rot);g.strokeStyle=`rgba(${rgb},${a})`;g.fillStyle=`rgba(${rgb},${a})`;g.lineWidth=.4;
+    if(kind===0){for(let j=0;j<5;j++){g.beginPath();g.moveTo(-3+j*1.3,-1.6);g.lineTo(-1.8+j*1.3,1.6);g.stroke();}}
+    else if(kind===1){g.beginPath();g.arc(0,5,6.5,-Math.PI*.72,-Math.PI*.28);g.stroke();}
+    else if(kind===2){g.lineWidth=.3;g.beginPath();g.moveTo(-6,.4);g.quadraticCurveTo(0,-.6,7,1.3);g.stroke();}
+    else{g.beginPath();g.arc(0,0,.55,0,TAU);g.fill();g.lineWidth=.25;g.beginPath();g.arc(0,0,2.2,0,TAU*.3);g.stroke();}
+    g.restore();
+  }
+  if(proof){const p=spot(count);renaissanceStarGlyph(g,p.x,p.y,3,rgb,a,.5,h>>>0);}
+  g.restore();
+}
 function frameScaleBar(g,x,y,colors){
   const w=30,h=3;
   // The rule's own ink, not a second, separately-tuned rule token: the printed double rule and the bar
@@ -360,6 +384,7 @@ function buildFrameLayer(){
   // And over the flat film, the tone the wiping hand could not take off (plateTone, src/press.js).
   if(renaissanceAtlas()&&!plainPlate())plateTone(g,pm1,pm1,markW,markH,markR);
   groove(pm1,pm1,markW,markH,colors.markEdge);
+  if(wide&&renaissanceAtlas())frameTrials(g,pm1);
   if(onPaper()){
     groove(pm2,pm2,Math.max(1,W-pm2*2),Math.max(1,H-pm2*2),colors.mark);
     // The plate's own edge was filed by hand and never ran perfectly true either — one very faint
