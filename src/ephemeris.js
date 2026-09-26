@@ -53,6 +53,35 @@ function sunPlace(y,m){
 // The sun's own sign, the circle with its point, is cut as a mark rather than set as a character, so the
 // cut faces never have to carry a glyph only this line would use.
 const SUN_MARK='<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.4"/><circle cx="6" cy="6" r="1.05" class="eph-sun-point"/></svg>';
+// The weekday columns are headed with the seven planetary characters, as every printed almanac of the
+// century heads them, drawn rather than set: the cut Fell faces carry none of them, and a character a face
+// never cut falls through to the phone's colour emoji. Each is a small closed or open burin figure on a
+// twelve-unit square, in the order of the planetary week from dies Solis to dies Saturni.
+const PLANET_SIGNS=[
+  '<circle cx="6" cy="6" r="4.3"/><circle cx="6" cy="6" r="1" class="eph-sign-fill"/>',
+  '<path d="M7.6 1.7A4.4 4.4 0 1 0 7.6 10.3A3.5 3.5 0 1 1 7.6 1.7Z"/>',
+  '<circle cx="4.9" cy="7.2" r="3.1"/><path d="M7.1 5 10.3 1.8M7.4 1.8H10.3V4.7"/>',
+  '<path d="M3.9 1C4.3 2.6 7.7 2.6 8.1 1"/><circle cx="6" cy="5" r="2.3"/><path d="M6 7.3V11.3M4.3 9.5H7.7"/>',
+  '<path d="M2.6 3.3C2.8 1.4 5.8 1.3 5.7 3.5C5.6 5.3 3.4 6.7 2.4 8.1H10.2M8.2 2.3V11.2"/>',
+  '<circle cx="6" cy="4.4" r="3"/><path d="M6 7.4V11.4M4.1 9.6H7.9"/>',
+  '<path d="M4 1V8.2C4.6 5.8 8.5 5.4 8.4 7.8C8.3 9.3 6.8 9.8 7.6 11.3M2.3 3H5.9"/>'
+];
+const planetSign=i=>'<svg viewBox="0 0 12 12" aria-hidden="true">'+PLANET_SIGNS[i]+'</svg>';
+// The moon's age is the first thing an almanac tells its reader, and it is a function of the date alone:
+// days since the new moon of 6 January 2000 at 18:14 UTC, over the mean synodic month, read at noon UTC.
+// The mean month runs up to half a day either side of the true moon, well within a day, which is all a square of the month can show. Each square gets a roundel filled
+// from one limb: a hollow ring at new, a solid disc at full, the quarters half filled — lit on the right
+// while the moon waxes and on the left while it wanes, as it stands in a northern sky.
+const SYNODIC_MONTH=29.530588853,NEW_MOON_EPOCH=Date.UTC(2000,0,6,18,14);
+function moonAge(y,m,d){const age=(Date.UTC(y,m,d,12)-NEW_MOON_EPOCH)/864e5%SYNODIC_MONTH;return age<0?age+SYNODIC_MONTH:age;}
+function moonRoundel(y,m,d){
+  const f=moonAge(y,m,d)/SYNODIC_MONTH,R=3.3,c=4,lit=(1-Math.cos(f*2*Math.PI))/2,t=(R*Math.abs(Math.cos(f*2*Math.PI))).toFixed(2);
+  const waxing=f<.5,gibbous=lit>.5;
+  let fill='';
+  if(lit>.97)fill=`<circle cx="${c}" cy="${c}" r="${R}" class="eph-sign-fill"/>`;
+  else if(lit>.03)fill=`<path class="eph-sign-fill" d="M${c} ${c-R}A${R} ${R} 0 0 ${waxing?1:0} ${c} ${c+R}A${t} ${R} 0 0 ${waxing===gibbous?1:0} ${c} ${c-R}Z"/>`;
+  return `<svg class="eph-moon" viewBox="0 0 8 8" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${R}"/>${fill}</svg>`;
+}
 // A streak read at the stroke of midnight would look broken before the player has had any chance to
 // draw today's plate, so a blank today counts from yesterday instead; a blank yesterday too is a real
 // break, and reads as zero. Longest scans every run the log holds, not only the one still open, since
@@ -91,11 +120,11 @@ function renderEphemeris(){
   const body=$('ephemeris-body');if(!body)return;
   const today=utcDay(),lead=monthLead(ephMonth),days=monthDays(ephMonth);
   let html='<div class="eph-grid">';
-  for(const name of WEEKDAYS_LATIN)html+=`<span class="eph-head" title="dies ${name}">${name.slice(0,3)}.</span>`;
+  WEEKDAYS_LATIN.forEach((name,i)=>{html+=`<span class="eph-head" title="dies ${name}" role="columnheader" aria-label="dies ${name}">${planetSign(i)}</span>`;});
   for(let i=0;i<lead;i++)html+='<span class="eph-cell eph-void" aria-hidden="true"></span>';
   for(let d=1;d<=days;d++){
     const date=dayKey(ephMonth.y,ephMonth.m,d),entry=dailyLog[date],jul=julianOf(ephMonth.y,ephMonth.m,d);
-    const numeral=`<span class="eph-num">${d}</span><span class="eph-julian">${jul.d}</span>`,julLabel=`stylo veteri ${jul.d} ${MONTHS_LATIN[jul.m].slice(0,3)}.`;
+    const numeral=moonRoundel(ephMonth.y,ephMonth.m,d)+`<span class="eph-num">${d}</span><span class="eph-julian">${jul.d}</span>`,julLabel=`stylo veteri ${jul.d} ${MONTHS_LATIN[jul.m].slice(0,3)}.`;
     if(date>today){html+=`<span class="eph-cell eph-hence">${numeral}</span>`;continue;}
     if(!entry&&date!==today){html+=`<span class="eph-cell eph-blank">${numeral}<span class="eph-rule" aria-hidden="true"></span></span>`;continue;}
     const chosen=dailyOn&&dailyDay===date;
