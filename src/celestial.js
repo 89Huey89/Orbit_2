@@ -915,20 +915,22 @@ function drawRevealTitle(x,y,m,age){
   // cut, which is how a title reads as engraved lettering rather than as a line of running text blown up.
   const plate=m.plate,name=m.name,size=m.size;
   ctx.font=plateFace(12,'sc');ctx.letterSpacing=REVEAL_TRACK+'px';
-  engraveLettering(plate,x,y-22,12,'sc',t,REVEAL_TRACK,ink.dark.chapterLabel);
+  // On paper the plate line is the rubricated line of the title, and its rule and lozenge are red with it.
+  const rubric=rubricInk(),ruleInk=rubric||ink.dark.chapterRule;
+  engraveLettering(plate,x,y-22,12,'sc',t,REVEAL_TRACK,rubric?`rgb(${rubric})`:ink.dark.chapterLabel);
   ctx.font=plateFace(size);ctx.letterSpacing=REVEAL_NAME_TRACK+'px';
   engraveLettering(name,x,y+12,size,'text',t,REVEAL_NAME_TRACK,ink.base.text);
   ctx.letterSpacing='0px';
   const reach=m.reach,ruled=reducedMotion?1:clamp((t-letteringTime(name)*.75)/.42,0,1);
   if(ruled>=1){
-    line(x-reach,y+27,x-9,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);line(x+9,y+27,x+reach,y+27,`rgba(${ink.dark.chapterRule},.42)`,.6);
-  }else penRule(x,y+27,reach-9,`rgba(${ink.dark.chapterRule},.42)`,.6,ruled);
+    line(x-reach,y+27,x-9,y+27,`rgba(${ruleInk},.42)`,.6);line(x+9,y+27,x+reach,y+27,`rgba(${ruleInk},.42)`,.6);
+  }else penRule(x,y+27,reach-9,`rgba(${ruleInk},.42)`,.6,ruled);
   ctx.globalAlpha=alpha*(ruled>=1?1:ruled);
   // The title is set in a strapwork cartouche (src/press.js), struck with the rule once the name is cut:
   // its scrolls stand clear of the rule's ends, and it never reaches past the frame's own inner margin.
   {const out=pressCartoucheInset(W,REVEAL_CARTOUCHE_H),half=Math.min(reach+8+out.x,Math.max(reach+out.x,Math.min(x,W-x)-frameBand()*.92-4));
     drawPressCartouche(x-half,y-40,half*2,REVEAL_CARTOUCHE_H,ink.dark.chapterRule,.5,.7,70291);}
-  ctx.strokeStyle=`rgba(${ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24);ctx.lineTo(x+3,y+27);ctx.lineTo(x,y+30);ctx.lineTo(x-3,y+27);ctx.closePath();ctx.stroke();ctx.restore();
+  ctx.strokeStyle=`rgba(${rubric||ink.dark.chapterDiamond},.7)`;ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y+24);ctx.lineTo(x+3,y+27);ctx.lineTo(x,y+30);ctx.lineTo(x-3,y+27);ctx.closePath();ctx.stroke();ctx.restore();
 }
 function drawChapterReveal(dt){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a

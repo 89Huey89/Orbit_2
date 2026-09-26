@@ -638,6 +638,11 @@ function frameCorrode(){
 // astrolabe's rete, the Ptolemaic orbs or a volvelle's dials — all four are things a sixteenth-century
 // hand set out from one prick with one pair of compasses, and none of them is more or less earned than
 // another. A sheet may also be left unruled, and then nothing here is drawn at all.
+// The rubricator's red, which the paper plate spends in three weights rather than keeping for one alarm:
+// the chapter title's plate line and rule, the rule under the running head, and the ecliptic on the
+// construction. It is the same token the press's second colour is inked in (src/press.js), so a plate
+// that re-inks its press re-inks these with it. The night plate keeps its heads in ink; null says so.
+function rubricInk(){return onPaper()?ink.press.rubric:null;}
 let renaissanceGridLayer=null,renaissanceGridKey='';
 // Every construction stands on the same centre and the same axes and arrives at the same rate, so the
 // measure is taken once and each hand below is only its own drawing. `stage(n)` is how far the
@@ -645,9 +650,12 @@ let renaissanceGridLayer=null,renaissanceGridKey='';
 // of, and `prick` the compass hole all four of them open on.
 function sphereMeasure(g,progress){
   const cx=W*.5,cy=H*.54,rx=Math.min(W*.41,H*.43),ry=rx*.62,rgb=ink.base.inkSoft;
-  const arc=(p,x,y,ax,ay,rotation=0,alpha=.18,weight=.55)=>{
+  // The ecliptic is the one line a printed celestial plate picks out in red, so on paper it is handed the
+  // rubricator's colour (rubricInk()) instead of the construction's own brown; at night it stays in ink.
+  const rubric=rubricInk();
+  const arc=(p,x,y,ax,ay,rotation=0,alpha=.18,weight=.55,tone=rgb)=>{
     if(p<=0)return;g.save();g.translate(x,y);g.rotate(rotation);
-    g.strokeStyle=`rgba(${rgb},${alpha})`;g.lineWidth=weight;
+    g.strokeStyle=`rgba(${tone},${alpha})`;g.lineWidth=weight;
     g.beginPath();g.ellipse(0,0,ax,ay,0,-Math.PI/2,-Math.PI/2+TAU*p);g.stroke();g.restore();
   };
   // The pole is a real compass prick with two short crossed ruling strokes.
@@ -670,7 +678,7 @@ function sphereMeasure(g,progress){
     g.globalAlpha=.42*p;g.fillStyle=ink.frame.text;g.fillText(text,0,0);
     g.restore();
   };
-  return {stage:n=>clamp(progress-n,0,1),cx,cy,rx,ry,rgb,colors:ink.frame,arc,prick,label};
+  return {stage:n=>clamp(progress-n,0,1),cx,cy,rx,ry,rgb,ecliptic:rubric||rgb,eclipticAlpha:rubric?.34:.24,colors:ink.frame,arc,prick,label};
 }
 // A graduated limb: 120 divisions cut round an ellipse, every tenth one long and numbered in the hours
 // the atlas counts them in. It is the last thing struck on three of the four constructions, and cutting
@@ -701,7 +709,7 @@ function paintGraticuleSphere(g,m){
   // Pale compass trials survive under the accepted projection.
   arc(stage(1),cx,cy,rx*.34,ry*.34,0,.07);arc(stage(1.5),cx,cy,rx*.68,ry*.68,0,.07);
   arc(stage(2),cx,cy,rx,ry,0,.2,.8); // celestial equator
-  arc(stage(3),cx,cy,rx,ry,-.31,.24,.9); // ecliptic
+  arc(stage(3),cx,cy,rx,ry,-.31,m.eclipticAlpha,.9,m.ecliptic); // ecliptic
   for(let i=1;i<=4;i++)arc(stage(3+i*.55),cx,cy,rx,ry*(1-i*.16),0,.1,.5); // parallels
   for(let i=0;i<6;i++)arc(stage(5.4+i*.42),cx,cy,rx*(.16+i*.14),ry,0,.1,.5); // meridians
   sphereGraduation(g,m,stage(8),rx,ry);
@@ -719,7 +727,7 @@ function paintReteSphere(g,m){
   m.prick(stage(0));
   arc(stage(1),cx,cy,R*.34,R*.34,0,.07);arc(stage(1.5),cx,cy,R*.68,R*.68,0,.07);
   arc(stage(2),cx,cy,R,R,0,.2,.8); // the limb, and with it the tropic of Capricorn
-  arc(stage(3),ex,ey,er,er,0,.24,.9); // the ecliptic, eccentric and tangent to both tropics
+  arc(stage(3),ex,ey,er,er,0,m.eclipticAlpha,.9,m.ecliptic); // the ecliptic, eccentric and tangent to both tropics
   arc(stage(3.55),cx,cy,cancer,cancer,0,.12,.5); // the tropic of Cancer
   arc(stage(4.1),cx,cy,R*.72,R*.72,0,.1,.5); // the equator
   // The east-west bar and the meridian: the rete's own frame, all that holds the rest of it together.
@@ -955,7 +963,10 @@ function drawRunningHead(){
   band2.addColorStop(1-f,`rgba(${ink.base.paperRgb},${a})`);band2.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
   ctx.fillStyle=band2;ctx.fillRect(W*.5-half,midY-halfH,half*2,halfH*2);
   burinSegment(ctx,W*.5-half,midY-halfH,W*.5+half,midY-halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81301,{segments:10,skips:1,hair:false,wobble:.15});
-  burinSegment(ctx,W*.5-half,midY+halfH,W*.5+half,midY+halfH,ink.base.inkSoft,onPaper()?.28:.2,.4,81307,{segments:10,skips:1,hair:false,wobble:.15});
+  // The rule under the head is the rubricator's on paper: the lightest of the three red weights the sheet
+  // keeps, over the chapter title's red line above it and beside the red ecliptic on the construction.
+  const underRule=rubricInk();
+  burinSegment(ctx,W*.5-half,midY+halfH,W*.5+half,midY+halfH,underRule||ink.base.inkSoft,underRule?.4:onPaper()?.28:.2,.4,81307,{segments:10,skips:1,hair:false,wobble:.15});
   ctx.fillStyle=colors.text;
   ctx.fillText(head,W*.5,y);
   ctx.restore();
