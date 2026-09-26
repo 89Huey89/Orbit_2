@@ -117,6 +117,14 @@ so it cannot catch any of this.
   canvas asks `plateFace(size, variant, style)` and the stylesheet reads
   `var(--face-text|--face-sc|--face-body)`; the faces themselves are a plate
   token like any colour, so a plate can letter in its own type.
+- The atlas's two voices. Ask whether an engraver would have cut it into the copper. If so, the
+  plate speaks Latin: frame, impressum, running head, chapter plate line, construction labels, the
+  magnitude key, the ephemeris heads, the names of things (figures, pressures, charges, regions,
+  bodies), and short marginal notes whose sense is carried by a number (`ANGULUS +9`, `SUMMA 301`).
+  If the player has to understand it to act, the game speaks English: instructions and hints,
+  feedback on an event (`PERFECT · FLOW`, `THE DARK CAUGHT UP`, `COMPLETE`), controls, catalogue
+  statistics, aria labels. A name the player also has to understand is set in Latin small caps with
+  an English italic gloss beneath it, as the figures and the chapter titles already are.
 - Persisted state is versioned `localStorage` keys (`orbit.ledger.v1`,
   `orbit.plate.v1`, `orbit.daily.v1`, ...). If you change a stored shape,
   bump the version suffix and migrate the old key forward (see `ledger.js`'s

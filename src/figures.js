@@ -777,6 +777,9 @@ function drawChargeDevice(kind,r,rgb,pen){
   ctx.drawImage(sprite,-reach,-reach,reach*2,reach*2);
   ctx.restore();
 }
+// The species a full observation names, one per geological family: the atlas's own Latin for what the
+// specimen shows, in the manner of the century's descriptive names rather than any later nomenclature.
+const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus ansatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
 function drawNode(n,aim){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -921,6 +924,27 @@ function drawNode(n,aim){
     const written=revealLabel(pen,word);
     const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
     if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
+  }
+  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Fell italic,
+  // written round the top of the rim by the pen once the observation closes and left there after release,
+  // so a finished chart reads as a lettered plate rather than a field of anonymous circles. It is a name,
+  // so it is the plate's Latin (CLAUDE.md, the two voices); the seven are plain enough to need no gloss.
+  // The top is tried first, the foot second when no rim caption stands there, and where both stand on
+  // other type the name is still written, drawn down to a hairline the way a crowded side caption is. A
+  // star and a slingshot are not worlds and have no species, so they are left as they are.
+  const species=renaissanceAtlas()&&!n.difficultyChoice&&!PICKUP_FAMILIES.has(n.type)&&!sling&&n.routeRole!=='star'&&pen.d>=1?SPECIMEN_NAMES[planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice)]:null;
+  if(species&&!captionsHeld()){
+    const written=reveal.progress('specimen:'+n.id,species.length*.05,true),size=Math.max(8,8.6*scale),radius=r+8*scale;
+    ctx.font=plateFace(size,'text','italic');
+    const width=ctx.measureText(species).width||species.length*size*.5,rimTaken=!active&&n.row>0&&n.row%4===0;
+    const boxAt=top=>{const edge=top?y-radius:y+radius;return {left:x-width/2-2,right:x+width/2+2,top:top?edge-size*1.05:edge-size*.2,bottom:top?edge+size*.2:edge+size*1.05};};
+    const clear=b=>groundClear(b,n,2),top=clear(boxAt(true))||rimTaken||!clear(boxAt(false)),box=boxAt(top);
+    markGroundBox('caption',box,n);
+    ctx.save();if(!clear(box))ctx.globalAlpha*=.3;
+    ctx.fillStyle=paper?`rgba(${ink.base.ink},.62)`:`rgba(${rgb},.5)`;
+    const arc=textAlongArc(ctx,species,0,0,top?radius:radius+size*.72,top?-Math.PI/2:Math.PI/2,{align:'center',size,spacing:size*.06,inward:!top,progress:written});
+    if(written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
+    ctx.restore();
   }
   if(active){
     for(const next of releaseTargets(n)){
