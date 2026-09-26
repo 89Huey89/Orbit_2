@@ -570,6 +570,9 @@ function drawConstellations(){
         // Latin over it: the Latin is the atlas's, and a century that never wrote it has no gloss to give.
         const own=chartTitle(chart)!==chart.name,dir=below?Math.PI/2:-Math.PI/2,latin=!own&&CONSTELLATIONS[chart.catalogueIndex]&&CONSTELLATIONS[chart.catalogueIndex].latin;
         const alpha=chart.completed?.34:.52;
+        // A finished figure is named the way the printed atlas names one, across itself (drawFigureName),
+        // and the rim caption that announced the route gives way to it.
+        if(chart.completed&&latin&&renaissanceAtlas())drawFigureName(chart,latin);else{
         ctx.save();ctx.translate(ex,ey);
         ctx.font=plateFace(size,'sc');
         ctx.fillStyle=`rgba(${ink.marks.constellationLabel},${alpha})`;
@@ -581,6 +584,7 @@ function drawConstellations(){
           textAlongArc(ctx,chart.name,0,0,glossRing,dir,{align:'center',size:glossSize,spacing:glossSize*.22,inward:below});
         }
         ctx.restore();
+        }
       }
       // The entry still announces that a route begins there, at a bare pricked arc well clear of the
       // node's own tick fence and dashed capture ring — a coarser, wider prick than either, so it
@@ -621,6 +625,44 @@ function drawConstellations(){
     }
     ctx.restore();
   }
+}
+// Bayer letters a constellation's name across the figure itself, in a large italic set level on the sheet
+// rather than turned along the figure's spine, and on this plate that is how a completed figure is named:
+// the Latin across the middle of its three stars, the English gloss small beneath it (CLAUDE.md, the two
+// voices), swept on left to right by the pen as the completion lands and kept while the figure is on the
+// sheet. The line starts level with the stars' centre and steps a line and a half up or down at a time
+// until it stands clear of the stars' own rings and of settled type; failing that, clear of their punches
+// alone, so it is never printed through a star; and when no step is clear it keeps the centre line, drawn
+// down to a hairline. The gloss is set in the vernacular's own case, since the ledger keeps it in capitals.
+const FIGURE_NAME_PUNCH=7;
+function drawFigureName(chart,latin){
+  const pts=chart.stars.filter(Boolean).map(s=>({x:sx(s.x),y:sy(s.y),ring:s.r*scale+8}));if(!pts.length)return;
+  const glossText=chart.name.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+  const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length,cy=pts.reduce((a,p)=>a+p.y,0)/pts.length;
+  const size=Math.max(14,17*scale),gloss=Math.max(8,9*scale),inner=frameBand()*.92+8,punch=FIGURE_NAME_PUNCH*scale;
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.font=plateFace(gloss,'text','italic');const gw=ctx.measureText(glossText).width;
+  ctx.font=plateFace(size,'text','italic');const w=Math.max(ctx.measureText(latin).width,gw);
+  const x=clamp(cx,inner+w/2,Math.max(inner+w/2,W-inner-w/2));
+  const boxAt=y=>({left:x-w/2-3,right:x+w/2+3,top:y-size*.86,bottom:y+gloss*1.55});
+  const crosses=(b,reach)=>pts.some(p=>{const d=reach?p.ring:punch;return p.x+d>b.left&&p.x-d<b.right&&p.y+d>b.top&&p.y-d<b.bottom;});
+  let y=cy+size*.35,clear=false;
+  for(const reach of [true,false]){
+    for(const step of [0,-1,1,-2,2,-3,3,-4,4,-5,5]){const t=cy+size*.35+step*size*1.5,b=boxAt(t);if(t>inner+size&&t<H-inner-gloss*2&&!crosses(b,reach)&&groundFixed(b,chart,2)<=0){y=t;clear=true;break;}}
+    if(clear)break;
+  }
+  const box=boxAt(y);markGroundBox('name',box,chart);
+  const k=reveal.progress('figname:'+chart.id,.9,true),front=box.left+(box.right-box.left)*k;
+  if(!clear)ctx.globalAlpha*=.3;
+  ctx.beginPath();ctx.rect(box.left-2,box.top-4,front-box.left+2,box.bottom-box.top+8);ctx.clip();
+  // The ground round the letters is reserved first, a narrow margin of the sheet's own stock, the way an
+  // engraver left the plate clean round a name he meant to cut across a figure's lines.
+  ctx.lineJoin='round';ctx.strokeStyle=`rgba(${ink.base.paperRgb},.7)`;ctx.lineWidth=3.2;ctx.strokeText(latin,x,y);
+  ctx.fillStyle=`rgba(${ink.marks.constellationLabel},.68)`;ctx.fillText(latin,x,y);
+  ctx.font=plateFace(gloss,'text','italic');ctx.lineWidth=2.4;ctx.strokeText(glossText,x,y+gloss*1.3);
+  ctx.fillStyle=`rgba(${ink.marks.constellationCaption},.5)`;ctx.fillText(glossText,x,y+gloss*1.3);
+  ctx.restore();
+  if(k<1)penNib(front,y-size*.3,0,.6,undefined,nibRecency(k));
 }
 // How far either side of the middle the DOM HUD's centre column — the score, the pace and the flow — can
 // reach. A caption printed inside it has to keep below the whole HUD band rather than merely inside the frame.

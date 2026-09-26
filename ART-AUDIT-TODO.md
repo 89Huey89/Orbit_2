@@ -1008,7 +1008,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* The inset vignette in the margin of a chart, showing at a glance what the scattered stars are meant to be — used throughout the period and the direct ancestor of the modern star-chart inset.
 
-- [ ] **The figure's own name lettered across the figure** `medium effort` — src/figures.js, a new branch in drawConstellations beside the entry-star caption at figures.js:775-782, using writeText with the existing HUD/frame guards.
+- [x] **The figure's own name lettered across the figure** `medium effort` — *Done (2026-09-26): `drawFigureName()` (figures.js) sets a completed figure's Latin in a level italic across the centre of its three stars, the English gloss beneath (CLAUDE.md's two voices), stepping a line and a half at a time to a line clear of the stars' rings and settled type, else of their punches, else a hairline; the sheet's stock is reserved round the letters, it sweeps on left to right with the pen over 0.9 s and replaces the rim caption. It is not broken glyph by glyph round a punch; the line is moved instead. Scenario: `npm run shots -- press`.* src/figures.js, a new branch in drawConstellations beside the entry-star caption at figures.js:775-782, using writeText with the existing HUD/frame guards.
 
   Set the chart's name across the figure's widest point at the middle star — italic, horizontal on the sheet rather than rotated along the spine, broken where it would cross a star punch, revealed with the same sweep the figure is. It arrives with the third star, so the naming and the completion are one event; the caption at the fork's entry stays for the unfinished chart.
 
