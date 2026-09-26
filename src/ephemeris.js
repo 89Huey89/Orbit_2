@@ -31,6 +31,28 @@ function julianOf(y,m,d){
   const j=new Date(Date.UTC(y,m,d-10));
   return {y:j.getUTCFullYear(),m:j.getUTCMonth(),d:j.getUTCDate()};
 }
+// The sun's place in the zodiac is the first column of every printed ephemeris of the century; it is what
+// the genre is for. The leaf names the sign the sun stands in on the month's first day and the day it
+// enters the next, read off the low-precision solar longitude (the mean longitude and anomaly from J2000
+// with the two leading terms of the equation of centre), which is good to a hundredth of a degree — far
+// finer than a whole day needs. The day of entry is the UTC day across whose midnights the sign changes,
+// the same day the rest of this leaf keeps. It is plain calendar arithmetic and never touches the RNG.
+const SIGNS_IN=['Ariete','Tauro','Geminis','Cancro','Leone','Virgine','Libra','Scorpione','Sagittario','Capricorno','Aquario','Piscibus'];
+const SIGNS_INTO=['Arietem','Taurum','Geminos','Cancrum','Leonem','Virginem','Libram','Scorpionem','Sagittarium','Capricornum','Aquarium','Pisces'];
+const SIGNS_EN=['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+function sunSign(y,m,d){
+  const n=Date.UTC(y,m,d)/864e5-10957.5,g=(357.528+.9856003*n)*Math.PI/180;
+  const l=280.46+.9856474*n+1.915*Math.sin(g)+.02*Math.sin(2*g);
+  return Math.floor((l%360+360)%360/30);
+}
+function sunPlace(y,m){
+  const sign=sunSign(y,m,1),days=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+  for(let d=1;d<=days;d++){const into=sunSign(y,m,d+1);if(into!==sign)return {sign,into,day:d};}
+  return {sign,into:null,day:0};
+}
+// The sun's own sign, the circle with its point, is cut as a mark rather than set as a character, so the
+// cut faces never have to carry a glyph only this line would use.
+const SUN_MARK='<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.4"/><circle cx="6" cy="6" r="1.05" class="eph-sun-point"/></svg>';
 // A streak read at the stroke of midnight would look broken before the player has had any chance to
 // draw today's plate, so a blank today counts from yesterday instead; a blank yesterday too is a real
 // break, and reads as zero. Longest scans every run the log holds, not only the one still open, since
@@ -92,6 +114,12 @@ function renderEphemeris(){
   // so the header names it too, the same two-column reckoning every square in the body already keeps.
   const oldMonth=julianOf(ephMonth.y,ephMonth.m,1),titleOld=$('eph-title-old');
   if(titleOld)titleOld.textContent=MONTHS_LATIN[oldMonth.m]+' · '+roman(oldMonth.y);
+  const sun=$('eph-sun');
+  if(sun){
+    const place=sunPlace(ephMonth.y,ephMonth.m),enters=place.into!==null;
+    sun.innerHTML=SUN_MARK+'in '+SIGNS_IN[place.sign]+(enters?' · '+SIGNS_INTO[place.into]+' intrat die '+roman(place.day):'');
+    sun.setAttribute('aria-label','The sun stands in '+SIGNS_EN[place.sign]+(enters?' and enters '+SIGNS_EN[place.into]+' on day '+place.day:''));
+  }
   const span=ephemerisSpan(),here=monthIndex(ephMonth);
   for(const [id,spent] of [['eph-prev',here<=monthIndex(span.first)],['eph-next',here>=monthIndex(span.last)]]){
     const arrow=$(id);if(!arrow)continue;

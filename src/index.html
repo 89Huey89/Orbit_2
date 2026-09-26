@@ -748,6 +748,11 @@
        and this second, smaller hand names the Julian month bleeding into the grid's own first ten days. */
     .eph-title-old{font-family:var(--face-text);font-style:italic;font-size:8.5px;letter-spacing:.06em;color:var(--muted);opacity:.62;margin-left:-2px}
     .eph-title-old::before{content:'/ '}
+    /* The sun's place, the first column of every printed ephemeris, set under the month in the same
+       small italic hand as the old-style month beside it, with the sun's own sign cut in gold. */
+    .eph-sun{flex:0 0 auto;margin:5px 0 0;font-family:var(--face-text);font-style:italic;font-size:9.5px;letter-spacing:.04em;text-align:center;color:var(--muted);opacity:.82}
+    .eph-sun svg{width:1.1em;height:1.1em;margin-right:.4em;vertical-align:-.18em;fill:none;stroke:var(--gold);stroke-width:1}
+    .eph-sun .eph-sun-point{fill:var(--gold);stroke:none}
     .eph-arrow{pointer-events:auto;padding:2px 11px;background:none;border:0;border-radius:0;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;transition:color .2s,opacity .2s}
     .eph-arrow:hover,.eph-arrow:focus-visible{color:var(--gold)}
     .eph-arrow:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
@@ -786,7 +791,7 @@
       #ephemeris .title-rule{margin-top:5px}
       #game .eph-month{margin-top:7px}
       #game .eph-body{margin-top:7px}
-      #game .eph-title-old,#game .eph-stylo,#game .eph-julian{display:none}
+      #game .eph-title-old,#game .eph-sun,#game .eph-stylo,#game .eph-julian{display:none}
       #game .eph-cell{min-height:34px;gap:1px}
       #game .eph-num{font-size:13px}
       #game .eph-note{display:none}
@@ -988,6 +993,7 @@
         <span id="eph-title-old" class="eph-title-old"></span>
         <button id="eph-next" class="eph-arrow" type="button" aria-label="The month after">&rsaquo;</button>
       </div>
+      <p id="eph-sun" class="eph-sun" role="note"></p>
       <div id="ephemeris-body" class="eph-body"></div>
       <p class="eph-stylo">STYLO NOVO &middot; STYLO VETERI</p>
       <p id="eph-note" class="eph-note"></p>

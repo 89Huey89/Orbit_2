@@ -798,7 +798,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* frame.js:249-284 gates the compass rose, the scale bar, the engraver's credit and the MAGNITUDINES key behind `frameWide()`, which frame.js:14 defines as `W>780`. The reference viewport is 430x932. So the sheet CLAUDE.md and README:92 both name as the one every visual judgement is made on is the only sheet in the game with no marginalia at all, while the bonus desktop gets all of it — and README:129 frames the flank set as something wide screens *add*, which is a decision about where they go, not about whether a hand-held plate carries its own scale and orientation. Every printed sheet of any size carries both.
 
-- [ ] **Register marks in place of the release arcs** `small effort` — figures.js `drawNode`, the `if(active)` block at figures.js:1032-1045. On screen every time an orbit is held, which is most of the run.
+- [x] **Register marks in place of the release arcs** `small effort` — *Already shipped: `registerMark()` (figures.js) cuts a cross in a fine circle on the orbit rim for each clean release tangent, struck heavier and doubled for the perfect preview; the plain release arcs are gone.* figures.js `drawNode`, the `if(active)` block at figures.js:1032-1045. On screen every time an orbit is held, which is most of the run.
 
   Replace the 2.2px release marks and the 2.6px perfect-preview arc with an engraver's register mark cut on the orbit rim: a small cross inside a fine circle for an ordinary release point, the cross struck heavier and doubled for a perfect one. The same information, a third of the ink, and a mark that says "this is where the plate lines up".
 
@@ -862,7 +862,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
 ### Lettering, faces and the Latin
 
-- [ ] **The twelve figures lettered in Latin, Bayer's way** `medium effort` — src/simulation.js:164-177 (add `latin` to each entry), src/figures.js:804-805 (set Latin, then English gloss), src/ui.js:377-379 (the Asterismi table), and the completion inscription at src/ui.js:87.
+- [x] **The twelve figures lettered in Latin, Bayer's way** `medium effort` — *Already shipped: every `CONSTELLATIONS` entry carries a `latin` name (simulation.js); the chart sets it in small caps with the English gloss in italic beneath (figures.js), and the Asterismi table fills a `.cat-latin` column (catalogue.js). Still English only: the completion flash and the chart-progress inscription.* src/simulation.js:164-177 (add `latin` to each entry), src/figures.js:804-805 (set Latin, then English gloss), src/ui.js:377-379 (the Asterismi table), and the completion inscription at src/ui.js:87.
 
   Give each of the twelve constellations a Latin name and set it on the chart as the primary caption, with the English dropping beneath as an italic gloss at about two-thirds the size — the same two-register pairing every card in the catalogue already uses. ACUS · VELUM · LYRA · CORONA · CIRCINUS · CLEPSAMMIA · SERPENS · ARGO · ASTROLABIUM · PENNA · LATERNA · PHALÆNA. The Latin sits in the small-caps face as the sweep reveals the figure; in the catalogue it fills the `.cat-latin` slot the Asterismi table is currently the only table on the leaf to lack.
 
@@ -880,7 +880,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* A ledger rules a blank rather than writing a nought — the nought is a value, the rule is an absence, and the distinction matters in a book of accounts as much as in a star catalogue. Crucially, this atlas has already invented the mark twice and simply not generalised it: the ephemeris rules a hairline in the square of a day nothing was drawn on (`.eph-rule`, index.html:444, ephemeris.js:66), the impressum rules a hairline across an unearned row (frame.js:735), and `roman()` at ephemeris.js:16 already returns '—' when handed zero. Three independent decisions, all the same decision, none of them reaching the tables where it is most needed: 06-catalogue-end-night.png prints eleven lowercase o's in a right-aligned numeric column.
 
-- [ ] **MAGNITUDINES on the phone** `medium effort` — Extract the key painter from src/frame.js:268-282 and draw it into `.pause-leaf` (src/index.html:594) or onto the canvas behind it while `world.state==='paused'`.
+- [x] **MAGNITUDINES on the phone** `medium effort` — *Already shipped: `drawPauseMagnitudeKey()` (frame.js) draws the key on the canvas below the pause leaf while `world.state==='paused'`, on the narrow sheet only.* Extract the key painter from src/frame.js:268-282 and draw it into `.pause-leaf` (src/index.html:594) or onto the canvas behind it while `world.state==='paused'`.
 
   Fold the magnitude key into the pause slip: the six star forms at the gauge the chart punches them at, six Roman numerals beside them, and the ghost rows for classes the run has not yet classified — the same drawing `buildFrameLayer()` already makes, at a size a thumb can read. It appears when the press stands idle, which is exactly when a reader consults a key.
 
@@ -898,7 +898,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* The colophon is the one page a period book ends in Latin — the word itself is the finishing stroke, and FINIS, LAVS DEO or the printer's device closing the last gathering are the standard forms. Confirmed in 15-colophon-night-phone.png: the leaf currently carries no Latin except the three feat names and EX LIBRIS, while the frontispiece two screens back carries a Latin subtitle and a nine-row Latin imprint. The book opens in Latin and shuts in English.
 
-- [ ] **The sun's place on the ephemeris head** `small effort` — src/ephemeris.js:75, `title.textContent=MONTHS_LATIN[ephMonth.m]+' · '+roman(ephMonth.y)`. Needs a low-precision solar longitude from the UTC date — a dozen lines, not trivial, and it must stay off the simulation's RNG the way the rest of this file already does.
+- [x] **The sun's place on the ephemeris head** `small effort` — *Done (2026-09-26): `sunPlace()` (ephemeris.js) reads a low-precision solar longitude off the UTC date and the leaf sets a line under the month, the sun's sign cut as an inline mark in gold: 'in Virgine · Libram intrat die XXIII'. The ingress is the UTC day the crossing falls in, checked in runtime.mjs against three published ingresses.* src/ephemeris.js:75, `title.textContent=MONTHS_LATIN[ephMonth.m]+' · '+roman(ephMonth.y)`. Needs a low-precision solar longitude from the UTC date — a dozen lines, not trivial, and it must stay off the simulation's RNG the way the rest of this file already does.
 
   Extend the month line from 'SEPTEMBER · MMXXVI' to 'SEPTEMBER · MMXXVI · ☉ IN VIRGINE', with the zodiac sign cut as one small glyph beside the Roman year. One line, one glyph, and the leaf stops being a calendar in Latin dress and becomes an ephemeris.
 
@@ -958,7 +958,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
 ### The dark, the comet and the hazards
 
-- [ ] **The mark the dark leaves** `medium effort` — src/ui.js:148-151 (the `burst`+ring branch, for `THE DARK CAUGHT UP` only); the drawing reuses `inkSplat` with `spray` pointing up the sheet, or a small `drownMark()` beside it in src/effects.js.
+- [x] **The mark the dark leaves** `medium effort` — *Already shipped as ART-REVIEW's D5: the dark's death pushes a splat with the spray pointed up the sheet and a crown of bleed threads (ui.js), drying from wet to dry ink in `inkSplat` (effects.js). Not done: it fades over 1.8 s rather than staying under the colophon, and the trail is not drowned.* src/ui.js:148-151 (the `burst`+ring branch, for `THE DARK CAUGHT UP` only); the drawing reuses `inkSplat` with `spray` pointing up the sheet, or a small `drownMark()` beside it in src/effects.js.
 
   When the flood takes the traveller the sheet keeps nothing — sparks fly, the page flashes, and the colophon covers it. Give the moment ink: at the waterline, a blot of the run's own `trailInk()` spreading upward from the point of loss, the pen's last few trail segments drowned in it, and a short crown of the flood's own bleed threads wicking up over the spot as though the spill had climbed to swallow the line. It dries from `blotWet` to `blotDry` over about a second and stays on the sheet under the colophon leaf, so the last thing the plate shows is where the ink won.
 
@@ -970,7 +970,7 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
   *Historical basis:* README:163 already specifies exactly this for the comet observer mark ('a bundle of divergent rays rather than a shape with an outline, as the cometary plates of the century cut one') and src/ui.js:508-527 cuts it. The comet broadsides of 1577 and 1618 draw a comet the same way. I have deliberately dropped the auditor's proposed dated inscription: README:64 makes ambient events things that fade near everything the player is looking at, and a lettered caption would turn a quiet event into an inscription that has to fight the placement solver in src/inscriptions.js.
 
-- [ ] **The vortex as a charted maelstrom** `medium effort` — src/figures.js:1338-1348 (`hazardCoreSprite`) and 1378-1384 (`vortexWhirl`).
+- [x] **The vortex as a charted maelstrom** `medium effort` — *Already shipped: on paper the vortex core is a `landContour` blot with a coffee ring re-struck at .94r and 1.0r (figures.js `hazardCoreSprite`), and `vortexWhirl` winds three arms into the eye. The night halo is kept.* src/figures.js:1338-1348 (`hazardCoreSprite`) and 1378-1384 (`vortexWhirl`).
 
   Redraw the vortex so the water turning is the first thing read and the eye is the second. On paper: a pooled blot built with `landContour`, filled at ~0.86 so the laid lines read through the thin middle, with a coffee-ring — the contour re-struck at 0.94r and 1.0r in a darker tone — where the pigment dried at the rim. The three whirl arms roughly doubled in weight and alpha and carried further in, so they visibly wind into the eye rather than hovering outside it. On night, the same arms carry the reach the halo currently carries.
 
@@ -1048,13 +1048,13 @@ Severity is the atlas's own magnitude class (Magnitude I = brightest/most import
 
 ### Screens, HUD and the interface as printed matter
 
-- [ ] **The speaking-trumpet, actually cut as a speaking-trumpet** `small effort` — src/index.html:632-634, replacing the three `#sound` paths. The auditor proposed a wind-head instead — I refute that: README:86 names the speaking-trumpet, and the wind-heads already sit in all four frame corners (frame.js:47 frameWindHead, visible in every screenshot), so a fifth at 21px would repeat a motif the frame owns.
+- [x] **The speaking-trumpet, actually cut as a speaking-trumpet** `small effort` — *Already shipped: `#sound` (index.html) is a tapering speaking-trumpet with a throat band, breath strokes (`.sound-wave`), a stop bar (`.mute-mark`) and the ghost pull.* src/index.html:632-634, replacing the three `#sound` paths. The auditor proposed a wind-head instead — I refute that: README:86 names the speaking-trumpet, and the wind-heads already sit in all four frame corners (frame.js:47 frameWindHead, visible in every screenshot), so a fifth at 21px would repeat a motif the frame owns.
 
   Replace the loudspeaker at index.html:632-634 with the object README:86 already says it is: a long tapering tube in three-quarter view, narrow mouthpiece at the lower left, flared bell at the upper right, one hoop band round the throat, drawn with two or three swells per stroke rather than one uniform 1.1px hairline. Sounding: three tapering breath strokes issue from the bell. Silent: the strokes are gone and the bell is drawn stopped with a single closed bar. Keep the existing `.mute-mark` / `.sound-wave` class swap so the muted logic is untouched, and add the `transform="translate(.5,.4)" opacity=".3"` ghost pull every other mark in the row carries.
 
   *Historical basis:* The speaking-trumpet is the century's own instrument for carrying sound — Kircher's Phonurgia Nova and Morland's tuba stentorophonica figure it exactly this way, and it is already the object the README chose. The current path is instead the canonical 20th-century loudspeaker silhouette, so this is not a new motif at all; it is drawing the one that was decided on.
 
-- [ ] **The sheet, actually cut as a sheet** `small effort` — src/index.html:672-678, keeping the existing `.plate-night` / `.plate-paper` class swap at index.html:96-98 so the state logic is untouched. The auditor proposed a lunar phase roundel here; I refute it — the button switches ground, not time of day, and the moon is already spoken for as an earnable observer mark (ui.js:575-591, README:159).
+- [x] **The sheet, actually cut as a sheet** `small effort` — *Already shipped: `#plate` (index.html) is a deckled laid leaf with two chain lines and three `.plate-night` rules, hidden on paper, with the ghost pull.* src/index.html:672-678, keeping the existing `.plate-night` / `.plate-paper` class swap at index.html:96-98 so the state logic is untouched. The auditor proposed a lunar phase roundel here; I refute it — the button switches ground, not time of day, and the moon is already spoken for as an earnable observer mark (ui.js:575-591, README:159).
 
   Replace the dog-eared document at index.html:672-678 with a laid sheet seen at a slight angle: one long deckle edge, two chain lines running the short way, a faint lift at the near corner. Night state prints the sheet with three short rules of engraved lettering on it; paper state leaves it blank with only the chain lines. The mark then answers the actual question the button asks — which ground is this plate printed on — rather than asking the reader to decode a file icon.
 

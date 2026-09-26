@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
 get initials(){return initials},get runMode(){return runMode},get journey(){return journey},journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
-openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
+openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
@@ -415,6 +415,11 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     }
     assert.equal(context.test.roman(2026),'MMXXVI','The almanac dates its months in Roman numerals');
     assert.equal(context.test.roman(1620),'MDCXX');
+    // The sun's place against published ingresses: Libra 2026-09-23 00:05 UTC, Aries 2026-03-20 14:46 UTC,
+    // Capricorn 2026-12-21 20:50 UTC. The day named is the UTC day the crossing falls in.
+    assert.deepEqual({...context.test.sunPlace(2026,8)},{sign:5,into:6,day:23},'The sun enters Libra on the 23rd of September 2026');
+    assert.deepEqual({...context.test.sunPlace(2026,2)},{sign:11,into:0,day:20},'The sun enters Aries on the 20th of March 2026');
+    assert.deepEqual({...context.test.sunPlace(2026,11)},{sign:8,into:9,day:21},'The sun enters Capricorn on the 21st of December 2026');
     assert.equal(context.test.dailyOpen(drawnDay),false,'A day that was never drawn is closed');
     assert.equal(context.test.replayDaily(drawnDay),false,'A plate that was never drawn can never be dealt');
     assert.equal(context.test.dailyOn,false,'A refused entry leaves the ordinary chart exactly as it was');
@@ -427,6 +432,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
       assert(element('eph-title').textContent.includes(context.test.roman(Number(today.slice(0,4)))),element('eph-title').textContent);
       assert(element('eph-note').textContent.includes('only on the day it was drawn'),element('eph-note').textContent);
+      assert(/^<svg[^]*<\/svg>in [A-Z][a-z]+ · [A-Z][a-z]+ intrat die [IVX]+$/.test(element('eph-sun').innerHTML),'The ephemeris names the sun\'s place: '+element('eph-sun').innerHTML);
     }
     const held=context.test.world.state;
     context.test.handleInput();
