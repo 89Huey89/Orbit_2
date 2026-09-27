@@ -547,7 +547,7 @@ function syncEraChrome(){
     reading.hidden=!offered;reading.textContent=word;
     reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
-  syncJourney();
+  syncJourney();syncInstruments();
   const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;
   const statPerfects=$('end-perfects-label');if(statPerfects)statPerfects.textContent=chrome.statPerfects;
   const statFlow=$('end-flow-label');if(statFlow)statFlow.textContent=chrome.statFlow;
@@ -951,6 +951,7 @@ for(const id in PLATE_STYLES){
 $('ceiling-exit-end').addEventListener('click',leaveEra);
 $('ceiling-exit').addEventListener('click',leaveEra);
 $('reading').addEventListener('click',toggleReading);
+$('instrument').addEventListener('click',()=>{setInstruments(!instrumentsOn);if(audio.enabled)audio.tone(instrumentOn()?659.25:392,.3,0,.16);if(world&&world.state==='ready'&&W&&H)render(0);});
 $('journey-open').addEventListener('click',toggleJourney);
 $('journey-restart').addEventListener('click',journeyRestartTap);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});

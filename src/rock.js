@@ -1653,7 +1653,7 @@ function rockCoreSprite(){
 }
 function rockPlayer(){
   if(world.state==='dead')return;
-  const p=world.player,crayon=rockCrayonSprite(),{x,y,ang}=heldPose(-crayon.L,0);
+  const p=world.player,crayon=rockCrayonSprite(),tool=instrumentOn(),{x,y,ang}=travellerPose(-crayon.L,0);
   ctx.save();
   // The torch's smoke, curling up off the flame and thinning as it climbs, and dust hanging in its light.
   {const t=reducedMotion?0:world.time;ctx.save();
@@ -1667,9 +1667,16 @@ function rockPlayer(){
   // Everything from here in is one rigid tool: translate to the travelling point, face the heading of
   // travel, and scale by the chart's own scale exactly as every other mark on it does.
   ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  ctx.drawImage(crayon.canvas,-crayon.size/2-crayon.tip,-crayon.size/2,crayon.size,crayon.size);
+  if(tool)ctx.drawImage(crayon.canvas,-crayon.size/2-crayon.tip,-crayon.size/2,crayon.size,crayon.size);
   const core=rockCoreSprite();
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(core.canvas,-core.R,-core.R,core.size,core.size);ctx.restore();
+  // Unless the crayon is chosen, the traveller is the comet, laid in the wall's own pigments over the torch
+  // that still lights it: a haematite head keylined in manganese, a tail of red and yellow ochre, and no
+  // reserve, since a lit wall has no blank sheet to cut one in. The charges then close in round it.
+  if(!tool){
+    travellerComet({playerHalo:`rgb(${ink.rock.kaolin})`,playerKeyline:`rgb(${ink.rock.manganese})`,playerMid:`rgb(${ink.rock.redOchre})`,playerHighlight:`rgb(${ink.rock.ochre})`,playerNib:ink.rock.ember,playerHeadWash:ink.rock.ochreDeep,playerFilamentA:ink.rock.ochreDeep,playerFilamentB:ink.rock.redOchre});
+    ctx.scale(.72,.72);
+  }
   // A shielded run carries the charge visibly, in the one colour this era spends on rarity: kaolin.
   if(p.shielded){ctx.strokeStyle=`rgba(${ink.rock.kaolin},.55)`;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,14,0,TAU);ctx.stroke();}
   // The charge held against the forgetting is the one thing on this wall that is not a pigment at all:

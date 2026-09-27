@@ -1231,15 +1231,29 @@ function lensScopeSprite(reg){
 }
 function lensPlayer(){
   if(world.state==='dead')return;
-  const P=ink.lens,reg=lensRegNow(),p=world.player,sp=lensScopeSprite(reg),{x,y,ang}=heldPose(-21*sp.S,19*sp.S),t=reducedMotion?0:world.time;
+  // The tube is laid with its eyepiece, and the Core at it, on the true point, so the objective leads the
+  // flight from there rather than the Core trailing a tube's length behind the point that collides.
+  const P=ink.lens,reg=lensRegNow(),p=world.player,sp=lensScopeSprite(reg),ap=sp.core,tool=instrumentOn(),{x,y,ang}=travellerPose(-21*sp.S-ap,19*sp.S-ap),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  // the sightline ahead of the objective, faint, so the tube reads as pointing
-  const sl=ctx.createLinearGradient(20,0,54,0),lc=reg===0?P.ink:reg===1?P.inkBlack:P.cyan;sl.addColorStop(0,`rgba(${lc},.35)`);sl.addColorStop(1,`rgba(${lc},0)`);ctx.strokeStyle=sl;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(54,0);ctx.stroke();
-  ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
-  const ax=sp.core,br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(ax,0,0,ax,0,10*br);
-  hg.addColorStop(0,reg===2?'rgba(230,246,255,.95)':'rgba(255,250,228,.95)');hg.addColorStop(.35,reg===2?'rgba(160,220,250,.5)':'rgba(255,240,196,.5)');hg.addColorStop(1,'rgba(255,240,196,0)');
-  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(ax,0,10*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(ax,0,1.9,0,TAU);ctx.fill();
-  ctx.strokeStyle=reg===2?`rgb(${P.instrSoft})`:`rgb(${P.ink})`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(ax,0,2.5,0,TAU);ctx.stroke();
+  // Unless the telescope is chosen, the traveller is the comet, re-inked for each register as the tube is
+  // re-clad: iron gall and sepia at the eyepiece, the silver of a negative on the glass, and a readout's own
+  // white on the sensor's black, keylined there in the black itself. The charges then close in round it.
+  if(!tool){
+    travellerComet(reg===0?{ground:P.paper,playerHalo:`rgb(${P.paper})`,playerKeyline:`rgb(${P.ink})`,playerMid:`rgb(${P.sepia})`,playerHighlight:`rgb(${P.brass})`,playerNib:P.ink,playerHeadWash:P.inkSoft,playerFilamentA:P.inkSoft,playerFilamentB:P.ink}
+      :reg===1?{ground:P.glass,playerHalo:`rgb(${P.glass})`,playerKeyline:`rgb(${P.inkBlack})`,playerMid:`rgb(${P.silver})`,playerHighlight:`rgb(${P.silverMid})`,playerNib:P.inkBlack,playerHeadWash:P.silverMid,playerFilamentA:P.silverMid,playerFilamentB:P.silver}
+      :{ground:P.sensor,playerHalo:`rgb(${P.sensor})`,playerKeyline:`rgb(${P.sensor})`,playerMid:`rgb(${P.instr})`,playerHighlight:`rgb(${P.core})`,playerNib:P.cyan,playerHeadWash:P.instrSoft,playerFilamentA:P.instrSoft,playerFilamentB:P.instr});
+    ctx.scale(.72,.72);
+  }else{
+    ctx.translate(-ap,0);
+    // the sightline ahead of the objective, faint, so the tube reads as pointing
+    const sl=ctx.createLinearGradient(20,0,54,0),lc=reg===0?P.ink:reg===1?P.inkBlack:P.cyan;sl.addColorStop(0,`rgba(${lc},.35)`);sl.addColorStop(1,`rgba(${lc},0)`);ctx.strokeStyle=sl;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(54,0);ctx.stroke();
+    ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
+    ctx.translate(ap,0);
+    const br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(0,0,0,0,0,10*br);
+    hg.addColorStop(0,reg===2?'rgba(230,246,255,.95)':'rgba(255,250,228,.95)');hg.addColorStop(.35,reg===2?'rgba(160,220,250,.5)':'rgba(255,240,196,.5)');hg.addColorStop(1,'rgba(255,240,196,0)');
+    ctx.fillStyle=hg;ctx.beginPath();ctx.arc(0,0,10*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(0,0,1.9,0,TAU);ctx.fill();
+    ctx.strokeStyle=reg===2?`rgb(${P.instrSoft})`:`rgb(${P.ink})`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(0,0,2.5,0,TAU);ctx.stroke();
+  }
   // the charges held: the dew-cap as a ring round the tube, the finder's mirror as a silver arc, the open sky's light
   const cc=reg===0?P.ink:reg===1?P.inkBlack:P.instr;
   // the arrays reach further than a tube, so off the sensor the charges stand clear of them

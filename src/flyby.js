@@ -756,14 +756,23 @@ function flyCraftSprite(){
 }
 function flyPlayer(){
   if(world.state==='dead')return;
-  const P=ink.flyby,p=world.player,sp=flyCraftSprite(),{x,y,ang}=heldPose(-20*sp.S,23*sp.S),t=reducedMotion?0:world.time;
+  // The craft is laid with its camera's boresight, and the Core on it, on the true point, so the hull and the
+  // dish trail behind the point that looks rather than carrying it a craft's length ahead of the flight.
+  const P=ink.flyby,p=world.player,sp=flyCraftSprite(),ap=sp.core,tool=instrumentOn(),{x,y,ang}=travellerPose(-20*sp.S-ap,23*sp.S-ap),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  // the boresight ahead of the camera, faint, so the craft reads as pointing
-  const sl=ctx.createLinearGradient(sp.core,0,sp.core+34,0);sl.addColorStop(0,`rgba(${P.phos},.35)`);sl.addColorStop(1,`rgba(${P.phos},0)`);ctx.strokeStyle=sl;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(sp.core+2,0);ctx.lineTo(sp.core+34,0);ctx.stroke();
-  ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
-  const ax=sp.core,br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(ax,0,0,ax,0,9*br);
-  hg.addColorStop(0,'rgba(255,250,232,.95)');hg.addColorStop(.35,'rgba(255,240,200,.45)');hg.addColorStop(1,'rgba(255,240,200,0)');ctx.fillStyle=hg;ctx.beginPath();ctx.arc(ax,0,9*br,0,TAU);ctx.fill();
-  ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(ax,0,1.8,0,TAU);ctx.fill();ctx.strokeStyle=`rgba(${P.phos},.8)`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(ax,0,2.6,0,TAU);ctx.stroke();
+  // Unless the craft is chosen, the traveller is the comet as a monitor draws it: a phosphor trace with a
+  // white-hot head on the vacuum's black. The charges then close in round it.
+  if(!tool){
+    travellerComet({ground:P.vac,playerHalo:`rgb(${P.vac})`,playerKeyline:`rgb(${P.vac})`,playerMid:`rgb(${P.phos})`,playerHighlight:`rgb(${P.core})`,playerNib:P.phos,playerHeadWash:P.phosDim,playerFilamentA:P.phosDim,playerFilamentB:P.phos});
+    ctx.scale(.72,.72);
+  }else{
+    // the boresight ahead of the camera, faint, so the craft reads as pointing
+    const sl=ctx.createLinearGradient(0,0,34,0);sl.addColorStop(0,`rgba(${P.phos},.35)`);sl.addColorStop(1,`rgba(${P.phos},0)`);ctx.strokeStyle=sl;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(2,0);ctx.lineTo(34,0);ctx.stroke();
+    ctx.drawImage(sp.canvas,-sp.size/2-ap,-sp.size/2,sp.size,sp.size);
+    const br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(0,0,0,0,0,9*br);
+    hg.addColorStop(0,'rgba(255,250,232,.95)');hg.addColorStop(.35,'rgba(255,240,200,.45)');hg.addColorStop(1,'rgba(255,240,200,0)');ctx.fillStyle=hg;ctx.beginPath();ctx.arc(0,0,9*br,0,TAU);ctx.fill();
+    ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(0,0,1.8,0,TAU);ctx.fill();ctx.strokeStyle=`rgba(${P.phos},.8)`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,2.6,0,TAU);ctx.stroke();
+  }
   // the charges held: the vault as a hexagonal shield, the lock as signal arcs, the big dish's margin as a ring of ticks
   const cr=6;
   if(p.shielded){ctx.strokeStyle=`rgba(${P.amber},.75)`;ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<=6;i++){const a=i*TAU/6;i?ctx.lineTo(Math.cos(a)*(26+cr),Math.sin(a)*(26+cr)):ctx.moveTo(Math.cos(a)*(26+cr),Math.sin(a)*(26+cr));}ctx.stroke();}

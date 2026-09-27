@@ -1040,29 +1040,54 @@ function heldPose(back,front){
   }
   return {x:sx(p.x+dx),y:sy(p.y+dy),ang};
 }
+// Where a century's traveller is drawn and which way it faces. Its own instrument, once earned and chosen
+// (instrumentOn(), src/journey.js), is turned to the chord heldPose fits it to on an orbit; the comet every
+// century flies otherwise faces its flight, as the atlas's own marks do. Either way the drawing is set down
+// on the true point and nowhere else, because whatever an instrument's Observer Core is drawn at is where
+// the eye aims the next release from: a Core carried a tube's length ahead of the point that actually
+// collides had a player timing every release off the wrong place.
+function travellerPose(back,front){
+  const p=world.player,ang=instrumentOn()?heldPose(back,front).ang:Math.atan2(p.vy,p.vx);
+  return {x:sx(p.x),y:sy(p.y),ang};
+}
+// Round the whole mark the sheet is kept clean, as an engraver keeps a reserve round the one figure the eye
+// must find first: a soft oval of the ground under the pen, so a flight across the graticule, the orbits and
+// the route is not lost among lines drawn in the same ink as the mark.
+function markClearing(length,rgb,a0,a1){
+  const rx=length*.62+7,ry=7.5,cx=-length*.42;
+  ctx.save();ctx.translate(cx,0);ctx.scale(rx,ry);
+  const clear=ctx.createRadialGradient(0,0,0,0,0,1);
+  clear.addColorStop(0,`rgba(${rgb},${a0})`);clear.addColorStop(.55,`rgba(${rgb},${a1})`);clear.addColorStop(1,`rgba(${rgb},0)`);
+  ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
+}
+const markLength=()=>{const p=world.player,boost=clamp((Math.hypot(p.vx,p.vy)-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1);return {boost,length:p.node?16:23+boost*20};};
+// The one traveller every century flies unless its own instrument has been earned and chosen: the comet,
+// whose drawn point is exactly the point that collides, and whose tail says the heading. It is the Observer
+// Core JOURNEY.md keeps unchanged in shape, size and behaviour from the cave to the probe, so only its
+// material changes: `tones` lends the century's own colours to the comet's tokens for the length of the
+// draw, as the Ceiling lends its line to the barque, and `tones.ground` is the ground its reserve is cut in,
+// or nothing where the ground is a lit wall a reserve would only read as a stain on. Drawn in the
+// traveller's own frame: translated to the point, turned to the heading and scaled.
+function travellerComet(tones){
+  const {boost,length}=markLength(),charge=world.charge(),inkHeld=world.inkLevel(),breath=reducedMotion?0:Math.sin(world.time*5.5)*.22,own=ink.dark;
+  ctx.lineCap='round';ctx.lineJoin='round';
+  ink.dark=Object.assign({},own,tones);
+  try{if(tones.ground)markClearing(length,tones.ground,.55,.38);OBSERVER_MARKS.comet(length,boost,breath,charge,inkHeld);markHead(boost,charge,inkHeld);}
+  finally{ink.dark=own;}
+}
 function drawPlayer(){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
   const own=handFor('player');if(own)return own();
-  if(world.state==='dead')return;const p=world.player,flight=!p.node;
-  const speed=Math.hypot(p.vx,p.vy),boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),charge=world.charge(),inkHeld=world.inkLevel();
-  const length=flight?23+boost*20:16,breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
+  if(world.state==='dead')return;const p=world.player;
+  const {boost,length}=markLength(),charge=world.charge(),inkHeld=world.inkLevel(),breath=reducedMotion?0:Math.sin(world.time*5.5)*.22;
   ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
   ctx.lineCap='round';ctx.lineJoin='round';
   // A mark that cuts its own point — the quill's nib is the moving point — says so and keeps it;
   // every other mark ends with the shared head. The dark keyline keeps the actual moving point legible
   // over pale planets; on paper a thin ring of exposed, unprinted paper sits between the ink and it.
   const mark=OBSERVER_MARKS[activeCosmetic('mark')]||OBSERVER_MARKS.quill;
-  // Round the whole mark the sheet is kept clean, as an engraver keeps a reserve round the one figure the
-  // eye must find first: a soft oval of the plate's own ground under the pen, so a flight across the
-  // graticule, the orbits and the route is not lost among lines drawn in the same pale ink as the quill.
-  {
-    const rx=length*.62+7,ry=7.5,cx=-length*.42;
-    ctx.save();ctx.translate(cx,0);ctx.scale(rx,ry);
-    const clear=ctx.createRadialGradient(0,0,0,0,0,1);
-    clear.addColorStop(0,`rgba(${ink.base.paperRgb},${onPaper()?.6:.55})`);clear.addColorStop(.55,`rgba(${ink.base.paperRgb},${onPaper()?.4:.38})`);clear.addColorStop(1,`rgba(${ink.base.paperRgb},0)`);
-    ctx.fillStyle=clear;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
-  }
+  markClearing(length,ink.base.paperRgb,onPaper()?.6:.55,onPaper()?.4:.38);
   if(!mark(length,boost,breath,charge,inkHeld))markHead(boost,charge,inkHeld);
   if(p.shielded){
     const pulse=reducedMotion?1:.85+.15*Math.sin(world.time*4);
