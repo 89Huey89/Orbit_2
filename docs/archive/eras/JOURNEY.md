@@ -635,6 +635,12 @@ away at the growing edge in each century's own material, from `THE-FRONTIER.md`'
 flaking, ink bleed and foxing, patina, ink burn, fog and frilling, tile dropout — with falling fragments
 coloured from the still itself. The Probe's bit flips are not drawn: no century is above it to give way to.
 
+**The unchanged core** (§1.3 step 10) came last: while the circle grows, `drawEraCore` in `src/frame.js`
+holds the traveller as a small inked core keyed in paper, the one mark neither century draws in its own hand,
+and for the first 0.7 s eight short gold strokes converge onto it — strokes rather than a ring, as
+`OBSERVER-CORE.md` asks, so the new tool is seen closing round the core rather than a halo being hung on it.
+The core lets go over the last half-second of the growth, when the new century's own traveller is drawn whole.
+
 **Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
 move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
 it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) of the new century

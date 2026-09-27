@@ -1280,7 +1280,7 @@ function drawEraGrowth(dt){
   const x=sx(g.x),y=sy(g.y);
   // The old medium fails in its own material where it can (src/recede.js); the plain circle with a gold edge
   // below is only what is left if there was no copy of it to wear away.
-  if(recedeFrame(g,x,y,R,world.state==='playing'?dt||0:0))return;
+  if(recedeFrame(g,x,y,R,world.state==='playing'?dt||0:0)){drawEraCore(g);return;}
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.beginPath();ctx.rect(0,0,W,H);ctx.arc(x,y,Math.max(0,R),0,TAU,true);ctx.clip('evenodd');
   ctx.drawImage(g.snap,0,0,W,H);
@@ -1293,6 +1293,28 @@ function drawEraGrowth(dt){
     ctx.strokeStyle=`rgba(${I.goldBright},.9)`;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.stroke();
     ctx.restore();
   }
+}
+// The Observer Core through the change (§1.3 steps 8 and 10, OBSERVER-CORE.md): the one mark no century
+// changes, drawn over both sheets for as long as the old one is giving way — a bare disc, dark keyline then
+// bright fill, the same size throughout — while the new century's tool gathers round it, eight short strokes
+// drawn in from all sides in the new plate's ink over the first seven tenths of a second. Strokes and not a
+// ring, because every ring on the sheet already means something the Core must not borrow.
+function drawEraCore(g){
+  if(!world||world.state==='dead')return;
+  const p=world.player,x=sx(p.x),y=sy(p.y),t=world.time-g.t0,left=eraGrowthReach(g);
+  const fade=left===Infinity?0:clamp((ERA_GROW-t)/.5,0,1),I=ink.base;
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(!reducedMotion&&t<.7){
+    const u=clamp(t/.7,0,1),s=u*u*(3-2*u),from=34*(1-s)+7,to=from-7*(1-s)-3;
+    ctx.strokeStyle=`rgba(${I.goldBright},${(.85*(1-u*.6)).toFixed(3)})`;ctx.lineWidth=1.3;ctx.beginPath();
+    for(let k=0;k<8;k++){const a=k/8*TAU+.3;ctx.moveTo(x+Math.cos(a)*from,y+Math.sin(a)*from);ctx.lineTo(x+Math.cos(a)*Math.max(4,to),y+Math.sin(a)*Math.max(4,to));}
+    ctx.stroke();
+  }
+  // The keyline is the plate's own ground and the fill its strongest ink, so the disc reads on a dark sheet
+  // and a light one alike.
+  ctx.globalAlpha=fade;ctx.fillStyle=`rgb(${I.paperRgb})`;ctx.beginPath();ctx.arc(x,y,3.4,0,TAU);ctx.fill();
+  ctx.fillStyle=`rgb(${I.inkStrong})`;ctx.beginPath();ctx.arc(x,y,2.1,0,TAU);ctx.fill();
+  ctx.restore();
 }
 // The body the next century will most likely begin at, once the era in hand is known: two rings round it
 // in the plate's gold, the outer one turning slowly, drawn over whatever hand is on the press. Any ordinary
