@@ -82,8 +82,11 @@ if(PRESSURE&&!(PRESSURE in MULTS.darknessMult))throw new Error('Unknown pressure
 // Whether the endless driver is felt. The live game turns it on for every run with no row it is won at,
 // which is every run the probe flies, so it is on unless `--flat` asks for the chart as it was before it.
 const DRIVEN=!args.includes('--flat');
-function dealWorld(seed){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.driven=DRIVEN;
+// `era` carries what a century changes in the simulation itself, which is only the Rock's: its chasms
+// and its relighting flares (PLATE_STYLES.rock.can in src/plates.js). Every other century flies the
+// atlas's own chart under its own art.
+function dealWorld(seed,era={}){
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,!!era.chasms,!!era.relight);w.driven=DRIVEN;
   if(MULTS)for(const key in MULTS)if(MULTS[key])w[key]=MULTS[key][PRESSURE];
   if(GRACE!==null)w.releaseGrace=GRACE;
   return w;
@@ -170,8 +173,8 @@ function forecast(w,eligible,settle,sigma=0){
   return wide!==null&&(settle||sigma>0)?wide:null;
 }
 function gauss(r){const u=Math.max(1e-12,r()),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function flySpread(seed,hand){
-  const w=dealWorld(seed);w.start();
+function flySpread(seed,hand,era){
+  const w=dealWorld(seed,era);w.start();
   const jitter=rng(seed*7919+Math.round(hand.sigma*1000)+17);
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1,frame=0;
@@ -191,11 +194,14 @@ function flySpread(seed,hand){
     } else pending=-1;
     w.update(STEP);
   }
-  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow};
+  // The body still held when the run ends is banked for what it had been observed to, as the Journey
+  // banks it at death (journeyCommit in src/journey.js).
+  const held=w.player.node?ledgerOf(w.player.orbitSweep):0;
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held};
 }
-function fly(seed,hand){
-  if(MODEL==='spread')return flySpread(seed,hand);
-  const w=dealWorld(seed);w.start();
+function fly(seed,hand,era){
+  if(MODEL==='spread')return flySpread(seed,hand,era);
+  const w=dealWorld(seed,era);w.start();
   const jitter=rng(seed*7919+Math.round(hand.late*1000));
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1;
@@ -221,13 +227,67 @@ function fly(seed,hand){
     } else pending=-1;
     w.update(STEP);
   }
-  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow};
+  const held=w.player.node?ledgerOf(w.player.orbitSweep):0;
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held};
 }
 
 const sorted=a=>[...a].sort((x,y)=>x-y);
 const pct=(a,q)=>{const s=sorted(a);return s.length?s[Math.min(s.length-1,Math.floor(q*s.length))]:0;};
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const pad=(s,n)=>String(s).padEnd(n),padL=(s,n)=>String(s).padStart(n);
+
+// ---------- The ladder: the Journey climbed across runs ----------
+// `--ladder` asks the question JOURNEY.md §1.6 is written against, directly rather than by dividing a
+// median: a player flies Journey runs one after another at the frontier, every run banking what it
+// observed (and the body held at death), a ready era banking nothing further, and the frontier turning
+// over between runs once every milestone stands — exactly the rules src/journey.js keeps, until stage 5
+// lets the turn happen inside a run. Runs are independent of one another, so the climb is not flown
+// run by run: each hand flies `--seeds` runs on the atlas's chart and as many on the Rock's (the one
+// century whose simulation differs), and the players then climb by drawing runs from those, which reads
+// the same as flying every run of every climb at a fraction of the cost. What it reports is how many runs
+// each century holds a player for, and how many the whole climb takes. `--threshold` reads the ladder at
+// other era thresholds than the one the game ships with (a comma-separated list); `--players` sets how
+// many climb, `--runs` how many runs a climb is given before it is called unfinished.
+const LADDER=args.includes('--ladder');
+if(LADDER){
+  const journeySource=await readFile(new URL('../src/journey.js',import.meta.url),'utf8');
+  const SHIPPED=Number((journeySource.match(/ERA_THRESHOLD=([\d.]+)/)||[])[1]);
+  const asked=args.find(a=>a.startsWith('--threshold='));
+  const THRESHOLDS=asked?asked.slice(12).split(',').map(Number).filter(t=>t>0):[SHIPPED];
+  const PLAYERS=flag('players',400),RUN_CAP=flag('runs',400);
+  const hands=(MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>args.includes('--oracle')||(h.sigma??h.late)>0);
+  const tables=THRESHOLDS.map(()=>[]);
+  for(const hand of hands){
+    const bank=r=>r.ledger+r.held,atlas=[],rock=[];
+    for(let seed=1;seed<=SEEDS;seed++){atlas.push(bank(fly(seed,hand)));rock.push(bank(fly(seed,hand,{chasms:true,relight:true})));}
+    THRESHOLDS.forEach((THRESHOLD,ti)=>{
+      const draw=rng(4099+Math.round((hand.sigma??hand.late)*1e4)+ti),pick=list=>list[Math.floor(draw()*list.length)];
+      const perEra=[...Array(9)].map(()=>[]),totals=[];let finished=0;
+      for(let player=0;player<PLAYERS;player++){
+        let era=1,knowledge=0,runs=0,eraRuns=0;
+        while(era<=8&&runs<RUN_CAP){
+          runs++;eraRuns++;knowledge=Math.min(THRESHOLD,knowledge+pick(era===1?rock:atlas));
+          if(knowledge>=THRESHOLD){perEra[era].push(eraRuns);era++;knowledge=0;eraRuns=0;}
+        }
+        if(era>8){finished++;totals.push(runs);}
+      }
+      tables[ti].push({hand:hand.name,runLedger:pct(atlas,.5),rockLedger:pct(rock,.5),perEra:perEra.slice(1).map(a=>a.length?pct(a,.5):null),total:totals.length?pct(totals,.5):null,finished:finished/PLAYERS});
+    });
+  }
+  if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,players:PLAYERS,runCap:RUN_CAP,shipped:SHIPPED,tables:THRESHOLDS.map((t,i)=>({threshold:t,table:tables[i]}))},null,2));process.exit(0);}
+  console.log('\nOrbit · the Journey climbed across runs — '+SEEDS+' runs per hand on each chart, '+PLAYERS+' players, at most '+RUN_CAP+' runs');
+  console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', endless driver '+(DRIVEN?'on':'off'));
+  THRESHOLDS.forEach((THRESHOLD,ti)=>{
+    console.log('\nera threshold '+THRESHOLD+(THRESHOLD===SHIPPED?' (as shipped)':' (shipped: '+SHIPPED+')')+'\n');
+    console.log(pad('hand',9)+padL('run',5)+padL('rock',6)+['I','II','III','IV','V','VI','VII','VIII'].map(e=>padL(e,5)).join('')+padL('climb',7)+padL('done',6));
+    console.log('-'.repeat(9+11+8*5+13));
+    for(const r of tables[ti])console.log(pad(r.hand,9)+padL(r.runLedger.toFixed(1),5)+padL(r.rockLedger.toFixed(1),6)+r.perEra.map(v=>padL(v===null?'—':v,5)).join('')+padL(r.total===null?'—':r.total,7)+padL(Math.round(r.finished*100)+'%',6));
+  });
+  console.log('\n  run, rock · the median run\'s whole banked observation on the atlas\'s chart and on the Rock\'s');
+  console.log('  I … VIII · median runs a century holds a player for   climb · median runs for the whole ladder');
+  console.log('  done · share of players who climbed all eight inside the cap\n');
+  process.exit(0);
+}
 
 const report=[];
 for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
