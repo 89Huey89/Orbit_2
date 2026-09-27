@@ -4,12 +4,18 @@
    its seed and when the traveller released, so the finished chart can be read back long after the
    run that drew it, without a frame of it ever having played again. */
 // ---------- Replaying a run from its own log ----------
-// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, driven, goalRow, grace, releases,
-// resizes}: releases and resizes are ordered lists of the world.time each one happened at (see replayLog
-// in ui.js, where one is kept). varyOpening, chasmsOn and relightOn are all read the same permissive way
+// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, newtonOn, transitionRows,
+// driven, goalRow, grace, releases, resizes, eras}: releases and resizes are ordered lists of the world.time
+// each one happened at (see replayLog in ui.js, where one is kept). varyOpening, chasmsOn and relightOn are all read the same permissive way
 // an older saved log already reads a field it predates — undefined falls through to OrbitWorld's own
 // default (an ordinary, unvaried, chasm-free, unrelit opening), so a log saved before either era
 // feature existed still replays exactly as it always did.
+// A Journey run that changed century inside itself logs each change in `eras`: when the page armed it
+// (armedAt, a world.time like a release, since the simulation is told rather than deciding) and what the
+// new century then set on the world (relightOn, chasmsOn, transitionRows). The landing that carries the
+// change is the simulation's own, so arming the same moment turns the replay on the same body, and the
+// settings are put on the world in the same event the live page puts them on in. newtonOn is read the
+// same permissive way: a log without it was flown, or is read back, with no pull toward the bodies.
 // Capturing one of the three opening bodies fires a 'difficulty' event that the live game answers
 // by setting the pressure multipliers on the world (setDifficulty()/syncDifficulty() in plates.js).
 // A replay has no game listening for that, so it answers the event itself, the same way, with
@@ -19,14 +25,20 @@ function replayRun(log){
   // recordDeparture/recordLanding/sampleInkPath (src/effects.js) read and write through the shared
   // `world` binding, the same way every other painter in this file does — so it is pointed at the
   // world being rebuilt for the whole of the loop below, and put back the way it was found afterward.
-  const savedWorld=world,graced=Number.isFinite(log.grace);
+  const savedWorld=world,graced=Number.isFinite(log.grace),eras=Array.isArray(log.eras)?log.eras:[];
   const w=new OrbitWorld(log.seed,log.width,log.height,(type,e)=>{
     if(type==='difficulty'){w.darknessMult=DARKNESS_MULT[e.value];w.inkMult=INK_MULT[e.value];w.perfectMult=PERFECT_MULT[e.value];w.capMult=CAP_MULT[e.value];if(graced)w.releaseGrace=RELEASE_GRACE_BY[e.value];}
     // The departure and landing are surveyed exactly as they are live (see event() in src/ui.js), so a
     // reviewed plate carries the same release bearings and arrival angles the run itself was drawn with.
     else if(type==='release')recordDeparture(e);
     else if(type==='capture')recordLanding(e);
-  },log.offerDifficulty,log.varyOpening,false,log.chasmsOn,log.relightOn,Number(log.goalRow)||0);
+    else if(type==='eraTransition'){
+      const r=eras[e.index];if(!r)return;
+      if(r.relightOn!==undefined)w.relightOn=!!r.relightOn;
+      if(r.chasmsOn!==undefined)w.chasmsOn=!!r.chasmsOn;
+      if(Array.isArray(r.transitionRows)){w.transitionRows=r.transitionRows.slice();w.transitionsCrossed=0;}
+    }
+  },log.offerDifficulty,log.varyOpening,log.newtonOn===true,log.chasmsOn,log.relightOn,Number(log.goalRow)||0);
   // A log written before the release grace existed carries no grace field, and its releases were flown
   // exactly where they were asked for; it is read back that way rather than under a rule it never had.
   // One that has it starts from the grace it was dealt with and takes the chosen pressure's own grace
@@ -34,8 +46,9 @@ function replayRun(log){
   world=w;w.keepAll=true;w.releaseGrace=graced?log.grace:0;
   // The endless driver the same way: a log that predates it was flown on the flat chart and reads back on it.
   w.driven=log.driven===true;
+  if(Array.isArray(log.transitionRows))w.transitionRows=log.transitionRows.slice();
   const releases=log.releases||[],resizes=log.resizes||[],startedAt=log.startedAt||0;
-  let ri=0,zi=0,guard=0,started=false;
+  let ri=0,zi=0,ai=0,guard=0,started=false;
   // The live clock keeps running while the traveller is still reading the frontispiece (nodes wobble
   // there too), so a release logged against world.time is only meaningful once that same idle stretch
   // has been sat through here — start() is held off, exactly like the live 'ready' state, until it has.
@@ -46,6 +59,7 @@ function replayRun(log){
     // one tick further along than the one it actually answered to live.
     while(zi<resizes.length&&w.time>=resizes[zi].at){w.resize(resizes[zi].width,resizes[zi].height);zi++;}
     if(!started&&w.time>=startedAt){w.start();started=true;}
+    while(ai<eras.length&&w.time>=Number(eras[ai].armedAt)){w.transitionReady=true;ai++;}
     while(ri<releases.length&&w.time>=releases[ri]){w.release();ri++;}
     w.update(FLIGHT_STEP);
     // Sampled every physics tick rather than once a rendered frame, the way the live route is: a replay

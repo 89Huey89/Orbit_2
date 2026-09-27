@@ -86,7 +86,9 @@ function renderReview(){
 // panning down toward the opening plate leaves it behind. The stock inside it is cleared first, so the
 // chart under it never runs through the lettering.
 function reviewTabletRows(w){
-  const chapter=clamp(Math.floor(w.progress/8),0,3),d=new Date(reviewTakenAt);
+  // A run that came onto the atlas from the century below counts its tables from the row it arrived at, as
+  // the live sheet did (eraRow), not from the first row of the climb.
+  const chapter=clamp(Math.floor((w.progress-(w.eraFrom||0))/8),0,3),d=new Date(reviewTakenAt);
   const pressure=Object.keys(DARKNESS_MULT).find(k=>DARKNESS_MULT[k]===w.darknessMult)||'classic';
   const words=plateWords().pressures||{};
   return [
