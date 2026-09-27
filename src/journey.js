@@ -96,12 +96,9 @@ const RECORDS_KEY='orbit.records.v1';
 function readRecords(){
   let raw=null;
   try{raw=JSON.parse(storage.get(RECORDS_KEY,'null'));}catch(_){raw=null;}
-  if(raw&&typeof raw==='object'&&!Array.isArray(raw))return {free:cleanCounts(raw.free)};
-  // The one universal best there was, `orbit.best.v1`, was always the atlas's, played free. It is carried
-  // forward once, when no record document exists yet, and left where it is: nothing writes it any more.
-  const out={free:{}},legacy=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
-  if(legacy>0){out.free['5']=legacy;storage.set(RECORDS_KEY,JSON.stringify(out));}
-  return out;
+  // The one universal best there used to be, `orbit.best.v1`, is not carried forward: nothing had been
+  // played for real when the records were split, so there was nothing to keep.
+  return {free:raw&&typeof raw==='object'&&!Array.isArray(raw)?cleanCounts(raw.free):{}};
 }
 const records=readRecords();
 // Which record the run in hand is measured against: null on the daily, which keeps its own.

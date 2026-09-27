@@ -89,14 +89,13 @@ export async function runJourneyChecks(){
     assert.equal(j.journeyMilestones().toward,0);
   }
   {
-    // JOURNEY.md §1.7: the one universal best is carried forward once into Free Play's record for the atlas,
-    // and every later record is kept by the way its run was played.
+    // JOURNEY.md §1.7: every record is kept by the way its run was played. The old universal best is not
+    // carried forward: nothing had been played for real when the records were split.
     const {j,context,saved}=load({'orbit.best.v1':'420'},{plate:0});
-    assert.equal(j.records.free['5'],420,'The old universal best becomes the atlas\'s own Free Play record');
-    assert.equal(JSON.parse(saved.get(j.RECORDS_KEY)).free['5'],420,'The carried record is written down once');
-    assert.equal(j.contextBest(),420);
-    assert.equal(j.keepContextBest(300),false,'A lower score is not a record');
+    assert.equal(j.contextBest(),0,'The old universal best is not carried into the new records');
     assert.equal(j.keepContextBest(500),true);assert.equal(j.contextBest(),500);
+    assert.equal(JSON.parse(saved.get(j.RECORDS_KEY)).free['5'],500,'The atlas keeps its Free Play record under era V');
+    assert.equal(j.keepContextBest(300),false,'A lower score is not a record');
     assert.equal(saved.get('orbit.best.v1'),'420','Nothing writes the old key any more');
     j.mode='journey';
     assert.equal(j.contextBest(),0,'A Journey run is measured against the Journey\'s own best, not Free Play\'s');
@@ -108,11 +107,10 @@ export async function runJourneyChecks(){
     j.keepContextBest(40);assert.equal(j.records.free['1:endless'],40,'A century read Endless keeps a record apart from its Chronicle');
     context.eraReading=()=>'chronicle';assert.equal(j.contextBest(),0);
     context.dailyOn=true;assert.equal(j.keepContextBest(9999),false,'The daily keeps its own record elsewhere');context.dailyOn=false;
-    // A document already there is never overwritten by the legacy key again.
-    const again=load({'orbit.best.v1':'9000',[j.RECORDS_KEY]:saved.get(j.RECORDS_KEY)});
-    assert.equal(again.j.records.free['5'],500,'The old key is carried forward only when there is no record document yet');
-    const junk=load({[j.RECORDS_KEY]:'{ not records','orbit.best.v1':'7'});
-    assert.equal(junk.j.records.free['5'],7,'A malformed record document reads as none');
+    const again=load({[j.RECORDS_KEY]:saved.get(j.RECORDS_KEY)});
+    assert.equal(again.j.records.free['5'],500,'The record document is read back');
+    const junk=load({[j.RECORDS_KEY]:'{ not records'});
+    assert.deepEqual(JSON.parse(JSON.stringify(junk.j.records)),{free:{}},'A malformed record document reads as none');
   }
   {
     // Free Play's doors: each century an unlockable reading the Journey's document, behind a gate that is off.

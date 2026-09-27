@@ -67,9 +67,6 @@ let namedHazardKinds=new Set();
 // A working plate queries a wrong impression rather than pretending it never happened, but only once
 // a run: the first steep arrival earns the chart's one correction, not every one of them.
 let correctionNode=null;
-// The one universal best there used to be. It is read only to be carried forward, into the ledger's
-// personal bests (migrateRecords) and the contextual records (readRecords in src/journey.js).
-const best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
 // Whether the frontispiece's full instruction paragraph has already been shown once: after that

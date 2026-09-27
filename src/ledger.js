@@ -54,12 +54,11 @@ function readLedger(){
 }
 const ledger=readLedger();
 function saveLedger(){storage.set(LEDGER_KEY,JSON.stringify(ledger));}
-// The two records that predate the ledger are folded into it once, and left where they are: the
-// colophon and the HUD still read `orbit.best.v1` and `orbit.bestRow.v1` exactly as before.
+// The ascent record that predates the ledger is folded into it once, and left where it is: the colophon
+// still reads `orbit.bestRow.v1` exactly as before.
 function migrateRecords(){
   let changed=false;
   if(bestRow>ledger.bestRow){ledger.bestRow=bestRow;changed=true;}
-  if(best>0&&best>(ledger.personalBests[difficulty]||0)){ledger.personalBests[difficulty]=best;changed=true;}
   if(changed)saveLedger();
 }
 migrateRecords();

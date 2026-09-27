@@ -556,7 +556,7 @@ function showEnd(){
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
-  // A preview era keeps no best of its own above (orbit.best.v1/orbit.bestRow.v1 are the atlas's), but
+  // A preview era keeps no best of its own above (orbit.bestRow.v1 is the atlas's), but
   // may keep a small record of its own runs under its own key — the Rock's cave (G3), never the atlas's
   // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
   // That record is Free Play's (LINKING.md decision 5): a Journey run is measured by its climb, never

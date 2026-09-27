@@ -497,8 +497,8 @@ the player timing, it has failed regardless of how it looks. Record the outcome 
 
 **The back half** (2026-09-27): the contextual records of §1.7 are `orbit.records.v1` (Free Play, per era
 and per reading) and the Journey document's `bests` (per era), read and kept by `contextBest()` and
-`keepContextBest()` in `src/journey.js`; `orbit.best.v1` is carried forward once into era V's Free Play
-record and never written again, and the daily keeps the record it already had. A Journey run no longer
+`keepContextBest()` in `src/journey.js`; `orbit.best.v1` is dropped rather than carried forward (the game
+was not yet played for real, so there was nothing to keep), and the daily keeps the record it already had. A Journey run no longer
 writes Free Play's record, a pressure's personal best (the ledger counts it under `journey`) or a
 century's own record (`caveRun`). Free Play is re-pointed: each era is an unlockable of the catalogue's
 shape (`ERA_UNLOCKS`) whose condition reads `journey.unlocked`, answered by `ledger.js`'s own `unlockMet()`
