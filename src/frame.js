@@ -961,7 +961,7 @@ function drawRunningHead(){
   const own=handFor('runningHead');if(own)return own();
   if(!world||plainPlate())return;
   const bottom=H<=530&&W>H?4:W>=800?23:Math.max(17,safeAreaBottom()+7);
-  const y=H-bottom-24+3,index=clamp(Math.floor(world.progress/8),0,3),colors=ink.frame;
+  const y=H-bottom-24+3,index=clamp(Math.floor(eraRow()/8),0,3),colors=ink.frame;
   // REGIO, not TAB.: the impressum's own TAB. names the plate itself, and TAB. naming the region too
   // made one abbreviation stand for two different things on the same sheet. The region takes its own
   // Latin name (chaptersLatin, plates.js) rather than the game's English one, matching the plate's voice
@@ -1251,6 +1251,61 @@ function drawActionFrames(){
   drawActionRowFrame($('daily-actions'));
   drawActionRowFrame($('more-actions'));
 }
+// ---------- A century growing out of a body (JOURNEY.md §1.3, stage 5) ----------
+// When the Journey changes century inside a run, the sheet as it last stood under the old hand is taken
+// whole, and every frame after it the new hand draws the chart and that old sheet is laid back over it
+// everywhere outside a circle round the body just landed on, the circle widening until it holds the sheet.
+// So the new medium grows out from the body rather than arriving from an edge, and the body itself is never
+// drawn twice or dimmed. The old sheet is held where it stood, a still of the medium being left, rather than
+// carried up with the camera: carried, it opened a strip of the new sheet along its top edge and slid the
+// old margins and marks across the new ones. It reads the run's own clock, so a pause holds it.
+const ERA_GROW=2.4;
+let eraGrowth=null;
+function beginEraGrowth(e){
+  let snap=null;
+  try{if(canvas.width&&canvas.height){snap=makeCanvas(canvas.width,canvas.height);snap.getContext('2d').drawImage(canvas,0,0);}}catch(_){snap=null;}
+  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world};game.classList.add('era-growing');
+}
+function endEraGrowth(){eraGrowth=null;game.classList.remove('era-growing');}
+function eraGrowthReach(g){
+  const t=(world.time-g.t0)/(reducedMotion?.5:ERA_GROW);if(t>=1)return Infinity;
+  const u=Math.max(0,t);return u*u*(3-2*u)*Math.hypot(W,H)*1.1;
+}
+function drawEraGrowth(){
+  const g=eraGrowth;if(!g)return;
+  if(g.world!==world||!g.snap){endEraGrowth();return;}
+  const R=eraGrowthReach(g);if(R===Infinity){endEraGrowth();return;}
+  const x=sx(g.x),y=sy(g.y);
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.beginPath();ctx.rect(0,0,W,H);ctx.arc(x,y,Math.max(0,R),0,TAU,true);ctx.clip('evenodd');
+  ctx.drawImage(g.snap,0,0,W,H);
+  ctx.restore();
+  // The growing edge in the new century's own ink: a hairline over a soft band, so the edge reads as the
+  // new sheet's own margin arriving rather than as a hole cut in the old one.
+  if(R>2){
+    const I=ink.base;ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.strokeStyle=`rgba(${I.ink},.22)`;ctx.lineWidth=7;ctx.beginPath();ctx.arc(x,y,R+3,0,TAU);ctx.stroke();
+    ctx.strokeStyle=`rgba(${I.goldBright},.9)`;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.stroke();
+    ctx.restore();
+  }
+}
+// The body the next century will most likely begin at, once the era in hand is known: two rings round it
+// in the plate's gold, the outer one turning slowly, drawn over whatever hand is on the press. Any ordinary
+// landing carries the change (OrbitWorld.transitionBody); this only shows the one on the way.
+function drawEraMark(){
+  if(!world||world.state!=='playing')return;
+  const n=world.nextTransitionBody();if(!n)return;
+  const x=sx(n.x),y=sy(n.y),r=(n.r+10)*scale;if(y<-r*2||y>H+r*2)return;
+  // A plate's gold is its own and may be dark (the Rock's is an ochre on an unlit wall), so the ring is laid
+  // over a wide soft band of the plate's bright gold, which carries on a dark ground and a light one alike.
+  const I=ink.base,t=reducedMotion?0:world.time,pulse=.6+.3*Math.sin(t*3);
+  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.strokeStyle=`rgba(${I.goldBright},.22)`;ctx.lineWidth=9;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();
+  ctx.strokeStyle=`rgba(${I.goldBright},${pulse.toFixed(3)})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();
+  ctx.setLineDash([6,7]);ctx.lineDashOffset=-t*9;ctx.strokeStyle=`rgba(${I.goldBright},.8)`;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.arc(x,y,r+8*scale,0,TAU);ctx.stroke();
+  ctx.restore();
+}
 function render(dt){
   // However many strokes are in progress this frame, only one hand cuts the plate: the claim every
   // penNib call registers instead of drawing (reveal.js) is cleared here, at the very top, and whichever
@@ -1263,7 +1318,7 @@ function render(dt){
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
   // instead is still the atlas's own, since every other painter in this file is unchanged.
   const own=handFor('frame');
-  if(own){own(dt,world.aim());updateUI(dt);return;}
+  if(own){own(dt,world.aim());drawEraMark();drawEraGrowth();updateUI(dt);return;}
   reveal.prime();prewarmGlyph();
   // The chapter title is struck here, with the graticule and before a single chart mark, because it is cut
   // into the plate rather than laid over it: the orbits, the bodies, the traveller, the flood and the notes
@@ -1309,5 +1364,6 @@ function render(dt){
   // paper's own grain goes over the whole sheet last, the way every other mark's ink already sits under it.
   nibClaimDraw();
   drawLaidPaper();
+  drawEraMark();drawEraGrowth();
   updateUI(dt);
 }

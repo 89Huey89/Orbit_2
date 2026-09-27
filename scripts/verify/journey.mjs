@@ -16,7 +16,7 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
@@ -43,11 +43,11 @@ export async function runJourneyChecks(){
     j.journeyCommit();assert.equal(j.doc.knowledge,1.5,'A body still held is not banked by a fold that does not end the run');
     j.journeyCommit(true);assert.equal(j.doc.knowledge,2,'The body held at death is banked for what it was observed to');
     context.world=held(null);
-    j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);fold=j.journeyCommit(true);
-    assert.equal(j.doc.knowledge,6);assert.equal(fold.opened,0,'Six of twenty-five is still short of the first of four milestones');
-    j.journeyObserve(.25);fold=j.journeyCommit(true);
+    for(let i=0;i<10;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
+    assert.equal(j.doc.knowledge,12);assert.equal(fold.opened,0,'Twelve of fifty is still short of the first of four milestones');
+    j.journeyObserve(.5);fold=j.journeyCommit(true);
     assert.equal(fold.opened,1,'Knowledge opens a milestone at each ERA_THRESHOLD/k');assert.equal(fold.open,1);assert.equal(fold.ready,false);
-    for(let i=0;i<40;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
+    for(let i=0;i<60;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
     assert.equal(j.doc.knowledge,j.ERA_THRESHOLD,'A ready era banks nothing past the threshold: the surplus is the transition\'s');
     assert.equal(fold.open,4);assert.equal(fold.opened,3);assert.equal(fold.ready,true,'All milestones standing is transition-ready, and nothing else is asked');
     // A run on another century than the frontier's, or on the daily plate, banks nothing and keeps nothing over.
@@ -75,11 +75,11 @@ export async function runJourneyChecks(){
     assert(d.unlocked.every(e=>Number.isInteger(e)&&e>=1&&e<=8),'Only real eras are ever open: '+raw);
   }
   {const {j}=load({'orbit.journey.v1':'{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}'});
-    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:25,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:50,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
   {
     // Until the in-run transition exists, a known era is turned over between runs, and only onto a century
     // that is drawn.
-    const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:25})});
+    const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:50})});
     assert.equal(j.journeyAdvance(()=>false),false,'The frontier never climbs onto a century with nothing drawn');
     assert.equal(j.doc.era,1);
     assert.equal(j.journeyAdvance(e=>e===2),true,'A known era is turned over to the next');
@@ -87,6 +87,36 @@ export async function runJourneyChecks(){
     assert(j.doc.unlocked.includes(2),'An era reached stays open');
     assert.equal(j.journeyAdvance(()=>true),false,'An era not yet known does not move');
     assert.equal(j.journeyMilestones().toward,0);
+  }
+  {
+    // JOURNEY.md §1.7: every record is kept by the way its run was played. The old universal best is not
+    // carried forward: nothing had been played for real when the records were split.
+    const {j,context,saved}=load({'orbit.best.v1':'420'},{plate:0});
+    assert.equal(j.contextBest(),0,'The old universal best is not carried into the new records');
+    assert.equal(j.keepContextBest(500),true);assert.equal(j.contextBest(),500);
+    assert.equal(JSON.parse(saved.get(j.RECORDS_KEY)).free['5'],500,'The atlas keeps its Free Play record under era V');
+    assert.equal(j.keepContextBest(300),false,'A lower score is not a record');
+    assert.equal(saved.get('orbit.best.v1'),'420','Nothing writes the old key any more');
+    j.mode='journey';
+    assert.equal(j.contextBest(),0,'A Journey run is measured against the Journey\'s own best, not Free Play\'s');
+    assert.equal(j.keepContextBest(90),true);assert.equal(j.doc.bests['5'],90,'A Journey run\'s best is kept on the Journey\'s document, per era');
+    assert.equal(j.records.free['5'],500,'A Journey run never rewrites Free Play\'s record');
+    j.mode='free';context.plate=1;
+    assert.equal(j.contextBest(),0,'Each century keeps its own');
+    context.plateWords=()=>({endless:true});context.eraReading=()=>'endless';
+    j.keepContextBest(40);assert.equal(j.records.free['1:endless'],40,'A century read Endless keeps a record apart from its Chronicle');
+    context.eraReading=()=>'chronicle';assert.equal(j.contextBest(),0);
+    context.dailyOn=true;assert.equal(j.keepContextBest(9999),false,'The daily keeps its own record elsewhere');context.dailyOn=false;
+    const again=load({[j.RECORDS_KEY]:saved.get(j.RECORDS_KEY)});
+    assert.equal(again.j.records.free['5'],500,'The record document is read back');
+    const junk=load({[j.RECORDS_KEY]:'{ not records'});
+    assert.deepEqual(JSON.parse(JSON.stringify(junk.j.records)),{free:{}},'A malformed record document reads as none');
+  }
+  {
+    // Free Play's doors: each century an unlockable reading the Journey's document, behind a gate that is off.
+    const {j}=load({'orbit.journey.v1':JSON.stringify({era:3,unlocked:[1,2,3]})},{unlockMet:e=>!!e.test()});
+    for(let era=1;era<=8;era++)assert.equal(j.eraOpen(era),true,'Every door stays open while the gate is off: '+era);
+    assert.deepEqual([1,2,3,4,5,6,7,8].filter(e=>j.eraOpen(e,true)),[1,2,3,5],'Gated, a century is open once the Journey has reached it, and the atlas always');
   }
   {const {j,context,saved}=load({},{blocked:true,plate:1});j.mode='journey';context.world=held(null);j.journeyObserve(1);
     assert.equal(j.journeyCommit(true).open,0,'Blocked storage is an ordinary condition: the Journey plays on in memory');assert.equal(saved.size,0);}

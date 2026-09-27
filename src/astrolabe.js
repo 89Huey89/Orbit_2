@@ -488,8 +488,8 @@ function astroRun(){if(astroRunWorld!==world){astroRunWorld=world;astroNamed=new
 function astroPlainRow(k){const l=k%8;return k>=1&&!(l>=3&&l<=7)&&!(k===2||k>=7&&l===7)&&!(k>=14&&k%7===0);}
 function astroWanderer(n){
   if(n.difficultyChoice||n.routeId!=null||(n.type!=='still'&&n.type!=='drift')||n.row!==Math.floor(n.row))return -1;
-  const c=Math.floor(n.row/ASTRO_CHAPTER_ROWS);if(c<1||c>ASTRO_PLANETS.length)return -1;
-  const seed=(world.seed|0)>>>0,rows=[];for(let k=c*ASTRO_CHAPTER_ROWS;k<(c+1)*ASTRO_CHAPTER_ROWS;k++)if(astroPlainRow(k))rows.push(k);
+  const from=world.eraFrom||0,c=Math.floor((n.row-from)/ASTRO_CHAPTER_ROWS);if(c<1||c>ASTRO_PLANETS.length)return -1;
+  const seed=(world.seed|0)>>>0,rows=[];for(let k=from+c*ASTRO_CHAPTER_ROWS;k<from+(c+1)*ASTRO_CHAPTER_ROWS;k++)if(astroPlainRow(k))rows.push(k);
   if(!rows.length||n.row!==rows[Math.floor(tileHash(seed,c,11)*rows.length)])return -1;
   const order=[0,1,2,3,4];for(let i=order.length-1;i>0;i--){const j=Math.floor(tileHash(seed,i,29)*(i+1));[order[i],order[j]]=[order[j],order[i]];}
   return order[c-1];
@@ -900,7 +900,7 @@ function astroHudLeaf(){
   astroNaskh(ctx,'حبر',cx-span-8,top+7,12,P.ink,.8,'right');
   const m=world.speedMultiplier();astroGloss(ctx,words.pace+(m%1?m.toFixed(1):m),cx,top+30,9,P.inkSoft,.75);
   // The chapter, small under the pace: the place the run has reached.
-  {const i=Math.min(ASTRO_CHAPTERS.length-1,Math.floor(world.progress/ASTRO_CHAPTER_ROWS));astroNaskh(ctx,ASTRO_CHAPTERS[i].ar,cx,top+44,11,P.inkSoft,.7);}
+  {const i=Math.min(ASTRO_CHAPTERS.length-1,Math.floor(eraRow()/ASTRO_CHAPTER_ROWS));astroNaskh(ctx,ASTRO_CHAPTERS[i].ar,cx,top+44,11,P.inkSoft,.7);}
   // Clean sightings as khātam stars, and the charges held.
   const right=W-ASTRO_BAND-14;let rx=right;
   if(world.combo>1&&world.captures>0){const shown=Math.min(6,world.combo);for(let i=0;i<shown;i++){astroKhatam(ctx,rx,top+6,4.6,`rgb(${P.gilt})`,`rgba(${P.groove},.85)`,.5);rx-=12;}

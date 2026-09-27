@@ -8,7 +8,7 @@
 // folded into the document at death and whenever the page is hidden, exactly as the ledger is, and
 // survives the run that earned it. Only a Journey run folds anything: Free Play and the daily plate never
 // move the frontier, or grinding a favourite century would become the way up the ladder.
-const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=25,JOURNEY_ERAS=8;
+const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=50,JOURNEY_ERAS=8;
 // Each era's milestones are the chapters it is already told in (LINKING.md): the Rock's four chambers,
 // the Ceiling's four watches of the night, the Scroll's four palaces, the Astrolabe's six parts, the
 // atlas's four chapters, the Lens's three registers, the Flyby's three legs of the mission — Mars, the
@@ -84,4 +84,57 @@ function journeyAdvance(playable){
 function journeyReset(){
   journey.era=1;journey.knowledge=0;journey.milestones={};journeyRun=0;
   saveJourney();
+}
+// ---------- Contextual records ----------
+// JOURNEY.md §1.7: there is no single universal high score. Each record belongs to the way a run was
+// played. The daily keeps its own, beside its log (plates.js). A Journey run's best is kept per era on the
+// Journey's own document, in `bests`, and is never the comparative record, because progression is what a
+// Journey run is for. Free Play keeps a best per century and per reading, so a Chronicle flown to its
+// ending and the same century flown Endless are never measured against each other. The atlas has only
+// its endless reading and is keyed by its era, V, alone.
+const RECORDS_KEY='orbit.records.v1';
+function readRecords(){
+  let raw=null;
+  try{raw=JSON.parse(storage.get(RECORDS_KEY,'null'));}catch(_){raw=null;}
+  // The one universal best there used to be, `orbit.best.v1`, is not carried forward: nothing had been
+  // played for real when the records were split, so there was nothing to keep.
+  return {free:raw&&typeof raw==='object'&&!Array.isArray(raw)?cleanCounts(raw.free):{}};
+}
+const records=readRecords();
+// Which record the run in hand is measured against: null on the daily, which keeps its own.
+function recordContext(){
+  if(dailyOn)return null;
+  const era=journeyEraOf();
+  if(runMode==='journey')return {journey:true,key:String(era)};
+  const endless=typeof plateWords==='function'&&plateWords().endless&&typeof eraReading==='function'&&eraReading()==='endless';
+  return {journey:false,key:era+(endless?':endless':'')};
+}
+function contextBest(){
+  const c=recordContext();if(!c)return 0;
+  return (c.journey?journey.bests:records.free)[c.key]||0;
+}
+// Returns whether the score was a new record for its context.
+function keepContextBest(score){
+  const c=recordContext(),n=Math.floor(Number(score)||0);if(!c||n<=0)return false;
+  const table=c.journey?journey.bests:records.free;
+  if(n<=(table[c.key]||0))return false;
+  table[c.key]=n;
+  if(c.journey)saveJourney();else storage.set(RECORDS_KEY,JSON.stringify(records));
+  return true;
+}
+// ---------- Free Play's doors ----------
+// LINKING.md, "Door access": once the Journey ships, a century is open in Free Play only after the Journey
+// has reached it. Each era is an unlockable of the catalogue's own shape, whose condition reads the
+// Journey's document rather than the ledger, so the one unlockMet() in src/ledger.js answers both kinds.
+// They are kept out of UNLOCKS, and so off the catalogue's pages, until the gate stands. The gate is off,
+// by choice rather than necessity: the Journey can climb all eight, but every century stays open to Free
+// Play while the climb itself is still being tuned, and the first chapter of a century not yet reached,
+// which LINKING.md keeps open as a proof, is not built. Every preview door stays open until this is on.
+const JOURNEY_GATES_DOORS=false;
+const ERA_UNLOCKS=[1,2,3,4,6,7,8].map(era=>({id:'era'+era,kind:'era',era,test:()=>journey.unlocked.includes(era),describe:()=>'Reach this century in the Journey'}));
+// The atlas is always open: it is where the Journey and Free Play both begin.
+function eraOpen(era,gated=JOURNEY_GATES_DOORS){
+  if(!gated||era===5)return true;
+  const entry=ERA_UNLOCKS.find(e=>e.era===era);
+  return !entry||unlockMet(entry);
 }

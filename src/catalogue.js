@@ -98,6 +98,8 @@ function pressureTable(){
   // locked rule rather than a selectable one: an always-present zero row would read as played rather
   // than as not yet unlocked.
   if(isUnlocked('newton'))rows.push(['newton',UNLOCK_BY_ID.newton.latin]);
+  // The Journey's runs are counted apart from every pressure, and their row only stands once one is flown.
+  if(ledger.runs.journey)rows.push(['journey','THE JOURNEY']);
   return ledgerTable(rows.map(([key,label])=>[plainText(label),`${countMark(ledger.personalBests[key])} best · ${countMark(ledger.runs[key])} runs`]));
 }
 // The fuller record: the lifetime figures the catalogue has always shown, then every other stat the

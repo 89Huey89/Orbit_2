@@ -53,8 +53,8 @@ const LENS_CHAPTERS=[
 const LENS_GOAL_ROW=LENS_CHAPTERS.length*LENS_CHAPTER_ROWS;
 const LENS_REG_ROWS=LENS_CHAPTER_ROWS*2;
 const lensRegOfRow=row=>row<LENS_REG_ROWS?0:row<LENS_REG_ROWS*2?1:2;
-const lensChapterOf=w=>clamp(Math.floor((w?w.progress:0)/LENS_CHAPTER_ROWS),0,LENS_CHAPTERS.length-1);
-const lensRegNow=()=>world?lensRegOfRow(world.progress):0;
+const lensChapterOf=w=>clamp(Math.floor((w?w.progress-(w.eraFrom||0):0)/LENS_CHAPTER_ROWS),0,LENS_CHAPTERS.length-1);
+const lensRegNow=()=>world?lensRegOfRow(eraRow()):0;
 // Where the observation's three stages fall on the observation clock. Earlier than on the other eras: a
 // flown run leaves most bodies part-way through their sweep, and a surface the player never stays long
 // enough to see is art nobody sees, so the blur clears within a sixth of the sweep and the first reading is

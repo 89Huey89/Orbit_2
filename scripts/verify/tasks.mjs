@@ -3,11 +3,13 @@
 import assert from 'node:assert/strict';
 import {step,OrbitWorld,pointSegment,CONSTELLATIONS} from './sandbox.mjs';
 
-// A tangent-seeking pilot uses the stars and follows the generated main route.
+// A tangent-seeking pilot uses the stars and follows the generated main route. It flies the chart the
+// live game deals, endless driver and all, so the twenty rows past row 28 are the driver's first twenty
+// and every seed still has to get through them.
 export function taskRoute60(){
   let totalCaptures=0,perfects=0,maxNodes=0,maxHazards=0;const failures=[];
   for(let seed=1;seed<=60;seed++){
-    const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.start();
+    const w=new OrbitWorld(seed,seed%3===0?1280:440,860);w.driven=true;w.start();
     for(let i=0;i<120*220&&w.state==='playing'&&w.progress<48;i++){
       if(w.player.node){
         const aim=w.aim();
@@ -76,7 +78,8 @@ export function taskDetourDeep(){
   let chartCompletions=0,deepCharts=0,deepRows=0;
   const detourFailures=[],deepFailures=[],deepFigures=new Set();
   for(let seed=1;seed<=60;seed++){
-    const rewards=[],w=new OrbitWorld(seed,seed%3===0?1280:440,860,(type,e)=>{if(type==='constellation')rewards.push(e);});w.start();
+    // Under the endless driver, as taskRoute60 is: the live chart is the one that has to stay flyable to row 60.
+    const rewards=[],w=new OrbitWorld(seed,seed%3===0?1280:440,860,(type,e)=>{if(type==='constellation')rewards.push(e);});w.driven=true;w.start();
     let past48=false;
     for(let i=0;i<120*320&&w.state==='playing'&&w.progress<60;i++){
       if(w.player.node){

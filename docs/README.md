@@ -34,6 +34,7 @@ archive/
     │                         across many runs
     ├── JOURNEY.md             the controlling document: locked progression design, code map, build plan
     ├── LINKING.md            how the shipped preview doors join the climb: modes, milestones, order of work
+    ├── ENDLESS-HARD.md       draft: one harsh danger per era for a harder Endless reading
     ├── OVERVIEW.md           the older entry point; superseded in part by JOURNEY.md
     ├── MEASUREMENTS.md       what the simulation actually measures, for the design above
     ├── IMPLEMENTATION.md     the order the work would be done in, costed against src/

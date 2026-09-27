@@ -147,6 +147,9 @@ eight guarantees rather than to thirty, and keeps each one auditable on its own.
 
 ### 1.6 How long the climb is
 
+> *Re-measured in stage 6: the threshold is now **50**, not 25. The shape below is kept, the number is not;
+> see stage 6 for the reading.*
+
 **Five typical runs per era. Eight eras. Roughly forty runs for the whole ladder.**
 
 The threshold is the derived quantity, not the decision. Measured under §1.4's formula, a run at the
@@ -245,7 +248,7 @@ From `scripts/probe.mjs` (see `MEASUREMENTS.md`), 150 seeds per hand:
 - **The release window is about one frame wide.** The same pilot costed a single 8 ms frame collapses
   from surviving the cap to a median of row 26. 57–80 % of runs die by leaving the star chart.
   Nothing in the era work may narrow that window.
-- **Endless is flat today**, which is why §1.8 is stage 4 and not stage 7: `chartPace`'s clamp
+- **Endless was flat** until stage 4 landed, which is why §1.8 was stage 4 and not stage 7: `chartPace`'s clamp
   plateaus near row 28; `darknessSpeed()` has a *second*, independent wall-clock clamp that saturates
   around 236 s; hazard radius caps near k≈57; nebula radius is hard-capped with no row term; wind
   reach/force and the gravity pull coefficient have **no** row dependence at all.
@@ -493,7 +496,20 @@ the player timing, it has failed regardless of how it looks. Record the outcome 
 **Landed**, and the era is now built from it — see stage 7 below. The spike page survives in
 `prototypes/rock-read.html` as the record of the question; the frontispiece no longer opens it.
 
-### Stage 3 — era state and Journey persistence · *front half landed*
+### Stage 3 — era state and Journey persistence · *landed*
+
+**The back half** (2026-09-27): the contextual records of §1.7 are `orbit.records.v1` (Free Play, per era
+and per reading) and the Journey document's `bests` (per era), read and kept by `contextBest()` and
+`keepContextBest()` in `src/journey.js`; `orbit.best.v1` is dropped rather than carried forward (the game
+was not yet played for real, so there was nothing to keep), and the daily keeps the record it already had. A Journey run no longer
+writes Free Play's record, a pressure's personal best (the ledger counts it under `journey`) or a
+century's own record (`caveRun`). Free Play is re-pointed: each era is an unlockable of the catalogue's
+shape (`ERA_UNLOCKS`) whose condition reads `journey.unlocked`, answered by `ledger.js`'s own `unlockMet()`
+and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which is **off** by choice: every century stays open to Free Play while
+the climb is still being tuned. (An earlier note here said the frontier could not pass VI; it could — every
+century has a plate, and stage 6's acceptance test climbs all eight.) Turning
+it on is one line; LINKING.md's "first chapter of an era not yet reached stays open as a proof" is not
+built and belongs with it. `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
 
 **What is built.** The plate-declares-itself seam (§6.1), `eraId()` and `data-era`, the Ceiling fully
 entsandboxed (L7, nought reads left), the caches keyed, and the singleton-to-map conversions. **What is
@@ -545,7 +561,35 @@ entry; an old saved ledger and an old `orbit.best.v1` both survive migration; `j
 never called in Free Play or Daily. *Must not break*: the `plateIds` loops (`:842`,`:1078`) — extend
 them to loop era ids so a new era is smoke-tested the moment it is registered.
 
-### Stage 4 — the shared endless driver · *parallel-safe once §6 exists*
+### Stage 4 — the shared endless driver · *landed*
+
+**Built** (2026-09-26): `world.difficultyDriver()` in `src/simulation.js`, a row term and a clock term, each
+`log₂(1 + over/span)` from the point the last flat curve settled (row 28, and the flood's clock at
+≈234 s), so it is nothing through any run of ordinary depth and is still rising at rows 200 and 500. It
+feeds the pace a crossing is cut for, the flood, the lethal hazard radius, a field strength cut into each
+hazard (`h.force`, read by `bendVelocity`, so the guide and the flight agree), the nebula cap, and — on
+its whole units — the wind cadence, route-closing and hazard cadence. The capture band stops widening at
+the plateau growth, the one tightening of the landing. It is behind `world.driven`, off by default like
+every other world flag; `newWorld()` sets it for every run with `goalRow` 0 and the replay log carries
+it, so a log from before it replays flat. The README's gameplay section states every number.
+
+Two things the plan below asked for were deliberately left out, and why:
+
+- **Gravity and wind with no row term** are fed through the per-hazard field strength rather than the
+  two global coefficients (`1800`, `WIND_FORCE`), so a field is the strength it was dealt with and a
+  guide can never read a different chart from the flight. Newton mode's node pull is untouched: it is an
+  optional plate of its own and was not part of the flat-curve census in §3.
+- **The chapter cap (L6)** is presentation, not difficulty: no simulation value reads `chapter`, so the
+  driver does not need it lifted. What a fifth chapter onward *looks* like on each plate is an art
+  question for stage 7, and the five call shapes are still as L6 lists them.
+
+Measured with `scripts/probe.mjs --seeds=40 --rows=600 --seconds=1500` (and `--flat` for the chart
+before it): the hands at σ 20–30 ms are unchanged (median rows 24 and 21), σ 10 ms goes from a median
+of row 71 to 63, and the oracle from a median of row 190 (p90 421, one run in twenty surviving to the
+cap) to a median of 150 (p90 209, none surviving), dying 60 % of the time to the dark.
+
+The plan as it was written:
+
 
 One normalised, non-saturating scalar — `world.difficultyDriver()` — rising with run duration and
 progression, feeding chart pace, boundary speed, transfer distance, capture tolerance, hazard
@@ -564,7 +608,37 @@ at the same row must still mean the same thing.
 rising at rows 200 and 500. *Must not break*: `'The reward must move visible darkness away'` `:805`,
 `'Pausing preserves the reprieve'` `:807`, `'Darkness resumes after the reward'` `:809`.
 
-### Stage 5 — the seamless transition · *single-owner, largest render work*
+### Stage 5 — the seamless transition · *landed*
+
+**What landed** (2026-09-27).
+
+- **The simulation** (`src/simulation.js`): the page raises `world.transitionReady` once the era is known;
+  `capture()` then turns the century on the next landing whose body `transitionBody()` accepts — anything but
+  a fading body or an opening target, read at the moment it is landed on and never stored (L3). `eraTransition()`
+  refills the nib, drives the dark back by `DARKNESS_RESCUE_DROP` with `DARKNESS_RESCUE_LEAD`, holds it for
+  `TRANSITION_GRACE`, sets `eraFrom` and emits `eraTransition`. Score, streak, flow and clock are untouched,
+  and there may be any number in one run. `nextTransitionBody()` names the body on the way, for the mark.
+- **The page** (`src/ui.js`): `journeyArm()` raises readiness from the knowledge banked plus what the run has
+  observed so far, and writes NEXT LANDING on the sheet. On `eraTransition` the climb is banked and turned and
+  `turnEraInRun()` puts the next century on the press without dealing a new chart; a century's own simulation
+  flags and transition rows come with it. Every century's chapters now count from `eraFrom` (`eraRow()` in
+  `src/plates.js`), so a century reached at row 60 still opens on its first chapter.
+- **The render** (`src/frame.js`): the frame as it stood under the old hand is taken whole at the landing and laid
+  back outside a circle growing from the body, over 2.4 s, with the new plate's gold on its edge — two plates
+  in one frame by keeping one of them as a still. `drawEraMark()` rings the body on the way.
+- **The acceptance test** now takes steps 8 to 13 on the live page for three kinds of turn (a century to a
+  century, a century onto the atlas, the atlas onto a century), and `tools/shots/scenarios/era-transition.mjs`
+  shows it at 430×932.
+
+**Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
+move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
+it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) changes to the new
+century's at once rather than growing with the circle. The phenomenon is not yet *reinterpreted* in the new
+hand as it is crossed (§1.3); the body is simply drawn by whichever hand's circle it stands in. A run that
+changed century is not saved for review, since a log cannot yet say which hand each stretch was flown under.
+
+The plan as it was written:
+
 
 §1.3, entirely inside gameplay. The old medium recedes; the transition body and the Observer Core
 remain; the phenomenon is reinterpreted; the tool transforms; resource is restored; the boundary is
@@ -582,7 +656,47 @@ Nothing may reset score, streak, run timer or mastery state.
 from a point rather than arriving from an edge; no dropped frame; no input required. Plus a
 simulation fixture that two transitions in one run leave score and streak monotonic.
 
-### Stage 6 — the whole ladder in mocks · *parallel-safe, cheap*
+### Stage 6 — the whole ladder in mocks · *landed, without the mocks*
+
+**What landed** (2026-09-27). No mocks were needed: all eight centuries already had a playable plate by the
+time this stage came up, so the ladder was climbable end to end on real art from the start.
+
+- **The acceptance test runs**, as a runtime fixture in `scripts/verify/runtime.mjs` that climbs the live
+  page from era I to era VIII: a Journey run at the frontier, a death that keeps its knowledge, a restart at
+  the same frontier, every milestone standing, the page turned, a passed century open in Free Play, Free
+  Play leaving the Journey untouched, and the records kept apart (§8 steps 1–7 and 14–18). Steps 8–13 are
+  stage 5's in-run transition; until it exists the between-runs turn stands in for them. Step 19 is the
+  endless driver's own fixture.
+- **The climb is measured directly.** `node scripts/probe.mjs --ladder` has simulated players climb the
+  whole ladder run after run under `src/journey.js`'s own rules (a ready era banks nothing further, the turn
+  comes between runs) and reports the runs each century holds a player for. Read at 40 runs per hand on
+  each chart, 400 players:
+
+  | hand | runs per era at 25 | climb at 25 | runs per era at 50 | climb at 50 |
+  |---|---|---|---|---|
+  | σ 10 ms | 1 | 12 | 2 | 16 |
+  | σ 20 ms | 2–3 | 20 | 4–6 | 35 |
+  | σ 30 ms | 3 | 24 | 5–6 | 42 |
+  | σ 45 ms | 4–5 | 34 | 7–9 | 63 |
+  | σ 70 ms | 6 | 46 | 10–12 | 86 |
+
+- **`ERA_THRESHOLD` is 50.** §1.6 asks for about five runs an era and about forty for the ladder at the
+  author's own hand, which reaches about row 20. On the spread model that hand is σ 20–30 ms (median rows 24
+  and 21), and at 25 it climbed an era in two or three runs: the knowledge formula and the release grace
+  have both moved since §1.6's number was read off the late model. At 50 it takes four to six, and forty
+  runs or so for the whole ladder, while a sharper hand still climbs in half that and a rough one in about
+  twice. §1.6's shape is kept; its number is replaced.
+- **The Rock held a player longer than the rest** — about one run more — because its chasms ended runs
+  sooner and a shorter run observes less (a median of 8 to 9 banked a run against 10 to 13 on the atlas's
+  chart). Playtesting found the same thing from the other side: wide cracks and the rising dark together
+  left runs with no way out. The chasms were taken out of the base game (LINKING.md, "Endless, later"),
+  and the Rock now holds a player exactly as long as every other century: 4 runs at σ 20 ms, 5 at σ 30.
+
+**Not done here**, because each is a decision rather than a measurement: the curated milestone per era
+§1.5 allows, and so the generation guarantees behind them (§9).
+
+The plan as it was written:
+
 
 Eight eras end to end with placeholder visuals, so the complete loop is playable and tunable before
 any expensive art. A mock era is a `PLATE_STYLES` entry (`plates.js:236`) — `{base, wash, tint:
@@ -639,9 +753,8 @@ Decisions this file does not make, and which should not be invented by an implem
 
 - **The milestone tables for China and von Neumann**, and the final wording of all eight — including
   which single condition per era is the curated one §1.5 allows.
-- **The threshold's final value.** §1.6 sets 25 per era from the measurement, which fixes the *shape*
-  — five typical runs per era, forty for the ladder. The number itself is re-read off the probe once
-  stage 6 is playable and the milestones, not the raw total, are what actually gate an era.
+- *Settled in stage 6 (2026-09-27): the threshold is 50, re-read off `probe.mjs --ladder` so that the
+  author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
   era's milestones are the chapters its preview is already told in.*
 - **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and

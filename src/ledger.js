@@ -54,12 +54,11 @@ function readLedger(){
 }
 const ledger=readLedger();
 function saveLedger(){storage.set(LEDGER_KEY,JSON.stringify(ledger));}
-// The two records that predate the ledger are folded into it once, and left where they are: the
-// colophon and the HUD still read `orbit.best.v1` and `orbit.bestRow.v1` exactly as before.
+// The ascent record that predates the ledger is folded into it once, and left where it is: the colophon
+// still reads `orbit.bestRow.v1` exactly as before.
 function migrateRecords(){
   let changed=false;
   if(bestRow>ledger.bestRow){ledger.bestRow=bestRow;changed=true;}
-  if(best>0&&best>(ledger.personalBests[difficulty]||0)){ledger.personalBests[difficulty]=best;changed=true;}
   if(changed)saveLedger();
 }
 migrateRecords();
@@ -94,8 +93,9 @@ function ledgerCommit(){
   foldCounts(ledger.constellations,runTally.constellations);foldCounts(ledger.observations,runTally.observations);
   foldCounts(ledger.deaths,runTally.deaths);
   // A Newtonian run keeps its own bucket regardless of which pressure rode under it, exactly as the
-  // daily plate keeps its own regardless of always riding at Adeptus.
-  const key=dailyOn?'daily':world.newtonOn?'newton':difficulty;
+  // daily plate keeps its own regardless of always riding at Adeptus. A Journey run keeps one too
+  // (JOURNEY.md §1.7): its score is not the comparative record, so it never sets a pressure's best.
+  const pressure=dailyOn?'daily':world.newtonOn?'newton':difficulty,key=runMode==='journey'&&!dailyOn?'journey':pressure;
   const elapsed=Math.max(0,world.elapsed||0);
   ledger.playSeconds=Math.round((ledger.playSeconds+Math.max(0,elapsed-runSeconds))*100)/100;
   runSeconds=elapsed;
@@ -103,7 +103,7 @@ function ledgerCommit(){
   ledger.bestRow=Math.max(ledger.bestRow,Math.floor(world.progress||0));
   const chapter=Math.min(4,Math.floor((world.progress||0)/8)+1);
   ledger.deepestChapter=Math.max(ledger.deepestChapter,chapter);
-  if(key==='hardcore')ledger.deepestHardcoreChapter=Math.max(ledger.deepestHardcoreChapter,chapter);
+  if(pressure==='hardcore')ledger.deepestHardcoreChapter=Math.max(ledger.deepestHardcoreChapter,chapter);
   ledger.personalBests[key]=Math.max(ledger.personalBests[key]||0,world.score||0);
   if((world.constellationsCompleted||0)>=4)ledger.allFourInOneRun=true;
   if(!runCounted&&world.state!=='ready'){ledger.runs[key]=(ledger.runs[key]||0)+1;runCounted=true;}

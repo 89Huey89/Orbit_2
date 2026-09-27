@@ -41,7 +41,7 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'CHRONICLE',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
-    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}'},
+    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -124,7 +124,7 @@ function event(type,e){
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
     // What the orbit just left had been observed to is banked for the Journey (src/journey.js), and only there.
-    journeyObserve(world.player.launch.sweep/SWEEP_FULL);
+    journeyObserve(world.player.launch.sweep/SWEEP_FULL);journeyArm();
     // The departure is surveyed on the orbit just left, and stays on the sheet as dried ink.
     recordDeparture(e);
     rings.push({kind:'blot',x:e.x,y:e.y,size:1.5+e.charge*1.5,age:0,life:1.5,alpha:.6,seed:ringSeed()});
@@ -292,6 +292,15 @@ function event(type,e){
     }
     // The sheet is wiped of everything the run was saying: the colophon is a leaf of its own.
     clearInscriptions();
+  }else if(type==='eraTransition'){
+    // The Journey's change of century inside the run (JOURNEY.md §1.3, stage 5): the old medium is taken as it
+    // stood and left to recede while the new one grows out of the body just landed on (beginEraGrowth in
+    // src/frame.js), the climb is banked and turned, and the run goes on under the next century's hand.
+    beginEraGrowth(e);
+    journeyCommit(false);
+    if(journeyAdvance(journeyPlayable))turnEraInRun();
+    audio.medal();
+    $('announcement').textContent=fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)});
   }else if(type==='transition'){
     // The medium changes under the run (JOURNEY.md §1.3): the plate's own hand draws it, and a plate with
     // no hand for it has no transition rows either.
@@ -301,7 +310,7 @@ function event(type,e){
     // src/ceiling.js — falling back to the atlas's fanfare exactly as medal() does), no splat or flash,
     // and the live region gets its own line rather than the ordinary loss announcement.
     const h=handFor('dawn');if(h)h(audio);else audio.medal();
-    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best});
+    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best:currentBest()});
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
@@ -377,6 +386,36 @@ function syncJourney(){
   const note=$('journey-note');if(note){note.hidden=!on;note.textContent=on?journeyNote():'';}
   paintJourneyMark('journey-mark');
 }
+// The era in hand becomes known inside the run the moment what the run has observed carries it over the
+// line, and the simulation is told; its next ordinary landing is where the next century begins. Only on the
+// frontier's own century, and only where there is a century above it drawn to be climbed onto.
+function journeyArm(){
+  if(!world||world.transitionReady||runMode!=='journey'||dailyOn||world.state!=='playing')return;
+  if(journeyEraOf()!==journey.era||journey.era>=JOURNEY_ERAS||!journeyPlayable(journey.era+1))return;
+  if(journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9)return;
+  world.transitionReady=true;
+  const line=fmt(plateWords().chrome.journey.waits,{next:journeyEraTitle(journey.era+1)});
+  say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;
+}
+// The century above put on the press without dealing a new chart: the same world, the same traveller, the
+// same score and clock, under the next century's hand. The plate the atlas was on when the climb left it is
+// the one it comes back to, exactly as leaving a century by its exit restores it.
+function turnEraInRun(){
+  const id=journeyPlate(journey.era);
+  if(id){if(!plateOwns('mode'))eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};applyPlate(id);}
+  else{
+    const keep=eraReturn||{},kept=keep.plate&&PLATES[keep.plate]&&!(PLATE_STYLES[keep.plate]&&PLATE_STYLES[keep.plate].can&&PLATE_STYLES[keep.plate].can.mode);
+    applyPlate(kept?keep.plate:'night');eraReturn=null;
+  }
+  invalidateArt();loadPlateFaces();syncPlate();syncEraChrome();syncJourney();
+  // What a century changes in the simulation itself is carried across; the rows a century changes register
+  // at are counted from where it began, as its chapters are (eraRow in src/plates.js).
+  world.relightOn=plateOwns('relight');world.chasmsOn=plateOwns('chasms');
+  world.transitionRows=(plateWords().transitionRows||[]).map(r=>r+world.eraFrom);world.transitionsCrossed=0;
+  lastChapter=0;loreChapter=-1;chapterReveal={index:0,age:0};namedHazardKinds=new Set();
+  $('best').textContent=currentBest();
+  const ready=handFor('ready');if(ready)ready();
+}
 // Puts the frontier on the press for a Journey run: the century it names entered by its own door, or the
 // atlas dealt a fresh chart. A ready era is turned over first (journeyAdvance), which is the whole of the
 // transition until JOURNEY.md's stage 5 lets it happen inside a run.
@@ -400,6 +439,9 @@ function newWorld(){
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
   recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];
+  // The endless driver (simulation.js) is felt by every run that has no row it is won at: the atlas, an
+  // Endless reading, a Journey run and the daily. A Chronicle keeps the flat chart its finish was read off.
+  world.driven=!world.goalRow;
   world.darknessMult=DARKNESS_MULT[activeDifficulty()];world.inkMult=INK_MULT[activeDifficulty()];world.perfectMult=PERFECT_MULT[activeDifficulty()];world.capMult=CAP_MULT[activeDifficulty()];world.releaseGrace=RELEASE_GRACE_BY[activeDifficulty()];
   $('copy-score').textContent='TAKE AN IMPRESSION';
   ambience={random:seeded(world.seed^0x5c8a21),wait:7,event:null,sequence:0};
@@ -410,7 +452,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,driven:world.driven,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -427,7 +469,7 @@ function syncEraChrome(){
   // the same door out of all of them.
   for(const id in PLATE_STYLES){
     const door=PLATE_STYLES[id].door;if(!door)continue;
-    const button=$(door.button);if(button)button.textContent=door.label;
+    const button=$(door.button);if(button){button.textContent=door.label;button.hidden=!eraOpen(PLATE_STYLES[id].era);}
   }
   const brand=$('brand');if(brand)brand.textContent=chrome.brand;
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
@@ -491,6 +533,8 @@ function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
   if(world&&world.state==='playing')return;
   if(!PLATES[name])return;
+  // A Journey run is let in at its own frontier, which the Journey has by definition reached.
+  if(runMode!=='journey'&&!eraOpen(PLATE_STYLES[name].era))return;
   eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   applyPlate(name);invalidateArt();loadPlateFaces();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
@@ -551,10 +595,12 @@ function showEnd(){
   $('end-captures').textContent=world.captures;$('end-perfects').textContent=world.perfects;$('end-flow').textContent='×'+world.maxCombo;
   const row=Math.floor(world.progress),newRow=!preview&&row>bestRow;
   if(newRow){bestRow=row;storage.set('orbit.bestRow.v1',bestRow);}
-  // A preview era keeps no best of its own above (orbit.best.v1/orbit.bestRow.v1 are the atlas's), but
+  // A preview era keeps no best of its own above (orbit.bestRow.v1 is the atlas's), but
   // may keep a small record of its own runs under its own key — the Rock's cave (G3), never the atlas's
   // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
-  {const caveRun=handFor('caveRun');if(caveRun)caveRun(world);}
+  // That record is Free Play's (LINKING.md decision 5): a Journey run is measured by its climb, never
+  // against the century's own record.
+  {const caveRun=handFor('caveRun');if(caveRun&&runMode!=='journey')caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
@@ -591,7 +637,9 @@ function showEnd(){
   syncImpressumScreen();
   // Saved regardless of preview: the plate itself was really drawn, whether or not its score was
   // the kind the ledger keeps. Eras I and II are their own doors, outside review entirely.
-  if(eraId()===0)saveLastReplay(replayLog,{score:world.score,row,reason:world.reason,capturedAt:Date.now()});
+  // A run that changed century on the way is not one replay can rebuild: its log does not say which hand
+  // each stretch of it was flown under.
+  if(eraId()===0&&!world.eraTransitions)saveLastReplay(replayLog,{score:world.score,row,reason:world.reason,capturedAt:Date.now()});
   // Which situation the run ended in, in the same precedence the atlas always checked it in; a plate
   // that gives several of these the same line (the Ceiling gives four of the six one shared sentence)
   // still reads correctly, since only the chosen key's text is ever read. The old inline ternary this
@@ -603,7 +651,7 @@ function showEnd(){
   // where it does not, rather than falling through to a loss tip that would misdescribe the run.
   const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
   $('end-tip').textContent=world.won?(plateWords().tips.won||''):plateWords().tips[tip];
-  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best}):spoken('ended',{score:world.score,best:best});
+  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best:currentBest()}):spoken('ended',{score:world.score,best:currentBest()});
   syncEndFit();
 }
 // Whether the colophon actually fits #end's own box is measured directly rather than guessed from a
@@ -661,7 +709,7 @@ function updateUI(dt){
   // Rows per chapter is a plate's own number — the atlas's four chapters are eight rows apiece, the
   // Ceiling's twelve hours are shorter — so the boundary and the chapter count are both read off
   // plateWords() rather than the atlas's own fixture kept here as a literal 3/8.
-  const chapterVoice=plateWords(),chapter=Math.min(chapterVoice.chapters.length-1,Math.floor(world.progress/chapterVoice.chapterRows));
+  const chapterVoice=plateWords(),chapter=Math.min(chapterVoice.chapters.length-1,Math.floor(eraRow()/chapterVoice.chapterRows));
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
   // A chapter's line of lore is set once the run is actually under way, so the first chapter's is not

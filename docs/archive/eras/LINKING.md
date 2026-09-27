@@ -78,6 +78,21 @@ record, and become the per-era record of §1.7.
 
 **6 · The daily stays with the atlas** (`JOURNEY.md` §2). Free Play is what opens the other eras.
 
+## Endless, later
+
+Decided 2026-09-27, after playtesting the Rock. Its chasms — long cracks across the wall that kill a
+free flight crossing them — were taken out of the base game: wide cracks and the rising dark together
+left runs with no way out, on the first sheet a new player sees, and nothing later on the ladder ever
+repeats that. The mechanism is kept whole (`chasmsOn` in `src/simulation.js`, the drawing in
+`src/rock.js`, `taskChasmRoute60`'s fairness pilot) and the Rock simply no longer asks for it.
+
+That points at what a harder Endless reading could be for every century, beyond the shared driver of
+`JOURNEY.md` §1.8: one danger of the era's own, too harsh for the Chronicle or the Journey, switched on
+only when a player has chosen the harder way. The Rock's is the chasm. The others are still to be found
+in each era's own material, and each has to keep the one promise the chasm's generation already keeps —
+a way through always left standing — so that it is hard and never hopeless. A first reading for all eight is drafted in
+[ENDLESS-HARD.md](ENDLESS-HARD.md).
+
 ## Unlocks, later
 
 Not built by the first stage and recorded here so it is not lost:
@@ -92,7 +107,8 @@ Not built by the first stage and recorded here so it is not lost:
   the Lascaux bull drawn faint under Taurus; the Ceiling's decans earning the Dendera zodiac as a
   sphere on the atlas; every completed era leaving one heirloom in the atlas's own catalogue.
 - **Door access**: the preview doors stay open until the Journey ships; after that an era is open in
-  Free Play once reached, and the first chapter of one not yet reached stays open as a proof.
+  Free Play once reached, and the first chapter of one not yet reached stays open as a proof. *The gate
+  is built and off* (`JOURNEY_GATES_DOORS` in `src/journey.js`); the proof chapter is not built yet.
 
 ## The order of work
 
@@ -106,11 +122,14 @@ Not built by the first stage and recorded here so it is not lost:
    in its own materials (see the root README's "The eras"). Until stage 5
    exists, a known era is turned over **between** runs: the leaf says so and the next tap opens the next
    century's frontispiece (`journeyAdvance()`), which stage 5 replaces with the in-run transition. The
-   frontier never climbs onto a century that has no plate yet, so it stops at VI for now.
-4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs.
+   frontier never climbs onto a century that has no plate yet; every century from I to VIII now has one,
+   so the whole ladder is climbable between runs.
+4. `JOURNEY.md` stage 4, the shared endless driver, which Endless in Free Play needs. *Landed*: every run
+   with no row it is won at is dealt under it (`world.driven`).
 5. `JOURNEY.md` stage 5, the transition. *Its first step landed inside one century*: the Lens's registers no
    longer arrive as an edge but grow out of the body landed on past rows 12 and 24 (the simulation's
    `transition` event and `TRANSITION_GRACE`, which holds the dark for three seconds and holds no input).
-   Still to do: two plates' inks in one frame, so the same circle can draw one century outside and the
-   next inside; then the Journey's own trigger (a designated body once an era is known) in place of rows.
+   *Landed across centuries* (JOURNEY.md stage 5): once an era is known the next ordinary landing grows the
+   next century out of that body inside the run, the old one held as a still outside the circle. The page
+   turn between runs stays for a run that ends before it lands.
 6. The per-era catalogues and the links between eras.

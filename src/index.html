@@ -354,6 +354,9 @@
     /* The running head stays off the frontispiece itself: it is gameplay furniture, and the cartouche
        already sets ORBIT once, large, without a score to read before the first tap is even made. */
     #game.playing .hud,#game.over .hud{opacity:1}
+    /* While a new century grows out of a body the old sheet is still standing round it, so its HUD waits
+       for the circle and fades in once the sheet is whole (drawEraGrowth, src/frame.js). */
+    #game.playing.era-growing .hud{opacity:0;transition:none}
     @keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
     /* — Frontispiece / colophon: engraved atlas title page for #intro, #end, #pause — */
     .subtitle-latin{margin:0 0 13px;font-family:var(--face-sc);font-size:11px;letter-spacing:.26em;color:var(--muted);opacity:.9}

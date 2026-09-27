@@ -67,7 +67,6 @@ let namedHazardKinds=new Set();
 // A working plate queries a wrong impression rather than pretending it never happened, but only once
 // a run: the first steep arrival earns the chart's one correction, not every one of them.
 let correctionNode=null;
-let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
 // Whether the frontispiece's full instruction paragraph has already been shown once: after that
@@ -151,14 +150,14 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-// A preview era (plateOwns('score')) keeps no best of its own here, since it never touches
-// orbit.best.v1 or orbit.bestRow.v1 — but a plate that names its own `best` hand painter (the Rock's
-// rockBest(), read off its own orbit.rock.v1) gets to answer with that instead of a bare 0.
-const currentBest=()=>plateOwns('score')?(handFor('best')?handFor('best')():0):dailyOn?dailyBest:best;
+// Which best the HUD and the end leaf read is decided by how the run is being played (the contextual
+// records in src/journey.js): the daily's own, a Journey run's for its era, or Free Play's for this
+// century and reading. A century that names its own `best` hand painter (the Rock's rockBest(), read off
+// its own orbit.rock.v1) keeps answering with that in Free Play, since that record is the era's own.
+const currentBest=()=>dailyOn?dailyBest:plateOwns('score')&&runMode!=='journey'&&handFor('best')?handFor('best')():contextBest();
 function recordBest(score){
-  // A plate that keeps its own record does not write the atlas's. Its run is playable and scored on
-  // its own sheet; what it may never do is rewrite a number the atlas earned.
-  if(plateOwns('score'))return;
+  // Every record is keyed by its own context, so no century, reading or mode can rewrite a number another
+  // one earned; the atlas's is simply the one keyed by era V in Free Play.
   if(dailyOn){
     if(score>dailyBest){
       dailyBest=score;
@@ -167,7 +166,7 @@ function recordBest(score){
       if(dailyDay===utcDay())storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));
     }
   }
-  else if(score>best){best=score;storage.set('orbit.best.v1',best);}
+  else keepContextBest(score);
 }
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.
@@ -371,12 +370,15 @@ const PLATE_STYLES={
   // paper plate only because a light ground is the nearer of the two starting points; every mark on it
   // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
-  // chasms:true is read by newWorld() (src/ui.js) to decide whether OrbitWorld generates the long
-  // cracks across the wall (see simulation.js's chasmsOn) \u2014 a capability of this plate alone, so no
-  // other century or the atlas itself ever draws one. relight:true is read the same way to set
+  // The wall ships without its chasms. can.chasms would be read by newWorld() (src/ui.js) to have
+  // OrbitWorld cut the long cracks across the wall (simulation.js's chasmsOn), and everything behind it —
+  // generation, the fall, the drawing in src/rock.js — is kept, but playtesting found wide cracks and the
+  // rising dark together leave runs with no way out, on the very sheet a new player starts on, in a way no
+  // later sheet ever repeats. They are kept for a harder Endless reading (LINKING.md, "Endless, later").
+  // relight:true is read the same way to set
   // OrbitWorld's relightOn (see simulation.js): skimming a Flare's field refills the ochre charge on
   // this wall alone; the atlas, Era II and the daily plate never set it, so a Flare stays inert to them.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
   // Era III is a Tang star chart brushed on hemp paper, after the Dunhuang scroll: a light ground like
   // the paper plate's, so it is pulled from that one, and every mark on it comes from the hand
   // `src/scroll.js` registers; the identity transform is here for the same reason as on the two eras
@@ -517,6 +519,11 @@ const HANDS={atlas:{}};
 function defineHand(id,painters){HANDS[id]=Object.assign(HANDS[id]||{},painters);}
 const plateHand=()=>HANDS[(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render)||'atlas']||HANDS.atlas;
 const handFor=name=>plateHand()[name];
+// How far into the century on the press a row is. A run starts on its century at row nought; a Journey run
+// that changes century partway through (world.eraFrom, set by the simulation's eraTransition) begins the new
+// one's chapters, hours, palaces and registers at the row it arrived at, so every century is told from its
+// own beginning however deep in the run it was reached.
+const eraRow=(row=world?world.progress:0)=>row-(world&&world.eraFrom||0);
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},
