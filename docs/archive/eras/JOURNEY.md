@@ -505,8 +505,9 @@ was not yet played for real, so there was nothing to keep), and the daily keeps 
 writes Free Play's record, a pressure's personal best (the ledger counts it under `journey`) or a
 century's own record (`caveRun`). Free Play is re-pointed: each era is an unlockable of the catalogue's
 shape (`ERA_UNLOCKS`) whose condition reads `journey.unlocked`, answered by `ledger.js`'s own `unlockMet()`
-and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which is **off**, because the
-frontier cannot climb past VI until stage 5 and a gated door would shut VII and VIII on everyone. Turning
+and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which is **off** by choice: every century stays open to Free Play while
+the climb is still being tuned. (An earlier note here said the frontier could not pass VI; it could — every
+century has a plate, and stage 6's acceptance test climbs all eight.) Turning
 it on is one line; LINKING.md's "first chapter of an era not yet reached stays open as a proof" is not
 built and belongs with it. `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
 
