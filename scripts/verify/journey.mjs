@@ -16,7 +16,7 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,RECORDS_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
@@ -113,6 +113,12 @@ export async function runJourneyChecks(){
     assert.equal(again.j.records.free['5'],500,'The old key is carried forward only when there is no record document yet');
     const junk=load({[j.RECORDS_KEY]:'{ not records','orbit.best.v1':'7'});
     assert.equal(junk.j.records.free['5'],7,'A malformed record document reads as none');
+  }
+  {
+    // Free Play's doors: each century an unlockable reading the Journey's document, behind a gate that is off.
+    const {j}=load({'orbit.journey.v1':JSON.stringify({era:3,unlocked:[1,2,3]})},{unlockMet:e=>!!e.test()});
+    for(let era=1;era<=8;era++)assert.equal(j.eraOpen(era),true,'Every door stays open while the gate is off: '+era);
+    assert.deepEqual([1,2,3,4,5,6,7,8].filter(e=>j.eraOpen(e,true)),[1,2,3,5],'Gated, a century is open once the Journey has reached it, and the atlas always');
   }
   {const {j,context,saved}=load({},{blocked:true,plate:1});j.mode='journey';context.world=held(null);j.journeyObserve(1);
     assert.equal(j.journeyCommit(true).open,0,'Blocked storage is an ordinary condition: the Journey plays on in memory');assert.equal(saved.size,0);}

@@ -92,7 +92,8 @@ Not built by the first stage and recorded here so it is not lost:
   the Lascaux bull drawn faint under Taurus; the Ceiling's decans earning the Dendera zodiac as a
   sphere on the atlas; every completed era leaving one heirloom in the atlas's own catalogue.
 - **Door access**: the preview doors stay open until the Journey ships; after that an era is open in
-  Free Play once reached, and the first chapter of one not yet reached stays open as a proof.
+  Free Play once reached, and the first chapter of one not yet reached stays open as a proof. *The gate
+  is built and off* (`JOURNEY_GATES_DOORS` in `src/journey.js`); the proof chapter is not built yet.
 
 ## The order of work
 

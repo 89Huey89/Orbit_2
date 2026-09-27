@@ -493,14 +493,19 @@ the player timing, it has failed regardless of how it looks. Record the outcome 
 **Landed**, and the era is now built from it — see stage 7 below. The spike page survives in
 `prototypes/rock-read.html` as the record of the question; the frontispiece no longer opens it.
 
-### Stage 3 — era state and Journey persistence · *records landed; Free Play re-pointing to come*
+### Stage 3 — era state and Journey persistence · *landed*
 
 **The back half** (2026-09-27): the contextual records of §1.7 are `orbit.records.v1` (Free Play, per era
 and per reading) and the Journey document's `bests` (per era), read and kept by `contextBest()` and
 `keepContextBest()` in `src/journey.js`; `orbit.best.v1` is carried forward once into era V's Free Play
 record and never written again, and the daily keeps the record it already had. A Journey run no longer
 writes Free Play's record, a pressure's personal best (the ledger counts it under `journey`) or a
-century's own record (`caveRun`). `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
+century's own record (`caveRun`). Free Play is re-pointed: each era is an unlockable of the catalogue's
+shape (`ERA_UNLOCKS`) whose condition reads `journey.unlocked`, answered by `ledger.js`'s own `unlockMet()`
+and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which is **off**, because the
+frontier cannot climb past VI until stage 5 and a gated door would shut VII and VIII on everyone. Turning
+it on is one line; LINKING.md's "first chapter of an era not yet reached stays open as a proof" is not
+built and belongs with it. `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
 
 **What is built.** The plate-declares-itself seam (§6.1), `eraId()` and `data-era`, the Ceiling fully
 entsandboxed (L7, nought reads left), the caches keyed, and the singleton-to-map conversions. **What is

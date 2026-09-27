@@ -430,7 +430,7 @@ function syncEraChrome(){
   // the same door out of all of them.
   for(const id in PLATE_STYLES){
     const door=PLATE_STYLES[id].door;if(!door)continue;
-    const button=$(door.button);if(button)button.textContent=door.label;
+    const button=$(door.button);if(button){button.textContent=door.label;button.hidden=!eraOpen(PLATE_STYLES[id].era);}
   }
   const brand=$('brand');if(brand)brand.textContent=chrome.brand;
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
@@ -494,6 +494,8 @@ function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
   if(world&&world.state==='playing')return;
   if(!PLATES[name])return;
+  // A Journey run is let in at its own frontier, which the Journey has by definition reached.
+  if(runMode!=='journey'&&!eraOpen(PLATE_STYLES[name].era))return;
   eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   applyPlate(name);invalidateArt();loadPlateFaces();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);

@@ -125,3 +125,18 @@ function keepContextBest(score){
   if(c.journey)saveJourney();else storage.set(RECORDS_KEY,JSON.stringify(records));
   return true;
 }
+// ---------- Free Play's doors ----------
+// LINKING.md, "Door access": once the Journey ships, a century is open in Free Play only after the Journey
+// has reached it. Each era is an unlockable of the catalogue's own shape, whose condition reads the
+// Journey's document rather than the ledger, so the one unlockMet() in src/ledger.js answers both kinds.
+// They are kept out of UNLOCKS, and so off the catalogue's pages, until the gate stands. The gate is off:
+// the frontier cannot yet climb past the Lens (stage 5 has no transition to carry it there), so a gated
+// door would shut VII and VIII on every player. Every preview door stays open until this is turned on.
+const JOURNEY_GATES_DOORS=false;
+const ERA_UNLOCKS=[1,2,3,4,6,7,8].map(era=>({id:'era'+era,kind:'era',era,test:()=>journey.unlocked.includes(era),describe:()=>'Reach this century in the Journey'}));
+// The atlas is always open: it is where the Journey and Free Play both begin.
+function eraOpen(era,gated=JOURNEY_GATES_DOORS){
+  if(!gated||era===5)return true;
+  const entry=ERA_UNLOCKS.find(e=>e.era===era);
+  return !entry||unlockMet(entry);
+}
