@@ -1066,7 +1066,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   }
   assert.equal(run.constellationsCompleted,1,'The complete runtime must support the optional route');
   assert(element('announcement').textContent.includes('Darkness retreats'));
-  if(!storageBlocked)assert(Number(saved.get('orbit.best.v1'))>=run.score,'The constellation bonus must be saved in the best score');
+  if(!storageBlocked)assert(JSON.parse(saved.get('orbit.records.v1')).free['5']>=run.score,'The constellation bonus must be saved in the best score');
   const grace=run.darknessGrace;events['window:blur']();run.update(1);context.test.render(.1);assert.equal(run.darknessGrace,grace);
   context.test.handleInput();
   for(let i=0;i<120*30&&run.state==='playing'&&run.progress<7;i++){
@@ -1199,7 +1199,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   if(!storageBlocked){
     const plate=JSON.parse(saved.get('orbit.daily.v1'));
     assert.deepEqual(plate,{date:context.test.dailyDay,best:1234},'The daily plate keeps its own record for that date');
-    assert(Number(saved.get('orbit.best.v1'))<1234,'A daily score never touches the ordinary best');
+    assert.equal(saved.get('orbit.best.v1'),undefined,'Nothing writes the old universal best any more');
+    assert((JSON.parse(saved.get('orbit.records.v1')||'{"free":{}}').free['5']||0)<1234,'A daily score never touches the atlas\'s own Free Play record');
   }
   context.test.setDaily(false);
   context.test.handleInput();assert.equal(context.test.world.constellationsCompleted,0);assert.equal(context.test.world.darknessGrace,0);

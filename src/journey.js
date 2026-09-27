@@ -85,3 +85,43 @@ function journeyReset(){
   journey.era=1;journey.knowledge=0;journey.milestones={};journeyRun=0;
   saveJourney();
 }
+// ---------- Contextual records ----------
+// JOURNEY.md §1.7: there is no single universal high score. Each record belongs to the way a run was
+// played. The daily keeps its own, beside its log (plates.js). A Journey run's best is kept per era on the
+// Journey's own document, in `bests`, and is never the comparative record, because progression is what a
+// Journey run is for. Free Play keeps a best per century and per reading, so a Chronicle flown to its
+// ending and the same century flown Endless are never measured against each other. The atlas has only
+// its endless reading and is keyed by its era, V, alone.
+const RECORDS_KEY='orbit.records.v1';
+function readRecords(){
+  let raw=null;
+  try{raw=JSON.parse(storage.get(RECORDS_KEY,'null'));}catch(_){raw=null;}
+  if(raw&&typeof raw==='object'&&!Array.isArray(raw))return {free:cleanCounts(raw.free)};
+  // The one universal best there was, `orbit.best.v1`, was always the atlas's, played free. It is carried
+  // forward once, when no record document exists yet, and left where it is: nothing writes it any more.
+  const out={free:{}},legacy=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
+  if(legacy>0){out.free['5']=legacy;storage.set(RECORDS_KEY,JSON.stringify(out));}
+  return out;
+}
+const records=readRecords();
+// Which record the run in hand is measured against: null on the daily, which keeps its own.
+function recordContext(){
+  if(dailyOn)return null;
+  const era=journeyEraOf();
+  if(runMode==='journey')return {journey:true,key:String(era)};
+  const endless=typeof plateWords==='function'&&plateWords().endless&&typeof eraReading==='function'&&eraReading()==='endless';
+  return {journey:false,key:era+(endless?':endless':'')};
+}
+function contextBest(){
+  const c=recordContext();if(!c)return 0;
+  return (c.journey?journey.bests:records.free)[c.key]||0;
+}
+// Returns whether the score was a new record for its context.
+function keepContextBest(score){
+  const c=recordContext(),n=Math.floor(Number(score)||0);if(!c||n<=0)return false;
+  const table=c.journey?journey.bests:records.free;
+  if(n<=(table[c.key]||0))return false;
+  table[c.key]=n;
+  if(c.journey)saveJourney();else storage.set(RECORDS_KEY,JSON.stringify(records));
+  return true;
+}

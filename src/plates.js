@@ -67,7 +67,9 @@ let namedHazardKinds=new Set();
 // A working plate queries a wrong impression rather than pretending it never happened, but only once
 // a run: the first steep arrival earns the chart's one correction, not every one of them.
 let correctionNode=null;
-let best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
+// The one universal best there used to be. It is read only to be carried forward, into the ledger's
+// personal bests (migrateRecords) and the contextual records (readRecords in src/journey.js).
+const best=Math.max(0,parseInt(storage.get('orbit.best.v1','0'),10)||0);
 let bestRow=Math.max(0,parseInt(storage.get('orbit.bestRow.v1','0'),10)||0);
 const audio=new OrbitAudio(storage.get('orbit.sound.v1','on')!=='off');
 // Whether the frontispiece's full instruction paragraph has already been shown once: after that
@@ -151,14 +153,14 @@ function readDailyBest(){
 // What the plate is called on the title screen, the colophon and the copied line.
 const dailyLabel=()=>'Tabula diei \u00b7 '+dailyDay+(dailyReplay?' \u00b7 iterum':'');
 const activeDifficulty=()=>dailyOn?'classic':difficulty;
-// A preview era (plateOwns('score')) keeps no best of its own here, since it never touches
-// orbit.best.v1 or orbit.bestRow.v1 — but a plate that names its own `best` hand painter (the Rock's
-// rockBest(), read off its own orbit.rock.v1) gets to answer with that instead of a bare 0.
-const currentBest=()=>plateOwns('score')?(handFor('best')?handFor('best')():0):dailyOn?dailyBest:best;
+// Which best the HUD and the end leaf read is decided by how the run is being played (the contextual
+// records in src/journey.js): the daily's own, a Journey run's for its era, or Free Play's for this
+// century and reading. A century that names its own `best` hand painter (the Rock's rockBest(), read off
+// its own orbit.rock.v1) keeps answering with that in Free Play, since that record is the era's own.
+const currentBest=()=>dailyOn?dailyBest:plateOwns('score')&&runMode!=='journey'&&handFor('best')?handFor('best')():contextBest();
 function recordBest(score){
-  // A plate that keeps its own record does not write the atlas's. Its run is playable and scored on
-  // its own sheet; what it may never do is rewrite a number the atlas earned.
-  if(plateOwns('score'))return;
+  // Every record is keyed by its own context, so no century, reading or mode can rewrite a number another
+  // one earned; the atlas's is simply the one keyed by era V in Free Play.
   if(dailyOn){
     if(score>dailyBest){
       dailyBest=score;
@@ -167,7 +169,7 @@ function recordBest(score){
       if(dailyDay===utcDay())storage.set('orbit.daily.v1',JSON.stringify({date:dailyDay,best:dailyBest}));
     }
   }
-  else if(score>best){best=score;storage.set('orbit.best.v1',best);}
+  else keepContextBest(score);
 }
 // The difficulty is set in-run, by which of the three opening targets the player captures
 // (see the 'difficulty' event in ui.js), not by a button; this only applies it to the world.

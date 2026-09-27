@@ -16,7 +16,7 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
@@ -87,6 +87,32 @@ export async function runJourneyChecks(){
     assert(j.doc.unlocked.includes(2),'An era reached stays open');
     assert.equal(j.journeyAdvance(()=>true),false,'An era not yet known does not move');
     assert.equal(j.journeyMilestones().toward,0);
+  }
+  {
+    // JOURNEY.md §1.7: the one universal best is carried forward once into Free Play's record for the atlas,
+    // and every later record is kept by the way its run was played.
+    const {j,context,saved}=load({'orbit.best.v1':'420'},{plate:0});
+    assert.equal(j.records.free['5'],420,'The old universal best becomes the atlas\'s own Free Play record');
+    assert.equal(JSON.parse(saved.get(j.RECORDS_KEY)).free['5'],420,'The carried record is written down once');
+    assert.equal(j.contextBest(),420);
+    assert.equal(j.keepContextBest(300),false,'A lower score is not a record');
+    assert.equal(j.keepContextBest(500),true);assert.equal(j.contextBest(),500);
+    assert.equal(saved.get('orbit.best.v1'),'420','Nothing writes the old key any more');
+    j.mode='journey';
+    assert.equal(j.contextBest(),0,'A Journey run is measured against the Journey\'s own best, not Free Play\'s');
+    assert.equal(j.keepContextBest(90),true);assert.equal(j.doc.bests['5'],90,'A Journey run\'s best is kept on the Journey\'s document, per era');
+    assert.equal(j.records.free['5'],500,'A Journey run never rewrites Free Play\'s record');
+    j.mode='free';context.plate=1;
+    assert.equal(j.contextBest(),0,'Each century keeps its own');
+    context.plateWords=()=>({endless:true});context.eraReading=()=>'endless';
+    j.keepContextBest(40);assert.equal(j.records.free['1:endless'],40,'A century read Endless keeps a record apart from its Chronicle');
+    context.eraReading=()=>'chronicle';assert.equal(j.contextBest(),0);
+    context.dailyOn=true;assert.equal(j.keepContextBest(9999),false,'The daily keeps its own record elsewhere');context.dailyOn=false;
+    // A document already there is never overwritten by the legacy key again.
+    const again=load({'orbit.best.v1':'9000',[j.RECORDS_KEY]:saved.get(j.RECORDS_KEY)});
+    assert.equal(again.j.records.free['5'],500,'The old key is carried forward only when there is no record document yet');
+    const junk=load({[j.RECORDS_KEY]:'{ not records','orbit.best.v1':'7'});
+    assert.equal(junk.j.records.free['5'],7,'A malformed record document reads as none');
   }
   {const {j,context,saved}=load({},{blocked:true,plate:1});j.mode='journey';context.world=held(null);j.journeyObserve(1);
     assert.equal(j.journeyCommit(true).open,0,'Blocked storage is an ordinary condition: the Journey plays on in memory');assert.equal(saved.size,0);}

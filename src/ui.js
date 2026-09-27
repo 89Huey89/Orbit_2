@@ -301,7 +301,7 @@ function event(type,e){
     // src/ceiling.js — falling back to the atlas's fanfare exactly as medal() does), no splat or flash,
     // and the live region gets its own line rather than the ordinary loss announcement.
     const h=handFor('dawn');if(h)h(audio);else audio.medal();
-    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best});
+    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best:currentBest()});
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
@@ -557,7 +557,9 @@ function showEnd(){
   // A preview era keeps no best of its own above (orbit.best.v1/orbit.bestRow.v1 are the atlas's), but
   // may keep a small record of its own runs under its own key — the Rock's cave (G3), never the atlas's
   // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
-  {const caveRun=handFor('caveRun');if(caveRun)caveRun(world);}
+  // That record is Free Play's (LINKING.md decision 5): a Journey run is measured by its climb, never
+  // against the century's own record.
+  {const caveRun=handFor('caveRun');if(caveRun&&runMode!=='journey')caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
@@ -606,7 +608,7 @@ function showEnd(){
   // where it does not, rather than falling through to a loss tip that would misdescribe the run.
   const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
   $('end-tip').textContent=world.won?(plateWords().tips.won||''):plateWords().tips[tip];
-  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best}):spoken('ended',{score:world.score,best:best});
+  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best:currentBest()}):spoken('ended',{score:world.score,best:currentBest()});
   syncEndFit();
 }
 // Whether the colophon actually fits #end's own box is measured directly rather than guessed from a
