@@ -655,13 +655,14 @@ time this stage came up, so the ladder was climbable end to end on real art from
   have both moved since §1.6's number was read off the late model. At 50 it takes four to six, and forty
   runs or so for the whole ladder, while a sharper hand still climbs in half that and a rough one in about
   twice. §1.6's shape is kept; its number is replaced.
-- **The Rock holds a player longer than the rest** — about one run more — because its chasms end runs
+- **The Rock held a player longer than the rest** — about one run more — because its chasms ended runs
   sooner and a shorter run observes less (a median of 8 to 9 banked a run against 10 to 13 on the atlas's
-  chart). It is the front door, so that is worth knowing; it has not been evened out.
+  chart). Playtesting found the same thing from the other side: wide cracks and the rising dark together
+  left runs with no way out. The chasms were taken out of the base game (LINKING.md, "Endless, later"),
+  and the Rock now holds a player exactly as long as every other century: 4 runs at σ 20 ms, 5 at σ 30.
 
 **Not done here**, because each is a decision rather than a measurement: the curated milestone per era
-§1.5 allows, and so the generation guarantees behind them (§9); and whether the Rock's longer first rung
-should be evened out.
+§1.5 allows, and so the generation guarantees behind them (§9).
 
 The plan as it was written:
 

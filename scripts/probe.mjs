@@ -85,7 +85,10 @@ const DRIVEN=!args.includes('--flat');
 // `era` carries what a century changes in the simulation itself, which is only the Rock's: its chasms
 // and its relighting flares (PLATE_STYLES.rock.can in src/plates.js). Every other century flies the
 // atlas's own chart under its own art.
-function dealWorld(seed,era={}){
+// `--rock` flies the main report on the Rock's chart instead of the atlas's; `--chasms` cuts the cracks the
+// wall ships without back into it.
+const ROCK_CHART=args.includes('--rock'),ROCK={chasms:args.includes('--chasms'),relight:true};
+function dealWorld(seed,era=ROCK_CHART?ROCK:{}){
   const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,!!era.chasms,!!era.relight);w.driven=DRIVEN;
   if(MULTS)for(const key in MULTS)if(MULTS[key])w[key]=MULTS[key][PRESSURE];
   if(GRACE!==null)w.releaseGrace=GRACE;
@@ -243,7 +246,7 @@ const pad=(s,n)=>String(s).padEnd(n),padL=(s,n)=>String(s).padStart(n);
 // over between runs once every milestone stands — exactly the rules src/journey.js keeps, until stage 5
 // lets the turn happen inside a run. Runs are independent of one another, so the climb is not flown
 // run by run: each hand flies `--seeds` runs on the atlas's chart and as many on the Rock's (the one
-// century whose simulation differs), and the players then climb by drawing runs from those, which reads
+// century whose simulation differs: its flares relight the ochre, and under `--chasms` its cracks open), and the players then climb by drawing runs from those, which reads
 // the same as flying every run of every climb at a fraction of the cost. What it reports is how many runs
 // each century holds a player for, and how many the whole climb takes. `--threshold` reads the ladder at
 // other era thresholds than the one the game ships with (a comma-separated list); `--players` sets how
@@ -259,7 +262,7 @@ if(LADDER){
   const tables=THRESHOLDS.map(()=>[]);
   for(const hand of hands){
     const bank=r=>r.ledger+r.held,atlas=[],rock=[];
-    for(let seed=1;seed<=SEEDS;seed++){atlas.push(bank(fly(seed,hand)));rock.push(bank(fly(seed,hand,{chasms:true,relight:true})));}
+    for(let seed=1;seed<=SEEDS;seed++){atlas.push(bank(fly(seed,hand)));rock.push(bank(fly(seed,hand,ROCK)));}
     THRESHOLDS.forEach((THRESHOLD,ti)=>{
       const draw=rng(4099+Math.round((hand.sigma??hand.late)*1e4)+ti),pick=list=>list[Math.floor(draw()*list.length)];
       const perEra=[...Array(9)].map(()=>[]),totals=[];let finished=0;
@@ -289,8 +292,10 @@ if(LADDER){
   process.exit(0);
 }
 
+// `--hands=20,45` flies only the hands of those milliseconds, for a quicker reading of the ones that matter.
+const ONLY=(args.find(a=>a.startsWith('--hands='))||'').slice(8).split(',').filter(Boolean).map(Number);
 const report=[];
-for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
+for(const hand of (MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>!ONLY.length||ONLY.includes(Math.round((h.sigma??h.late)*1000)))){
   const runs=[];for(let seed=1;seed<=SEEDS;seed++)runs.push(fly(seed,hand));
   const rows=runs.map(r=>r.row),caps=runs.map(r=>r.captures),all=runs.flatMap(r=>r.sweeps);
   const deaths={};for(const r of runs)deaths[r.reason]=(deaths[r.reason]||0)+1;
@@ -328,7 +333,7 @@ for(const hand of MODEL==='spread'?SPREAD_HANDS:HANDS){
 if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,patience:PATIENCE/TAU,sweepFull:SWEEP_FULL,ledgerFloor:LEDGER_FLOOR,ledgerSpan:LEDGER_SPAN,report},null,2));process.exit(0);}
 
 console.log('\nOrbit · run-length probe — '+SEEDS+' seeds per hand, patience '+(PATIENCE/TAU).toFixed(2)+' turns, cut off at row '+ROW_CAP+' or '+TIME_CAP+' s');
-console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms')+', endless driver '+(DRIVEN?'on':'off'));
+console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', release grace '+(GRACE===null?'as shipped':Math.round(GRACE*1000)+' ms')+', endless driver '+(DRIVEN?'on':'off')+(ROCK_CHART?', the Rock\'s chart':''));
 console.log('knowledge per encounter = '+LEDGER_FLOOR+' + '+LEDGER_SPAN+' × documented\n');
 console.log(pad('hand',9)+padL('row p10',9)+padL('median',8)+padL('p90',7)+padL('captures',10)+padL('secs',7)+padL('perf',6)+padL('doc',6)+padL('full',7)+padL('ledger/cap',12)+padL('ledger',8));
 console.log('-'.repeat(89));

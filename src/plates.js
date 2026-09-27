@@ -370,12 +370,15 @@ const PLATE_STYLES={
   // paper plate only because a light ground is the nearer of the two starting points; every mark on it
   // comes from the hand `src/rock.js` registers, and the identity transform is here for the same reason
   // it is on the Ceiling — to let the shared registry finish booting before that hand takes over.
-  // chasms:true is read by newWorld() (src/ui.js) to decide whether OrbitWorld generates the long
-  // cracks across the wall (see simulation.js's chasmsOn) \u2014 a capability of this plate alone, so no
-  // other century or the atlas itself ever draws one. relight:true is read the same way to set
+  // The wall ships without its chasms. can.chasms would be read by newWorld() (src/ui.js) to have
+  // OrbitWorld cut the long cracks across the wall (simulation.js's chasmsOn), and everything behind it —
+  // generation, the fall, the drawing in src/rock.js — is kept, but playtesting found wide cracks and the
+  // rising dark together leave runs with no way out, on the very sheet a new player starts on, in a way no
+  // later sheet ever repeats. They are kept for a harder Endless reading (LINKING.md, "Endless, later").
+  // relight:true is read the same way to set
   // OrbitWorld's relightOn (see simulation.js): skimming a Flare's field refills the ochre charge on
   // this wall alone; the atlas, Era II and the daily plate never set it, so a Flare stays inert to them.
-  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,chasms:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
+  rock:{base:'paper',wash:0,era:1,render:'rock',can:{score:true,mode:true,relight:true},door:{button:'rock-open',label:'ERA I \u00b7 THE ROCK'},tint:(r,g,b)=>[rgbClamp(r),rgbClamp(g),rgbClamp(b)]},
   // Era III is a Tang star chart brushed on hemp paper, after the Dunhuang scroll: a light ground like
   // the paper plate's, so it is pulled from that one, and every mark on it comes from the hand
   // `src/scroll.js` registers; the identity transform is here for the same reason as on the two eras

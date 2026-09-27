@@ -78,6 +78,20 @@ record, and become the per-era record of §1.7.
 
 **6 · The daily stays with the atlas** (`JOURNEY.md` §2). Free Play is what opens the other eras.
 
+## Endless, later
+
+Decided 2026-09-27, after playtesting the Rock. Its chasms — long cracks across the wall that kill a
+free flight crossing them — were taken out of the base game: wide cracks and the rising dark together
+left runs with no way out, on the first sheet a new player sees, and nothing later on the ladder ever
+repeats that. The mechanism is kept whole (`chasmsOn` in `src/simulation.js`, the drawing in
+`src/rock.js`, `taskChasmRoute60`'s fairness pilot) and the Rock simply no longer asks for it.
+
+That points at what a harder Endless reading could be for every century, beyond the shared driver of
+`JOURNEY.md` §1.8: one danger of the era's own, too harsh for the Chronicle or the Journey, switched on
+only when a player has chosen the harder way. The Rock's is the chasm. The others are still to be found
+in each era's own material, and each has to keep the one promise the chasm's generation already keeps —
+a way through always left standing — so that it is hard and never hopeless.
+
 ## Unlocks, later
 
 Not built by the first stage and recorded here so it is not lost:
