@@ -147,6 +147,9 @@ eight guarantees rather than to thirty, and keeps each one auditable on its own.
 
 ### 1.6 How long the climb is
 
+> *Re-measured in stage 6: the threshold is now **50**, not 25. The shape below is kept, the number is not;
+> see stage 6 for the reading.*
+
 **Five typical runs per era. Eight eras. Roughly forty runs for the whole ladder.**
 
 The threshold is the derived quantity, not the decision. Measured under §1.4's formula, a run at the
@@ -622,7 +625,46 @@ Nothing may reset score, streak, run timer or mastery state.
 from a point rather than arriving from an edge; no dropped frame; no input required. Plus a
 simulation fixture that two transitions in one run leave score and streak monotonic.
 
-### Stage 6 — the whole ladder in mocks · *parallel-safe, cheap*
+### Stage 6 — the whole ladder in mocks · *landed, without the mocks*
+
+**What landed** (2026-09-27). No mocks were needed: all eight centuries already had a playable plate by the
+time this stage came up, so the ladder was climbable end to end on real art from the start.
+
+- **The acceptance test runs**, as a runtime fixture in `scripts/verify/runtime.mjs` that climbs the live
+  page from era I to era VIII: a Journey run at the frontier, a death that keeps its knowledge, a restart at
+  the same frontier, every milestone standing, the page turned, a passed century open in Free Play, Free
+  Play leaving the Journey untouched, and the records kept apart (§8 steps 1–7 and 14–18). Steps 8–13 are
+  stage 5's in-run transition; until it exists the between-runs turn stands in for them. Step 19 is the
+  endless driver's own fixture.
+- **The climb is measured directly.** `node scripts/probe.mjs --ladder` has simulated players climb the
+  whole ladder run after run under `src/journey.js`'s own rules (a ready era banks nothing further, the turn
+  comes between runs) and reports the runs each century holds a player for. Read at 40 runs per hand on
+  each chart, 400 players:
+
+  | hand | runs per era at 25 | climb at 25 | runs per era at 50 | climb at 50 |
+  |---|---|---|---|---|
+  | σ 10 ms | 1 | 12 | 2 | 16 |
+  | σ 20 ms | 2–3 | 20 | 4–6 | 35 |
+  | σ 30 ms | 3 | 24 | 5–6 | 42 |
+  | σ 45 ms | 4–5 | 34 | 7–9 | 63 |
+  | σ 70 ms | 6 | 46 | 10–12 | 86 |
+
+- **`ERA_THRESHOLD` is 50.** §1.6 asks for about five runs an era and about forty for the ladder at the
+  author's own hand, which reaches about row 20. On the spread model that hand is σ 20–30 ms (median rows 24
+  and 21), and at 25 it climbed an era in two or three runs: the knowledge formula and the release grace
+  have both moved since §1.6's number was read off the late model. At 50 it takes four to six, and forty
+  runs or so for the whole ladder, while a sharper hand still climbs in half that and a rough one in about
+  twice. §1.6's shape is kept; its number is replaced.
+- **The Rock holds a player longer than the rest** — about one run more — because its chasms end runs
+  sooner and a shorter run observes less (a median of 8 to 9 banked a run against 10 to 13 on the atlas's
+  chart). It is the front door, so that is worth knowing; it has not been evened out.
+
+**Not done here**, because each is a decision rather than a measurement: the curated milestone per era
+§1.5 allows, and so the generation guarantees behind them (§9); and whether the Rock's longer first rung
+should be evened out.
+
+The plan as it was written:
+
 
 Eight eras end to end with placeholder visuals, so the complete loop is playable and tunable before
 any expensive art. A mock era is a `PLATE_STYLES` entry (`plates.js:236`) — `{base, wash, tint:
@@ -679,9 +721,8 @@ Decisions this file does not make, and which should not be invented by an implem
 
 - **The milestone tables for China and von Neumann**, and the final wording of all eight — including
   which single condition per era is the curated one §1.5 allows.
-- **The threshold's final value.** §1.6 sets 25 per era from the measurement, which fixes the *shape*
-  — five typical runs per era, forty for the ladder. The number itself is re-read off the probe once
-  stage 6 is playable and the milestones, not the raw total, are what actually gate an era.
+- *Settled in stage 6 (2026-09-27): the threshold is 50, re-read off `probe.mjs --ladder` so that the
+  author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
   era's milestones are the chapters its preview is already told in.*
 - **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and

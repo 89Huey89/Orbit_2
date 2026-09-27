@@ -43,11 +43,11 @@ export async function runJourneyChecks(){
     j.journeyCommit();assert.equal(j.doc.knowledge,1.5,'A body still held is not banked by a fold that does not end the run');
     j.journeyCommit(true);assert.equal(j.doc.knowledge,2,'The body held at death is banked for what it was observed to');
     context.world=held(null);
-    j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);j.journeyObserve(1);fold=j.journeyCommit(true);
-    assert.equal(j.doc.knowledge,6);assert.equal(fold.opened,0,'Six of twenty-five is still short of the first of four milestones');
-    j.journeyObserve(.25);fold=j.journeyCommit(true);
+    for(let i=0;i<10;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
+    assert.equal(j.doc.knowledge,12);assert.equal(fold.opened,0,'Twelve of fifty is still short of the first of four milestones');
+    j.journeyObserve(.5);fold=j.journeyCommit(true);
     assert.equal(fold.opened,1,'Knowledge opens a milestone at each ERA_THRESHOLD/k');assert.equal(fold.open,1);assert.equal(fold.ready,false);
-    for(let i=0;i<40;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
+    for(let i=0;i<60;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
     assert.equal(j.doc.knowledge,j.ERA_THRESHOLD,'A ready era banks nothing past the threshold: the surplus is the transition\'s');
     assert.equal(fold.open,4);assert.equal(fold.opened,3);assert.equal(fold.ready,true,'All milestones standing is transition-ready, and nothing else is asked');
     // A run on another century than the frontier's, or on the daily plate, banks nothing and keeps nothing over.
@@ -75,11 +75,11 @@ export async function runJourneyChecks(){
     assert(d.unlocked.every(e=>Number.isInteger(e)&&e>=1&&e<=8),'Only real eras are ever open: '+raw);
   }
   {const {j}=load({'orbit.journey.v1':'{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}'});
-    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:25,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:50,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
   {
     // Until the in-run transition exists, a known era is turned over between runs, and only onto a century
     // that is drawn.
-    const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:25})});
+    const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:50})});
     assert.equal(j.journeyAdvance(()=>false),false,'The frontier never climbs onto a century with nothing drawn');
     assert.equal(j.doc.era,1);
     assert.equal(j.journeyAdvance(e=>e===2),true,'A known era is turned over to the next');

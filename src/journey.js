@@ -8,7 +8,7 @@
 // folded into the document at death and whenever the page is hidden, exactly as the ledger is, and
 // survives the run that earned it. Only a Journey run folds anything: Free Play and the daily plate never
 // move the frontier, or grinding a favourite century would become the way up the ladder.
-const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=25,JOURNEY_ERAS=8;
+const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=50,JOURNEY_ERAS=8;
 // Each era's milestones are the chapters it is already told in (LINKING.md): the Rock's four chambers,
 // the Ceiling's four watches of the night, the Scroll's four palaces, the Astrolabe's six parts, the
 // atlas's four chapters, the Lens's three registers, the Flyby's three legs of the mission — Mars, the

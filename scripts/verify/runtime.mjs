@@ -1764,12 +1764,12 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.world.goalRow,0,'A Journey run is never won at a row: its chapters are opened by knowledge');
     assert.equal(element('reading').hidden,true,'A Journey run has no reading to choose');
     assert.equal(note.hidden,false);assert(note.textContent.includes('THE HALL OF THE BULLS'),'The frontispiece names the milestone the climb is working toward: '+note.textContent);
-    t.handleInput();for(let i=0;i<7;i++)t.journeyObserve(1);
+    t.handleInput();for(let i=0;i<13;i++)t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
-    assert.equal(t.journey.knowledge,7,'A Journey run banks what it observed');
-    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,7);
+    assert.equal(t.journey.knowledge,13,'A Journey run banks what it observed');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,13);
     assert.equal(endNote.hidden,false);assert(endNote.textContent.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.textContent);
-    t.journey.knowledge=24.5;t.newWorld();t.handleInput();t.journeyObserve(1);
+    t.journey.knowledge=t.ERA_THRESHOLD-.5;t.newWorld();t.handleInput();t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     assert(endNote.textContent.includes('IS KNOWN')&&endNote.textContent.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.textContent);
     assert(element('end-action').textContent.includes('THE CEILING'),'And the leaf asks for the tap that turns the page to it: '+element('end-action').textContent);
@@ -1799,7 +1799,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       t.journey.era=era;t.journey.knowledge=0;events['journey-open:click']();
       assert.equal(t.eraId()||5,era,'The door opens on the frontier era: '+era);
       if(era!==5)assert.equal(typeof t.handFor('journeyMark'),'function','Every century paints its own milestones: era '+era);
-      for(const k of [0,3.1,12.5,24.9,25]){t.journey.knowledge=k;t.paintJourneyMark('journey-mark');}
+      for(const k of [0,.124,.5,.996,1].map(f=>f*t.ERA_THRESHOLD)){t.journey.knowledge=k;t.paintJourneyMark('journey-mark');}
       assert.equal(mark.hidden,false,'The milestones are drawn under the frontispiece\'s line: era '+era);
       if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();
       assert.equal(mark.hidden,true,'And gone with the Journey: era '+era);
