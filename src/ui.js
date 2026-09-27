@@ -298,7 +298,17 @@ function event(type,e){
     // src/frame.js), the climb is banked and turned, and the run goes on under the next century's hand.
     beginEraGrowth(e);
     journeyCommit(false);
-    if(journeyAdvance(journeyPlayable))turnEraInRun();
+    if(journeyAdvance(journeyPlayable)){
+      turnEraInRun();
+      // The same phenomenon, reinterpreted (JOURNEY.md §1.3 step 9, PROGRESSION.md step 7): the body is not
+      // swapped for another but drawn again from nothing by the incoming hand, with the same staged reveal every
+      // body is drawn with on first sight, while the old sheet recedes round it; and the sheet says which
+      // century now holds it. (A cut-out of the old hand's drawing of the body, kept over it and read away,
+      // was tried and set aside: the camera moves on after a landing, so the cut-out sat off the body, and an
+      // unvisited body is barely drawn in the old hand at all.)
+      reveal.forget(e.n);
+      say(fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)}),{node:e.n,tone:'note'});
+    }
     audio.medal();
     $('announcement').textContent=fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)});
   }else if(type==='transition'){

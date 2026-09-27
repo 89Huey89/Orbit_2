@@ -1898,6 +1898,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.eraRow(),0,'The new century is told from its own first row');
       if(from===4)assert.equal(t.plateName,'paper','A century onto the atlas puts back the plate the climb left it on');
       assert(t.eraGrowth,'Step 10: the new century grows out of the body');
+      // (Under reduced motion every mark is drawn whole at once, so there is no reveal to restart.)
+      if(!reduceMotion)assert(t.reveal.age(w.player.node)<.5,'Step 9: the body is drawn again from nothing, in the new century\'s hand');
       assert(element('game').classList.contains('era-growing'),'The new century\'s HUD waits for the circle');
       const score=w.score;
       for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}

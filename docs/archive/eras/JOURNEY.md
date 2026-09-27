@@ -632,9 +632,13 @@ rising at rows 200 and 500. *Must not break*: `'The reward must move visible dar
 
 **Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
 move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
-it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) changes to the new
-century's at once rather than growing with the circle. The phenomenon is not yet *reinterpreted* in the new
-hand as it is crossed (§1.3); the body is simply drawn by whichever hand's circle it stands in. A run that
+it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) of the new century
+waits for the circle and fades in once the sheet is whole. The phenomenon is reinterpreted (§1.3 step 9) as
+`PROGRESSION.md` step 7 describes it: the body is drawn again from nothing by the incoming hand with the staged
+reveal every body gets on first sight (`reveal.forget`), and the sheet writes the century that now holds it. A
+cut-out of the old hand's drawing of the body, kept over it and read away, was tried and set aside: the camera
+moves on after the landing, so the cut-out sat off the body, and an unvisited body is barely drawn in the old
+hand at all. A run that
 changed century is not saved for review, since a log cannot yet say which hand each stretch was flown under.
 
 The plan as it was written:

@@ -1264,7 +1264,7 @@ let eraGrowth=null;
 function beginEraGrowth(e){
   let snap=null;
   try{if(canvas.width&&canvas.height){snap=makeCanvas(canvas.width,canvas.height);snap.getContext('2d').drawImage(canvas,0,0);}}catch(_){snap=null;}
-  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world};game.classList.add('era-growing');
+  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world,n:e.n};game.classList.add('era-growing');
 }
 function endEraGrowth(){eraGrowth=null;game.classList.remove('era-growing');}
 function eraGrowthReach(g){
