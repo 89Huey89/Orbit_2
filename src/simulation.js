@@ -78,6 +78,10 @@ const DARKNESS_RESCUE_DROP = 230, DARKNESS_RESCUE_GRACE = 4, DARKNESS_RESCUE_LEA
 // moment the sheet is busiest is never the moment the boundary closes. Input is never held: the next tap
 // is an ordinary release, and a release during the change only leaves it growing behind the traveller.
 const TRANSITION_GRACE = 3;
+// A change of century inside a run (JOURNEY.md §1.3) is also a restoration: the nib is refilled and the dark
+// is driven back down the sheet by as much as a spent Aurora drives it, so the new medium opens on a run
+// that is still in hand rather than one the old medium had nearly lost.
+const ERA_TRANSITION_DROP = DARKNESS_RESCUE_DROP, ERA_TRANSITION_LEAD = DARKNESS_RESCUE_LEAD;
 // The chart is drawn for a pace rather than for a row count, and every transfer on it is cut to
 // take about the same time to fly. As the early slingshots put a faster pace within reach the
 // gulfs open to match, so speed earned on a star buys distance instead of merely arriving sooner.
@@ -504,6 +508,10 @@ class OrbitWorld {
     // The rows at which the medium changes under the run, set by the plate after construction ([] for none),
     // and how many of them the run has crossed.
     this.transitionRows=[];this.transitionsCrossed=0;
+    // The Journey's change of century inside a run. The page raises transitionReady once the era in hand is
+    // known; the next ordinary landing is then where the next century begins, and eraFrom is the row it began
+    // at, which that century's own chapters count from. eraTransitions only ever rises.
+    this.transitionReady=false;this.eraFrom=0;this.eraTransitions=0;
     // Figure order and nebula placement use their own streams so the main course
     // generation for a seed is unaffected by them.
     const shuffle=seeded((seed*2654435761>>>0)^0x9e3779b9);
@@ -984,8 +992,34 @@ class OrbitWorld {
     // A goal-row plate's only way to end is by reaching it, and only a landing moves progress, so this
     // is the one place that can ever cross the line. die() below still does the run-over bookkeeping
     // every other ending shares (state, reason, deadTime) — only the shake and the event it fires differ.
+    if(this.transitionReady&&this.transitionBody(n))this.eraTransition(n);
     if(this.goalRow>0&&this.state==='playing'&&this.progress>=this.goalRow)this.die('THE SUN ROSE',true);
     return true;
+  }
+  // Whether a body may carry the change of century (JOURNEY.md L3). Nothing is designated and kept: the answer
+  // is read off the body at the moment it is landed on, so a skipped body never strands the transition, and a
+  // chart generated after the era became known offers it on every row like any other. A fading body is never
+  // one, since it would die under the traveller while the new century is still growing out of it, nor is an
+  // opening target, which is the choice of pressure and not a place.
+  transitionBody(n) { return !!n&&!n.difficultyChoice&&n.type!=='fading'; }
+  // The body the next century is most likely to begin at, for the page to mark: the lowest unvisited one ahead
+  // on the main way that could carry it. Only a mark — any body that could carry it does, when landed on.
+  nextTransitionBody() {
+    if(!this.transitionReady)return null;
+    let best=null;
+    for(const n of this.nodes)if(!n.visited&&n.row>this.progress&&n.routeRole!=='star'&&n.type!=='gold'&&this.transitionBody(n)&&(!best||n.row<best.row))best=n;
+    return best;
+  }
+  // Landing restores the run the way the medium changing ought to: the nib is refilled, the dark is driven back
+  // and held while the new century grows, and nothing of the score, the streak, the flow or the clock is touched.
+  eraTransition(n) {
+    const p=this.player;
+    this.transitionReady=false;this.eraTransitions++;this.eraFrom=Math.floor(this.progress);
+    p.ink=1;p.dryAnnounced=false;
+    this.darknessLead=Math.max(this.darknessLead,ERA_TRANSITION_LEAD);
+    this.floorY=Math.min(this.cameraY+this.height-25+this.darknessLead,Math.max(this.floorY,p.y+ERA_TRANSITION_DROP));
+    this.darknessGrace=Math.max(this.darknessGrace,TRANSITION_GRACE);
+    this.emit('eraTransition',{n,x:n.x,y:n.y,index:this.eraTransitions-1,row:this.eraFrom,time:this.time});
   }
   // won is false for every ordinary loss, the shape this method has always had; a goal-row plate's
   // win passes true and fires 'sunrise' in place of 'death'. The powerup a node capture can also grant

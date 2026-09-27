@@ -162,7 +162,7 @@ const CEILING_CHANGE_DUR=1.2;
 let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
 // The one expression that names which of the four watches is current, shared by the wall's own bake
 // (which register to paint) and the running head (which word to print) so the two can never drift.
-function ceilingHour(){return world?clamp(Math.floor(world.progress/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
+function ceilingHour(){return world?clamp(Math.floor(eraRow()/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
 // The wall keeps four registers of furniture (ceilingBakeWall), so the twelve hours share them three to a
 // register: the room changes every third gate rather than at every one.
 function ceilingWatch(){return Math.floor(ceilingHour()/3);}
@@ -1344,7 +1344,7 @@ function ceilingDrawCartouche(){
 const CEILING_NIGHT_ROWS=CEILING_DAWN_ROW;
 function ceilingDrawSunCourse(dt){
   const c=ceilingSunCourse;if(!c||!world)return;
-  const target=clamp(world.progress/CEILING_NIGHT_ROWS,0,1);
+  const target=clamp(eraRow()/CEILING_NIGHT_ROWS,0,1);
   ceilingSunShown=reducedMotion||world.state!=='playing'?target:ceilingSunShown+(target-ceilingSunShown)*(1-Math.exp(-(dt||0)*3));
   const total=c.len.at(-1),at=f=>{const d=f*total;let k=1;while(k<c.len.length-1&&c.len[k]<d)k++;const u=(d-c.len[k-1])/Math.max(1e-6,c.len[k]-c.len[k-1]);return [lerp(c.pts[k-1][0],c.pts[k][0],u),lerp(c.pts[k-1][1],c.pts[k][1],u)];};
   ctx.save();
@@ -1380,7 +1380,7 @@ function ceilingDrawGates(){
   if(!world||world.state==='ready')return;
   const span=ceilingGateRows(),P=CEILING_PALETTE,bw=ceilingNutBandWidth();
   for(let h=1;h<=CEILING_HOURS.length;h++){
-    const R=h*CEILING_HOUR_ROWS,a=span.get(R),b=span.get(R+1);if(!a)continue;
+    const R=h*CEILING_HOUR_ROWS+(world.eraFrom||0),a=span.get(R),b=span.get(R+1);if(!a)continue;
     const gateY=b?(a.lo+b.hi)/2:a.lo-70,gy=sy(gateY),th=Math.max(52,64*scale);
     if(gy<-th*2||gy>H+th*2)continue;
     const passed=world.player.y<gateY-10,open=reducedMotion?(passed?1:0):clamp((gateY-world.player.y+30)/90,0,1);

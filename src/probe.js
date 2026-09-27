@@ -58,7 +58,7 @@ const PRB_CHAPTERS=[
   {phase:'REPLICATION',place:'BARNARD’S STAR',t:'T+0612.3 Y',reading:'GEN 2 · ESCAPE BURN'}
 ];
 const PRB_GOAL_ROW=PRB_CHAPTERS.length*PRB_CHAPTER_ROWS;
-const prbChapterOf=w=>clamp(Math.floor((w?w.progress:0)/PRB_CHAPTER_ROWS),0,PRB_CHAPTERS.length-1);
+const prbChapterOf=w=>clamp(Math.floor((w?w.progress-(w.eraFrom||0):0)/PRB_CHAPTER_ROWS),0,PRB_CHAPTERS.length-1);
 const PRB_ROMAN=['I','II','III','IV','V','VI'];
 // Where a reading's four stages fall on the observation clock. Early, as on the Flyby: a flown run leaves most
 // bodies part-way through their sweep, so the spectral guess is in within a tenth of it and the class tag

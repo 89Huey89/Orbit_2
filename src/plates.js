@@ -519,6 +519,11 @@ const HANDS={atlas:{}};
 function defineHand(id,painters){HANDS[id]=Object.assign(HANDS[id]||{},painters);}
 const plateHand=()=>HANDS[(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].render)||'atlas']||HANDS.atlas;
 const handFor=name=>plateHand()[name];
+// How far into the century on the press a row is. A run starts on its century at row nought; a Journey run
+// that changes century partway through (world.eraFrom, set by the simulation's eraTransition) begins the new
+// one's chapters, hours, palaces and registers at the row it arrived at, so every century is told from its
+// own beginning however deep in the run it was reached.
+const eraRow=(row=world?world.progress:0)=>row-(world&&world.eraFrom||0);
 definePlate('base',{
   night:{paper:'#080f18',paperRgb:'8,15,24',ink:'209,190,146',inkStrong:'236,229,211',inkSoft:'177,192,183',gold:'226,195,133',goldBright:'244,229,196',copper:'205,159,122',blue:'148,180,177',shieldBlue:'150,196,214',red:'222,145,106',text:'#e0d4b5',caption:'198,187,155',shadow:'#080f18'},
   paper:{paper:'#e7dabd',paperRgb:'231,218,189',ink:'58,42,28',inkStrong:'34,24,16',inkSoft:'96,74,52',gold:'150,100,32',goldBright:'176,118,38',copper:'160,84,52',blue:'52,84,120',shieldBlue:'56,104,134',red:'166,58,40',text:'#2a2016',caption:'92,70,48',shadow:'#e7dabd'},

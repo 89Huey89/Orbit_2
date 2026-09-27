@@ -607,7 +607,37 @@ at the same row must still mean the same thing.
 rising at rows 200 and 500. *Must not break*: `'The reward must move visible darkness away'` `:805`,
 `'Pausing preserves the reprieve'` `:807`, `'Darkness resumes after the reward'` `:809`.
 
-### Stage 5 — the seamless transition · *single-owner, largest render work*
+### Stage 5 — the seamless transition · *landed*
+
+**What landed** (2026-09-27).
+
+- **The simulation** (`src/simulation.js`): the page raises `world.transitionReady` once the era is known;
+  `capture()` then turns the century on the next landing whose body `transitionBody()` accepts — anything but
+  a fading body or an opening target, read at the moment it is landed on and never stored (L3). `eraTransition()`
+  refills the nib, drives the dark back by `DARKNESS_RESCUE_DROP` with `DARKNESS_RESCUE_LEAD`, holds it for
+  `TRANSITION_GRACE`, sets `eraFrom` and emits `eraTransition`. Score, streak, flow and clock are untouched,
+  and there may be any number in one run. `nextTransitionBody()` names the body on the way, for the mark.
+- **The page** (`src/ui.js`): `journeyArm()` raises readiness from the knowledge banked plus what the run has
+  observed so far, and writes NEXT LANDING on the sheet. On `eraTransition` the climb is banked and turned and
+  `turnEraInRun()` puts the next century on the press without dealing a new chart; a century's own simulation
+  flags and transition rows come with it. Every century's chapters now count from `eraFrom` (`eraRow()` in
+  `src/plates.js`), so a century reached at row 60 still opens on its first chapter.
+- **The render** (`src/frame.js`): the frame as it stood under the old hand is taken whole at the landing and laid
+  back outside a circle growing from the body, over 2.4 s, with the new plate's gold on its edge — two plates
+  in one frame by keeping one of them as a still. `drawEraMark()` rings the body on the way.
+- **The acceptance test** now takes steps 8 to 13 on the live page for three kinds of turn (a century to a
+  century, a century onto the atlas, the atlas onto a century), and `tools/shots/scenarios/era-transition.mjs`
+  shows it at 430×932.
+
+**Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
+move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
+it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) changes to the new
+century's at once rather than growing with the circle. The phenomenon is not yet *reinterpreted* in the new
+hand as it is crossed (§1.3); the body is simply drawn by whichever hand's circle it stands in. A run that
+changed century is not saved for review, since a log cannot yet say which hand each stretch was flown under.
+
+The plan as it was written:
+
 
 §1.3, entirely inside gameplay. The old medium recedes; the transition body and the Observer Core
 remain; the phenomenon is reinterpreted; the tool transforms; resource is restored; the boundary is

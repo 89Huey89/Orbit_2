@@ -681,7 +681,7 @@ function drawAmbientComet(point,tail,alpha,age=Infinity){
 }
 function drawAmbient(dt,aim){
   if(reducedMotion||world.state==='dead')return;
-  const chapter=clamp(Math.floor(world.progress/8),0,3);
+  const chapter=clamp(Math.floor(eraRow()/8),0,3);
   const busy=chapterReveal.age<4.2||Math.abs(regionBlend-chapter)>.08||world.darknessGrace>3||world.floorY-world.player.y<155||world.state==='playing'&&world.elapsed-world.lastCaptureAt<.65;
   if(world.state!=='paused'){
     if(ambience.event)ambience.event.age+=dt;
@@ -1097,7 +1097,7 @@ function drawAtmosphere(dt=0,aim=null){
   ctx.drawImage(backdrop,0,0,W,H);
   // The sheet ages as the run goes on (drawFoxing, src/press.js), laid on the stock under everything printed.
   drawFoxing();
-  const chapter=clamp(Math.floor(world.progress/8),0,3);
+  const chapter=clamp(Math.floor(eraRow()/8),0,3);
   if(world.state!=='paused')regionBlend=lerp(regionBlend,chapter,1-Math.exp(-dt*.8));
   if(Math.abs(chapter-regionBlend)<.001)regionBlend=chapter;
   plateShift=plateRegistration();
@@ -1109,7 +1109,7 @@ function drawAtmosphere(dt=0,aim=null){
   // changes on a bare sheet — so the fresh sheet still rises whatever is or is not printed on it.
   const distance=sceneryOn();
   // The next chapter's plate is baked a stage a frame over the last rows before its turn (celestialJob).
-  if(distance&&world.state==='playing'&&world.progress%8>5.5)prewarmCelestial(chapter+1,sceneryStyle());
+  if(distance&&world.state==='playing'&&eraRow()%8>5.5)prewarmCelestial(chapter+1,sceneryStyle());
   if(mix>0&&!reducedMotion){
     // The new chapter arrives as a fresh sheet drawn up from below the frame, its dust and its own
     // marginalia riding with it; the old plate stays where it lies and fades away underneath.

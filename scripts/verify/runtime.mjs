@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -1851,6 +1851,59 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(JSON.stringify(t.journey),held,'Step 17: Free Play does not advance the Journey');
     assert.equal(t.records.free['3'],scrollBest+77,'Step 18: Free Play keeps its own record for the century');
     t.world.player.deadTime=10;events['ceiling-exit-end:click']();
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
+  }
+  // ---- Steps 8 to 13: the change of century inside the run ----
+  // The era becomes known while the run is still flying, the next ordinary landing carries the change, and
+  // the run goes on under the next century's hand: the same world, the same score, still in orbit, the nib
+  // refilled and the dark held. Taken across three kinds of turn: a century to a century, a century onto
+  // the atlas, and the atlas onto a century.
+  {
+    const t=context.test,T=t.ERA_THRESHOLD;
+    t.setPlate('paper');t.newWorld();
+    for(const from of [1,4,5]){
+      t.journey.era=from;t.journey.knowledge=0;t.journey.unlocked=[1,2,3,4,5,6,7,8].filter(e=>e<=from);
+      if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+      events['journey-open:click']();
+      assert.equal(t.eraId()||5,from,'The Journey opens on the frontier: era '+from);
+      t.handleInput();
+      const w=t.world;
+      // The flier the whole block uses: the tangent-seeking pilot of the route playthroughs, releasing through
+      // the page's own input so the release is logged and heard exactly as a tap's is.
+      const fly=until=>{for(let i=0;i<120*40&&w.state==='playing'&&!until();i++){
+        if(w.player.node){const aim=w.aim();if(aim&&!aim.steep&&aim.n.row===Math.floor(w.progress)+1&&(aim.perfect||w.player.orbitSweep>Math.PI*3)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1)){scoreBefore=w.score;capturesBefore=w.captures;t.handleInput();}}
+        w.update(step);if(i%6===0)t.render(step);
+      }};
+      let scoreBefore=0,capturesBefore=0;
+      // The pressure is chosen first: an opening target is never a place a century begins.
+      fly(()=>!w.difficultyPending);
+      for(let i=0;i<T-1;i++)t.journeyObserve(1);
+      t.journeyArm();assert.equal(w.transitionReady,false,'Not yet known, not yet armed: era '+from);
+      t.journeyObserve(1);t.journeyArm();
+      assert.equal(w.transitionReady,true,'Step 7: the era is known inside the run, and the next landing is armed: era '+from);
+      assert(w.nextTransitionBody(),'Step 8: a body that can carry the change is presented: era '+from);
+      fly(()=>w.eraTransitions>0);
+      assert(w.eraTransitions===1,'Step 9: the body is captured normally and carries the change: era '+from+' · '+JSON.stringify({state:w.state,reason:w.reason,row:w.progress}));
+      assert.equal(t.world,w,'Step 12: the same run goes on, not a new one: era '+from);
+      assert.equal(w.state,'playing','Step 11: still in orbit: era '+from);assert(w.player.node,'Still holding the body landed on');
+      assert.equal(t.eraId()||5,from+1,'The next century is on the press: era '+(from+1));
+      assert.equal(t.journey.era,from+1);assert.equal(t.journey.knowledge,0,'The new century starts its knowledge from nothing');
+      assert.equal(t.runMode,'journey','Still a Journey run');
+      assert(w.captures===capturesBefore+1&&w.score>scoreBefore,'The landing that carried it scored as any landing does');
+      assert.equal(w.player.ink,1,'Step 13: the nib is restored');assert(w.darknessGrace>0,'And the boundary is held back');
+      assert.equal(t.eraRow(),0,'The new century is told from its own first row');
+      if(from===4)assert.equal(t.plateName,'paper','A century onto the atlas puts back the plate the climb left it on');
+      assert(t.eraGrowth,'Step 10: the new century grows out of the body');
+      const score=w.score;
+      for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
+      assert.equal(t.eraGrowth,null,'And has grown over the whole sheet within a few seconds');
+      assert(w.score>=score,'Score never falls');
+      w.die('THE DARK CAUGHT UP');t.showEnd();
+      assert.equal(t.journey.era,from+1,'Step 14 and 15: a later death leaves the frontier in the newly reached century');
+      t.world.player.deadTime=10;t.handleInput();
+      assert.equal(t.eraId()||5,from+1,'Step 15: and the next run starts there');
+    }
+    if(t.plateOwns('mode'))events['ceiling-exit:click']();else if(t.runMode==='journey')events['journey-open:click']();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
     t.setPlate('night');
   }

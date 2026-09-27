@@ -51,7 +51,7 @@ const FLY_CHAPTERS=[
   {place:'PLUTO',year:2015,craft:'NEW HORIZONS',when:'14 JUL 2015',reading:'ONE PASS, AND NEVER BACK',credit:'NASA · JHUAPL · SWRI'}
 ];
 const FLY_GOAL_ROW=FLY_CHAPTERS.length*FLY_CHAPTER_ROWS;
-const flyChapterOf=w=>clamp(Math.floor((w?w.progress:0)/FLY_CHAPTER_ROWS),0,FLY_CHAPTERS.length-1);
+const flyChapterOf=w=>clamp(Math.floor((w?w.progress-(w.eraFrom||0):0)/FLY_CHAPTER_ROWS),0,FLY_CHAPTERS.length-1);
 const FLY_ROMAN=['I','II','III','IV','V','VI'];
 // Where a body's four stages fall on the observation clock. Early, as on the Lens: a flown run leaves most
 // bodies part-way through their sweep, so the scan is done within a tenth of it and the seams closed by a little over half; only
