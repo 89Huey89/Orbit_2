@@ -41,7 +41,7 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'CHRONICLE',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
-    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON'},
+    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',climbed:'THE LADDER IS CLIMBED · THE FINAL FRONTIER',frontier:'THE FINAL FRONTIER · BEST {best}',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -364,6 +364,7 @@ const journeyPlayable=era=>era===5||!!journeyPlate(era);
 const journeyEraTitle=era=>{const id=journeyPlate(era);return id?PLATE_STYLES[id].door.label:'ERA V \u00b7 THE ATLAS';};
 function journeyNote(){
   const w=plateWords(),c=w.chrome.journey,m=journeyMilestones(),era=journeyEraTitle(journey.era);
+  if(journeyComplete())return fmt(c.frontier,{best:journey.bests.frontier||0});
   if(m.open<m.of)return fmt(c.line,{era,count:m.open+' / '+m.of,name:(w.milestones||[])[m.open]||'',pct:Math.floor(m.toward*100)});
   const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
   return fmt(next?c.known:c.whole,{era,next});
@@ -395,14 +396,37 @@ function syncJourney(){
   const door=$('journey-open');if(door){door.textContent=c.door;door.setAttribute('aria-pressed',String(on));door.setAttribute('aria-label',c.doorLabel);}
   const note=$('journey-note');if(note){note.hidden=!on;note.textContent=on?journeyNote():'';}
   paintJourneyMark('journey-mark');
+  syncJourneyRestart();
+}
+let journeyClimbedSaid=null,journeyRestartArmed=false;
+// The deliberate restart of JOURNEY.md §1.2, from the more-menu: asked twice, since it sends the climb back
+// to era I. The centuries already reached stay open and every record is kept (journeyReset).
+function syncJourneyRestart(){
+  const b=$('journey-restart');if(!b)return;
+  const c=plateWords().chrome.journey,begun=journey.era>1||journey.knowledge>0;
+  if(!begun)journeyRestartArmed=false;
+  b.hidden=!begun;b.textContent=journeyRestartArmed?c.restartSure:c.restart;b.setAttribute('aria-label',c.restartLabel);
+}
+function journeyRestartTap(){
+  if(world&&world.state==='playing')return;
+  if(!journeyRestartArmed){journeyRestartArmed=true;syncJourneyRestart();return;}
+  journeyRestartArmed=false;journeyReset();
+  if(runMode==='journey'){if(plateOwns('mode'))leaveEra();else{runMode='free';newWorld();resetToFrontispiece();}}
+  syncJourney();syncEraChrome();render(0);
 }
 // The era in hand becomes known inside the run the moment what the run has observed carries it over the
 // line, and the simulation is told; its next ordinary landing is where the next century begins. Only on the
 // frontier's own century, and only where there is a century above it drawn to be climbed onto.
 function journeyArm(){
   if(!world||world.transitionReady||runMode!=='journey'||dailyOn||world.state!=='playing')return;
-  if(journeyEraOf()!==journey.era||journey.era>=JOURNEY_ERAS||!journeyPlayable(journey.era+1))return;
-  if(journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9)return;
+  if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9)return;
+  // The last rung has no century above it: knowing it climbs the ladder, said once, and the run goes on as
+  // the Final Frontier with nothing else changed.
+  if(journey.era>=JOURNEY_ERAS){
+    if(journeyClimbedSaid!==world){journeyClimbedSaid=world;const line=plateWords().chrome.journey.climbed;say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;}
+    return;
+  }
+  if(!journeyPlayable(journey.era+1))return;
   world.transitionReady=true;
   const line=fmt(plateWords().chrome.journey.waits,{next:journeyEraTitle(journey.era+1)});
   say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;
@@ -901,6 +925,7 @@ $('ceiling-exit-end').addEventListener('click',leaveEra);
 $('ceiling-exit').addEventListener('click',leaveEra);
 $('reading').addEventListener('click',toggleReading);
 $('journey-open').addEventListener('click',toggleJourney);
+$('journey-restart').addEventListener('click',journeyRestartTap);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
 function syncEffects(){$('reduce-motion').setAttribute('aria-pressed',String(reducedMotion));}
@@ -924,6 +949,8 @@ function syncMoreMenu(){
   $('more-toggle').setAttribute('aria-expanded',String(open));
 }
 $('more-toggle').addEventListener('click',()=>{
+  // Folding the menu away lets go of a restart asked for only once.
+  journeyRestartArmed=false;syncJourneyRestart();
   $('more-menu').hidden=!$('more-menu').hidden;syncMoreMenu();
   if(audio.enabled)audio.brush(1400,.1);
 });

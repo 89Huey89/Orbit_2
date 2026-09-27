@@ -660,6 +660,15 @@ Nothing may reset score, streak, run timer or mastery state.
 from a point rather than arriving from an edge; no dropped frame; no input required. Plus a
 simulation fixture that two transitions in one run leave score and streak monotonic.
 
+### The ends of the climb · *landed*
+
+(2026-09-27.) Knowing era VIII climbs the ladder (`journeyComplete()` in `src/journey.js`), said once on the
+sheet. From then on a Journey run is the **Final Frontier** of §1.7: it goes on at the last rung, and its
+score is kept as the Journey document's `bests.frontier`, the primary endless record, apart from the last
+rung's own best. The deliberate restart of §1.2 has a control at last: BEGIN THE JOURNEY AGAIN in the
+frontispiece's MORE menu, shown once any of the climb has been made, asked twice, sending the frontier back
+to era I while the centuries reached stay open and every record, the Final Frontier's included, is kept.
+
 ### Stage 6 — the whole ladder in mocks · *landed, without the mocks*
 
 **What landed** (2026-09-27). No mocks were needed: all eight centuries already had a playable plate by the

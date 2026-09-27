@@ -1836,7 +1836,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       for(let k=2;k<T;k++)t.journeyObserve(1);
       t.world.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
-      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
+      assert(element('end-journey').textContent.includes(era<8?'IS KNOWN':'THE FINAL FRONTIER'),'The leaf says the era is known, and at the last rung that the ladder is climbed: era '+era+' · '+element('end-journey').textContent);
       t.world.player.deadTime=10;t.handleInput();
       if(era<8){
         assert.equal(t.journey.era,era+1,'Steps 12 and 15: the climb goes on in the next century: era '+(era+1));
@@ -1845,9 +1845,25 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }else assert.equal(t.journey.era,8,'The ladder ends at era VIII');
     }
     assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The whole ladder has been reached');
+    // The Final Frontier: the Journey goes on at the last rung, and its runs keep a record of their own.
+    assert.equal(t.eraId(),8,'After the ladder the Journey goes on at the last rung');
+    t.world.score=4321;t.recordBest(t.world.score);
+    assert.equal(t.journey.bests.frontier,4321,'A run past the ladder keeps the Final Frontier\'s record');
+    t.world.die('THE DARK CAUGHT UP');t.showEnd();
+    assert(element('end-journey').textContent.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').textContent);
+    // Beginning again is asked twice, sends the climb back to era I, and keeps every century reached and every record.
+    const restart=element('journey-restart');
+    assert.equal(restart.hidden,false,'A climb under way can be begun again');
+    events['journey-restart:click']();assert.equal(t.journey.era,8,'One tap only asks');assert(restart.textContent.includes('TAP AGAIN'));
+    events['journey-restart:click']();
+    assert.equal(t.journey.era,1,'The second begins the climb again at era I');assert.equal(t.journey.knowledge,0);
+    assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The centuries reached stay open');
+    assert.equal(t.journey.bests.frontier,4321,'And the records stay where they were');
+    assert.equal(t.runMode,'free','Beginning again leaves the Journey run that was on the press');
+    assert.equal(restart.hidden,true,'With nothing climbed there is nothing to begin again');
+    t.journey.unlocked=[1,2,3,4,5,6,7,8];
     assert.equal(JSON.stringify(t.records.free),freeBefore,'Step 18: no Journey run set a Free Play record');
     // Steps 16 and 17: a century already reached is flown in Free Play, and Free Play never moves the Journey.
-    if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();
     assert.equal(t.runMode,'free');
     t.enterEra('scroll');assert.equal(t.eraId(),3,'Step 16: a century the Journey has passed is open in Free Play');
     const held=JSON.stringify(t.journey),scrollBest=t.records.free['3']||0;
