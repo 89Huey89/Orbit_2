@@ -1714,7 +1714,25 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       if(w.endless)assert(w.goalRow>0&&w.chrome.readings.chronicle!==w.chrome.readings.endless,'A century offering two readings has an ending to leave out, and names both: '+id);
       context.test.leaveEra();context.test.newWorld();
     }
-    assert.equal(reading.hidden,true,'The atlas has no ending, and so no choice of reading');
+    // The atlas offers the choice the other way round: Endless is its own reading, and its Chronicle, the atlas
+    // printed once the fourth chapter is engraved, is the one to be chosen.
+    assert.equal(reading.hidden,false,'The atlas offers a Chronicle beside its Endless reading');
+    assert.equal(context.test.world.goalRow,0,'Read as it always was, the atlas has no row it is won at');
+    assert.equal(reading.textContent,'ENDLESS');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,32,'Its Chronicle is won when the fourth chapter is engraved');
+    assert.equal(context.test.world.driven,false,'And is flown on the flat chart, as every Chronicle is');
+    assert.equal(reading.textContent,'TO THE PRESS');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,'chronicle','One key for every atlas plate');
+    assert.equal(context.test.plateWords().losses['THE SUN ROSE'],'THE ATLAS IS PRINTED','The atlas names its own ending');
+    events['daily:click']();
+    assert.equal(reading.hidden,true,'The daily is one course flown the same way by all, and offers no reading');
+    assert.equal(context.test.world.goalRow,0,'And never ends at a row');
+    events['daily:click']();
+    assert.equal(context.test.world.goalRow,32,'Leaving the daily puts the chosen reading back');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'And Endless can be chosen back');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,undefined,'The atlas\'s own reading is not written down');
     context.test.enterEra('rock');
     assert.equal(context.test.world.goalRow,32,'The Rock\'s Chronicle ends with the fourth chamber, Newgrange');
     assert.equal(context.test.world.driven,false,'A Chronicle keeps the flat chart its finish was read off');

@@ -30,7 +30,7 @@ defineVoice('atlas',{
   observations:{},
   pressures:DIFFICULTY_LABELS,
   pressureSet:'PRESSURE SET · {label}',
-  losses:{},
+  losses:{'THE SUN ROSE':'THE ATLAS IS PRINTED'},
   opening:'Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.',
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
@@ -38,9 +38,9 @@ defineVoice('atlas',{
   // see event(), below — never on a first run, which breaks no record for want of one to beat.
   newRecord:'NOVUM RECORDUM',
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
-  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endActionWon:'Tap to try again',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
+  chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endTitleWon:'The atlas is printed.',endActionWon:'Tap to begin a new atlas',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
-    readings:{chronicle:'CHRONICLE',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
+    readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
     journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',climbed:'THE LADDER IS CLIMBED · THE FINAL FRONTIER',frontier:'THE FINAL FRONTIER · BEST {best}',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
@@ -58,7 +58,8 @@ defineVoice('atlas',{
   goalRow:0,
   chapterSaid:'Plate {numeral}. {name}.',
   // The atlas never wins, so it names no line for it; a plate with a goalRow overrides this.
-  won:'',
+  // The atlas's own Chronicle (ATLAS_CHRONICLE_ROW, below): every century replaces this with its own ending.
+  won:'The four chapters are engraved and the sheet is pulled: the atlas is printed, with a sum of {score}. Tap to begin a new atlas.',
   // Whether a century with a goalRow may also be flown without one: its Chronicle ends at that row, its
   // Endless reading never ends (docs/archive/eras/LINKING.md). Only a century whose chapters, notes and
   // record all read sanely past its own last chapter says so; the atlas, having no ending, has no choice.
@@ -340,18 +341,27 @@ function event(type,e){
 // likes the Rock's wall endless may still want the Scroll's four palaces; a century that offers no choice
 // is always its Chronicle, and the atlas, having no ending, is unaffected either way.
 const READING_KEY='orbit.reading.v1';
+// The atlas offers the choice the other way round (LINKING.md: V's Chronicle is the atlas printed). Endless is
+// what the atlas always was and stays its own reading; its Chronicle ends when the fourth chapter, The Deep, is
+// engraved, and the sheet is pulled. It is kept under one key for every atlas plate, since the paper and the
+// night plate are one century, and it is never offered under the daily, which is one course flown the same way by all.
+const ATLAS_CHRONICLE_ROW=32;
 const readings=(()=>{
   const out={};
-  try{const raw=JSON.parse(storage.get(READING_KEY,'{}'));if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw)if(raw[k]==='endless')out[k]='endless';}catch(_){}
+  try{const raw=JSON.parse(storage.get(READING_KEY,'{}'));if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw)if(raw[k]==='endless'||raw[k]==='chronicle')out[k]=raw[k];}catch(_){}
   return out;
 })();
-const eraReading=()=>plateWords().endless&&readings[plateName]==='endless'?'endless':'chronicle';
+const readingKey=()=>eraId()?plateName:'atlas';
+const readingDefault=()=>eraId()?'chronicle':'endless';
+const readingOffered=()=>eraId()?!!plateWords().endless:!dailyOn;
+const eraReading=()=>readingOffered()&&readings[readingKey()]||readingDefault();
 // A Journey run is never won at a row: its chapters are opened by knowledge across runs (LINKING.md).
-const eraGoalRow=()=>runMode==='journey'||eraReading()==='endless'?0:plateWords().goalRow;
+const eraGoalRow=()=>runMode==='journey'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
 // Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
 function toggleReading(){
-  if(!plateWords().endless||runMode==='journey'||(world&&world.state!=='ready'))return;
-  if(eraReading()==='endless')delete readings[plateName];else readings[plateName]='endless';
+  if(!readingOffered()||runMode==='journey'||(world&&world.state!=='ready'))return;
+  const next=eraReading()==='endless'?'chronicle':'endless';
+  if(next===readingDefault())delete readings[readingKey()];else readings[readingKey()]=next;
   storage.set(READING_KEY,JSON.stringify(readings));
   newWorld();resetToFrontispiece();syncEraChrome();render(0);
 }
@@ -486,7 +496,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,driven:world.driven,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,driven:world.driven,goalRow:world.goalRow,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -522,7 +532,7 @@ function syncEraChrome(){
   // The choice of reading stands only on a century that offers one, and names the reading in hand.
   const reading=$('reading');
   if(reading){
-    const offered=!!plateWords().endless&&runMode!=='journey',now=eraReading(),word=chrome.readings[now];
+    const offered=readingOffered()&&runMode!=='journey',now=eraReading(),word=chrome.readings[now];
     reading.hidden=!offered;reading.textContent=word;
     reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
@@ -911,7 +921,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{invalidateArt();if(world)render(0);});
 // The switch lives on both the title screen and the run-complete colophon, so a daily run is never a
 // dead end: tapping either one toggles the same setting and the next "tap to try again" honours it.
-function toggleDaily(){if(!dailyOn&&runMode==='journey'){runMode='free';syncJourney();}setDaily(!dailyOn);if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
+function toggleDaily(){if(!dailyOn&&runMode==='journey'){runMode='free';syncJourney();}setDaily(!dailyOn);syncEraChrome();if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
 function toggleNewtonSwitch(){toggleNewton();if(audio.enabled)audio.tone(newtonOn?659.25:392,.3,0,.16);}

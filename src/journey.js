@@ -109,8 +109,10 @@ function recordContext(){
   if(dailyOn)return null;
   const era=journeyEraOf();
   if(runMode==='journey')return {journey:true,key:journeyComplete()?'frontier':String(era)};
-  const endless=typeof plateWords==='function'&&plateWords().endless&&typeof eraReading==='function'&&eraReading()==='endless';
-  return {journey:false,key:era+(endless?':endless':'')};
+  // A reading that is not the century's own default is kept apart from it: ':endless' for a century whose
+  // default is its Chronicle, ':chronicle' for the atlas, whose default is Endless.
+  const reading=typeof eraReading==='function'?eraReading():'',fallback=typeof readingDefault==='function'?readingDefault():reading;
+  return {journey:false,key:era+(reading&&reading!==fallback?':'+reading:'')};
 }
 function contextBest(){
   const c=recordContext();if(!c)return 0;

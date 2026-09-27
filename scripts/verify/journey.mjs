@@ -103,7 +103,7 @@ export async function runJourneyChecks(){
     assert.equal(j.records.free['5'],500,'A Journey run never rewrites Free Play\'s record');
     j.mode='free';context.plate=1;
     assert.equal(j.contextBest(),0,'Each century keeps its own');
-    context.plateWords=()=>({endless:true});context.eraReading=()=>'endless';
+    context.plateWords=()=>({endless:true});context.eraReading=()=>'endless';context.readingDefault=()=>'chronicle';
     j.keepContextBest(40);assert.equal(j.records.free['1:endless'],40,'A century read Endless keeps a record apart from its Chronicle');
     context.eraReading=()=>'chronicle';assert.equal(j.contextBest(),0);
     context.dailyOn=true;assert.equal(j.keepContextBest(9999),false,'The daily keeps its own record elsewhere');context.dailyOn=false;

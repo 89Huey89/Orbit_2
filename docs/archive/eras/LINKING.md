@@ -34,8 +34,9 @@ Chronicle-only until their chapters, notes and records are made to read past the
   is rolled up. (The circuit of the twenty-eight mansions was the first idea, but the band measures the
   climb in world units, not rows, and closes its circle somewhere near row 23 to 25 depending on pace;
   a finish line has to be a row.)
-- **V** — the ten stages of the construction completed and the sheet pulled: the atlas printed. Its
-  exact row is still to be tuned.
+- **V** — the atlas printed. *Landed at row 32* (the fourth chapter engraved), not at the construction's
+  ten stages, which are bought in the first ten landings and would end the Chronicle before it had begun.
+  Endless stays the atlas's default reading; the Chronicle is chosen, and never under the daily.
 
 **2 · A chapter is a milestone.** `JOURNEY.md` §1.5 asked for three to five named knowledge
 structures per era and left most of them unnamed. The previews have already named them: the chapters

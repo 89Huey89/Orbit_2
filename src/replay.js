@@ -4,7 +4,7 @@
    its seed and when the traveller released, so the finished chart can be read back long after the
    run that drew it, without a frame of it ever having played again. */
 // ---------- Replaying a run from its own log ----------
-// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, driven, grace, releases,
+// A log is {seed, width, height, offerDifficulty, varyOpening, chasmsOn, relightOn, driven, goalRow, grace, releases,
 // resizes}: releases and resizes are ordered lists of the world.time each one happened at (see replayLog
 // in ui.js, where one is kept). varyOpening, chasmsOn and relightOn are all read the same permissive way
 // an older saved log already reads a field it predates — undefined falls through to OrbitWorld's own
@@ -26,7 +26,7 @@ function replayRun(log){
     // reviewed plate carries the same release bearings and arrival angles the run itself was drawn with.
     else if(type==='release')recordDeparture(e);
     else if(type==='capture')recordLanding(e);
-  },log.offerDifficulty,log.varyOpening,false,log.chasmsOn,log.relightOn);
+  },log.offerDifficulty,log.varyOpening,false,log.chasmsOn,log.relightOn,Number(log.goalRow)||0);
   // A log written before the release grace existed carries no grace field, and its releases were flown
   // exactly where they were asked for; it is read back that way rather than under a rule it never had.
   // One that has it starts from the grace it was dealt with and takes the chosen pressure's own grace
