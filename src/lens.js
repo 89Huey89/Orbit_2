@@ -1540,7 +1540,11 @@ defineVoice('lens',{
   chartSaid:'{chart} is resolved. Sixty toward the magnitude. The fog holds back for four seconds.',
   chapters:LENS_CHAPTERS.map(c=>c.place+' · '+c.year),
   chapterRows:LENS_CHAPTER_ROWS,
+  // The Chronicle ends where the sixth chapter does: Saturn resolved three times over, in 1990, above the
+  // air. Read Endless, the sensor stays the ground and the survey goes on past it — the last register held,
+  // the last chapter's Saturn never overwritten, no row it is won at (LINKING.md).
   goalRow:LENS_GOAL_ROW,
+  endless:true,
   // The rows past which the sheet changes medium under the run (lensTransition, above).
   transitionRows:[LENS_REG_ROWS,LENS_REG_ROWS*2],
   // The three registers the sheet climbs through are the Journey's milestones, not the six chapters in them.
@@ -1607,6 +1611,7 @@ defineVoice('lens',{
     pauseLeave:'CAP THE LENS',pauseLabel:'Close the dome',gameLabel:'The Lens, a playable Era VI preview',
     canvasLabel:'The Lens. Guide a telescope from Padua in 1610 to a telescope above the air in 1990, resolving each light you hold into a surface. Tap or press Space to release.',
     eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to raise the tube again',endActionWon:'Tap to begin again',
+    readings:{chronicle:'TO SATURN',endless:'THE ENDLESS SURVEY',label:'The reading: {reading}. Tap to change it'},
     statCaptures:'Resolved',statPerfects:'Clean',statFlow:'Best lock',statRow:'Row',
     instructions:{head:'THE MANNER OF OBSERVING',rules:['Tap to release the telescope.','Hold a light until it resolves into a surface.','Keep ahead of the fog rising below.','From the eyepiece to the plate to the sensor, six places. Choose the first light — {pressures}.']}
   },
