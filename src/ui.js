@@ -64,6 +64,12 @@ defineVoice('atlas',{
   // Endless reading never ends (docs/archive/eras/LINKING.md). Only a century whose chapters, notes and
   // record all read sanely past its own last chapter says so; the atlas, having no ending, has no choice.
   endless:false,
+  // Whether the century's own chapters are a cycle rather than a story with a last one: read with no row
+  // it is won at (world.goalRow falsy — an Endless reading, or a Journey run sitting here past its own
+  // dawn), the chapter count is let run on past chapters.length rather than held at the last one, and
+  // every read of it below wraps by chapters.length; a story with an actual ending (the atlas's four
+  // chapters, the Rock's four chambers) has no cycle to return to, so it stays false and unaffected.
+  chapterWrap:false,
   // The rows past which a century changes its medium under the run, growing the next out of the body
   // landed on (see TRANSITION_GRACE in the simulation, and the Lens's registers). The atlas has none.
   transitionRows:[],
@@ -753,16 +759,22 @@ function updateUI(dt){
   // Rows per chapter is a plate's own number — the atlas's four chapters are eight rows apiece, the
   // Ceiling's twelve hours are shorter — so the boundary and the chapter count are both read off
   // plateWords() rather than the atlas's own fixture kept here as a literal 3/8.
-  const chapterVoice=plateWords(),chapter=Math.min(chapterVoice.chapters.length-1,Math.floor(eraRow()/chapterVoice.chapterRows));
+  // A plate with chapterWrap, read with no row it is won at, is a cycle rather than a story: the raw
+  // count is let run on rather than held at chapters.length-1, and the name/numeral it looks up below
+  // are read modulo that length, so the Ceiling's twelfth hour is followed by a new first rather than a
+  // frozen twelfth (see chapterWrap's own comment above). The modulo is a no-op for every other century,
+  // whose chapter is already held inside its own array by the clamp.
+  const chapterVoice=plateWords(),cycles=chapterVoice.chapterWrap&&!world.goalRow,rawChapter=Math.floor(eraRow()/chapterVoice.chapterRows),
+    chapter=cycles?rawChapter:Math.min(chapterVoice.chapters.length-1,rawChapter),chapterName=chapter%chapterVoice.chapters.length;
   // The plate's number and name are engraved at the foot of the sheet rather than set in the DOM; the
   // live region is told once, so the change is still spoken.
   // A chapter's line of lore is set once the run is actually under way, so the first chapter's is not
   // spent on the frontispiece; it is tracked apart from lastChapter, which the reveal above keys on.
-  if(chapter!==loreChapter&&world.state==='playing'){loreChapter=chapter;const lines=plateWords().chapterLines,line=lines&&lines[chapter];if(line)say(line,{node:world.player.node,tone:'note'});}
+  if(chapter!==loreChapter&&world.state==='playing'){loreChapter=chapter;const lines=plateWords().chapterLines,line=lines&&lines[chapterName];if(line)say(line,{node:world.player.node,tone:'note'});}
   if(chapter!==lastChapter){
     lastChapter=chapter;
     // A plate may mark the turn of a chapter with a sound of its own (the Ceiling's gates); the atlas has none.
-    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};{const turn=handFor('chapter');if(turn)turn(audio,chapter);}$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapter],name:chapterVoice.chapters[chapter]});}
+    if(chapter>0&&world.state==='playing'){chapterReveal={index:chapter,age:0};{const turn=handFor('chapter');if(turn)turn(audio,chapterName);}$('announcement').textContent=spoken('chapterSaid',{numeral:numerals[chapterName],name:chapterVoice.chapters[chapterName]});}
   }
   // The standing instructions of the opening rows are written on the chart beside what they are about:
   // the orbit being held, or the vortex that is bending the flight. Each is kept on the sheet while

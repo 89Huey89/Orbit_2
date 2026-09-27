@@ -25,8 +25,8 @@ everything" is right, because the two answer different wishes. In **Free Play** 
 readings of itself: the **Chronicle**, its story flown to an ending in one run, and **Endless**, the
 same era flown on the shared driver of `JOURNEY.md` §1.8 for a record of its own. The three endless
 eras are given an ending out of material they already carry (I and III landed, row 32 each, with the
-reading chosen on the era's own frontispiece and kept in `orbit.reading.v1`; II, IV and VI stay
-Chronicle-only until their chapters, notes and records are made to read past their last chapter):
+reading chosen on the era's own frontispiece and kept in `orbit.reading.v1`; *II, IV, VI and VII landed
+2026-09-27*: the Ceiling's night comes round again, the others hold their last chapter):
 
 - **I** — the fourth chamber is already Newgrange; the Chronicle ends when the winter-solstice light
   comes down the passage into it.

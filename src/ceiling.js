@@ -134,13 +134,21 @@ defineVoice('ceiling',{
   squareLanding:CEILING_OBSERVATIONS.rightAngle,
   hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
   chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',endTitleWon:'The barque came through the night.',endActionWon:'Tap to sail the night again',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
+    readings:{chronicle:'TO SUNRISE',endless:'THE ENDLESS NIGHT',label:'The voyage: {reading}. Tap to change it'},
     instructions:{head:'THE MANNER OF USE',rules:['Tap to release the flat night barque.','Skim an hour-circle; hold it to restore the reed.','Follow the painted dabs around Apep, the Eye, Shu and Nun.','The first landing sets the course.']}},
   tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',won:'Twelve hours, twelve gates, and the sun is born again from the sky.'},
   chapters:CEILING_HOURS,
   chapterRows:CEILING_HOUR_ROWS,
+  // Read Endless, the night is a cycle rather than a story: hour I follows hour XII rather than the
+  // sheet holding at hour XII forever (docs/archive/eras/CEILING-OVERHAUL.md's own open question, settled
+  // as a lap rather than an ending). See chapterWrap's own comment in src/ui.js.
+  chapterWrap:true,
   // The Journey's milestones are the night's four watches, three of its twelve hours each.
   milestones:['HOURS I TO III','HOURS IV TO VI','HOURS VII TO IX','HOURS X TO XII'],
+  // The Chronicle ends at the twelfth gate, sunrise; read Endless the barque sails past it into a new
+  // night instead (LINKING.md's "Endless, later" and chapterWrap above).
   goalRow:CEILING_DAWN_ROW,
+  endless:true,
   won:'Dawn. The sun is born from the sky with a score of {score}. Tap to sail the night again or return to the atlas.',
   chapterSaid:'Hour {numeral}. {name}.',
   held:{choose:'Choose the first hour-circle — your landing sets the course.',dry:'The reed is dry. Hold this circle, or seek the bright star.',sling:'One circuit quickens the barque. A clean landing keeps its course.',release:'Release when the painted dabs skim the next circle.',bend:'Apep bends the course. Follow the dabs; give the serpent room.'}
@@ -162,7 +170,14 @@ const CEILING_CHANGE_DUR=1.2;
 let ceilingFrameTop=null,ceilingFrameBot=null,ceilingFrameKey='',ceilingNutHead=null,ceilingSunCourse=null,ceilingSunShown=0,ceilingCartouche=null,ceilingCartoucheKey='';
 // The one expression that names which of the four watches is current, shared by the wall's own bake
 // (which register to paint) and the running head (which word to print) so the two can never drift.
-function ceilingHour(){return world?clamp(Math.floor(eraRow()/CEILING_HOUR_ROWS),0,CEILING_HOURS.length-1):0;}
+// Read with no row this run is won at (Endless, or a Journey run sitting here past its own dawn), the
+// hour wraps rather than holds at the twelfth: the night comes round again (chapterWrap in defineVoice
+// above). The Chronicle keeps the old clamp, so a run flown to sunrise still reads hour XII at the gate.
+function ceilingHour(){
+  if(!world)return 0;
+  const h=Math.floor(eraRow()/CEILING_HOUR_ROWS);
+  return world.goalRow?clamp(h,0,CEILING_HOURS.length-1):((h%CEILING_HOURS.length)+CEILING_HOURS.length)%CEILING_HOURS.length;
+}
 // The wall keeps four registers of furniture (ceilingBakeWall), so the twelve hours share them three to a
 // register: the room changes every third gate rather than at every one.
 function ceilingWatch(){return Math.floor(ceilingHour()/3);}
@@ -1145,7 +1160,10 @@ function ceilingBuildWall(){
       // that has already passed; whatever changed further is picked up fresh below, the same as any
       // other cache miss.
       ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
-    }else if(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||Math.floor(chapterReveal.index/3)!==watch){
+      // chapterReveal.index is ui.js's own count of hours passed, unbounded once the night is a cycle
+      // (chapterWrap), so it is read modulo the twelve hours before it is turned into a watch number —
+      // the same wrap ceilingWatch() itself keeps.
+    }else if(reducedMotion||chapterReveal.age>=CEILING_CHANGE_DUR||Math.floor((chapterReveal.index%CEILING_HOURS.length)/3)!==watch){
       ceilingWall=ceilingChangeover.to;ceilingWallKey=ceilingChangeover.toKey;ceilingWallWatch=ceilingChangeover.toWatch;ceilingChangeover=null;
       return ceilingWall;
     }else return ceilingWall; // still mid-band: the outgoing tile keeps passing, already baked — no work this frame
@@ -1344,8 +1362,14 @@ function ceilingDrawCartouche(){
 const CEILING_NIGHT_ROWS=CEILING_DAWN_ROW;
 function ceilingDrawSunCourse(dt){
   const c=ceilingSunCourse;if(!c||!world)return;
-  const target=clamp(eraRow()/CEILING_NIGHT_ROWS,0,1);
-  ceilingSunShown=reducedMotion||world.state!=='playing'?target:ceilingSunShown+(target-ceilingSunShown)*(1-Math.exp(-(dt||0)*3));
+  // With no row this run is won at, the row count itself keeps climbing past the night's own length, so
+  // the course is read modulo it — the sun crossing Nut once a cycle rather than running off the end of
+  // her body and staying there.
+  const row=eraRow(),cyclic=!world.goalRow,target=clamp((cyclic?((row%CEILING_NIGHT_ROWS)+CEILING_NIGHT_ROWS)%CEILING_NIGHT_ROWS:row)/CEILING_NIGHT_ROWS,0,1);
+  // A wrap starts the sun back at Nut's lips rather than sweeping backwards across her whole body to get
+  // there: dawn is swallowed again, not rewound.
+  if(cyclic&&target<ceilingSunShown-.5)ceilingSunShown=target;
+  else ceilingSunShown=reducedMotion||world.state!=='playing'?target:ceilingSunShown+(target-ceilingSunShown)*(1-Math.exp(-(dt||0)*3));
   const total=c.len.at(-1),at=f=>{const d=f*total;let k=1;while(k<c.len.length-1&&c.len[k]<d)k++;const u=(d-c.len[k-1])/Math.max(1e-6,c.len[k]-c.len[k-1]);return [lerp(c.pts[k-1][0],c.pts[k][0],u),lerp(c.pts[k-1][1],c.pts[k][1],u)];};
   ctx.save();
   for(let h=1;h<CEILING_HOURS.length;h++){const f=h/CEILING_HOURS.length,[x,y]=at(f),past=ceilingSunShown>=f;
@@ -1378,14 +1402,21 @@ function ceilingGateRows(){
 }
 function ceilingDrawGates(){
   if(!world||world.state==='ready')return;
-  const span=ceilingGateRows(),P=CEILING_PALETTE,bw=ceilingNutBandWidth();
-  for(let h=1;h<=CEILING_HOURS.length;h++){
-    const R=h*CEILING_HOUR_ROWS+(world.eraFrom||0),a=span.get(R),b=span.get(R+1);if(!a)continue;
+  const span=ceilingGateRows(),P=CEILING_PALETTE,bw=ceilingNutBandWidth(),cyc=CEILING_HOURS.length;
+  // With no row this run is won at, the gates keep coming past the twelfth: the night comes round again
+  // every twelve hours (ceilingHour()'s own wrap), so the loop is windowed on the barque's own hour —
+  // cheap and constant however long the run runs on — rather than walked from the first gate every
+  // frame. hn is the gate's place in the repeating cycle (1..12, for its name and whether it is the
+  // horizon); h is its actual count of hours climbed, which keeps the row math and the weathering seeds
+  // that read off it varied from one night to the next rather than identical every lap.
+  const rawHour=Math.floor(eraRow()/CEILING_HOUR_ROWS),hFrom=world.goalRow?1:Math.max(1,rawHour-1),hTo=world.goalRow?cyc:rawHour+cyc;
+  for(let h=hFrom;h<=hTo;h++){
+    const hn=((h-1)%cyc)+1,R=h*CEILING_HOUR_ROWS+(world.eraFrom||0),a=span.get(R),b=span.get(R+1);if(!a)continue;
     const gateY=b?(a.lo+b.hi)/2:a.lo-70,gy=sy(gateY),th=Math.max(52,64*scale);
     if(gy<-th*2||gy>H+th*2)continue;
     const passed=world.player.y<gateY-10,open=reducedMotion?(passed?1:0):clamp((gateY-world.player.y+30)/90,0,1);
     ctx.save();
-    if(h===CEILING_HOURS.length){ceilingDrawHorizon(gy,th,passed);ctx.restore();continue;}
+    if(hn===cyc){ceilingDrawHorizon(gy,th,passed);ctx.restore();continue;}
     const x0=bw+3,tw=Math.max(46,W*.15),bot=gy+th*.38,top=gy-th*.62;
     for(const side of [1,-1]){
       const X=v=>side>0?v:W-v,ox=X(x0),ix=X(x0+tw),itop=X(x0+tw-th*.2),otop=X(x0+th*.08);
@@ -1426,10 +1457,10 @@ function ceilingDrawGates(){
         ctx.fillStyle=P.yellow;for(let k=1;k<4;k++)for(let m=0;m<3;m++){const px=X(x0+tw+leaf*k/4),py=dt+(bot-dt)*(m+.5)/3,worn=ceilingHash(h*7+k*3+m,side>0?71:73);ctx.globalAlpha=.45+worn*.55;ctx.beginPath();ctx.arc(px,py,.9+worn*.5,0,TAU);ctx.fill();}ctx.globalAlpha=1;
       }
       // The hour the gate closes, counted on the tower's face in the wall's own numerals.
-      ctx.save();ctx.globalAlpha=.85;ceilingNumber(ctx,h,side>0?x0+tw*.5-ceilingNumWidth(h,th*.22)/2:W-x0-tw*.5-ceilingNumWidth(h,th*.22)/2,gy-th*.02,th*.22,P.ink);ctx.restore();
+      ctx.save();ctx.globalAlpha=.85;ceilingNumber(ctx,hn,side>0?x0+tw*.5-ceilingNumWidth(hn,th*.22)/2:W-x0-tw*.5-ceilingNumWidth(hn,th*.22)/2,gy-th*.02,th*.22,P.ink);ctx.restore();
     }
     // The name of the hour the gate opens onto, lettered across the opening under the lintel line.
-    const size=Math.max(9,10*scale),label=CEILING_HOURS[h];ctx.font=plateFace(size,'sc');ctx.textAlign='center';
+    const size=Math.max(9,10*scale),label=CEILING_HOURS[hn];ctx.font=plateFace(size,'sc');ctx.textAlign='center';
     const lw=ctx.measureText(label).width,ly=top-th*.02;
     // Set on a small plate of the night's deepest blue, so the name reads wherever the gate happens to
     // stand, the register's star band included.
@@ -2250,7 +2281,7 @@ function ceilingDrawChangeover(dt){
   // also turn the room over to its next register, where the wall itself changes under the flight.
   if(reducedMotion||world.state!=='playing'||chapterReveal.index<=0||chapterReveal.index%3||chapterReveal.age>=CEILING_CHANGE_DUR)return;
   chapterReveal.age+=dt;
-  const age=chapterReveal.age,a=Math.sin(clamp(age/CEILING_CHANGE_DUR,0,1)*Math.PI),cy=H*.5,label=CEILING_HOURS[chapterReveal.index];
+  const age=chapterReveal.age,a=Math.sin(clamp(age/CEILING_CHANGE_DUR,0,1)*Math.PI),cy=H*.5,label=CEILING_HOURS[chapterReveal.index%CEILING_HOURS.length];
   ctx.save();ctx.textAlign='center';
   // A band of fresh plaster laid across, translucent rather than the old opaque fill, so whatever it
   // covers is dimmed, never hidden — docs/archive/eras/CEILING-POLISH.md P3's own alternative, applied to the
