@@ -60,10 +60,12 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
     const classes=new Set(),e={id,style:{},textContent:'',innerHTML:'',classList:{add:(...x)=>x.forEach(a=>classes.add(a)),remove:(...x)=>x.forEach(a=>classes.delete(a)),toggle:(x,force)=>force?classes.add(x):classes.delete(x),contains:x=>classes.has(x)},setAttribute(){},getContext:()=>drawing,getBoundingClientRect:()=>({width,height}),closest:()=>null,removeAttribute(){},addEventListener:(type,fn)=>{events[id+':'+type]=fn;}};
     items.set(id,e);return e;
   }
-  const context={console,Math,Date,Uint8ClampedArray,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
+  // setTimeout only ever defers a sound or a class a moment in the page; nothing a check reads waits on it,
+  // so the page is handed one that never fires.
+  const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -1803,6 +1805,53 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(mark.hidden,true,'And gone with the Journey: era '+era);
     }
     t.journey.era=1;t.journey.knowledge=0;
+  }
+  // ---- JOURNEY.md §8, the acceptance loop, climbed from era I to era VIII ----
+  // Every step the loop names is taken on the live page except the in-run transition (steps 8 to 13), which
+  // is stage 5's: until it exists a known era is turned over between runs, and that turn stands in for it
+  // here. Step 19, Free Play scaling rather than saturating, is the endless driver's own fixture.
+  {
+    const t=context.test,T=t.ERA_THRESHOLD;
+    t.setPlate('paper');t.newWorld();
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.milestones={};
+    const freeBefore=JSON.stringify(t.records.free);
+    events['journey-open:click']();
+    for(let era=1;era<=8;era++){
+      assert.equal(t.runMode,'journey','Step 1: a Journey run starts at the frontier: era '+era);
+      assert.equal(t.eraId()||5,era,'The run is flown on the frontier\'s own century: era '+era);
+      // Steps 2 to 5: a short run dies, what it observed stays, and the next run starts at the same frontier. A
+      // score is recorded as it is earned (on a landing), so the fixture records the one it sets.
+      t.handleInput();t.journeyObserve(1);t.journeyObserve(1);t.world.score=100+era;t.recordBest(t.world.score);t.world.die('THE DARK CAUGHT UP');t.showEnd();
+      assert.equal(t.journey.knowledge,2,'Step 4: all earned observation survives the death: era '+era);
+      assert.equal(t.journey.era,era,'A death never moves the frontier: era '+era);
+      assert.equal(t.journey.bests[String(era)],100+era,'Step 18: the Journey keeps its best per era: era '+era);
+      t.world.player.deadTime=10;t.handleInput();
+      assert.equal(t.eraId()||5,era,'Step 5: the next run starts directly at the same frontier: era '+era);
+      assert.equal(t.runMode,'journey');assert.equal(t.world.state,'playing','The one tap that restarts starts the run');
+      // Steps 6 and 7: the named milestones open, one at a time, until the era stands ready.
+      for(let k=2;k<T;k++)t.journeyObserve(1);
+      t.world.die('THE DARK CAUGHT UP');t.showEnd();
+      assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
+      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
+      t.world.player.deadTime=10;t.handleInput();
+      if(era<8){
+        assert.equal(t.journey.era,era+1,'Steps 12 and 15: the climb goes on in the next century: era '+(era+1));
+        assert(t.journey.unlocked.includes(era+1),'The century reached stays open: era '+(era+1));
+        assert.equal(t.journey.knowledge,0,'The next century starts its knowledge from nothing: era '+(era+1));
+      }else assert.equal(t.journey.era,8,'The ladder ends at era VIII');
+    }
+    assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The whole ladder has been reached');
+    assert.equal(JSON.stringify(t.records.free),freeBefore,'Step 18: no Journey run set a Free Play record');
+    // Steps 16 and 17: a century already reached is flown in Free Play, and Free Play never moves the Journey.
+    if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();
+    assert.equal(t.runMode,'free');
+    t.enterEra('scroll');assert.equal(t.eraId(),3,'Step 16: a century the Journey has passed is open in Free Play');
+    const held=JSON.stringify(t.journey),scrollBest=t.records.free['3']||0;
+    t.handleInput();t.journeyObserve(1);t.world.score=scrollBest+77;t.recordBest(t.world.score);t.world.die('THE DARK CAUGHT UP');t.showEnd();
+    assert.equal(JSON.stringify(t.journey),held,'Step 17: Free Play does not advance the Journey');
+    assert.equal(t.records.free['3'],scrollBest+77,'Step 18: Free Play keeps its own record for the century');
+    t.world.player.deadTime=10;events['ceiling-exit-end:click']();
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
     t.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};
