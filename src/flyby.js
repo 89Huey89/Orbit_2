@@ -804,9 +804,14 @@ function flyDark(dt){
   // the edge: a square-stepped raster line, bright, the sharpest thing in the field
   ctx.strokeStyle=`rgba(${P.white},${(.75+near*.2).toFixed(3)})`;ctx.lineWidth=Math.max(1,1.1*scale);ctx.beginPath();ctx.moveTo(0,edge[0][1]);for(let i=0;i<edge.length;i++){const [x,y]=edge[i];ctx.lineTo(x,y);if(i+1<edge.length)ctx.lineTo(edge[i+1][0],y);}ctx.stroke();
   // what is lost is named plainly: LOS, and the frame counter jumping the frames that never arrived
-  const f0=1200+Math.abs(level)*7%88000,lost=2+Math.floor(tileHash(level,1,109)*9);
-  flyMono(ctx,'LOS',W-FLY_BAND-8,fy-9*scale,Math.max(9,10*scale),P.amber,.95,'right');
-  flyMono(ctx,'FRM '+String(f0).padStart(5,'0')+' > '+String(f0+lost).padStart(5,'0')+' · '+lost+' LOST',FLY_BAND+8,fy-9*scale,Math.max(6.5,7*scale),P.grey,.85,'left');
+  // The two are set on the edge, but never lower than the top of the row of utility buttons: an edge still down
+  // behind that row had its counter and its LOS printed under the icons, where neither could be read. Once the
+  // edge has sunk off the sheet altogether there is nothing on it to name.
+  const f0=1200+Math.abs(level)*7%88000,lost=2+Math.floor(tileHash(level,1,109)*9),ly=Math.min(fy,H-footerBand()+2*scale)-9*scale;
+  if(fy<H+9*scale){
+    flyMono(ctx,'LOS',W-FLY_BAND-8,ly,Math.max(9,10*scale),P.amber,.95,'right');
+    flyMono(ctx,'FRM '+String(f0).padStart(5,'0')+' > '+String(f0+lost).padStart(5,'0')+' · '+lost+' LOST',FLY_BAND+8,ly,Math.max(6.5,7*scale),P.grey,.85,'left');
+  }
   ctx.restore();
 }
 
