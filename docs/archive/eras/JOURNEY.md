@@ -794,3 +794,47 @@ Decisions this file does not make, and which should not be invented by an implem
   thresholds beside it. It is a row to be read against the running page, not a decision recorded here.
   `PROTOTYPES.md`'s own open question is the same one: whether three brightnesses separate at speed and
   in peripheral vision, or only when looked at.
+
+---
+
+## 10 · Where the climb stands (2026-09-27)
+
+A ledger of this plan against the code, so the next pass starts from what is true rather than from the
+stages above.
+
+**Done.**
+
+- *Stage 3*: era state and the Journey document (`src/journey.js`); contextual records in
+  `orbit.records.v1`, one per era and reading, with the Final Frontier's apart; the door mechanism
+  (`eraOpen`, `ERA_UNLOCKS`) built and held off by `JOURNEY_GATES_DOORS=false`. No old records are
+  carried over: the game had no players to carry them for.
+- *Stage 4*: the shared endless driver, `world.difficultyDriver()`, on every Endless reading and the
+  Journey; `probe.mjs --flat` reads the chart as it was before it.
+- *Stage 5*: the in-run change of century, §1.3 steps 7–13 — NEXT LANDING and the ringed body, the growing
+  circle over a still of the old sheet (`src/frame.js`), the old medium giving way in its own material
+  (`src/recede.js`, eras I–VII), the body drawn again in the new hand (`reveal.forget`), the Observer Core
+  held steady with the new tool's strokes closing on it (`drawEraCore`), resource restored and the dark
+  pushed back, chapters counted from the arrival row (`eraRow`), any number of changes in one run.
+- *Stage 6*: the whole ladder on real art, `ERA_THRESHOLD=50` measured with `probe.mjs --ladder`, the §8
+  acceptance loop as a runtime fixture from era I to VIII, the Rock's chasms taken out of the base game.
+- *The ends of the climb*: the ladder climbed and the Final Frontier; BEGIN THE JOURNEY AGAIN.
+- *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
+  included; the Ceiling's night wraps its hours when read Endless.
+
+**Open.**
+
+- **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. A design decision,
+  waiting on the author.
+- **Per-era catalogues and the links between centuries.** The catalogue shows the Journey's row but no
+  century keeps its own statistics, and nothing on one century's frontispiece points to another's.
+- **Review of a run that changed century.** Such a run is not saved as a plate, because its log cannot say
+  which hand each stretch was flown under. The log needs the transitions in it, and the replay must turn
+  the page where the run did.
+- **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
+  in place rather than carried with the camera.
+- **The Probe's own giving way** (eight has none above it), and what its transition withholds (§9).
+- **The bottom tally overlap on the Flyby and the Lens**, seen in the shots harness in the Chronicle too;
+  likely the harness, still to be checked in the live page at 430×932.
+- **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
+  `ENDLESS-HARD.md` and not built.
+- **The doors.** Built and off; whether the Journey ever gates Free Play is the author's call.
