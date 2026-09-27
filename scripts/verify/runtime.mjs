@@ -1627,6 +1627,9 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     const replayed=context.test.replayRun(log);
     assert.equal(replayed.driven,true,'A replay reads the driver back off its log');
     assert.equal(context.test.replayRun({...log,driven:undefined}).driven,false,'A log from before the driver replays on the flat chart it was flown on');
+    assert.equal(log.newtonOn,live.newtonOn,'The log keeps whether the run was flown under Newton\'s pull');
+    assert.equal(context.test.replayRun({...log,newtonOn:true}).newtonOn,true,'And a replay flies it under the pull it was flown with');
+    assert.equal(context.test.replayRun({...log,newtonOn:undefined}).newtonOn,false,'A log from before the field reads back with no pull, as it always did');
     assert.equal(replayed.state,'dead','A replayed run must reach the same end the live one did: '+width+'x'+height);
     assert.equal(replayed.reason,live.reason,'A replayed run must die of the same cause: '+width+'x'+height);
     for(const key of ['score','captures','perfects','squares','maxCombo','progress','constellationsCompleted'])
@@ -1940,7 +1943,30 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.eraGrowth,null,'And has grown over the whole sheet within a few seconds');
       assert(!element('game').classList.contains('era-growing'),'And its HUD comes in once the sheet is whole');
       assert(w.score>=score,'Score never falls');
-      w.die('THE DARK CAUGHT UP');t.showEnd();
+      // Left in orbit until the dark takes it, so the whole run is the simulation's own and its log alone
+      // must rebuild it: the change of century armed at the same moment, carried by the same landing, and
+      // the new century's settings put on the world there, to the same end.
+      for(let i=0;i<120*240&&w.state==='playing';i++)w.update(step);
+      assert.equal(w.state,'dead','Left alone, the run is ended by the dark: era '+from);
+      {
+        const log=t.replayLog;
+        assert(log.eras.length===1&&Number.isFinite(log.eras[0].armedAt)&&Array.isArray(log.eras[0].transitionRows),'The log keeps when the change was armed and what it set: era '+from);
+        const rp=t.replayRun(log);
+        assert.equal(rp.eraTransitions,1,'The replay turns the century where the run did: era '+from);
+        assert.equal(rp.eraFrom,w.eraFrom,'On the same row: era '+from);
+        assert.equal(rp.reason,w.reason,'To the same end: era '+from);
+        for(const key of ['score','captures','perfects','progress','relightOn','chasmsOn'])assert.equal(rp[key],w[key],'A replayed change of century matches the live run on '+key+': era '+from);
+        assert(Math.abs(rp.player.x-w.player.x)<1e-6&&Math.abs(rp.player.y-w.player.y)<1e-6,'And ends in the same place: era '+from);
+        assert.equal(t.replayRun({...log,eras:undefined}).eraTransitions,0,'A log without the change flies the whole run under the hand it began in: era '+from);
+      }
+      t.showEnd();
+      if(from===4){
+        let stored=null;try{stored=context.localStorage.getItem('orbit.lastReplay.v1');}catch(_){}
+        if(!storageBlocked)assert(stored&&JSON.parse(stored).eras.length===1,'A run that came onto the atlas from the century below is saved as a plate');
+        t.openReview();assert.equal(t.reviewing,true,'And can be reviewed');
+        assert.equal(t.reviewWorld.eraTransitions,1,'Its review is the run as it was flown, the change of century included');
+        t.renderReview();t.closeReview();
+      }
       assert.equal(t.journey.era,from+1,'Step 14 and 15: a later death leaves the frontier in the newly reached century');
       t.world.player.deadTime=10;t.handleInput();
       assert.equal(t.eraId()||5,from+1,'Step 15: and the next run starts there');

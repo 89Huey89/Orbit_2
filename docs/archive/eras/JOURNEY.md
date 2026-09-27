@@ -818,6 +818,14 @@ stages above.
 - *Stage 6*: the whole ladder on real art, `ERA_THRESHOLD=50` measured with `probe.mjs --ladder`, the §8
   acceptance loop as a runtime fixture from era I to VIII, the Rock's chasms taken out of the base game.
 - *The ends of the climb*: the ladder climbed and the Final Frontier; BEGIN THE JOURNEY AGAIN.
+- *The replay of a run that changed century* (2026-09-27): the log keeps when each change was armed and
+  what each new century set on the world (`eras`, beside `newtonOn` and the opening `transitionRows`), the
+  replay arms the same landing and applies the same settings, and such a run ending on the atlas is saved
+  as a plate and reviewable (`src/replay.js`; a runtime check replays each turn of the §8 fixture).
+- *The bottom tally overlap on the Flyby and the Lens* (2026-09-27): an era's score floater settled its line
+  a frame before it could see the note the same landing wrote; it now asks the notes directly and waits out
+  its first frame, as the Ceiling's did. The shots harness also let floaters stand through skipped paints,
+  pinned at the foot of the sheet, which is where the overlap was seen.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -827,14 +835,12 @@ stages above.
   waiting on the author.
 - **Per-era catalogues and the links between centuries.** The catalogue shows the Journey's row but no
   century keeps its own statistics, and nothing on one century's frontispiece points to another's.
-- **Review of a run that changed century.** Such a run is not saved as a plate, because its log cannot say
-  which hand each stretch was flown under. The log needs the transitions in it, and the replay must turn
-  the page where the run did.
+- **The review of a run that changed century, in each century's hand.** The log now carries the changes and
+  the replay turns where the run did (above), but the review paints the whole chart in the atlas's hand,
+  the stretch flown in the century below included; the page is not yet turned on the sheet itself.
 - **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
   in place rather than carried with the camera.
 - **The Probe's own giving way** (eight has none above it), and what its transition withholds (§9).
-- **The bottom tally overlap on the Flyby and the Lens**, seen in the shots harness in the Chronicle too;
-  likely the harness, still to be checked in the live page at 430×932.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
   `ENDLESS-HARD.md` and not built.
 - **The doors.** Built and off; whether the Journey ever gates Free Play is the author's call.

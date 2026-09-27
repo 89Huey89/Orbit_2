@@ -41,7 +41,15 @@ export function pageInit({seed,epoch,storage}){
       const ms=1000/fps,n=Math.max(0,Math.round(seconds*fps)),quiet=paint?0:Math.max(0,n-Math.round(settle*fps));
       const real=window.render;
       try{
-        if(quiet)window.render=function(){};
+        // A score floater ages only where it is drawn (effects.js), so a skipped paint kept every one alive
+        // for as long as the flight lasted, pinned at the foot of the sheet as the ascent carried it down,
+        // and the shot caught them standing over the notes there. The no-op still lets them run their
+        // second and go.
+        const s=ms/1000;
+        if(quiet)window.render=function(){
+          if(typeof floaters==='undefined'||typeof world==='undefined'||world.state==='paused')return;
+          for(let i=floaters.length-1;i>=0;i--){floaters[i].age+=s;if(floaters[i].age>1.15)floaters.splice(i,1);}
+        };
         for(let i=0;i<n;i++){if(i===quiet&&quiet)window.render=real;shots.frame(ms);}
       }finally{window.render=real;}
       return now;

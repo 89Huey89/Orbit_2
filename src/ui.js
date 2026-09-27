@@ -318,6 +318,9 @@ function event(type,e){
     }
     audio.medal();
     $('announcement').textContent=fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)});
+    // What the new century changed in the simulation is written beside the moment it was armed, so a replay
+    // turns the chart where the run did rather than flying the whole of it under the hand it began in.
+    if(replayLog){const r=replayLog.eras[e.index]||(replayLog.eras[e.index]={});Object.assign(r,{relightOn:world.relightOn,chasmsOn:world.chasmsOn,transitionRows:world.transitionRows.slice()});}
   }else if(type==='transition'){
     // The medium changes under the run (JOURNEY.md §1.3): the plate's own hand draws it, and a plate with
     // no hand for it has no transition rows either.
@@ -444,6 +447,8 @@ function journeyArm(){
   }
   if(!journeyPlayable(journey.era+1))return;
   world.transitionReady=true;
+  // Logged by the clock like a release, since the simulation cannot know it: the replay arms the same landing.
+  if(replayLog)replayLog.eras.push({armedAt:world.time});
   const line=fmt(plateWords().chrome.journey.waits,{next:journeyEraTitle(journey.era+1)});
   say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;
 }
@@ -502,7 +507,7 @@ function newWorld(){
   // the traveller is still reading the frontispiece, so a run that sat a while before its first tap
   // logs every release well after world.time zero, and the replay has to sit through that same idle
   // stretch rather than starting cold at the first release's own timestamp.
-  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,driven:world.driven,goalRow:world.goalRow,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[]};
+  replayLog={seed:world.seed,width:world.width,height:world.height,offerDifficulty:!dailyOn,varyOpening:dailyOn,chasmsOn:world.chasmsOn,relightOn:world.relightOn,newtonOn:world.newtonOn,transitionRows:world.transitionRows.slice(),driven:world.driven,goalRow:world.goalRow,startedAt:0,grace:world.releaseGrace,releases:[],resizes:[],eras:[]};
 }
 function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
@@ -687,9 +692,9 @@ function showEnd(){
   syncImpressumScreen();
   // Saved regardless of preview: the plate itself was really drawn, whether or not its score was
   // the kind the ledger keeps. Eras I and II are their own doors, outside review entirely.
-  // A run that changed century on the way is not one replay can rebuild: its log does not say which hand
-  // each stretch of it was flown under.
-  if(eraId()===0&&!world.eraTransitions)saveLastReplay(replayLog,{score:world.score,row,reason:world.reason,capturedAt:Date.now()});
+  // A run that changed century on the way is saved too: its log says when each change was armed and what
+  // each new century changed in the simulation, so the replay turns where the run did (src/replay.js).
+  if(eraId()===0)saveLastReplay(replayLog,{score:world.score,row,reason:world.reason,capturedAt:Date.now()});
   // Which situation the run ended in, in the same precedence the atlas always checked it in; a plate
   // that gives several of these the same line (the Ceiling gives four of the six one shared sentence)
   // still reads correctly, since only the chosen key's text is ever read. The old inline ternary this

@@ -1277,6 +1277,10 @@ function drawEffects(dt){
     // with no clear line left anywhere leaves `f.lift` null rather than forcing the note onto ground
     // already spoken for — checked once here, exactly as the settle itself is, rather than retried every
     // frame, which would let an already-standing note jump about as the ground around it changes.
+    // It waits out its first frame unsettled, as the Ceiling's does (ceilingFloaterMark): the landing that
+    // scored it can also re-set a standing instruction at the end of that same frame, after this line would
+    // have been chosen, and the score was then set straight across it. Its first frame is all but unseen.
+    if(!f.waited){f.waited=true;continue;}
     if(f.lift===undefined){
       f.left=sx(f.x)<W*.5;
       const line=floaterLine(f,f.left,size*1.5);
