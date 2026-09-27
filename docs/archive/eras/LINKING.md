@@ -25,8 +25,8 @@ everything" is right, because the two answer different wishes. In **Free Play** 
 readings of itself: the **Chronicle**, its story flown to an ending in one run, and **Endless**, the
 same era flown on the shared driver of `JOURNEY.md` §1.8 for a record of its own. The three endless
 eras are given an ending out of material they already carry (I and III landed, row 32 each, with the
-reading chosen on the era's own frontispiece and kept in `orbit.reading.v1`; II, IV and VI stay
-Chronicle-only until their chapters, notes and records are made to read past their last chapter):
+reading chosen on the era's own frontispiece and kept in `orbit.reading.v1`; *II, IV, VI and VII landed
+2026-09-27*: the Ceiling's night comes round again, the others hold their last chapter):
 
 - **I** — the fourth chamber is already Newgrange; the Chronicle ends when the winter-solstice light
   comes down the passage into it.
@@ -34,8 +34,9 @@ Chronicle-only until their chapters, notes and records are made to read past the
   is rolled up. (The circuit of the twenty-eight mansions was the first idea, but the band measures the
   climb in world units, not rows, and closes its circle somewhere near row 23 to 25 depending on pace;
   a finish line has to be a row.)
-- **V** — the ten stages of the construction completed and the sheet pulled: the atlas printed. Its
-  exact row is still to be tuned.
+- **V** — the atlas printed. *Landed at row 32* (the fourth chapter engraved), not at the construction's
+  ten stages, which are bought in the first ten landings and would end the Chronicle before it had begun.
+  Endless stays the atlas's default reading; the Chronicle is chosen, and never under the daily.
 
 **2 · A chapter is a milestone.** `JOURNEY.md` §1.5 asked for three to five named knowledge
 structures per era and left most of them unnamed. The previews have already named them: the chapters

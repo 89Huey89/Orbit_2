@@ -1037,6 +1037,10 @@ defineVoice('astrolabe',{
   chapters:ASTRO_CHAPTERS.map(c=>c.en+' · '+c.year),
   chapterRows:ASTRO_CHAPTER_ROWS,
   goalRow:ASTRO_GOAL_ROW,
+  // The Chronicle ends at Samarkand with the Zij finished. Read Endless, the sixth door is still opened
+  // and held — the instrument stands complete, its rete still gaining named stars — but the Zij is never
+  // called done, so the run keeps the sky open for observing instead of closing the table (LINKING.md).
+  endless:true,
   chapterSaid:'Door {numeral}. {name}.',
   // The instrument's six parts, one a city: the Journey's milestones are the astrolabe assembled.
   milestones:ASTRO_CHAPTERS.map(c=>c.part),
@@ -1102,6 +1106,7 @@ defineVoice('astrolabe',{
     pauseLeave:'HANG UP THE ASTROLABE',pauseLabel:'Rest the alidade',gameLabel:'The Astrolabe, a playable Era IV preview',
     canvasLabel:'The Astrolabe. Guide a brass alidade from Baghdad to Samarkand, measuring each star you hold. Tap or press Space to release.',
     eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to take up the alidade again',endActionWon:'Tap to begin the journey again',
+    readings:{chronicle:'TO THE ZIJ',endless:'THE ENDLESS OBSERVATORY',label:'The reading: {reading}. Tap to change it'},
     statCaptures:'Stars',statPerfects:'Clean',statFlow:'Best order',statRow:'Row',
     instructions:{head:'THE MANNER OF SIGHTING',rules:['Tap to release the alidade.','Hold a star until its scale closes and the qadr is cut.','Keep ahead of the darknesses, the brass tarnishing below.','Six doors from Baghdad to Samarkand. Choose the first star — {pressures}.']}
   },

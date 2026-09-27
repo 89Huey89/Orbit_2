@@ -1714,7 +1714,25 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       if(w.endless)assert(w.goalRow>0&&w.chrome.readings.chronicle!==w.chrome.readings.endless,'A century offering two readings has an ending to leave out, and names both: '+id);
       context.test.leaveEra();context.test.newWorld();
     }
-    assert.equal(reading.hidden,true,'The atlas has no ending, and so no choice of reading');
+    // The atlas offers the choice the other way round: Endless is its own reading, and its Chronicle, the atlas
+    // printed once the fourth chapter is engraved, is the one to be chosen.
+    assert.equal(reading.hidden,false,'The atlas offers a Chronicle beside its Endless reading');
+    assert.equal(context.test.world.goalRow,0,'Read as it always was, the atlas has no row it is won at');
+    assert.equal(reading.textContent,'ENDLESS');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,32,'Its Chronicle is won when the fourth chapter is engraved');
+    assert.equal(context.test.world.driven,false,'And is flown on the flat chart, as every Chronicle is');
+    assert.equal(reading.textContent,'TO THE PRESS');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,'chronicle','One key for every atlas plate');
+    assert.equal(context.test.plateWords().losses['THE SUN ROSE'],'THE ATLAS IS PRINTED','The atlas names its own ending');
+    events['daily:click']();
+    assert.equal(reading.hidden,true,'The daily is one course flown the same way by all, and offers no reading');
+    assert.equal(context.test.world.goalRow,0,'And never ends at a row');
+    events['daily:click']();
+    assert.equal(context.test.world.goalRow,32,'Leaving the daily puts the chosen reading back');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'And Endless can be chosen back');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,undefined,'The atlas\'s own reading is not written down');
     context.test.enterEra('rock');
     assert.equal(context.test.world.goalRow,32,'The Rock\'s Chronicle ends with the fourth chamber, Newgrange');
     assert.equal(context.test.world.driven,false,'A Chronicle keeps the flat chart its finish was read off');
@@ -1836,7 +1854,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       for(let k=2;k<T;k++)t.journeyObserve(1);
       t.world.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
-      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
+      assert(element('end-journey').textContent.includes(era<8?'IS KNOWN':'THE FINAL FRONTIER'),'The leaf says the era is known, and at the last rung that the ladder is climbed: era '+era+' · '+element('end-journey').textContent);
       t.world.player.deadTime=10;t.handleInput();
       if(era<8){
         assert.equal(t.journey.era,era+1,'Steps 12 and 15: the climb goes on in the next century: era '+(era+1));
@@ -1845,9 +1863,25 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }else assert.equal(t.journey.era,8,'The ladder ends at era VIII');
     }
     assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The whole ladder has been reached');
+    // The Final Frontier: the Journey goes on at the last rung, and its runs keep a record of their own.
+    assert.equal(t.eraId(),8,'After the ladder the Journey goes on at the last rung');
+    t.world.score=4321;t.recordBest(t.world.score);
+    assert.equal(t.journey.bests.frontier,4321,'A run past the ladder keeps the Final Frontier\'s record');
+    t.world.die('THE DARK CAUGHT UP');t.showEnd();
+    assert(element('end-journey').textContent.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').textContent);
+    // Beginning again is asked twice, sends the climb back to era I, and keeps every century reached and every record.
+    const restart=element('journey-restart');
+    assert.equal(restart.hidden,false,'A climb under way can be begun again');
+    events['journey-restart:click']();assert.equal(t.journey.era,8,'One tap only asks');assert(restart.textContent.includes('TAP AGAIN'));
+    events['journey-restart:click']();
+    assert.equal(t.journey.era,1,'The second begins the climb again at era I');assert.equal(t.journey.knowledge,0);
+    assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The centuries reached stay open');
+    assert.equal(t.journey.bests.frontier,4321,'And the records stay where they were');
+    assert.equal(t.runMode,'free','Beginning again leaves the Journey run that was on the press');
+    assert.equal(restart.hidden,true,'With nothing climbed there is nothing to begin again');
+    t.journey.unlocked=[1,2,3,4,5,6,7,8];
     assert.equal(JSON.stringify(t.records.free),freeBefore,'Step 18: no Journey run set a Free Play record');
     // Steps 16 and 17: a century already reached is flown in Free Play, and Free Play never moves the Journey.
-    if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();
     assert.equal(t.runMode,'free');
     t.enterEra('scroll');assert.equal(t.eraId(),3,'Step 16: a century the Journey has passed is open in Free Play');
     const held=JSON.stringify(t.journey),scrollBest=t.records.free['3']||0;
@@ -1898,6 +1932,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.eraRow(),0,'The new century is told from its own first row');
       if(from===4)assert.equal(t.plateName,'paper','A century onto the atlas puts back the plate the climb left it on');
       assert(t.eraGrowth,'Step 10: the new century grows out of the body');
+      // (Under reduced motion every mark is drawn whole at once, so there is no reveal to restart.)
+      if(!reduceMotion)assert(t.reveal.age(w.player.node)<.5,'Step 9: the body is drawn again from nothing, in the new century\'s hand');
       assert(element('game').classList.contains('era-growing'),'The new century\'s HUD waits for the circle');
       const score=w.score;
       for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}

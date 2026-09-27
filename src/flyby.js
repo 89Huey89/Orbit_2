@@ -981,6 +981,13 @@ defineVoice('flyby',{
   chapters:FLY_CHAPTERS.map(c=>c.place+' · '+c.year),
   chapterRows:FLY_CHAPTER_ROWS,
   goalRow:FLY_GOAL_ROW,
+  // The Chronicle ends at the sixth encounter, Pluto, one pass and never back. Read Endless, the craft
+  // keeps going past it, out toward interstellar space, and reaching Pluto is not a win: the sixth
+  // encounter's frame is held rather than invented past its own last picture (flyChapterOf's own clamp
+  // already does this, unchanged), because 07-flyby.md reserves the mission's actual interstellar range
+  // to The Probe, era VIII, and a relabelled "extended mission" here would only blur that line for no
+  // new art earned. The mission log (orbit.flyby.v1) keeps filling exactly as it always did.
+  endless:true,
   // The Journey's milestones: Mars, the Grand Tour, and the edge of the planets, two encounters apiece.
   milestones:['MARS','THE GRAND TOUR','THE EDGE OF THE PLANETS'],
   chapterSaid:'Encounter {numeral}. {name}.',
@@ -1042,6 +1049,7 @@ defineVoice('flyby',{
     pauseLeave:'END THE MISSION',pauseLabel:'Enter safe mode',gameLabel:'The Flyby, a playable Era VII preview',
     canvasLabel:'The Flyby. Fly a spacecraft from Mars in 1965 to Pluto in 2015, holding each light until its picture comes home. Tap or press Space to release.',
     eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to launch again',endActionWon:'Tap to begin again',
+    readings:{chronicle:'TO PLUTO',endless:'THE ENDLESS MISSION',label:'The reading: {reading}. Tap to change it'},
     statCaptures:'Mapped',statPerfects:'Clean',statFlow:'Best lock',statRow:'Row',
     instructions:{head:'THE MISSION PLAN',rules:['Tap to release the craft.','Hold a light until its picture comes home.','Stay ahead of the loss of signal rising below.','Six encounters, Mars to Pluto. Choose the first target — {pressures}.']}
   },

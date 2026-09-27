@@ -65,6 +65,9 @@ const reveal=(function(){
   return {
     get runs(){return runs;},
     reset(){born.clear();drawing.clear();queued.clear();runs++;lastScratch=-9;},
+    // A mark drawn once and to be drawn again from its first stroke: the body a new century begins at is
+    // redrawn in that century's own hand with the same staged reveal it first arrived with.
+    forget(key){born.delete(key);drawing.delete(key);queued.delete(key);},
     // 0..1 for a key, registering it on first sight. While three other throttled marks are still being
     // drawn a new one waits at 0, unless it is urgent — anything already inside the view draws at once,
     // so a mark can never be invisible where it matters, and never counts against the three either.

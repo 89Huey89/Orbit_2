@@ -630,11 +630,26 @@ rising at rows 200 and 500. *Must not break*: `'The reward must move visible dar
   century, a century onto the atlas, the atlas onto a century), and `tools/shots/scenarios/era-transition.mjs`
   shows it at 430×932.
 
+**The old medium's own failure** (§1.3 step 6) landed after: `src/recede.js` wears a copy of the still
+away at the growing edge in each century's own material, from `THE-FRONTIER.md`'s table — spall, salt bloom and
+flaking, ink bleed and foxing, patina, ink burn, fog and frilling, tile dropout — with falling fragments
+coloured from the still itself. The Probe's bit flips are not drawn: no century is above it to give way to.
+
+**The unchanged core** (§1.3 step 10) came last: while the circle grows, `drawEraCore` in `src/frame.js`
+holds the traveller as a small inked core keyed in paper, the one mark neither century draws in its own hand,
+and for the first 0.7 s eight short gold strokes converge onto it — strokes rather than a ring, as
+`OBSERVER-CORE.md` asks, so the new tool is seen closing round the core rather than a halo being hung on it.
+The core lets go over the last half-second of the growth, when the new century's own traveller is drawn whole.
+
 **Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
 move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
-it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) changes to the new
-century's at once rather than growing with the circle. The phenomenon is not yet *reinterpreted* in the new
-hand as it is crossed (§1.3); the body is simply drawn by whichever hand's circle it stands in. A run that
+it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) of the new century
+waits for the circle and fades in once the sheet is whole. The phenomenon is reinterpreted (§1.3 step 9) as
+`PROGRESSION.md` step 7 describes it: the body is drawn again from nothing by the incoming hand with the staged
+reveal every body gets on first sight (`reveal.forget`), and the sheet writes the century that now holds it. A
+cut-out of the old hand's drawing of the body, kept over it and read away, was tried and set aside: the camera
+moves on after the landing, so the cut-out sat off the body, and an unvisited body is barely drawn in the old
+hand at all. A run that
 changed century is not saved for review, since a log cannot yet say which hand each stretch was flown under.
 
 The plan as it was written:
@@ -655,6 +670,15 @@ Nothing may reset score, streak, run timer or mastery state.
 *Proven by*: eye, frame by frame — the body and the Core never flicker or dim; the new world grows
 from a point rather than arriving from an edge; no dropped frame; no input required. Plus a
 simulation fixture that two transitions in one run leave score and streak monotonic.
+
+### The ends of the climb · *landed*
+
+(2026-09-27.) Knowing era VIII climbs the ladder (`journeyComplete()` in `src/journey.js`), said once on the
+sheet. From then on a Journey run is the **Final Frontier** of §1.7: it goes on at the last rung, and its
+score is kept as the Journey document's `bests.frontier`, the primary endless record, apart from the last
+rung's own best. The deliberate restart of §1.2 has a control at last: BEGIN THE JOURNEY AGAIN in the
+frontispiece's MORE menu, shown once any of the climb has been made, asked twice, sending the frontier back
+to era I while the centuries reached stay open and every record, the Final Frontier's included, is kept.
 
 ### Stage 6 — the whole ladder in mocks · *landed, without the mocks*
 
@@ -770,3 +794,47 @@ Decisions this file does not make, and which should not be invented by an implem
   thresholds beside it. It is a row to be read against the running page, not a decision recorded here.
   `PROTOTYPES.md`'s own open question is the same one: whether three brightnesses separate at speed and
   in peripheral vision, or only when looked at.
+
+---
+
+## 10 · Where the climb stands (2026-09-27)
+
+A ledger of this plan against the code, so the next pass starts from what is true rather than from the
+stages above.
+
+**Done.**
+
+- *Stage 3*: era state and the Journey document (`src/journey.js`); contextual records in
+  `orbit.records.v1`, one per era and reading, with the Final Frontier's apart; the door mechanism
+  (`eraOpen`, `ERA_UNLOCKS`) built and held off by `JOURNEY_GATES_DOORS=false`. No old records are
+  carried over: the game had no players to carry them for.
+- *Stage 4*: the shared endless driver, `world.difficultyDriver()`, on every Endless reading and the
+  Journey; `probe.mjs --flat` reads the chart as it was before it.
+- *Stage 5*: the in-run change of century, §1.3 steps 7–13 — NEXT LANDING and the ringed body, the growing
+  circle over a still of the old sheet (`src/frame.js`), the old medium giving way in its own material
+  (`src/recede.js`, eras I–VII), the body drawn again in the new hand (`reveal.forget`), the Observer Core
+  held steady with the new tool's strokes closing on it (`drawEraCore`), resource restored and the dark
+  pushed back, chapters counted from the arrival row (`eraRow`), any number of changes in one run.
+- *Stage 6*: the whole ladder on real art, `ERA_THRESHOLD=50` measured with `probe.mjs --ladder`, the §8
+  acceptance loop as a runtime fixture from era I to VIII, the Rock's chasms taken out of the base game.
+- *The ends of the climb*: the ladder climbed and the Final Frontier; BEGIN THE JOURNEY AGAIN.
+- *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
+  included; the Ceiling's night wraps its hours when read Endless.
+
+**Open.**
+
+- **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. A design decision,
+  waiting on the author.
+- **Per-era catalogues and the links between centuries.** The catalogue shows the Journey's row but no
+  century keeps its own statistics, and nothing on one century's frontispiece points to another's.
+- **Review of a run that changed century.** Such a run is not saved as a plate, because its log cannot say
+  which hand each stretch was flown under. The log needs the transitions in it, and the replay must turn
+  the page where the run did.
+- **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
+  in place rather than carried with the camera.
+- **The Probe's own giving way** (eight has none above it), and what its transition withholds (§9).
+- **The bottom tally overlap on the Flyby and the Lens**, seen in the shots harness in the Chronicle too;
+  likely the harness, still to be checked in the live page at 430×932.
+- **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
+  `ENDLESS-HARD.md` and not built.
+- **The doors.** Built and off; whether the Journey ever gates Free Play is the author's call.

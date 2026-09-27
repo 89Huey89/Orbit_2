@@ -44,6 +44,9 @@ function journeyMilestones(doc=journey){
   return {of,open,toward:open>=of?1:clamp(doc.knowledge/per-open,0,1)};
 }
 const journeyReady=(doc=journey)=>{const m=journeyMilestones(doc);return m.open>=m.of;};
+// The ladder is climbed once the last century is known. What follows is the Final Frontier of §1.7: a Journey
+// run goes on at the last rung for as long as it survives, and its score is the one record kept for it.
+const journeyComplete=(doc=journey)=>doc.era>=JOURNEY_ERAS&&journeyReady(doc);
 // A run's knowledge, banked as each body is released and zeroed whenever it is folded in, so a second
 // fold after the page has been hidden adds only what has been observed since the first.
 function resetJourneyRun(){journeyRun=0;}
@@ -78,7 +81,7 @@ function journeyAdvance(playable){
   if(!journey.unlocked.includes(journey.era))journey.unlocked.push(journey.era);
   saveJourney();return true;
 }
-// The deliberate restart of §1.2: the frontier back to era I and its knowledge cleared, while the eras
+// The deliberate restart of §1.2 (the Final Frontier's record is kept with the rest): the frontier back to era I and its knowledge cleared, while the eras
 // already reached stay open to Free Play and every record stays where it was. The page confirms it first;
 // nothing calls this on its own.
 function journeyReset(){
@@ -105,9 +108,11 @@ const records=readRecords();
 function recordContext(){
   if(dailyOn)return null;
   const era=journeyEraOf();
-  if(runMode==='journey')return {journey:true,key:String(era)};
-  const endless=typeof plateWords==='function'&&plateWords().endless&&typeof eraReading==='function'&&eraReading()==='endless';
-  return {journey:false,key:era+(endless?':endless':'')};
+  if(runMode==='journey')return {journey:true,key:journeyComplete()?'frontier':String(era)};
+  // A reading that is not the century's own default is kept apart from it: ':endless' for a century whose
+  // default is its Chronicle, ':chronicle' for the atlas, whose default is Endless.
+  const reading=typeof eraReading==='function'?eraReading():'',fallback=typeof readingDefault==='function'?readingDefault():reading;
+  return {journey:false,key:era+(reading&&reading!==fallback?':'+reading:'')};
 }
 function contextBest(){
   const c=recordContext();if(!c)return 0;
