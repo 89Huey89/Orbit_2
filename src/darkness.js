@@ -387,22 +387,30 @@ function floaterLine(f,left,h,kind){
   for(const q of list)if(q!==f&&q.lift!==undefined&&q.left===left){
     const qy=sy(q.y)+q.lift;boxes.push([qy-h*.55,qy+h*.55]);
   }
+  // The notes are asked directly as well as through the register, for both kinds: a note is written in the
+  // same event a landing's score is (ui.js's say, a line after the push), and a standing instruction is
+  // re-set at the end of a frame, after this frame's lettering has declared its ground, so the register can
+  // be one note short at exactly the moment a floater or a tally is choosing its line. Asked only through
+  // it, an era's score settled straight across the note written beside the same landing.
+  const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale);
+  let w;ctx.save();ctx.font=plateFace(size,'text','italic');
+  if(kind==='tally'){w=ctx.measureText(f.line1).width;ctx.font=plateFace(Math.max(9.5,11*scale),'text','italic');w=Math.max(w,ctx.measureText(f.line2).width);}
+  else w=f.markWidth!=null?f.markWidth:ctx.measureText(f.text).width;
+  ctx.restore();
+  const l=left?inner:W-inner-hand*2.4-w,r=left?inner+hand*2.4+w:W-inner;
+  // A floater climbs a little over its second on the sheet (floaterBox), so a note just above its line is
+  // ground it would drift into; the note's box is carried down by that climb before it is weighed.
+  const climb=kind==='tally'||reducedMotion?0:1.15*22*scale;
+  for(const q of inscriptions){const b=inscriptionBox(q);if(b.right>l&&b.left<r)boxes.push([b.top,b.bottom+climb]);}
   // A tally is ink that stands, so it is kept off the chart as well as off the lettering — a body or a
   // hazard whose disc reaches into the stretch of gutter the note would take is a line the note is not
   // set on, exactly as a note beside the chart steps round the bodies (placeInscription). A floater, gone
   // in a second, never needed to; a tally set across a slingshot's rose would stand there until the sheet
   // carried both away.
   if(kind==='tally'){
-    const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
-    ctx.save();ctx.font=plateFace(size,'text','italic');let w=ctx.measureText(f.line1).width;ctx.font=plateFace(size2,'text','italic');w=Math.max(w,ctx.measureText(f.line2).width);ctx.restore();
-    const l=left?inner:W-inner-hand*2.4-w,r=left?inner+hand*2.4+w:W-inner;
     const disc=(x,y,rad)=>{if(x+rad>l&&x-rad<r)boxes.push([y-rad,y+rad]);};
     for(const n of world.nodes)disc(sx(n.x),sy(n.y),(n.cap||n.r)*scale+2);
     for(const hz of world.hazards)disc(sx(hz.x),sy(hz.y),hz.r*scale+6);
-    // The notes are asked directly as well as through the register: a standing instruction is re-set at
-    // the end of a frame, after this frame's lettering has declared its ground, so the register can be one
-    // note short at exactly the moment a tally is choosing its line.
-    for(const q of inscriptions){const b=inscriptionBox(q);if(b.right>l&&b.left<r)boxes.push([b.top,b.bottom]);}
   }
   const clash=y=>{let worst=0;for(const [t,b] of boxes){const o=Math.min(y+h*.55,b)-Math.max(y-h*.55,t);if(o>worst)worst=o;}return worst;};
   const home=clamp(sy(f.y),top,bottom);
