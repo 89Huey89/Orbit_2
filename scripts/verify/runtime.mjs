@@ -1894,9 +1894,11 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.eraRow(),0,'The new century is told from its own first row');
       if(from===4)assert.equal(t.plateName,'paper','A century onto the atlas puts back the plate the climb left it on');
       assert(t.eraGrowth,'Step 10: the new century grows out of the body');
+      assert(element('game').classList.contains('era-growing'),'The new century\'s HUD waits for the circle');
       const score=w.score;
       for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
       assert.equal(t.eraGrowth,null,'And has grown over the whole sheet within a few seconds');
+      assert(!element('game').classList.contains('era-growing'),'And its HUD comes in once the sheet is whole');
       assert(w.score>=score,'Score never falls');
       w.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.era,from+1,'Step 14 and 15: a later death leaves the frontier in the newly reached century');

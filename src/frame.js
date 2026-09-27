@@ -1264,16 +1264,17 @@ let eraGrowth=null;
 function beginEraGrowth(e){
   let snap=null;
   try{if(canvas.width&&canvas.height){snap=makeCanvas(canvas.width,canvas.height);snap.getContext('2d').drawImage(canvas,0,0);}}catch(_){snap=null;}
-  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world};
+  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world};game.classList.add('era-growing');
 }
+function endEraGrowth(){eraGrowth=null;game.classList.remove('era-growing');}
 function eraGrowthReach(g){
   const t=(world.time-g.t0)/(reducedMotion?.5:ERA_GROW);if(t>=1)return Infinity;
   const u=Math.max(0,t);return u*u*(3-2*u)*Math.hypot(W,H)*1.1;
 }
 function drawEraGrowth(){
   const g=eraGrowth;if(!g)return;
-  if(g.world!==world||!g.snap){eraGrowth=null;return;}
-  const R=eraGrowthReach(g);if(R===Infinity){eraGrowth=null;return;}
+  if(g.world!==world||!g.snap){endEraGrowth();return;}
+  const R=eraGrowthReach(g);if(R===Infinity){endEraGrowth();return;}
   const x=sx(g.x),y=sy(g.y);
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.beginPath();ctx.rect(0,0,W,H);ctx.arc(x,y,Math.max(0,R),0,TAU,true);ctx.clip('evenodd');
