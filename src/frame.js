@@ -1264,18 +1264,23 @@ let eraGrowth=null;
 function beginEraGrowth(e){
   let snap=null;
   try{if(canvas.width&&canvas.height){snap=makeCanvas(canvas.width,canvas.height);snap.getContext('2d').drawImage(canvas,0,0);}}catch(_){snap=null;}
-  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world,n:e.n};game.classList.add('era-growing');
+  // The century giving way is the one on the press now, before the page turns it (recedeBegin, src/recede.js).
+  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world,n:e.n,era:eraId()||5};game.classList.add('era-growing');
+  if(snap)recedeBegin(eraGrowth);
 }
 function endEraGrowth(){eraGrowth=null;game.classList.remove('era-growing');}
 function eraGrowthReach(g){
   const t=(world.time-g.t0)/(reducedMotion?.5:ERA_GROW);if(t>=1)return Infinity;
   const u=Math.max(0,t);return u*u*(3-2*u)*Math.hypot(W,H)*1.1;
 }
-function drawEraGrowth(){
+function drawEraGrowth(dt){
   const g=eraGrowth;if(!g)return;
   if(g.world!==world||!g.snap){endEraGrowth();return;}
   const R=eraGrowthReach(g);if(R===Infinity){endEraGrowth();return;}
   const x=sx(g.x),y=sy(g.y);
+  // The old medium fails in its own material where it can (src/recede.js); the plain circle with a gold edge
+  // below is only what is left if there was no copy of it to wear away.
+  if(recedeFrame(g,x,y,R,world.state==='playing'?dt||0:0))return;
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.beginPath();ctx.rect(0,0,W,H);ctx.arc(x,y,Math.max(0,R),0,TAU,true);ctx.clip('evenodd');
   ctx.drawImage(g.snap,0,0,W,H);
@@ -1318,7 +1323,7 @@ function render(dt){
   // src/plates.js) and this file steps aside completely; everything below that it does not draw
   // instead is still the atlas's own, since every other painter in this file is unchanged.
   const own=handFor('frame');
-  if(own){own(dt,world.aim());drawEraMark();drawEraGrowth();updateUI(dt);return;}
+  if(own){own(dt,world.aim());drawEraMark();drawEraGrowth(dt);updateUI(dt);return;}
   reveal.prime();prewarmGlyph();
   // The chapter title is struck here, with the graticule and before a single chart mark, because it is cut
   // into the plate rather than laid over it: the orbits, the bodies, the traveller, the flood and the notes
@@ -1364,6 +1369,6 @@ function render(dt){
   // paper's own grain goes over the whole sheet last, the way every other mark's ink already sits under it.
   nibClaimDraw();
   drawLaidPaper();
-  drawEraMark();drawEraGrowth();
+  drawEraMark();drawEraGrowth(dt);
   updateUI(dt);
 }

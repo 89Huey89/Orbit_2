@@ -630,6 +630,11 @@ rising at rows 200 and 500. *Must not break*: `'The reward must move visible dar
   century, a century onto the atlas, the atlas onto a century), and `tools/shots/scenarios/era-transition.mjs`
   shows it at 430×932.
 
+**The old medium's own failure** (§1.3 step 6) landed after: `src/recede.js` wears a copy of the still
+away at the growing edge in each century's own material, from `THE-FRONTIER.md`'s table — spall, salt bloom and
+flaking, ink bleed and foxing, patina, ink burn, fog and frilling, tile dropout — with falling fragments
+coloured from the still itself. The Probe's bit flips are not drawn: no century is above it to give way to.
+
 **Known compromises of this first cut.** The old medium is a still, not a live drawing: its marks do not
 move while the circle grows, and it is held in place rather than carried up with the camera, because carrying
 it opened a strip of the new sheet along its top edge. The DOM chrome (score, HUD labels) of the new century
