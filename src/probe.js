@@ -883,14 +883,24 @@ function prbCraftSprite(){
 function prbPlayer(){
   prbDaughters();
   if(world.state==='dead')return;
-  const P=ink.probe,p=world.player,sp=prbCraftSprite(),{x,y,ang}=heldPose(-27*sp.S,26*sp.S),t=reducedMotion?0:world.time;
+  // The craft is laid with its replication core, and the Observer Core in it, on the true point.
+  const P=ink.probe,p=world.player,sp=prbCraftSprite(),ap=sp.core,tool=instrumentOn(),{x,y,ang}=travellerPose(-27*sp.S-ap,26*sp.S-ap),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  // the drive's plume while in flight: a short radiator-coloured cone from the bell
-  if(world.state==='playing'&&!p.node){const fl=ctx.createLinearGradient(-29,0,-48,0);fl.addColorStop(0,`rgba(${P.core},.9)`);fl.addColorStop(.25,`rgba(${P.radHi},.75)`);fl.addColorStop(1,`rgba(${P.rad},0)`);ctx.fillStyle=fl;ctx.beginPath();ctx.moveTo(-29,-5.4);ctx.quadraticCurveTo(-38,-2.4,-48-3*Math.sin(t*20),0);ctx.quadraticCurveTo(-38,2.4,-29,5.4);ctx.closePath();ctx.fill();}
-  ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
-  // the Observer Core: omnidirectional, three thin rings breathing out from it rather than a beam forward
-  const cx=sp.core;ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(cx,0,1.5,0,TAU);ctx.fill();
-  for(let i=0;i<3;i++){const f=((t*.5+i/3)%1);ctx.strokeStyle=`rgba(${P.core},${((1-f)*.45).toFixed(3)})`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(cx,0,3+f*9,0,TAU);ctx.stroke();}
+  // Unless the probe is chosen, the traveller is the comet in the self-log's instrument white, its tail
+  // run through with the one warm colour aboard. The charges then close in round it.
+  if(!tool){
+    travellerComet({ground:P.vac,playerHalo:`rgb(${P.vac})`,playerKeyline:`rgb(${P.vac})`,playerMid:`rgb(${P.white})`,playerHighlight:`rgb(${P.core})`,playerNib:P.radHi,playerHeadWash:P.dim,playerFilamentA:P.radHi,playerFilamentB:P.white});
+    ctx.scale(.72,.72);
+  }else{
+    ctx.translate(-ap,0);
+    // the drive's plume while in flight: a short radiator-coloured cone from the bell
+    if(world.state==='playing'&&!p.node){const fl=ctx.createLinearGradient(-29,0,-48,0);fl.addColorStop(0,`rgba(${P.core},.9)`);fl.addColorStop(.25,`rgba(${P.radHi},.75)`);fl.addColorStop(1,`rgba(${P.rad},0)`);ctx.fillStyle=fl;ctx.beginPath();ctx.moveTo(-29,-5.4);ctx.quadraticCurveTo(-38,-2.4,-48-3*Math.sin(t*20),0);ctx.quadraticCurveTo(-38,2.4,-29,5.4);ctx.closePath();ctx.fill();}
+    ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
+    ctx.translate(ap,0);
+    // the Observer Core: omnidirectional, three thin rings breathing out from it rather than a beam forward
+    ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(0,0,1.5,0,TAU);ctx.fill();
+    for(let i=0;i<3;i++){const f=((t*.5+i/3)%1);ctx.strokeStyle=`rgba(${P.core},${((1-f)*.45).toFixed(3)})`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,3+f*9,0,TAU);ctx.stroke();}
+  }
   // the charges held: the shield plate as a hexagon, the sail segment as a diamond astern, the scrub as a ring of bits
   const cr=6;
   if(p.shielded){ctx.strokeStyle=`rgba(${P.white},.7)`;ctx.lineWidth=1.1;ctx.beginPath();for(let i=0;i<=6;i++){const a=i*TAU/6;i?ctx.lineTo(Math.cos(a)*(34+cr),Math.sin(a)*(34+cr)):ctx.moveTo(Math.cos(a)*(34+cr),Math.sin(a)*(34+cr));}ctx.stroke();}

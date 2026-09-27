@@ -789,13 +789,21 @@ function astroAlidadeSprite(){
 }
 function astroPlayer(){
   if(world.state==='dead')return;
-  const P=ink.astro,p=world.player,sp=astroAlidadeSprite(),{x,y,ang}=heldPose(-19*sp.S,19*sp.S),t=reducedMotion?0:world.time;
+  // The bar is laid with its forward pinnule, and the Core in its hole, on the true point.
+  const P=ink.astro,p=world.player,sp=astroAlidadeSprite(),ap=sp.core,tool=instrumentOn(),{x,y,ang}=travellerPose(-19*sp.S-ap,19*sp.S-ap),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
-  const ax=sp.core,br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(ax,0,0,ax,0,10*br);
-  hg.addColorStop(0,'rgba(255,250,228,.95)');hg.addColorStop(.35,'rgba(255,240,196,.5)');hg.addColorStop(1,'rgba(255,240,196,0)');
-  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(ax,0,10*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(ax,0,1.9,0,TAU);ctx.fill();
-  ctx.strokeStyle=`rgb(${P.groove})`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(ax,0,2.5,0,TAU);ctx.stroke();
+  // Unless the alidade is chosen, the traveller is the comet, in brass with a gilt light at its head and
+  // the manuscript's own ink for its tail. The charges then close in round it.
+  if(!tool){
+    travellerComet({ground:P.paper,playerHalo:`rgb(${P.paper})`,playerKeyline:`rgb(${P.groove})`,playerMid:`rgb(${P.brass})`,playerHighlight:`rgb(${P.gilt})`,playerNib:P.groove,playerHeadWash:P.inkSoft,playerFilamentA:P.inkSoft,playerFilamentB:P.ink});
+    ctx.scale(.72,.72);
+  }else{
+    ctx.drawImage(sp.canvas,-sp.size/2-ap,-sp.size/2,sp.size,sp.size);
+    const br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(0,0,0,0,0,10*br);
+    hg.addColorStop(0,'rgba(255,250,228,.95)');hg.addColorStop(.35,'rgba(255,240,196,.5)');hg.addColorStop(1,'rgba(255,240,196,0)');
+    ctx.fillStyle=hg;ctx.beginPath();ctx.arc(0,0,10*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(0,0,1.9,0,TAU);ctx.fill();
+    ctx.strokeStyle=`rgb(${P.groove})`;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(0,0,2.5,0,TAU);ctx.stroke();
+  }
   // The charges held, round the instrument: the buckler's ring, the mirror's silver arc, the sun's rays.
   if(p.shielded){ctx.strokeStyle=`rgba(${P.brassLo},.8)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,0,22,0,TAU);ctx.stroke();ctx.strokeStyle=`rgba(${P.brassHi},.7)`;ctx.lineWidth=.5;ctx.beginPath();ctx.arc(0,0,20.5,0,TAU);ctx.stroke();}
   if(p.reflectorArmed){ctx.strokeStyle=`rgba(${P.silver},.95)`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,25,-.9,.9);ctx.stroke();ctx.strokeStyle=`rgba(${P.groove},.8)`;ctx.lineWidth=.4;ctx.beginPath();ctx.arc(0,0,26.3,-.9,.9);ctx.stroke();}

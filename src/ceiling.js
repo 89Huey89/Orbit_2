@@ -1988,12 +1988,21 @@ function ceilingDrawPlayer(dt){
   // a column; where it is going is said by the route under it and the guide ahead of it, not by the hull.
   // The barque is flooded in light colours, so it alone is closed in the dark ink rather than the pale
   // line the rest of the night is drawn in; the palette's line is lent to it for the length of the draw.
+  // Unless the barque is chosen, the traveller is the comet painted as the ceiling paints a star: a red
+  // disc with a yellow light, closed in the dark ink and set on the lapis, trailing yellow and the pale line.
+  if(!instrumentOn()){
+    ctx.save();ctx.translate(x,y);ctx.save();ctx.rotate(Math.atan2(p.vy,p.vx));ctx.scale(scale,scale);
+    travellerComet({ground:CEILING_RGB.ground,playerHalo:CEILING_PALETTE.carbon,playerKeyline:CEILING_PALETTE.ink,playerMid:CEILING_PALETTE.red,playerHighlight:CEILING_PALETTE.yellow,playerNib:CEILING_RGB.carbon,playerHeadWash:CEILING_RGB.yellow,playerFilamentA:CEILING_RGB.yellow,playerFilamentB:CEILING_RGB.carbon});
+    ctx.restore();ctx.scale(s*.72,s*.72);ceilingPaintCharges(p);ctx.restore();return;
+  }
   const line=CEILING_PALETTE.carbon;CEILING_PALETTE.carbon=CEILING_PALETTE.ink;
   try{ceilingPaintBarque(x,y,s,speed);}finally{CEILING_PALETTE.carbon=line;}
 }
 function ceilingPaintBarque(x,y,s,speed){
-  const p=world.player;
-  ctx.save();ctx.translate(x,y);ctx.save();ctx.scale(s,s);
+  const p=world.player,boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),dx=reducedMotion?0:Math.sin(world.time*(1.2+boost*1.8))*1.6;
+  // The disc the barque carries is its Observer Core, so it is the disc that stands on the true point: the
+  // hull is hung beneath it, and where the disc used to rock in its cradle the boat now rocks under the disc.
+  ctx.save();ctx.translate(x,y);ctx.save();ctx.scale(s,s);ctx.translate(-dx,11.4);
   // What is drawn is the barque of the coffin boards and the Greenfield sheet, and it is rowed and
   // steered, never sailed: a crescent hull with papyrus umbels curling up at both ends, a naos
   // amidships carrying the disc, two steering oars crossed at the stern. The bare post that used to
@@ -2036,7 +2045,6 @@ function ceilingPaintBarque(x,y,s,speed){
   // with speed (OBSERVER_MARKS.quill, src/effects.js) — flat, no glow, no modelling, held still under
   // reducedMotion. The swing is kept inside the two columns so the disc is always seen carried by the
   // boat and never drifting alongside it, which is what its old eleven-unit travel across the deck did.
-  const boost=clamp((speed-BASE_SPEED)/(MAX_SPEED-BASE_SPEED),0,1),dx=reducedMotion?0:Math.sin(world.time*(1.2+boost*1.8))*1.6;
   ctx.fillStyle=CEILING_PALETTE.red;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(dx,-11.4,4.6,0,TAU);ctx.fill();ctx.stroke();
   ceilingBrush(ctx,[[dx+1.4,-15.4],[dx+2.6,-17.4],[dx+4.2,-17.9],[dx+4.8,-16.6]],CEILING_PALETTE.carbon,.9,.85,923);
   // Two steering oars crossed at the stern, looms standing above the sheer and blades reaching below
@@ -2049,6 +2057,10 @@ function ceilingPaintBarque(x,y,s,speed){
   // The charges below are rings round the barque rather than parts of it, so they are laid outside the
   // hull's own frame.
   ctx.restore();ctx.scale(s,s);
+  ceilingPaintCharges(p);
+  ctx.restore();
+}
+function ceilingPaintCharges(p){
   // Defect (e): the reflector's ring was the atlas's dashed convention; the wall marks the same
   // boundary two other ways instead, so the two held charges stay tellable apart by shape as well as
   // by colour and radius. The shield keeps a doubled line, close and smooth, at its own tighter radius
@@ -2076,7 +2088,6 @@ function ceilingPaintBarque(x,y,s,speed){
     }
     ctx.stroke();
   }
-  ctx.restore();
 }
 // ---------- The wall's record of a flight: four marks in pigment, and the score as a marginal note ----------
 // Wet red ochre and the tone it dries toward as it soaks into the lime — this sheet's own wet/dry

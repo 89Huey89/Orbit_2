@@ -539,13 +539,22 @@ function scrollTubeSprite(){
 }
 function scrollPlayer(){
   if(world.state==='dead')return;
-  const P=ink.scroll,p=world.player,sp=scrollTubeSprite(),{x,y,ang}=heldPose(-19*sp.S,15*sp.S),t=reducedMotion?0:world.time;
+  // The tube is laid with its aperture, and the Core in it, on the true point, so it trails behind the point
+  // it sights from rather than carrying that point a tube's length ahead of where the flight is.
+  const P=ink.scroll,p=world.player,sp=scrollTubeSprite(),ap=sp.aperture,tool=instrumentOn(),{x,y,ang}=travellerPose(-19*sp.S-ap,15*sp.S-ap),t=reducedMotion?0:world.time;
   ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(scale,scale);
-  ctx.drawImage(sp.canvas,-sp.size/2,-sp.size/2,sp.size,sp.size);
-  const ax=sp.aperture,br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(ax,0,0,ax,0,11*br);
-  hg.addColorStop(0,'rgba(255,250,228,.95)');hg.addColorStop(.3,'rgba(255,244,206,.55)');hg.addColorStop(1,'rgba(255,244,206,0)');
-  ctx.fillStyle=hg;ctx.beginPath();ctx.arc(ax,0,11*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(ax,0,2.5,0,TAU);ctx.fill();
-  ctx.strokeStyle=`rgb(${P.bronzeLo})`;ctx.lineWidth=.8;ctx.beginPath();ctx.arc(ax,0,3.4,0,TAU);ctx.stroke();
+  // Unless the tube is chosen, the traveller is the comet, brushed in pine soot with a cinnabar head: the
+  // chart's own two inks, the red its brightest stars are dotted in. The charges then close in round it.
+  if(!tool){
+    travellerComet({ground:P.paper,playerHalo:`rgb(${P.paperLight})`,playerKeyline:`rgb(${P.soot})`,playerMid:`rgb(${P.cin})`,playerHighlight:`rgb(${P.cinLight})`,playerNib:P.soot,playerHeadWash:P.soot3,playerFilamentA:P.soot3,playerFilamentB:P.soot});
+    ctx.scale(.72,.72);
+  }else{
+    ctx.drawImage(sp.canvas,-sp.size/2-ap,-sp.size/2,sp.size,sp.size);
+    const br=1+.08*Math.sin(t*2.1),hg=ctx.createRadialGradient(0,0,0,0,0,11*br);
+    hg.addColorStop(0,'rgba(255,250,228,.95)');hg.addColorStop(.3,'rgba(255,244,206,.55)');hg.addColorStop(1,'rgba(255,244,206,0)');
+    ctx.fillStyle=hg;ctx.beginPath();ctx.arc(0,0,11*br,0,TAU);ctx.fill();ctx.fillStyle=`rgb(${P.core})`;ctx.beginPath();ctx.arc(0,0,2.5,0,TAU);ctx.fill();
+    ctx.strokeStyle=`rgb(${P.bronzeLo})`;ctx.lineWidth=.8;ctx.beginPath();ctx.arc(0,0,3.4,0,TAU);ctx.stroke();
+  }
   // The charges held, round the instrument: the screen as a pale rule-drawn ring, the jade disc's notched
   // rim, the dawn as cinnabar rays.
   if(p.shielded){ctx.strokeStyle=`rgba(${P.soot},.55)`;ctx.lineWidth=1;ctx.setLineDash([3,2]);ctx.beginPath();ctx.arc(0,0,20,0,TAU);ctx.stroke();ctx.setLineDash([]);}

@@ -143,3 +143,22 @@ function eraOpen(era,gated=JOURNEY_GATES_DOORS){
   const entry=ERA_UNLOCKS.find(e=>e.era===era);
   return !entry||unlockMet(entry);
 }
+// ---------- The century's own instrument ----------
+// Every century flies the traveller as the one comet (travellerComet(), src/effects.js), because the eye has to
+// find the point that collides and nothing else, at the size of a fingertip on the reference phone. The tool a
+// century actually looked through — the crayon, the barque, the sighting tube, the alidade, the telescope, the
+// craft, the probe — is earned as that century is reached in the Journey, exactly as its door would be, and is
+// then a choice rather than a replacement: one switch on the frontispiece, kept for every century at once and
+// honoured only where it has been earned. Drawn either way, its Observer Core stands on the true point.
+const INSTRUMENTS_KEY='orbit.instruments.v1';
+let instrumentsOn=storage.get(INSTRUMENTS_KEY,'off')==='on';
+function instrumentEarned(era=eraId()){
+  const entry=ERA_UNLOCKS.find(e=>e.era===era);
+  return !!entry&&unlockMet(entry);
+}
+const instrumentOn=()=>instrumentsOn&&instrumentEarned();
+function setInstruments(on){instrumentsOn=!!on;storage.set(INSTRUMENTS_KEY,instrumentsOn?'on':'off');syncInstruments();}
+function syncInstruments(){
+  const button=$('instrument');if(!button)return;
+  button.hidden=!instrumentEarned();button.setAttribute('aria-pressed',String(instrumentOn()));
+}
