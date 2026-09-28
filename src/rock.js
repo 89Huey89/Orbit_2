@@ -2563,7 +2563,7 @@ function rockCollectionArt(idx){
 // A device cut small for a feat's medal: the beaded roundel the whole catalogue strikes a device into
 // (medalRoundel, src/catalogue.js), with this wall's own marks laid inside it rather than the atlas's.
 const rockMedal=device=>medalRoundel(device);
-defineCentury(1,{
+defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
   title:'THE ROCK',
   gloss:'Franco-Cantabrian Europe, centred on Lascaux — the wall carries no word for its own name, only the ring of dots and the spiral it is signed with.',
   recordRows(){

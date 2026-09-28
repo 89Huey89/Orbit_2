@@ -1301,7 +1301,7 @@ function prbCraftIcon(cx,cy,s=1){
   return artLine('M'+(cx-9*s)+' '+cy+'h'+(18*s)+'M'+(cx+9*s)+' '+(cy-3*s)+'L'+(cx+7*s)+' '+cy+'L'+(cx+9*s)+' '+(cy+3*s)+'Z',1,.9)+
     artRing(cx-6*s,cy,2.2*s,.9,.85)+artLine('M'+(cx-2*s)+' '+(cy-4*s)+'v'+(8*s)+'M'+(cx+2*s)+' '+(cy-4*s)+'v'+(8*s),.7,.65);
 }
-defineCentury(8,{
+defineCentury(8,{leaf:{heading:'SELF-LOG',subs:['','','']},
   title:'The Probe',latin:'',gloss:'The last rung, told by a machine with no eye left to draw the sky it crossed — a self-log and one inherited plate.',
   recordRows(){
     const r=prbRead();

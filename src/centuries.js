@@ -66,6 +66,8 @@ function foldBeforeTurn(){
 // material. The shape (all optional but `title`):
 //   title, latin          — the century's name as its frontispiece sets it, and the Latin (or its own
 //                           tongue's) caption beneath; `gloss` is an English line under both.
+//   leaf                  — {heading, subs:[record, collection, feats]}: the leaf's own heading and the
+//                           captions under its three tabs, for a century that sets no Latin.
 //   recordRows()          — extra [label, value] rows for the Record, read from the century's own store.
 //   collection            — {title, latin, items()}: items() returns [{name, latin, gloss, seen, count,
 //                           art}] where `seen` says whether it has been met, `count` how often (optional),

@@ -672,7 +672,7 @@ function catalogueInsignia(){
 // its collection, and its feats, under a strip of the eight numerals that turns between them. The atlas's
 // own leaf is numeral V and is the one printed above, unchanged; the others are set in the same register
 // and card, so a player reads one catalogue with eight leaves rather than eight catalogues.
-let catalogueCentury=5;
+let catalogueCentury=5,centuryPlain=false;
 function centuryStrip(){
   let html='<nav class="cat-centuries" aria-label="Centuries">';
   for(let era=1;era<=JOURNEY_ERAS;era++){
@@ -684,7 +684,7 @@ function centuryStrip(){
 // A card for anything a century's leaf lists: drawn when it stands, a blank rule with its condition when not.
 function centuryCard({name,latin='',gloss='',state='',cond='',art=null,locked=false}){
   const drawn=typeof art==='function'?art():art;
-  const shown=locked||!drawn?`<span class="cat-preview-glyph">${locked?'DESIDERATUR':''}</span>`
+  const shown=locked||!drawn?`<span class="cat-preview-glyph">${locked&&!centuryPlain?'DESIDERATUR':''}</span>`
     :'<svg class="cat-art" viewBox="'+ART_FIELD+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'+drawn+'</svg>';
   return `<li class="cat-row cat-card${locked?' locked':''}"><span class="cat-preview${locked?' is-locked':''}" data-kind="century" aria-hidden="true">${shown}<span class="cat-preview-rule"></span></span>`+
     `<div class="cat-card-copy"><span class="cat-name">${plainText(name)}</span>${latin?`<span class="cat-latin">${plainText(latin)}</span>`:''}`+
@@ -722,7 +722,7 @@ function centuryRecord(era){
   const own=typeof page.recordRows==='function'?page.recordRows():[];
   if(own&&own.length)html+=`<section class="cat-group"><h3>${plainText(page.title||'')}<span class="cat-latin">${plainText(page.latin||'')}</span></h3>`+ledgerTable(own.map(([label,value])=>[plainText(label),plainText(value)]))+'</section>';
   const losses=Object.keys(log.deaths);
-  if(losses.length)html+='<section class="cat-group"><h3>How runs ended<span class="cat-latin">Exitus</span></h3>'+
+  if(losses.length)html+='<section class="cat-group"><h3>How runs ended<span class="cat-latin">'+(page.leaf?'':'Exitus')+'</span></h3>'+
     ledgerTable(losses.map(reason=>[plainText(reason.charAt(0)+reason.slice(1).toLowerCase()),countMark(log.deaths[reason])]))+'</section>';
   return html;
 }
@@ -731,20 +731,20 @@ function centuryCollection(era){
   if(!c)return '<p class="cat-empty">Nothing is collected in this century yet.</p>';
   const items=c.items()||[],seen=items.filter(i=>i.seen).length;
   let html=`<div class="cat-overview"><div class="cat-overview-seal"><strong>${seen}</strong><span>/ ${items.length}</span></div>`+
-    `<div class="cat-overview-copy"><span class="cat-overview-kicker">${plainText(c.latin||c.title)}</span><strong>${plainText(c.title)}</strong>`+
+    `<div class="cat-overview-copy"><span class="cat-overview-kicker">${plainText(c.latin||'')}</span><strong>${plainText(c.title)}</strong>`+
     `${c.gloss?`<span class="cat-overview-progress">${plainText(c.gloss)}</span>`:''}</div></div>`;
   html+='<ul class="cat-grid">'+items.map(i=>i.seen?centuryCard({name:i.name,latin:i.latin,gloss:i.gloss,art:i.art,state:i.count?'MET '+commas(i.count)+'×':'MET'})
     :centuryCard({name:i.name,latin:i.latin,locked:true,state:'NOT YET MET',cond:i.cond||''})).join('')+'</ul>';
   return html;
 }
 function centuryFeatsPane(era){
-  const page=CENTURIES[era]||{feats:[]},earned=page.feats.filter(centuryFeatMet).length;
-  let html=`<section class="cat-group"><h3>Named feats<span class="cat-latin">Insignia · ${earned} / ${page.feats.length}</span></h3><ul class="cat-grid">`+
+  const page=CENTURIES[era]||{feats:[]},earned=page.feats.filter(centuryFeatMet).length,latin=page.leaf?'':'Insignia · ';
+  let html=`<section class="cat-group"><h3>Named feats<span class="cat-latin">${latin}${earned} / ${page.feats.length}</span></h3><ul class="cat-grid">`+
     page.feats.map(centuryFeatCard).join('')+'</ul></section>';
   // The lineage: what the century before this one handed down, what this one leaves the atlas, and the way
   // to either neighbour's leaf.
   const prev=era>1?era-1:0,next=era<JOURNEY_ERAS?era+1:0;
-  html+='<section class="cat-group"><h3>Lineage<span class="cat-latin">Stemma</span></h3><ul class="cat-grid">'+
+  html+='<section class="cat-group"><h3>Lineage<span class="cat-latin">'+(page.leaf?'':'Stemma')+'</span></h3><ul class="cat-grid">'+
     (prev&&prev!==5?heirloomCard(prev):'')+heirloomCard(era)+'</ul>'+
     '<p class="cat-lineage">'+(prev?`<button type="button" class="cat-link" data-century="${prev}">← ${plainText(centuryTitle(prev))}</button>`:'')+
     (next?`<button type="button" class="cat-link" data-century="${next}">${plainText(centuryTitle(next))} →</button>`:'')+'</p></section>';
@@ -770,7 +770,12 @@ function renderCatalogue(){
   const era=catalogueCentury,atlas=era===5,own=CENTURIES[era]||{};
   const tabs=atlas?[['record','RECORD','Chronicon'],['catalogue','CATALOGUE','Studiolo'],['insignia','FEATS','Insignia']]
     :[['record','RECORD','Chronicon'],['catalogue','COLLECTION',own.collection&&own.collection.latin||'Collectio'],['insignia','FEATS','Insignia']];
+  // A century that sets no Latin at all (the Rock, the Flyby, the Probe) names its own leaf and leaves the
+  // learned captions under its tabs unset, rather than having the atlas's Latin cut into its wall or its log.
+  const words=!atlas&&own.leaf;centuryPlain=!!words;
+  if(words&&words.subs)tabs.forEach((tab,i)=>{tab[2]=words.subs[i]||'';});
   const eyebrow=$('catalogue-eyebrow');if(eyebrow)eyebrow.textContent=atlas?'ORBIS TABULA':centuryTitle(era).toUpperCase();
+  const heading=$('catalogue-heading');if(heading)heading.textContent=words&&words.heading||'CATALOGUS';
   let html=centuryStrip()+'<div class="cat-tabs">'+
     tabs.map(([id,label,sub])=>`<button type="button" class="diff-btn cat-tab-btn" data-tab="${id}" data-sub="${sub}" aria-pressed="${catalogueTab===id}">${label}</button>`).join('')+
     '</div>';

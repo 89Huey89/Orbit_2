@@ -1152,7 +1152,7 @@ function flyTargetGlyph(kind){
   if(kind==='rock')return box+artFill('M50 36Q48 26 60 24Q72 23 74 33Q76 43 64 46Q52 48 50 36Z',.16)+artLine('M50 36Q48 26 60 24Q72 23 74 33Q76 43 64 46Q52 48 50 36Z',1,.85);
   return box+artRing(60,36,13,1.1,.9)+artFill('M60 23A13 13 0 0 1 60 49A6.5 13 0 0 0 60 23Z',.22)+artDot(55,31,1,.5)+artRing(65,42,2.4,.6,.5);
 }
-defineCentury(7,{
+defineCentury(7,{leaf:{heading:'MISSION LOG',subs:['','','']},
   title:'The Flyby',latin:'',gloss:'Mars to Pluto · 1965–2015',
   // The mission log's own figures, read straight off orbit.flyby.v1 rather than restated from the shared
   // register above (JOURNEY.md's per-era row already prints runs, rows and flow): what only this era's

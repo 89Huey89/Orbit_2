@@ -831,6 +831,9 @@ stages above.
   a frame before it could see the note the same landing wrote; it now asks the notes directly and waits out
   its first frame, as the Ceiling's did. The shots harness also let floaters stand through skipped paints,
   pinned at the foot of the sheet, which is where the overlap was seen.
+- *Per-era catalogues and the links between centuries* (2026-09-28): `orbit.eras.v1` keeps a log per century
+  (`src/centuries.js`), and the one catalogue turns between eight leaves, each with its record, its collection,
+  ten to fifteen feats of its own and a lineage; every known century leaves an heirloom on the atlas's Feats tab.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -839,8 +842,9 @@ stages above.
 - **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. Its shape is
   decided (§9: a signature feat per century that gates the transition); the eight feats themselves, their
   guarantees and the gate in `journeyReady()` are not built.
-- **Per-era catalogues and the links between centuries.** The catalogue shows the Journey's row but no
-  century keeps its own statistics, and nothing on one century's frontispiece points to another's.
+- **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
+  (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
+  under its Arabic name, the Dendera zodiac as a construction.
 - **The review of a run that changed century, in each century's hand.** The log now carries the changes and
   the replay turns where the run did (above), but the review paints the whole chart in the atlas's hand,
   the stretch flown in the century below included; the page is not yet turned on the sheet itself.
