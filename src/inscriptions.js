@@ -135,6 +135,13 @@ function ontoSheet(cx,cy,w,h){
 // the sheet carries it from there.
 const INSCRIPTION_PLACES=[[1,0],[-1,0],[1,.8],[-1,.8],[1,-.8],[-1,-.8],[0,1],[0,-1]];
 const INSCRIPTION_REACHES=3;
+// Which of two places is the better, in the order placeInscription ranks them: clear of settled type and
+// other notes before anything, then clear of the impressum's rows, and only then the cheaper.
+function inscriptionBetter(clash,over,cost,best){
+  if((clash>0)!==(best.clash>0))return clash<=0;
+  if(clash<=0&&(over>0)!==(best.over>0))return over<=0;
+  return cost<best.cost;
+}
 function placeInscription(g){
   // The geometry is worked at the subject's rest, so a note beside a wandering planet is set clear for the
   // whole of its drift; the offset kept is from the subject itself, wherever it is carried.
@@ -187,7 +194,12 @@ function placeInscription(g){
     cost+=Math.min(24,(groundTaken(box,'note',2*scale)-fixed)*.6);
     for(const q of others)clash+=inscriptionClash(box,sway,q);
     cost+=clash*40;
-    if(!best||cost<best.cost)best={cost,clash,cx,cy,box};
+    // The impressum is passing type, so it never silences a note, but a note set across its rows is read
+    // as neither: the imprint's lines run straight through the instruction's. So ground clear of it is
+    // preferred outright to any place on it, whatever else either costs, just below the one rule that
+    // outranks everything — clear of settled type first, then clear of the imprint, then the cheaper.
+    const over=groundKindTaken(box,'impressum',2*scale);
+    if(!best||inscriptionBetter(clash,over,cost,best))best={cost,clash,over,cx,cy,box};
     return cost;
   };
   // Eight places round the subject, then the same eight further out, nearest first.
@@ -213,7 +225,7 @@ function placeInscription(g){
   }
   // As a last resort the whole sheet is combed for a clear place, the nearest to the subject preferred:
   // lettering is set over lettering only when there is no clear ground left on the plate at all.
-  if(best.clash>0){
+  if(best.clash>0||best.over>0){
     const inner=inscriptionInner(),dx=Math.max(8,w*.5),dy=Math.max(6,h*.5);
     for(let y=inner+h/2;y<=H-footerBand()-h/2;y+=dy)for(let x=inner+w/2;x<=W-inner-w/2;x+=dx){
       judge(x,y,INSCRIPTION_REACHES*2.4+Math.hypot(x-ax,y-ay)/(40*scale));
@@ -299,7 +311,10 @@ function inscribeHeld(key,text,options={}){
     if(options.node&&options.node!==live.node)repositionHeld(live,()=>{live.node=options.node;});
     else{
       const a=inscriptionAnchor(live);
-      if(Math.hypot(a.x-live.placedX,a.y-live.placedY)>46||inscriptionRoom(inscriptionBox(live))<0)repositionHeld(live,()=>{});
+      // Standing on the impressum is a reason too: the cartouche is first lettered in the frame the run
+      // opens, so the register had not yet seen it when the opening instruction was placed.
+      const box=inscriptionBox(live);
+      if(Math.hypot(a.x-live.placedX,a.y-live.placedY)>46||inscriptionRoom(box)<0||groundKindTaken(box,'impressum',2*scale)>0)repositionHeld(live,()=>{});
     }
     return live;
   }
