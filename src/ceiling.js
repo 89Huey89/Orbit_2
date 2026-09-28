@@ -1710,6 +1710,23 @@ function ceilingDrawDecanCharts(){
 // otherwise spent on the disc a star is set on, since a white sign on plaster is a pale mark and a
 // field of them would be a route the player has to hunt for.
 const CEILING_BODY_FILLS=[CEILING_PALETTE.carbon,CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.faience,CEILING_PALETTE.carbon];
+// The Journey's signature feat on this wall (SIGNATURES, src/centuries.js) is a landing on one of the
+// ikhemu-wretju, so the wall owes one: besides the fifth of ordinary bodies whose own seed paints them as a
+// barque, one plain row of every watch of the night — nine rows, counted from where the Ceiling began — is
+// dealt a wanderer by the chart's seed. The plain rows are the astrolabe's own reading of the chart's rule
+// (astroPlainRow), so both walls agree on which rows carry an ordinary body alone.
+function ceilingWatchWanderer(n){
+  if(!world||n.difficultyChoice||n.routeId!=null||(n.type!=='still'&&n.type!=='drift')||n.row!==Math.floor(n.row))return false;
+  const from=world.eraFrom||0,w=Math.floor((n.row-from)/9),seed=(world.seed|0)>>>0,rows=[];
+  if(w<0)return false;
+  // Row 1 is where a fresh chart deals its three difficulty paths rather than one plain body.
+  for(let k=from+w*9;k<from+(w+1)*9;k++)if(k>=2&&astroPlainRow(k))rows.push(k);
+  return rows.length>0&&n.row===rows[Math.floor(tileHash(seed,w,43)*rows.length)];
+}
+function ceilingWanderer(n){
+  if(!n||n.difficultyChoice||['gold','sling','shield','reflector','dawn','inkwell'].includes(n.type))return false;
+  return ceilingHash(n.seed||n.id+1,307)<.2||ceilingWatchWanderer(n);
+}
 function ceilingNodeIcon(n,r,stage){
   const seed=n.seed||n.id+1;
   if(n.type==='gold'||n.type==='sling'){
@@ -1744,7 +1761,7 @@ function ceilingNodeIcon(n,r,stage){
   // a plate still paints identically every load while no two bodies on it are the same mark.
   const kind=ceilingHash(seed,307),size=r*(.2+ceilingHash(seed,311)*.11),
     fill=CEILING_BODY_FILLS[Math.floor(ceilingHash(seed,313)*CEILING_BODY_FILLS.length)%CEILING_BODY_FILLS.length];
-  if(kind<.2){
+  if(kind<.2||ceilingWatchWanderer(n)){
     const w=r*(.26+ceilingHash(seed,317)*.08);
     ceilingPolygon(ctx,[[-w,r*.14],[w,r*.14],[w*1.4,r*.04],[w*.86,r*.1],[-w*.86,r*.1],[-w*1.4,r*.04]],CEILING_PALETTE.white,stage,seed,1.1);
     if(stage>.5){ctx.save();ctx.globalAlpha=clamp((stage-.5)*2,0,1);ctx.fillStyle=(seed&1)?CEILING_PALETTE.red:CEILING_PALETTE.carbon;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-r*.05,r*.14,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}

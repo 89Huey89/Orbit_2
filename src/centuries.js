@@ -116,3 +116,55 @@ function centuryKnown(era){
   return era<JOURNEY_ERAS?journey.era>era:journeyComplete();
 }
 const centuryTitle=era=>era===5?'The Atlas':(CENTURIES[era]&&CENTURIES[era].title)||'Century '+CENTURY_NUMERALS[era-1];
+// ---------- Each century's signature feat ----------
+// JOURNEY.md §1.5 and §9, as the author settled them: every century has one curated milestone of its own
+// beside the chapters its knowledge opens, a feat drawn from that century's own mechanic, and a Journey run
+// does not leave the century until it has been flown there. Each one is read off events the simulation
+// already emits, and each is owed by the chart: the note beside it names what the generator promises.
+// Kept on the Journey's document as `milestones['sig'+era]`, which a restart clears with the rest.
+let sigRun={held:null,schools:[],rescued:false};
+const SIGNATURES={
+  // A sling body is dealt at row 2 and every eighth row after 7, always at radius 57, which the wall's naked
+  // eye always sorts as major: a doubled ring is on the wall within eight rows of anywhere.
+  1:{name:'THE STRUCK RING',describe:'Hold one of the brightest lights, a doubled ring, for a whole orbit',
+    test:(type,e)=>type==='release'&&sigRun.held&&rockTier(sigRun.held)==='major'&&sigRun.held.documented>=1},
+  // One ordinary body in every watch of the night is a wanderer carried in its barque (ceilingWanderer).
+  2:{name:'THOSE WHO KNOW NO REST',describe:'Land on a wandering star carried in its barque',
+    test:(type,e)=>type==='capture'&&typeof ceilingWanderer==='function'&&ceilingWanderer(e.n)},
+  // A body's school is its row taken in threes, so any three rows running carry all three schools.
+  3:{name:'THE THREE SCHOOLS',describe:'Land three perfect transfers in a row on the three schools, Gan, Shi and Wu Xian',
+    test:(type,e)=>{
+      if(type!=='capture')return false;
+      if(!e.perfect){sigRun.schools=[];return false;}
+      sigRun.schools=[...sigRun.schools,scrollSchool(e.n)].slice(-3);
+      return new Set(sigRun.schools).size===3;
+    }},
+  // One wanderer is set on a plain row of every chapter after the first (astroWanderer).
+  4:{name:'A WANDERER SIGHTED',describe:'Land on the wandering star of a chapter',
+    test:(type,e)=>type==='capture'&&astroWanderer(e.n)!==-1},
+  // A figure forks off every eighth row.
+  5:{name:'LINEA PURA',describe:'Trace a constellation in perfect transfers alone',
+    test:(type,e)=>type==='observation'&&e.key==='pureChart'},
+  // The registers change at fixed rows counted from where the Lens began.
+  6:{name:'SATURN IN ONE SITTING',describe:'Carry one sitting from the eyepiece to the sensor without a charge spent to save it',
+    test:(type,e)=>{
+      if(type==='shieldBreak'||type==='dawnBreak'||type==='reflectorBreak')sigRun.rescued=true;
+      return type==='transition'&&e.index===1&&!sigRun.rescued;
+    }},
+  // A sling body at row 2 and every eighth row after 7, as on every sheet.
+  7:{name:'GRAVITY ASSIST',describe:'Leave a gravity well on a full lap, at full charge',
+    test:(type,e)=>type==='release'&&e.sling&&e.charge>=1},
+  // The bill is sized so a steady run meets closure in its middle phases, and never stalls (probe.js).
+  8:{name:'CLOSURE',describe:'Launch the first daughter probe',
+    test:()=>typeof prbState!=='undefined'&&prbState&&prbState.gen>=2}
+};
+// Heard from every simulation event (ui.js). Returns the signature this event flew, or null.
+function signatureEvent(type,e){
+  if(type==='start'||type==='eraTransition'){sigRun={held:null,schools:[],rescued:false};return null;}
+  const era=journeyEraOf(),sig=SIGNATURES[era];
+  if(!sig)return null;
+  let flown=false;
+  try{flown=!!sig.test(type,e||{});}catch(_){flown=false;}
+  if(type==='capture')sigRun.held=e&&e.n||null;
+  return flown&&journeySign(era)?sig:null;
+}

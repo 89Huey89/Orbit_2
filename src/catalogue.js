@@ -718,6 +718,9 @@ function centuryRecord(era){
     ['Perfect transfers',commas(log.perfects)],
     ['Time in the chart',chartTime(log.playSeconds)]
   ];
+  // The century's own signature feat, which the Journey asks to be flown on it before it is left.
+  const sig=SIGNATURES[era];
+  if(sig)rows.splice(8,0,['Signature feat',sig.name+(journey.milestones['sig'+era]||journey.era>era?' · flown':' · '+sig.describe)]);
   let html=ledgerTable(rows,4);
   const own=typeof page.recordRows==='function'?page.recordRows():[];
   if(own&&own.length)html+=`<section class="cat-group"><h3>${plainText(page.title||'')}<span class="cat-latin">${plainText(page.latin||'')}</span></h3>`+ledgerTable(own.map(([label,value])=>[plainText(label),plainText(value)]))+'</section>';

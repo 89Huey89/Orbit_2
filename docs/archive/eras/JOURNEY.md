@@ -780,8 +780,10 @@ Decisions this file does not make, and which should not be invented by an implem
   each era's curated milestone is a **signature feat** drawn from that century's own mechanic (a swing-by
   round a `sling` body on the Flyby, Saturn resolved on the Lens, and so on), counted as one milestone more
   beside the chapters, and it **gates**: an era is transition-ready only when its chapters stand and its
-  signature feat has been flown. Its generation guarantee is therefore owed, one per era. Which feat each
-  century takes is still to be chosen, era by era.*
+  signature feat has been flown. Its generation guarantee is therefore owed, one per era. The eight were
+  chosen the same day: the Struck Ring (I), Those Who Know No Rest (II), the Three Schools (III), a Wanderer
+  Sighted (IV), Linea Pura (V), Saturn in One Sitting (VI), Gravity Assist (VII), Closure (VIII) — see
+  `SIGNATURES` in `src/centuries.js`, each with the guarantee it rests on beside it.*
 - *Settled in stage 6 (2026-09-27): the threshold is 50, re-read off `probe.mjs --ladder` so that the
   author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
@@ -831,6 +833,9 @@ stages above.
   a frame before it could see the note the same landing wrote; it now asks the notes directly and waits out
   its first frame, as the Ceiling's did. The shots harness also let floaters stand through skipped paints,
   pinned at the foot of the sheet, which is where the overlap was seen.
+- *The signature feats* (2026-09-28): one per century (§9), read off events the simulation already emits
+  (`signatureEvent`), recorded by `journeySign()` and asked by `journeyReady()` and the arming of the in-run
+  change; seven rest on what the chart already deals, and the Ceiling's on a wanderer dealt in every watch.
 - *Per-era catalogues and the links between centuries* (2026-09-28): `orbit.eras.v1` keeps a log per century
   (`src/centuries.js`), and the one catalogue turns between eight leaves, each with its record, its collection,
   ten to fifteen feats of its own and a lineage; every known century leaves an heirloom on the atlas's Feats tab.
@@ -839,9 +844,8 @@ stages above.
 
 **Open.**
 
-- **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. Its shape is
-  decided (§9: a signature feat per century that gates the transition); the eight feats themselves, their
-  guarantees and the gate in `journeyReady()` are not built.
+- **The ladder re-read with the signature feats.** `probe.mjs --ladder` still climbs on knowledge alone; how
+  many runs the eight feats add to each era's stay is not yet measured.
 - **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
   (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
   under its Arabic name, the Dendera zodiac as a construction.

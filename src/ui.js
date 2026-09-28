@@ -127,6 +127,8 @@ function say(text,where){
 function event(type,e){
   // The press answers a few of these in its own way (src/press.js) before anything else hears them.
   pressEvent(type,e);
+  // A century's signature feat (src/centuries.js), said on the sheet the moment it is flown in the Journey.
+  {const sig=signatureEvent(type,e);if(sig){const line=sig.name+' \u00b7 FLOWN';say(line,{node:world.player.node||e&&e.n,tone:'note'});$('announcement').textContent=line;journeyArm();syncJourney();}}
   if(type==='start'){audio.start();if(replayLog)replayLog.startedAt=world.time;return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
@@ -385,6 +387,9 @@ function journeyNote(){
   const w=plateWords(),c=w.chrome.journey,m=journeyMilestones(),era=journeyEraTitle(journey.era);
   if(journeyComplete())return fmt(c.frontier,{best:journey.bests.frontier||0});
   if(m.open<m.of)return fmt(c.line,{era,count:m.open+' / '+m.of,name:(w.milestones||[])[m.open]||'',pct:Math.floor(m.toward*100)});
+  // Every chapter stands and the century's own feat is still to be flown: the line names it, in English,
+  // since the player has to understand it to fly it.
+  if(!journeySigned()){const sig=SIGNATURES[journey.era];if(sig)return fmt(c.signature||'{era} \u00b7 STILL TO FLY: {name} \u2014 {how}',{era,name:sig.name,how:sig.describe});}
   const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
   return fmt(next?c.known:c.whole,{era,next});
 }
@@ -438,7 +443,7 @@ function journeyRestartTap(){
 // frontier's own century, and only where there is a century above it drawn to be climbed onto.
 function journeyArm(){
   if(!world||world.transitionReady||runMode!=='journey'||dailyOn||world.state!=='playing')return;
-  if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9)return;
+  if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9||!journeySigned())return;
   // The last rung has no century above it: knowing it climbs the ladder, said once, and the run goes on as
   // the Final Frontier with nothing else changed.
   if(journey.era>=JOURNEY_ERAS){
