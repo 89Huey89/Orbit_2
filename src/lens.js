@@ -1684,3 +1684,128 @@ defineHand('lens',{journeyMark(g,w,h,m){
   for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*14,y=h-7;g.save();g.strokeStyle=`rgb(${P.ink})`;g.lineWidth=.8;g.beginPath();g.arc(x,y,2.6,0,TAU);g.stroke();
     const f=i<m.open?1:i===m.open?m.toward:0;if(f>0){g.fillStyle=`rgb(${P.inkRed})`;g.beginPath();g.moveTo(x,y);g.arc(x,y,2.6,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.fill();}g.restore();}
 }});
+
+// ---------- The catalogue's own leaf (src/centuries.js, printed by src/catalogue.js) ----------
+// The record, the collection and the named feats read the small store the era already keeps under its own
+// key (LENS_KEY above) rather than any new one — LINKING.md's "The era records stay the era's own." The
+// catalogue's SVG helpers (artLine, artDot, artRing, artFill, artStar, artSpiral, artOval, medalRoundel) are
+// catalogue.js globals, loaded *after* this file — so nothing below calls one outside a function body; every
+// art is a thunk, built lazily and only once the catalogue is actually open.
+
+// The twelve fields' own small marks, one to a catalogue kind: a scatter for an open cluster, a soft cloud
+// for a nebula, a flattened haze for a galaxy, a ring for a planetary nebula, a web for a remnant, a
+// silhouette for a dark nebula, and two named points for a double star — the seven kinds register two and
+// three between them actually resolved (06-lens.md's own document list).
+const lensCluster=pts=>()=>pts.map(([x,y,r])=>artDot(x,y,r,.85)).join('')+artRing(60,36,27,.5,.2);
+const lensGlobular=(cx,cy,r)=>()=>{let d='';for(let i=0;i<16;i++){const a=i/16*TAU,rr=r*(tileHash(i,7)*.5+.5);d+=artDot(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,.9+tileHash(i,9)*.5,.8);}return d+artDot(cx,cy,2,.9)+artRing(cx,cy,r+2,.4,.2);};
+const lensNebula=(d,dots)=>()=>artFill(d,.18)+artLine(d,.7,.55)+dots.map(([x,y])=>artDot(x,y,1,.9)).join('');
+// Each entry a thunk, indexed exactly as LENS_FIELDS is.
+const LENS_FIELD_ART=[
+  lensCluster([[50,20,1.6],[58,16,1.3],[66,18,1.5],[72,26,1.2],[64,30,1.8],[54,32,1.4],[46,28,1.1]]), // M45
+  lensCluster([[44,26,1.2],[52,20,1],[60,24,1.4],[68,20,1],[74,28,1.2],[50,34,1],[62,34,1.3],[70,36,1]]), // M44
+  lensNebula('M40 44C34 30 48 16 62 18C78 20 86 34 78 46C68 58 46 56 40 44Z',[[54,32],[58,34],[56,37],[60,36]]), // M42
+  ()=>artOval(60,36,30,9,.9,.85,-18)+artDot(60,36,2,.9)+artDot(46,32,.8,.5)+artDot(74,40,.8,.5), // M31
+  ()=>artLine(artSpiral(56,32,10,1.4,.2,.2+TAU*1.5),1,.85)+artDot(56,32,2,.9)+artRing(76,44,3,.6,.7)+artDot(76,44,1,.7), // M51
+  ()=>artLine('M42 24L48 30L44 38L52 40L48 48L58 44L60 52L66 42L74 46L70 36L78 32L68 28L70 20L60 26L56 18Z',.7,.7)+artDot(60,36,1.4,.9), // M1
+  ()=>artFill('M44 50C42 40 46 30 54 26C52 32 58 30 60 24C64 28 62 34 58 38C64 36 68 30 70 24C74 30 70 40 62 44C58 46 56 50 58 56C50 58 46 56 44 50Z',.6)+artRing(60,36,26,.5,.25), // B33
+  ()=>artFill('M40 30C34 36 34 44 42 50C52 56 66 52 70 42C74 32 64 24 52 24C46 24 44 26 40 30Z',.5), // B86
+  lensGlobular(60,36,17), // M13
+  ()=>artRing(60,36,13,2.6,.85)+artDot(60,36,1.4,.6), // M57
+  lensCluster([[40,20,1.3],[46,26,1.2],[52,32,1.4],[58,38,1.6],[46,44,1.1],[52,40,1],[58,44,1.2]]), // MEL 25 Hyades
+  ()=>artDot(52,32,2.2,.95)+artDot(68,40,1.5,.85)+artLine('M56 34L64 38',.4,.4) // β Cyg
+];
+// The seven families, one to a plate: the shape register three's own colours already give each of them
+// (LENS_WORLD above), cut here as a line rather than a wash, since a catalogue card strokes in currentColor.
+const LENS_WORLD_ART={
+  ocean:()=>artRing(60,36,17,1,.9)+artLine('M46 30Q53 27 60 30T74 30M45 38Q53 35 60 38T75 38M47 45Q53 43 59 45T73 45',.6,.6),
+  crater:()=>artRing(60,36,17,1,.9)+[[53,29,2.6],[65,32,1.8],[57,42,2.2],[68,44,1.4]].map(([x,y,r])=>artRing(x,y,r,.5,.7)).join(''),
+  ringed:()=>artOval(60,36,25,7,1,.9,-8)+artRing(60,36,11,1,.95)+artLine('M39 34.5H49M71 37.5H81',1,.9),
+  ice:()=>artRing(60,36,17,1,.9)+artLine('M45 30Q60 27 75 30M44 42Q60 45 76 42',.5,.5),
+  dune:()=>artRing(60,36,17,1,.9)+artLine('M45 42Q53 38 60 42T75 42M47 48Q53 45 59 48T72 48',.6,.65)+artDot(60,21,3,.5),
+  volcanic:()=>artRing(60,36,17,1,.9)+artLine('M60 36L52 24M60 36L70 46M60 36L48 42',.7,.75)+artDot(60,36,1.6,.9)+artDot(52,24,1,.7)+artDot(70,46,1,.7),
+  storm:()=>artRing(60,36,17,1,.9)+artLine(artSpiral(60,36,15,3,-.6,-.6+TAU*1.3),.6,.6)+artOval(68,42,4,2.2,.6,.75,20)
+};
+// A field is logged the moment lensNoteField flips its bit; a world the moment lensNoteWorld does, so both
+// read straight off the same rec the frontispiece's own log line counts.
+function lensCollectionItems(){
+  const rec=lensRead(),items=[];
+  LENS_FIELDS.forEach(([id,common],i)=>{
+    const seen=!!(rec.fields&(1<<i));
+    items.push({name:common.charAt(0)+common.slice(1).toLowerCase(),latin:id,seen,cond:'Not yet logged as a field on the plate',art:LENS_FIELD_ART[i]});
+  });
+  LENS_FAMILIES.forEach((family,i)=>{
+    const seen=!!(rec.worlds&(1<<i)),eye=LENS_EYE_READINGS[family];
+    items.push({name:LENS_WORLD_NAMES[family].charAt(0)+LENS_WORLD_NAMES[family].slice(1).toLowerCase(),latin:eye.first,gloss:eye.caption,seen,cond:'Not yet resolved into a world',art:LENS_WORLD_ART[family]});
+  });
+  return items;
+}
+// The feats' own small marks: the eyepiece, the ruled plate and the sensor's own grid stand for the three
+// registers; the collection's seven worlds and twelve fields massed on a medal; and the plain devices
+// medalRoundel already gives a run of runs, captures, perfects and flow. Every one a thunk, as above.
+const lensFeatArt={
+  eyepiece:()=>artRing(60,36,15,1.2,.9)+artLine('M45 30C50 26 55 24 60 24C65 24 70 26 75 30',.8,.6)+artDot(60,36,1.4,.9),
+  ring:()=>artOval(60,36,24,7,1,.9,-10)+artRing(60,36,10,1,.95),
+  glass:()=>'<rect x="30" y="18" width="60" height="36" fill="none" stroke-width="1.1"/>'+artLine('M30 30H90M30 42H60',.4,.4)+artDot(52,34,4,.6),
+  sensor:()=>'<rect x="28" y="20" width="64" height="32" fill="none" stroke-width="1.1"/>'+artLine('M28 36H92',.5,.5)+artLine('M40 26V46M52 26V46M64 26V46M76 26V46',.4,.35),
+  saturn:()=>medalRoundel(artOval(60,36,17,5,1.2,.9,-8)+artRing(60,36,8,1.1,.95)),
+  worlds:()=>medalRoundel(Array.from({length:7},(_,i)=>{const a=i/7*TAU-Math.PI/2;return artRing(60+Math.cos(a)*15,36+Math.sin(a)*15,4,.8,.85);}).join('')),
+  fields:()=>medalRoundel(Array.from({length:12},(_,i)=>{const a=i/12*TAU-Math.PI/2;return artDot(60+Math.cos(a)*16,36+Math.sin(a)*16,1.4,.85);}).join('')+artRing(60,36,16,.4,.3)),
+  surveys:()=>medalRoundel(artLine('M46 44Q60 24 74 44',1.2)+[46,53,60,67,74].map(x=>artDot(x,46,1.6,.85)).join('')),
+  observatory:()=>medalRoundel(artLine('M46 48L60 22L74 48Z',1.1)+artLine('M46 48H74',1.1)+artRing(60,34,3,.7,.8)),
+  lights:()=>medalRoundel(Array.from({length:9},(_,i)=>{const a=i/9*TAU;return artDot(60+Math.cos(a)*17,36+Math.sin(a)*17,1.2,.75);}).join('')),
+  clean:()=>medalRoundel(artFill(artStar(47,36,4,4.6,1.4))+artFill(artStar(60,36,4,4.6,1.4))+artFill(artStar(73,36,4,4.6,1.4))),
+  slew:()=>medalRoundel(artLine(artSpiral(60,36,13,1.4,0,TAU*1.7),1.1)),
+  graze:()=>medalRoundel(artLine(artSpiral(60,36,13,1.4,0,TAU*1.7),1.1)+artLine('M47 25C55 32 63 40 73 46',1.1,.8)),
+  endless:()=>medalRoundel(artLine('M46 40Q53 30 60 40T74 40',1.1)+artLine('M46 32Q53 22 60 32T74 32',.8,.6))
+};
+defineCentury(6,{
+  title:'The Lens',latin:'Systema Saturnium',gloss:'The eye at the tube: a point of light resolved, register by register, into a place.',
+  recordRows(){
+    const rec=lensRead(),stage=Math.min(LENS_CHAPTERS.length-1,rec.completed>0?LENS_CHAPTERS.length-1:rec.furthest),C=LENS_CHAPTERS[stage];
+    return [
+      ['Furthest reading',C.year+' · '+C.place.charAt(0)+C.place.slice(1).toLowerCase()],
+      ['Sheets resolved',countMark(rec.completed)],
+      ['Worlds resolved',lensBits(rec.worlds)+' / '+LENS_FAMILIES.length],
+      ['Fields logged',lensBits(rec.fields)+' / '+LENS_FIELDS.length]
+    ];
+  },
+  collection:{
+    title:'The Twelve Fields and the Seven Worlds',latin:'Campi et Mundi',
+    gloss:'What the tube, the plate and the sensor between them resolved: the catalogue’s fields, and the families of world found circling other lights.',
+    items:lensCollectionItems
+  },
+  feats:[
+    {id:'firstLight',name:'First Light',latin:'Prima Lux',describe:()=>'Fly the Lens once.',stat:'runs',threshold:1,art:lensFeatArt.eyepiece},
+    {id:'ring',name:'The Ring Stated',latin:'Annulus',describe:()=>'Reach the second chapter — Huygens, The Hague, 1659.',
+      value:()=>lensRead().furthest,threshold:1,art:lensFeatArt.ring},
+    {id:'glass',name:'The Sky on Glass',latin:'',describe:()=>'Reach the third chapter — the Carte du Ciel, Paris, 1887.',
+      value:()=>lensRead().furthest,threshold:2,art:lensFeatArt.glass},
+    {id:'sensor',name:'A Table of Numbers',latin:'',describe:()=>'Reach the fifth chapter — FITS, Tucson, 1981.',
+      value:()=>lensRead().furthest,threshold:4,art:lensFeatArt.sensor},
+    {id:'resolved',name:'Saturn Resolved',latin:'Saturnus Deprehensus',describe:()=>'Finish the Chronicle, To Saturn.',
+      stat:'won',threshold:1,art:lensFeatArt.saturn},
+    {id:'sevenWorlds',name:'The Seven Worlds',latin:'Septem Mundi',describe:()=>'Resolve every family of world at least once.',
+      value:()=>lensBits(lensRead().worlds),threshold:LENS_FAMILIES.length,art:lensFeatArt.worlds},
+    {id:'wholeField',name:'The Whole Field',latin:'Campus Totus',describe:()=>'Log every one of the twelve fields.',
+      value:()=>lensBits(lensRead().fields),threshold:LENS_FIELDS.length,art:lensFeatArt.fields},
+    {id:'threeSurveys',name:'Three Surveys Kept',latin:'',describe:()=>'Finish the Chronicle three times.',
+      value:()=>lensRead().completed,threshold:3,art:lensFeatArt.surveys},
+    {id:'observatory',name:'A Standing Observatory',latin:'Observatorium',describe:()=>'Fly the Lens ten times.',
+      stat:'runs',threshold:10,art:lensFeatArt.observatory},
+    {id:'lights',name:'A Field of Lights',latin:'',describe:()=>'Resolve 250 lights.',
+      stat:'captures',threshold:250,art:lensFeatArt.lights},
+    {id:'clean',name:'Fifty Clean Acquisitions',latin:'',describe:()=>'Make 50 clean acquisitions.',
+      stat:'perfects',threshold:50,art:lensFeatArt.clean},
+    {id:'slew',name:'Full Slew Held',latin:'',describe:()=>'Hold a lock of ×15.',
+      stat:'bestFlow',threshold:15,art:lensFeatArt.slew},
+    {id:'graze',name:'Ten Voids Grazed',latin:'',describe:()=>'Graze the emulsion void ten times, at full slew.',
+      stat:'grazes',threshold:10,art:lensFeatArt.graze},
+    {id:'endless',name:'The Endless Survey',latin:'',describe:()=>'Reach row 48 in the endless survey — past where the Chronicle ends.',
+      stat:'bestRow',threshold:48,art:lensFeatArt.endless}
+  ],
+  heirloom:{
+    name:'Saturn’s Handles',latin:'Ansae Saturni',
+    gloss:'Galileo’s own first, wrong reading of the planet — not a ring but two bodies touching it, either side — engraved into the atlas’s margin once the tube has resolved them.',
+    art:()=>MARK_ART.saturn
+  }
+});
