@@ -133,4 +133,4 @@ Not built by the first stage and recorded here so it is not lost:
    *Landed across centuries* (JOURNEY.md stage 5): once an era is known the next ordinary landing grows the
    next century out of that body inside the run, the old one held as a still outside the circle. The page
    turn between runs stays for a run that ends before it lands.
-6. The per-era catalogues and the links between eras.
+6. The per-era catalogues and the links between eras. *Landed 2026-09-28* (`src/centuries.js`): a leaf per century and its heirloom in the atlas's catalogue; the heirlooms are not yet drawn on the atlas's own chart.

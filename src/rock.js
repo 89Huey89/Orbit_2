@@ -2530,3 +2530,107 @@ defineHand('rock',{journeyMark(g,w,h,m){
     for(let d=0;d<8;d++){const a=-Math.PI/2+d/8*TAU,on=d<lit;rockDot(g,cx+Math.cos(a)*r,cy+Math.sin(a)*r,on?2.6:2.1,on?P.redOchre:P.manganese,on?.95:.3,i*8+d+900);}
     if(i<m.open)rockDot(g,cx,cy,4.2,P.kaolin,.9,i+960,true);}
 }});
+
+// ---------- The catalogue's own leaf (LINKING.md, "Unlocks, later") ----------
+// The Rock keeps no Latin anywhere on it (see the vocabulary note above), so its leaf keeps none
+// either: every name below is the plain curator's English the wall itself is lettered in, and the
+// `latin` field a card would set in small caps is left off wherever this wall has never had one to
+// give it. The one exception is the heirloom, which is no longer a mark on this wall at all once it is
+// handed down — it is a figure on the atlas's own plate, and the atlas speaks Latin over a name.
+//
+// One silhouette in engraved line, built from the same body-and-strokes points rockPaintAnimal draws
+// from (ROCK_ANIMALS) rather than a second, invented outline: the body's own contour, thinned to about
+// sixteen of its points so the path stays short, closed as one stroke, with whatever horns, antlers,
+// tusks or tail the species carries laid over it a shade lighter. Fitted to the 120×72 field off the
+// point data's own bounding box — antlers and tusks run well outside the body's, which is why the box
+// is read off both rather than the body alone.
+function rockCollectionArt(idx){
+  const a=ROCK_ANIMALS[idx];if(!a)return '';
+  const xs=[],ys=[];
+  for(const p of a.body){xs.push(p[0]);ys.push(p[1]);}
+  for(const st of a.strokes)for(const p of st){xs.push(p[0]);ys.push(p[1]);}
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const s=Math.min(74/(x1-x0||1),46/(y1-y0||1)),cx=(x0+x1)/2,cy=(y0+y1)/2;
+  const T=p=>[60+(p[0]-cx)*s,36+(p[1]-cy)*s];
+  const step=Math.max(1,Math.floor(a.body.length/16));
+  let body='';
+  for(let i=0;i<a.body.length;i+=step){const q=T(a.body[i]);body+=(i?'L':'M')+artRound(q[0])+' '+artRound(q[1]);}
+  body+='Z';
+  let strokes='';
+  for(const st of a.strokes){let d='';st.forEach((p,i)=>{const q=T(p);d+=(i?'L':'M')+artRound(q[0])+' '+artRound(q[1]);});strokes+=d;}
+  return artLine(body,1.7,.95)+artLine(strokes,1.1,.8);
+}
+// A device cut small for a feat's medal: the beaded roundel the whole catalogue strikes a device into
+// (medalRoundel, src/catalogue.js), with this wall's own marks laid inside it rather than the atlas's.
+const rockMedal=device=>medalRoundel(device);
+defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
+  title:'THE ROCK',
+  gloss:'Franco-Cantabrian Europe, centred on Lascaux — the wall carries no word for its own name, only the ring of dots and the spiral it is signed with.',
+  recordRows(){
+    const cave=rockCaveRead(),kinds=Object.keys(cave.animals||{}).map(Number).filter(k=>ROCK_ANIMALS[k]);
+    let top=-1;for(const k of kinds)if(top<0||cave.animals[k]>cave.animals[top])top=k;
+    return [
+      ['Runs kept on this wall',cave.runs.length+' of the last 60'],
+      ['Deepest of those runs','row '+rockBest()],
+      ['Animals marked at least once',kinds.length+' of 12'],
+      ['Animal marked most often',top>=0?ROCK_ANIMALS[top].name+' · '+cave.animals[top]+'×':'—']
+    ];
+  },
+  collection:{
+    title:'The animals',
+    latin:'',
+    gloss:'The twelve animals the caves actually drew, each one met by carrying its cluster of three lights to a close.',
+    items(){
+      const cave=rockCaveRead();
+      return ROCK_ANIMALS.map((a,i)=>({
+        name:a.name,
+        latin:'',
+        gloss:(VOICES.rock.chartNotes||[])[i]||'',
+        seen:!!cave.animals[i],
+        count:cave.animals[i]||0,
+        cond:'Close its cluster of three lights in a run on the Rock.',
+        art:()=>rockCollectionArt(i)
+      }));
+    }
+  },
+  feats:[
+    {id:'strike',name:'FIRST STRIKE',describe:()=>'Capture one orbit on the wall.',
+      art:()=>rockMedal(artRing(60,36,11,1.3)+artDot(60,36,3.4)),stat:'captures',threshold:1},
+    {id:'hundred',name:'A HUNDRED HANDS',describe:()=>'Capture 100 orbits, across every run on the Rock.',
+      art:()=>rockMedal(artLine('M42 36H78',1)+[46,53,60,67,74].map(x=>artDot(x,36,1.7,.9)).join('')),stat:'captures',threshold:100},
+    {id:'clean',name:'A CLEAN LANDING',describe:()=>'Land one perfect transfer.',
+      art:()=>rockMedal(artRing(60,36,14,1.3)+artDot(60,36,3.2)),stat:'perfects',threshold:1},
+    {id:'steady',name:'A STEADY HAND',describe:()=>'Land 25 perfect transfers.',
+      art:()=>rockMedal(artLine('M45 30L60 42L75 30M45 40L60 52L75 40',1.3,.9)),stat:'perfects',threshold:25},
+    {id:'graze',name:'NEAR THE SHAFT',describe:()=>'Graze a danger and carry the torch on, 10 times.',
+      art:()=>rockMedal(artFill('M50 24L70 26L74 40L62 50L48 46L44 34Z',.35)+artLine('M50 24L70 26L74 40L62 50L48 46L44 34Z',1.1)),stat:'grazes',threshold:10},
+    {id:'shaftscene',name:'THE SHAFT SCENE',describe:()=>'Carry the torch to row 8, the mouth of the second chamber.',
+      art:()=>rockMedal(artLine('M46 26L54 34L50 40L62 46L58 52',1.3,.9)),stat:'bestRow',threshold:8},
+    {id:'handdots',name:'THE PANEL OF HAND DOTS',describe:()=>'Carry the torch to row 16, the third chamber.',
+      art:()=>rockMedal(Array.from({length:9},(_,i)=>artDot(50+(i%3)*10,28+((i/3)|0)*8,1.8,.85)).join('')),stat:'bestRow',threshold:16},
+    {id:'newgrangedeep',name:'NEWGRANGE',describe:()=>'Carry the torch to row 24, the last chamber.',
+      art:()=>rockMedal([[48,30],[60,30],[72,30]].map(([x,y])=>artLine(artSpiral(x,y,4.6,1,-.4,-.4+TAU*1.3,18),.9,.85)).join('')),stat:'bestRow',threshold:24},
+    {id:'midwinter',name:'MIDWINTER',describe:()=>'Finish the Chronicle: bring the sunrise down the passage into Newgrange.',
+      art:()=>rockMedal(artDot(60,36,7,.9)+artLine(artRays(60,36,9,16,12),.9,.85)),stat:'won',threshold:1},
+    {id:'unbroken',name:'AN UNBROKEN LINE',describe:()=>'Reach a flow of ×20 without a graze.',
+      art:()=>rockMedal(artLine('M44 44Q60 20 76 44',1.3)+[46,53,60,67,74].map(x=>artDot(x,44,1.6,.9)).join('')),stat:'bestFlow',threshold:20},
+    {id:'wholeherd',name:'THE WHOLE HERD',describe:()=>'Mark every one of the twelve animals at least once.',
+      art:()=>rockCollectionArt(0),value:()=>{const cave=rockCaveRead();return Object.keys(cave.animals||{}).filter(k=>ROCK_ANIMALS[k]).length;},threshold:12},
+    {id:'devoted',name:'A DEVOTED HAND',describe:()=>'Mark one animal 10 times over.',
+      art:()=>rockMedal(artLine('M60 24V48M60 24L52 32M60 24L68 32M60 24L46 26M60 24L74 26',1.2,.85)+artDot(60,24,2.2)),
+      value:()=>{const cave=rockCaveRead();let m=0;for(const k in cave.animals)if(cave.animals[k]>m)m=cave.animals[k];return m;},threshold:10},
+    {id:'deepest',name:'THE DEEPEST TORCH',describe:()=>'Carry the torch past row 40, deep into an Endless wall.',
+      art:()=>rockMedal(artLine('M60 14V58',1.4)+[22,30,38,46,54].map(y=>artDot(60,y,1.3,.7)).join('')),stat:'bestRow',threshold:40},
+    {id:'returning',name:'WHAT RETURNS',describe:()=>'Fly the Rock 20 times — every hand that comes back is pressed round the mark.',
+      art:()=>rockMedal(Array.from({length:8},(_,i)=>{const a=i/8*TAU;return artRing(60+Math.cos(a)*16,36+Math.sin(a)*16,3.2,.9,.8);}).join('')),stat:'runs',threshold:20},
+    {id:'yourcave',name:'YOUR OWN CAVE',describe:()=>'Keep a full cave of 60 runs on this wall.',
+      art:()=>rockMedal(artRing(60,36,16,1.2)+artFill(artStar(60,36,4,6,2),.9)),
+      value:()=>rockCaveRead().runs.length,threshold:60}
+  ],
+  heirloom:{
+    name:'THE BULL OF THE HALL',
+    latin:'TAURUS',
+    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, under the atlas’s own Taurus — the oldest bull in the sky standing under the newest.',
+    art:()=>rockCollectionArt(0)
+  }
+});

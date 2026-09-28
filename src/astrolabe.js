@@ -1174,3 +1174,132 @@ defineHand('astrolabe',{journeyMark(g,w,h,m){
   for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*12,y=h-6,f=i<m.open?1:i===m.open?m.toward:0;g.save();g.strokeStyle=`rgb(${P.groove})`;g.lineWidth=.8;g.beginPath();g.arc(x,y,2.4,0,TAU);g.stroke();
     if(f>0){g.fillStyle=`rgb(${P.gilt})`;g.beginPath();g.moveTo(x,y);g.arc(x,y,2.4,-Math.PI/2,-Math.PI/2+TAU*f);g.closePath();g.fill();}g.restore();}
 }});
+
+// ---------- The leaf: the fihrist, the six parts, the star that came down whole ----------
+// Small art for the fihrist's three registers: a rete pointer for a star, the khātam rosette worn thin
+// for a figure set, and a wanderer's own epicycle for a planet sighted. Cheap and deterministic off the
+// index alone, since the catalogue asks for a mark and not a second copy of the instrument.
+function astroFihristStarArt(i){
+  const a=-Math.PI/2+(i/ASTRO_STARS.length)*TAU,px=60+Math.cos(a)*24,py=36+Math.sin(a)*24;
+  return artRing(60,36,15,.7,.5)+artLine('M60 36L'+px.toFixed(1)+' '+py.toFixed(1),1.1,.85)+artFill(artStar(px,py,4,4.4,1.3),1)+artDot(60,36,1.4,.8);
+}
+function astroFihristFigureArt(i){
+  const a=(i/ASTRO_FIGURES.length)*TAU,tx=60+Math.cos(a)*11,ty=36+Math.sin(a)*11;
+  return artFill(artStar(60,36,8,19,13.5),.32)+artRing(60,36,19,.7,.55)+artDot(tx,ty,1.7,.9);
+}
+function astroFihristPlanetArt(i){
+  const r=9+i*3,ex=60+r,ey=36;
+  return artRing(60,36,r,.8,.65)+artRing(ex,ey,4.2,.7,.7)+artDot(ex,ey,1.7,1)+artDot(60,36,1.3,.7);
+}
+defineCentury(4,{
+  title:'The Astrolabe',latin:'الأسطرلاب',
+  gloss:'Six cities, one instrument built a part a city, from Baghdad’s cast mater to the rule laid at Samarkand.',
+  // The century's own store (orbit.astrolabe.v1) rather than eraLog: the furthest part any run has ever
+  // built, how often the Zīj was closed, the best reckoning, and how much of the fihrist stands filled.
+  recordRows(){
+    const r=astroRead(),f=astroFihrist(),C=ASTRO_CHAPTERS[r.furthest];
+    const filled=Object.keys(f.stars).length+Object.keys(f.figures).length+Object.keys(f.planets).length;
+    const total=ASTRO_STARS.length+ASTRO_FIGURES.length+ASTRO_PLANETS.length;
+    return[
+      ['Furthest part built',C.en+' · '+C.part],
+      ['The Zīj finished',commas(r.completed)+'×'],
+      ['Best reckoning',commas(r.best)],
+      ['Fihrist filled',commas(filled)+' / '+commas(total)]
+    ];
+  },
+  // The fihrist itself: every rete star a run has ever named, every figure it has set whole, every
+  // wandering star it has sighted, read off orbit.fihrist.v1 rather than the run log, since a name once
+  // entered is entered for good and does not reset with a fresh flight.
+  collection:{
+    title:'The Fihrist',latin:'الفهرست',
+    gloss:'Every star the rete has named, every figure set whole, every wanderer sighted, kept across every flight.',
+    items(){
+      const f=astroFihrist(),out=[];
+      ASTRO_STARS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.stars[i],count:f.stars[i]||0,
+        cond:'Hold close by a first- or second-greatness star until its scale is struck whole.',art:()=>astroFihristStarArt(i)}));
+      ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.figures[i],count:f.figures[i]||0,
+        cond:'Trace the figure’s whole constellation in one flight.',art:()=>astroFihristFigureArt(i)}));
+      ASTRO_PLANETS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.planets[i],count:f.planets[i]||0,
+        cond:'Hold a wandering star until it is named, rather than a fixed one.',art:()=>astroFihristPlanetArt(i)}));
+      return out;
+    }
+  },
+  // Fifteen: the five parts a run can reach past Baghdad's own (the sixth, the Zīj itself, closes the
+  // ladder), the four counts every century keeps, and the fihrist's own four measures, the last of them
+  // the century's signature — the whole instrument named and the whole sky it points at with it.
+  feats:[
+    {id:'isfahan',name:'The Limb Is Divided',latin:'أصفهان',
+      describe:()=>'Reach row 6 of a Chronicle, where Isfahan divides the limb.',
+      art:()=>medalRoundel(artRing(60,36,21,1.2)+artLine(artRays(60,36,17,21,24),.7,.75)),
+      stat:'bestRow',threshold:6},
+    {id:'cairo',name:'The Plate Is Constructed',latin:'القاهرة',
+      describe:()=>'Reach row 12 of a Chronicle, where Cairo constructs the plate.',
+      art:()=>medalRoundel(artRing(60,36,20,1)+artRing(60,36,11,.7,.7)+artLine('M38 36H82M60 15V57',.7,.6)),
+      stat:'bestRow',threshold:12},
+    {id:'valencia',name:'The Rete Is Pierced',latin:'بلنسية',
+      describe:()=>'Reach row 18 of a Chronicle, where Valencia pierces the rete.',
+      art:()=>medalRoundel(artRing(60,36,20,1)+artRing(60,28,7,.8,.8)+artLine('M60 36L60 21M46 36H74',.6,.55)),
+      stat:'bestRow',threshold:18},
+    {id:'maragha',name:'The Stars Are Set',latin:'مراغة',
+      describe:()=>'Reach row 24 of a Chronicle, where Marāgha sets the stars.',
+      art:()=>medalRoundel([[50,30],[70,28],[62,46],[44,44]].map(([x,y])=>artFill(artStar(x,y,4,4,1.3))).join('')),
+      stat:'bestRow',threshold:24},
+    {id:'samarkand',name:'The Rule Is Laid',latin:'سمرقند',
+      describe:()=>'Reach row 30 of a Chronicle, where Samarkand lays the rule.',
+      art:()=>medalRoundel(artLine('M39 36H81',1.6)+artDot(60,36,2.6)+artLine('M39 36L45 32M39 36L45 40',.7,.7)),
+      stat:'bestRow',threshold:30},
+    {id:'zij',name:'The Zīj Is Finished',latin:'زيج',
+      describe:()=>'Carry a Chronicle of the Astrolabe to its finish.',
+      art:()=>medalRoundel(artFill(artStar(60,36,8,18,13),.9)+artRing(60,36,25,.7,.6)),
+      stat:'won',threshold:1},
+    {id:'obs100',name:'A Hundred Observations',latin:astroAbjad(100),
+      describe:()=>'Capture 100 orbits across every flight of the Astrolabe.',
+      art:()=>medalRoundel(artDot(60,36,6,.9)+artRing(60,36,13,.8,.7)+artRing(60,36,19,.6,.5)),
+      stat:'captures',threshold:100},
+    {id:'obs500',name:'Five Hundred Observations',latin:astroAbjad(500),
+      describe:()=>'Capture 500 orbits across every flight of the Astrolabe.',
+      art:()=>medalRoundel(artDot(60,36,6,.9)+artRing(60,36,13,.8,.7)+artRing(60,36,19,.6,.5)+artRing(60,36,25,.5,.4)),
+      stat:'captures',threshold:500},
+    {id:'perfects50',name:'Fifty Perfect Transfers',latin:astroAbjad(50),
+      describe:()=>'Fly 50 perfect transfers across every flight of the Astrolabe.',
+      art:()=>medalRoundel([47,60,73].map(x=>artFill(artStar(x,36,4,4.8,1.5))).join('')),
+      stat:'perfects',threshold:50},
+    {id:'flights20',name:'Twenty Flights',latin:astroAbjad(20),
+      describe:()=>'Fly the Astrolabe 20 times.',
+      art:()=>medalRoundel(artLine('M50 22V50M70 22V50',1.2)+artLine('M50 22L70 22M50 50L70 50',.7,.7)+artDot(60,36,1.6,.9)),
+      stat:'runs',threshold:20},
+    {id:'figures30',name:'Thirty Figures Traced',latin:astroAbjad(30),
+      describe:()=>'Trace 30 figures whole across every flight of the Astrolabe.',
+      art:()=>medalRoundel(artLine('M46 44L58 25L75 34L65 51Z',.9)+[[46,44],[58,25],[75,34],[65,51]].map(([x,y])=>artDot(x,y,1.4,.85)).join('')),
+      stat:'constellations',threshold:30},
+    {id:'fihristStars',name:'The Fihrist of Stars',latin:'فهرست الكواكب',
+      describe:()=>'Name every one of the twelve rete stars across your runs.',
+      art:()=>medalRoundel([[50,29],[68,25],[74,46],[47,48]].map(([x,y])=>artFill(artStar(x,y,4,5,1.6))).join('')),
+      value:()=>Object.keys(astroFihrist().stars).length,threshold:ASTRO_STARS.length},
+    {id:'fihristFigures',name:'The Fihrist of Figures',latin:'فهرست الصور',
+      describe:()=>'Set every one of the twelve figures whole across your runs.',
+      art:()=>medalRoundel(artFill(artStar(60,36,8,19,13.5),.85)),
+      value:()=>Object.keys(astroFihrist().figures).length,threshold:ASTRO_FIGURES.length},
+    {id:'fihristPlanets',name:'The Five Wanderers',latin:'الكواكب السيارة',
+      describe:()=>'Sight every one of the five wandering stars across your runs.',
+      art:()=>medalRoundel(artRing(60,36,17,.9,.8)+artRing(74,27,6,.7,.6)+artDot(74,27,2,1)+artRing(45,45,5,.6,.5)+artDot(45,45,1.6,.9)),
+      value:()=>Object.keys(astroFihrist().planets).length,threshold:ASTRO_PLANETS.length},
+    {id:'fihristComplete',name:'The Fihrist Complete',latin:'الفهرست الكامل',
+      describe:()=>'Fill the whole fihrist: every rete star, every figure and every wanderer, across your runs.',
+      art:()=>medalRoundel(artFill(artStar(60,36,8,22,15),.9)+artRing(60,36,26,.7,.6)+artDot(60,36,3,1)),
+      value:()=>{const f=astroFihrist();return Object.keys(f.stars).length+Object.keys(f.figures).length+Object.keys(f.planets).length;},
+      threshold:ASTRO_STARS.length+ASTRO_FIGURES.length+ASTRO_PLANETS.length}
+  ],
+  // What the Astrolabe leaves the atlas once known: not a device but a single name, the one thing every
+  // instrument, chart and star-list of this line actually shares. Aldebaran is Latin only by accident of
+  // transcription — the atlas's own star is still al-Dabarān, "the follower", trailing the Pleiades across
+  // the sky, exactly as al-Ṣūfī's Book of the Fixed Stars (964 CE) named it, and every European
+  // catalogue after it, Ptolemy's Greek predecessors having named it nothing at all.
+  heirloom:{
+    name:'Aldebaran',latin:'الدبران · al-Dabarān',
+    gloss:'The eye of the Bull keeps its Arabic name in the atlas still — "the follower", trailing the Pleiades — exactly as al-Ṣūfī’s Book of the Fixed Stars set it down in 964.',
+    art:()=>artFill(artStar(60,36,4,4.2,1.4))+artRing(60,36,9,.6,.6)+
+      [[46,26],[38,34],[44,44],[52,50],[64,50],[72,44]].map(([x,y],i)=>artDot(x,y,i===1?1.1:.75,.55)).join('')+
+      artLine('M46 26L38 34L44 44L52 50L64 50L72 44',.5,.4)
+  }
+});

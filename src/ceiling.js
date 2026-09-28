@@ -1710,6 +1710,23 @@ function ceilingDrawDecanCharts(){
 // otherwise spent on the disc a star is set on, since a white sign on plaster is a pale mark and a
 // field of them would be a route the player has to hunt for.
 const CEILING_BODY_FILLS=[CEILING_PALETTE.carbon,CEILING_PALETTE.red,CEILING_PALETTE.white,CEILING_PALETTE.faience,CEILING_PALETTE.carbon];
+// The Journey's signature feat on this wall (SIGNATURES, src/centuries.js) is a landing on one of the
+// ikhemu-wretju, so the wall owes one: besides the fifth of ordinary bodies whose own seed paints them as a
+// barque, one plain row of every watch of the night — nine rows, counted from where the Ceiling began — is
+// dealt a wanderer by the chart's seed. The plain rows are the astrolabe's own reading of the chart's rule
+// (astroPlainRow), so both walls agree on which rows carry an ordinary body alone.
+function ceilingWatchWanderer(n){
+  if(!world||n.difficultyChoice||n.routeId!=null||(n.type!=='still'&&n.type!=='drift')||n.row!==Math.floor(n.row))return false;
+  const from=world.eraFrom||0,w=Math.floor((n.row-from)/9),seed=(world.seed|0)>>>0,rows=[];
+  if(w<0)return false;
+  // Row 1 is where a fresh chart deals its three difficulty paths rather than one plain body.
+  for(let k=from+w*9;k<from+(w+1)*9;k++)if(k>=2&&astroPlainRow(k))rows.push(k);
+  return rows.length>0&&n.row===rows[Math.floor(tileHash(seed,w,43)*rows.length)];
+}
+function ceilingWanderer(n){
+  if(!n||n.difficultyChoice||['gold','sling','shield','reflector','dawn','inkwell'].includes(n.type))return false;
+  return ceilingHash(n.seed||n.id+1,307)<.2||ceilingWatchWanderer(n);
+}
 function ceilingNodeIcon(n,r,stage){
   const seed=n.seed||n.id+1;
   if(n.type==='gold'||n.type==='sling'){
@@ -1744,7 +1761,7 @@ function ceilingNodeIcon(n,r,stage){
   // a plate still paints identically every load while no two bodies on it are the same mark.
   const kind=ceilingHash(seed,307),size=r*(.2+ceilingHash(seed,311)*.11),
     fill=CEILING_BODY_FILLS[Math.floor(ceilingHash(seed,313)*CEILING_BODY_FILLS.length)%CEILING_BODY_FILLS.length];
-  if(kind<.2){
+  if(kind<.2||ceilingWatchWanderer(n)){
     const w=r*(.26+ceilingHash(seed,317)*.08);
     ceilingPolygon(ctx,[[-w,r*.14],[w,r*.14],[w*1.4,r*.04],[w*.86,r*.1],[-w*.86,r*.1],[-w*1.4,r*.04]],CEILING_PALETTE.white,stage,seed,1.1);
     if(stage>.5){ctx.save();ctx.globalAlpha=clamp((stage-.5)*2,0,1);ctx.fillStyle=(seed&1)?CEILING_PALETTE.red:CEILING_PALETTE.carbon;ctx.strokeStyle=CEILING_PALETTE.carbon;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-r*.05,r*.14,0,TAU);ctx.fill();ctx.stroke();ctx.restore();}
@@ -2386,3 +2403,127 @@ defineHand('ceiling',{journeyMark(g,w,h,m){
   for(let i=0;i<m.of;i++){const cx=w/2+(i-(m.of-1)/2)*step,lit=i<m.open?3:i===m.open?Math.floor(m.toward*3):0;
     for(let s=0;s<3;s++){const x=cx+(s-1)*r*2.3,y=h/2+(s===1?-r*.8:r*.35);ceilingStar(g,x,y,r,s<lit?CEILING_PALETTE.yellow:CEILING_PALETTE.lime,1,i*3+s+1);}}
 }});
+
+// ---------- The Ceiling's own leaf of the catalogue (src/centuries.js, docs/archive/eras/LINKING.md's
+// "Unlocks, later") ----------
+// The Ceiling keeps no record of its own — LINKING.md's own table says so ("Keeps: nothing") — so every
+// figure below is read off eraLog(2) alone: bestRow counted in the Ceiling's own rows (CEILING_HOUR_ROWS
+// a stretch, CEILING_DAWN_ROW the whole night) and won, the tally of nights sailed clean to dawn. Nothing
+// here opens a second orbit.<era>.v1 key, since bestRow and won already carry everything a leaf needs.
+// The watch each hour keeps (defineVoice's own milestones, above, group them the same way) named in the
+// plain words a caption under a wheel would use, not restated as a fifth constant.
+const CEILING_WATCH_WORDS=['first','second','third','fourth'];
+function ceilingHourLabel(i){return 'Hour '+numerals[i]+' · '+CEILING_HOURS[i];}
+// A zigzag laid wall to wall, the n sign's own shape (see the file's opening note on Nun's waters),
+// for every decan card whose hour is a stretch of water.
+function ceilingZigzagD(y,amp,x0=24,x1=96,n=7){
+  let d='M'+x0+' '+y;
+  for(let i=1;i<=n;i++)d+='L'+artRound(x0+(x1-x0)*i/n)+' '+artRound(y+(i%2?amp:-amp));
+  return d;
+}
+// One small engraved mark a decan card, cut from the hour's own region of the Duat rather than from a
+// shared glyph repeated twelve times over: a gate for the entrance, a wave for a stretch of water, a
+// mound for the sands and the cavern, Apep's own coil, a row of biers for the dead, oars for the
+// rowers, drowned dots under the waterline, flames for the pits, and the tunnel the body is drawn
+// through to be born again.
+function ceilingDecanArt(i){
+  switch(i){
+    case 0: // THE ENTRANCE OF THE WEST — the gate the barque casts off through.
+      return artLine('M40 14V58M80 14V58',1.7)+artLine('M40 16H80',1.3,.85)+
+        artFill(artStar(60,34,4,5.6,1.8),.92)+artLine('M36 58H84',.9,.55);
+    case 1: // THE WATERS OF WERNES
+      return artLine(ceilingZigzagD(26,3.4),1.3)+artLine(ceilingZigzagD(40,3.4),1,.7)+
+        artFill(artStar(92,18,4,3.4,1.1),.85);
+    case 2: // THE WATERS OF OSIRIS — a second, calmer stretch, one wave instead of two.
+      return artLine(ceilingZigzagD(34,4.2,22,98,6),1.5)+artRing(60,20,4,.9,.75)+artDot(60,20,1.3,.8);
+    case 3: // THE SANDS OF SOKAR — a mound rising out of a scatter of grains.
+      return artLine('M24 52Q60 22 96 52',1.5)+Array.from({length:16},(_,k)=>artDot(26+k*4.6,55+((k*7)%5),.7,.5)).join('');
+    case 4: // THE CAVERN OF SOKAR — the dark arch the barque is dragged through.
+      return artLine(artArc(60,58,26,Math.PI,TAU),1.6)+artLine(artArc(60,58,18,Math.PI,TAU),.8,.6)+artDot(60,40,1.4,.85);
+    case 5: // THE DEEP WATERS — the widest, deepest stretch of the whole night.
+      return artLine(ceilingZigzagD(22,3,20,100,8),1,.6)+artLine(ceilingZigzagD(34,5,20,100,6),1.5)+
+        artLine(ceilingZigzagD(48,3,20,100,8),1,.6);
+    case 6: // THE COILS OF APEP — the serpent's own body, met and overcome.
+      return artLine(artSpiral(60,36,15,1.5,-.3,TAU*1.6-.3),1.5)+artDot(60,36,1.6,.9);
+    case 7: // THE CAVERNS OF THE DEAD — a row of biers.
+      return Array.from({length:5},(_,k)=>{const x=30+k*15;return artLine('M'+x+' 44H'+(x+11)+'V50H'+x+'Z',1,.85)+artLine('M'+(x+5.5)+' 44V32',.8,.6);}).join('');
+    case 8: // THE ROWERS OF RA — the barque's own oars, pulling it on.
+      return artLine('M22 40H98',1.6)+Array.from({length:6},(_,k)=>{const x=30+k*11.5;return artLine('M'+x+' 40L'+(x-3)+' 56',.9,.75);}).join('')+artDot(94,40,2,.9);
+    case 9: // THE WATERS OF THE DROWNED — the wave, and what sank under it.
+      return artLine(ceilingZigzagD(28,3.6),1.2)+[[38,46],[58,50],[78,45]].map(([x,y])=>artDot(x,y,1.5,.7)).join('');
+    case 10: // THE PITS OF FIRE — flame set in a row of pits.
+      return Array.from({length:4},(_,k)=>{const x=32+k*19;return artLine('M'+x+' 52Q'+(x-4)+' 40 '+x+' 30Q'+(x+4)+' 40 '+x+' 52Z',1.1,.9);}).join('');
+    default: // THE BODY OF THE SERPENT — the tunnel the barque is threaded through to be born again.
+      return artLine(artSpiral(30,36,3,20,0,TAU*1.3),1,.55)+artLine('M50 36H96',1.6)+artFill(artStar(96,36,4,4.2,1.4),.9);
+  }
+}
+defineCentury(2,{
+  title:'The Ceiling',latin:'Wnwt',gloss:'Twelve hours of the Amduat, sailed beneath Nut to the dawn.',
+  // No store of its own (LINKING.md): every row here is read off eraLog(2)'s bestRow and won alone.
+  recordRows(){
+    const log=eraLog(2),cleared=Math.min(CEILING_HOURS.length,Math.floor(log.bestRow/CEILING_HOUR_ROWS)),
+      laps=Math.floor(log.bestRow/CEILING_DAWN_ROW);
+    return [
+      ['Furthest hour reached',cleared?ceilingHourLabel(cleared-1):'Not yet cast off'],
+      ['Decans of the night passed',commas(cleared)+' / '+commas(CEILING_HOURS.length)],
+      ['Dawns witnessed',commas(laps)+' '+(laps===1?'night':'nights')+' sailed clean to sunrise']
+    ];
+  },
+  collection:{
+    title:'The Twelve Hours',latin:'Wnwt',gloss:'The night’s own watches, sailed one gate at a time toward the dawn.',
+    items(){
+      const log=eraLog(2),cleared=Math.min(CEILING_HOURS.length,Math.floor(log.bestRow/CEILING_HOUR_ROWS));
+      return CEILING_HOURS.map((name,i)=>({
+        name,latin:(CEILING_WORD.hour.tr)+' '+numerals[i],
+        gloss:'The '+CEILING_WATCH_WORDS[Math.floor(i/3)]+' watch of the night, at hour '+numerals[i]+' of the barque’s passage.',
+        seen:i<cleared,
+        cond:'Steer the barque past this hour’s gate, at row '+((i+1)*CEILING_HOUR_ROWS)+'.',
+        art:()=>ceilingDecanArt(i)
+      }));
+    }
+  },
+  feats:[
+    {id:'firstNight',name:'FIRST NIGHT SAILED',latin:'',describe:()=>'Cast off on the night barque once.',
+      stat:'runs',threshold:1,art:()=>artLine('M26 50Q60 62 94 50L88 42H32Z',1.4,.92)+artLine('M60 42V16',1.6)+artFill(artStar(60,16,4,4.2,1.4),.9)},
+    {id:'tenNights',name:'TEN NIGHTS SAILED',latin:'',describe:()=>'Sail the night barque ten times.',
+      stat:'runs',threshold:10,art:()=>artLine('M26 50Q60 62 94 50L88 42H32Z',1.4,.92)+Array.from({length:10},(_,k)=>artFill(artStar(24+k*8,20,4,2.6,.9),.9)).join('')},
+    {id:'captures60',name:'SIXTY STARS TAKEN',latin:'',describe:()=>'Capture sixty orbiting stars on the Ceiling.',
+      stat:'captures',threshold:60,art:()=>artRing(60,36,20,1.2,.85)+artFill(artStar(60,36,4,7,2.2),.95)+[0,1,2,3,4,5].map(k=>artDot(60+Math.cos(k/6*TAU)*20,36+Math.sin(k/6*TAU)*20,1.3,.75)).join('')},
+    {id:'captures200',name:'TWO HUNDRED STARS TAKEN',latin:'',describe:()=>'Capture two hundred orbiting stars on the Ceiling.',
+      stat:'captures',threshold:200,art:()=>artRing(60,36,24,1.2,.85)+artRing(60,36,14,.9,.7)+artFill(artStar(60,36,4,7,2.2),.95)+[0,1,2,3,4,5,6,7].map(k=>artDot(60+Math.cos(k/8*TAU)*24,36+Math.sin(k/8*TAU)*24,1.2,.7)).join('')},
+    {id:'perfects20',name:'TWENTY CLEAN TRANSFERS',latin:'',describe:()=>'Land twenty clean transfers on an hour-circle.',
+      stat:'perfects',threshold:20,art:()=>artRing(46,36,14,1.3)+artRing(74,36,14,1.3,.55)+artLine('M58 36H62',1.6)+artFill(artStar(46,36,4,4,1.3),.9)},
+    {id:'grazes10',name:'TEN COILS BRUSHED',latin:'',describe:()=>'Graze Apep’s coils and live to tell it, ten times.',
+      stat:'grazes',threshold:10,art:()=>artLine(artSpiral(52,36,14,1.5,-.3,TAU*1.5-.3),1.4)+artLine('M76 24L92 16',1.4,.9)+artDot(76,24,1.6,.9)},
+    {id:'decan5',name:'FIVE DECAN COURSES',latin:'',describe:()=>'Complete five decan courses in one flight each.',
+      stat:'constellations',threshold:5,art:()=>artRing(60,36,20,1.1,.8)+[0,1,2,3,4].map(k=>artFill(artStar(60+Math.cos(k/5*TAU-Math.PI/2)*20,36+Math.sin(k/5*TAU-Math.PI/2)*20,4,3.6,1.2),.92)).join('')},
+    {id:'decan15',name:'FIFTEEN DECAN COURSES',latin:'',describe:()=>'Complete fifteen decan courses in all.',
+      stat:'constellations',threshold:15,art:()=>artRing(60,36,24,1.1,.8)+artRing(60,36,15,.8,.6)+[0,1,2,3,4,5,6].map(k=>artFill(artStar(60+Math.cos(k/7*TAU-Math.PI/2)*24,36+Math.sin(k/7*TAU-Math.PI/2)*24,4,3.2,1.1),.92)).join('')},
+    {id:'flow10',name:'ORDER ×10 HELD',latin:'',describe:()=>'Reach an order of ×10 in one flight.',
+      stat:'bestFlow',threshold:10,art:()=>Array.from({length:6},(_,k)=>artLine('M'+(32+k*11)+' 54V'+(54-k*6.5),1.6,.9)).join('')+artFill(artStar(96,12,4,4,1.3),.9)},
+    {id:'hourSeven',name:'PAST THE COILS OF APEP',latin:'wnwt VII',describe:()=>'Bring the barque through the seventh hour’s own gate.',
+      stat:'bestRow',threshold:CEILING_HOUR_ROWS*7,art:()=>ceilingDecanArt(6)+artLine('M40 14V58M80 14V58',.7,.4)},
+    {id:'dawn',name:'DAYBREAK HELD',latin:'',describe:()=>'Bring the barque to the twelfth gate, at dawn.',
+      stat:'bestRow',threshold:CEILING_DAWN_ROW,art:()=>artLine(artArc(60,50,28,Math.PI,TAU),1.6)+artRays(60,50,30,38,9,Math.PI)+artFill(artStar(60,50,4,5,1.6),.9)},
+    {id:'chronicle',name:'THE CHRONICLE SAILED',latin:'',describe:()=>'Finish the Ceiling’s Chronicle: sail all twelve hours to dawn in one flight.',
+      stat:'won',threshold:1,art:()=>artLine(artArc(60,50,28,Math.PI,TAU),1.8)+artRays(60,50,30,40,12,Math.PI)+artFill(artStar(60,50,4,6,1.9),.95)+artLine('M26 58H94',1,.55)},
+    {id:'allDecans',name:'ALL TWELVE DECANS',latin:'',describe:()=>'Pass every one of the twelve hours’ own gates.',
+      value:log=>Math.min(CEILING_HOURS.length,Math.floor(log.bestRow/CEILING_HOUR_ROWS)),threshold:CEILING_HOURS.length,
+      art:()=>artRing(60,36,22,1.2,.85)+Array.from({length:12},(_,k)=>artFill(artStar(60+Math.cos(k/12*TAU-Math.PI/2)*22,36+Math.sin(k/12*TAU-Math.PI/2)*22,4,2.6,.85),.9)).join('')},
+    {id:'doubleDawn',name:'THE SUN REBORN TWICE',latin:'',describe:()=>'Sail two full nights’ worth of hours without the run ending — the dawn come round again.',
+      value:log=>log.bestRow,threshold:CEILING_DAWN_ROW*2,
+      art:()=>artLine(artArc(46,50,16,Math.PI,TAU),1.4)+artFill(artStar(46,50,4,3.6,1.2),.9)+artLine(artArc(78,50,16,Math.PI,TAU),1.4)+artFill(artStar(78,50,4,3.6,1.2),.9)},
+    {id:'halfHour',name:'HALF AN HOUR UNDER THE EARTH',latin:'',describe:()=>'Spend thirty minutes in all flying the Ceiling.',
+      stat:'playSeconds',threshold:1800,art:()=>artRing(60,36,22,1.4)+artLine('M60 36V20M60 36L72 44',1.4)+artDot(60,36,1.8,.9)}
+  ],
+  // LINKING.md's "Unlocks, later": the Ceiling's decans, earning the atlas its own Dendera zodiac — the
+  // temple ceiling that later gathered the same twelve hours into one circular sphere. Handed down once
+  // the Chronicle is sailed to dawn, or the Journey is climbed past this era.
+  heirloom:{
+    name:'The Dendera zodiac',latin:'Zodiacus Denderae',
+    gloss:'The night’s twelve decans, once cut into a ring around a temple ceiling at Dendera, turn again as a sphere on the atlas’s own construction plate.',
+    art:()=>artRing(60,36,26,1.3)+artRing(60,36,20,.7,.6)+artLine(artRays(60,36,20,26,12,-Math.PI/2),.6,.55)+
+      Array.from({length:12},(_,k)=>artFill(artStar(60+Math.cos(k/12*TAU-Math.PI/2)*23,36+Math.sin(k/12*TAU-Math.PI/2)*23,4,2.2,.7),.85)).join('')+
+      artFill(artStar(60,36,4,5,1.6),.95)
+  }
+});

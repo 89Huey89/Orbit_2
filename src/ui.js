@@ -127,6 +127,8 @@ function say(text,where){
 function event(type,e){
   // The press answers a few of these in its own way (src/press.js) before anything else hears them.
   pressEvent(type,e);
+  // A century's signature feat (src/centuries.js), said on the sheet the moment it is flown in the Journey.
+  {const sig=signatureEvent(type,e);if(sig){const line=sig.name+' \u00b7 FLOWN';say(line,{node:world.player.node||e&&e.n,tone:'note'});$('announcement').textContent=line;journeyArm();syncJourney();}}
   if(type==='start'){audio.start();if(replayLog)replayLog.startedAt=world.time;return;}
   if(type==='release'){
     audio.release();burst(e.x,e.y,8,'gold',.4);rings.push({x:e.x,y:e.y,start:4,distance:25,age:0,life:.32,alpha:.45,seed:ringSeed()});
@@ -385,6 +387,9 @@ function journeyNote(){
   const w=plateWords(),c=w.chrome.journey,m=journeyMilestones(),era=journeyEraTitle(journey.era);
   if(journeyComplete())return fmt(c.frontier,{best:journey.bests.frontier||0});
   if(m.open<m.of)return fmt(c.line,{era,count:m.open+' / '+m.of,name:(w.milestones||[])[m.open]||'',pct:Math.floor(m.toward*100)});
+  // Every chapter stands and the century's own feat is still to be flown: the line names it, in English,
+  // since the player has to understand it to fly it.
+  if(!journeySigned()){const sig=SIGNATURES[journey.era];if(sig)return fmt(c.signature||'{era} \u00b7 STILL TO FLY: {name} \u2014 {how}',{era,name:sig.name,how:sig.describe});}
   const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
   return fmt(next?c.known:c.whole,{era,next});
 }
@@ -438,7 +443,7 @@ function journeyRestartTap(){
 // frontier's own century, and only where there is a century above it drawn to be climbed onto.
 function journeyArm(){
   if(!world||world.transitionReady||runMode!=='journey'||dailyOn||world.state!=='playing')return;
-  if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9)return;
+  if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9||!journeySigned())return;
   // The last rung has no century above it: knowing it climbs the ladder, said once, and the run goes on as
   // the Final Frontier with nothing else changed.
   if(journey.era>=JOURNEY_ERAS){
@@ -456,6 +461,7 @@ function journeyArm(){
 // same score and clock, under the next century's hand. The plate the atlas was on when the climb left it is
 // the one it comes back to, exactly as leaving a century by its exit restores it.
 function turnEraInRun(){
+  foldBeforeTurn();
   const id=journeyPlate(journey.era);
   if(id){if(!plateOwns('mode'))eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};applyPlate(id);}
   else{
@@ -671,7 +677,7 @@ function showEnd(){
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
-  const fresh=preview?[]:[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
+  const fresh=[...pendingUnlocks,...(preview?eraLedgerCommit(true):ledgerCommit())];pendingUnlocks=[];
   // What a Journey run banked is said on the leaf: any milestone it opened, then where the climb stands.
   {
     const fold=journeyCommit(true),note=$('end-journey');
@@ -684,7 +690,7 @@ function showEnd(){
     if(fold&&fold.ready&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1))$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journey.era+1)});
     syncJourney();
   }
-  const names=fresh.map(id=>UNLOCK_BY_ID[id]&&UNLOCK_BY_ID[id].name).filter(Boolean);
+  const names=fresh.map(id=>UNLOCK_BY_ID[id]?UNLOCK_BY_ID[id].name:centuryFeat(id)&&centuryFeat(id).name).filter(Boolean);
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
@@ -887,10 +893,10 @@ function resume(){
 // is simply set aside unfinished and the frontispiece comes back up with a fresh chart dealt behind it.
 // What the run did is still folded into the ledger, exactly as it is when the page is switched away from,
 // so orbits already flown are never lost with the sheet; anything earned waits for the next colophon to
-// name it. A preview era keeps its own record and so writes nothing here, as it writes nothing anywhere.
+// name it. Any other century folds into its own log instead (eraLedgerCommit, src/centuries.js).
 function leaveRun(){
   if(!world||world.state!=='paused')return;
-  if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+  for(const id of plateOwns('score')?eraLedgerCommit():ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
   journeyCommit(true);
   newWorld();resetToFrontispiece();render(0);
 }
@@ -899,7 +905,7 @@ document.addEventListener('visibilitychange',()=>{
     pause();
     // A run that is never finished still counts what it did: fold it in now, and keep anything it
     // unlocked for the colophon to name when the run does end.
-    if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+    for(const id of plateOwns('score')?eraLedgerCommit():ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
     journeyCommit();
     if(audio.ctx)audio.ctx.suspend().catch(()=>{});
   }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
@@ -919,6 +925,12 @@ $('catalogue-open').addEventListener('click',()=>{if(catalogueOpen)closeCatalogu
 $('catalogue-close').addEventListener('click',()=>closeCatalogue());
 $('catalogue').addEventListener('pointerdown',e=>{if(e.stopPropagation)e.stopPropagation();});
 $('catalogue-body').addEventListener('click',e=>{
+  const centuryButton=e.target&&e.target.closest?e.target.closest('button[data-century]'):null;
+  if(centuryButton){
+    const wanted=Number(centuryButton.getAttribute('data-century'));
+    if(wanted!==catalogueCentury){catalogueCentury=wanted;catalogueTab='record';renderCatalogue();if(audio.enabled)audio.brush(1300,.1);}
+    return;
+  }
   const tabButton=e.target&&e.target.closest?e.target.closest('button[data-tab]'):null;
   if(tabButton){
     const wanted=tabButton.getAttribute('data-tab');

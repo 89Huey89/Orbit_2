@@ -1121,3 +1121,119 @@ defineHand('flyby',{journeyMark(g,w,h,m){
   for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*14,y=h-7;g.save();g.strokeStyle=`rgb(${P.phos})`;g.lineWidth=.8;g.strokeRect(x-2.6,y-2.6,5.2,5.2);
     const f=i<m.open?1:i===m.open?m.toward:0;if(f>0){g.fillStyle=`rgb(${P.phos})`;g.fillRect(x-2.6,y+2.6-5.2*f,5.2,5.2*f);}g.restore();}
 }});
+
+// ---------- The catalogue's own leaf: the mission log, read as a collection ----------
+// docs/archive/eras/LINKING.md, "Unlocks, later": the century's own page, cut from the mission log already
+// kept under orbit.flyby.v1 (no second key wanted; the log already holds the furthest frame, the downlink
+// record and both bitmasks). This era prints no second tongue over its telemetry — 07-flyby.md, "Names",
+// keeps it to the operational English the network actually used — so every card below is set in that same
+// English rather than a Latin caption invented for it, the way the Rock's own leaf will read.
+// A limb and a terminator, the one mark every held world's card opens on; the family's own few strokes are
+// added over it. Kept as a function, never called at load time, so catalogue.js's helpers (artRing and the
+// rest) are only ever reached from inside an art:()=>… closure, evaluated once the leaf is actually drawn.
+function flyGlyphLimb(){return artRing(60,36,20,1.2,.9)+artFill('M60 16A20 20 0 0 1 60 56A10 20 0 0 0 60 16Z',.22);}
+function flyWorldGlyph(family){
+  const base=flyGlyphLimb();
+  if(family==='crater')return base+artRing(51,29,3,.7,.7)+artDot(51,29,1.1,.5)+artRing(67,42,4,.7,.6)+artDot(67,42,1.6,.5)+artRing(57,47,2,.6,.5);
+  if(family==='ocean')return base+artLine('M42 25Q55 31 50 47',.9,.7)+artLine('M48 20Q66 26 70 44',.8,.6)+artLine('M40 41Q54 45 64 51',.7,.55);
+  if(family==='ringed')return artOval(60,36,26,4.5,1,.85,-18)+artRing(60,36,14,1.1,.9)+artOval(60,36,20,3.2,.6,.5,-18)+artFill('M60 22A14 14 0 0 1 60 50A7 14 0 0 0 60 22Z',.22);
+  if(family==='ice')return base+artLine('M41 30H79M39 36H81M41 42H79',.5,.4);
+  if(family==='dune')return base+artLine('M43 44Q60 40 77 46M45 50Q60 47 75 51',.6,.5)+artRing(58,20,3,.7,.7);
+  if(family==='volcanic')return base+artRing(67,28,3,.9,.8)+artLine(artRays(67,28,3,7,6),.5,.6)+artDot(50,42,1.4,.5)+artDot(54,48,1.2,.5);
+  if(family==='storm')return base+artOval(50,42,6,3,.9,.85)+artLine('M40 26Q60 22 80 28',.5,.4);
+  return base;
+}
+// A target's card: the navigation plot's own bracket round a held light (see flyPhenomenon), and inside it
+// either a cratered moon's limb, an irregular body's own lumpy outline (433 Eros, Itokawa), or a comet's two
+// lobes (67P) — the three shapes flySmallBody and flyRenderWorld actually put on the chart, cut small.
+function flyTargetGlyph(kind){
+  const box=artLine('M46 22h6M46 22v6M74 22h-6M74 22v6M46 50h6M46 50v-6M74 50h-6M74 50v6',.6,.55)+artDot(60,36,1.4,.9);
+  if(kind==='comet')return box+artOval(52,38,8,6.5,1,.9)+artOval(68,32,6.5,5.5,1,.9,12)+artLine('M46 45L40 53M63 27L60 19',.5,.5);
+  if(kind==='rock')return box+artFill('M50 36Q48 26 60 24Q72 23 74 33Q76 43 64 46Q52 48 50 36Z',.16)+artLine('M50 36Q48 26 60 24Q72 23 74 33Q76 43 64 46Q52 48 50 36Z',1,.85);
+  return box+artRing(60,36,13,1.1,.9)+artFill('M60 23A13 13 0 0 1 60 49A6.5 13 0 0 0 60 23Z',.22)+artDot(55,31,1,.5)+artRing(65,42,2.4,.6,.5);
+}
+defineCentury(7,{leaf:{heading:'MISSION LOG',subs:['','','']},
+  title:'The Flyby',latin:'',gloss:'Mars to Pluto · 1965–2015',
+  // The mission log's own figures, read straight off orbit.flyby.v1 rather than restated from the shared
+  // register above (JOURNEY.md's per-era row already prints runs, rows and flow): what only this era's
+  // own store still knows — how far the log itself has ever reached, and both its bitmasks.
+  recordRows(){
+    const r=flyRead(),c=FLY_CHAPTERS[r.furthest];
+    return [
+      ['Furthest encounter',c.place+' · '+c.year],
+      ['Mission log completions',commas(r.completed)],
+      ['Best downlink',commas(r.best)+' bits'],
+      ['Worlds mapped',flyBits(r.worlds)+' / 7'],
+      ['Targets mapped',flyBits(r.targets)+' / 12']
+    ];
+  },
+  // The collection LINKING.md asks for: the twelve targets a mission actually mapped, then the seven kinds
+  // of world the pictures come home as (FLY_TARGETS, FLY_FAMILIES) — both read off the mission log's own
+  // two bitmasks, which is the one thing orbit.flyby.v1 keeps beyond a single run.
+  collection:{
+    title:'Targets & Worlds',latin:'',
+    gloss:'Every light the mission log has mapped, twelve targets by name and seven kinds of world by their picture.',
+    items(){
+      const r=flyRead();
+      const targets=FLY_TARGETS.map((t,i)=>({
+        name:t[0],latin:'',gloss:'Mapped by '+t[1]+'.',seen:!!(r.targets&(1<<i)),
+        cond:'Map '+t[0]+' — held by '+t[1]+'.',
+        art:()=>flyTargetGlyph(i===11?'comet':i>=9?'rock':'moon')
+      }));
+      const worlds=FLY_FAMILIES.map((f,i)=>{
+        const [year,craft]=(FLY_READINGS[f].mission||'').split(' · ');
+        return {name:FLY_WORLD_NAMES[f],latin:'',gloss:'First mapped by '+craft+', '+year+'.',
+          seen:!!(r.worlds&(1<<i)),cond:'Hold a '+FLY_WORLD_NAMES[f].toLowerCase()+' until its picture comes home.',
+          art:()=>flyWorldGlyph(f)};
+      });
+      return [...targets,...worlds];
+    }
+  },
+  // Ten to fifteen: a ladder of runs, captures, clean encounters and rows scaled to the six-row encounter
+  // and the thirty-six-row mission; several read straight off the collection above; one Chronicle completion;
+  // and the era's own signature — the sixth encounter, reached once and never revisited.
+  feats:[
+    {id:'lock1',name:'CARRIER LOCK',describe:()=>'Fly one mission, start to loss of signal.',stat:'runs',threshold:1,
+      art:()=>artRing(60,36,14,1.2,.9)+artLine('M46 22h6M46 22v6M74 22h-6M74 22v6M46 50h6M46 50v-6M74 50h-6M74 50v6',.7,.6)+artDot(60,36,2,1)},
+    {id:'dsn10',name:'DEEP SPACE NETWORK',describe:()=>'Fly ten missions.',stat:'runs',threshold:10,
+      art:()=>artOval(60,32,10,22,1,.9,-20)+artLine('M60 10L70 4',.7,.6)+artRing(70,4,2,.6,.7)},
+    {id:'downlink10',name:'FIRST DOWNLINK',describe:()=>'Map ten lights across every mission.',stat:'captures',threshold:10,
+      art:()=>artLine('M40 20H80M40 28H80M40 36H80M40 44H80M40 52H80',.8,.7)},
+    {id:'downlink60',name:'FULL COVERAGE',describe:()=>'Map sixty lights across every mission.',stat:'captures',threshold:60,
+      art:()=>{let d='';for(let i=0;i<9;i++){const x=42+(i%3)*14,y=22+Math.floor(i/3)*14;d+='M'+x+' '+y+'h10v10h-10z ';}return artLine(d,.7,.75);}},
+    {id:'clean10',name:'CLEAN INSERTION',describe:()=>'Complete ten clean encounters.',stat:'perfects',threshold:10,
+      art:()=>artRing(60,36,10,1.2,.9)+artLine('M60 20V52M44 36H76',.6,.6)},
+    {id:'close5',name:'CLOSE APPROACH',describe:()=>'Graze a gravity well five times and hold the course.',stat:'grazes',threshold:5,
+      art:()=>artLine(artSpiral(60,36,16,3,0,Math.PI*2.4),1,.8)},
+    {id:'row18',name:'MID-COURSE',describe:()=>'Reach row eighteen — Jupiter, and the Grand Tour under way.',stat:'bestRow',threshold:18,
+      art:()=>artLine('M40 36H70M62 30L76 33L76 39L62 42',1,.9)+artOval(46,36,8,4,1,.9)+artDot(30,36,1.5,.8)},
+    {id:'row36',name:'END OF MISSION',describe:()=>'Reach row thirty-six — Pluto, and the mission log complete.',stat:'bestRow',threshold:36,
+      art:()=>artFill('M60 48C48 40 42 30 48 24C53 19 60 24 60 30C60 24 67 19 72 24C78 30 72 40 60 48Z',.85)},
+    {id:'flow8',name:'STEADY LOCK',describe:()=>'Hold an eightfold lock without a miss.',stat:'bestFlow',threshold:8,
+      art:()=>artLine('M46 46V40M54 46V34M62 46V28M70 46V22M78 46V16',1.2,.85)},
+    {id:'targets6',name:'HALF THE CATALOGUE',describe:()=>'Map six of the mission log’s twelve targets.',
+      value:()=>flyBits(flyRead().targets),threshold:6,
+      art:()=>{let d='';for(let i=0;i<6;i++){const x=40+(i%3)*16,y=24+Math.floor(i/3)*20;d+='M'+x+' '+y+'h14v16h-14z ';}return artLine(d,.7,.8);}},
+    {id:'targets12',name:'THE WHOLE CATALOGUE',describe:()=>'Map every one of the twelve targets.',
+      value:()=>flyBits(flyRead().targets),threshold:12,art:()=>flyTargetGlyph('moon')},
+    {id:'worlds7',name:'EVERY WORLD MAPPED',describe:()=>'Meet all seven kinds of world the mission maps.',
+      value:()=>flyBits(flyRead().worlds),threshold:7,
+      art:()=>Array.from({length:7},(_,i)=>{const a=Math.PI*(.1+i*(.8/6));return artRing(60+Math.cos(a)*26,40-Math.sin(a)*26,3,.7,.8);}).join('')},
+    {id:'furthest5',name:'THE EDGE OF THE PLANETS',describe:()=>'Reach the sixth encounter, Pluto — one pass, and never back.',
+      value:()=>flyRead().furthest,threshold:5,
+      art:()=>artLine('M20 50H100',.8,.7)+artLine('M20 46V54M60 46V54M100 46V54',.6,.6)+artDot(100,50,2,1)},
+    {id:'won1',name:'MISSION LOG COMPLETE',describe:()=>'Fly the Chronicle to its end, Mars to Pluto, in one mission.',
+      stat:'won',threshold:1,art:()=>Array.from({length:6},(_,i)=>artFill('M'+(32+i*10)+' 30h8v12h-8z',.8)).join('')},
+    {id:'everyLight',name:'EVERY LIGHT, EVERY WORLD',describe:()=>'Map all twelve targets and meet all seven worlds, across every mission flown.',
+      test:()=>{const r=flyRead();return flyBits(r.targets)>=12&&flyBits(r.worlds)>=7;},
+      art:()=>medalRoundel(artFill(artStar(60,36,6,16,6),.9))}
+  ],
+  // What the space age hands back to the 1603 atlas: not a discovery about a planet, but a picture of the
+  // Earth itself, taken from beyond them and printed as one undistinguished point of light — the one thing
+  // no engraver at the press could have cut, since no one had yet stood far enough away to draw it.
+  heirloom:{
+    name:'The Pale Blue Dot',latin:'',
+    gloss:'Voyager 1 turned its camera back from beyond Neptune in 1990 and found the Earth inside a single pixel of scattered sunlight — the one star the atlas never had to plot, seen at last from outside it.',
+    art:()=>artFill('M20 14L100 30L98 40L18 26Z',.12)+artLine('M20 14L100 30M18 26L98 40',.6,.5)+artDot(63,29,1.3,.95)+artRing(63,29,4,.6,.8)+artLine('M63 29L63 20M63 29L70 34',.4,.5)
+  }
+});

@@ -25,7 +25,7 @@ function readJourney(){
   const era=Math.floor(Number(raw.era));
   out.era=era>=1&&era<=JOURNEY_ERAS?era:1;
   out.knowledge=Math.min(ERA_THRESHOLD,Math.max(0,Number(raw.knowledge)||0));
-  // The curated milestone §1.5 allows an era is not written yet; whatever an era records here is kept.
+  // The curated milestone §1.5 allows an era, its signature feat, is kept here as `sig<era>`.
   if(raw.milestones&&typeof raw.milestones==='object'&&!Array.isArray(raw.milestones))for(const key in raw.milestones)if(raw.milestones[key]===true)out.milestones[key]=true;
   const unlocked=new Set([1,out.era]);
   if(Array.isArray(raw.unlocked))for(const e of raw.unlocked){const n=Math.floor(Number(e));if(n>=1&&n<=JOURNEY_ERAS)unlocked.add(n);}
@@ -43,7 +43,15 @@ function journeyMilestones(doc=journey){
   const open=Math.min(of,Math.floor(doc.knowledge/per+1e-9));
   return {of,open,toward:open>=of?1:clamp(doc.knowledge/per-open,0,1)};
 }
-const journeyReady=(doc=journey)=>{const m=journeyMilestones(doc);return m.open>=m.of;};
+// The century's own signature feat (SIGNATURES, src/centuries.js) is the milestone knowledge cannot pace:
+// an era stands ready only when its chapters stand and its feat has been flown on it in a Journey run.
+const journeySigned=(doc=journey)=>doc.milestones['sig'+doc.era]===true;
+const journeyReady=(doc=journey)=>{const m=journeyMilestones(doc);return m.open>=m.of&&journeySigned(doc);};
+// Records the feat for the frontier's own century, from a Journey run flown on it; true the first time.
+function journeySign(era){
+  if(runMode!=='journey'||dailyOn||era!==journey.era||journeyEraOf()!==era||journeySigned())return false;
+  journey.milestones['sig'+era]=true;saveJourney();return true;
+}
 // The ladder is climbed once the last century is known. What follows is the Final Frontier of §1.7: a Journey
 // run goes on at the last rung for as long as it survives, and its score is the one record kept for it.
 const journeyComplete=(doc=journey)=>doc.era>=JOURNEY_ERAS&&journeyReady(doc);

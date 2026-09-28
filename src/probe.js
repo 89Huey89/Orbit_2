@@ -1268,3 +1268,118 @@ defineHand('probe',{journeyMark(g,w,h,m){
   for(let i=0;i<m.of;i++){const x=w/2+(i-(m.of-1)/2)*14,y=h-7;g.save();g.strokeStyle=`rgb(${P.white})`;g.lineWidth=.8;g.strokeRect(x-2.6,y-2.6,5.2,5.2);
     const f=i<m.open?1:i===m.open?m.toward:0;if(f>0){g.fillStyle=`rgb(${P.white})`;g.fillRect(x-2.6,y+2.6-5.2*f,5.2,5.2*f);}g.restore();}
 }});
+
+// ---------- The catalogue leaf: the self-log read back once the run is over ----------
+// The log has no Latin to speak, any more than it has an eye: the plaque is a diagram and the odometer a
+// figure, and the one other grammar the sheet allows itself — the instrument's own block capitals — does the
+// work a caption in another tongue does on every other leaf. So where the shape below asks for the century's
+// own second voice, it gets that instrument phrase instead of an invented Latin word, and describe() keeps
+// the plain-English condition the shape always asks for. Small SVG marks here echo the sheet's own drawn
+// vocabulary (prbIcon's class shorthand, the survey bracket, the odometer window, the hull's parts) rather
+// than reusing those canvas painters directly, since the catalogue's field is cut in path data, not pixels.
+const PRB_CLASS_ICON={
+  ocean:()=>artLine('M40 28Q47 22 54 28T68 28T82 28',1,.85)+artLine('M40 38Q47 32 54 38T68 38T82 38',1,.68)+artLine('M40 48Q47 42 54 48T68 48T82 48',1,.5),
+  crater:()=>artRing(50,28,7,1,.85)+artRing(69,42,5,1,.72)+artRing(45,48,4,1,.6),
+  ringed:()=>artOval(60,36,22,6,1.1,.9,-14)+artRing(60,36,10,1,.85),
+  ice:()=>artLine('M40 36H80M47 20L73 52M47 52L73 20',1,.85)+artLine('M48 28L54 28M66 44L72 44',.8,.6),
+  dune:()=>artLine('M38 26Q54 18 82 24',1,.85)+artLine('M38 36Q54 28 82 34',1,.7)+artLine('M38 46Q54 38 82 44',1,.55),
+  volcanic:()=>artLine('M44 50L60 24L76 50Z',1,.9)+artLine('M52 20L56 28M60 18L60 28M68 20L64 28',.8,.65),
+  storm:()=>artLine(artSpiral(60,36,11,1.5,0,TAU*1.55),1,.85)
+};
+// The twelve systems share one mark — the three-star survey bracket the run itself strikes once a system is
+// whole — since what tells one from another on the page is its own name and light-years, not a second drawing.
+const PRB_SYSTEM_ICON=()=>artDot(60,36,1.8,.95)+artLine(artArc(60,36,17,-2.35,-.8),1,.7)+artLine(artArc(60,36,17,.8,2.35),1,.7)+
+  artDot(60+Math.cos(-2.35)*17,36+Math.sin(-2.35)*17,1.1,.6)+artDot(60+Math.cos(2.35)*17,36+Math.sin(2.35)*17,1.1,.6);
+// A row of small filled squares, the odometer's own window shape, standing in for any count read as a tally
+// against a fixed number of places — the runs ladder, a class or system checklist.
+function prbTallyIcon(n,of,w=8){
+  const x0=60-of*w/2+w/2;let out='';
+  for(let i=0;i<of;i++){const x=x0+i*w,filled=i<n;out+=artLine('M'+(x-w*.34)+' 26h'+(w*.68)+'v20h-'+(w*.68)+'z',.9,filled?.95:.4)+(filled?artDot(x,36,1.1,.85):'');}
+  return out;
+}
+function prbCraftIcon(cx,cy,s=1){
+  return artLine('M'+(cx-9*s)+' '+cy+'h'+(18*s)+'M'+(cx+9*s)+' '+(cy-3*s)+'L'+(cx+7*s)+' '+cy+'L'+(cx+9*s)+' '+(cy+3*s)+'Z',1,.9)+
+    artRing(cx-6*s,cy,2.2*s,.9,.85)+artLine('M'+(cx-2*s)+' '+(cy-4*s)+'v'+(8*s)+'M'+(cx+2*s)+' '+(cy-4*s)+'v'+(8*s),.7,.65);
+}
+defineCentury(8,{leaf:{heading:'SELF-LOG',subs:['','','']},
+  title:'The Probe',latin:'',gloss:'The last rung, told by a machine with no eye left to draw the sky it crossed — a self-log and one inherited plate.',
+  recordRows(){
+    const r=prbRead();
+    return [
+      ['Furthest phase',PRB_ROMAN[r.furthest]+' · '+PRB_CHAPTERS[r.furthest].phase],
+      ['Highest generation','GEN '+commas(Math.max(1,r.maxGen))],
+      ['Classes catalogued',commas(prbBits(r.classes))+' / '+commas(PRB_FAMILIES.length)],
+      ['Systems surveyed',commas(prbBits(r.systems))+' / '+commas(PRB_SYSTEMS.length)],
+      ['Closures logged',commas(r.completed)]
+    ];
+  },
+  collection:{
+    title:'Classes & systems',latin:'SURVEY LOG',gloss:'Every class a body can read as, and every system a daughter can be sent to.',
+    items(){
+      const r=prbRead(),items=[];
+      PRB_FAMILIES.forEach((fam,i)=>items.push({
+        name:PRB_CLASS[fam],latin:fam.toUpperCase(),gloss:PRB_MAT_NAME[PRB_MAT_OF[fam]]+' · MAIN MATERIAL',
+        seen:!!(r.classes&(1<<i)),cond:'Hold a '+fam+' body until its class tag prints.',
+        art:PRB_CLASS_ICON[fam]
+      }));
+      PRB_SYSTEMS.forEach(([name,dist],i)=>items.push({
+        name,latin:dist,gloss:'SURVEYED · A DAUGHTER ASSIGNED',
+        seen:!!(r.systems&(1<<i)),cond:'Survey this system whole and send a daughter to it.',
+        art:PRB_SYSTEM_ICON
+      }));
+      return items;
+    }
+  },
+  feats:[
+    {id:'firstLog',name:'First Transmission',latin:'LOG OPEN',stat:'runs',threshold:1,
+      describe:()=>'Fly the probe once.',art:()=>artLine('M46 20h28v28h-28z',1,.9)+artLine('M50 48v4M74 48v4',.8,.6)+artDot(60,34,1.4,.85)},
+    {id:'tenRuns',name:'Standing Watch',latin:'LOG ×10',stat:'runs',threshold:10,
+      describe:()=>'Fly ten runs of the probe.',art:()=>prbTallyIcon(1,3,12)},
+    {id:'hundredMasses',name:'A Hundred Masses',latin:'M ×100',stat:'captures',threshold:100,
+      describe:()=>'Catalogue a hundred masses, across every run.',
+      art:()=>artRing(60,36,15,1,.55)+artLine('M60 18v7M60 47v7M42 36h7M71 36h7',1,.8)+artDot(60,36,2.1,.9)},
+    {id:'twentyClean',name:'Twenty Clean Insertions',latin:'OI ×20',stat:'perfects',threshold:20,
+      describe:()=>'Make twenty clean insertions.',
+      art:()=>artRing(60,36,16,1,.85)+artDot(76,36,1.7,.95)+artDot(44,36,1.7,.65)+artLine('M60 20V12',1,.8)},
+    {id:'fiveGrazes',name:'Five Near Wells',latin:'GRAZE ×5',stat:'grazes',threshold:5,
+      describe:()=>"Graze a well's edge five times and hold the course.",
+      art:()=>artLine(artSpiral(60,36,15,2,0,TAU*1.4),1,.85)+artLine('M38 50L58 40',1,.7)},
+    {id:'sixFlow',name:'Six in a Row',latin:'OI ×6 CHAIN',stat:'bestFlow',threshold:6,
+      describe:()=>'String six clean insertions together without a rough one.',
+      art:()=>Array.from({length:6},(_,i)=>artFill(artStar(37+i*9.2,36,4,3.6,1.2),.9)).join('')},
+    {id:'arrival',name:'Orbit Insertion',latin:PRB_CHAPTERS[2].reading,value:log=>Math.min(log.bestRow,2*PRB_CHAPTER_ROWS),threshold:2*PRB_CHAPTER_ROWS,
+      describe:()=>'Reach Arrival at Barnard’s Star.',
+      art:()=>artFill(artStar(60,30,4,5,1.6),.95)+artRing(60,30,10,1,.6)+artLine('M50 50h20',1,.6)},
+    {id:'theSeed',name:'The Seed Is Dropped',latin:PRB_CHAPTERS[3].reading,value:log=>Math.min(log.bestRow,3*PRB_CHAPTER_ROWS),threshold:3*PRB_CHAPTER_ROWS,
+      describe:()=>'Reach the Seed phase, down on Barnard’s Star B.',
+      art:()=>artLine('M60 16v20M52 30l8 8l8-8',1.4,.9)+artLine(artArc(60,50,16,3.35,6.07),1,.6)+artDot(50,52,1.2,.6)+artDot(70,53,1.4,.6)},
+    {id:'wholeSurveyClasses',name:'Every Class Read',latin:'7 / 7 CLASS',
+      value:()=>prbBits(prbRead().classes),threshold:PRB_FAMILIES.length,
+      describe:()=>'Catalogue a body of every class the chart deals.',
+      art:()=>prbTallyIcon(7,7,7.4)},
+    {id:'everySystem',name:'The Whole Chart',latin:'12 / 12 SYS',
+      value:()=>prbBits(prbRead().systems),threshold:PRB_SYSTEMS.length,
+      describe:()=>'Survey all twelve systems a daughter can be sent to.',
+      art:()=>prbTallyIcon(12,12,5.6)},
+    {id:'thirdCraft',name:'The Third Craft',latin:'GEN 3',value:()=>prbRead().maxGen,threshold:3,
+      describe:()=>'Carry the line to a third craft — reach generation 3.',
+      art:()=>prbCraftIcon(40,42,.8)+artLine('M48 40L58 34',.8,.6,'',' stroke-dasharray="2 2"')+prbCraftIcon(68,30,1)},
+    {id:'lineage',name:'A Lineage',latin:'GEN 6',value:()=>prbRead().maxGen,threshold:6,
+      describe:()=>'Carry the line to generation 6.',
+      art:()=>Array.from({length:6},(_,i)=>artDot(34+i*10.4,50-i*4.6,1.3+i*.35,.55+i*.07)).join('')+artLine('M34 50L86 25',.6,.4)},
+    {id:'closure',name:'Closure',latin:PRB_CHAPTERS[5].reading,stat:'won',threshold:1,
+      describe:()=>'Reach closure: build the first daughter and see it escape the system.',
+      art:()=>prbCraftIcon(46,40,1)+prbCraftIcon(76,28,.85)+artLine('M55 37L67 31',.8,.7,'',' stroke-dasharray="2 2"')},
+    {id:'threeClosures',name:'A Standing Factory',latin:'CLOSURE ×3',value:()=>prbRead().completed,threshold:3,
+      describe:()=>'Reach closure three times.',
+      art:()=>[42,60,78].map(x=>prbCraftIcon(x,36,.62)).join('')},
+    {id:'fullManifest',name:'A Full Manifest',latin:'M ×300',value:()=>prbRead().best,threshold:300,
+      describe:()=>'Process 300 units of mass in a single run.',
+      art:()=>PRB_MATS.map((m,i)=>artLine('M'+(40+i*14)+' 50V20',3,.85)).join('')+artLine('M36 50H92',.8,.6)}
+  ],
+  heirloom:{
+    name:'The Ladder, Cut Whole',latin:'EIGHT MARKS, ONE CURSOR',
+    gloss:'Closure copies the whole climb onto the atlas’s own last line — the fifth rung was never the top of the ladder, only the middle of one running from a cave wall to a self-replicating probe.',
+    art:()=>Array.from({length:8},(_,i)=>{const x=32+i*8,last=i===7;return artLine('M'+x+' 44v-'+(6+i*2.2)+'',last?1.4:1,last?.95:.55+i*.05);}).join('')+artLine('M28 44H92',.8,.5)+artDot(88,44-6-7*2.2,1.6,.9)
+  }
+});

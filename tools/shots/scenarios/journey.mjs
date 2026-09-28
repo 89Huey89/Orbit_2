@@ -16,7 +16,16 @@ export default {
     // The era is carried to the edge of known and the next run's first landings take it over.
     await g.tap();
     await g.fly(6);
-    await g.eval(()=>{journey.knowledge=ERA_THRESHOLD;});
+    // The oracle's hand flies the Rock's feat on its own (a full lap on the row-2 sling), so it is unflown here.
+    await g.eval(()=>{journey.knowledge=ERA_THRESHOLD;delete journey.milestones['sig'+journey.era];});
+    await g.die();
+    // Every chapter stands and the century's own feat is still owed: the leaf names it and the page holds.
+    await g.shot('end-feat-owed');
+    await g.eval(()=>{world.player.deadTime=10;});
+    await g.tap();
+    await g.shot('run-feat-owed');
+    await g.fly(4);
+    await g.eval(()=>{journey.milestones['sig'+journey.era]=true;});
     await g.die();
     await g.shot('end-known');
     await g.eval(()=>{world.player.deadTime=10;});

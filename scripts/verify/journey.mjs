@@ -16,7 +16,7 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,RECORDS_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,journeySigned,journeySign,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
@@ -49,7 +49,14 @@ export async function runJourneyChecks(){
     assert.equal(fold.opened,1,'Knowledge opens a milestone at each ERA_THRESHOLD/k');assert.equal(fold.open,1);assert.equal(fold.ready,false);
     for(let i=0;i<60;i++)j.journeyObserve(1);fold=j.journeyCommit(true);
     assert.equal(j.doc.knowledge,j.ERA_THRESHOLD,'A ready era banks nothing past the threshold: the surplus is the transition\'s');
-    assert.equal(fold.open,4);assert.equal(fold.opened,3);assert.equal(fold.ready,true,'All milestones standing is transition-ready, and nothing else is asked');
+    assert.equal(fold.open,4);assert.equal(fold.opened,3);assert.equal(fold.ready,false,'Every chapter standing is not enough: the century\'s signature feat is still owed');
+    // The signature feat (JOURNEY.md §9): recorded once, only for the frontier's own century flown in the Journey.
+    context.plate=6;assert.equal(j.journeySign(6),false,'A feat flown on another century than the frontier\'s is not the frontier\'s');
+    context.plate=1;j.mode='free';assert.equal(j.journeySign(1),false,'A feat flown in Free Play never moves the Journey');
+    j.mode='journey';assert.equal(j.journeySign(1),true,'The frontier\'s own feat is recorded');
+    assert.equal(j.journeySign(1),false,'and recorded once');
+    assert.equal(j.journeyReady(),true,'Every chapter standing and the feat flown is transition-ready, and nothing else is asked');
+    assert.equal(JSON.parse(saved.get(j.JOURNEY_KEY)).milestones.sig1,true,'The feat is written with the climb');
     // A run on another century than the frontier's, or on the daily plate, banks nothing and keeps nothing over.
     context.plate=6;j.journeyObserve(1);assert.equal(j.journeyCommit(true),null,'A run on an era that is not the frontier is not the frontier\'s to bank');
     assert.equal(j.run,0,'Nor is its knowledge carried over to the next fold');
@@ -80,6 +87,8 @@ export async function runJourneyChecks(){
     // Until the in-run transition exists, a known era is turned over between runs, and only onto a century
     // that is drawn.
     const {j}=load({'orbit.journey.v1':JSON.stringify({era:1,knowledge:50})});
+    assert.equal(j.journeyAdvance(()=>true),false,'A known era whose feat is not flown does not move');
+    j.doc.milestones.sig1=true;
     assert.equal(j.journeyAdvance(()=>false),false,'The frontier never climbs onto a century with nothing drawn');
     assert.equal(j.doc.era,1);
     assert.equal(j.journeyAdvance(e=>e===2),true,'A known era is turned over to the next');
@@ -125,7 +134,9 @@ export async function runJourneyChecks(){
     assert.equal(j.journeyComplete(),false,'Short of the threshold the last rung is not yet climbed');
     j.mode='journey';assert.equal(j.contextBest(),300,'Until then a Journey run at the last rung is measured against its own best');
     context.world={state:'dead',player:{node:null}};j.journeyObserve(1);j.journeyCommit(true);
-    assert.equal(j.journeyComplete(),true,'Knowing the last century climbs the ladder');
+    assert.equal(j.journeyComplete(),false,'Its knowledge alone does not climb it: the Probe\'s own feat is owed');
+    j.journeySign(8);
+    assert.equal(j.journeyComplete(),true,'Knowing the last century and flying its feat climbs the ladder');
     assert.equal(j.journeyAdvance(()=>true),false,'There is no century above the last to turn to');
     assert.equal(j.contextBest(),0,'From then on a Journey run is measured against the Final Frontier');
     assert.equal(j.keepContextBest(900),true);assert.equal(j.doc.bests.frontier,900,'The Final Frontier keeps its own record');
