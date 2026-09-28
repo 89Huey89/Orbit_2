@@ -47,7 +47,7 @@
     /* Era I sets its counts on the rock in its own marks (rockHudLeaf() in rock.js); the DOM HUD stays for
        screen readers and is only taken off the screen. */
     #game[data-era="1"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="1"] #catalogue-open,#game[data-era="1"] #plate{display:none}
+    #game[data-era="1"] #plate{display:none}
     /* The end and pause leaves on this wall are not a printed leaf but a slab of the rock itself, broken
        off and lying in the torchlight: a chipped edge rather than a rule, warm limestone lit from below
        where the flame is, its grain from a turbulence field, a shade pooled at its top edge, and the
@@ -101,7 +101,7 @@
     #game[data-era="3"]{--face-text:'Zilla Slab','LXGW WenKai TC',Georgia,serif;--face-sc:'Zilla Slab','LXGW WenKai TC',Georgia,serif;--face-body:'Zilla Slab','LXGW WenKai TC',Georgia,'Times New Roman',serif;--ink:#d8c79b;--ivory:#1e1a15;--gold:#a8302a;--muted:#6b5a44;--copy:#3a3026;--best:#1e1a15;--shield:#44362a;--reflector:#4e6a55;--dawn:#a8302a;--copper:#861f1b;--line:rgba(30,26,21,.3);--veil:216,199,155}
     #game[data-era="3"] .footer{color:#3a3026}
     #game[data-era="3"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="3"] #catalogue-open,#game[data-era="3"] #plate{display:none}
+    #game[data-era="3"] #plate{display:none}
     #game[data-era="3"] #end-score-roman{display:none}
     .scroll-lore-open{position:absolute;left:16px;right:16px;top:calc(6.5% + env(safe-area-inset-top));text-align:center}
     .scroll-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','LXGW WenKai TC',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2c241b}
@@ -114,7 +114,7 @@
     #game[data-era="4"]{--face-text:'Zilla Slab','Amiri',Georgia,serif;--face-sc:'Zilla Slab','Amiri',Georgia,serif;--face-body:'Zilla Slab','Amiri',Georgia,'Times New Roman',serif;--ink:#efe1c4;--ivory:#241c11;--gold:#9a7424;--muted:#6e5a3c;--copy:#3a2e1c;--best:#241c11;--shield:#4a3b22;--reflector:#5d6a70;--dawn:#9a7424;--copper:#a8392c;--line:rgba(36,28,17,.3);--veil:239,225,196}
     #game[data-era="4"] .footer{color:#3a2e1c}
     #game[data-era="4"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="4"] #catalogue-open,#game[data-era="4"] #plate{display:none}
+    #game[data-era="4"] #plate{display:none}
     #game[data-era="4"] #end-score-roman{display:none}
     /* The score is cut on the leaf in Eastern Arabic-Indic digits over a graduated arc, with the fihrist's
        count beneath (astroPaintEndNumerals, src/astrolabe.js); the Latin figure stays under it as a gloss. */
@@ -132,7 +132,7 @@
     #game[data-era="6"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8a2318;--muted:#6d5a45;--copy:#4d3d2d;--best:#2a2016;--shield:#3f5a6a;--reflector:#5d6a78;--dawn:#8a2318;--copper:#a05434;--line:rgba(52,38,26,.3);--veil:231,218,189}
     #game[data-era="6"] .footer{color:#4d3d2d}
     #game[data-era="6"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="6"] #catalogue-open,#game[data-era="6"] #plate{display:none}
+    #game[data-era="6"] #plate{display:none}
     #game[data-era="6"] #end-score-roman{display:none}
     /* The magnitude is typed on a plate-jacket label on the leaf, with the optical catalogue's count beneath
        (lensPaintEndNumerals, src/lens.js); the plain figure stays under it. */
@@ -149,7 +149,7 @@
     #game[data-era="7"]{--face-text:'Libre Franklin','Helvetica Neue',Arial,sans-serif;--face-sc:'Libre Franklin','Helvetica Neue',Arial,sans-serif;--face-body:'Libre Franklin','Helvetica Neue',Arial,sans-serif;--ink:#030406;--ivory:#e6ecf2;--gold:#ffb000;--muted:#8a96a4;--copy:#b8c2cc;--best:#e6ecf2;--shield:#9fc9d8;--reflector:#9fe8b4;--dawn:#ffb000;--copper:#e8543c;--line:rgba(230,236,242,.22);--veil:3,4,6}
     #game[data-era="7"] .footer{color:#8a96a4}
     #game[data-era="7"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="7"] #catalogue-open,#game[data-era="7"] #plate{display:none}
+    #game[data-era="7"] #plate{display:none}
     #game[data-era="7"] #end-score-roman,#game[data-era="7"] #end-leaf-frame{display:none}
     #game[data-era="7"] .colophon{background:rgba(3,4,6,.93);border:1px solid rgba(51,255,102,.22)}
     #game[data-era="7"] .colophon::before,#game[data-era="7"] .colophon::after{display:none}
@@ -173,7 +173,7 @@
     #game[data-era="8"]{--face-text:'B612 Mono','IBM Plex Mono','Courier New',monospace;--face-sc:'B612 Mono','IBM Plex Mono','Courier New',monospace;--face-body:'B612 Mono','IBM Plex Mono','Courier New',monospace;--ink:#050505;--ivory:#e8ecf2;--gold:#ffb000;--muted:#8a8e96;--copy:#b4b8c0;--best:#e8ecf2;--shield:#b4bcc8;--reflector:#d9e4ea;--dawn:#ffb000;--copper:#b8451f;--line:rgba(232,236,242,.2);--veil:5,5,5}
     #game[data-era="8"] .footer{color:#8a8e96}
     #game[data-era="8"] .hud{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-    #game[data-era="8"] #catalogue-open,#game[data-era="8"] #plate{display:none}
+    #game[data-era="8"] #plate{display:none}
     #game[data-era="8"] #end-score-roman,#game[data-era="8"] #end-leaf-frame{display:none}
     #game[data-era="8"] .colophon{background:rgba(5,5,5,.94);border:1px solid rgba(232,236,242,.18)}
     #game[data-era="8"] .colophon::before,#game[data-era="8"] .colophon::after{display:none}
@@ -191,7 +191,7 @@
     .probe-context{font-family:'B612 Mono','IBM Plex Mono','Courier New',monospace;max-width:44em;margin:12px auto 0;color:#8a8e96;font-size:9.5px;line-height:1.55;letter-spacing:.02em}
     #game[data-era] .era-exit{display:revert!important}
     #game[data-era="2"] .footer{color:#c9bb98}
-    #game[data-era="2"] #catalogue-open,#game[data-era="2"] #plate{display:none}
+    #game[data-era="2"] #plate{display:none}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--ink);color:var(--ivory)}
     #game{background:var(--ink);color:var(--ivory)}
@@ -683,6 +683,15 @@
     .cat-tab-btn{min-height:44px;width:100%;padding:6px 3px;font-size:9px;letter-spacing:.13em;line-height:1.2}
     .cat-tab-btn::after{content:attr(data-sub);display:block;margin-top:3px;font-family:var(--face-text);font-style:italic;font-size:10px;letter-spacing:.02em;text-transform:none;color:var(--muted)}
     .cat-tab-btn[aria-pressed="true"]::after{color:var(--gold)}
+    /* The eight centuries' leaves, turned by their numerals above the tabs: the leaf in hand is inked in gold,
+       the rest in the rule ink, each a whole fingertip tall on the reference phone. */
+    .cat-centuries{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;margin:0 -2px 6px}
+    .cat-century{min-height:44px;padding:0;border:1px solid var(--line);background:transparent;color:var(--muted);font-family:var(--face-sc);font-size:11px;letter-spacing:.06em;cursor:pointer}
+    .cat-century[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}
+    .cat-gloss{font-family:var(--face-text);font-style:italic;font-size:11px;color:var(--copy)}
+    .cat-empty{font-family:var(--face-text);font-style:italic;color:var(--muted);text-align:center}
+    .cat-lineage{display:flex;justify-content:space-between;gap:8px;margin:10px 0 0}
+    .cat-link{min-height:44px;padding:6px 8px;border:0;background:transparent;color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
     .cat-overview{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin:0 0 14px;padding:10px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.3),rgba(var(--veil),.72));position:relative}
     .cat-overview::before{content:'';position:absolute;inset:4px;border:1px solid var(--line);opacity:.48;pointer-events:none}
     .cat-overview-seal{position:relative;z-index:1;width:59px;height:59px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--gold);border-radius:50%;color:var(--gold)}
@@ -998,7 +1007,7 @@
     <div class="catalogue-leaf">
       <canvas id="cat-leaf-frame" class="cat-leaf-frame" aria-hidden="true"></canvas>
       <div class="catalogue-head">
-        <p class="eyebrow">ORBIS TABULA</p>
+        <p id="catalogue-eyebrow" class="eyebrow">ORBIS TABULA</p>
         <h2>CATALOGUS</h2>
         <div class="title-rule"><span></span></div>
       </div>
@@ -1111,6 +1120,7 @@
 <script src="replay.js"></script>
 <script src="ledger.js"></script>
 <script src="journey.js"></script>
+<script src="centuries.js"></script>
 <script src="backdrop.js"></script>
 <script src="planets.js"></script>
 <script src="ground.js"></script>

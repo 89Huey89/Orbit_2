@@ -776,7 +776,12 @@ If that passes with placeholder visuals, the progression architecture is correct
 Decisions this file does not make, and which should not be invented by an implementer:
 
 - **The milestone tables for China and von Neumann**, and the final wording of all eight — including
-  which single condition per era is the curated one §1.5 allows.
+  which single condition per era is the curated one §1.5 allows. *Shape settled by the author (2026-09-28):
+  each era's curated milestone is a **signature feat** drawn from that century's own mechanic (a swing-by
+  round a `sling` body on the Flyby, Saturn resolved on the Lens, and so on), counted as one milestone more
+  beside the chapters, and it **gates**: an era is transition-ready only when its chapters stand and its
+  signature feat has been flown. Its generation guarantee is therefore owed, one per era. Which feat each
+  century takes is still to be chosen, era by era.*
 - *Settled in stage 6 (2026-09-27): the threshold is 50, re-read off `probe.mjs --ladder` so that the
   author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
@@ -831,8 +836,9 @@ stages above.
 
 **Open.**
 
-- **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. A design decision,
-  waiting on the author.
+- **The curated milestone per era** (§1.5, §9) and the generation guarantees behind it. Its shape is
+  decided (§9: a signature feat per century that gates the transition); the eight feats themselves, their
+  guarantees and the gate in `journeyReady()` are not built.
 - **Per-era catalogues and the links between centuries.** The catalogue shows the Journey's row but no
   century keeps its own statistics, and nothing on one century's frontispiece points to another's.
 - **The review of a run that changed century, in each century's hand.** The log now carries the changes and

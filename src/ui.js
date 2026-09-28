@@ -456,6 +456,7 @@ function journeyArm(){
 // same score and clock, under the next century's hand. The plate the atlas was on when the climb left it is
 // the one it comes back to, exactly as leaving a century by its exit restores it.
 function turnEraInRun(){
+  foldBeforeTurn();
   const id=journeyPlate(journey.era);
   if(id){if(!plateOwns('mode'))eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};applyPlate(id);}
   else{
@@ -671,7 +672,7 @@ function showEnd(){
   $('end-daily').textContent=dailyOn?dailyLabel():'';
   // The run is folded into the ledger here, and anything the catalogue has just granted is named on
   // the colophon and announced once.
-  const fresh=preview?[]:[...pendingUnlocks,...ledgerCommit()];pendingUnlocks=[];
+  const fresh=[...pendingUnlocks,...(preview?eraLedgerCommit(true):ledgerCommit())];pendingUnlocks=[];
   // What a Journey run banked is said on the leaf: any milestone it opened, then where the climb stands.
   {
     const fold=journeyCommit(true),note=$('end-journey');
@@ -684,7 +685,7 @@ function showEnd(){
     if(fold&&fold.ready&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1))$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journey.era+1)});
     syncJourney();
   }
-  const names=fresh.map(id=>UNLOCK_BY_ID[id]&&UNLOCK_BY_ID[id].name).filter(Boolean);
+  const names=fresh.map(id=>UNLOCK_BY_ID[id]?UNLOCK_BY_ID[id].name:centuryFeat(id)&&centuryFeat(id).name).filter(Boolean);
   $('end-unlocked').textContent=names.length?'NEW IN THE CATALOGUE \u00b7 '+names.join(' \u00b7 '):'';
   if(names.length){audio.tone(523.25,.7,0,.14);audio.tone(783.99,.7,.16,.12);}
   syncCatalogueMarks();
@@ -887,10 +888,10 @@ function resume(){
 // is simply set aside unfinished and the frontispiece comes back up with a fresh chart dealt behind it.
 // What the run did is still folded into the ledger, exactly as it is when the page is switched away from,
 // so orbits already flown are never lost with the sheet; anything earned waits for the next colophon to
-// name it. A preview era keeps its own record and so writes nothing here, as it writes nothing anywhere.
+// name it. Any other century folds into its own log instead (eraLedgerCommit, src/centuries.js).
 function leaveRun(){
   if(!world||world.state!=='paused')return;
-  if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+  for(const id of plateOwns('score')?eraLedgerCommit():ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
   journeyCommit(true);
   newWorld();resetToFrontispiece();render(0);
 }
@@ -899,7 +900,7 @@ document.addEventListener('visibilitychange',()=>{
     pause();
     // A run that is never finished still counts what it did: fold it in now, and keep anything it
     // unlocked for the colophon to name when the run does end.
-    if(!plateOwns('score'))for(const id of ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
+    for(const id of plateOwns('score')?eraLedgerCommit():ledgerCommit())if(!pendingUnlocks.includes(id))pendingUnlocks.push(id);
     journeyCommit();
     if(audio.ctx)audio.ctx.suspend().catch(()=>{});
   }else{frameTime=performance.now();renderDue=0;paceIntervals.length=0;}
@@ -919,6 +920,12 @@ $('catalogue-open').addEventListener('click',()=>{if(catalogueOpen)closeCatalogu
 $('catalogue-close').addEventListener('click',()=>closeCatalogue());
 $('catalogue').addEventListener('pointerdown',e=>{if(e.stopPropagation)e.stopPropagation();});
 $('catalogue-body').addEventListener('click',e=>{
+  const centuryButton=e.target&&e.target.closest?e.target.closest('button[data-century]'):null;
+  if(centuryButton){
+    const wanted=Number(centuryButton.getAttribute('data-century'));
+    if(wanted!==catalogueCentury){catalogueCentury=wanted;catalogueTab='record';renderCatalogue();if(audio.enabled)audio.brush(1300,.1);}
+    return;
+  }
   const tabButton=e.target&&e.target.closest?e.target.closest('button[data-tab]'):null;
   if(tabButton){
     const wanted=tabButton.getAttribute('data-tab');
