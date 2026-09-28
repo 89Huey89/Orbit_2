@@ -64,6 +64,13 @@ function groundTaken(box,skip,pad,fixedOnly){
   }
   return taken;
 }
+// One kind of type alone, for a caller that weighs that kind apart from the rest: a note keeping off the
+// impressum's rows even though the impressum is only passing type.
+function groundKindTaken(box,kind,pad){
+  const g=pad||0;let taken=0;
+  for(const m of groundPast)if(m.kind===kind)taken+=groundSpan(box.left-g,box.right+g,m.left,m.right)*groundSpan(box.top-g,box.bottom+g,m.top,m.bottom)/100;
+  return taken;
+}
 // The settled type alone, for the one caller that must refuse to write rather than crowd: a note.
 const groundFixed=(box,skip,pad)=>groundTaken(box,skip,pad,true);
 const groundClear=(box,skip,pad)=>groundTaken(box,skip,pad)<=0;
