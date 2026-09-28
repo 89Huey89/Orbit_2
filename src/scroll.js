@@ -821,3 +821,140 @@ defineHand('scroll',{journeyMark(g,w,h,m){
     if(part>0){g.fillStyle=`rgba(${P.soot},.12)`;g.fillRect(cx-size/2,cy+size/2-size*part,size,size*part);}g.restore();
     scrollColumn(g,q,cx,cy-size*.53,size*.72,P.soot,.35+.5*part,1,'kaiM');}
 }});
+
+// ---------- The Catalogue's leaf (LINKING.md, "Unlocks, later") ----------
+// The Scroll keeps no store of its own — no orbit.scroll.v1 — so its whole leaf is read off orbit.eras.v1,
+// the shared per-era log centuries.js already keeps (src/centuries.js's eraLog). Its Record and its named
+// feats read `eraLog(3)` directly; its one collection, the twenty-eight mansions, is derived from the same
+// log rather than tracked star by star, for a reason LINKING.md states outright: "the band measures the
+// climb in world units, not rows, and closes its circle somewhere near row 23 to 25 depending on pace" —
+// so a mansion's true dù cannot be read back out of a saved best row. What can: `eraRow()`'s row and the
+// four palaces are the same eight-rows-apiece structure this file's own chapters and journeyMark keep
+// (chapterRows=8 in ui.js, unset by this era's voice, so its default stands), so a run's bestRow places it
+// in one of the four palaces cleanly, and every mansion of an already-passed palace is filed with it.
+const SCROLL_MANSION_GLOSS=['The Horn','The Neck','The Root','The Room','The Heart','The Tail','The Winnowing Basket',
+  'The Dipper','The Ox','The Girl','The Emptiness','The Rooftop','The Encampment','The Wall',
+  'The Legs','The Bond','The Stomach','The Hairy Head','The Net','The Turtle Beak','The Three Stars',
+  'The Well','The Ghost','The Willow','The Star','The Extended Net','The Wing','The Chariot Board'];
+const SCROLL_PALACE_NAMES=['Azure Dragon','Black Tortoise','White Tiger','Vermilion Bird'];
+const SCROLL_PALACE_CHINESE=['蒼龍','玄武','白虎','朱雀'];
+const scrollMansionPalace=i=>Math.floor(i/7);
+const scrollPalaceEndRow=p=>(p+1)*8;
+// A star office's own grammar, cut as flat SVG rather than canvas: dots at a hashed spread, joined by a
+// line, closed in a boundary loop when `loop` asks for one — catalogue.js's own drawing, called only from
+// inside an `art:()=>` closure below, since catalogue.js (and its artDot/artLine/artRing) loads after this
+// file, exactly as this file's own comment on CENTURIES/catalogue.js says to.
+function scrollCatAsterism(seed,n,r,loop){
+  const x=[],y=[];for(let i=0;i<n;i++){const a=tileHash(seed,i,1)*TAU,rr=r*(.4+tileHash(seed,i,2)*.6);x.push(60+Math.cos(a)*rr);y.push(36+Math.sin(a)*rr);}
+  let out='';for(let i=1;i<n;i++)out+=artLine('M'+x[i-1].toFixed(1)+' '+y[i-1].toFixed(1)+'L'+x[i].toFixed(1)+' '+y[i].toFixed(1),1,.65);
+  if(loop){let d='';for(let i=0;i<n;i++)d+=(i?'L':'M')+x[i].toFixed(1)+' '+y[i].toFixed(1);out=artLine(d+'Z',.6,.4)+out;}
+  for(let i=0;i<n;i++)out+=artDot(x[i],y[i],i===0?2.6:1.9,.95);
+  return out;
+}
+// The graduated rim past the Chronicle's own ending: a ring with a tick every five dù, exactly the ring
+// scrollRing draws in the run itself, cut flat.
+function scrollCatRing(ticks){
+  let out=artRing(60,36,18,1,.85);
+  for(let i=0;i<ticks;i++){const a=i/ticks*TAU,l=i%5===0?5:2.6;
+    out+=artLine('M'+(60+Math.cos(a)*19).toFixed(1)+' '+(36+Math.sin(a)*19).toFixed(1)+'L'+(60+Math.cos(a)*(19+l)).toFixed(1)+' '+(36+Math.sin(a)*(19+l)).toFixed(1),.7,.55);}
+  return out;
+}
+// A colophon's own square chop, the shape scrollSeal presses in cinnabar on the sheet, cut here in outline.
+function scrollCatSeal(){return artLine('M46 20h28v32h-28Z',1.1,.85)+artDot(60,36,3.2,.9)+artLine('M52 20v32M68 20v32',.5,.4)+artLine('M46 36h28',.5,.4);}
+// Mars lingering at the Heart: the closing rings of scrollMars, cut flat and still.
+function scrollCatOmen(){return artDot(60,36,2.6,1)+artRing(60,36,7,1,.6)+artRing(60,36,13,.8,.4)+artRing(60,36,19,.6,.25);}
+// A clean sighting: the ring's rim, and the tangent that meets it true.
+function scrollCatRim(size){
+  const rim=artArc(60,36,size,-2.1,.9),a=.9;
+  return artLine(rim,1.3,.8)+artLine('M'+(60+Math.cos(a)*(size-6)).toFixed(1)+' '+(36+Math.sin(a)*(size-6)).toFixed(1)+'L'+(60+Math.cos(a)*(size+6)).toFixed(1)+' '+(36+Math.sin(a)*(size+6)).toFixed(1),.9,.7)+artDot(60+Math.cos(a)*size,36+Math.sin(a)*size,2,.95);
+}
+// A guest star: the sky's usual faint scatter, and the one light that was not there before, entered and
+// dated the same night — 客星, "guest star," the term the court's own record used for a nova or a comet
+// alike, anything that came into the catalogue rather than always having been in it.
+function scrollCatGuestStar(){
+  let out='';for(let i=0;i<10;i++){const a=tileHash(770,i,1)*TAU,r=8+tileHash(770,i,2)*22;out+=artDot(60+Math.cos(a)*r,36+Math.sin(a)*r,1,.5);}
+  out+=artDot(60,36,3,1);
+  for(let i=0;i<8;i++){const a=i/8*TAU;out+=artLine('M'+(60+Math.cos(a)*5).toFixed(1)+' '+(36+Math.sin(a)*5).toFixed(1)+'L'+(60+Math.cos(a)*13).toFixed(1)+' '+(36+Math.sin(a)*13).toFixed(1),1,.8);}
+  return out;
+}
+defineCentury(3,{
+  title:'The Scroll',latin:'天文圖',gloss:'A Tang star chart, brushed after the Dunhuang chart on hemp paper.',
+  recordRows(){
+    const log=eraLog(3),row=log.bestRow,palace=Math.min(3,Math.floor(Math.max(0,row)/8)),
+      filed=SCROLL_MANSION_GLOSS.filter((_,i)=>row>=scrollPalaceEndRow(scrollMansionPalace(i))).length;
+    return [
+      ['Furthest palace reached',row<1?'Not yet entered':SCROLL_PALACE_CHINESE[palace]+' · The '+SCROLL_PALACE_NAMES[palace]],
+      ['Mansions filed',filed+' / 28'],
+      ['Star offices filed',commas(log.constellations)],
+      ['Mars grazed at full pace',log.grazes>0?commas(log.grazes)+' time'+(log.grazes===1?'':'s'):'Never']
+    ];
+  },
+  collection:{
+    title:'The Twenty-Eight Mansions',latin:'二十八宿',
+    gloss:'Right ascension in dù, filed under whichever of the four palaces a run’s best row has passed.',
+    items(){
+      const row=eraLog(3).bestRow;
+      return SCROLL_MANSIONS.map((m,i)=>{
+        const palace=scrollMansionPalace(i),end=scrollPalaceEndRow(palace),seen=row>=end;
+        return {name:m[0],latin:SCROLL_MANSION_GLOSS[i],
+          gloss:m[1]+' dù, filed under the '+SCROLL_PALACE_NAMES[palace]+'.',
+          seen,cond:seen?'':'Climb to row '+end+' — pass all of the '+SCROLL_PALACE_NAMES[palace]+'.',
+          art:()=>scrollCatAsterism(900+i,Math.max(3,Math.min(6,Math.round(m[1]/5))),12,true)};
+      });
+    }
+  },
+  feats:[
+    {id:'palace1',name:'蒼龍',latin:'THE AZURE DRAGON ENTERED',
+      describe:()=>'Climb to row 8 — pass into the Azure Dragon, the Eastern palace of the mansions.',
+      stat:'bestRow',threshold:8,art:()=>scrollCatAsterism(910,4,13,true)},
+    {id:'palace2',name:'玄武',latin:'THE BLACK TORTOISE ENTERED',
+      describe:()=>'Climb to row 16 — pass into the Black Tortoise, the Northern palace.',
+      stat:'bestRow',threshold:16,art:()=>scrollCatAsterism(911,5,13,true)},
+    {id:'palace3',name:'白虎',latin:'THE WHITE TIGER ENTERED',
+      describe:()=>'Climb to row 24 — pass into the White Tiger, the Western palace.',
+      stat:'bestRow',threshold:24,art:()=>scrollCatAsterism(912,6,13,true)},
+    {id:'palace4',name:'朱雀',latin:'THE VERMILION BIRD ENTERED',
+      describe:()=>'Climb to row 32 — pass into the Vermilion Bird, the Southern palace: all four, and every mansion of the circuit.',
+      stat:'bestRow',threshold:32,art:()=>scrollCatAsterism(913,7,13,true)},
+    {id:'fortieth',name:scrollNum(40),latin:'THE FORTIETH ROW',
+      describe:()=>'Read the Scroll past the Chronicle’s own ending: reach row 40 in the Endless reading.',
+      stat:'bestRow',threshold:40,art:()=>scrollCatRing(20)},
+    {id:'chronicle',name:'跋',latin:'THE SCROLL IS ROLLED UP',
+      describe:()=>'Complete a Chronicle of the Scroll: the four palaces passed in one unrolling.',
+      stat:'won',threshold:1,art:()=>scrollCatSeal()},
+    {id:'marsGraze',name:'熒惑守心',latin:'MARS GRAZED AT FULL PACE',
+      describe:()=>'Graze a danger while flying at full pace, and come away — what the Bureau feared most, read at speed.',
+      stat:'grazes',threshold:1,art:()=>scrollCatOmen()},
+    {id:'lights1',name:'Fifteen Lights Filed',latin:scrollNum(15)+'光',
+      describe:()=>'File fifteen lights in the star chart, across every unrolling.',
+      stat:'captures',threshold:15,art:()=>scrollCatAsterism(920,3,10,false)},
+    {id:'lights2',name:'Fifty Lights Filed',latin:scrollNum(50)+'光',
+      describe:()=>'File fifty lights.',
+      stat:'captures',threshold:50,art:()=>scrollCatAsterism(921,4,12,false)},
+    {id:'lights3',name:'A Hundred Fifty Lights',latin:scrollNum(150)+'光',
+      describe:()=>'File a hundred and fifty lights.',
+      stat:'captures',threshold:150,art:()=>scrollCatAsterism(922,5,14,false)},
+    {id:'clean1',name:'Ten Clean Sightings',
+      describe:()=>'Land ten clean sightings — the rim skimmed true.',
+      stat:'perfects',threshold:10,art:()=>scrollCatRim(14)},
+    {id:'clean2',name:'Thirty Clean Sightings',
+      describe:()=>'Land thirty clean sightings.',
+      stat:'perfects',threshold:30,art:()=>scrollCatRim(19)},
+    {id:'offices1',name:'Five Star Offices Filed',
+      describe:()=>'Close and caption five star offices.',
+      stat:'constellations',threshold:5,art:()=>scrollCatAsterism(930,3,15,true)},
+    {id:'offices2',name:'Fifteen Star Offices Filed',
+      describe:()=>'Close and caption fifteen star offices.',
+      stat:'constellations',threshold:15,art:()=>scrollCatAsterism(931,5,16,true)}
+  ],
+  // What the Chinese sky truly hands the 1603 atlas is a thin line, and this file says so rather than
+  // inventing a thicker one: no guest-star record of the Bureau's reached Tycho or Bayer's own generation.
+  // The honest link is later and longer — the Song court's watch for new stars, kept across nine centuries,
+  // is the record twentieth-century astronomers used to place the Crab Nebula's remnant at the guest star
+  // of 1054. It still runs, eventually, into the same modern star atlas this game's own atlas descends from.
+  heirloom:{
+    name:'客星',latin:'THE GUEST STAR RECORD',
+    gloss:'No straight line runs from here to Bayer’s plate: the Bureau’s watch for guest stars — new lights entered and dated for nine centuries — only reached Western astronomy in the twentieth, when the Crab Nebula was traced back to the light the Song court logged in 1054.',
+    art:()=>scrollCatGuestStar()
+  }
+});

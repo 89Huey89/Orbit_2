@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,centuryKnown,centuryFeatMet,ERAS_KEY,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -963,13 +963,17 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     const held=context.test.plateName;
     if(!storageBlocked)saved.delete(context.test.ROCK_CAVE_KEY);
     context.test.setPlate('rock');context.test.newWorld();context.test.handleInput();
-    const run=context.test.world,beforeRuns=context.test.ledgerStat('runs'),beforeLedgerDoc=storageBlocked?null:saved.get(LEDGER_KEY);
+    const run=context.test.world,beforeRuns=context.test.ledgerStat('runs'),beforeLedgerDoc=storageBlocked?null:saved.get(LEDGER_KEY),beforeLog=context.test.eraLog(1).runs;
     for(let i=0;i<120*45&&run.state==='playing'&&run.captures<3;i++){
       if(run.player.node){const aim=run.aim();if(aim&&aim.perfect&&run.player.orbitTime>.12)run.release();}
       run.update(step);
     }
     run.die('THE TORCH GUTTERED');run.player.deadTime=.8;context.test.render(.1);
     assert.equal(context.test.ledgerStat('runs'),beforeRuns,'A Rock run end must never fold into the atlas\'s ledger');
+    // It folds into the Rock's own log instead (orbit.eras.v1, src/centuries.js), once, with what it caught.
+    assert.equal(context.test.eraLog(1).runs,beforeLog+1,'A Rock run end folds exactly one run into its century\'s own log');
+    assert(context.test.eraLog(1).captures>=run.captures,'The century\'s log keeps the run\'s captures');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get(context.test.ERAS_KEY))[1].runs,beforeLog+1,'The century\'s log is written to storage');
     if(!storageBlocked){
       assert.equal(saved.get(LEDGER_KEY),beforeLedgerDoc,'A Rock run end must never write the atlas\'s ledger to storage');
       const cave=context.test.rockCaveRead();
@@ -1173,6 +1177,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       'The Asterismi table lists Bayer\'s three added figures in place of the retired instruments');
     for(const group of context.test.COSMETIC_KINDS)assert(page.includes(group.title),'The catalogue lists '+group.title);
     assert(page.includes('Named feats')&&page.includes('Insignia'),'The catalogue lists the named feats as medals');
+    assert(page.includes('cat-centuries')&&page.includes('Heirlooms'),'The atlas\'s leaf turns to the other centuries and keeps their heirlooms');
     assert(page.includes('Night plate')&&page.includes('Tabula nocturna'),'Stock cosmetics are always listed and selectable');
     assert(page.includes('Celestial graticule')&&page.includes('Nothing drawn'),'The construction can always be chosen, or left undrawn');
     assert(page.includes('Bare sheet')&&page.includes('Charta nuda'),'A bare sheet is always on offer as the distance');
@@ -1692,7 +1697,24 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.test.plateName,id,'A door opens onto its own century: '+id);
       assert.equal(context.test.eraId(),context.test.PLATE_STYLES[id].era);
       assert.equal(context.test.plateOwns('score'),true,'A century keeps its own record: '+id);
-      context.test.render(1/60);context.test.handleInput();context.test.render(1/60);
+      context.test.render(1/60);
+      // Every century keeps a leaf of its own in the one catalogue, opened on that century (LINKING.md,
+      // "Unlocks, later"): its record, its collection, ten to fifteen feats, and the heirloom it leaves.
+      {
+        const era=context.test.eraId(),page=context.test.CENTURIES[era];
+        assert(page&&page.title,'Century '+era+' registers its own catalogue page');
+        assert(page.feats.length>=10&&page.feats.length<=15,'Century '+era+' has ten to fifteen feats: '+page.feats.length);
+        assert(page.collection&&typeof page.collection.items==='function'&&page.collection.items().length>0,'Century '+era+' lists its collection');
+        assert(page.heirloom&&page.heirloom.name,'Century '+era+' leaves an heirloom');
+        for(const feat of page.feats)assert.equal(typeof context.test.centuryFeatMet(feat),'boolean',feat.id);
+        context.test.openCatalogue();
+        assert.equal(context.test.catalogueCentury,era,'The catalogue opens on the century it is opened from');
+        const leaf=element('catalogue-body').innerHTML;
+        assert(leaf.includes('cat-centuries')&&leaf.includes('Chronicles completed')&&leaf.includes('Lineage'),'Century '+era+' prints its record, feats and lineage');
+        assert(!leaf.includes('undefined')&&!leaf.includes('NaN'),'Century '+era+' prints no undefined or NaN');
+        context.test.closeCatalogue();
+      }
+      context.test.handleInput();context.test.render(1/60);
       context.test.leaveEra();
       assert.equal(context.test.plateName,'paper','Leaving a century puts back the plate that was on the press: '+id);
       context.test.newWorld();
