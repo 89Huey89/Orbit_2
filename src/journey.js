@@ -16,6 +16,10 @@ const JOURNEY_KEY='orbit.journey.v1',ERA_THRESHOLD=50,JOURNEY_ERAS=8;
 // for every ERA_THRESHOLD/k banked, and stands transition-ready when all of them do.
 const ERA_MILESTONES=[0,4,4,4,6,4,3,3,3];
 let runMode='free',journeyRun=0;
+// What the run in hand has done toward the climb, kept only so the leaf can say where the knowledge came
+// from: the orbits watched, how many were held whole and how many were left before half their arc, and what
+// was actually banked. It survives the folds a hidden page makes and is cleared only as a run begins.
+let journeyTally={orbits:0,whole:0,early:0,banked:0};
 function emptyJourney(){return {era:1,knowledge:0,milestones:{},unlocked:[1],bests:{}};}
 function readJourney(){
   const out=emptyJourney();
@@ -57,10 +61,11 @@ function journeySign(era){
 const journeyComplete=(doc=journey)=>doc.era>=JOURNEY_ERAS&&journeyReady(doc);
 // A run's knowledge, banked as each body is released and zeroed whenever it is folded in, so a second
 // fold after the page has been hidden adds only what has been observed since the first.
-function resetJourneyRun(){journeyRun=0;}
+function resetJourneyRun(){journeyRun=0;journeyTally={orbits:0,whole:0,early:0,banked:0};}
 function journeyObserve(fraction){
   if(runMode!=='journey')return;
-  journeyRun+=clamp(Number(fraction)||0,0,1);
+  const f=clamp(Number(fraction)||0,0,1);
+  journeyRun+=f;journeyTally.orbits++;if(f>=1-1e-9)journeyTally.whole++;else if(f<.5)journeyTally.early++;
 }
 // Fold the run in and write it. `ending` is true where the run is over: the body still held at the end
 // then counts for what it had been observed to, since death ends the attempt and not the knowledge — and
@@ -71,10 +76,11 @@ function journeyCommit(ending=false){
   // A run flown on another century's plate than the frontier's is not the frontier's to bank.
   if(journeyEraOf()!==journey.era){journeyRun=0;return null;}
   const p=world.player;
-  if(ending&&p&&p.node)journeyRun+=clamp(p.orbitSweep/SWEEP_FULL,0,1);
-  const before=journeyMilestones().open;
+  if(ending&&p&&p.node&&p.orbitSweep>0)journeyObserve(p.orbitSweep/SWEEP_FULL);
+  const before=journeyMilestones().open,had=journey.knowledge;
   // A ready era banks nothing further: what a run observes past the threshold is the transition's to spend.
   journey.knowledge=Math.min(ERA_THRESHOLD,journey.knowledge+journeyRun);
+  journeyTally.banked+=journey.knowledge-had;
   journeyRun=0;saveJourney();
   const after=journeyMilestones().open;
   return {opened:after-before,open:after,of:journeyMilestones().of,ready:journeyReady()};

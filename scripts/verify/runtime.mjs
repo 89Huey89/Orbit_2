@@ -1810,17 +1810,19 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.plateName,'rock','A first Journey opens on the frontier, era I');
     assert.equal(t.world.goalRow,0,'A Journey run is never won at a row: its chapters are opened by knowledge');
     assert.equal(element('reading').hidden,true,'A Journey run has no reading to choose');
-    assert.equal(note.hidden,false);assert(note.textContent.includes('THE HALL OF THE BULLS'),'The frontispiece names the milestone the climb is working toward: '+note.textContent);
+    assert.equal(note.hidden,false);assert(note.textContent.includes('KNOWLEDGE 0 / '+t.ERA_THRESHOLD)&&note.textContent.includes('FEAT \u00b7 '+t.SIGNATURES[1].name),'The frontispiece names both conditions from the first run, the knowledge and the feat: '+note.textContent);
     t.handleInput();for(let i=0;i<13;i++)t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     assert.equal(t.journey.knowledge,13,'A Journey run banks what it observed');
     if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,13);
     assert.equal(endNote.hidden,false);assert(endNote.textContent.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.textContent);
+    assert(endNote.textContent.includes('THIS RUN \u00b7 +13.0 KNOWLEDGE \u00b7 13 ORBITS \u00b7 13 WHOLE'),'The leaf says what the run banked and from what: '+endNote.textContent);
+    assert(endNote.textContent.includes('KNOWLEDGE 13 / '+t.ERA_THRESHOLD),'and where the knowledge now stands: '+endNote.textContent);
     t.journey.knowledge=t.ERA_THRESHOLD-.5;t.newWorld();t.handleInput();t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     // Every chapter stands, and the Rock's own feat (JOURNEY.md §9) is still owed: the leaf names it and the
     // page does not turn.
-    assert(endNote.textContent.includes('STILL TO FLY')&&endNote.textContent.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.textContent);
+    assert(endNote.textContent.includes('ONLY THE FEAT REMAINS')&&endNote.textContent.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.textContent);
     // The Struck Ring, read off the events a run emits: a light the wall sorts as major held for a whole orbit.
     // Every sling body is one (radius 57), and one is dealt at row 2 on every chart.
     t.newWorld();t.handleInput();
@@ -1842,7 +1844,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.plateName,'ceiling','The next run opens on the next century');
     assert.equal(t.world.state,'ready','Onto its frontispiece, not straight into a run');
     assert.equal(t.world.goalRow,0,'The Ceiling in a Journey has no dawn row either');
-    assert(note.textContent.includes('HOURS I TO III'),'The Ceiling names its own milestones: '+note.textContent);
+    assert(note.textContent.includes('THE CEILING')&&note.textContent.includes(t.SIGNATURES[2].name),'The Ceiling names its own feat: '+note.textContent);
     events['ceiling-exit:click']();
     assert.equal(t.runMode,'free','Leaving a century by its exit leaves the Journey with it');
     assert.equal(t.plateName,'paper');assert.equal(note.hidden,true);

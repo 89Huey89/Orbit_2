@@ -41,7 +41,7 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endTitleWon:'The atlas is printed.',endActionWon:'Tap to begin a new atlas',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
-    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',line:'THE JOURNEY · {era} · {count} · {name} {pct}%',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',climbed:'THE LADDER IS CLIMBED · THE FINAL FRONTIER',frontier:'THE FINAL FRONTIER · BEST {best}',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
+    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',head:'THE JOURNEY · {era}',knowledge:'KNOWLEDGE {k} / {of} · LONGER ORBITS TEACH MORE',full:'KNOWLEDGE COMPLETE · ONLY THE FEAT REMAINS',feat:'FEAT · {name} — {how}',flown:'FEAT FLOWN · {name}',run:'THIS RUN · +{gained} KNOWLEDGE · {orbits} ORBITS · {whole} WHOLE · {early} LEFT EARLY',elsewhere:'THIS RUN DID NOT COUNT · THE JOURNEY LEARNS ONLY ON {era}',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',climbed:'THE LADDER IS CLIMBED · THE FINAL FRONTIER',frontier:'THE FINAL FRONTIER · BEST {best}',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -383,15 +383,28 @@ function toggleReading(){
 const journeyPlate=era=>Object.keys(PLATE_STYLES).find(id=>PLATE_STYLES[id].era===era&&PLATE_STYLES[id].door)||null;
 const journeyPlayable=era=>era===5||!!journeyPlate(era);
 const journeyEraTitle=era=>{const id=journeyPlate(era);return id?PLATE_STYLES[id].door.label:'ERA V \u00b7 THE ATLAS';};
-function journeyNote(){
-  const w=plateWords(),c=w.chrome.journey,m=journeyMilestones(),era=journeyEraTitle(journey.era);
+// Both of the frontier's conditions are named from the first run, each on a line of its own and in English,
+// since the player has to understand them to act: the knowledge banked against the threshold, with what earns
+// it, and the century's own feat, whether flown or still owed. A feat that only surfaced once the knowledge was
+// full read as a second gate sprung at the end, and a percentage beside a chapter's name read as the chapter.
+// The leaf, which is already the century's own, leaves the heading off to stand clear on the shortest phone.
+function journeyNote(head=true){
+  const w=plateWords(),c=w.chrome.journey,era=journeyEraTitle(journey.era);
   if(journeyComplete())return fmt(c.frontier,{best:journey.bests.frontier||0});
-  if(m.open<m.of)return fmt(c.line,{era,count:m.open+' / '+m.of,name:(w.milestones||[])[m.open]||'',pct:Math.floor(m.toward*100)});
-  // Every chapter stands and the century's own feat is still to be flown: the line names it, in English,
-  // since the player has to understand it to fly it.
-  if(!journeySigned()){const sig=SIGNATURES[journey.era];if(sig)return fmt(c.signature||'{era} \u00b7 STILL TO FLY: {name} \u2014 {how}',{era,name:sig.name,how:sig.describe});}
-  const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
-  return fmt(next?c.known:c.whole,{era,next});
+  if(journeyReady()){
+    const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
+    return fmt(next?c.known:c.whole,{era,next});
+  }
+  const full=journey.knowledge>=ERA_THRESHOLD-1e-9,sig=SIGNATURES[journey.era],lines=head?[fmt(c.head,{era})]:[];
+  lines.push(full?c.full:fmt(c.knowledge,{k:Math.floor(journey.knowledge+1e-9),of:ERA_THRESHOLD}));
+  if(sig)lines.push(journeySigned()?fmt(c.flown,{name:sig.name}):fmt(c.feat,{name:sig.name,how:sig.describe}));
+  return lines.join('\n');
+}
+// What the run just ended gave the climb, and from what: the knowledge it banked and the orbits it came from,
+// so a run that left its bodies early can see why it banked little.
+function journeyRunLine(){
+  const t=journeyTally;
+  return fmt(plateWords().chrome.journey.run,{gained:t.banked.toFixed(1),orbits:t.orbits,whole:t.whole,early:t.early});
 }
 // The milestones drawn, not only named: every century paints its own knowledge structure as far as the
 // climb has built it (a `journeyMark` painter in its hand), onto a small sheet of its own under the
@@ -683,8 +696,12 @@ function showEnd(){
     const fold=journeyCommit(true),note=$('end-journey');
     paintJourneyMark('end-journey-mark',42);
     if(note){
-      note.hidden=!fold;
-      if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyNote()].join(' \u00b7 ');}
+      // A Journey run that could not bank (flown on a century other than the frontier's) says so rather than
+      // leaving the leaf silent, which read as knowledge lost.
+      const stray=!fold&&runMode==='journey'&&!dailyOn;
+      note.hidden=!fold&&!stray;
+      if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyRunLine(),journeyNote(false)].join('\n');}
+      else if(stray)note.textContent=fmt(plateWords().chrome.journey.elsewhere,{era:journeyEraTitle(journey.era)});
     }
     // The next tap turns the page rather than dealing this century again, and the leaf says so.
     if(fold&&fold.ready&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1))$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journey.era+1)});

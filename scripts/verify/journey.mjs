@@ -16,7 +16,7 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,journeySigned,journeySign,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,RECORDS_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},get tally(){return journeyTally},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,journeySigned,journeySign,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
@@ -37,6 +37,8 @@ export async function runJourneyChecks(){
     assert.equal(j.doc.knowledge,1.5);assert.equal(JSON.parse(saved.get(j.JOURNEY_KEY)).knowledge,1.5,'A fold is written at once');
     assert.equal(fold.opened,0);assert.equal(fold.of,4,'The Rock has its four chambers for milestones');
     j.journeyCommit();assert.equal(j.doc.knowledge,1.5,'A second fold adds only what was observed since the first');
+    // The run's own tally, for the leaf: it outlives the folds a hidden page makes and counts what was banked.
+    assert.deepEqual({...j.tally},{orbits:3,whole:1,early:1,banked:1.5},'The run tallies its orbits, the whole ones, the ones left before half, and what it banked');
     // Death ends the attempt, not the knowledge: the body held at the end counts for what it was observed
     // to, once, and a fold that is not an ending (the page hidden mid-orbit) does not count it at all.
     context.world=held(SWEEP*.5);
@@ -62,6 +64,7 @@ export async function runJourneyChecks(){
     assert.equal(j.run,0,'Nor is its knowledge carried over to the next fold');
     context.plate=1;context.dailyOn=true;j.journeyObserve(1);assert.equal(j.journeyCommit(true),null,'The daily plate never moves the Journey');
     context.dailyOn=false;j.resetJourneyRun();
+    assert.deepEqual({...j.tally},{orbits:0,whole:0,early:0,banked:0},'A run begun clears the tally');
     // The deliberate restart clears the climb and nothing else.
     const doc=j.doc;doc.era=3;doc.unlocked=[1,2,3];doc.bests={2:40};
     j.journeyReset();
