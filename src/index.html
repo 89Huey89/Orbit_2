@@ -633,6 +633,10 @@
     .catch-word{font-family:var(--face-text);font-style:italic;font-size:16px;line-height:1;color:var(--gold);transition:color .2s}
     .catchword:hover .catch-word,.catchword:focus-visible .catch-word{color:var(--ivory)}
     .catchword:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+    /* The catchword alone read as a page ornament rather than a way out, so the foot glosses it in the
+       game's own English, in the small caps the colophon's buttons are set in: BACK TO, then the word. */
+    .catch-back{display:flex;align-items:baseline;gap:8px}
+    .catch-gloss{font-family:var(--face-sc);font-size:10px;letter-spacing:.2em;color:var(--copy)}
     #game.playing #catalogue-open{display:none}
     /* — The catalogue's marks on the colophon: what a run has just granted, and the library stamp — */
     #end-unlocked{margin:-9px 0 13px;font-family:var(--face-sc);font-size:10px;letter-spacing:.19em;color:var(--gold)}
@@ -987,7 +991,7 @@
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <div id="end-finis" class="finis atlas-only"><canvas id="end-miniature" aria-hidden="true" hidden></canvas><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="rock-lore rock-only" id="end-lore">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
+      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="frontispiece-end" class="diff-btn atlas-only" type="button">RETURN TO THE FRONTISPIECE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
     </div>
   </section>
   <button id="review-close" class="catchword" type="button" aria-label="Close the review"><span id="review-catch" class="catch-word" aria-hidden="true">Colophon.</span></button>
@@ -1013,7 +1017,7 @@
         <div class="title-rule"><span></span></div>
       </div>
       <div id="catalogue-body" class="catalogue-body"></div>
-      <button id="catalogue-close" class="catchword" type="button" aria-label="Close the catalogue"><span class="catch-sig" aria-hidden="true">A ij</span><span class="catch-word" aria-hidden="true">Orbit.</span></button>
+      <button id="catalogue-close" class="catchword" type="button" aria-label="Close the catalogue"><span class="catch-sig" aria-hidden="true">A ij</span><span class="catch-back" aria-hidden="true"><span class="catch-gloss">BACK TO</span><span class="catch-word">Orbit.</span></span></button>
     </div>
   </section>
   <section id="ephemeris" class="screen hidden" aria-label="Ephemeris of the daily plates" aria-hidden="true">
@@ -1034,7 +1038,7 @@
       <div id="ephemeris-body" class="eph-body"></div>
       <p class="eph-stylo">STYLO NOVO &middot; STYLO VETERI</p>
       <p id="eph-note" class="eph-note"></p>
-      <button id="ephemeris-close" class="catchword" type="button" aria-label="Close the ephemeris"><span class="catch-sig" aria-hidden="true">B ij</span><span class="catch-word" aria-hidden="true">Orbit.</span></button>
+      <button id="ephemeris-close" class="catchword" type="button" aria-label="Close the ephemeris"><span class="catch-sig" aria-hidden="true">B ij</span><span class="catch-back" aria-hidden="true"><span class="catch-gloss">BACK TO</span><span class="catch-word">Orbit.</span></span></button>
     </div>
   </section>
   <div class="footer">
