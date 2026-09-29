@@ -835,10 +835,20 @@ function handleInput(){
   else if(world.state==='dead'&&world.player.deadTime>(world.won?WIN_END_DELAY:.7)){
     // A Journey whose era has just become known opens the next century's frontispiece rather than dealing
     // the same one again: the page turns between runs until the transition can turn it inside one.
-    if(runMode==='journey'&&journeyReady()&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)){journeyTurn();return;}
+    if(journeyTurnDue()){journeyTurn();return;}
     newWorld();world.start();setPlaying();
   }
   else if(world.state==='paused')resume();
+}
+function journeyTurnDue(){return runMode==='journey'&&journeyReady()&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1);}
+// A tap on the colophon deals the next chart straight away, so the leaf carries its own way back to the
+// frontispiece as well: without it the atlas's only door out of a finished run was to start another and
+// set that one down. The run is already folded into the ledger by now; a Journey due to turn its page
+// turns it here too, since the next century's frontispiece is exactly where this door leads.
+function endToFrontispiece(){
+  if(!world||world.state!=='dead'||!deathShown)return;
+  if(journeyTurnDue())journeyTurn();else{newWorld();resetToFrontispiece();render(0);}
+  if(audio.enabled)audio.tone(392,.35,0,.15);
 }
 // The frontispiece is the one screen with room enough under it to scroll (see #intro, index.html), so
 // the state it shows — 'ready' — can't fire on the down stroke the way every other state safely does:
@@ -961,6 +971,7 @@ for(const id in PLATE_STYLES){
   const button=$(door.button);if(button)button.addEventListener('click',()=>enterEra(id));
 }
 $('ceiling-exit-end').addEventListener('click',leaveEra);
+$('frontispiece-end').addEventListener('click',endToFrontispiece);
 $('ceiling-exit').addEventListener('click',leaveEra);
 $('reading').addEventListener('click',toggleReading);
 $('instrument').addEventListener('click',()=>{setInstruments(!instrumentsOn);if(audio.enabled)audio.tone(instrumentOn()?659.25:392,.3,0,.16);if(world&&world.state==='ready'&&W&&H)render(0);});
