@@ -1920,7 +1920,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
           flown=fly('capture',{n:find(n=>t.astroWanderer(n)!==-1),perfect:false});
         }
         if(era===5)flown=fly('observation',{key:'pureChart'});
-        if(era===6){fly('shieldBreak',{});assert.equal(fly('transition',{index:1}),null,'A sitting saved by a charge is not Saturn in one sitting');fly('start',{});flown=fly('transition',{index:1});}
+        if(era===6){fly('shieldBreak',{});fly('dawnBreak',{});assert.equal(fly('transition',{index:1}),null,'A sitting saved by two charges is not Saturn in one sitting');fly('start',{});fly('reflectorBreak',{});flown=fly('transition',{index:1});}
         if(era===7){assert.equal(fly('release',{sling:true,charge:.8}),null,'A gravity assist short of a full lap is not the feat');flown=fly('release',{sling:true,charge:1});}
         if(era===8){t.prbState.gen=2;flown=fly('capture',{n:find(n=>n.row===3),perfect:false});}
         assert.equal(flown&&flown.name,sig.name,'The century\'s own feat is flown and recorded: era '+era);
