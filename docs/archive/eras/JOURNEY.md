@@ -841,18 +841,21 @@ stages above.
   ten to fifteen feats of its own and a lineage; every known century leaves an heirloom on the atlas's Feats tab.
 - *The ladder re-read with the signature feats* (2026-09-30): `probe.mjs --ladder` climbs on the feats as well
   as knowledge, read off the game's own detectors. At the author's hand they add two to four runs to the
-  climb (33 → 35 at σ 20 ms, 40 → 44 at σ 30 ms), nearly all in era V. §1.6's shape holds and
+  climb (33 → 35 at σ 20 ms, 40 → 44 at σ 30 ms), nearly all in era V, and nothing since Linea Pura was made fair. §1.6's shape holds and
   `ERA_THRESHOLD` stays at 50 (`MEASUREMENTS.md`, "The third reading").
+- *Linea Pura made fair* (2026-09-30): the author's call, keeping the eight-row rhythm. The entry no longer
+  spoils a figure, and a figure's stars hold a perfect band 2.2 times as wide with their reach opened to it
+  (`FIGURE_RIM`). A hand of σ 45 ms flies the feat in about one run in ten (was one in a hundred), and every
+  hand now climbs all eight.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
 **Open.**
 
-- **Linea Pura against a rough hand.** Six of the eight feats cost a century nothing beyond its chapters.
-  Linea Pura, a clean figure, needs four perfect landings in a row. At σ 45 ms it is flown in about one run
-  in forty, which holds a player in era V for about forty runs against seven for its chapters; at σ 70 ms
-  not once in 240 (`MEASUREMENTS.md`, "The third reading"). Whether that stands, or the feat or the chart's
-  figures change for it, is the author's call.
+- **Saturn in One Sitting against a rough hand.** Now that Linea Pura is fair (Done, above), the Lens's feat
+  holds a rough hand longest. At σ 70 ms it is flown in about one run in thirty, so that hand stays in era
+  VI for 27 runs against 11 for its chapters (`MEASUREMENTS.md`, "Linea Pura made fair"). At σ 45 ms and
+  better it costs nothing. Whether a hand that rough should be held there is the author's call.
 - **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
   (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
   under its Arabic name, the Dendera zodiac as a construction.

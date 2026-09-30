@@ -268,6 +268,38 @@ What this measures and what it does not:
 - The feats of centuries II, III, IV, VII and VIII are read off the same atlas flight. That is correct
   for every century whose simulation is the atlas's, and each century keeps its own run state.
 
+### Linea Pura made fair, and the ladder read again
+
+The author's answer to the wall was to leave the eight-row rhythm alone, since that rhythm is also the
+atlas's chapters, the Chronicle's finish, the slings and the wanderers' rows. Offering figures more often
+could only have raised a rough hand's chance in proportion, from under one run in a hundred to about one.
+Two changes were made instead. First, the entry no longer spoils a figure, since it is landed on whether
+the figure is taken or not. That changed almost nothing, because the three stars are the bottleneck.
+Second, a figure's stars hold a perfect band 2.2 times as wide, with their capture reach opened to its
+outer edge (`FIGURE_RIM` in `simulation.js`). The band on its own was capped by the reach and grew only
+inward, so even three times as wide reached only 9 % at σ 45 ms. With the reach open as well, the
+figure-seeking hand, read on 120 seeds, flies the feat far more often and survives as deep as before:
+
+| hand | entry counted | entry free | band ×2.2, reach opened |
+|---|---|---|---|
+| σ 20 ms | 20 % | 25 % | 57 % |
+| σ 45 ms | 2.5 % | 0.8 % | 10 % |
+
+The ladder read again on the same terms as above:
+
+| hand | feat V | VI feat | I | II | III | IV | V | VI | VII | VIII | climb | done | knowledge alone |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| σ 10 ms | 100 % | 78 % | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 17 | 100 % | 17 |
+| σ 20 ms | 60 % | 55 % | 4 | 4 | 4 | 4 | 3 | 4 | 4 | 4 | 33 | 100 % | 33 |
+| σ 30 ms | 33 % | 43 % | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 41 | 100 % | 41 |
+| σ 45 ms | 15 % | 20 % | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 58 | 100 % | 56 |
+| σ 70 ms | 10 % | 3 % | 11 | 11 | 11 | 11 | 8 | **27** | 11 | 11 | 105 | 100 % | 83 |
+
+At the author's hand the feats now cost the climb nothing. Every hand climbs all eight, and Linea Pura
+holds no one longer than its chapters. **Saturn in One Sitting is now the feat that holds a rough hand
+longest.** At σ 70 ms a sitting is carried from the eyepiece to the sensor without a charge spent to save
+it in about one run in thirty, which keeps that hand in era VI for 27 runs against 11 for its chapters.
+
 ```
 node scripts/probe.mjs --ladder --seeds=40                    # the tables above, one process
 node scripts/probe.mjs --ladder --seeds=40 --hands=20         # one hand; fly several side by side
