@@ -247,7 +247,7 @@ function transferContact(p,v,n,time,limit,windowMult=1) {
       if(Math.abs(next-closest)<1e-8){closest=next;break;}closest=next;
     }
   }
-  const near=sample(closest),rimWindow=Math.max(8,n.r*.20)*windowMult;
+  const near=sample(closest),rimWindow=Math.max(8,n.r*.20)*windowMult*(n.rim||1);
   const perfect=closest>0&&near.distance>=n.r-rimWindow&&near.distance<=Math.min(n.cap,n.r+rimWindow);
   let arrival=closest;
   if(!perfect){
@@ -265,6 +265,12 @@ function transferContact(p,v,n,time,limit,windowMult=1) {
   if(arrival>limit+1e-8)return null;
   return {...sample(arrival),time:arrival,perfect};
 }
+// How much wider a figure's star holds its perfect band than an ordinary body of its size. A clean figure
+// asks for three perfect landings in a row, so whatever one landing costs a rough hand is paid three times
+// over; the band is widened on the stars alone, where the figure is chosen, and the guide draws it so. The
+// star's capture reach opens to the band's outer edge with it, since a band is never wider than the reach
+// it lies inside. Read off scripts/probe.mjs: a hand of σ 45 ms flies Linea Pura in about one run in ten.
+const FIGURE_RIM=2.2;
 // Twelve engraved asterisms. Each entry carries the three lateral star offsets of its
 // fork, in the fixed bottom-to-top generation order. Catalogue entries 0-3 belong to
 // regions 0-3 and are unchanged; later regions draw from the whole catalogue in a
@@ -644,7 +650,7 @@ class OrbitWorld {
           const starR=(35-Math.min(region,4))*size,reach=Math.min(shape[i]*size,this.inboard(starR));
           const star=this.makeNode(side*reach,y+[24,42,18][i]*grow,starR,k,'gold');
           const profile=renaissanceStarProfile(star.seed,i);
-          star.cap=(star.r+9*grow)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;
+          star.rim=FIGURE_RIM;star.cap=Math.max(star.r+9*grow,star.r+Math.max(8,star.r*.2)*FIGURE_RIM)*this.capMult;star.routeId=region;star.routeRole='star';star.starIndex=i;
           star.brightness=profile.brightness;star.magnitude=profile.magnitude;star.uncertain=profile.uncertain;
           chart.stars.push(star);orderRenaissanceStars(chart);
         }
