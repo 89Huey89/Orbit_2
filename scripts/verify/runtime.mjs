@@ -725,7 +725,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(atlasWords.chrome.eraExit,'RETURN TO THE ATLAS');
     assert.equal(atlasWords.chrome.endAction,'Tap to try again');
     assert.equal(atlasWords.chrome.statFlow,'Best flow');
-    assert.equal(atlasWords.hazards.vortex,'VORAGO');
+    assert.equal(atlasWords.hazards.vortex,'VORAGO · A WHIRLPOOL');
     assert.equal(atlasWords.squareLanding,'Angulus rectus');
     assert.equal(atlasWords.glosses.perfect,'PERFECT · MOMENTUM KEPT');
     assert.equal(atlasWords.held.choose,'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.');

@@ -33,33 +33,54 @@ const CEILING_PALETTE={
 };
 // The same inks as channel triples, for the painters that build an rgba() with its own alpha.
 const CEILING_RGB={carbon:'239,226,196',red:'194,74,47',yellow:'227,180,71',blue:'110,176,214',violet:'150,130,190',ground:'21,36,87'};
-// The checked sign vocabulary: Gardiner's uniliterals, four logograms and the five ready-made groups,
-// every codepoint carried over from the research file rather than looked up again here. A word this
-// table cannot spell is not written on the wall at all — the sheet would rather be quiet than invent
-// an inscription.
+// The checked sign vocabulary: Gardiner's uniliterals and a handful of logograms and determinatives. A
+// word this table cannot spell is not written on the wall at all — the sheet would rather be quiet than
+// invent an inscription. Every codepoint was checked against its Unicode name, which carries its Gardiner
+// number, on 2026-09-30 (docs/KNOWLEDGE-AUDIT.md): three groups copied from the research file spelled other
+// words than they were filed under — a harpoon and t, wꜥt, "one", for white; a stool and t, pt, "sky", for
+// the red land; a ring-stand and an owl, gm, "find", for a shield — Apep had lost its opening ꜥ, and the star
+// was N6, the sun with a uraeus, where the star is N14.
 const CEILING_G={a:0x1313f,i:0x131cb,w:0x13171,b:0x130c0,p:0x132aa,f:0x13191,m:0x13153,n:0x13216,
   r:0x1308b,h:0x13254,H:0x1339b,x:0x1340d,s:0x132f4,g:0x133bc,t:0x133cf,
-  eye:0x13079,sun:0x131f3,setAnimal:0x130e9,feather:0x13184,star:0x131f4};
-const CEILING_RG={mw:[0x13217],hd:[0x13321,0x133cf],dsrt:[0x132aa,0x133cf],ikm:[0x133bc,0x13153]};
+  d:0x130a7,S:0x13219,k:0x133a1,D:0x13193,ayin:0x1309d,
+  eye:0x13079,sun:0x131f3,setAnimal:0x130e9,feather:0x13184,star:0x131fc,
+  water:0x13217,mace:0x13309,hills:0x13209};
 // A word is a column of quadrats; a quadrat is one, two or three signs sharing one square, and a
 // quadrat headed by 'h' sets its pair side by side instead of stacked. This is the layout the wall
 // actually uses, and setting one sign per line — which is what this sheet did before — is not
 // writing but a list of pictures.
+// Each word also carries what the catalogue's leaf says of it (ceilingWordItems): `say`, the reading a
+// player can pronounce, since no face this atlas embeds carries the Egyptological ꜣ and ꜥ that `tr` uses;
+// `gl`, its sense; and `note`, one sentence of what it meant.
 const CEILING_WORD={
-  hour:{q:[[CEILING_G.w,CEILING_G.n],[CEILING_G.w,CEILING_G.t]],tr:'wnwt',gl:'hour'},
-  foreleg:{q:[[CEILING_G.m,CEILING_G.s],[CEILING_G.x,CEILING_G.t],[CEILING_G.i,CEILING_G.w]],tr:'msḫtjw',gl:'the Foreleg'},
-  sah:{q:[[CEILING_G.s],[CEILING_G.a,CEILING_G.H]],tr:'Sꜣḥ',gl:'Sah · Orion'},
-  apep:{q:[[CEILING_G.a],['h',CEILING_G.p,CEILING_G.p]],tr:'ꜥꜣpp',gl:'Apep'},
-  eye:{q:[[CEILING_G.eye],[CEILING_G.sun]],tr:'jrt Rꜥ',gl:'the Eye of Ra'},
-  shu:{q:[[CEILING_G.feather]],tr:'Šw',gl:'Shu'},
-  nun:{q:[[CEILING_G.n],[CEILING_G.w,CEILING_G.n]],tr:'Nwn',gl:'Nun'},
-  sekhmet:{q:[[CEILING_G.s,CEILING_G.x],[CEILING_G.m,CEILING_G.t]],tr:'sḫmt',gl:'Sekhmet'},
-  set:{q:[[CEILING_G.setAnimal]],tr:'stẖ',gl:'Set'},
-  water:{q:[CEILING_RG.mw],tr:'mw',gl:'water'},
-  white:{q:[CEILING_RG.hd],tr:'ḥḏ',gl:'white'},
-  red:{q:[CEILING_RG.dsrt],tr:'dšrt',gl:'the red land'},
-  shield:{q:[CEILING_RG.ikm],tr:'ikm',gl:'shield'},
-  star:{q:[[CEILING_G.star]],tr:'sbꜣ',gl:'star'}
+  hour:{q:[[CEILING_G.w,CEILING_G.n],[CEILING_G.w,CEILING_G.t]],tr:'wnwt',say:'Wenut',gl:'hour',
+    note:'The night had twelve hours; on the star clocks each was marked by a decan rising.'},
+  foreleg:{q:[[CEILING_G.m,CEILING_G.s],[CEILING_G.x,CEILING_G.t],[CEILING_G.i,CEILING_G.w]],tr:'msḫtjw',say:'Meskhetiu',gl:'the Foreleg',
+    note:'The Plough, seen as a bull’s foreleg: stars that never set, and so were never thought to die.'},
+  sah:{q:[[CEILING_G.s],[CEILING_G.a,CEILING_G.H]],tr:'Sꜣḥ',say:'Sah',gl:'Orion',
+    note:'Orion, seen as Sah, a figure bound up with Osiris and the life after death.'},
+  apep:{q:[[CEILING_G.ayin],[CEILING_G.a],['h',CEILING_G.p,CEILING_G.p]],tr:'ꜥꜣpp',say:'Apep',gl:'the serpent',
+    note:'The serpent who lies in wait each night to swallow the Sun’s barque, and is beaten back each night.'},
+  eye:{q:[[CEILING_G.eye],[CEILING_G.sun]],tr:'jrt Rꜥ',say:'Iret Ra',gl:'the Eye of Ra',
+    note:'An eye and a sun: the Eye of Ra, the Sun’s power sent out into the world as a goddess.'},
+  shu:{q:[[CEILING_G.feather]],tr:'Šw',say:'Shu',gl:'the air',
+    note:'An ostrich feather, read shu: the air, who holds the sky apart from the earth.'},
+  nun:{q:[[CEILING_G.n],[CEILING_G.w,CEILING_G.n]],tr:'Nwn',say:'Nun',gl:'the waters',
+    note:'The dark water before creation, out of which the Sun first rose.'},
+  sekhmet:{q:[[CEILING_G.s,CEILING_G.x],[CEILING_G.m,CEILING_G.t]],tr:'sḫmt',say:'Sekhmet',gl:'the Powerful One',
+    note:'The lioness whose name means the Powerful One: the Eye of Ra in its fury.'},
+  set:{q:[[CEILING_G.setAnimal]],tr:'stẖ',say:'Set',gl:'storm and desert',
+    note:'God of storm and desert, who stands at the barque’s prow to spear Apep.'},
+  water:{q:[[CEILING_G.water]],tr:'mw',say:'Mu',gl:'water',
+    note:'Three ripples of water, which also spell the sound mu.'},
+  white:{q:[[CEILING_G.mace],[CEILING_G.D]],tr:'ḥḏ',say:'Hedj',gl:'white',
+    note:'A mace, read hedj: white, and the white crown of Upper Egypt.'},
+  red:{q:[[CEILING_G.d,CEILING_G.S],[CEILING_G.r,CEILING_G.t],[CEILING_G.hills]],tr:'dšrt',say:'Deshret',gl:'the red land',
+    note:'The red land, the desert, set against kemet, the black land of the Nile.'},
+  shield:{q:[[CEILING_G.i],[CEILING_G.k],[CEILING_G.m]],tr:'ikm',say:'Ikem',gl:'shield',
+    note:'A reed leaf, a basket and an owl, i, k and m: the word for a shield.'},
+  star:{q:[[CEILING_G.star]],tr:'sbꜣ',say:'Seba',gl:'star',
+    note:'A five-pointed star, the sign the ceilings of tombs are sown with.'}
 };
 // The columns beside the route stand where TT353 sets its decan names, but what they spell is the vocabulary
 // above, which holds none of those names — the frontispiece's source line says so rather than letting the
@@ -2461,6 +2482,17 @@ function ceilingDecanArt(i){
       return artLine(artSpiral(30,36,3,20,0,TAU*1.3),1,.55)+artLine('M50 36H96',1.6)+artFill(artStar(96,36,4,4.2,1.4),.9);
   }
 }
+// The words the columns spell, as cards on the leaf (docs/KNOWLEDGE-AUDIT.md, §3.1): the signs as the wall
+// sets them, in a row, in the hieroglyph face; the reading a player can say; its sense; and one sentence of
+// what it meant. Every one is on the wall from a run's first rows, so a card is met once the Ceiling is flown.
+function ceilingWordArt(key){
+  const signs=CEILING_WORD[key].q.flat().filter(c=>typeof c==='number'),size=Math.min(34,104/Math.max(1,signs.length));
+  return `<text class="cat-hiero" x="60" y="${(36+size*.36).toFixed(1)}" text-anchor="middle" font-size="${size.toFixed(1)}">${signs.map(c=>String.fromCodePoint(c)).join('')}</text>`;
+}
+function ceilingWordItems(log){
+  return Object.keys(CEILING_WORD).map(key=>{const w=CEILING_WORD[key];
+    return {name:w.say,latin:w.gl,gloss:w.note,seen:log.runs>0,cond:'Fly the Ceiling once: it is written in the columns beside the route.',art:()=>ceilingWordArt(key)};});
+}
 defineCentury(2,{
   title:'The Ceiling',latin:'Wnwt',gloss:'Twelve hours of the Amduat, sailed beneath Nut to the dawn.',
   // No store of its own (LINKING.md): every row here is read off eraLog(2)'s bestRow and won alone.
@@ -2474,7 +2506,7 @@ defineCentury(2,{
     ];
   },
   collection:{
-    title:'The Twelve Hours',latin:'Wnwt',gloss:'The night’s own watches, sailed one gate at a time toward the dawn.',
+    title:'The Hours & the Words',latin:'Wnwt',gloss:'The night’s own watches, sailed one gate at a time toward the dawn; and the words the columns spell, read.',
     items(){
       const log=eraLog(2),cleared=Math.min(CEILING_HOURS.length,Math.floor(log.bestRow/CEILING_HOUR_ROWS));
       return CEILING_HOURS.map((name,i)=>({
@@ -2483,7 +2515,7 @@ defineCentury(2,{
         seen:i<cleared,
         cond:'Steer the barque past this hour’s gate, at row '+((i+1)*CEILING_HOUR_ROWS)+'.',
         art:()=>ceilingDecanArt(i)
-      }));
+      })).concat(ceilingWordItems(log));
     }
   },
   feats:[

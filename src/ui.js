@@ -98,8 +98,9 @@ defineVoice('atlas',{
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
   // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
   // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
-  // its own has somewhere to put a different word instead.
-  hazards:{vortex:HAZARD_KINDS.vortex.latin,flare:HAZARD_KINDS.flare.latin,wind:HAZARD_KINDS.wind.latin},
+  // its own has somewhere to put a different word instead. The English a player needs is set beside it,
+  // as every other century's pair of names reads (docs/KNOWLEDGE-AUDIT.md, §3.1).
+  hazards:{vortex:HAZARD_KINDS.vortex.latin+' · A WHIRLPOOL',flare:HAZARD_KINDS.flare.latin+' · A SUNSPOT',wind:HAZARD_KINDS.wind.latin+' · A WIND'},
   // The bare currency word, without the ARMED/HELD suffix a capsule's own pickup toast (below) adds to
   // it — kept apart from POWERUP_LABELS itself so a plate can rename what is carried without touching
   // the internal type strings every capsule handler already keys on.

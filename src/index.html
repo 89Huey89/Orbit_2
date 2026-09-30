@@ -11,7 +11,7 @@
   <style>
     /* The three faces the plate letters in, so a plate cut for another century overrides them
        beside its colours; the canvas reads the same values through plateFace() in plates.js. */
-    :root{--face-text:'IM Fell English',Georgia,serif;--face-sc:'IM Fell English SC','IM Fell English',Georgia,serif;--face-body:'IM Fell English',Georgia,'Times New Roman',serif}
+    :root{--face-text:'IM Fell English',Georgia,serif;--face-sc:'IM Fell English SC','IM Fell English',Georgia,serif;--face-body:'IM Fell English',Georgia,'Times New Roman',serif;--face-hiero:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif}
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--dawn:#f2c79a;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--dawn:#a5622a;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:var(--footer,#d9ccb0)}
@@ -705,6 +705,8 @@
     .cat-annal .cat-gloss{font-size:12px;line-height:1.45}
     .cat-annal .cat-cond{margin-top:0;text-align:left}
     .cat-annal.locked .cat-annal-head{color:var(--muted)}
+    /* A word of the Ceiling's wall, set on its card in the hieroglyph face whichever century's leaf is open. */
+    .cat-art .cat-hiero{font-family:var(--face-hiero);fill:currentColor;stroke:none}
     /* A traced figure's note, under its name in the register's own label column. */
     .ledger-table th .cat-gloss{display:block;margin-top:4px;font-size:11.5px;line-height:1.4;letter-spacing:normal}
     .cat-link{min-height:44px;padding:6px 8px;border:0;background:transparent;color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}

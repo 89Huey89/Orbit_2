@@ -105,6 +105,13 @@ Each was re-read in the code; the ones marked *web* were checked against the sou
   the Bulls as Taurus is a minority view that `research/rock.md` says the game should not assert. The
   gloss now makes it conditional: "if the dots on its shoulder are the Pleiades, as a few have read
   them".
+- **Five hieroglyphic spellings on the Ceiling's wall** (found while building §3.1, item 4; checked
+  against each codepoint's Unicode name, which carries its Gardiner number). Three groups copied from
+  `research/ceiling.md` as "attested" spelled other words: *white* was a harpoon and t (T21, X1), *wꜥt*,
+  "one"; *the red land* was a stool and t (Q3, X1), *pt*, "sky"; *shield* was a ring-stand and an owl
+  (W11, G17), *gm*, "find". They are now the mace and cobra, *ḥḏ*; hand, pool, mouth, bread and hills,
+  *dšrt*; and reed, basket and owl, *ikm*. *Apep* had lost its opening arm (ꜥ, D36), and the *star*
+  was N6, the sun with a uraeus, where the star is N14. The research file's table is corrected too.
 - **README drift:** the Rock's paragraph described the Moon as a crescent with tally notches, after
   Laussel and Blanchard. Since the triad became one light in three sizes (§9.1, commit `2ca35ac`)
   `rockTier()` never returns `'moon'`, so no body is drawn that way. The README now says the mark is kept
@@ -201,6 +208,12 @@ cheap steps would close most of the gap:
    Foreleg"); the hazard Latin (VORAGO, MACULA, VENTUS on the atlas, *Nihil visum* and *Manus tremula*
    on the Lens). The charges already have the right pattern — `SCUTUM ARMED · SURVIVES ONE VORTEX` — and
    the hazards could borrow it.
+   *Built 2026-09-30:* the atlas names each hazard kind once as VORAGO · A WHIRLPOOL, MACULA · A SUNSPOT,
+   VENTUS · A WIND; the Lens's eyepiece notes carry their English after them in the same hand (*Nihil
+   visum · nothing seen*, *Foramen in caelo? · a hole in the sky?*); and the Ceiling's leaf lists the
+   fourteen words its columns spell, each in its signs, with a reading a player can say (Sah, Apep,
+   Deshret — no embedded face carries ꜣ or ꜥ), its sense and one sentence of what it meant. Setting the
+   words out found five of them misspelled on the wall itself, now corrected and recorded in §2.1.
 5. **Half a clause of why on every signature feat.** GRAVITY ASSIST: a planet's motion borrowed, first
    done between planets by Mariner 10 at Venus in 1974. THE THREE SCHOOLS: three old star catalogues,
    told apart on one chart by colour. THOSE WHO KNOW NO REST: the wandering stars Senenmut's ceiling
