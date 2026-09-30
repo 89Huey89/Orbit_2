@@ -2052,7 +2052,15 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       if(!reduceMotion)assert(t.reveal.age(w.player.node)<.5,'Step 9: the body is drawn again from nothing, in the new century\'s hand');
       assert(element('game').classList.contains('era-growing'),'The new century\'s HUD waits for the circle');
       const score=w.score;
-      for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
+      // The circle's turn is fallen through rather than grown over (src/descent.js): longer, and the traveller is
+      // held in its orbit for all of it, a tap flying nothing, with the dark held off until it is done.
+      if(from===8&&!reduceMotion){
+        assert.equal(t.eraGrowth.descent,true,'The circle is fallen through');
+        const releases=t.replayLog.releases.length;t.handleInput();
+        assert.equal(t.replayLog.releases.length,releases,'A tap during the descent flies nothing');assert(w.player.node,'The traveller stays in orbit');
+        assert(w.darknessGrace>t.eraGrowth.dur,'And the dark is held off for the whole descent');
+      }
+      for(let i=0;i<120*(from===8?8:3)&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
       assert.equal(t.eraGrowth,null,'And has grown over the whole sheet within a few seconds');
       assert(!element('game').classList.contains('era-growing'),'And its HUD comes in once the sheet is whole');
       assert(w.score>=score,'Score never falls');

@@ -12,8 +12,8 @@
 // feature existed still replays exactly as it always did.
 // A Journey run that changed century inside itself logs each change in `eras`: when the page armed it
 // (armedAt, a world.time like a release, since the simulation is told rather than deciding) and what the
-// new century then set on the world (relightOn, chasmsOn, transitionRows). The landing that carries the
-// change is the simulation's own, so arming the same moment turns the replay on the same body, and the
+// new century then set on the world (relightOn, chasmsOn, transitionRows, and the grace the dark was held
+// off for). The landing that carries the change is the simulation's own, so arming the same moment turns the replay on the same body, and the
 // settings are put on the world in the same event the live page puts them on in. newtonOn is read the
 // same permissive way: a log without it was flown, or is read back, with no pull toward the bodies.
 // Capturing one of the three opening bodies fires a 'difficulty' event that the live game answers
@@ -37,6 +37,8 @@ function replayRun(log){
       if(r.relightOn!==undefined)w.relightOn=!!r.relightOn;
       if(r.chasmsOn!==undefined)w.chasmsOn=!!r.chasmsOn;
       if(Array.isArray(r.transitionRows)){w.transitionRows=r.transitionRows.slice();w.transitionsCrossed=0;}
+      // The dark held off for the circle's descent, where the change was the circle's (src/descent.js).
+      if(Number.isFinite(r.grace))w.darknessGrace=Math.max(w.darknessGrace,r.grace);
     }
   },log.offerDifficulty,log.varyOpening,log.newtonOn===true,log.chasmsOn,log.relightOn,Number(log.goalRow)||0);
   // A log written before the release grace existed carries no grace field, and its releases were flown

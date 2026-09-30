@@ -1381,17 +1381,21 @@ function beginEraGrowth(e){
   let snap=null;
   try{if(canvas.width&&canvas.height){snap=makeCanvas(canvas.width,canvas.height);snap.getContext('2d').drawImage(canvas,0,0);}}catch(_){snap=null;}
   // The century giving way is the one on the press now, before the page turns it (recedeBegin, src/recede.js).
-  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world,n:e.n,era:eraId()||5};game.classList.add('era-growing');
-  if(snap)recedeBegin(eraGrowth);
+  eraGrowth={snap,x:e.x,y:e.y,t0:world.time,world,n:e.n,era:eraId()||5,dur:reducedMotion?.5:ERA_GROW};game.classList.add('era-growing');
+  // The last century's turn is the circle's, and it is fallen through rather than grown over (src/descent.js),
+  // except under reduced motion, where it is turned as plainly as any other.
+  if(eraGrowth.era===JOURNEY_ERAS&&!reducedMotion)descentBegin(eraGrowth);
+  else if(snap)recedeBegin(eraGrowth);
 }
 function endEraGrowth(){eraGrowth=null;game.classList.remove('era-growing');}
 function eraGrowthReach(g){
-  const t=(world.time-g.t0)/(reducedMotion?.5:ERA_GROW);if(t>=1)return Infinity;
+  const t=(world.time-g.t0)/g.dur;if(t>=1)return Infinity;
   const u=Math.max(0,t);return u*u*(3-2*u)*Math.hypot(W,H)*1.1;
 }
 function drawEraGrowth(dt){
   const g=eraGrowth;if(!g)return;
   if(g.world!==world||!g.snap){endEraGrowth();return;}
+  if(g.descent){if(descentFrame(g))drawEraCore(g);else endEraGrowth();return;}
   const R=eraGrowthReach(g);if(R===Infinity){endEraGrowth();return;}
   const x=sx(g.x),y=sy(g.y);
   // The old medium fails in its own material where it can (src/recede.js); the plain circle with a gold edge
@@ -1418,7 +1422,7 @@ function drawEraGrowth(dt){
 function drawEraCore(g){
   if(!world||world.state==='dead')return;
   const p=world.player,x=sx(p.x),y=sy(p.y),t=world.time-g.t0,left=eraGrowthReach(g);
-  const fade=left===Infinity?0:clamp((ERA_GROW-t)/.5,0,1),I=ink.base;
+  const fade=left===Infinity?0:clamp(((g.descent?g.dur:ERA_GROW)-t)/.5,0,1),I=ink.base;
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   if(!reducedMotion&&t<.7){
     const u=clamp(t/.7,0,1),s=u*u*(3-2*u),from=34*(1-s)+7,to=from-7*(1-s)-3;

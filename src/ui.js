@@ -325,9 +325,12 @@ function event(type,e){
     }
     audio.medal();
     $('announcement').textContent=fmt(plateWords().chrome.journey[turned],{era:journeyEraTitle(journey.era)});
+    // The circle is fallen through for as long as the descent lasts (src/descent.js), and the dark is held off
+    // for all of it and a second after, as any change of century holds it for the circle it grows in.
+    if(eraGrowth&&eraGrowth.descent)world.darknessGrace=Math.max(world.darknessGrace,eraGrowth.dur+1);
     // What the new century changed in the simulation is written beside the moment it was armed, so a replay
     // turns the chart where the run did rather than flying the whole of it under the hand it began in.
-    if(replayLog){const r=replayLog.eras[e.index]||(replayLog.eras[e.index]={});Object.assign(r,{relightOn:world.relightOn,chasmsOn:world.chasmsOn,transitionRows:world.transitionRows.slice()});}
+    if(replayLog){const r=replayLog.eras[e.index]||(replayLog.eras[e.index]={});Object.assign(r,{relightOn:world.relightOn,chasmsOn:world.chasmsOn,transitionRows:world.transitionRows.slice(),grace:world.darknessGrace});}
   }else if(type==='transition'){
     // The medium changes under the run (JOURNEY.md §1.3): the plate's own hand draws it, and a plate with
     // no hand for it has no transition rows either.
@@ -866,7 +869,9 @@ function handleInput(){
   if(catalogueOpen||ephemerisOpen||reviewing)return;
   audio.unlock();
   if(world.state==='ready'){recordAtStart=currentBest();world.start();setPlaying();enterFullscreen();}
-  else if(world.state==='playing'){if(world.release()&&replayLog)replayLog.releases.push(world.time);}
+  // While the circle is fallen through the traveller is held in its orbit: a tap would fly it across a sheet
+  // that is not yet there to be seen.
+  else if(world.state==='playing'){if(eraGrowth&&eraGrowth.descent)return;if(world.release()&&replayLog)replayLog.releases.push(world.time);}
   else if(world.state==='dead'&&world.player.deadTime>(world.won?WIN_END_DELAY:.7)){
     // A Journey whose era has just become known opens the next century's frontispiece rather than dealing
     // the same one again: the page turns between runs until the transition can turn it inside one.

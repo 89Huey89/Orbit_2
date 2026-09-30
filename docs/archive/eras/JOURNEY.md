@@ -945,6 +945,14 @@ stages above.
   keeping `bests.frontier` and never banking. A second round is by construction the first one again, so its
   length is the ladder's own reading in `MEASUREMENTS.md`, 35 to 44 runs at the author's hand; no new
   `probe.mjs` reading was needed for it.
+- *The descent, first pass* (2026-09-30, §9.2): the circle's turn is fallen through as a zoom rather than grown
+  over (`src/descent.js`, 6.6 s): the probe's field pushed into, the stars streaming, a blue world swelling from
+  a point, the land at dusk and a cave in the hill, the cave's dark, and a hand pressing a dot of ochre on the
+  body landed on while the Rock's sheet opens out from it. The three hints are there and unnamed: the daughter as
+  a spark gone ahead (panspermia), the world struck twice more beside itself (the multiverse), and the probe's
+  clock run back to T-17000.0 Y (time). The traveller is held in orbit through it and the dark held off; the
+  replay applies the same grace (`grace` on the log's era entry). Reduced motion turns the page plainly. Seen at
+  430×932 with `npm run shots -- descent`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -955,10 +963,9 @@ stages above.
   the stretch flown in the century below included; the page is not yet turned on the sheet itself.
 - **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
   in place rather than carried with the camera.
-- **The descent back to the cave** (§9.2): the zoom from the probe to the hand, its art and animation, the
-  probe's replication drawn, and the layer each round reveals once the author has said what it is. Until then
-  the circle turns the page as every other change of century does: VIII has no recession of its own in
-  `src/recede.js`, so its sheet gives way behind the plain gold circle.
+- **The descent, a second pass** (§9.2): the probe's replication drawn before the fall (the daughter is only a
+  spark on the wake so far), a sound of its own, and the layer each round reveals once the author has said what
+  it is — the descent is where a round's revelation would be shown.
 - **Marathon** (§9.2): the whole ladder in one run without dying, opened by the first closing of the circle;
   its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
