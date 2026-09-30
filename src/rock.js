@@ -34,15 +34,18 @@ definePlate('rock',{
 });
 
 // ---------- The tunable rows ----------
-// The opening triad's reading, written down once so it can be read against the running page rather
-// than buried in a conditional: the Moon for Tiro, a bright star for Adeptus, a faint star for
-// Magister (01-rock.md; JOURNEY.md §9 leaves the choice itself open).
-const ROCK_TRIAD={relaxed:'moon',classic:'bright',hardcore:'faint'};
+// The opening triad's reading, as the author settled it (JOURNEY.md §9.1): three struck lights of one
+// sign in three sizes, the largest for Tiro and the smallest for Magister, because size separates at speed
+// and in the corner of the eye where three brightnesses on a torchlit wall have to be looked at. The
+// simulation deals all three at one radius, so the size is the drawing's alone; the largest is held to
+// what keeps its rays inside the ring every body is caught on.
+const ROCK_TRIAD={relaxed:1.22,classic:.95,hardcore:.68};
+const rockTriadSize=n=>n.difficultyChoice?ROCK_TRIAD[n.difficultyChoice]||1:1;
 // The two radii a naked eye sorts an ordinary body by, beside the triad above as the other tunable
-// row. A difficultyChoice body skips this and takes ROCK_TRIAD's word for it instead.
+// row. A difficultyChoice body skips this and is a bright light at the size ROCK_TRIAD gives it.
 const ROCK_TIER_BRIGHT=34,ROCK_TIER_MAJOR=46;
 function rockTier(n){
-  if(n.difficultyChoice)return ROCK_TRIAD[n.difficultyChoice];
+  if(n.difficultyChoice)return 'bright';
   return n.r>=ROCK_TIER_MAJOR?'major':n.r>=ROCK_TIER_BRIGHT?'bright':'faint';
 }
 // Stage spans over the observation clock `d` (revealNode's own pen.d — see rockNode), copied from the
@@ -1143,7 +1146,7 @@ function rockNode(n,aim){
   const relief=rockRelief(n,x,y,bodyR);
   rockRing(n,x,y,cap,state);
   if(ROCK_GIFTS[n.type])rockGift(n,x,y,bodyR,used);
-  else if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR,tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
+  else if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR*rockTriadSize(n),tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
   else rockPhenomenon(n,x,y,bodyR);
   if(active)rockReleaseMarks(n,p,x,y);
   ctx.restore();
@@ -2366,9 +2369,9 @@ defineVoice('rock',{
   // The bare word for each of the three charges a run can carry, without the HELD suffix (below).
   labels:{shield:'THE SPIRAL',reflector:'THE TURNED HAND',dawn:'THE EMBER'},
   squareLanding:'A SQUARE LANDING',
-  // The opening triad, read against ROCK_TRIAD above rather than restated: the Moon for Tiro, a bright
-  // light for Adeptus, a faint one for Magister.
-  pressures:{relaxed:'THE MOON',classic:'A BRIGHT LIGHT',hardcore:'A FAINT LIGHT'},
+  // The opening triad, read against ROCK_TRIAD above rather than restated: one light in three sizes,
+  // the largest for Tiro and the smallest for Magister.
+  pressures:{relaxed:'THE LARGE LIGHT',classic:'THE MIDDLE LIGHT',hardcore:'THE SMALL LIGHT'},
   pressureSet:'THE PACE IS SET · {label}',
   // Every loss the simulation can deal, in the wall's own terms — the chasm's own loss (what the pen
   // wrote on the atlas as a vortex swallowing the traveller) is the crack it actually is here.

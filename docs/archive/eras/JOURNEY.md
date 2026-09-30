@@ -824,8 +824,9 @@ each is owed its own pass (§10, Open).
   freeze in their parallax. Nothing is softened towards grey.
 - **The Rock's triad reads by size, not brightness.** Three struck dabs in three sizes stand for the three
   pressures, because size separates at speed and in peripheral vision where three brightnesses on a torchlit
-  wall need to be looked at. `ROCK_TRIAD` in `src/rock.js` is to be recut accordingly (the largest for Tiro,
-  the smallest for Magister); the Moon keeps its place as a body of the wall, not as the easiest pressure.
+  wall need to be looked at. *Built the same day:* `ROCK_TRIAD` in `src/rock.js` is three sizes of one bright
+  light (1.22, .95 and .68 of the dealt body), the largest for Tiro and the smallest for Magister; the Moon keeps
+  its place as a body of the wall, not as the easiest pressure.
 - **The Journey gates Free Play, with a proof chapter.** `JOURNEY_GATES_DOORS` is to be turned on once the
   proof is built: a century the Journey has reached is open in Free Play, and of one not yet reached only the
   first chapter is open, as `LINKING.md`'s door-access line planned. The proof chapter is not built yet, and
@@ -887,6 +888,9 @@ stages above.
   laid along it, Aldebaran at its eye, the guest star of 1054 at its southern horn, where the Crab really lies;
   the Dendera zodiac rings the pole and the Earth is the pale blue point at it; Saturn's handles and the ladder
   stand either side of the engraver's line. `npm run shots -- heirlooms` shows all seven under each sphere.
+- *The Rock's triad by size* (2026-09-30, §9.1): `ROCK_TRIAD` recut from the Moon, a bright and a faint light
+  to one bright light in three sizes, named THE LARGE, THE MIDDLE and THE SMALL LIGHT; seen at 430×932 with
+  `npm run shots -- choose --era=rock`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -903,6 +907,5 @@ stages above.
   `ENDLESS-HARD.md` and not built.
 - **The doors** (§9.1): the gate is built and off; it is turned on once the proof chapter of an unreached
   century is built.
-- **The Rock's triad by size** (§9.1): `ROCK_TRIAD` recut from brightness to three sizes of dab.
 - **The Flyby's vacuum as measurement** (§9.1): check the shipped ground and LOS against the settled
   reading and fill in what it lacks.

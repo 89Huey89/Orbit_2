@@ -138,7 +138,7 @@ in this plate's pigments.
 The opening triad is a row in the code, `ROCK_TRIAD`, carrying this file's own reading — the Moon for
 Tiro, a bright star for Adeptus, a faint one for Magister — and is deliberately not recorded as decided
 anywhere: open question K is answered against the running page, not on paper.
-*Settled by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1:* the triad reads by **size**, not brightness — three struck dabs, the largest for Tiro and the smallest for Magister — because size separates at speed and in peripheral vision. `ROCK_TRIAD` is to be recut to match.
+*Settled by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1:* the triad reads by **size**, not brightness — three struck dabs, the largest for Tiro and the smallest for Magister — because size separates at speed and in peripheral vision. `ROCK_TRIAD` is recut to match: one bright light at three sizes.
 
 ## The prototype
 
