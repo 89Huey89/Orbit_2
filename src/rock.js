@@ -2588,7 +2588,7 @@ defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
       return ROCK_ANIMALS.map((a,i)=>({
         name:a.name,
         latin:'',
-        gloss:(VOICES.rock.chartNotes||[])[i]||'',
+        gloss:centuryChartNote(1,i,a.name),
         seen:!!cave.animals[i],
         count:cave.animals[i]||0,
         cond:'Close its cluster of three lights in a run on the Rock.',

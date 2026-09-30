@@ -1176,7 +1176,7 @@ defineCentury(7,{leaf:{heading:'MISSION LOG',subs:['','','']},
     items(){
       const r=flyRead();
       const targets=FLY_TARGETS.map((t,i)=>({
-        name:t[0],latin:'',gloss:'Mapped by '+t[1]+'.',seen:!!(r.targets&(1<<i)),
+        name:t[0],latin:'',gloss:[centuryChartNote(7,i,t[0]),'Mapped by '+t[1]+'.'].filter(Boolean).join(' '),seen:!!(r.targets&(1<<i)),
         cond:'Map '+t[0]+' — held by '+t[1]+'.',
         art:()=>flyTargetGlyph(i===11?'comet':i>=9?'rock':'moon')
       }));

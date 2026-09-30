@@ -696,6 +696,14 @@
     .cat-gloss{font-family:var(--face-text);font-style:italic;font-size:11px;color:var(--copy)}
     .cat-empty{font-family:var(--face-text);font-style:italic;color:var(--muted);text-align:center}
     .cat-lineage{display:flex;justify-content:space-between;gap:8px;margin:10px 0 0}
+    /* The curator's lines a century has said, kept on its Record chapter by chapter: one column, since a line
+       is a sentence rather than a caption, each under the head of the chapter it was said at. */
+    .cat-annals{display:flex;flex-direction:column;gap:8px;margin:0;padding:8px 0 0;list-style:none}
+    .cat-annal{display:flex;flex-direction:column;gap:3px;padding:0 0 8px;border-bottom:1px solid var(--line)}
+    .cat-annal-head{font-family:var(--face-sc);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold)}
+    .cat-annal .cat-gloss{font-size:12px;line-height:1.45}
+    .cat-annal .cat-cond{margin-top:0;text-align:left}
+    .cat-annal.locked .cat-annal-head{color:var(--muted)}
     .cat-link{min-height:44px;padding:6px 8px;border:0;background:transparent;color:var(--gold);font-family:var(--face-sc);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
     .cat-overview{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;margin:0 0 14px;padding:10px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(var(--veil),.3),rgba(var(--veil),.72));position:relative}
     .cat-overview::before{content:'';position:absolute;inset:4px;border:1px solid var(--line);opacity:.48;pointer-events:none}

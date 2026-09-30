@@ -1731,7 +1731,7 @@ function lensCollectionItems(){
   const rec=lensRead(),items=[];
   LENS_FIELDS.forEach(([id,common],i)=>{
     const seen=!!(rec.fields&(1<<i));
-    items.push({name:common.charAt(0)+common.slice(1).toLowerCase(),latin:id,seen,cond:'Not yet logged as a field on the plate',art:LENS_FIELD_ART[i]});
+    items.push({name:common.charAt(0)+common.slice(1).toLowerCase(),latin:id,gloss:centuryChartNote(6,i,common),seen,cond:'Not yet logged as a field on the plate',art:LENS_FIELD_ART[i]});
   });
   LENS_FAMILIES.forEach((family,i)=>{
     const seen=!!(rec.worlds&(1<<i)),eye=LENS_EYE_READINGS[family];

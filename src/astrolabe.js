@@ -1220,7 +1220,7 @@ defineCentury(4,{
       const f=astroFihrist(),out=[];
       ASTRO_STARS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.stars[i],count:f.stars[i]||0,
         cond:'Hold close by a first- or second-greatness star until its scale is struck whole.',art:()=>astroFihristStarArt(i)}));
-      ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.figures[i],count:f.figures[i]||0,
+      ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,gloss:centuryChartNote(4,i,en),seen:!!f.figures[i],count:f.figures[i]||0,
         cond:'Trace the figure’s whole constellation in one flight.',art:()=>astroFihristFigureArt(i)}));
       ASTRO_PLANETS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.planets[i],count:f.planets[i]||0,
         cond:'Hold a wandering star until it is named, rather than a fixed one.',art:()=>astroFihristPlanetArt(i)}));

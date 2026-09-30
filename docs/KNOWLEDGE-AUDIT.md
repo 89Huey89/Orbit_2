@@ -169,6 +169,11 @@ cheap steps would close most of the gap:
 1. **Keep every note seen on the catalogue, in every century**, as the Rock already does. The catalogue
    becomes a compendium the player earns by flying, which is the design's own thesis in the form a
    player can reread: holding a light turns it into knowledge. This is the single most useful change.
+   *Built 2026-09-30:* a met chart's card carries its note on every century that says one
+   (`centuryChartNote` in `centuries.js`), and each century's Record keeps its curator's lines chapter by
+   chapter under *Chapter by chapter · Annales* once a run has reached them (`centuryAnnals`), both read
+   off what the centuries' records already keep. Any line added to the atlas, the Ceiling or the Scroll
+   under 2–3 below is kept the same way with no further work.
 2. **Give the atlas its own lines.** Candidates: Bayer (1603) and his Greek letters, α for a figure's
    brightest; Phoenix, Tucana and Pavo, first charted from Keyser and de Houtman's voyage of 1595–97; the
    slingshot star named for what the README says it is, a *stella nova* (Tycho, 1572); *Ecliptica*, the
