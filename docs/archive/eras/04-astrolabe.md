@@ -27,7 +27,9 @@ number anyone with the instrument could reproduce — a different kind of knowin
   library reported at roughly 400,000 volumes and, per its chief instrument-maker Muʾayyad al-Dīn
   al-ʿUrḍī, a mural quadrant of roughly 40 m radius and an armillary sphere of roughly 160 cm; the
   "roughly" is load-bearing, carried from secondary summaries rather than a primary text (attested
-  institution and output, unverified radii).
+  institution and output, unverified radii). *Checked 2026-09-30 (docs/KNOWLEDGE-AUDIT.md): the 40 m is
+  contradicted by the peer-reviewed survey (arXiv:2511.19559), which gives the quadrant 4.3 m, and 40 m is
+  Samarkand's Fakhrī sextant below; the sheet's chapter line now names no radius at all.*
 - **Samarkand Observatory**, built 1428–29 under Ulugh Beg, its **Fakhrī sextant** trenched directly
   into a hillside, twin walls 40 m in radius — a structure keyed into bedrock so the arc cannot
   shift the way a freestanding brass instrument does. Its *Zīj-i Sulṭānī*, finished 1437, catalogued
@@ -311,7 +313,8 @@ rather than as a nested disc.
 
 First build: the **rete assembled around its own named star-pointers**, anchored on the two whose
 very names still carry Orion inside them — *Rijl al-Jabbār* ("the foot of the Giant"), the Arabic
-origin of Rigel, and the shoulder-star *Manqib al-Jawzāʾ* behind Betelgeuse's own name — each pointer
+origin of Rigel, and *Yad al-Jawzāʾ* ("the hand of al-Jawzāʾ") behind Betelgeuse's own name, its *y* misread as
+a *b* in medieval Latin — each pointer
 a small stylised bird's-head or leaf tip, engraved beside it in naskh, set at its true catalogued
 position on an otherwise near-empty openwork skeleton. The demoted colophon vignette, in the
 corner, carries al-Ṣūfī's own painted al-Jabbār from the Doha 1125 copy, small and flatly coloured,

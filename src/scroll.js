@@ -251,7 +251,9 @@ function scrollTitleMark(){
   const P=ink.scroll,R=Math.min(W*.17,58*scale+10),x=W/2,y=H*.235+R*.2,sp=scrollTitleSprite(R);
   ctx.save();ctx.globalAlpha=scrollTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);
   const tx=Math.min(W-34,x+R+34),ts=Math.max(19,R*.3);scrollColumn(ctx,'天文圖',tx,y-R,ts,P.soot,.94,1,'kaiM');
-  scrollSeal(ctx,tx,y-R+ts*3.2+14,Math.max(18,R*.26),'司天監印',5,.95);
+  // The seal is the office's as it was named when the Dunhuang chart was drawn: the Tang's Taishi Ju, the
+  // Bureau of the Grand Historian. The Sitian names came later, from 758.
+  scrollSeal(ctx,tx,y-R+ts*3.2+14,Math.max(18,R*.26),'太史局印',5,.95);
   ctx.restore();
 }
 // The ground: the paper tile at the camera's own rate, one lamp above the held body, the bands, the title.
@@ -949,12 +951,12 @@ defineCentury(3,{
   ],
   // What the Chinese sky truly hands the 1603 atlas is a thin line, and this file says so rather than
   // inventing a thicker one: no guest-star record of the Bureau's reached Tycho or Bayer's own generation.
-  // The honest link is later and longer — the Song court's watch for new stars, kept across nine centuries,
+  // The honest link is later and longer — the court's watch for new stars, kept dynasty after dynasty,
   // is the record twentieth-century astronomers used to place the Crab Nebula's remnant at the guest star
   // of 1054. It still runs, eventually, into the same modern star atlas this game's own atlas descends from.
   heirloom:{
     name:'客星',latin:'THE GUEST STAR RECORD',
-    gloss:'No straight line runs from here to Bayer’s plate: the Bureau’s watch for guest stars — new lights entered and dated for nine centuries — only reached Western astronomy in the twentieth, when the Crab Nebula was traced back to the light the Song court logged in 1054.',
+    gloss:'No straight line runs from here to Bayer’s plate: the Bureau’s watch for guest stars — new lights entered and dated, dynasty after dynasty — did its great work for Western astronomy only in the twentieth century, when the Crab Nebula was traced back to the light the Song court logged in 1054.',
     art:()=>scrollCatGuestStar()
   }
 });

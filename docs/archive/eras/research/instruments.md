@@ -465,7 +465,9 @@ the "Instrument-mode depiction" column is design work built on top of it and is 
   summaries, not a primary text read directly this session.** The specific radii (Marāgha's quadrant
   "about 40 m," its armillary sphere "about 160 cm") are widely repeated across independent sources
   reached this session but should be traced to a named primary or peer-reviewed source before being
-  presented as more precise than "on the order of." The Samarkand building's diameter, height and
+  presented as more precise than "on the order of." *Checked 2026-09-30: the peer-reviewed survey
+  arXiv:2511.19559 gives Marāgha's mural quadrant a radius of 4.3 m, not 40 m; the 40 m looks borrowed from
+  Samarkand's Fakhrī sextant, and the game no longer states a radius (docs/KNOWLEDGE-AUDIT.md).* The Samarkand building's diameter, height and
   trench width, and its ~1420 construction start, are marked (unverified) in §5 for the same reason
   and should not be treated as more solid than the `globe.md`-sourced figures they sit beside.
 - **Engraving-and-gilding technique (§8) generalises from engraving and metalworking practice

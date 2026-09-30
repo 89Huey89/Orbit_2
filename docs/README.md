@@ -19,6 +19,10 @@ door only and builds nothing toward the progression.
 proposals for fixes, effects and rendering. It adds to the root `ART-AUDIT-TODO.md` rather than
 repeating it.
 
+[KNOWLEDGE-AUDIT.md](KNOWLEDGE-AUDIT.md) reads all eight centuries for what they teach: what reaches the
+player, which statements were wrong (corrected with it), what still contradicts its own claim, and where
+the game could teach more — including options for what JOURNEY.md §9.2's rounds could reveal.
+
 ## `archive/eras/` — the eight-era progression plan
 
 Nothing here describes shipped behaviour, with seven exceptions: Era I (`01-rock.md`), Era II

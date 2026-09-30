@@ -61,8 +61,9 @@ const CEILING_WORD={
   shield:{q:[CEILING_RG.ikm],tr:'ikm',gl:'shield'},
   star:{q:[[CEILING_G.star]],tr:'sbꜣ',gl:'star'}
 };
-// The columns beside the route are decan-name columns on the wall itself. These are the words the
-// vocabulary above can spell in full; the order is fixed so the sheet paints identically every load.
+// The columns beside the route stand where TT353 sets its decan names, but what they spell is the vocabulary
+// above, which holds none of those names — the frontispiece's source line says so rather than letting the
+// columns pass for the decans. The order is fixed so the sheet paints identically every load.
 const CEILING_COLUMNS=['hour','foreleg','star','water','sah','apep','nun','white','red','shu','sekhmet','set','eye','shield'];
 // The twelve month circles are captioned from the same checked vocabulary rather than an invented
 // calendar: twelve of CEILING_WORD's fourteen entries are enough to give every wheel a caption line
@@ -2465,7 +2466,7 @@ defineCentury(2,{
       laps=Math.floor(log.bestRow/CEILING_DAWN_ROW);
     return [
       ['Furthest hour reached',cleared?ceilingHourLabel(cleared-1):'Not yet cast off'],
-      ['Decans of the night passed',commas(cleared)+' / '+commas(CEILING_HOURS.length)],
+      ['Hours of the night passed',commas(cleared)+' / '+commas(CEILING_HOURS.length)],
       ['Dawns witnessed',commas(laps)+' '+(laps===1?'night':'nights')+' sailed clean to sunrise']
     ];
   },
@@ -2507,7 +2508,7 @@ defineCentury(2,{
       stat:'bestRow',threshold:CEILING_DAWN_ROW,art:()=>artLine(artArc(60,50,28,Math.PI,TAU),1.6)+artRays(60,50,30,38,9,Math.PI)+artFill(artStar(60,50,4,5,1.6),.9)},
     {id:'chronicle',name:'THE CHRONICLE SAILED',latin:'',describe:()=>'Finish the Ceiling’s Chronicle: sail all twelve hours to dawn in one flight.',
       stat:'won',threshold:1,art:()=>artLine(artArc(60,50,28,Math.PI,TAU),1.8)+artRays(60,50,30,40,12,Math.PI)+artFill(artStar(60,50,4,6,1.9),.95)+artLine('M26 58H94',1,.55)},
-    {id:'allDecans',name:'ALL TWELVE DECANS',latin:'',describe:()=>'Pass every one of the twelve hours’ own gates.',
+    {id:'allDecans',name:'ALL TWELVE HOURS',latin:'',describe:()=>'Pass every one of the twelve hours’ own gates.',
       value:log=>Math.min(CEILING_HOURS.length,Math.floor(log.bestRow/CEILING_HOUR_ROWS)),threshold:CEILING_HOURS.length,
       art:()=>artRing(60,36,22,1.2,.85)+Array.from({length:12},(_,k)=>artFill(artStar(60+Math.cos(k/12*TAU-Math.PI/2)*22,36+Math.sin(k/12*TAU-Math.PI/2)*22,4,2.6,.85),.9)).join('')},
     {id:'doubleDawn',name:'THE SUN REBORN TWICE',latin:'',describe:()=>'Sail two full nights’ worth of hours without the run ending — the dawn come round again.',
@@ -2517,11 +2518,13 @@ defineCentury(2,{
       stat:'playSeconds',threshold:1800,art:()=>artRing(60,36,22,1.4)+artLine('M60 36V20M60 36L72 44',1.4)+artDot(60,36,1.8,.9)}
   ],
   // LINKING.md's "Unlocks, later": the Ceiling's decans, earning the atlas its own Dendera zodiac — the
-  // temple ceiling that later gathered the same twelve hours into one circular sphere. Handed down once
+  // temple ceiling that later gathered all thirty-six decans round the twelve signs in one circular sphere.
+  // Twelve is the signs' number and the hours', never the decans': a night's twelve hours were each marked
+  // by a decan rising, but the year kept thirty-six of them, one to every ten days. Handed down once
   // the Chronicle is sailed to dawn, or the Journey is climbed past this era.
   heirloom:{
     name:'The Dendera zodiac',latin:'Zodiacus Denderae',
-    gloss:'The night’s twelve decans, once cut into a ring around a temple ceiling at Dendera, turn again as a sphere on the atlas’s own construction plate.',
+    gloss:'The thirty-six decans and the twelve signs, once cut into a ring on a temple ceiling at Dendera in the last century BCE, turn again as a sphere on the atlas’s own construction plate.',
     art:()=>artRing(60,36,26,1.3)+artRing(60,36,20,.7,.6)+artLine(artRays(60,36,20,26,12,-Math.PI/2),.6,.55)+
       Array.from({length:12},(_,k)=>artFill(artStar(60+Math.cos(k/12*TAU-Math.PI/2)*23,36+Math.sin(k/12*TAU-Math.PI/2)*23,4,2.2,.7),.85)).join('')+
       artFill(artStar(60,36,4,5,1.6),.95)

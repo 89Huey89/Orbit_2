@@ -62,7 +62,8 @@ either tool are labelled as such in the text, in the same spirit as the evidence
   and, per search summaries, the oldest known illustration of an endless chain drive. In 1126,
   during the Jurchen conquest of Kaifeng, the tower was dismantled and carried off; the treatise
   preserved the design.
-- **The imperial Bureau of Astronomy** — Sitianjian (司天監) under the Tang and Song, Qintianjian
+- **The imperial Bureau of Astronomy** — Taishiju (太史局) in the early Tang, when the Dunhuang chart was
+  drawn, renamed Sitiantai (司天臺) in 758 (checked 2026-09-30, docs/KNOWLEDGE-AUDIT.md); Sitianjian (司天監) under the Song, Qintianjian
   (欽天監) from the Yuan/Ming, with a separate Huihui Sitianjian (回回司天監, "Muslim Bureau of
   Astronomy") founded 1271 for Central and West Asian astronomers alongside the Han bureau (search
   summary). Its remit: continuous observation, calendar production, and reading celestial events as
