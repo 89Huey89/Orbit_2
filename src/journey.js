@@ -20,7 +20,7 @@ let runMode='free',journeyRun=0;
 // from: the orbits watched, how many were held whole and how many were left before half their arc, and what
 // was actually banked. It survives the folds a hidden page makes and is cleared only as a run begins.
 let journeyTally={orbits:0,whole:0,early:0,banked:0};
-function emptyJourney(){return {era:1,knowledge:0,milestones:{},unlocked:[1],bests:{}};}
+function emptyJourney(){return {era:1,knowledge:0,milestones:{},unlocked:[1],bests:{},rounds:0};}
 function readJourney(){
   const out=emptyJourney();
   let raw=null;
@@ -35,6 +35,8 @@ function readJourney(){
   if(Array.isArray(raw.unlocked))for(const e of raw.unlocked){const n=Math.floor(Number(e));if(n>=1&&n<=JOURNEY_ERAS)unlocked.add(n);}
   out.unlocked=[...unlocked].sort((a,b)=>a-b);
   out.bests=cleanCounts(raw.bests);
+  // The circles closed (§9.1), a field a document written before the circle simply lacks and reads as none.
+  out.rounds=Math.max(0,Math.floor(Number(raw.rounds)||0));
   return out;
 }
 const journey=readJourney();
@@ -56,9 +58,13 @@ function journeySign(era){
   if(runMode!=='journey'||dailyOn||era!==journey.era||journeyEraOf()!==era||journeySigned())return false;
   journey.milestones['sig'+era]=true;saveJourney();return true;
 }
-// The ladder is climbed once the last century is known. What follows is the Final Frontier of §1.7: a Journey
-// run goes on at the last rung for as long as it survives, and its score is the one record kept for it.
+// The ladder is climbed once the last century is known. It does not end there (JOURNEY.md §9.1 and §9.2): the
+// last century's turn closes the circle back to the cave, and the Final Frontier is a door of its own.
 const journeyComplete=(doc=journey)=>doc.era>=JOURNEY_ERAS&&journeyReady(doc);
+// The century a known era turns to: the next one up, and from the last, the first.
+const journeyNext=era=>era>=JOURNEY_ERAS?1:era+1;
+// The Final Frontier and the Marathon are opened by the first closing of the circle.
+const journeyCircled=(doc=journey)=>doc.rounds>0;
 // A run's knowledge, banked as each body is released and zeroed whenever it is folded in, so a second
 // fold after the page has been hidden adds only what has been observed since the first.
 function resetJourneyRun(){journeyRun=0;journeyTally={orbits:0,whole:0,early:0,banked:0};}
@@ -89,13 +95,17 @@ function journeyCommit(ending=false){
 // inside a run, as a transition that never stops it; until that transition is built (stage 5), a ready
 // era is turned over between runs instead, as the next Journey run is begun. `playable` says whether the
 // era above has anything to be flown on yet, so the frontier never climbs onto a century not drawn.
+// The last century's turn is the circle's (§9.1): the probe replicates, the daughter finds the Earth as it was
+// when the Hall of the Bulls was painted, and the climb begins a new round on the cave wall. The round clears
+// what the climb banked, feats included, exactly as the deliberate restart does, and keeps everything else.
 function journeyAdvance(playable){
-  if(!journeyReady()||journey.era>=JOURNEY_ERAS||!playable(journey.era+1))return false;
+  if(!journeyReady()||!playable(journeyNext(journey.era)))return false;
+  if(journey.era>=JOURNEY_ERAS){journey.rounds++;journey.era=1;journey.knowledge=0;journey.milestones={};journeyRun=0;saveJourney();return true;}
   journey.era++;journey.knowledge=0;journeyRun=0;
   if(!journey.unlocked.includes(journey.era))journey.unlocked.push(journey.era);
   saveJourney();return true;
 }
-// The deliberate restart of §1.2 (the Final Frontier's record is kept with the rest): the frontier back to era I and its knowledge cleared, while the eras
+// The deliberate restart of §1.2 (the circles closed and the Final Frontier's record are kept with the rest): the frontier back to era I and its knowledge cleared, while the eras
 // already reached stay open to Free Play and every record stays where it was. The page confirms it first;
 // nothing calls this on its own.
 function journeyReset(){
@@ -122,7 +132,8 @@ const records=readRecords();
 function recordContext(){
   if(dailyOn)return null;
   const era=journeyEraOf();
-  if(runMode==='journey')return {journey:true,key:journeyComplete()?'frontier':String(era)};
+  if(runMode==='frontier')return {journey:true,key:'frontier'};
+  if(runMode==='journey')return {journey:true,key:String(era)};
   // A reading that is not the century's own default is kept apart from it: ':endless' for a century whose
   // default is its Chronicle, ':chronicle' for the atlas, whose default is Endless.
   const reading=typeof eraReading==='function'?eraReading():'',fallback=typeof readingDefault==='function'?readingDefault():reading;

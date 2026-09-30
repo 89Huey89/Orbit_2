@@ -673,7 +673,9 @@ simulation fixture that two transitions in one run leave score and streak monoto
 
 ### The ends of the climb · *landed*
 
-(2026-09-27.) Knowing era VIII climbs the ladder (`journeyComplete()` in `src/journey.js`), said once on the
+*Amended 2026-09-30 (§9.1, §9.2): the last rung now closes the circle back to era I, and the Final Frontier is a
+door of its own opened by the first circle, rather than what a Journey run becomes at the last rung. What
+follows is the record as it was built.* (2026-09-27.) Knowing era VIII climbs the ladder (`journeyComplete()` in `src/journey.js`), said once on the
 sheet. From then on a Journey run is the **Final Frontier** of §1.7: it goes on at the last rung, and its
 score is kept as the Journey document's `bests.frontier`, the primary endless record, apart from the last
 rung's own best. The deliberate restart of §1.2 has a control at last: BEGIN THE JOURNEY AGAIN in the
@@ -813,9 +815,10 @@ each is owed its own pass (§10, Open).
   The Journey then begins a **new round**: the frontier returns to era I and the knowledge banked is cleared,
   as `journeyReset()` already does for BEGIN THE JOURNEY AGAIN, while every century reached stays open,
   every heirloom stays on the atlas and every record is kept. The document counts how many times the circle
-  has been closed. This **replaces the Final Frontier** of §1.7 and "The ends of the climb": a Journey run no
+  has been closed. ~~This replaces the Final Frontier of §1.7 and "The ends of the climb": a Journey run no
   longer goes on at the last rung for ever; its endless record becomes the round's, and the rounds closed
-  are the ladder's own lasting mark. (Lascaux is dated c. 17,000 BP; era I spans c. 40,000–3,000 BCE, so the
+  are the ladder's own lasting mark.~~ *Amended the same day (§9.2): the Final Frontier stays, as a mode of
+  its own, and the rounds closed are still the ladder's lasting mark.* (Lascaux is dated c. 17,000 BP; era I spans c. 40,000–3,000 BCE, so the
   date sits inside the century the circle returns to.)
 - **Era VII's black is vacuum as measurement**, as `07-flyby.md` proposed: a parallaxing star field, a faint
   standing texture of the DSN link (carrier lock, signal-to-noise, a Doppler trace), the odd cosmic-ray hit
@@ -831,6 +834,47 @@ each is owed its own pass (§10, Open).
   proof is built: a century the Journey has reached is open in Free Play, and of one not yet reached only the
   first chapter is open, as `LINKING.md`'s door-access line planned. The proof chapter is not built yet, and
   the gate stays off until it is, so no door is ever simply shut.
+
+### 9.2 · The circle amended, and the modes it opens · settled by the author, 2026-09-30
+
+Taken up later the same day, after a review of §9.1's circle raised two risks: that a second round asked of a
+player who had already climbed would read as a grind, and that the descent from the Probe's resolution to the
+cave's would read as a loss rather than a triumph. The author's answers, recorded here and not yet built:
+
+- **The Final Frontier is kept, as a mode.** The circle is how a Journey run leaves era VIII; the Final Frontier
+  no longer follows from the climb on its own but is a door of its own, opened by the first closing of the
+  circle: endless at the last rung, its score still `bests.frontier`, the primary endless record of §1.7.
+- **Marathon, opened by the first closing of the circle.** The whole ladder in **one run**, era I to era VIII,
+  without dying: a death ends the Marathon, and the next one starts again at the cave. Where the Journey banks
+  across runs, the Marathon banks nothing across them, so every century's gate has to be met inside the one
+  run — which is what makes it the hardcore reading. Read as an endless pass through the whole Journey, it
+  goes on round the circle rather than stopping at VIII. Like Free Play it never advances the Journey (§1.1).
+- **The descent is a zoom, and it is a mechanic of its own.** The turn from VIII back to I is not a recession
+  in the old medium like the seven below it (`src/recede.js`); it is shown as a zoom, and it needs new art and
+  new animation — nothing on the ladder yet moves this way. It is meant to catch the player unprepared: nothing
+  before it says the ladder is a circle.
+- **The zoom hints at more than it says.** Multiverse, panspermia, time running back on itself: the descent
+  suggests them without naming any, so that the daughter's Earth may be this one, another like it, or this one
+  seeded by the probe that finds it.
+- **A deeper layer, round by round.** What the first descent only hints at is built out over the rounds that
+  follow: each closing of the circle shows a little more of it, so the rounds after the first are the way into
+  a deeper level of the game rather than a repeat of the climb. This is also the answer to the grind: a
+  second round is flown for what it reveals.
+
+Three of the answers this list owed were given the same day, asked one by one:
+
+- **The zoom moves from the probe to a hand.** The probe's field of view, a distant point in it, a blue world,
+  a landscape, a cave, a wall, and at last a hand setting a dot on it: the same star the probe was looking at.
+- **The Marathon is one life, endless round the circle.** Every death starts it again in the cave; past era VIII
+  it goes through the circle into the second round, the third and on, and its record is the number of centuries
+  flown in the one run.
+- **What each round reveals is left for later.** The mechanism and the count of circles are built first; the
+  contents of the deeper layer are decided once they stand.
+
+Still owed, and not for an implementer to invent: what each round's layer reveals and in what order, and how the
+Marathon's in-run gates are set — the chapters are paced by knowledge banked over
+about five runs an era (§1.6, `ERA_THRESHOLD`), which one run cannot hold, so the Marathon needs gates of its
+own, measured with `probe.mjs --ladder` as the threshold was.
 
 ---
 
@@ -891,6 +935,24 @@ stages above.
 - *The Rock's triad by size* (2026-09-30, §9.1): `ROCK_TRIAD` recut from the Moon, a bright and a faint light
   to one bright light in three sizes, named THE LARGE, THE MIDDLE and THE SMALL LIGHT; seen at 430×932 with
   `npm run shots -- choose --era=rock`.
+- *The circle, the mechanism* (2026-09-30, §9.1 and §9.2): the Probe known turns to the cave
+  (`journeyNext`, `journeyAdvance`), inside a run through the same NEXT LANDING as every change of century or
+  between runs, and the Journey begins a new round with its knowledge and feats cleared. The document counts
+  the circles closed (`rounds`, read as none from a document written before it) and the line names the round
+  from the second on. A century climbed past stays known through a new round or a restart (`centuryKnown`
+  reads the eras reached), so the heirlooms stay on the atlas. The Final Frontier is a door of its own in the
+  MORE menu, opened by the first circle (`runMode==='frontier'`, `toggleFrontier`): the Probe flown endless,
+  keeping `bests.frontier` and never banking. A second round is by construction the first one again, so its
+  length is the ladder's own reading in `MEASUREMENTS.md`, 35 to 44 runs at the author's hand; no new
+  `probe.mjs` reading was needed for it.
+- *The descent, first pass* (2026-09-30, §9.2): the circle's turn is fallen through as a zoom rather than grown
+  over (`src/descent.js`, 6.6 s): the probe's field pushed into, the stars streaming, a blue world swelling from
+  a point, the land at dusk and a cave in the hill, the cave's dark, and a hand pressing a dot of ochre on the
+  body landed on while the Rock's sheet opens out from it. The three hints are there and unnamed: the daughter as
+  a spark gone ahead (panspermia), the world struck twice more beside itself (the multiverse), and the probe's
+  clock run back to T-17000.0 Y (time). The traveller is held in orbit through it and the dark held off; the
+  replay applies the same grace (`grace` on the log's era entry). Reduced motion turns the page plainly. Seen at
+  430×932 with `npm run shots -- descent`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -901,8 +963,11 @@ stages above.
   the stretch flown in the century below included; the page is not yet turned on the sheet itself.
 - **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
   in place rather than carried with the camera.
-- **The circle back to the cave** (§9.1): the Probe's replication, the Earth-like world as it was at
-  Lascaux, the run going on on the wall, and the Journey's new round in place of the Final Frontier.
+- **The descent, a second pass** (§9.2): the probe's replication drawn before the fall (the daughter is only a
+  spark on the wake so far), a sound of its own, and the layer each round reveals once the author has said what
+  it is — the descent is where a round's revelation would be shown.
+- **Marathon** (§9.2): the whole ladder in one run without dying, opened by the first closing of the circle;
+  its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
   `ENDLESS-HARD.md` and not built.
 - **The doors** (§9.1): the gate is built and off; it is turned on once the proof chapter of an unreached

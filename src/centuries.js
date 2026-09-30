@@ -109,11 +109,14 @@ function centuryUnlockedIds(){
 // ---------- What the centuries leave each other ----------
 // LINKING.md, "Links between eras": every century that is known leaves one heirloom in the atlas's own
 // catalogue. Known is the one thing both ways of playing it can say: its Chronicle flown to its ending in
-// Free Play, or the Journey climbed past it (the last century, once the ladder itself is climbed).
+// Free Play, or the Journey climbed past it (the last century, once the ladder itself is climbed). A century
+// climbed past stays known when the climb begins again, by the circle or by the restart: the century above it
+// was reached, and every one of the eight is known once the circle has been closed.
 function centuryKnown(era){
   if(era===5)return true;
   if(eraLog(era).won>0)return true;
-  return era<JOURNEY_ERAS?journey.era>era:journeyComplete();
+  if(journeyCircled())return true;
+  return era<JOURNEY_ERAS?journey.era>era||journey.unlocked.includes(era+1):journeyComplete();
 }
 const centuryTitle=era=>era===5?'The Atlas':(CENTURIES[era]&&CENTURIES[era].title)||'Century '+CENTURY_NUMERALS[era-1];
 // ---------- Each century's signature feat ----------

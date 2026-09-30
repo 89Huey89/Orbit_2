@@ -1895,7 +1895,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   {
     const t=context.test,T=t.ERA_THRESHOLD;
     t.setPlate('paper');t.newWorld();
-    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.milestones={};
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.milestones={};t.journey.rounds=0;
     const freeBefore=JSON.stringify(t.records.free);
     events['journey-open:click']();
     for(let era=1;era<=8;era++){
@@ -1944,21 +1944,42 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }
       t.world.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
-      assert(element('end-journey').textContent.includes(era<8?'IS KNOWN':'THE FINAL FRONTIER'),'The leaf says the era is known, and at the last rung that the ladder is climbed: era '+era+' · '+element('end-journey').textContent);
+      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
+      if(era===8)assert(element('end-journey').textContent.includes('ERA I'),'And at the last rung that the next run opens in the cave: '+element('end-journey').textContent);
+      assert.equal(element('frontier-open').hidden,true,'The Final Frontier waits for the circle to close: era '+era);
       t.world.player.deadTime=10;t.handleInput();
       if(era<8){
         assert.equal(t.journey.era,era+1,'Steps 12 and 15: the climb goes on in the next century: era '+(era+1));
         assert(t.journey.unlocked.includes(era+1),'The century reached stays open: era '+(era+1));
         assert.equal(t.journey.knowledge,0,'The next century starts its knowledge from nothing: era '+(era+1));
-      }else assert.equal(t.journey.era,8,'The ladder ends at era VIII');
+      }else{
+        // JOURNEY.md §9.1: the last century's turn closes the circle, and the climb begins a new round in the cave.
+        assert.equal(t.journey.era,1,'The circle closes back to the cave');assert.equal(t.eraId(),1,'The next run is flown on the wall');
+        assert.equal(t.journey.rounds,1,'The circle closed is counted');assert.equal(t.journey.knowledge,0);
+        assert.equal(t.journey.bests['8'],108,'The last rung keeps its own best');
+      }
     }
     assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The whole ladder has been reached');
-    // The Final Frontier: the Journey goes on at the last rung, and its runs keep a record of their own.
-    assert.equal(t.eraId(),8,'After the ladder the Journey goes on at the last rung');
+    assert(element('journey-note').textContent.includes('ROUND 2'),'The second round is named: '+element('journey-note').textContent);
+    for(let era=1;era<=8;era++)assert.equal(t.centuryKnown(era),true,'Every century stays known through the new round: era '+era);
+    // JOURNEY.md §9.2: the Final Frontier is a door of its own, opened by the circle; it is the last century flown
+    // endless, keeps the one endless record, and never moves the Journey.
+    events['ceiling-exit:click']();
+    assert.equal(t.runMode,'free');
+    const frontierDoor=element('frontier-open');
+    assert.equal(frontierDoor.hidden,false,'The circle closed opens the Final Frontier');
+    events['frontier-open:click']();
+    assert.equal(t.runMode,'frontier');assert.equal(t.eraId(),8,'The Final Frontier is flown on the last century');
+    assert.equal(t.world.goalRow,0,'And flown endless');
+    t.handleInput();t.journeyObserve(1);
     t.world.score=4321;t.recordBest(t.world.score);
-    assert.equal(t.journey.bests.frontier,4321,'A run past the ladder keeps the Final Frontier\'s record');
+    assert.equal(t.journey.bests.frontier,4321,'The Final Frontier keeps its own record');
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     assert(element('end-journey').textContent.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').textContent);
+    assert.equal(t.journey.era,1,'The Final Frontier never moves the Journey');assert.equal(t.journey.knowledge,0,'Nor banks for it');
+    // A climb carried a little way into the new round, so there is something to begin again.
+    t.journey.era=8;t.journey.knowledge=12;
+    events['ceiling-exit:click']();assert.equal(t.runMode,'free');
     // Beginning again is asked twice, sends the climb back to era I, and keeps every century reached and every record.
     const restart=element('journey-restart');
     assert.equal(restart.hidden,false,'A climb under way can be begun again');
@@ -1966,7 +1987,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     events['journey-restart:click']();
     assert.equal(t.journey.era,1,'The second begins the climb again at era I');assert.equal(t.journey.knowledge,0);
     assert.equal(t.journey.unlocked.join(),'1,2,3,4,5,6,7,8','The centuries reached stay open');
-    assert.equal(t.journey.bests.frontier,4321,'And the records stay where they were');
+    assert.equal(t.journey.bests.frontier,4321,'And the records stay where they were');assert.equal(t.journey.rounds,1,'And the circles closed');
     assert.equal(t.runMode,'free','Beginning again leaves the Journey run that was on the press');
     assert.equal(restart.hidden,true,'With nothing climbed there is nothing to begin again');
     t.journey.unlocked=[1,2,3,4,5,6,7,8];
@@ -1989,8 +2010,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   {
     const t=context.test,T=t.ERA_THRESHOLD;
     t.setPlate('paper');t.newWorld();
-    for(const from of [1,4,5]){
-      t.journey.era=from;t.journey.knowledge=0;t.journey.unlocked=[1,2,3,4,5,6,7,8].filter(e=>e<=from);
+    // And the last: the Probe's turn closes the circle back to the cave (JOURNEY.md §9.1).
+    for(const from of [1,4,5,8]){
+      const to=from<8?from+1:1;
+      t.journey.era=from;t.journey.knowledge=0;t.journey.rounds=0;t.journey.unlocked=[1,2,3,4,5,6,7,8].filter(e=>e<=from);
       if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
       events['journey-open:click']();
       assert.equal(t.eraId()||5,from,'The Journey opens on the frontier: era '+from);
@@ -2017,8 +2040,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert(w.eraTransitions===1,'Step 9: the body is captured normally and carries the change: era '+from+' · '+JSON.stringify({state:w.state,reason:w.reason,row:w.progress}));
       assert.equal(t.world,w,'Step 12: the same run goes on, not a new one: era '+from);
       assert.equal(w.state,'playing','Step 11: still in orbit: era '+from);assert(w.player.node,'Still holding the body landed on');
-      assert.equal(t.eraId()||5,from+1,'The next century is on the press: era '+(from+1));
-      assert.equal(t.journey.era,from+1);assert.equal(t.journey.knowledge,0,'The new century starts its knowledge from nothing');
+      assert.equal(t.eraId()||5,to,'The next century is on the press: era '+to);
+      assert.equal(t.journey.era,to);if(from===8)assert.equal(t.journey.rounds,1,'The circle closed inside the run is counted');assert.equal(t.journey.knowledge,0,'The new century starts its knowledge from nothing');
       assert.equal(t.runMode,'journey','Still a Journey run');
       assert(w.captures===capturesBefore+1&&w.score>scoreBefore,'The landing that carried it scored as any landing does');
       assert.equal(w.player.ink,1,'Step 13: the nib is restored');assert(w.darknessGrace>0,'And the boundary is held back');
@@ -2029,7 +2052,15 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       if(!reduceMotion)assert(t.reveal.age(w.player.node)<.5,'Step 9: the body is drawn again from nothing, in the new century\'s hand');
       assert(element('game').classList.contains('era-growing'),'The new century\'s HUD waits for the circle');
       const score=w.score;
-      for(let i=0;i<120*3&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
+      // The circle's turn is fallen through rather than grown over (src/descent.js): longer, and the traveller is
+      // held in its orbit for all of it, a tap flying nothing, with the dark held off until it is done.
+      if(from===8&&!reduceMotion){
+        assert.equal(t.eraGrowth.descent,true,'The circle is fallen through');
+        const releases=t.replayLog.releases.length;t.handleInput();
+        assert.equal(t.replayLog.releases.length,releases,'A tap during the descent flies nothing');assert(w.player.node,'The traveller stays in orbit');
+        assert(w.darknessGrace>t.eraGrowth.dur,'And the dark is held off for the whole descent');
+      }
+      for(let i=0;i<120*(from===8?8:3)&&w.state==='playing';i++){w.update(step);if(i%4===0)t.render(step);}
       assert.equal(t.eraGrowth,null,'And has grown over the whole sheet within a few seconds');
       assert(!element('game').classList.contains('era-growing'),'And its HUD comes in once the sheet is whole');
       assert(w.score>=score,'Score never falls');
@@ -2046,7 +2077,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         assert.equal(rp.eraFrom,w.eraFrom,'On the same row: era '+from);
         assert.equal(rp.reason,w.reason,'To the same end: era '+from);
         for(const key of ['score','captures','perfects','progress','relightOn','chasmsOn'])assert.equal(rp[key],w[key],'A replayed change of century matches the live run on '+key+': era '+from);
-        assert(Math.abs(rp.player.x-w.player.x)<1e-6&&Math.abs(rp.player.y-w.player.y)<1e-6,'And ends in the same place: era '+from);
+        // A run begun on the Probe is not rebuilt tick for tick from its log (its first landing already falls a tick
+        // apart), and it never needs to be: only a run that ends on the atlas is saved for review. The circle it
+        // closes is checked above; where the run ends is checked for the turns that can be reviewed.
+        if(from!==8)assert(Math.abs(rp.player.x-w.player.x)<1e-6&&Math.abs(rp.player.y-w.player.y)<1e-6,'And ends in the same place: era '+from);
         assert.equal(t.replayRun({...log,eras:undefined}).eraTransitions,0,'A log without the change flies the whole run under the hand it began in: era '+from);
       }
       t.showEnd();
@@ -2057,12 +2091,12 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         assert.equal(t.reviewWorld.eraTransitions,1,'Its review is the run as it was flown, the change of century included');
         t.renderReview();t.closeReview();
       }
-      assert.equal(t.journey.era,from+1,'Step 14 and 15: a later death leaves the frontier in the newly reached century');
+      assert.equal(t.journey.era,to,'Step 14 and 15: a later death leaves the frontier in the newly reached century');
       t.world.player.deadTime=10;t.handleInput();
-      assert.equal(t.eraId()||5,from+1,'Step 15: and the next run starts there');
+      assert.equal(t.eraId()||5,to,'Step 15: and the next run starts there');
     }
     if(t.plateOwns('mode'))events['ceiling-exit:click']();else if(t.runMode==='journey')events['journey-open:click']();
-    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;
     t.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};

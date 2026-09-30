@@ -1228,7 +1228,7 @@ defineVoice('probe',{
     maxSpeed:'FULL VELOCITY · HOLD THE COURSE',
     fullCharge:'FEED FULL · VELOCITY IS YOURS',
     rough:'A ROUGH INSERTION · BASE {base}',
-    skip:'{count} MASS{plural} PASSED BY · +{bonus}',
+    skip:'MASS PASSED BY ×{count} · +{bonus}',
     reprieve:'SURVEY 3 STARS · +60 & A REPRIEVE',
     slingOrbit:'CIRCLE FOR A DV ASSIST · TAP TO LEAVE',
     fading:'A DECAYING RETURN · KEEP MOVING',

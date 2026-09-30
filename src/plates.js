@@ -154,7 +154,7 @@ const activeDifficulty=()=>dailyOn?'classic':difficulty;
 // records in src/journey.js): the daily's own, a Journey run's for its era, or Free Play's for this
 // century and reading. A century that names its own `best` hand painter (the Rock's rockBest(), read off
 // its own orbit.rock.v1) keeps answering with that in Free Play, since that record is the era's own.
-const currentBest=()=>dailyOn?dailyBest:plateOwns('score')&&runMode!=='journey'&&handFor('best')?handFor('best')():contextBest();
+const currentBest=()=>dailyOn?dailyBest:plateOwns('score')&&runMode==='free'&&handFor('best')?handFor('best')():contextBest();
 function recordBest(score){
   // Every record is keyed by its own context, so no century, reading or mode can rewrite a number another
   // one earned; the atlas's is simply the one keyed by era V in Free Play.

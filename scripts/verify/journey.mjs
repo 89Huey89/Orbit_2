@@ -16,13 +16,13 @@ export async function runJourneyChecks(){
       storage:{get:(k,f)=>over.blocked?f:(saved.get(k)??f),set:(k,v)=>{if(!over.blocked)saved.set(k,String(v));}}};
     context.eraId=()=>context.plate;
     vm.createContext(context);
-    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},get tally(){return journeyTally},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,journeySigned,journeySign,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,RECORDS_KEY};',context);
+    vm.runInContext(journeySource+'\nthis.j={get doc(){return journey},get run(){return journeyRun},get tally(){return journeyTally},set mode(m){runMode=m},journeyObserve,journeyCommit,journeyReset,journeyAdvance,journeyMilestones,journeyReady,journeySigned,journeySign,resetJourneyRun,ERA_THRESHOLD,JOURNEY_KEY,get records(){return records},contextBest,keepContextBest,eraOpen,journeyComplete,journeyNext,journeyCircled,RECORDS_KEY};',context);
     return {j:context.j,context,saved};
   };
   const held=(sweep)=>({state:'dead',player:{node:sweep===null?null:{},orbitSweep:sweep||0}});
   {
     const {j,saved}=load();
-    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:1,knowledge:0,milestones:{},unlocked:[1],bests:{}},'A fresh store opens the Journey at era I with nothing banked');
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:1,knowledge:0,milestones:{},unlocked:[1],bests:{},rounds:0},'A fresh store opens the Journey at era I with nothing banked');
     // Free Play is the default, and observes nothing however much is flown.
     j.journeyObserve(1);assert.equal(j.run,0,'Free Play must bank nothing toward the Journey');
     assert.equal(j.journeyCommit(true),null,'Only a Journey run may fold anything into the Journey');
@@ -78,14 +78,15 @@ export async function runJourneyChecks(){
     assert.equal(j.journeyCommit(true).of,4,'The atlas has its four chapters for milestones');assert.equal(j.doc.knowledge,4);
   }
   // Whatever the store holds, the Journey opens: malformed, blocked, or out of range.
-  for(const raw of ['{ not a journey','[1,2]','null','{"era":99,"knowledge":-4,"unlocked":"all","bests":[3]}','{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}']){
+  for(const raw of ['{ not a journey','[1,2]','null','{"era":99,"knowledge":-4,"unlocked":"all","bests":[3],"rounds":-3}','{"era":2,"rounds":"many"}','{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}']){
     const {j}=load({'orbit.journey.v1':raw});const d=j.doc;
     assert(d.era>=1&&d.era<=8&&d.knowledge>=0&&d.knowledge<=j.ERA_THRESHOLD,'A malformed Journey document reads as a sane one: '+raw);
     assert(d.unlocked.includes(1)&&d.unlocked.includes(d.era),'The frontier and era I are always open: '+raw);
     assert(d.unlocked.every(e=>Number.isInteger(e)&&e>=1&&e<=8),'Only real eras are ever open: '+raw);
+    assert(Number.isInteger(d.rounds)&&d.rounds>=0,'The circles closed are a count: '+raw);
   }
   {const {j}=load({'orbit.journey.v1':'{"era":4,"knowledge":1e9,"unlocked":[0,2,9,"3"],"milestones":{"x":true,"y":1}}'});
-    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:50,milestones:{x:true},unlocked:[1,2,3,4],bests:{}});}
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc)),{era:4,knowledge:50,milestones:{x:true},unlocked:[1,2,3,4],bests:{},rounds:0});}
   {
     // Until the in-run transition exists, a known era is turned over between runs, and only onto a century
     // that is drawn.
@@ -131,21 +132,33 @@ export async function runJourneyChecks(){
     assert.deepEqual([1,2,3,4,5,6,7,8].filter(e=>j.eraOpen(e,true)),[1,2,3,5],'Gated, a century is open once the Journey has reached it, and the atlas always');
   }
   {
-    // The ladder climbed: the last century known, and the Journey's runs from then on keep the Final Frontier's
-    // record (§1.7), apart from the last rung's own. A restart sends the climb back and keeps that record.
-    const {j,context}=load({'orbit.journey.v1':JSON.stringify({era:8,knowledge:49,unlocked:[1,2,3,4,5,6,7,8],bests:{8:300}})},{plate:8});
+    // The ladder climbed and the circle closed (§9.1, §9.2): the last century known turns back to the cave, a new
+    // round begins with the climb's knowledge and feats cleared, and the Final Frontier is a mode of its own
+    // whose record (§1.7) stands apart from the last rung's. A restart sends the climb back and keeps the rounds.
+    const {j,context,saved}=load({'orbit.journey.v1':JSON.stringify({era:8,knowledge:49,unlocked:[1,2,3,4,5,6,7,8],bests:{8:300}})},{plate:8});
+    assert.equal(j.doc.rounds,0,'A document written before the circle reads as no round closed');
     assert.equal(j.journeyComplete(),false,'Short of the threshold the last rung is not yet climbed');
-    j.mode='journey';assert.equal(j.contextBest(),300,'Until then a Journey run at the last rung is measured against its own best');
+    j.mode='journey';assert.equal(j.contextBest(),300,'A Journey run at the last rung is measured against its own best');
     context.world={state:'dead',player:{node:null}};j.journeyObserve(1);j.journeyCommit(true);
     assert.equal(j.journeyComplete(),false,'Its knowledge alone does not climb it: the Probe\'s own feat is owed');
     j.journeySign(8);
     assert.equal(j.journeyComplete(),true,'Knowing the last century and flying its feat climbs the ladder');
-    assert.equal(j.journeyAdvance(()=>true),false,'There is no century above the last to turn to');
-    assert.equal(j.contextBest(),0,'From then on a Journey run is measured against the Final Frontier');
+    assert.equal(j.journeyNext(8),1,'The last century turns to the first');
+    assert.equal(j.journeyAdvance(e=>e!==1),false,'The circle never closes onto a cave with nothing drawn');
+    assert.equal(j.journeyCircled(),false);
+    assert.equal(j.journeyAdvance(()=>true),true,'The known last century closes the circle');
+    assert.equal(j.doc.era,1,'The climb goes on in the cave');assert.equal(j.doc.knowledge,0,'Its knowledge begins again');
+    assert.deepEqual(JSON.parse(JSON.stringify(j.doc.milestones)),{},'And its feats are to be flown again');
+    assert.equal(j.doc.rounds,1,'The circle closed is counted');assert.equal(j.journeyCircled(),true);
+    assert.equal(j.doc.unlocked.join(),'1,2,3,4,5,6,7,8','Every century reached stays open');
+    context.plate=1;assert.equal(j.contextBest(),0,'The new round\'s cave has no best yet');context.plate=8;
+    assert.equal(JSON.parse(saved.get('orbit.journey.v1')).rounds,1,'And kept on the document');
+    j.mode='frontier';assert.equal(j.contextBest(),0,'The Final Frontier is measured against its own record');
     assert.equal(j.keepContextBest(900),true);assert.equal(j.doc.bests.frontier,900,'The Final Frontier keeps its own record');
     assert.equal(j.doc.bests['8'],300,'Apart from the last rung\'s');
+    j.mode='frontier';j.journeyObserve(1);assert.equal(j.journeyCommit(true),null,'The Final Frontier never banks for the Journey');
     j.journeyReset();assert.equal(j.doc.era,1);assert.equal(j.doc.bests.frontier,900,'A restart keeps the Final Frontier\'s record');
-    assert.equal(j.journeyComplete(),false,'And the ladder is to be climbed again');
+    assert.equal(j.doc.rounds,1,'And the circles closed');
   }
   {const {j,context,saved}=load({},{blocked:true,plate:1});j.mode='journey';context.world=held(null);j.journeyObserve(1);
     assert.equal(j.journeyCommit(true).open,0,'Blocked storage is an ordinary condition: the Journey plays on in memory');assert.equal(saved.size,0);}
