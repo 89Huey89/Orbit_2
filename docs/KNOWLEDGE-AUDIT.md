@@ -191,6 +191,12 @@ cheap steps would close most of the gap:
    the Heart, is Antares*, *the Weaver Girl and the Herd Boy are Vega and Altair*, *twenty-eight lodges,
    about one for each night of the Moon's round*, *365¼ dù, a day for each of the Sun's*; pinyin beside
    the Chinese; a source line.
+   *Built 2026-09-30:* a line as each palace opens (its quarter, season and lodges, the 365¼ dù and the
+   Moon's round among them), a note under each of the twelve star offices, pinyin beside every mansion and
+   office on the leaf, and a source line on the frontispiece that names the Dunhuang chart and calls the
+   office and school each light is filed under a gameplay translation — which also discloses §2.2's
+   arbitrary pairing, though it does not bind it. The offices are kept on the leaf through a new
+   `orbit.scroll.v1`, a bitmask of the offices ever filed.
 4. **Show the glosses that exist.** `CEILING_WORD`'s transliterations and glosses ("Sah · Orion", "the
    Foreleg"); the hazard Latin (VORAGO, MACULA, VENTUS on the atlas, *Nihil visum* and *Manus tremula*
    on the Lens). The charges already have the right pattern — `SCUTUM ARMED · SURVIVES ONE VORTEX` — and

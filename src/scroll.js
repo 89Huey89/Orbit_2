@@ -54,6 +54,18 @@ const SCROLL_NAMES=['天江','傅說','東咸','西咸','鍵閉','天市','帝�
 // The twelve charts of the catalogue, as the twelve asterisms each is filed under on this sheet.
 const SCROLL_CHARTS=[['北斗','THE NORTHERN DIPPER'],['軒轅','XUANYUAN'],['織女','THE WEAVER GIRL'],['河鼓','THE RIVER DRUM'],['天津','THE HEAVENLY FORD'],['五車','THE FIVE CHARIOTS'],
   ['參','THREE STARS'],['昴','THE HAIRY HEAD'],['心','THE HEART'],['天市','THE MARKET'],['北極','THE NORTH POLE'],['南斗','THE SOUTHERN DIPPER']];
+// The same twelve and the twenty-eight mansions below, read aloud: plain pinyin without tone marks, the
+// romanisation a reader can say, set beside the English wherever the leaf names one.
+const SCROLL_CHART_PINYIN=['Beidou','Xuanyuan','Zhinü','Hegu','Tianjin','Wuche','Shen','Mao','Xin','Tianshi','Beiji','Nandou'];
+// Which of the twelve a run has ever filed, a bit apiece, kept so that each one's card can carry the note the
+// sheet set under it as it closed (docs/KNOWLEDGE-AUDIT.md). It is the one thing the Scroll keeps beyond the
+// era log, and it is written by the same hand every century's closing chart calls (`caveAnimal`).
+const SCROLL_KEY='orbit.scroll.v1';
+function scrollRead(){
+  let raw=null;try{raw=JSON.parse(storage.get(SCROLL_KEY,'null'));}catch(_){raw=null;}
+  return {v:1,offices:clamp(Math.floor(Number(raw&&raw.offices)||0),0,4095)};
+}
+function scrollNoteOffice(i){const r=scrollRead(),b=1<<(((i|0)%12+12)%12);if(!(r.offices&b)){r.offices|=b;storage.set(SCROLL_KEY,JSON.stringify(r));}}
 // The twenty-eight mansions in their traditional widths in dù, eastern palace first: 365 between them
 // and the quarter-dù left over. The paper's side bands count the climb in these, so a run is literally a
 // passage round the mansions, and one column drawn as wide as another can carry a visibly different scale.
@@ -706,7 +718,8 @@ defineHand('scroll',{
   chartStar:scrollNone,
   nib:scrollNone,
   hazardReveal:scrollHazardReveal,
-  ready:scrollFaceReady
+  ready:scrollFaceReady,
+  caveAnimal:i=>scrollNoteOffice(i)
 });
 
 // ---------- The vocabulary: only what this era calls differently ----------
@@ -715,9 +728,28 @@ defineHand('scroll',{
 // a chapter one of the four palaces of the sky, the score is counted in dù, the currency is the ink-stick,
 // the boundary is hundun, the formless chaos before the world had shape. Names from 03-scroll.md.
 defineVoice('scroll',{
-  // Every voice is read over the atlas's, so a century that has no lore of its own yet says so, rather than
-  // speaking the atlas's four lines and twelve notes over its own palaces.
-  chapterLines:null,chartNotes:null,
+  // The curator's lines, one as each palace opens: its quarter and season, and what its seven lodges hold.
+  chapterLines:[
+    'The Azure Dragon rules the east and the spring. Its seven lodges run from the Horn to the Basket; Antares burns at its Heart.',
+    'The Black Tortoise, north and winter. The lodges are measured in dù, 365¼ round the sky: one for each day of the Sun’s year.',
+    'The White Tiger, west and autumn. Its lodges hold the Pleiades, the Hyades and the three stars of Orion’s belt.',
+    'The Vermilion Bird, south and summer, closes the ring: twenty-eight lodges, about one for each night of the Moon’s round.'
+  ],
+  // A note under each star office as it is filed, in SCROLL_CHARTS's order: what the name still carries.
+  chartNotes:[
+    'The Northern Dipper is the Plough. Where its handle points at dusk tells the season: east in spring, south in summer.',
+    'Xuanyuan, the Yellow Emperor’s name, is a long coil of stars through Leo. Its brightest is Regulus.',
+    'The Weaver Girl is Vega. Once a year, on the seventh night of the seventh month, magpies bridge the River for her.',
+    'The River Drum holds Altair, the Herd Boy of the same story, kept across the River from the Weaver Girl.',
+    'The Heavenly Ford is a crossing of the Milky Way, the River of Heaven. Its brightest star is Deneb.',
+    'The Five Chariots lie in Auriga. Their brightest star, Capella, is Wuche Er, the second of the five.',
+    'Shen is Orion, named for the three stars of its belt. It and the Heart never share the sky, like two feuding brothers kept apart.',
+    'Mao, the Hairy Head, is the Pleiades, set down as seven stars, though most eyes count six.',
+    'Xin, the Heart, is three stars with Antares in the middle. Mars lingering here was among the gravest omens the Bureau read.',
+    'The Heavenly Market is one of the sky’s three walled enclosures, its wall stars named for the old states of China.',
+    'The pole is the still point the sky turns on, and so the emperor’s seat. It drifts: in the Tang it stood well off Polaris.',
+    'The Southern Dipper, six stars in Sagittarius, heads the Tortoise’s lodges. Legend gives it the book of births, the Northern of deaths.'
+  ],
   chart:'STAR OFFICE',
   chartNoun:'star office',
   chartVerb:'filed',
@@ -841,6 +873,8 @@ const SCROLL_MANSION_GLOSS=['The Horn','The Neck','The Root','The Room','The Hea
   'The Dipper','The Ox','The Girl','The Emptiness','The Rooftop','The Encampment','The Wall',
   'The Legs','The Bond','The Stomach','The Hairy Head','The Net','The Turtle Beak','The Three Stars',
   'The Well','The Ghost','The Willow','The Star','The Extended Net','The Wing','The Chariot Board'];
+const SCROLL_MANSION_PINYIN=['Jiao','Kang','Di','Fang','Xin','Wei','Ji','Dou','Niu','Nü','Xu','Wei','Shi','Bi',
+  'Kui','Lou','Wei','Mao','Bi','Zi','Shen','Jing','Gui','Liu','Xing','Zhang','Yi','Zhen'];
 const SCROLL_PALACE_NAMES=['Azure Dragon','Black Tortoise','White Tiger','Vermilion Bird'];
 const SCROLL_PALACE_CHINESE=['蒼龍','玄武','白虎','朱雀'];
 const scrollMansionPalace=i=>Math.floor(i/7);
@@ -895,17 +929,24 @@ defineCentury(3,{
     ];
   },
   collection:{
-    title:'The Twenty-Eight Mansions',latin:'二十八宿',
-    gloss:'Right ascension in dù, filed under whichever of the four palaces a run’s best row has passed.',
+    title:'Mansions & Star Offices',latin:'二十八宿 · 星官',
+    gloss:'The mansions in dù, filed under whichever palace a run’s best row has passed; and every star office ever filed, with what its name still carries.',
     items(){
-      const row=eraLog(3).bestRow;
+      const row=eraLog(3).bestRow,filed=scrollRead().offices;
+      // An office whose English is its own pinyin (Xuanyuan) is named once rather than twice.
+      const offices=SCROLL_CHARTS.map(([zh,en],i)=>{
+        const said=SCROLL_CHART_PINYIN[i],english=en.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+        return {name:zh,latin:english.toLowerCase()===said.toLowerCase()?said:said+' · '+english,
+          gloss:centuryChartNote(3,i,en),seen:!!(filed&(1<<i)),cond:'File this star office whole in one flight.',
+          art:()=>scrollCatAsterism(940+i,4+i%3,14,true)};
+      });
       return SCROLL_MANSIONS.map((m,i)=>{
         const palace=scrollMansionPalace(i),end=scrollPalaceEndRow(palace),seen=row>=end;
-        return {name:m[0],latin:SCROLL_MANSION_GLOSS[i],
+        return {name:m[0],latin:SCROLL_MANSION_PINYIN[i]+' · '+SCROLL_MANSION_GLOSS[i],
           gloss:m[1]+' dù, filed under the '+SCROLL_PALACE_NAMES[palace]+'.',
           seen,cond:seen?'':'Climb to row '+end+' — pass all of the '+SCROLL_PALACE_NAMES[palace]+'.',
           art:()=>scrollCatAsterism(900+i,Math.max(3,Math.min(6,Math.round(m[1]/5))),12,true)};
-      });
+      }).concat(offices);
     }
   },
   feats:[
