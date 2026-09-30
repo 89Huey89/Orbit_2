@@ -965,7 +965,9 @@ class OrbitWorld {
     if(n.type==='reflector'&&!p.reflectorArmed){p.reflectorArmed=true;this.emit('reflector',{x:n.x,y:n.y});}
     if(n.type==='dawn'&&!p.dawnArmed){p.dawnArmed=true;this.emit('dawn',{x:n.x,y:n.y});}
     if(n.type==='inkwell')this.emit(reckless?'inkwell':'inkwellDry',{x:n.x,y:n.y});
-    if(n.routeId!==undefined&&!perfect){
+    // The entry stands on the main line and is landed on whether the figure is taken or not, so only the
+    // landings after it, the ones that choose the figure, can spoil its purity.
+    if(n.routeId!==undefined&&n.routeRole!=='entry'&&!perfect){
       const route=this.constellations.find(c=>c.id===n.routeId);if(route)route.pure=false;
     }
     if(n.routeRole==='star'){

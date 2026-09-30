@@ -143,7 +143,7 @@ const SIGNATURES={
   4:{name:'A WANDERER SIGHTED',describe:'Land on the wandering star of a chapter',
     test:(type,e)=>type==='capture'&&astroWanderer(e.n)!==-1},
   // A figure forks off every eighth row.
-  5:{name:'LINEA PURA',describe:'Trace a constellation in perfect transfers alone',
+  5:{name:'LINEA PURA',describe:'Reach all three stars of a constellation in perfect transfers',
     test:(type,e)=>type==='observation'&&e.key==='pureChart'},
   // The registers change at fixed rows counted from where the Lens began.
   6:{name:'SATURN IN ONE SITTING',describe:'Carry one sitting from the eyepiece to the sensor without a charge spent to save it',

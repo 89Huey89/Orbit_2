@@ -178,13 +178,12 @@ function forecast(w,eligible,settle,sigma=0,perfectOnly=false){
   if(best!==null&&bestMargin>=sigma)return best;
   return wide!==null&&!perfectOnly&&(settle||sigma>0)?wide:null;
 }
-// A body of a figure still worth going for: its chart neither traced, run past, nor already spoiled, and
-// the body either the entry on the main line, which a rough landing spoils like any other of the figure's
-// (simulation.js), or one of its stars not yet visited.
+// A star of a figure still worth going for: its chart neither traced, run past, nor already spoiled by a
+// rough landing after its entry (simulation.js), and this star not yet visited.
 function figureOpen(w,n){
-  if(n.routeRole!=='star'&&n.routeRole!=='entry')return false;
+  if(n.routeRole!=='star')return false;
   const chart=w.constellations.find(c=>c.id===n.routeId);
-  return !!chart&&!chart.completed&&!chart.expired&&chart.pure&&(n.routeRole==='entry'?w.player.node!==n:!(chart.mask&1<<n.starIndex));
+  return !!chart&&!chart.completed&&!chart.expired&&chart.pure&&!(chart.mask&1<<n.starIndex);
 }
 function gauss(r){const u=Math.max(1e-12,r()),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 function flySpread(seed,hand,era,watch){
@@ -197,7 +196,7 @@ function flySpread(seed,hand,era,watch){
     if(p.node){
       if(pending<0&&frame%4===0&&p.orbitTime>.12&&(p.node.type!=='sling'||w.charge()===1)){
         const row=Math.floor(w.progress)+1,near=a=>!a.steep&&!a.dry&&a.n.row>=row&&a.n.row<=row+2;
-        // A hand after Linea Pura goes for a figure's entry and stars while the figure is still clean, and
+        // A hand after Linea Pura goes for a figure's stars while the figure is still clean, and
         // only on a perfect transfer with room beside it, since one rough landing spoils the figure and a
         // miss ends the run. With such a body in reach it would rather circle for the next window than land
         // roughly, until its patience runs out; otherwise it flies the main line as ever.
