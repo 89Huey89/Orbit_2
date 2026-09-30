@@ -202,3 +202,111 @@ Tiro's ±30 ms roughly doubles a beginner's run (σ 45 ms: row 10 → 23, and 62
 where ±20 ms moved it much less and ±45 ms made even a middling hand nearly unending. It also carries a
 strong hand a long way, which is what the easiest pressure is for. Magister with no grace plays as the
 game did before the grace existed, with its harsher dark and nib on top.
+
+## The third reading: the ladder with the signature feats
+
+*2026-09-30.* A century is left only once its chapters stand and its own signature feat has been flown on
+it in a Journey run (JOURNEY.md §9, `SIGNATURES` in `src/centuries.js`). The ladder of stage 6 was read on
+knowledge alone, so it could not say what the feats cost. `probe.mjs --ladder` now asks both. It reads
+each feat off the game's own detectors, which it cuts out of `src/` by name rather than copying, and it
+flies three charts per seed: the atlas's, the Rock's, and the Lens's, whose registers each buy a breath of
+grace from the dark.
+
+**The plain pilot never flies Linea Pura.** It never leaves the main line for a figure's stars (they are
+`gold` bodies), so it had never completed a constellation at all. Era V is therefore flown by a hand that
+goes after a clean figure. It aims for the figure's entry and stars on perfect transfers only, and only
+with a σ of room beside the band. With such a body in reach, it circles for the next window instead of
+landing roughly, until its patience runs out. Every landing on the figure's route counts, the entry on the
+main line included: one rough one spoils the figure (`route.pure` in `simulation.js`). That hand survives
+about as deep as the plain one (median row 27 against 29 at σ 20 ms), so going for the feat costs a run
+little.
+
+40 runs per hand on each chart, 400 players, era threshold 50 as shipped, default pressure, endless driver
+on. The first block is the share of runs on each century's chart that fly its feat.
+
+| hand | I | II | III | IV | V | VI | VII | VIII |
+|---|---|---|---|---|---|---|---|---|
+| σ 10 ms | 100 % | 98 % | 93 % | 93 % | 80 % | 75 % | 100 % | 95 % |
+| σ 20 ms | 100 % | 83 % | 83 % | 75 % | 20 % | 53 % | 100 % | 98 % |
+| σ 30 ms | 98 % | 93 % | 85 % | 83 % | 10 % | 40 % | 98 % | 100 % |
+| σ 45 ms | 98 % | 73 % | 53 % | 53 % | 0 % | 15 % | 93 % | 83 % |
+| σ 70 ms | 90 % | 63 % | 20 % | 33 % | 0 % | 3 % | 75 % | 80 % |
+
+Runs each century holds a player for with the feats. The last two columns compare the whole climb with
+and without them; "done" is the share of players who climb all eight within 400 runs.
+
+| hand | I | II | III | IV | V | VI | VII | VIII | climb | done | on knowledge alone |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| σ 10 ms | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 16 | 100 % | 16 |
+| σ 20 ms | 4 | 4 | 4 | 4 | 5 | 4 | 4 | 4 | 35 | 100 % | 33 |
+| σ 30 ms | 5 | 5 | 5 | 5 | 7 | 5 | 5 | 5 | 44 | 100 % | 40 |
+| σ 45 ms | 7 | 7 | 7 | 7 | — | — | — | — | — | **0 %** | 60 |
+| σ 70 ms | 11 | 10 | 11 | 11 | — | — | — | — | — | **0 %** | 82 |
+
+**At the author's hand the feats cost little.** Six of the eight are flown in most runs, so they cost a
+century nothing beyond its chapters. The climb grows by two runs at σ 20 ms and four at σ 30 ms, nearly
+all of it in era V. §1.6's shape (about five runs a century, about forty for the ladder) holds, and
+`ERA_THRESHOLD` does not need to move for it.
+
+**Linea Pura is a wall for a rough hand.** A clean figure takes four perfect landings in a row: the entry
+and the three stars. Below about σ 30 ms that almost never happens. At σ 45 ms and σ 70 ms not one of the
+40 runs flew it, so no player climbed past era V in the table. Read again on 200 further seeds with the
+figure-seeking hand, σ 45 ms flew it in 5 runs (2.5 %) and σ 70 ms in none. At σ 45 ms that is a stall
+rather than a wall: about forty runs in era V for the feat alone, against seven for its chapters. At
+σ 70 ms it is a wall: under 1.5 % a run, if at all. The Rock's
+Struck Ring and the Flyby's Gravity Assist are the opposite case: nearly free, because the pilot always
+holds a sling body to full charge anyway. They read as an upper bound, since a player who lets go early
+would miss them. Saturn in One Sitting (VI) is the next hardest (3 % of runs at σ 70 ms) but still passes
+within the cap.
+
+What this measures and what it does not:
+
+- It models only a hand that goes after the figure. A player who never tries will never fly Linea Pura,
+  and the leaf names the feat so that they do.
+- The turn still comes between runs. The game now turns the page inside a run (stage 5), so a run that
+  became ready early and flew on is counted here as one more run in the century it left.
+- The feats of centuries II, III, IV, VII and VIII are read off the same atlas flight. That is correct
+  for every century whose simulation is the atlas's, and each century keeps its own run state.
+
+### Linea Pura made fair, and the ladder read again
+
+The author's answer to the wall was to leave the eight-row rhythm alone, since that rhythm is also the
+atlas's chapters, the Chronicle's finish, the slings and the wanderers' rows. Offering figures more often
+could only have raised a rough hand's chance in proportion, from under one run in a hundred to about one.
+Two changes were made instead. First, the entry no longer spoils a figure, since it is landed on whether
+the figure is taken or not. That changed almost nothing, because the three stars are the bottleneck.
+Second, a figure's stars hold a perfect band 2.2 times as wide, with their capture reach opened to its
+outer edge (`FIGURE_RIM` in `simulation.js`). The band on its own was capped by the reach and grew only
+inward, so even three times as wide reached only 9 % at σ 45 ms. With the reach open as well, the
+figure-seeking hand, read on 120 seeds, flies the feat far more often and survives as deep as before:
+
+| hand | entry counted | entry free | band ×2.2, reach opened |
+|---|---|---|---|
+| σ 20 ms | 20 % | 25 % | 57 % |
+| σ 45 ms | 2.5 % | 0.8 % | 10 % |
+
+The ladder read again on the same terms as above:
+
+| hand | feat V | VI feat | I | II | III | IV | V | VI | VII | VIII | climb | done | knowledge alone |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| σ 10 ms | 100 % | 78 % | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 17 | 100 % | 17 |
+| σ 20 ms | 60 % | 55 % | 4 | 4 | 4 | 4 | 3 | 4 | 4 | 4 | 33 | 100 % | 33 |
+| σ 30 ms | 33 % | 43 % | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 41 | 100 % | 41 |
+| σ 45 ms | 15 % | 20 % | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 58 | 100 % | 56 |
+| σ 70 ms | 10 % | 3 % | 11 | 11 | 11 | 11 | 8 | **27** | 11 | 11 | 105 | 100 % | 83 |
+
+At the author's hand the feats now cost the climb nothing. Every hand climbs all eight, and Linea Pura
+holds no one longer than its chapters. **Saturn in One Sitting is now the feat that holds a rough hand
+longest.** At σ 70 ms a sitting is carried from the eyepiece to the sensor without a charge spent to save
+it in about one run in thirty, which keeps that hand in era VI for 27 runs against 11 for its chapters.
+
+The author then let the sitting forgive one charge spent to save it. The ladder read again afterwards gave
+the same numbers to the run, because charges were never what the feat cost. The sensor is the Lens's third
+register, at row 24 of the Lens, and a hand of σ 70 ms reaches row 20 in one run in ten and row 30 in one
+in fifty. For that hand the feat is simply reaching the sensor, which no rule about charges can change.
+Only a sitting that ends sooner, or a hand that goes deeper, would move it.
+
+```
+node scripts/probe.mjs --ladder --seeds=40                    # the tables above, one process
+node scripts/probe.mjs --ladder --seeds=40 --hands=20         # one hand; fly several side by side
+```

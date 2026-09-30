@@ -122,7 +122,7 @@ const centuryTitle=era=>era===5?'The Atlas':(CENTURIES[era]&&CENTURIES[era].titl
 // does not leave the century until it has been flown there. Each one is read off events the simulation
 // already emits, and each is owed by the chart: the note beside it names what the generator promises.
 // Kept on the Journey's document as `milestones['sig'+era]`, which a restart clears with the rest.
-let sigRun={held:null,schools:[],rescued:false};
+let sigRun={held:null,schools:[],rescues:0};
 const SIGNATURES={
   // A sling body is dealt at row 2 and every eighth row after 7, always at radius 57, which the wall's naked
   // eye always sorts as major: a doubled ring is on the wall within eight rows of anywhere.
@@ -143,13 +143,15 @@ const SIGNATURES={
   4:{name:'A WANDERER SIGHTED',describe:'Land on the wandering star of a chapter',
     test:(type,e)=>type==='capture'&&astroWanderer(e.n)!==-1},
   // A figure forks off every eighth row.
-  5:{name:'LINEA PURA',describe:'Trace a constellation in perfect transfers alone',
+  5:{name:'LINEA PURA',describe:'Reach all three stars of a constellation in perfect transfers',
     test:(type,e)=>type==='observation'&&e.key==='pureChart'},
-  // The registers change at fixed rows counted from where the Lens began.
-  6:{name:'SATURN IN ONE SITTING',describe:'Carry one sitting from the eyepiece to the sensor without a charge spent to save it',
+  // The registers change at fixed rows counted from where the Lens began. One charge spent to save the sitting
+  // is forgiven, since a rough hand spends one in most sittings long enough to reach the sensor; a second is
+  // not (MEASUREMENTS.md, "Linea Pura made fair").
+  6:{name:'SATURN IN ONE SITTING',describe:'Carry one sitting from the eyepiece to the sensor with no more than one charge spent to save it',
     test:(type,e)=>{
-      if(type==='shieldBreak'||type==='dawnBreak'||type==='reflectorBreak')sigRun.rescued=true;
-      return type==='transition'&&e.index===1&&!sigRun.rescued;
+      if(type==='shieldBreak'||type==='dawnBreak'||type==='reflectorBreak')sigRun.rescues++;
+      return type==='transition'&&e.index===1&&sigRun.rescues<=1;
     }},
   // A sling body at row 2 and every eighth row after 7, as on every sheet.
   7:{name:'GRAVITY ASSIST',describe:'Leave a gravity well on a full lap, at full charge',
@@ -160,7 +162,7 @@ const SIGNATURES={
 };
 // Heard from every simulation event (ui.js). Returns the signature this event flew, or null.
 function signatureEvent(type,e){
-  if(type==='start'||type==='eraTransition'){sigRun={held:null,schools:[],rescued:false};return null;}
+  if(type==='start'||type==='eraTransition'){sigRun={held:null,schools:[],rescues:0};return null;}
   const era=journeyEraOf(),sig=SIGNATURES[era];
   if(!sig)return null;
   let flown=false;

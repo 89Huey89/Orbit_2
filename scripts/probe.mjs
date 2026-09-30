@@ -88,8 +88,11 @@ const DRIVEN=!args.includes('--flat');
 // `--rock` flies the main report on the Rock's chart instead of the atlas's; `--chasms` cuts the cracks the
 // wall ships without back into it.
 const ROCK_CHART=args.includes('--rock'),ROCK={chasms:args.includes('--chasms'),relight:true};
-function dealWorld(seed,era=ROCK_CHART?ROCK:{}){
-  const w=new OrbitWorld(seed,seed%3===0?1280:440,860,()=>{},false,false,false,!!era.chasms,!!era.relight);w.driven=DRIVEN;
+function dealWorld(seed,era=ROCK_CHART?ROCK:{},emit=()=>{}){
+  const w=new OrbitWorld(seed,seed%3===0?1280:440,860,emit,false,false,false,!!era.chasms,!!era.relight);w.driven=DRIVEN;
+  // The Lens is the one century whose chart crosses rows of its own, the registers (plateWords().transitionRows),
+  // and each crossing buys a breath of grace from the dark, so it is flown on a chart of its own as well.
+  if(era.transitionRows)w.transitionRows=era.transitionRows.slice();
   if(MULTS)for(const key in MULTS)if(MULTS[key])w[key]=MULTS[key][PRESSURE];
   if(GRACE!==null)w.releaseGrace=GRACE;
   return w;
@@ -134,7 +137,7 @@ function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<
 // still open at the horizon is not aimed at yet, since its far edge is not yet seen. Returns the offset
 // aimed at, or null.
 const LOOK=1/240,HORIZON=.6;
-function forecast(w,eligible,settle,sigma=0){
+function forecast(w,eligible,settle,sigma=0,perfectOnly=false){
   // The world's clock is carried forward with the orbit, so a drifting body is read where it will be
   // when the release is let go rather than where it stands now.
   const p=w.player,n=p.node,angle=p.angle,rate=p.dir*p.speed/p.rad,samples=[],now=w.time,nx=n.x,nvx=n.vx;
@@ -173,11 +176,18 @@ function forecast(w,eligible,settle,sigma=0){
   // before a miss; otherwise it takes the middle of the widest landing on offer at once, as a player does
   // who would rather land than skim.
   if(best!==null&&bestMargin>=sigma)return best;
-  return wide!==null&&(settle||sigma>0)?wide:null;
+  return wide!==null&&!perfectOnly&&(settle||sigma>0)?wide:null;
+}
+// A star of a figure still worth going for: its chart neither traced, run past, nor already spoiled by a
+// rough landing after its entry (simulation.js), and this star not yet visited.
+function figureOpen(w,n){
+  if(n.routeRole!=='star')return false;
+  const chart=w.constellations.find(c=>c.id===n.routeId);
+  return !!chart&&!chart.completed&&!chart.expired&&chart.pure&&!(chart.mask&1<<n.starIndex);
 }
 function gauss(r){const u=Math.max(1e-12,r()),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function flySpread(seed,hand,era){
-  const w=dealWorld(seed,era);w.start();
+function flySpread(seed,hand,era,watch){
+  const w=dealWorld(seed,era,watch&&watch.emit);if(watch)watch.bind(w);w.start();
   const jitter=rng(seed*7919+Math.round(hand.sigma*1000)+17);
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1,frame=0;
@@ -185,8 +195,14 @@ function flySpread(seed,hand,era){
     const p=w.player;
     if(p.node){
       if(pending<0&&frame%4===0&&p.orbitTime>.12&&(p.node.type!=='sling'||w.charge()===1)){
-        const row=Math.floor(w.progress)+1;
-        const aimAt=forecast(w,a=>!a.steep&&!a.dry&&a.n.type!=='gold'&&a.n.row>=row&&a.n.row<=row+2,p.orbitSweep>PATIENCE,hand.sigma);
+        const row=Math.floor(w.progress)+1,near=a=>!a.steep&&!a.dry&&a.n.row>=row&&a.n.row<=row+2;
+        // A hand after Linea Pura goes for a figure's stars while the figure is still clean, and
+        // only on a perfect transfer with room beside it, since one rough landing spoils the figure and a
+        // miss ends the run. With such a body in reach it would rather circle for the next window than land
+        // roughly, until its patience runs out; otherwise it flies the main line as ever.
+        const chasing=era&&era.figures&&w.nodes.some(n=>n.row>=row&&n.row<=row+2&&figureOpen(w,n));
+        let aimAt=chasing?forecast(w,a=>near(a)&&figureOpen(w,a.n),false,hand.sigma,true):null;
+        if(aimAt===null&&(!chasing||p.orbitSweep>PATIENCE))aimAt=forecast(w,a=>near(a)&&a.n.type!=='gold',p.orbitSweep>PATIENCE,hand.sigma);
         if(aimAt!==null)pending=w.time+Math.max(0,aimAt+gauss(jitter)*hand.sigma);
       }
       if(pending>=0&&w.time>=pending){
@@ -196,15 +212,16 @@ function flySpread(seed,hand,era){
       }
     } else pending=-1;
     w.update(STEP);
+    if(watch&&frame%2===1)watch.frame();
   }
   // The body still held when the run ends is banked for what it had been observed to, as the Journey
   // banks it at death (journeyCommit in src/journey.js).
   const held=w.player.node?ledgerOf(w.player.orbitSweep):0;
-  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held};
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held,feats:watch?watch.flown():null};
 }
-function fly(seed,hand,era){
-  if(MODEL==='spread')return flySpread(seed,hand,era);
-  const w=dealWorld(seed,era);w.start();
+function fly(seed,hand,era,watch){
+  if(MODEL==='spread')return flySpread(seed,hand,era,watch);
+  const w=dealWorld(seed,era,watch&&watch.emit);if(watch)watch.bind(w);w.start();
   const jitter=rng(seed*7919+Math.round(hand.late*1000));
   const sweeps=[],byRow=new Map();
   let ledger=0,pending=-1;
@@ -229,9 +246,10 @@ function fly(seed,hand,era){
       }
     } else pending=-1;
     w.update(STEP);
+    if(watch&&i%2===1)watch.frame();
   }
   const held=w.player.node?ledgerOf(w.player.orbitSweep):0;
-  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held};
+  return {seed,row:w.progress,captures:w.captures,perfects:w.perfects,elapsed:w.elapsed,score:w.score,reason:w.state==='dead'?w.reason:'(survived the cap)',sweeps,ledger,byRow,held,feats:watch?watch.flown():null};
 }
 
 const sorted=a=>[...a].sort((x,y)=>x-y);
@@ -239,18 +257,93 @@ const pct=(a,q)=>{const s=sorted(a);return s.length?s[Math.min(s.length-1,Math.f
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const pad=(s,n)=>String(s).padEnd(n),padL=(s,n)=>String(s).padStart(n);
 
+// ---------- The signature feats, read off the game's own detectors ----------
+// A century is left only once its chapters stand and its own feat has been flown on it (SIGNATURES in
+// src/centuries.js), so a ladder climbed on knowledge alone reads every century short by however many runs
+// its feat takes. The feats are not re-told here: the detectors themselves, and the few rules of each
+// century they ask (which body is a doubled ring on the wall, which carries a wanderer, which school a row
+// belongs to, what the probe's harvest has paid for), are cut out of the game's own files by name and run
+// as the page runs them, so the probe cannot drift from what the game asks. What is stubbed is only what
+// has nothing to do with the question: the frontier (each century's copy records its own feat, once), and
+// the probe's paint-side bookkeeping, sound and screen coordinates.
+const FEAT_SOURCES={
+  'effects.js':['tileHash'],
+  'backdrop.js':['planetFamilies'],
+  'planets.js':['planetFamily','DIFFICULTY_FAMILY','PICKUP_FAMILIES','planetFamilyFor'],
+  'rock.js':['ROCK_TRIAD','ROCK_TIER_BRIGHT','rockTier'],
+  'ceiling.js':['ceilingHash','ceilingWatchWanderer','ceilingWanderer'],
+  'scroll.js':['scrollSchool'],
+  'astrolabe.js':['ASTRO_CHAPTER_ROWS','ASTRO_PLANETS','astroPlainRow','astroWanderer'],
+  'lens.js':['LENS_CHAPTER_ROWS','LENS_REG_ROWS'],
+  'probe.js':['PRB_MATS','PRB_MAT_OF','PRB_SIDE_OF','PRB_YIELD','PRB_PART_OF','PRB_BILL','prbBill','PRB_REFINE','prbShort','prbPay','PRB_CHOICE','prbFamily','prbFresh','prbHarvest'],
+  'centuries.js':['sigRun','SIGNATURES','signatureEvent']
+};
+// One top-level declaration of a classic script, by name: a function to its closing brace, a const or let
+// to the semicolon that ends its statement, stepping over strings, templates and line comments.
+function cut(text,name,file){
+  const at=text.search(new RegExp('^(?:function '+name+'\\(|(?:const|let) '+name+'\\b)','m'));
+  if(at<0)throw new Error('probe: '+name+' is no longer declared in src/'+file);
+  const fn=text.startsWith('function',at);let depth=0,opened=false;
+  for(let i=at;i<text.length;i++){
+    const c=text[i];
+    if(c==='/'&&text[i+1]==='/'){i=text.indexOf('\n',i);if(i<0)break;continue;}
+    if(c==='\''||c==='"'||c==='`'){for(i++;i<text.length&&text[i]!==c;i++)if(text[i]==='\\')i++;continue;}
+    if(c==='{'||c==='('||c==='['){depth++;if(c==='{')opened=true;continue;}
+    if(c==='}'||c===')'||c===']'){depth--;if(fn&&opened&&depth===0)return text.slice(at,i+1);continue;}
+    if(!fn&&c===';'&&depth===0)return text.slice(at,i+1);
+  }
+  throw new Error('probe: could not find the end of '+name+' in src/'+file);
+}
+const FEAT_SCRIPT=await (async()=>{
+  const parts=['const TAU=Math.PI*2,SWEEP_FULL=TAU*2/3,clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));',
+    // The page's own frame of reference, reduced to what the detectors read: the world in hand, and the
+    // frontier, which is this copy's century and records its feat the first time it is flown.
+    'let world=null,signed=false;const journeyEraOf=()=>ERA,journeySign=era=>era===ERA&&!signed&&(signed=true);',
+    // The probe's harvest as the page runs it each frame, less what it draws and plays.
+    'let prbState=null,prbRunWorld=null;const prbRun=()=>{if(prbRunWorld!==world){prbRunWorld=world;prbState=prbFresh();}},prbNoteGen=()=>{},prbLaunchSound=()=>{},sx=x=>x,sy=y=>y;'];
+  for(const [file,names] of Object.entries(FEAT_SOURCES)){
+    const text=await readFile(new URL('../src/'+file,import.meta.url),'utf8');
+    for(const name of names)parts.push(cut(text,name,file));
+  }
+  parts.push('this.api={bind(w){world=w;signed=false;},event(type,e){signatureEvent(type,e);},harvest(){if(ERA===8)prbHarvest();},get signed(){return signed;},LENS_REG_ROWS};');
+  return parts.join('\n');
+})();
+// One copy of the detectors per century, each with its own run state, all listening to the same flight: a
+// run on the atlas's chart is read for every century flown on that chart at once.
+const FEAT_COPIES=[...Array(9)].map((_,era)=>{if(!era)return null;const c={ERA:era};vm.createContext(c);vm.runInContext(FEAT_SCRIPT,c);return c.api;});
+// The atlas's own chart, flown by a hand that goes after its feat: see figureOpen().
+const FIGURES={figures:true};
+const LENS={transitionRows:[FEAT_COPIES[6].LENS_REG_ROWS,FEAT_COPIES[6].LENS_REG_ROWS*2]};
+function featWatch(eras){
+  const copies=eras.map(e=>FEAT_COPIES[e]);
+  return {
+    bind:w=>{for(const c of copies)c.bind(w);},
+    emit:(type,e)=>{for(const c of copies)c.event(type,e);},
+    frame:()=>{if(eras.includes(8))FEAT_COPIES[8].harvest();},
+    flown:()=>Object.fromEntries(eras.map(e=>[e,FEAT_COPIES[e].signed]))
+  };
+}
+
 // ---------- The ladder: the Journey climbed across runs ----------
 // `--ladder` asks the question JOURNEY.md §1.6 is written against, directly rather than by dividing a
 // median: a player flies Journey runs one after another at the frontier, every run banking what it
 // observed (and the body held at death), a ready era banking nothing further, and the frontier turning
-// over between runs once every milestone stands — exactly the rules src/journey.js keeps, until stage 5
-// lets the turn happen inside a run. Runs are independent of one another, so the climb is not flown
-// run by run: each hand flies `--seeds` runs on the atlas's chart and as many on the Rock's (the one
-// century whose simulation differs: its flares relight the ochre, and under `--chasms` its cracks open), and the players then climb by drawing runs from those, which reads
-// the same as flying every run of every climb at a fraction of the cost. What it reports is how many runs
-// each century holds a player for, and how many the whole climb takes. `--threshold` reads the ladder at
-// other era thresholds than the one the game ships with (a comma-separated list); `--players` sets how
-// many climb, `--runs` how many runs a climb is given before it is called unfinished.
+// over between runs once its chapters stand and its signature feat has been flown in one of them — the
+// rules src/journey.js keeps. The game now turns the page inside a run as well (stage 5); the ladder still
+// turns it between runs, so it reads each century's stay a little long for a run that became ready early
+// and flew on. Runs are independent of one another, so the climb is not flown run by run: each hand flies
+// `--seeds` runs on each of three charts — the atlas's, the Rock's (whose flares relight the ochre, and
+// under `--chasms` whose cracks open) and the Lens's (whose registers each buy a breath of grace) — with
+// every century flown on that chart reading its own feat off the same flight, and the players then climb
+// by drawing runs from those, which reads the same as flying every run of every climb at a fraction of the
+// cost. What it reports is how often a run flies each century's feat, how many runs each century holds a
+// player for, and how many the whole climb takes, beside what knowledge alone would have held them for.
+// `--threshold` reads the ladder at other era thresholds than the one the game ships with (a
+// comma-separated list); `--players` sets how many climb, `--runs` how many runs a climb is given before it
+// is called unfinished.
+// `--hands=20,45` flies only the hands of those milliseconds, for a quicker reading of the ones that matter;
+// it serves the ladder as well, so its hands can be flown side by side as separate processes.
+const ONLY=(args.find(a=>a.startsWith('--hands='))||'').slice(8).split(',').filter(Boolean).map(Number);
 const LADDER=args.includes('--ladder');
 if(LADDER){
   const journeySource=await readFile(new URL('../src/journey.js',import.meta.url),'utf8');
@@ -258,42 +351,62 @@ if(LADDER){
   const asked=args.find(a=>a.startsWith('--threshold='));
   const THRESHOLDS=asked?asked.slice(12).split(',').map(Number).filter(t=>t>0):[SHIPPED];
   const PLAYERS=flag('players',400),RUN_CAP=flag('runs',400);
-  const hands=(MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>args.includes('--oracle')||(h.sigma??h.late)>0);
-  const tables=THRESHOLDS.map(()=>[]);
+  const hands=(MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>(args.includes('--oracle')||(h.sigma??h.late)>0)&&(!ONLY.length||ONLY.includes(Math.round((h.sigma??h.late)*1000))));
+  const tables=THRESHOLDS.map(()=>[]),featTable=[];
+  const ON_ATLAS=[2,3,4,7,8],ERA_NAMES=['I','II','III','IV','V','VI','VII','VIII'];
   for(const hand of hands){
-    const bank=r=>r.ledger+r.held,atlas=[],rock=[];
-    for(let seed=1;seed<=SEEDS;seed++){atlas.push(bank(fly(seed,hand)));rock.push(bank(fly(seed,hand,ROCK)));}
+    // Each century's pool: what a run on its chart banked, and whether it flew that century's feat.
+    const bank=r=>r.ledger+r.held,pools=[...Array(9)].map(()=>[]);
+    for(let seed=1;seed<=SEEDS;seed++){
+      const atlas=fly(seed,hand,undefined,featWatch(ON_ATLAS)),rock=fly(seed,hand,ROCK,featWatch([1])),lens=fly(seed,hand,LENS,featWatch([6]));
+      const figures=fly(seed,hand,FIGURES,featWatch([5]));
+      pools[1].push({bank:bank(rock),feat:rock.feats[1]});pools[6].push({bank:bank(lens),feat:lens.feats[6]});pools[5].push({bank:bank(figures),feat:figures.feats[5]});
+      for(const era of ON_ATLAS)pools[era].push({bank:bank(atlas),feat:atlas.feats[era]});
+    }
+    featTable.push({hand:hand.name,share:pools.slice(1).map(p=>p.filter(r=>r.feat).length/p.length)});
     THRESHOLDS.forEach((THRESHOLD,ti)=>{
-      const draw=rng(4099+Math.round((hand.sigma??hand.late)*1e4)+ti),pick=list=>list[Math.floor(draw()*list.length)];
-      const perEra=[...Array(9)].map(()=>[]),totals=[];let finished=0;
-      for(let player=0;player<PLAYERS;player++){
-        let era=1,knowledge=0,runs=0,eraRuns=0;
-        while(era<=8&&runs<RUN_CAP){
-          runs++;eraRuns++;knowledge=Math.min(THRESHOLD,knowledge+pick(era===1?rock:atlas));
-          if(knowledge>=THRESHOLD){perEra[era].push(eraRuns);era++;knowledge=0;eraRuns=0;}
+      // Both climbs start from the same draws, so what separates them is the feats and not the luck of the draw.
+      const climb=feats=>{
+        const draw=rng(4099+Math.round((hand.sigma??hand.late)*1e4)+ti),pick=list=>list[Math.floor(draw()*list.length)];
+        const perEra=[...Array(9)].map(()=>[]),totals=[];let finished=0;
+        for(let player=0;player<PLAYERS;player++){
+          let era=1,knowledge=0,signed=!feats,runs=0,eraRuns=0;
+          while(era<=8&&runs<RUN_CAP){
+            const run=pick(pools[era]);runs++;eraRuns++;
+            knowledge=Math.min(THRESHOLD,knowledge+run.bank);signed=signed||run.feat;
+            if(knowledge>=THRESHOLD&&signed){perEra[era].push(eraRuns);era++;knowledge=0;signed=!feats;eraRuns=0;}
+          }
+          if(era>8){finished++;totals.push(runs);}
         }
-        if(era>8){finished++;totals.push(runs);}
-      }
-      tables[ti].push({hand:hand.name,runLedger:pct(atlas,.5),rockLedger:pct(rock,.5),perEra:perEra.slice(1).map(a=>a.length?pct(a,.5):null),total:totals.length?pct(totals,.5):null,finished:finished/PLAYERS});
+        return {perEra:perEra.slice(1).map(a=>a.length?pct(a,.5):null),total:totals.length?pct(totals,.5):null,finished:finished/PLAYERS};
+      };
+      const shipped=climb(true),alone=climb(false);
+      tables[ti].push({hand:hand.name,runLedger:pct(pools[2].map(r=>r.bank),.5),rockLedger:pct(pools[1].map(r=>r.bank),.5),...shipped,alone});
     });
   }
-  if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,players:PLAYERS,runCap:RUN_CAP,shipped:SHIPPED,tables:THRESHOLDS.map((t,i)=>({threshold:t,table:tables[i]}))},null,2));process.exit(0);}
+  if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,players:PLAYERS,runCap:RUN_CAP,shipped:SHIPPED,feats:featTable,tables:THRESHOLDS.map((t,i)=>({threshold:t,table:tables[i]}))},null,2));process.exit(0);}
   console.log('\nOrbit · the Journey climbed across runs — '+SEEDS+' runs per hand on each chart, '+PLAYERS+' players, at most '+RUN_CAP+' runs');
   console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', endless driver '+(DRIVEN?'on':'off'));
+  console.log('\nHow often a run flies each century\'s signature feat\n');
+  console.log(pad('hand',9)+ERA_NAMES.map(e=>padL(e,6)).join(''));
+  console.log('-'.repeat(9+8*6));
+  for(const r of featTable)console.log(pad(r.hand,9)+r.share.map(v=>padL(Math.round(v*100)+'%',6)).join(''));
+  const cell=v=>v===null?'—':v;
   THRESHOLDS.forEach((THRESHOLD,ti)=>{
-    console.log('\nera threshold '+THRESHOLD+(THRESHOLD===SHIPPED?' (as shipped)':' (shipped: '+SHIPPED+')')+'\n');
-    console.log(pad('hand',9)+padL('run',5)+padL('rock',6)+['I','II','III','IV','V','VI','VII','VIII'].map(e=>padL(e,5)).join('')+padL('climb',7)+padL('done',6));
-    console.log('-'.repeat(9+11+8*5+13));
-    for(const r of tables[ti])console.log(pad(r.hand,9)+padL(r.runLedger.toFixed(1),5)+padL(r.rockLedger.toFixed(1),6)+r.perEra.map(v=>padL(v===null?'—':v,5)).join('')+padL(r.total===null?'—':r.total,7)+padL(Math.round(r.finished*100)+'%',6));
+    console.log('\nera threshold '+THRESHOLD+(THRESHOLD===SHIPPED?' (as shipped)':' (shipped: '+SHIPPED+')')+' · runs a century holds a player for, chapters and feat\n');
+    console.log(pad('hand',9)+padL('run',5)+padL('rock',6)+ERA_NAMES.map(e=>padL(e,5)).join('')+padL('climb',7)+padL('done',6)+padL('alone',7)+padL('done',6));
+    console.log('-'.repeat(9+11+8*5+26));
+    for(const r of tables[ti])console.log(pad(r.hand,9)+padL(r.runLedger.toFixed(1),5)+padL(r.rockLedger.toFixed(1),6)+r.perEra.map(v=>padL(cell(v),5)).join('')+padL(cell(r.total),7)+padL(Math.round(r.finished*100)+'%',6)+padL(cell(r.alone.total),7)+padL(Math.round(r.alone.finished*100)+'%',6));
+    console.log('\n  knowledge alone, runs per century');
+    for(const r of tables[ti])console.log(pad('  '+r.hand,11)+r.alone.perEra.map(v=>padL(cell(v),5)).join(''));
   });
-  console.log('\n  run, rock · the median run\'s whole banked observation on the atlas\'s chart and on the Rock\'s');
+  console.log('\n  I … VIII (feats) · share of runs on that century\'s chart that fly its feat at least once');
+  console.log('  run, rock · the median run\'s whole banked observation on the atlas\'s chart and on the Rock\'s');
   console.log('  I … VIII · median runs a century holds a player for   climb · median runs for the whole ladder');
-  console.log('  done · share of players who climbed all eight inside the cap\n');
+  console.log('  done · share of players who climbed all eight inside the cap   alone · the same climb on knowledge alone\n');
   process.exit(0);
 }
 
-// `--hands=20,45` flies only the hands of those milliseconds, for a quicker reading of the ones that matter.
-const ONLY=(args.find(a=>a.startsWith('--hands='))||'').slice(8).split(',').filter(Boolean).map(Number);
 const report=[];
 for(const hand of (MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>!ONLY.length||ONLY.includes(Math.round((h.sigma??h.late)*1000)))){
   const runs=[];for(let seed=1;seed<=SEEDS;seed++)runs.push(fly(seed,hand));

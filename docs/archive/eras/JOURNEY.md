@@ -788,10 +788,10 @@ Decisions this file does not make, and which should not be invented by an implem
   author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
   era's milestones are the chapters its preview is already told in.*
-- **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and
-  §1.6 measures the climb in knowledge; whether the milestones *are* the gate with the total merely
-  pacing them, or both must be satisfied, is not settled and should be decided in stage 6 against a
-  playable ladder rather than on paper.
+- *How the milestones and the knowledge total relate, which this list once kept open, is the question the
+  line above settles: the chapters are the gate and knowledge opens them one at a time
+  (`journeyMilestones()` in `src/journey.js`), with the signature feat as the one milestone knowledge cannot
+  pace.*
 - **What the von Neumann era's own transition withholds** that no earlier one does, now that every
   transition grows outward from the traveller.
 - **Era VII's black space as a material** — the frontier needs a substance to fail in.
@@ -839,13 +839,24 @@ stages above.
 - *Per-era catalogues and the links between centuries* (2026-09-28): `orbit.eras.v1` keeps a log per century
   (`src/centuries.js`), and the one catalogue turns between eight leaves, each with its record, its collection,
   ten to fifteen feats of its own and a lineage; every known century leaves an heirloom on the atlas's Feats tab.
+- *The ladder re-read with the signature feats* (2026-09-30): `probe.mjs --ladder` climbs on the feats as well
+  as knowledge, read off the game's own detectors. At the author's hand they add two to four runs to the
+  climb (33 → 35 at σ 20 ms, 40 → 44 at σ 30 ms), nearly all in era V, and nothing since Linea Pura was made fair. §1.6's shape holds and
+  `ERA_THRESHOLD` stays at 50 (`MEASUREMENTS.md`, "The third reading").
+- *Linea Pura made fair* (2026-09-30): the author's call, keeping the eight-row rhythm. The entry no longer
+  spoils a figure, and a figure's stars hold a perfect band 2.2 times as wide with their reach opened to it
+  (`FIGURE_RIM`). A hand of σ 45 ms flies the feat in about one run in ten (was one in a hundred), and every
+  hand now climbs all eight.
+- *Saturn in One Sitting against a rough hand* (2026-09-30), settled by the author as it stands. The sitting
+  forgives one charge spent to save it. A hand of σ 70 ms still stays in era VI for about 27 runs against 11
+  for its chapters, because the feat asks a run to reach the sensor at row 24 of the Lens and a hand that
+  rough rarely gets that deep. The sitting is not shortened; at σ 45 ms and better the feat costs nothing
+  (`MEASUREMENTS.md`, "Linea Pura made fair").
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
 **Open.**
 
-- **The ladder re-read with the signature feats.** `probe.mjs --ladder` still climbs on knowledge alone; how
-  many runs the eight feats add to each era's stay is not yet measured.
 - **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
   (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
   under its Arabic name, the Dendera zodiac as a construction.
