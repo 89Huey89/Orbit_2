@@ -788,10 +788,10 @@ Decisions this file does not make, and which should not be invented by an implem
   author's hand keeps §1.6's shape of about five runs an era.*
 - *Settled in `LINKING.md` (2026-09-24): the milestones are the gate and knowledge only paces them; each
   era's milestones are the chapters its preview is already told in.*
-- **How the milestones and the knowledge total relate.** §1.5 gates an era on named milestones and
-  §1.6 measures the climb in knowledge; whether the milestones *are* the gate with the total merely
-  pacing them, or both must be satisfied, is not settled and should be decided in stage 6 against a
-  playable ladder rather than on paper.
+- *How the milestones and the knowledge total relate, which this list once kept open, is the question the
+  line above settles: the chapters are the gate and knowledge opens them one at a time
+  (`journeyMilestones()` in `src/journey.js`), with the signature feat as the one milestone knowledge cannot
+  pace.*
 - **What the von Neumann era's own transition withholds** that no earlier one does, now that every
   transition grows outward from the traveller.
 - **Era VII's black space as a material** — the frontier needs a substance to fail in.
