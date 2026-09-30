@@ -42,8 +42,10 @@ see README.md's "The eras".
 - `node scripts/probe.mjs` — a tuning instrument, not a test: flies many seeded runs at several
   levels of hand and reports how deep a run actually gets, what it captures, and what the era
   progression's observation ledger would stand at by each row; it flies the endless driver as the live game
-  does, and `--flat` reads the chart as it was before it. `--ladder` climbs the whole Journey run after run
-  and reports how many runs each era holds a player for (`--threshold=a,b,…` compares thresholds). Makes no assertions and is not run by
+  does, and `--flat` reads the chart as it was before it. `--ladder` climbs the whole Journey run after run,
+  on each century's signature feat as well as its knowledge, and reports how often a run flies each feat
+  and how many runs each era holds a player for (`--threshold=a,b,…` compares thresholds; `--hands=20`
+  flies one hand, so several can run side by side). Makes no assertions and is not run by
   `npm test`. Its first reading is `docs/archive/eras/MEASUREMENTS.md`.
 - `node scripts/perf.mjs` — a timing instrument, not a test: flies a seeded run on each era in headless
   Chromium at 430×932 with the canvas rasterised on the CPU (the nearest a desktop comes to Safari's
