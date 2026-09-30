@@ -41,7 +41,7 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endTitleWon:'The atlas is printed.',endActionWon:'Tap to begin a new atlas',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
-    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',head:'THE JOURNEY · {era}',knowledge:'KNOWLEDGE {k} / {of} · LONGER ORBITS TEACH MORE',full:'KNOWLEDGE COMPLETE · ONLY THE FEAT REMAINS',feat:'FEAT · {name} — {how}',flown:'FEAT FLOWN · {name}',run:'THIS RUN · +{gained} KNOWLEDGE · {orbits} ORBITS · {whole} WHOLE · {early} LEFT EARLY',elsewhere:'THIS RUN DID NOT COUNT · THE JOURNEY LEARNS ONLY ON {era}',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',climbed:'THE LADDER IS CLIMBED · THE FINAL FRONTIER',frontier:'THE FINAL FRONTIER · BEST {best}',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
+    journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',head:'THE JOURNEY · {era}',headRound:'THE JOURNEY · ROUND {round} · {era}',knowledge:'KNOWLEDGE {k} / {of} · LONGER ORBITS TEACH MORE',full:'KNOWLEDGE COMPLETE · ONLY THE FEAT REMAINS',feat:'FEAT · {name} — {how}',flown:'FEAT FLOWN · {name}',run:'THIS RUN · +{gained} KNOWLEDGE · {orbits} ORBITS · {whole} WHOLE · {early} LEFT EARLY',elsewhere:'THIS RUN DID NOT COUNT · THE JOURNEY LEARNS ONLY ON {era}',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',circle:'THE CIRCLE CLOSES · {era}',frontier:'THE FINAL FRONTIER · BEST {best}',frontierDoor:'THE FINAL FRONTIER',frontierLabel:'The Final Frontier: the last century flown endless, opened by closing the circle',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
     instructions:{head:'MODUS OPERANDI',rules:['Tap to release. Skim the next orbit.','Circle stars to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first orbit — {pressures}.']}},
@@ -307,6 +307,11 @@ function event(type,e){
     // src/frame.js), the climb is banked and turned, and the run goes on under the next century's hand.
     beginEraGrowth(e);
     journeyCommit(false);
+    // The last century's turn is the circle's (JOURNEY.md §9.1): the run goes on on the cave wall, and the
+    // sheet says the circle has closed rather than that the climb goes on. The descent drawn as a zoom is still
+    // owed (§9.2); until it is built the circle turns the page as every other change of century does.
+    const circle=journey.era>=JOURNEY_ERAS;
+    const turned=circle?'circle':'entered';
     if(journeyAdvance(journeyPlayable)){
       turnEraInRun();
       // The same phenomenon, reinterpreted (JOURNEY.md §1.3 step 9, PROGRESSION.md step 7): the body is not
@@ -316,10 +321,10 @@ function event(type,e){
       // was tried and set aside: the camera moves on after a landing, so the cut-out sat off the body, and an
       // unvisited body is barely drawn in the old hand at all.)
       reveal.forget(e.n);
-      say(fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)}),{node:e.n,tone:'note'});
+      say(fmt(plateWords().chrome.journey[turned],{era:journeyEraTitle(journey.era)}),{node:e.n,tone:'note'});
     }
     audio.medal();
-    $('announcement').textContent=fmt(plateWords().chrome.journey.entered,{era:journeyEraTitle(journey.era)});
+    $('announcement').textContent=fmt(plateWords().chrome.journey[turned],{era:journeyEraTitle(journey.era)});
     // What the new century changed in the simulation is written beside the moment it was armed, so a replay
     // turns the chart where the run did rather than flying the whole of it under the hand it began in.
     if(replayLog){const r=replayLog.eras[e.index]||(replayLog.eras[e.index]={});Object.assign(r,{relightOn:world.relightOn,chasmsOn:world.chasmsOn,transitionRows:world.transitionRows.slice()});}
@@ -367,10 +372,10 @@ const readingDefault=()=>eraId()?'chronicle':'endless';
 const readingOffered=()=>eraId()?!!plateWords().endless:!dailyOn;
 const eraReading=()=>readingOffered()&&readings[readingKey()]||readingDefault();
 // A Journey run is never won at a row: its chapters are opened by knowledge across runs (LINKING.md).
-const eraGoalRow=()=>runMode==='journey'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
+const eraGoalRow=()=>runMode==='journey'||runMode==='frontier'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
 // Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
 function toggleReading(){
-  if(!readingOffered()||runMode==='journey'||(world&&world.state!=='ready'))return;
+  if(!readingOffered()||runMode!=='free'||(world&&world.state!=='ready'))return;
   const next=eraReading()==='endless'?'chronicle':'endless';
   if(next===readingDefault())delete readings[readingKey()];else readings[readingKey()]=next;
   storage.set(READING_KEY,JSON.stringify(readings));
@@ -383,6 +388,8 @@ function toggleReading(){
 const journeyPlate=era=>Object.keys(PLATE_STYLES).find(id=>PLATE_STYLES[id].era===era&&PLATE_STYLES[id].door)||null;
 const journeyPlayable=era=>era===5||!!journeyPlate(era);
 const journeyEraTitle=era=>{const id=journeyPlate(era);return id?PLATE_STYLES[id].door.label:'ERA V \u00b7 THE ATLAS';};
+// Whether the frontier's century has one to turn to that is drawn to be flown on: the next up, or the cave.
+const journeyOnward=()=>journeyPlayable(journeyNext(journey.era));
 // Both of the frontier's conditions are named from the first run, each on a line of its own and in English,
 // since the player has to understand them to act: the knowledge banked against the threshold, with what earns
 // it, and the century's own feat, whether flown or still owed. A feat that only surfaced once the knowledge was
@@ -390,12 +397,13 @@ const journeyEraTitle=era=>{const id=journeyPlate(era);return id?PLATE_STYLES[id
 // The leaf, which is already the century's own, leaves the heading off to stand clear on the shortest phone.
 function journeyNote(head=true){
   const w=plateWords(),c=w.chrome.journey,era=journeyEraTitle(journey.era);
-  if(journeyComplete())return fmt(c.frontier,{best:journey.bests.frontier||0});
+  if(runMode==='frontier')return fmt(c.frontier,{best:journey.bests.frontier||0});
   if(journeyReady()){
-    const next=journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1)?journeyEraTitle(journey.era+1):'';
+    const next=journeyOnward()?journeyEraTitle(journeyNext(journey.era)):'';
     return fmt(next?c.known:c.whole,{era,next});
   }
-  const full=journey.knowledge>=ERA_THRESHOLD-1e-9,sig=SIGNATURES[journey.era],lines=head?[fmt(c.head,{era})]:[];
+  // The round is named once the circle has been closed, so the second climb is not read as the first again.
+  const full=journey.knowledge>=ERA_THRESHOLD-1e-9,sig=SIGNATURES[journey.era],lines=head?[fmt(journeyCircled()?c.headRound:c.head,{era,round:journey.rounds+1})]:[];
   lines.push(full?c.full:fmt(c.knowledge,{k:Math.floor(journey.knowledge+1e-9),of:ERA_THRESHOLD}));
   if(sig)lines.push(journeySigned()?fmt(c.flown,{name:sig.name}):fmt(c.feat,{name:sig.name,how:sig.describe}));
   return lines.join('\n');
@@ -429,13 +437,15 @@ function paintJourneyMark(id,h=64){
   (handFor('journeyMark')||atlasJourneyMark)(g,w,h,journeyMilestones());
 }
 function syncJourney(){
-  const on=runMode==='journey',c=plateWords().chrome.journey;
+  const on=runMode==='journey',c=plateWords().chrome.journey,noted=on||runMode==='frontier';
   const door=$('journey-open');if(door){door.textContent=c.door;door.setAttribute('aria-pressed',String(on));door.setAttribute('aria-label',c.doorLabel);}
-  const note=$('journey-note');if(note){note.hidden=!on;note.textContent=on?journeyNote():'';}
+  // The Final Frontier's door stands only once the circle has been closed (JOURNEY.md §9.2).
+  const frontier=$('frontier-open');if(frontier){frontier.hidden=!journeyCircled();frontier.textContent=c.frontierDoor;frontier.setAttribute('aria-pressed',String(runMode==='frontier'));frontier.setAttribute('aria-label',c.frontierLabel);}
+  const note=$('journey-note');if(note){note.hidden=!noted;note.textContent=noted?journeyNote():'';}
   paintJourneyMark('journey-mark');
   syncJourneyRestart();
 }
-let journeyClimbedSaid=null,journeyRestartArmed=false;
+let journeyRestartArmed=false;
 // The deliberate restart of JOURNEY.md §1.2, from the more-menu: asked twice, since it sends the climb back
 // to era I. The centuries already reached stay open and every record is kept (journeyReset).
 function syncJourneyRestart(){
@@ -457,17 +467,12 @@ function journeyRestartTap(){
 function journeyArm(){
   if(!world||world.transitionReady||runMode!=='journey'||dailyOn||world.state!=='playing')return;
   if(journeyEraOf()!==journey.era||journey.knowledge+journeyRun<ERA_THRESHOLD-1e-9||!journeySigned())return;
-  // The last rung has no century above it: knowing it climbs the ladder, said once, and the run goes on as
-  // the Final Frontier with nothing else changed.
-  if(journey.era>=JOURNEY_ERAS){
-    if(journeyClimbedSaid!==world){journeyClimbedSaid=world;const line=plateWords().chrome.journey.climbed;say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;}
-    return;
-  }
-  if(!journeyPlayable(journey.era+1))return;
+  // The last rung arms the same way: its next landing closes the circle back to the cave (§9.1).
+  if(!journeyOnward())return;
   world.transitionReady=true;
   // Logged by the clock like a release, since the simulation cannot know it: the replay arms the same landing.
   if(replayLog)replayLog.eras.push({armedAt:world.time});
-  const line=fmt(plateWords().chrome.journey.waits,{next:journeyEraTitle(journey.era+1)});
+  const line=fmt(plateWords().chrome.journey.waits,{next:journeyEraTitle(journeyNext(journey.era))});
   say(line,{node:world.player.node,tone:'note'});$('announcement').textContent=line;
 }
 // The century above put on the press without dealing a new chart: the same world, the same traveller, the
@@ -506,6 +511,18 @@ function toggleJourney(){
   if(runMode==='journey'){runMode='free';newWorld();resetToFrontispiece();syncEraChrome();render(0);return;}
   if(dailyOn)setDaily(false);
   journeyTurn();
+}
+// The Final Frontier (JOURNEY.md §9.2): the last century flown endless, a door of its own once the circle has
+// been closed. It keeps the one endless record of §1.7 and, like Free Play, never moves the Journey.
+function toggleFrontier(){
+  if(world&&world.state==='playing'||!journeyCircled())return;
+  if(runMode==='frontier'){if(plateOwns('mode'))leaveEra();else{runMode='free';newWorld();resetToFrontispiece();syncEraChrome();render(0);}syncJourney();return;}
+  if(dailyOn)setDaily(false);
+  if(plateOwns('mode'))leaveEra();
+  runMode='frontier';
+  const plate=journeyPlate(JOURNEY_ERAS);
+  if(plate)enterEra(plate);else{newWorld();resetToFrontispiece();syncEraChrome();render(0);}
+  syncJourney();
 }
 function newWorld(){
   reveal.reset();glyphs.clear();trailSampledAt=-1;particles=[];rings=[];floaters=[];tallies=[];clearInscriptions();clearRevealTitles();lastScore=-1;lastChapter=-1;loreChapter=-1;deathShown=false;screenFlash=0;darkFlash=0;accumulator=0;namedHazardKinds=new Set();correctionNode=null;recordAnnounced=false;
@@ -562,7 +579,7 @@ function syncEraChrome(){
   // The choice of reading stands only on a century that offers one, and names the reading in hand.
   const reading=$('reading');
   if(reading){
-    const offered=readingOffered()&&runMode!=='journey',now=eraReading(),word=chrome.readings[now];
+    const offered=readingOffered()&&runMode==='free',now=eraReading(),word=chrome.readings[now];
     reading.hidden=!offered;reading.textContent=word;
     reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
@@ -608,7 +625,7 @@ function enterEra(name){
   if(world&&world.state==='playing')return;
   if(!PLATES[name])return;
   // A Journey run is let in at its own frontier, which the Journey has by definition reached.
-  if(runMode!=='journey'&&!eraOpen(PLATE_STYLES[name].era))return;
+  if(runMode==='free'&&!eraOpen(PLATE_STYLES[name].era))return;
   eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   applyPlate(name);invalidateArt();loadPlateFaces();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
@@ -674,7 +691,7 @@ function showEnd(){
   // ledger. See defineHand('rock',{...}) in rock.js for what caveRun actually does.
   // That record is Free Play's (LINKING.md decision 5): a Journey run is measured by its climb, never
   // against the century's own record.
-  {const caveRun=handFor('caveRun');if(caveRun&&runMode!=='journey')caveRun(world);}
+  {const caveRun=handFor('caveRun');if(caveRun&&runMode==='free')caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
   // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
@@ -698,13 +715,14 @@ function showEnd(){
     if(note){
       // A Journey run that could not bank (flown on a century other than the frontier's) says so rather than
       // leaving the leaf silent, which read as knowledge lost.
-      const stray=!fold&&runMode==='journey'&&!dailyOn;
-      note.hidden=!fold&&!stray;
+      const stray=!fold&&runMode==='journey'&&!dailyOn,frontier=runMode==='frontier'&&!dailyOn;
+      note.hidden=!fold&&!stray&&!frontier;
       if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyRunLine(),journeyNote(false)].join('\n');}
       else if(stray)note.textContent=fmt(plateWords().chrome.journey.elsewhere,{era:journeyEraTitle(journey.era)});
+      else if(frontier)note.textContent=journeyNote(false);
     }
     // The next tap turns the page rather than dealing this century again, and the leaf says so.
-    if(fold&&fold.ready&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1))$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journey.era+1)});
+    if(fold&&fold.ready&&journeyOnward())$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journeyNext(journey.era))});
     syncJourney();
   }
   const names=fresh.map(id=>UNLOCK_BY_ID[id]?UNLOCK_BY_ID[id].name:centuryFeat(id)&&centuryFeat(id).name).filter(Boolean);
@@ -857,7 +875,7 @@ function handleInput(){
   }
   else if(world.state==='paused')resume();
 }
-function journeyTurnDue(){return runMode==='journey'&&journeyReady()&&journey.era<JOURNEY_ERAS&&journeyPlayable(journey.era+1);}
+function journeyTurnDue(){return runMode==='journey'&&journeyReady()&&journeyOnward();}
 // A tap on the colophon deals the next chart straight away, so the leaf carries its own way back to the
 // frontispiece as well: without it the atlas's only door out of a finished run was to start another and
 // set that one down. The run is already folded into the ledger by now; a Journey due to turn its page
@@ -977,7 +995,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{invalidat
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{invalidateArt();if(world)render(0);});
 // The switch lives on both the title screen and the run-complete colophon, so a daily run is never a
 // dead end: tapping either one toggles the same setting and the next "tap to try again" honours it.
-function toggleDaily(){if(!dailyOn&&runMode==='journey'){runMode='free';syncJourney();}setDaily(!dailyOn);syncEraChrome();if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
+function toggleDaily(){if(!dailyOn&&runMode!=='free'){runMode='free';syncJourney();}setDaily(!dailyOn);syncEraChrome();if(audio.enabled)audio.tone(dailyOn?659.25:392,.3,0,.16);}
 $('daily').addEventListener('click',toggleDaily);
 $('daily-end').addEventListener('click',toggleDaily);
 function toggleNewtonSwitch(){toggleNewton();if(audio.enabled)audio.tone(newtonOn?659.25:392,.3,0,.16);}
@@ -993,6 +1011,7 @@ $('ceiling-exit').addEventListener('click',leaveEra);
 $('reading').addEventListener('click',toggleReading);
 $('instrument').addEventListener('click',()=>{setInstruments(!instrumentsOn);if(audio.enabled)audio.tone(instrumentOn()?659.25:392,.3,0,.16);if(world&&world.state==='ready'&&W&&H)render(0);});
 $('journey-open').addEventListener('click',toggleJourney);
+$('frontier-open').addEventListener('click',toggleFrontier);
 $('journey-restart').addEventListener('click',journeyRestartTap);
 $('copy-score').addEventListener('click',()=>{copyScore();if(audio.enabled)audio.tone(523.25,.25,0,.14);});
 function syncSound(){$('sound').classList.toggle('muted',!audio.enabled);$('sound').setAttribute('aria-label',audio.enabled?'Mute sound':'Enable sound');$('sound').setAttribute('aria-pressed',String(audio.enabled));}
