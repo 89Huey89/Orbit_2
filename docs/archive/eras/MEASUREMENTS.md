@@ -300,6 +300,12 @@ holds no one longer than its chapters. **Saturn in One Sitting is now the feat t
 longest.** At σ 70 ms a sitting is carried from the eyepiece to the sensor without a charge spent to save
 it in about one run in thirty, which keeps that hand in era VI for 27 runs against 11 for its chapters.
 
+The author then let the sitting forgive one charge spent to save it. The ladder read again afterwards gave
+the same numbers to the run, because charges were never what the feat cost. The sensor is the Lens's third
+register, at row 24 of the Lens, and a hand of σ 70 ms reaches row 20 in one run in ten and row 30 in one
+in fifty. For that hand the feat is simply reaching the sensor, which no rule about charges can change.
+Only a sitting that ends sooner, or a hand that goes deeper, would move it.
+
 ```
 node scripts/probe.mjs --ladder --seeds=40                    # the tables above, one process
 node scripts/probe.mjs --ladder --seeds=40 --hands=20         # one hand; fly several side by side

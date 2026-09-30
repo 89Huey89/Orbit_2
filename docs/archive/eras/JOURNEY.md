@@ -855,7 +855,9 @@ stages above.
 - **Saturn in One Sitting against a rough hand.** Now that Linea Pura is fair (Done, above), the Lens's feat
   holds a rough hand longest. At σ 70 ms it is flown in about one run in thirty, so that hand stays in era
   VI for 27 runs against 11 for its chapters (`MEASUREMENTS.md`, "Linea Pura made fair"). At σ 45 ms and
-  better it costs nothing. Whether a hand that rough should be held there is the author's call.
+  better it costs nothing. Forgiving one charge spent (2026-09-30) did not move it: the feat asks a run to
+  reach the sensor at row 24 of the Lens, and a hand that rough rarely gets that deep at all. Whether it
+  should be held there, or the sitting end sooner, is the author's call.
 - **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
   (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
   under its Arabic name, the Dendera zodiac as a construction.
