@@ -715,6 +715,9 @@ defineHand('scroll',{
 // a chapter one of the four palaces of the sky, the score is counted in dù, the currency is the ink-stick,
 // the boundary is hundun, the formless chaos before the world had shape. Names from 03-scroll.md.
 defineVoice('scroll',{
+  // Every voice is read over the atlas's, so a century that has no lore of its own yet says so, rather than
+  // speaking the atlas's four lines and twelve notes over its own palaces.
+  chapterLines:null,chartNotes:null,
   chart:'STAR OFFICE',
   chartNoun:'star office',
   chartVerb:'filed',

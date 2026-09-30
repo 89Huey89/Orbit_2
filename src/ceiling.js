@@ -119,6 +119,9 @@ const CEILING_OBSERVATIONS={
 // own. `entry` is deliberately absent from chrome below: it is read from the atlas's own voice on
 // every plate, this one included, so the button that opens an era never has to ask which one it is.
 defineVoice('ceiling',{
+  // Every voice is read over the atlas's, so a century that has no lore of its own yet says so, rather than
+  // speaking the atlas's four lines and twelve notes over its own hours.
+  chapterLines:null,chartNotes:null,
   chart:'DECAN COURSE',
   chartNoun:'decan course',
   chartSaid:'Decan course complete. Sixty bonus points. The wall holds for four seconds.',

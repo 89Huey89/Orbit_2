@@ -127,6 +127,7 @@ const centuryTitle=era=>era===5?'The Atlas':(CENTURIES[era]&&CENTURIES[era].titl
 // century's own record, and a chapter is reached once the century's log has a row at or past its first.
 // `centuryWords` is the century's voice as its own run hears it, the atlas's filling in what it leaves unset.
 function centuryWords(era){
+  if(era===5)return VOICES.atlas||null;
   for(const id in PLATE_STYLES)if(PLATE_STYLES[id].era===era)return mergeTokens(VOICES.atlas||{},VOICES[id]||{});
   return null;
 }
@@ -138,14 +139,15 @@ function centuryChartNote(era,i,name=''){
   const rest=note.slice(cut+2);return rest.charAt(0).toUpperCase()+rest.slice(1);
 }
 // The curator's lines, one to a chapter, each with whether a run has reached it: read off the century's log,
-// whose bestRow is counted in the same rows (eraRow) that set the line on the sheet.
+// whose bestRow is counted in the same rows (eraRow) that set the line on the sheet. The atlas keeps no such
+// log; its ledger keeps the deepest chapter a run has reached (1–4, nought for none) instead.
 function centuryAnnals(era){
   const words=centuryWords(era),lines=words&&words.chapterLines;
   if(!lines||!lines.length)return [];
-  const log=eraLog(era),rows=words.chapterRows||8;
+  const log=era===5?null:eraLog(era),rows=words.chapterRows||8;
   return lines.map((line,i)=>({
     head:fmt(words.chapterSaid,{numeral:numerals[i],name:(words.chapters||[])[i]||''}).replace(/\.$/,''),
-    line,row:i*rows,reached:log.runs>0&&log.bestRow>=i*rows
+    line,row:i*rows,reached:log?log.runs>0&&log.bestRow>=i*rows:i<ledger.deepestChapter
   }));
 }
 // ---------- Each century's signature feat ----------

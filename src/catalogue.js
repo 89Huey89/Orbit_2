@@ -130,8 +130,11 @@ function catalogueRecord(){
   for(const reason in ledger.deaths)if(!losses.includes(reason))losses.push(reason);
   html+='<section class="cat-group"><h3>How runs ended<span class="cat-latin">Exitus</span></h3>'+
     ledgerTable(losses.map(reason=>[plainText(reason.charAt(0)+reason.slice(1).toLowerCase()),countMark(ledger.deaths[reason])]))+'</section>';
+  // A figure once traced carries, under its name, the note the sheet set under it as it closed.
   html+='<section class="cat-group"><h3>Constellations<span class="cat-latin">Asterismi</span></h3>'+
-    ledgerTable(CONSTELLATIONS.map(c=>[`<span class="cat-name">${plainText(c.name)}</span><span class="cat-latin">${plainText(c.latin)}</span>`,countMark(ledger.constellations[c.name])]))+'</section>';
+    ledgerTable(CONSTELLATIONS.map((c,i)=>{const note=ledger.constellations[c.name]?centuryChartNote(5,i):'';
+      return [`<span class="cat-name">${plainText(c.name)}</span><span class="cat-latin">${plainText(c.latin)}</span>`+(note?`<span class="cat-gloss">${plainText(note)}</span>`:''),countMark(ledger.constellations[c.name])];}))+'</section>';
+  html+=annalsSection(5);
   return html;
 }
 // ---------- The catalogue's engraved previews ----------
@@ -702,6 +705,15 @@ function heirloomCard(era,cond=true){
   return centuryCard({name:h.name,latin:h.latin,locked:true,state:'NOT YET HANDED DOWN',
     cond:cond?'Finish the Chronicle of '+centuryTitle(era)+', or climb past it in the Journey':''});
 }
+// The same lines as a section of a leaf's Record: a chapter not yet reached keeps its head and the row it
+// opens at, as a locked card keeps its condition. `latin` is false on a leaf that sets no Latin.
+function annalsSection(era,latin=true){
+  const annals=centuryAnnals(era);
+  if(!annals.length)return '';
+  return '<section class="cat-group"><h3>Chapter by chapter<span class="cat-latin">'+(latin?'Annales':'')+'</span></h3><ol class="cat-annals">'+
+    annals.map(a=>`<li class="cat-annal${a.reached?'':' locked'}"><span class="cat-annal-head">${plainText(a.head)}</span>`+
+      (a.reached?`<span class="cat-gloss">${plainText(a.line)}</span>`:`<span class="cat-cond">Not yet reached · it opens at row ${commas(a.row)}</span>`)+'</li>').join('')+'</ol></section>';
+}
 function centuryRecord(era){
   const log=eraLog(era),page=CENTURIES[era]||{},free=records.free,reading=key=>free[key]?commas(free[key]):'—';
   const m=journey.era===era?journeyMilestones():null;
@@ -724,12 +736,8 @@ function centuryRecord(era){
   let html=ledgerTable(rows,4);
   const own=typeof page.recordRows==='function'?page.recordRows():[];
   if(own&&own.length)html+=`<section class="cat-group"><h3>${plainText(page.title||'')}<span class="cat-latin">${plainText(page.latin||'')}</span></h3>`+ledgerTable(own.map(([label,value])=>[plainText(label),plainText(value)]))+'</section>';
-  // What the century's curator said, chapter by chapter, kept once a run has reached the chapter; a chapter
-  // not yet reached keeps its head and the row it opens at, as a locked card keeps its condition.
-  const annals=centuryAnnals(era);
-  if(annals.length)html+='<section class="cat-group"><h3>Chapter by chapter<span class="cat-latin">'+(page.leaf?'':'Annales')+'</span></h3><ol class="cat-annals">'+
-    annals.map(a=>`<li class="cat-annal${a.reached?'':' locked'}"><span class="cat-annal-head">${plainText(a.head)}</span>`+
-      (a.reached?`<span class="cat-gloss">${plainText(a.line)}</span>`:`<span class="cat-cond">Not yet reached · it opens at row ${commas(a.row)}</span>`)+'</li>').join('')+'</ol></section>';
+  // What the century's curator said, chapter by chapter, kept once a run has reached the chapter.
+  html+=annalsSection(era,!page.leaf);
   const losses=Object.keys(log.deaths);
   if(losses.length)html+='<section class="cat-group"><h3>How runs ended<span class="cat-latin">'+(page.leaf?'':'Exitus')+'</span></h3>'+
     ledgerTable(losses.map(reason=>[plainText(reason.charAt(0)+reason.slice(1).toLowerCase()),countMark(log.deaths[reason])]))+'</section>';

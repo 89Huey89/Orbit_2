@@ -137,7 +137,8 @@ These need a design decision, not a text edit.
 - **The atlas's twelve figures** mix Ptolemaic ones (Lyra, Corona, Serpens, Argo), Bayer's southern ones
   of 1603 (Phoenix, Tucana, Pavo) and four invented ones (Acus, Penna, Laterna, Phalæna). Velum is
   Lacaille's division of Argo in the 1750s, flown beside Argo itself. None of this is disclosed, and the
-  atlas is the one frontispiece with no source line.
+  atlas is the one frontispiece with no source line. *Since 2026-09-30 the figures' own notes disclose it
+  (§3.1, item 2); the source line is still owed.*
 - **The Ceiling fuses three sources** a century and a half apart: Senenmut's ceiling (c. 1470 BCE), the
   Book of Nut and the Amduat (Ramesside). The source line discloses part of it.
 - **Smaller:** the compass rose sets ORIENS on the right, the terrestrial convention, where a chart of
@@ -172,12 +173,20 @@ cheap steps would close most of the gap:
    *Built 2026-09-30:* a met chart's card carries its note on every century that says one
    (`centuryChartNote` in `centuries.js`), and each century's Record keeps its curator's lines chapter by
    chapter under *Chapter by chapter · Annales* once a run has reached them (`centuryAnnals`), both read
-   off what the centuries' records already keep. Any line added to the atlas, the Ceiling or the Scroll
-   under 2–3 below is kept the same way with no further work.
+   off what the centuries' records already keep. Any line added to the Ceiling or the Scroll under 3
+   below is kept the same way with no further work.
 2. **Give the atlas its own lines.** Candidates: Bayer (1603) and his Greek letters, α for a figure's
    brightest; Phoenix, Tucana and Pavo, first charted from Keyser and de Houtman's voyage of 1595–97; the
    slingshot star named for what the README says it is, a *stella nova* (Tycho, 1572); *Ecliptica*, the
    Sun's yearly path; the calendar reform of 1582, which the ephemeris already double-dates.
+   *Built 2026-09-30:* four chapter lines, in date order (Apian's volvelles, 1540; Tycho's nova, 1572;
+   the Gregorian reform, 1582; the Medicean stars, 1610) and a note for each of the twelve figures, which also closes
+   §2.2's point that the invented figures were undisclosed: the Needle, the Quill, the Lantern and the
+   Moth now say they are the atlas's own. The atlas's Record keeps both (the notes under the Asterismi
+   register, the lines as *Annales*). Building it found that every voice inherits the atlas's lore unless
+   it sets its own, so the Ceiling and the Scroll now set theirs to none, and the suite checks that no
+   century speaks the atlas's lines. Still open from the list: the *stella nova* caption and the
+   ecliptic's gloss, which are captions on the sheet rather than lines.
 3. **Bring the Scroll up to the Astrolabe.** Curator's lines for the four palaces; notes such as *Xin,
    the Heart, is Antares*, *the Weaver Girl and the Herd Boy are Vega and Altair*, *twenty-eight lodges,
    about one for each night of the Moon's round*, *365¼ dù, a day for each of the Sun's*; pinyin beside

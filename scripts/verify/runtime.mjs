@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,scrollSchool,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,scrollSchool,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -1718,6 +1718,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         // its card in the collection once the chart has been closed. The store and the log are put back after.
         {
           const words=context.test.centuryWords(era),log=context.test.eraLogs[era],was={runs:log.runs,bestRow:log.bestRow},store=new Map(saved);
+          // Every voice is read over the atlas's: a century with no lore of its own must not say the atlas's.
+          const atlas=context.test.centuryWords(5);
+          assert(words.chapterLines!==atlas.chapterLines&&words.chartNotes!==atlas.chartNotes,'Century '+era+' never speaks the atlas\'s lines or notes as its own');
+          assert.deepEqual(context.test.plateWords().chartNotes,words.chartNotes,'Century '+era+' says on its sheet the notes its leaf keeps');
           const leafNow=()=>{context.test.openCatalogue();const html=element('catalogue-body').innerHTML;context.test.closeCatalogue();return html;};
           if(words.chapterLines){
             const annals=context.test.centuryAnnals(era),rows=words.chapterRows;
@@ -1759,6 +1763,23 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.test.heirloomMask(),0,'A century\'s own sheet carries none of the heirlooms');
       context.test.leaveEra();context.test.newWorld();
       for(const era of [1,2,3,4,6,7,8])if(logs[era])logs[era].won=saved[era]||0;
+    }
+    // The atlas keeps what it says on its own Record as well: a traced figure's note under its name in the
+    // Asterismi register, and each chapter's line once a run has reached the chapter (its ledger's deepest).
+    {
+      const L=context.test.ledger,words=context.test.plateWords(),was={deep:L.deepestChapter,figures:L.constellations};
+      const record=()=>{context.test.openCatalogue();const html=element('catalogue-body').innerHTML;context.test.closeCatalogue();return html;};
+      const said=(list,i)=>list[i].slice(0,24);
+      assert.equal(words.chapterLines.length,4,'The atlas opens each of its four chapters with a line');
+      assert.equal(words.chartNotes.length,context.test.CONSTELLATIONS.length,'Every figure of the atlas carries a note');
+      L.deepestChapter=0;L.constellations={};
+      let html=record();
+      assert(!html.includes(said(words.chapterLines,0))&&!html.includes(said(words.chartNotes,0)),'The atlas keeps no line or note before a run has met it');
+      L.deepestChapter=2;L.constellations={[context.test.CONSTELLATIONS[0].name]:1};
+      html=record();
+      assert(html.includes(said(words.chapterLines,1))&&!html.includes(said(words.chapterLines,2)),'The atlas keeps the lines of the chapters reached, and no further');
+      assert(html.includes(said(words.chartNotes,0))&&!html.includes(said(words.chartNotes,1)),'The atlas keeps a figure\'s note once the figure is traced, and no other');
+      L.deepestChapter=was.deep;L.constellations=was.figures;
     }
     context.test.enterEra('rock');
     context.test.enterEra('ceiling');
