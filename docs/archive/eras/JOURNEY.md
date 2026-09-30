@@ -792,19 +792,49 @@ Decisions this file does not make, and which should not be invented by an implem
   line above settles: the chapters are the gate and knowledge opens them one at a time
   (`journeyMilestones()` in `src/journey.js`), with the signature feat as the one milestone knowledge cannot
   pace.*
-- **What the von Neumann era's own transition withholds** that no earlier one does, now that every
-  transition grows outward from the traveller.
-- **Era VII's black space as a material** — the frontier needs a substance to fail in.
-- **The Rock's triad.** Still open, and deliberately not decided in code: `ROCK_TRIAD` in
-  `src/rock.js` is one row mapping each pressure to a brightness — the Moon for Tiro, a bright star for
-  Adeptus, a faint one for Magister, which is the reading `01-rock.md` offers — with the two tier
-  thresholds beside it. It is a row to be read against the running page, not a decision recorded here.
-  `PROTOTYPES.md`'s own open question is the same one: whether three brightnesses separate at speed and
-  in peripheral vision, or only when looked at.
+- *What the von Neumann era's own transition withholds* — settled by the author (2026-09-30), §9.1.
+- *Era VII's black space as a material* — settled by the author (2026-09-30), §9.1.
+- *The Rock's triad* — settled by the author (2026-09-30), §9.1.
+- *Whether the Journey ever gates Free Play* — settled by the author (2026-09-30), §9.1.
+
+### 9.1 · Settled by the author, 2026-09-30
+
+Four questions this list kept open, answered by the author in one sitting. Recorded here, not yet built;
+each is owed its own pass (§10, Open).
+
+- **The ladder closes as a circle, back to the cave.** Era VIII's turn is the one that has no century above
+  it, and it is the only turn that does not grow into a new hand. Once the Probe's chapters stand and
+  Closure has been flown, the probe *replicates* — the Observer Core is copied into a daughter rather than
+  carried across, which is the one thing no earlier turn does — and the daughter, sent out, finds a world
+  like the Earth, seen as it was some seventeen thousand years ago, when the Hall of the Bulls at Lascaux
+  was painted. The run then goes on in the cave: the sheet becomes era I's wall, and the sky the probe was
+  sent to is the sky the first hand is about to notice. What this turn withholds that no other does is
+  *the future*: every earlier turn reveals the next century, this one reveals the first.
+  The Journey then begins a **new round**: the frontier returns to era I and the knowledge banked is cleared,
+  as `journeyReset()` already does for BEGIN THE JOURNEY AGAIN, while every century reached stays open,
+  every heirloom stays on the atlas and every record is kept. The document counts how many times the circle
+  has been closed. This **replaces the Final Frontier** of §1.7 and "The ends of the climb": a Journey run no
+  longer goes on at the last rung for ever; its endless record becomes the round's, and the rounds closed
+  are the ladder's own lasting mark. (Lascaux is dated c. 17,000 BP; era I spans c. 40,000–3,000 BCE, so the
+  date sits inside the century the circle returns to.)
+- **Era VII's black is vacuum as measurement**, as `07-flyby.md` proposed: a parallaxing star field, a faint
+  standing texture of the DSN link (carrier lock, signal-to-noise, a Doppler trace), the odd cosmic-ray hit
+  and, over an irregular body, the shape-model mesh. The ground stays the starkest on the ladder; what the
+  frontier (LOS) fails in is that measurement — the signal drops lock, lines go flat, tiles stop, the stars
+  freeze in their parallax. Nothing is softened towards grey.
+- **The Rock's triad reads by size, not brightness.** Three struck dabs in three sizes stand for the three
+  pressures, because size separates at speed and in peripheral vision where three brightnesses on a torchlit
+  wall need to be looked at. *Built the same day:* `ROCK_TRIAD` in `src/rock.js` is three sizes of one bright
+  light (1.22, .95 and .68 of the dealt body), the largest for Tiro and the smallest for Magister; the Moon keeps
+  its place as a body of the wall, not as the easiest pressure.
+- **The Journey gates Free Play, with a proof chapter.** `JOURNEY_GATES_DOORS` is to be turned on once the
+  proof is built: a century the Journey has reached is open in Free Play, and of one not yet reached only the
+  first chapter is open, as `LINKING.md`'s door-access line planned. The proof chapter is not built yet, and
+  the gate stays off until it is, so no door is ever simply shut.
 
 ---
 
-## 10 · Where the climb stands (2026-09-27)
+## 10 · Where the climb stands (2026-09-30)
 
 A ledger of this plan against the code, so the next pass starts from what is true rather than from the
 stages above.
@@ -852,20 +882,30 @@ stages above.
   for its chapters, because the feat asks a run to reach the sensor at row 24 of the Lens and a hand that
   rough rarely gets that deep. The sitting is not shortened; at σ 45 ms and better the feat costs nothing
   (`MEASUREMENTS.md`, "Linea Pura made fair").
+- *The heirlooms on the sheet itself* (2026-09-30): every known century's heirloom is drawn on the atlas's own
+  sheet as well as in its catalogue (`paintSphereHeirlooms` and `frameHeirlooms` in `src/frame.js`). The atlas
+  has no Taurus among its twelve figures, so Taurus is found on the construction's zodiac instead: the aurochs
+  laid along it, Aldebaran at its eye, the guest star of 1054 at its southern horn, where the Crab really lies;
+  the Dendera zodiac rings the pole and the Earth is the pale blue point at it; Saturn's handles and the ladder
+  stand either side of the engraver's line. `npm run shots -- heirlooms` shows all seven under each sphere.
+- *The Rock's triad by size* (2026-09-30, §9.1): `ROCK_TRIAD` recut from the Moon, a bright and a faint light
+  to one bright light in three sizes, named THE LARGE, THE MIDDLE and THE SMALL LIGHT; seen at 430×932 with
+  `npm run shots -- choose --era=rock`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
 **Open.**
 
-- **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
-  (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
-  under its Arabic name, the Dendera zodiac as a construction.
 - **The review of a run that changed century, in each century's hand.** The log now carries the changes and
   the replay turns where the run did (above), but the review paints the whole chart in the atlas's hand,
   the stretch flown in the century below included; the page is not yet turned on the sheet itself.
 - **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
   in place rather than carried with the camera.
-- **The Probe's own giving way** (eight has none above it), and what its transition withholds (§9).
+- **The circle back to the cave** (§9.1): the Probe's replication, the Earth-like world as it was at
+  Lascaux, the run going on on the wall, and the Journey's new round in place of the Final Frontier.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
   `ENDLESS-HARD.md` and not built.
-- **The doors.** Built and off; whether the Journey ever gates Free Play is the author's call.
+- **The doors** (§9.1): the gate is built and off; it is turned on once the proof chapter of an unreached
+  century is built.
+- **The Flyby's vacuum as measurement** (§9.1): check the shipped ground and LOS against the settled
+  reading and fill in what it lacks.

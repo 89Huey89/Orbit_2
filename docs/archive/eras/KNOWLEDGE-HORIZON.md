@@ -145,7 +145,9 @@ ladder's very last turn is now how all eight of them work, and the final turn ca
 that particular distinction for itself. Whatever marks the Probe's turn as the ladder's true close
 now has to be found elsewhere — in what decays, in what the frontier is made of, in the fact that
 nothing grows after it — not in being the one turn that does not rise from the ground. This is
-carried to [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) rather than resolved here by fiat.
+carried to [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) rather than resolved here by fiat. *Settled by the
+author (2026-09-30, [JOURNEY.md](JOURNEY.md) §9.1): the last turn does not grow into a new hand but
+closes the ladder as a circle, back to the cave.*
 
 One thing is not in tension at all and is worth keeping separate from the above: the brief's own
 constant, [OBSERVER-CORE.md](OBSERVER-CORE.md)'s point, at the working end of whatever tool

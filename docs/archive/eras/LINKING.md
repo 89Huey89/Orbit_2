@@ -109,7 +109,9 @@ Not built by the first stage and recorded here so it is not lost:
   sphere on the atlas; every completed era leaving one heirloom in the atlas's own catalogue.
 - **Door access**: the preview doors stay open until the Journey ships; after that an era is open in
   Free Play once reached, and the first chapter of one not yet reached stays open as a proof. *The gate
-  is built and off* (`JOURNEY_GATES_DOORS` in `src/journey.js`); the proof chapter is not built yet.
+  is built and off* (`JOURNEY_GATES_DOORS` in `src/journey.js`); the proof chapter is not built yet. *Confirmed
+  by the author (2026-09-30, [JOURNEY.md](JOURNEY.md) §9.1): the Journey gates Free Play this way, and the
+  gate goes on once the proof chapter exists.*
 
 ## The order of work
 

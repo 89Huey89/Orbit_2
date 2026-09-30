@@ -303,6 +303,15 @@ language of its own century, no rendering an improvement on the one before it, e
 the terms available to it. This is the one era with no next century left to hand its own redrawing
 on to, and it keeps going anyway.
 
+*Superseded by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1.* The ladder does not end at a
+probe that goes on for ever; it closes as a circle, and the two ends above stop merely rhyming and
+meet. Once this era's chapters stand and Closure has been flown, the probe replicates — the Observer
+Core copied into a daughter, the one turn on the ladder where it is copied rather than carried — and
+the daughter, sent out, finds a world like the Earth as it was some seventeen thousand years ago,
+when the Hall of the Bulls was painted. The run goes on on era I's wall, and the Journey begins a new
+round at the cave with every century, heirloom and record kept. What this turn withholds that no
+other does is the future: every earlier turn reveals the next century, this one reveals the first.
+
 ## Frame and furniture
 
 No cartouche, no colophon, no engraver's credit — the closest equivalent bolted to the hull is the

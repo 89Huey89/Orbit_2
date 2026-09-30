@@ -186,6 +186,7 @@ made of, such that it can still decay into something rather than simply being an
 the hardest unanswered art question on the whole ladder and is not answered by
 [THE-FRONTIER.md](THE-FRONTIER.md)'s "LOS" entry, which describes the *signal* failing, not the
 space around it.
+*Settled by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1:* vacuum as measurement, as [07-flyby.md](07-flyby.md) proposes — the parallaxing stars, the DSN link's standing texture, the cosmic-ray hits and the shape-model mesh are the material, and LOS is that measurement failing.
 
 **Whether the release dividend's floor and the ledger's own weight should be one constant or two.**
 `RELEASE_FLOOR` echoes the ledger's `0.35` as a starting guess because both answer "how much does an
@@ -213,6 +214,7 @@ rather than rising from the ground, so that distinction is gone for all eight tu
 nothing has yet been proposed to replace it: what the Probe's own transition does, or is made of, or
 withholds, that no earlier era's transition does, is stated in
 [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md) as an open wound rather than resolved there.
+*Settled by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1:* the ladder closes as a circle. The probe replicates — the Core copied into a daughter, not carried — and the daughter finds an Earth-like world as it was at Lascaux; the run goes on on era I's wall and the Journey begins a new round. What this turn withholds is the future: every other turn reveals the next century, this one the first.
 
 **Vulcan's invented treatment, on the Lens.** A phantom body that was never real cannot become a
 capturable node without bending the readability contract itself — position and capture-region size

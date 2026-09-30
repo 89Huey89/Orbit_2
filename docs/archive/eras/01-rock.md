@@ -138,6 +138,7 @@ in this plate's pigments.
 The opening triad is a row in the code, `ROCK_TRIAD`, carrying this file's own reading — the Moon for
 Tiro, a bright star for Adeptus, a faint one for Magister — and is deliberately not recorded as decided
 anywhere: open question K is answered against the running page, not on paper.
+*Settled by the author (2026-09-30), [JOURNEY.md](JOURNEY.md) §9.1:* the triad reads by **size**, not brightness — three struck dabs, the largest for Tiro and the smallest for Magister — because size separates at speed and in peripheral vision. `ROCK_TRIAD` is recut to match: one bright light at three sizes.
 
 ## The prototype
 
@@ -145,4 +146,4 @@ anywhere: open question K is answered against the running page, not on paper.
 
 ## Risk
 
-The torch twist is Rule 1's hardest test: confirm in a spike it needs no simulation state, or it becomes B/C-shaped. The tally/dot-field HUD is a genuine legibility risk, unspiked beyond the prototype's own compromise. No frame at all is the era's strongest and riskiest idea at once. The star-map claims — Pleiades, Summer Triangle, Adorant-as-Orion, Knowth-as-lunar-map, Göbekli Tepe Pillar 43-as-zodiac — are contested minority readings, several disputed by the excavating archaeologists, and must never be asserted as fact. Absolute dates throughout are approximate and debated; torch relight/wipe-mark evidence for run-length is unverified this pass. The triad in three brightnesses is unspiked: whether Tiro, Adeptus and Magister read off the Moon and two dabs alone, on a sheet with no caption to fall back on, is open question K.
+The torch twist is Rule 1's hardest test: confirm in a spike it needs no simulation state, or it becomes B/C-shaped. The tally/dot-field HUD is a genuine legibility risk, unspiked beyond the prototype's own compromise. No frame at all is the era's strongest and riskiest idea at once. The star-map claims — Pleiades, Summer Triangle, Adorant-as-Orion, Knowth-as-lunar-map, Göbekli Tepe Pillar 43-as-zodiac — are contested minority readings, several disputed by the excavating archaeologists, and must never be asserted as fact. Absolute dates throughout are approximate and debated; torch relight/wipe-mark evidence for run-length is unverified this pass. The triad in three brightnesses is unspiked: whether Tiro, Adeptus and Magister read off the Moon and two dabs alone, on a sheet with no caption to fall back on, is open question K — answered by the author in favour of size ([JOURNEY.md](JOURNEY.md) §9.1).
