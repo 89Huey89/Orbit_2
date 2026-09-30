@@ -2630,7 +2630,7 @@ defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
   heirloom:{
     name:'THE BULL OF THE HALL',
     latin:'TAURUS',
-    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, under the atlas’s own Taurus — the oldest bull in the sky standing under the newest.',
+    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, along the zodiac of the atlas’s own construction where Taurus stands — the oldest bull in the sky, with Aldebaran for its eye.',
     art:()=>rockCollectionArt(0)
   }
 });

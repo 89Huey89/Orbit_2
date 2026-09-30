@@ -833,7 +833,7 @@ each is owed its own pass (§10, Open).
 
 ---
 
-## 10 · Where the climb stands (2026-09-27)
+## 10 · Where the climb stands (2026-09-30)
 
 A ledger of this plan against the code, so the next pass starts from what is true rather than from the
 stages above.
@@ -881,14 +881,17 @@ stages above.
   for its chapters, because the feat asks a run to reach the sensor at row 24 of the Lens and a hand that
   rough rarely gets that deep. The sitting is not shortened; at σ 45 ms and better the feat costs nothing
   (`MEASUREMENTS.md`, "Linea Pura made fair").
+- *The heirlooms on the sheet itself* (2026-09-30): every known century's heirloom is drawn on the atlas's own
+  sheet as well as in its catalogue (`paintSphereHeirlooms` and `frameHeirlooms` in `src/frame.js`). The atlas
+  has no Taurus among its twelve figures, so Taurus is found on the construction's zodiac instead: the aurochs
+  laid along it, Aldebaran at its eye, the guest star of 1054 at its southern horn, where the Crab really lies;
+  the Dendera zodiac rings the pole and the Earth is the pale blue point at it; Saturn's handles and the ladder
+  stand either side of the engraver's line. `npm run shots -- heirlooms` shows all seven under each sphere.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
 **Open.**
 
-- **The heirlooms on the sheet itself.** Every known century now leaves its heirloom in the atlas's catalogue
-  (below, Done), but none is yet drawn on the atlas's chart: the bull faint under Taurus, the rete star lettered
-  under its Arabic name, the Dendera zodiac as a construction.
 - **The review of a run that changed century, in each century's hand.** The log now carries the changes and
   the replay turns where the run did (above), but the review paints the whole chart in the atlas's hand,
   the stretch flown in the century below included; the page is not yet turned on the sheet itself.

@@ -488,6 +488,7 @@ function buildFrameLayer(){
     // The engraver's line, which carries the player's initials once the catalogue has granted them.
     g.font=plateFace(Math.max(6,6.5*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='left';
     g.fillText(engraverCredit(),rightX,H-5);
+    frameHeirlooms(g,rightX,rightX+g.measureText(engraverCredit()).width,H-5,colors,1.25);
     // A key to the six star forms used on the plate, set in the right flank clear of the play channel.
     // Its ghost rows are printed with the first proof; a row becomes dark only after a player has held
     // a matching star long enough to classify it, so the margin records the atlas's actual knowledge.
@@ -532,8 +533,32 @@ function buildFrameLayer(){
     // bottom inner rule, where the sheet has a clear run the whole width of the play field.
     g.font=plateFace(Math.max(5.2,5.6*scale),'text','italic');g.fillStyle=colors.text;g.textAlign='center';
     g.fillText(engraverCredit(),W*.5,H-innerR-4);
+    const half=g.measureText(engraverCredit()).width*.5;
+    frameHeirlooms(g,W*.5-half,W*.5+half,H-innerR-4,colors,1);
   }
   return c;
+}
+// The two heirlooms that are margin work rather than construction, cut either side of the engraver's line
+// on the sheet's last line, in the credit's own ink (see heirloomMask above). VI: Saturn as Galileo first
+// drew it in 1610, a globe with a handle either side, set before the credit like a printer's device. VIII:
+// the whole ladder after it, eight marks rising, the last one heavy with the cursor standing on it.
+function frameHeirlooms(g,left,right,baseline,colors,k){
+  const mask=heirloomMask();if(!(mask&(1<<6|1<<8)))return;
+  const {rgb,alpha}=rgbaSplit(colors.text);
+  g.save();g.lineCap='round';
+  if(mask&1<<6){
+    const r=2.1*k,x=left-9*k,y=baseline-2.2*k;
+    g.strokeStyle=`rgba(${rgb},${alpha*.9})`;g.lineWidth=.6*k;
+    g.beginPath();g.arc(x,y,r,0,TAU);g.stroke();
+    g.lineWidth=.5*k;for(const side of [-1,1]){g.beginPath();g.ellipse(x+side*r*1.55,y,r*.62,r*.42,0,0,TAU);g.stroke();}
+  }
+  if(mask&1<<8){
+    const x0=right+6*k,step=2.3*k;
+    g.strokeStyle=`rgba(${rgb},${alpha*.8})`;
+    for(let i=0;i<8;i++){const last=i===7,x=x0+i*step;g.lineWidth=(last?.9:.5)*k;g.beginPath();g.moveTo(x,baseline);g.lineTo(x,baseline-(1.4+i*.62)*k);g.stroke();}
+    g.fillStyle=`rgba(${rgb},${alpha})`;g.beginPath();g.arc(x0+7*step,baseline-(1.4+7*.62)*k-1.3*k,.8*k,0,TAU);g.fill();
+  }
+  g.restore();
 }
 // How far into the sheet the frame layer actually carries ink. The layer is cut at the size of the
 // whole plate, but nearly all of it is bare: the double rule, the graduated scales and the corner
@@ -604,7 +629,7 @@ function drawPlateFrame(){
   // (buildFrameLayer's `if(wide)` block below); on a narrow sheet nothing drawn reads it, so folding
   // the width test into the key itself stops a phone from re-cutting its whole frame layer every time
   // a class is classified, which is a change the narrow sheet was never going to draw in the first place.
-  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+(frameWide()?legend:0);
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+(frameWide()?legend:0)+':'+(heirloomMask()&(1<<6|1<<8));
   if(!frameLayer||key!==frameKey){frameLayer=buildFrameLayer();frameKey=key;frameInset=frameLayerInset(frameLayer);}
   framePen=revealFrame(frameLayer);
   // The side scales alone track world.cameraY, redrawn live over the cached ladder so the chart reads as
@@ -863,10 +888,101 @@ function paintVolvelleSphere(g,m){
   m.label(names,'Volvella',cx,cy+R-13);m.label(names,'Index',cx+Math.cos(-1.09)*R*.78+16,cy+Math.sin(-1.09)*R*.78);
 }
 const SPHERE_HANDS={graticule:paintGraticuleSphere,rete:paintReteSphere,orbs:paintOrbSphere,volvelle:paintVolvelleSphere};
+// ---------- What the other centuries leave on the atlas's own sheet ----------
+// LINKING.md, "Links between eras": every century that is known (centuryKnown(), src/centuries.js) hands
+// the atlas one heirloom, and the catalogue's Heirlooms card only says what it is. Five of the seven are
+// set on the construction, because each is a thing a sphere can carry: the Hall of the Bulls' aurochs
+// laid along the zodiac where Taurus stands, Aldebaran lettered at its eye and the guest star of 1054 at
+// the tip of its southern horn, which is where the Crab Nebula really lies; the Dendera zodiac as a ring
+// round the pole; and the Earth, which a geocentric construction sets at its centre and never has to plot,
+// as the one pale blue point Voyager saw. The other two are margin work, cut on the sheet's last line
+// beside the engraver's (frameHeirlooms, below). One bit per century, so a cache can key on the set.
+function heirloomMask(){
+  if(typeof centuryKnown!=='function'||!renaissanceAtlas()||plainPlate())return 0;
+  let mask=0;for(const era of [1,2,3,4,6,7,8])if(centuryKnown(era))mask|=1<<era;
+  return mask;
+}
+// A point on the construction's zodiac, whichever hand cut it: the graticule's oblique ecliptic, the
+// rete's eccentric ring, the orbs' firmament or the volvelle's graduated band. `a` is the tangent there.
+function sphereZodiacAt(style,m,t){
+  const {cx,cy,rx,ry}=m;
+  if(style==='rete'){
+    const R=rx,er=(R-R*.44)/2,ex=cx+Math.cos(-.9)*(R-er),ey=cy+Math.sin(-.9)*(R-er);
+    return {x:ex+Math.cos(t)*er,y:ey+Math.sin(t)*er,a:t+Math.PI/2};
+  }
+  if(style==='orbs'||style==='volvelle'){const r=rx*.955;return {x:cx+Math.cos(t)*r,y:cy+Math.sin(t)*r,a:t+Math.PI/2};}
+  const rot=-.31,ex=Math.cos(t)*rx,ey=Math.sin(t)*ry,c=Math.cos(rot),s=Math.sin(rot);
+  return {x:cx+ex*c-ey*s,y:cy+ex*s+ey*c,a:Math.atan2(Math.cos(t)*ry*c-Math.sin(t)*rx*s,-Math.sin(t)*rx*c-Math.cos(t)*ry*s)};
+}
+const heirloomStar=(g,x,y,outer,inner)=>{g.beginPath();for(let k=0;k<10;k++){const r=k%2?inner:outer,a=-Math.PI/2+k*Math.PI/5;g[k?'lineTo':'moveTo'](x+Math.cos(a)*r,y+Math.sin(a)*r);}g.closePath();};
+function paintSphereHeirlooms(g,m,style,mask){
+  if(!mask)return;
+  const {stage,cx,cy,rx,rgb}=m,flat=style==='graticule'?.62:1;
+  // VII. The Earth at the pole the compasses were set on, in the one colour the atlas never engraved:
+  // a pale blue point inside a faint band of scattered sunlight, as the Voyager frame caught it.
+  const dot=stage(.5);
+  if(mask&1<<7&&dot>0){
+    const a=-.36,len=rx*.5,w=2.2,ux=Math.cos(a),uy=Math.sin(a),nx=-uy*w,ny=ux*w;
+    g.save();g.fillStyle=`rgba(${rgb},${.05*dot})`;
+    g.beginPath();g.moveTo(cx-ux*len+nx,cy-uy*len+ny);g.lineTo(cx+ux*len+nx,cy+uy*len+ny);g.lineTo(cx+ux*len-nx,cy+uy*len-ny);g.lineTo(cx-ux*len-nx,cy-uy*len-ny);g.closePath();g.fill();
+    g.fillStyle=`rgba(104,150,204,${.9*dot})`;g.beginPath();g.arc(cx,cy,1.5,0,TAU);g.fill();
+    g.strokeStyle=`rgba(${rgb},${.22*dot})`;g.lineWidth=.45;g.beginPath();g.arc(cx,cy,4.2,0,TAU);g.stroke();g.restore();
+  }
+  // II. The Dendera zodiac: a doubled ring round the pole, its band ruled into twelve, a five-pointed
+  // star in each hour and the thirty-six decans ticked round the outside, foreshortened with the sphere.
+  const ring=stage(6);
+  if(mask&1<<2&&ring>0){
+    const R=rx*.22,r=R*.77,sweep=TAU*ring;
+    g.save();g.translate(cx,cy);g.scale(1,flat);g.strokeStyle=`rgba(${rgb},${.2*ring})`;g.lineWidth=.6/Math.sqrt(flat);
+    g.beginPath();g.arc(0,0,R,-Math.PI/2,-Math.PI/2+sweep);g.stroke();
+    g.lineWidth=.45/Math.sqrt(flat);g.beginPath();g.arc(0,0,r,-Math.PI/2,-Math.PI/2+sweep);g.stroke();
+    g.fillStyle=`rgba(${rgb},${.26*ring})`;
+    for(let i=0;i<36*ring;i++){
+      const a=-Math.PI/2+i/36*TAU,c=Math.cos(a),s=Math.sin(a);
+      g.beginPath();g.moveTo(c*R,s*R);g.lineTo(c*(R+(i%3?2.2:3.6)),s*(R+(i%3?2.2:3.6)));g.stroke();
+      if(i%3===0){g.beginPath();g.moveTo(c*r,s*r);g.lineTo(c*R,s*R);g.stroke();
+        heirloomStar(g,Math.cos(a+TAU/24)*(R+r)/2,Math.sin(a+TAU/24)*(R+r)/2,2.1,.85);g.fill();}
+    }
+    g.restore();
+  }
+  // I. The aurochs of the Hall of the Bulls, in the atlas's hairline and no ochre, laid along the zodiac
+  // at Taurus the way a printed sphere lays its signs: fainter than any line of the construction.
+  const bull=stage(7),at=sphereZodiacAt(style,m,-2.3);
+  // Leaned with the zodiac but never more than a printed sign leans, so the animal stays on its feet.
+  let lean=at.a;while(lean>Math.PI/2)lean-=Math.PI;while(lean<-Math.PI/2)lean+=Math.PI;lean=clamp(lean,-.35,.35);
+  const u=rx*.36,c=Math.cos(lean),s=Math.sin(lean);
+  // The animal's own coordinates, rump at 0 and muzzle near 1, centred on the zodiac so the line runs
+  // through its body as the ecliptic runs through the Bull on any celestial plate.
+  const T=p=>{const x=(p[0]-.5)*u,y=(p[1]-.2)*u;return [at.x+x*c-y*s,at.y+x*s+y*c];};
+  const aurochs=typeof ROCK_ANIMALS!=='undefined'&&ROCK_ANIMALS[0];
+  if(mask&1<<1&&bull>0&&aurochs){
+    g.save();g.lineJoin='round';g.lineCap='round';
+    g.strokeStyle=`rgba(${rgb},${.3*bull})`;g.lineWidth=.7;rockSmoothPath(g,aurochs.body,T);g.stroke();
+    g.strokeStyle=`rgba(${rgb},${.24*bull})`;g.lineWidth=.6;for(const st of aurochs.strokes){rockSmoothOpen(g,st,T);g.stroke();}
+    g.restore();
+  }
+  const named=stage(9);
+  // IV. Aldebaran at the Bull's eye, lettered by the name al-Ṣūfī's book handed the atlas, whether or not
+  // the Bull is drawn round it.
+  if(mask&1<<4&&named>0){
+    const [x,y]=T([.9,.05]);
+    renaissanceStarGlyph(g,x,y,1,ink.atmosphere.starGlyph,.55*named,.62,0x964);
+    m.label(named,'Aldebaran',x,y+13);
+  }
+  // III. The guest star at the tip of the southern horn, dated in the atlas's numerals to the year the
+  // Song court's astronomers entered it.
+  if(mask&1<<3&&named>0){
+    const [x,y]=T([.97,-.25]);
+    novaGlyph(g,x,y,.25,rgb,.5*named,.32,0x1054);
+    g.save();g.font=plateFace(frameWide()?7:6,'text','italic');g.textAlign='left';g.globalAlpha=.42*named;g.fillStyle=ink.frame.text;
+    g.fillText('MLIV',x+7,y-5);g.restore();
+  }
+}
 function paintRenaissanceGrid(g,progress,style){
   const hand=SPHERE_HANDS[style]||SPHERE_HANDS.graticule,band=frameBand()+4;
   g.save();g.beginPath();g.rect(band,band,Math.max(1,W-band*2),Math.max(1,H-band*2));g.clip();
-  hand(g,sphereMeasure(g,progress));
+  const m=sphereMeasure(g,progress);
+  hand(g,m);paintSphereHeirlooms(g,m,style,heirloomMask());
   g.restore();
 }
 function drawRenaissanceGrid(){
@@ -880,7 +996,7 @@ function drawRenaissanceGrid(){
   // layer is kept, so the construction costs exactly nothing when it is not wanted.
   const style=sphereStyle();if(!SPHERE_HANDS[style])return;
   const count=Math.min(10,world.captures),progress=count;
-  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+style+':'+count;
+  const key=W+'x'+H+'x'+DPR+':'+plateName+':'+style+':'+count+':'+heirloomMask();
   if(!renaissanceGridLayer||key!==renaissanceGridKey){
     renaissanceGridLayer=makeCanvas(Math.max(1,Math.ceil(W*DPR)),Math.max(1,Math.ceil(H*DPR)));const g=renaissanceGridLayer.getContext('2d');g.scale(DPR,DPR);paintRenaissanceGrid(g,progress,style);renaissanceGridKey=key;
   }
