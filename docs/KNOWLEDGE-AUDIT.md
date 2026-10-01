@@ -131,13 +131,20 @@ These need a design decision, not a text edit.
 - **Arbitrary pairings that read as fact.** On the Scroll a body's school is its row taken in threes and
   its asterism name is its id taken in twenty-fours, so the caption pairs them at random. On the
   Astrolabe the qadr comes from the seed and a star's name goes to any bright body, so Sirius can read
-  qadr 3. *Built 2026-10-01:* each rete star carries its catalogued qadr and is dealt only to a body of
-  that greatness, so a named star always reads its own. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
+  qadr 3. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
   "everything is either a measurement or an inheritance". Either bind them to real data or say, in the
-  source line, that the pairings are illustrative. *Built 2026-10-01:* the Scroll is bound to real
-  data: a body takes its school from its row as before and then an office that school truly set down
-  (`SCROLL_OFFICES`, after the Kaiyuan Zhanjing's three lists) in the palace of the lodge it is held in,
-  so name and colour always agree, and its source line no longer calls the pairing a translation.
+  source line, that the pairings are illustrative.
+  *Built 2026-10-01, bound to real data in all three.* The Astrolabe's rete stars carry their catalogued
+  qadr (the Almagest's, which al-Ṣūfī keeps) and each is dealt only to a body of that greatness, so a
+  named star always reads its own; until then a named body could read any first or second greatness.
+  On the Scroll a body takes its school from its row as before and then an office that school truly set
+  down (`SCROLL_OFFICES`, after the Kaiyuan Zhanjing's three lists) in the palace of the lodge it is held
+  in, so name and colour always agree, and its source line no longer calls the pairing a translation.
+  The Probe's systems carry their stars' catalogued classes (`PRB_SYSTEMS`), and a star prints its own
+  component's (Barnard's Star `M4V`; Alpha Centauri `A G2V`, `B K1V`, `C M5.5V`), with Barnard's mass
+  corrected to 0.16 M☉. The values were checked through search summaries only, since the primary
+  catalogues could not be opened from the sandbox; a reading against Toomer's Almagest, the Kaiyuan
+  Zhanjing's chapters 65–70 and RECONS is still owed.
 - **The Lens's families do not follow its chapters.** A body's family comes from
   `planetFamily(row,runSeed)`, not from the register, so by the code a 1610 chapter can caption a body
   `1787 · THREE VOLCANOS`. Not yet seen in play. Its sensor-era names (OCEAN WORLD, LAVA WORLD) sit on a
