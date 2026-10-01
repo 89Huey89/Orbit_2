@@ -268,6 +268,17 @@ cheap steps would close most of the gap:
    and the Ṭūsī couple that replaced it; on the Flyby, Mariner 4 finding craters where Lowell drew
    canals — planned in `07-flyby.md`, and the word *canal* is not yet in `flyby.js`, although the Lens
    already sets `NOT CANALS` two centuries below.
+   *Built 2026-10-01:* in the Lens's own form, decided by the author — a belief of the time set beside a body
+   early in the run, then set again later in the same run struck through, never erased, with its correction
+   beneath (`src/beliefs.js`, and the Lens's `LOWELL 1895` now struck in red as Antoniadi's note is typed).
+   Only attested pairs: the Ceiling's 365-day year and the Decree of Canopus (238 BCE); the Scroll's inch of
+   shadow per thousand li and Yixing's survey of 724 (Mars at the Heart was dropped: its only correction is
+   Huang Yi-long's computation of 1990, six centuries past the Scroll); the Astrolabe's equant and al-Ṭūsī's
+   two circles at Marāgha (1261); the atlas's unchanging heavens and Tycho's new star of 1572; the Flyby's
+   canals and Mariner 4 (1965); the Probe's van de Kamp planets of Barnard's Star and the telescope fault
+   found in 1973. The Rock is left without: it asserts nothing a later hand corrected. Table and sources in
+   KNOWLEDGE-HORIZON.md and `docs/archive/eras/research/beliefs.md`; the suite checks every century sets its
+   belief and strikes it later, and `npm run shots -- beliefs` shows each at 430×932.
 8. **One star through several hands.** Antares is *Xin*, *qalb al-aqrab* and "the rival of Ares"; Vega
    and Altair are the Weaver Girl and the Herd Boy and al-Ṣūfī's two eagles; Aldebaran leads from the
    Hall of the Bulls, hedged, to *al-dabarān* to the guest star of 1054 at the Bull's horn. The

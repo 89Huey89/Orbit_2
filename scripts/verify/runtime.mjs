@@ -69,7 +69,7 @@ get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCos
 get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,lensFamily,LENS_FAMILY_YEAR,LENS_EYE_READINGS,LENS_FAMILIES,planetFamily,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,PRB_SYSTEMS,prbStarClass,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,astroQadr,astroDealName,astroRun,ASTRO_STARS,scrollSchool,scrollOffice,scrollLodge,SCROLL_OFFICES,SCROLL_SCHOOLS,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
-ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
+BELIEFS,beliefOf,beliefHere,beliefBodies,beliefTick,strikeInscription,inscriptionStrike,lensCanalReading,ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
@@ -2320,6 +2320,57 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }
     }
     if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;t.journey.milestones={};
+    t.setPlate('night');
+  }
+  // ---- A belief kept, and corrected, in every century (docs/KNOWLEDGE-AUDIT.md §3.2 item 7, src/beliefs.js) ----
+  // Every century but the Rock keeps one attested belief and its attested correction. The belief is set beside
+  // a plain body early in the run; later in the same run, on a body further up, it is set again struck through
+  // with the correction beneath, and the first note, if it still stands, is struck where it is. The Lens draws
+  // its own pair on Mars's plate, struck the same way. The same seed sets both on the same bodies.
+  {
+    const t=context.test,LABELS=['attested','plausible reconstruction','gameplay translation'];
+    assert.equal(t.beliefOf(1),null,'The Rock keeps no belief: it asserts nothing a later hand corrected');
+    for(let era=2;era<=8;era++){
+      const b=t.beliefOf(era);assert(b&&b.belief&&b.fix&&b.source&&LABELS.includes(b.label),'Every century from the Ceiling up has a belief, its correction, a label and a source: era '+era);
+      if(!b.own)assert(b.fixAt>b.at,'The correction is set later in the run than the belief: era '+era);
+    }
+    {const r=t.lensCanalReading,early=r(1,0),late=r(1,1);
+      assert(early.belief>0&&early.struck===0&&early.fix===0,'The Lens sets Lowell\'s canals as the plate develops, unstruck');
+      assert(late.belief>0&&late.struck===1&&late.fix===1,'And strikes them through, never erasing them, as Antoniadi\'s correction is typed');}
+    const leave=()=>{if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}};
+    for(const era of [1,2,3,4,5,7,8]){
+      leave();
+      t.journey.era=era;t.journey.knowledge=0;t.journey.rounds=0;t.journey.milestones={};t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();t.handleInput();
+      const w=t.world;for(let i=0;i<34;i++)w.generateRow();
+      t.clearInscriptions();
+      const got=t.beliefBodies(),b=t.beliefOf(era);
+      if(era===1){assert.equal(got,null,'The wall sets no belief');t.beliefTick(()=>true);assert(!t.inscriptions.some(g=>/^belief/.test(g.key)),'And writes none');continue;}
+      const where='era '+era,from=w.eraFrom||0;
+      assert(got&&got.set&&got.fix&&got.set!==got.fix,'The belief and its correction each stand on a body of their own: '+where);
+      assert(got.set.row>=from+b.at&&got.fix.row>=from+b.fixAt,'On the rows the century gives them: '+where);
+      for(const n of [got.set,got.fix])assert(!n.difficultyChoice&&n.routeId==null&&(n.type==='still'||n.type==='drift'),'A plain main-line body: '+where);
+      const twin=new OrbitWorld(w.seed,w.width,w.height,()=>{},true,w.varyOpening,w.newtonOn,w.chasmsOn,w.relightOn,w.goalRow);twin.driven=w.driven;for(let i=0;i<34;i++)twin.generateRow();
+      const tg=t.beliefBodies(twin);assert(tg&&tg.set.row===got.set.row&&tg.fix.row===got.fix.row,'The same seed sets them on the same rows: '+where);
+      t.beliefBodies(w);
+      // Early: only the belief is in sight, and it is set, unstruck.
+      t.beliefTick(n=>n===got.set);
+      const first=t.inscriptions.find(g=>g.key==='belief');
+      assert(first&&first.text===b.belief&&t.inscriptionStrike(first)===0,'The belief is set beside its body, unstruck: '+where);
+      assert(!t.inscriptions.some(g=>g.key==='belief-fix'),'And nothing corrects it yet: '+where);
+      // Later: the correction's body comes into sight, and the belief is struck.
+      t.beliefTick(()=>true);
+      const fix=t.inscriptions.find(g=>g.key==='belief-fix');
+      assert(fix&&fix.text===b.fix,'The correction is set beside a body further up the run: '+where);
+      assert(fix.strikeN>=1&&fix.lines.slice(0,fix.strikeN).join(' ')===b.belief,'Quoting the belief above it, to be struck: '+where);
+      assert(first.struckAt!=null&&first.strikeN===first.lines.length,'And the first note, still on the sheet, is struck where it stands: '+where);
+      for(const g of [first,fix])g.age+=10;
+      assert(t.inscriptionStrike(first)===1&&t.inscriptionStrike(fix)===1,'Struck through in full, and still there: '+where);
+      t.beliefTick(()=>true);
+      assert.equal(t.inscriptions.filter(g=>g.key==='belief-fix').length,1,'The correction is written once: '+where);
+    }
+    leave();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;t.journey.milestones={};
     t.setPlate('night');
   }
