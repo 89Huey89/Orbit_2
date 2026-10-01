@@ -135,7 +135,7 @@ const ONE_STARS=[
     3:{line:'織女 ZHINÜ · VEGA',own:'織女',reading:'Zhinü · the Weaver Girl',label:'attested',
       note:'Zhinü, the Weaver Girl, who in the Book of Songs “moves seven times all day” and weaves no pattern. Across the River of Heaven the Herd Boy is Altair, great star of the River Drum.',
       source:'Shijing, Xiao Ya, 大東: 跂彼織女，終日七襄…睆彼牽牛; Sima Qian, Tianguan shu: 織女，天女孫也, and 河鼓大星，上將 (Altair, 河鼓二, the Herd Boy 牛郎).'},
-    4:{line:'النسر الواقع · AL-NASR AL-WAQI · VEGA',own:'النسر الواقع',reading:'al-Nasr al-Wāqiʿ · the swooping eagle',label:'attested',
+    4:{line:'النسر الواقع · AL-NASR AL-WAQI · VEGA',own:'النسر الواقع',reading:'al-Nasr al-Wāqi · the swooping eagle',label:'attested',
       note:'Al-nasr al-waqi, the swooping eagle, its wings folded. Across the Milky Way Altair is al-nasr al-tair, the flying eagle, its wings spread.',
       source:'Al-Ṣūfī, Book of the Fixed Stars (964); Kunitzsch. The Astrolabe’s own ASTRO_STARS.'},
     5:{line:'VEGA · α LYRAE',own:'Vega · α Lyrae',reading:'the swooping one, in Latin letters',label:'attested',

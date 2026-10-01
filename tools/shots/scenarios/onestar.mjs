@@ -28,7 +28,8 @@ export default {
     await g.advance(1);
     await g.eval(()=>{if(runMode==='journey'){if(plateOwns('mode'))leaveEra();else toggleJourney();}});
     await g.openCatalogue('record');
-    await g.eval(()=>{const s=document.querySelector('.cat-onestar');if(s)s.scrollIntoView({block:'start'});});
+    // The section of the round's own star, the stars counted in ONE_STARS's order from round 2.
+    await g.eval(r=>{const all=document.querySelectorAll('.cat-onestar'),s=all[Math.min(all.length-1,(r-1)%ONE_STARS.length)];if(s)s.scrollIntoView({block:'start'});},rounds);
     await g.advance(.3);
     await g.shot('catalogue');
   }
