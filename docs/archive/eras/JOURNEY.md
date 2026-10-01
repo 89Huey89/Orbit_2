@@ -915,6 +915,10 @@ stages above.
   `orbit.records.v1`, one per era and reading, with the Final Frontier's apart; the door mechanism
   (`eraOpen`, `ERA_UNLOCKS`), on since 2026-10-01 with the proof chapter below. No old records are
   carried over: the game had no players to carry them for.
+- *The Flyby's vacuum as measurement* (§9.1, 2026-10-01): the shipped ground already had the parallax field,
+  the DSN traces, the cosmic rays and the shape-model mesh; what LOS lacked is now built (`flyLock()` in
+  `src/flyby.js`): the margin traces go flat over the edge's reach, and past lock (`FLY_LOCK_LOST`) the AOS
+  turns LOS, the traces stop and the stars freeze in their parallax. Shots: `flyby-los`.
 - *The doors* (§9.1, 2026-10-01): `JOURNEY_GATES_DOORS` is on. A century the Journey has reached is flown
   whole in Free Play; a door to one not yet reached stays on the frontispiece, named `THE SCROLL · FIRST
   CHAPTER`, and opens a proof (`eraProof()` in `src/journey.js`): the Chronicle reading only, won at the end of
@@ -1008,5 +1012,3 @@ stages above.
   its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
   `ENDLESS-HARD.md` and not built.
-- **The Flyby's vacuum as measurement** (§9.1): check the shipped ground and LOS against the settled
-  reading and fill in what it lacks.
