@@ -700,8 +700,22 @@ function lensReleaseMarks(n,p,reg,x,y){
       ctx.restore();}
   }
 }
-// Which world a body is, and how large its disc is drawn once it is resolved.
-const lensFamily=n=>planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice);
+// Which world a body is, and how large its disc is drawn once it is resolved. The chart deals families
+// without regard to dates, but the Lens is a story told in order, and a body never resolves into a reading
+// its chapter had not yet made: the year sealed on each family's register-one caption is the year that
+// family's reading entered the record, and a family dealt to a chapter older than it is redrawn, from the
+// row and the seed, among those its chapter already knew. Padua holds the Moon and Venus, The Hague adds
+// the ring, and from Paris on every reading is old. Only the Lens is bound this way; every other century
+// reads the chart's own family.
+const LENS_FAMILY_YEAR=Object.fromEntries(Object.entries(LENS_EYE_READINGS).map(([f,r])=>[f,parseInt(r.caption,10)]));
+const lensChapterOfRow=row=>clamp(Math.floor(eraRow(row)/LENS_CHAPTER_ROWS),0,LENS_CHAPTERS.length-1);
+function lensFamily(n){
+  const f=planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice);
+  if(n.difficultyChoice||!(f in LENS_FAMILY_YEAR))return f;
+  const year=LENS_CHAPTERS[lensChapterOfRow(n.row)].year;if(LENS_FAMILY_YEAR[f]<=year)return f;
+  const known=LENS_FAMILIES.filter(k=>LENS_FAMILY_YEAR[k]<=year);
+  return known[(Math.floor(n.row)+((world.seed>>>0)%7))%known.length];
+}
 const lensDiscR=n=>clamp(n.r*.4,7,17)*scale;
 // A light not yet reached, in each register's way of being unresolved: a soft blot at the eyepiece that has
 // not come to focus; a bare knot of silver on the glass; a point-spread function off the sensor.
