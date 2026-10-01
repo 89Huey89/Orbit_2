@@ -272,6 +272,13 @@ cheap steps would close most of the gap:
    and Altair are the Weaver Girl and the Herd Boy and al-Ṣūfī's two eagles; Aldebaran leads from the
    Hall of the Bulls, hedged, to *al-dabarān* to the guest star of 1054 at the Bull's horn. The
    heirlooms already walk this path in part.
+   *Built 2026-10-01:* Vega and Altair are the fifth entry of one star, eight names (§3.3), round 6, so the
+   cycle is five long. One entry for the pair: the round's body is Vega, and Altair stands in the notes of the
+   centuries that set the two down together (the Scroll's Herd Boy, great star of 河鼓 the River Drum; al-Ṣūfī's
+   flying eagle; Bayer's α Aquilae; Altair's distance on the Probe). The Rock's line says no name survives and
+   its note hedges Rappenglück's Shaft Scene reading as weak; the Ceiling's says no name is certain. The
+   distinction between 河鼓 (the office Altair is brightest in) and 牽牛 (properly the lodge Niu) is argued in
+   `research/one-star.md`.
 9. **The phone first.** On 430×932 the magnitude key and the construction's labels are next to
    invisible. The pause leaf could be the atlas's legend: *I brightest · VI faintest, as Ptolemy ranked
    them*; *the celestial equator*; *the ecliptic, the Sun's yearly path*.
@@ -307,7 +314,8 @@ such a round one plain body is the star, inscribed in the plate's own small caps
 ends the round letters the ochre dot with the star's name and names nothing else; and the atlas's Record keeps the
 names met under `orbit.star.v1`. Every one of the thirty-two entries carries an evidence label and a source
 (`ONE_STARS` in `src/onestar.js`; `docs/archive/eras/research/one-star.md`), and six of them are honest absences.
-This also answers part of §3.2 item 8 (one star through several hands) for these four stars.
+This also answers part of §3.2 item 8 (one star through several hands) for these four stars; Vega and Altair
+were added the same day as a fifth entry, round 6, with forty entries in all and eight of them honest absences.
 
 ## Sources checked for this audit
 

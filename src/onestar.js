@@ -5,9 +5,12 @@
 // ---------- The round's star ----------
 // The first climb reveals nothing; it is the climb. Every round after it follows one real star up the whole
 // ladder, the same light named in each century's own hand: the Pleiades in the second round, Sirius in the third,
-// Antares in the fourth, Aldebaran in the fifth, and the four again from the sixth. In every century of such a
-// round one body on the chart *is* that star, and the descent that ends the round letters the ochre dot with its
-// name. Only attested names are set: where a century has left no name for the star, its line says so plainly,
+// Antares in the fourth, Aldebaran in the fifth, Vega in the sixth, and the five again from the seventh. In every
+// century of such a round one body on the chart *is* that star, and the descent that ends the round letters the
+// ochre dot with its name. Vega comes as half of a pair, the Weaver Girl whom the Herd Boy, Altair, faces across
+// the river of the Milky Way: a round still follows one body, so Vega is the one the chart deals and named, and
+// Altair stands in the notes of every century that set the two down together. Its entry's `title` names the
+// pair, for the Record's page, and `name` the one star, for the dot the descent letters. Only attested names are set: where a century has left no name for the star, its line says so plainly,
 // and a reading that is only likely is hedged the way the Rock's notes hedge the Lascaux dots. Each entry carries
 // the evidence label ERA-AUDIT.md asks for and its source; docs/archive/eras/research/one-star.md keeps the table.
 // `line` is what the sheet inscribes beside the body, in the century's own small caps, always ending in the name
@@ -121,9 +124,37 @@ const ONE_STARS=[
     8:{line:'ALDEBARAN · 65 LY',own:'ALDEBARAN · 65 LY',reading:'logged, not a target',label:'gameplay translation',
       note:'Aldebaran: an orange giant sixty-five light-years off, some forty-four times the Sun’s width. Logged; not a target.',
       source:'Distance 65 ly, radius c. 44 solar. The probe’s log is the game’s.'}
+  }},
+  {id:'vega',title:'Vega and Altair',name:'Vega',eras:{
+    1:{line:'VEGA · NO NAME SURVIVES',own:'',reading:'',label:'plausible reconstruction',
+      note:'No name for it survives. One reading takes the eyes of three figures in the Lascaux Shaft for Vega, Deneb and Altair; it is a weak reading.',
+      source:'Rappenglück’s reading of the Shaft Scene as the Summer Triangle; contested, and weaker than his Pleiades (Bahn; Hayden & Villeneuve, CAJ 21(3), 2011). research/rock.md §1.'},
+    2:{line:'VEGA · NO NAME IS CERTAIN',own:'',reading:'',label:'gameplay translation',
+      note:'No Egyptian name for Vega, or for Altair across the river of stars from it, can be fixed with confidence.',
+      source:'Decan identifications beyond Sah, Sopdet and Meskhetiu are uncertain; research/ceiling.md.'},
+    3:{line:'織女 ZHINÜ · VEGA',own:'織女',reading:'Zhinü · the Weaver Girl',label:'attested',
+      note:'Zhinü, the Weaver Girl, who in the Book of Songs “moves seven times all day” and weaves no pattern. Across the River of Heaven the Herd Boy is Altair, great star of the River Drum.',
+      source:'Shijing, Xiao Ya, 大東: 跂彼織女，終日七襄…睆彼牽牛; Sima Qian, Tianguan shu: 織女，天女孫也, and 河鼓大星，上將 (Altair, 河鼓二, the Herd Boy 牛郎).'},
+    4:{line:'النسر الواقع · AL-NASR AL-WAQI · VEGA',own:'النسر الواقع',reading:'al-Nasr al-Wāqi · the swooping eagle',label:'attested',
+      note:'Al-nasr al-waqi, the swooping eagle, its wings folded. Across the Milky Way Altair is al-nasr al-tair, the flying eagle, its wings spread.',
+      source:'Al-Ṣūfī, Book of the Fixed Stars (964); Kunitzsch. The Astrolabe’s own ASTRO_STARS.'},
+    5:{line:'VEGA · α LYRAE',own:'Vega · α Lyrae',reading:'the swooping one, in Latin letters',label:'attested',
+      note:'Vega, α Lyrae: the name is the Arabic al-waqi, the swooping, worn down on its way into Latin. Altair, the flying one, is Bayer’s α Aquilae.',
+      source:'Bayer, Uranometria (1603): α Lyrae, α Aquilae; Vega from (al-nasr) al-wāqiʿ by way of the Alfonsine Tables (Kunitzsch).'},
+    6:{line:'3 LYRAE · VEGA',own:'3 Lyrae',reading:'Vega, numbered from Flamsteed',label:'attested',
+      note:'Struve at Dorpat chose Vega for one of the first measurements of a star’s distance, published in 1837. In 1850 it was the first star photographed after the Sun.',
+      source:'Flamsteed numbers 3 Lyr and 53 Aql (Altair); F. G. W. Struve, parallax of Vega with the Fraunhofer refractor (1837); W. C. Bond and J. A. Whipple, Harvard, 16–17 July 1850.'},
+    7:{line:'HIP 91262 · VEGA',own:'HIP 91262',reading:'Vega, in the Hipparcos catalogue',label:'attested',
+      note:'In 1983 the IRAS satellite found Vega too bright in the infrared: a disc of dust round it, the first such disc found round another star.',
+      source:'HIP 91262 = α Lyr, HIP 97649 = α Aql (Altair); Aumann et al., ApJ 278 (1984), the “Vega phenomenon”.'},
+    8:{line:'VEGA · 25 LY',own:'VEGA · 25 LY',reading:'logged, not a target',label:'gameplay translation',
+      note:'Vega: twenty-five light-years, young, fast-spinning and ringed with dust. Altair, its partner across the river, is nearer, at 16.7. Logged; not a target.',
+      source:'Hipparcos distances, Vega c. 25 ly and Altair c. 16.7 ly. The probe’s log is the game’s.'}
   }}
 ];
 // The round counts from one, as the Journey's line names it (journey.rounds is the circles closed before it).
+// The one star a round's body is, as the descent letters it: the entry's `name` where its title names more.
+const oneStarName=star=>star.name||star.title;
 const oneStarOfRound=round=>round>=2?ONE_STARS[(Math.floor(round)-2)%ONE_STARS.length]:null;
 // The star the run in hand follows: only a Journey run, and only in a round after the first.
 function oneStarNow(){
@@ -214,4 +245,10 @@ function oneStarCeilingSigns(n){
 function oneStarAstroTaken(i){
   const here=oneStarHere();if(!here||here.era!==4||typeof ASTRO_STARS==='undefined'||!ASTRO_STARS[i])return false;
   return ASTRO_STARS[i][0]===here.entry.own;
+}
+// The Scroll writes a held body up under one of its school's offices (SCROLL_OFFICES). Where the round's star is
+// itself one of those offices, the Weaver Girl, no other body is written up under that name as well; the River
+// Drum stays free, since that office is Altair's, the other half of the pair.
+function oneStarScrollTaken(name){
+  const here=oneStarHere();return !!here&&here.era===3&&here.entry.own===name;
 }
