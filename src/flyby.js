@@ -14,7 +14,7 @@
 // the Deep Space Network's own listening in the margins, and the odd cosmic-ray hit on the sensor.
 //
 // A body is never delivered whole, because a mission's picture never was. Held, it arrives as a controller
-// actually sat through it: scan lines filling from the top as Mariner 4's ten-hour frames did; then a mosaic of
+// actually sat through it: scan lines filling from the top as Mariner 4's eight-hour frames did; then a mosaic of
 // separately radioed tiles locking in with their seams showing, a false-colour pass where there is a named
 // reason for one; then the seams closing into one clean disc; and only then the instrument margin — a scale
 // bar, a filter, and a mission label dated as the mission was. A small irregular body is a shape model instead,

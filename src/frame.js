@@ -63,8 +63,10 @@ function frameCompassRose(g,cx,cy,r,colors){
   g.fillStyle=colors.text;
   const opts={align:'center',size,spacing:size*.14};
   textAlongArc(g,'SEPTENTRIO',cx,cy,ring+size,-Math.PI/2,opts);
-  textAlongArc(g,'ORIENS',cx,cy,ring+size,0,opts);
-  textAlongArc(g,'OCCIDENS',cx,cy,ring+size,Math.PI,opts);
+  // East stands on the left and west on the right: a chart of the sky is the sky seen from below, looking
+  // up with the north at the head, and the land map's east-on-the-right is that view turned over.
+  textAlongArc(g,'OCCIDENS',cx,cy,ring+size,0,opts);
+  textAlongArc(g,'ORIENS',cx,cy,ring+size,Math.PI,opts);
   textAlongArc(g,'MERIDIES',cx,cy,ring+size,Math.PI/2,{...opts,inward:true});
 }
 // A cherubic wind-head, cut for the corner of the plate: a puffing face turned into the chart with its
@@ -419,6 +421,8 @@ function buildFrameLayer(){
   // width, each cut into six ten-minute divisions, so the count is 24 wherever the plate is played and
   // only the spacing changes with it. Numbered in the same Roman hours sphereGraduation's own limb
   // already counts by, going round twice — a 24-hour dial unrolled flat rather than run as a circle.
+  // The hours rise from right to left, since right ascension runs eastward and a chart of the sky has
+  // its east on the left, as the compass rose letters it.
   // Majors are cut short of the inner rule on purpose, leaving the numeral its own lane rather than
   // the tick's own ink.
   const hLen=Math.max(1,W-band*2),HOUR_STEP=hLen/24,MIN_STEP=HOUR_STEP/6,hourLen=tickLen*.5,minLen=tickLen*.3;
@@ -429,7 +433,7 @@ function buildFrameLayer(){
     burinSegment(g,x,outerR,x,outerR+len,rgb,alpha,onHour?.9:.5,90301+i*3,{segments:3,skips:0,hair:false,wobble:.22});
     burinSegment(g,x,H-outerR,x,H-outerR-len,rgb,alpha,onHour?.9:.5,90401+i*3,{segments:3,skips:0,hair:false,wobble:.22});
     if(onHour&&!plainPlate()){
-      const label=ROMAN_HOURS[(i/6)%12];
+      const label=ROMAN_HOURS[((144-i)/6)%12];
       g.font=plateFace(numFont,'sc');g.textAlign='center';g.fillStyle=colors.text;g.textBaseline='middle';
       g.fillText(label,x,(outerR+innerR)/2);g.fillText(label,x,H-(outerR+innerR)/2);
     }
@@ -718,14 +722,17 @@ function sphereMeasure(g,progress){
   // Lettering a construction names its parts with: one line, set where the part it names actually is,
   // on a small leaf of the sheet's own ground rather than bare over the construction's own lines — the
   // same clearing `drawRunningHead()` cuts for itself, sized to the caption rather than to a fixed band.
-  const label=(p,text,x,y,rotation=0)=>{
+  // A part the player has to understand carries its English in italic under the Latin, as the figures do.
+  const label=(p,text,x,y,rotation=0,gloss='')=>{
     if(p<=0)return;
-    const size=frameWide()?8:6.5;
-    g.save();g.font=plateFace(size,'sc');g.textAlign='center';
+    const size=frameWide()?8:6.5,gs=size*.9;
+    g.save();g.font=plateFace(gs,'text','italic');const gw=gloss?g.measureText(gloss).width:0;
+    g.font=plateFace(size,'sc');g.textAlign='center';
     g.translate(x,y);if(rotation)g.rotate(rotation);
-    const half=g.measureText(text).width*.5+3;
-    g.globalAlpha=.32*p;g.fillStyle=`rgba(${ink.base.paperRgb},1)`;g.fillRect(-half,-size*.78,half*2,size*1.12);
+    const half=Math.max(g.measureText(text).width,gw)*.5+3;
+    g.globalAlpha=.32*p;g.fillStyle=`rgba(${ink.base.paperRgb},1)`;g.fillRect(-half,-size*.78,half*2,size*1.12+(gloss?gs*1.1:0));
     g.globalAlpha=.42*p;g.fillStyle=ink.frame.text;g.fillText(text,0,0);
+    if(gloss){g.font=plateFace(gs,'text','italic');g.fillText(gloss,0,gs*1.1);}
     g.restore();
   };
   return {stage:n=>clamp(progress-n,0,1),cx,cy,rx,ry,rgb,ecliptic:rubric||rgb,eclipticAlpha:rubric?.34:.24,colors:ink.frame,arc,prick,label};
@@ -764,7 +771,7 @@ function paintGraticuleSphere(g,m){
   for(let i=0;i<6;i++)arc(stage(5.4+i*.42),cx,cy,rx*(.16+i*.14),ry,0,.1,.5); // meridians
   sphereGraduation(g,m,stage(8),rx,ry);
   const names=stage(9);
-  m.label(names,'Æquator cælestis',cx,cy+ry+15);m.label(names,'Ecliptica',cx+rx*.58,cy-ry*.54,-.31);
+  m.label(names,'Æquator cælestis',cx,cy+ry+15,0,'the celestial equator');m.label(names,'Ecliptica',cx+rx*.58,cy-ry*.54,-.31,'the Sun’s yearly path');
 }
 // The pierced plate that turns over an astrolabe's tympan: the limb, the two tropics between which the
 // whole zodiac lies, and the eccentric ecliptic ring laid tangent to both of them — which is the one

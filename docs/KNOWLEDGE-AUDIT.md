@@ -145,15 +145,22 @@ These need a design decision, not a text edit.
   of 1603 (Phoenix, Tucana, Pavo) and four invented ones (Acus, Penna, Laterna, Phalæna). Velum is
   Lacaille's division of Argo in the 1750s, flown beside Argo itself. None of this is disclosed, and the
   atlas is the one frontispiece with no source line. *Since 2026-09-30 the figures' own notes disclose it
-  (§3.1, item 2); the source line is still owed.*
+  (§3.1, item 2); since 2026-10-01 the atlas has its source line too, naming Bayer's Uranometria, the
+  figures' four sources and the gameplay translation.*
 - **The Ceiling fuses three sources** a century and a half apart: Senenmut's ceiling (c. 1470 BCE), the
-  Book of Nut and the Amduat (Ramesside). The source line discloses part of it.
+  Book of Nut and the Amduat (Ramesside). The source line discloses part of it. *Built 2026-10-01:* the
+  source line now dates Senenmut's ceiling and the Ramesside books and says the sheet sets the three side
+  by side.
 - **Smaller:** the compass rose sets ORIENS on the right, the terrestrial convention, where a chart of
   the sky seen from below has east on the left; VIS GRAVITATIS is a softened pull of finite range, while
   its only English (an aria label) calls it "real gravity"; the Mariner 4 "ten-hour frames" in
   `flyby.js`'s header and `07-flyby.md` do not match their own figures (240,000 bits at 8⅓ bit/s is
   eight hours); the Ceiling's month circles are drawn with thirty spokes where
-  `research/ceiling.md` records twenty-four segments.
+  `research/ceiling.md` records twenty-four segments. *Built 2026-10-01:* all four are done. The rose
+  letters ORIENS on the left and OCCIDENS on the right, and the frame's hours of right ascension now rise
+  from right to left with it; the aria label says the pull is softened and has a short reach; Mariner 4's
+  frames are eight hours in `flyby.js`, `07-flyby.md` and `research/space-age.md`; the month circles have
+  twenty-four spokes.
 
 ### 2.3 · How claims are kept honest
 
@@ -169,6 +176,8 @@ cheap steps would close most of the gap:
   should say what its framing is ("Someone has to remember them" is a story, not a finding); the
   atlas's should name Bayer's *Uranometria* (Augsburg, 1603) and say that the telescopic bodies and the
   invented figures are a gameplay translation.
+  *Built 2026-10-01:* the Rock and the atlas now carry theirs, so every frontispiece has one. The Rock's
+  says no painted dot is asserted to be a star and that the keeping hand is a story, not a finding.
 
 ## 3 · Where it could teach more
 
@@ -192,8 +201,10 @@ cheap steps would close most of the gap:
    Moth now say they are the atlas's own. The atlas's Record keeps both (the notes under the Asterismi
    register, the lines as *Annales*). Building it found that every voice inherits the atlas's lore unless
    it sets its own, so the Ceiling and the Scroll now set theirs to none, and the suite checks that no
-   century speaks the atlas's lines. Still open from the list: the *stella nova* caption and the
-   ecliptic's gloss, which are captions on the sheet rather than lines.
+   century speaks the atlas's lines. *Built 2026-10-01:* the two captions left over. A slingshot held to a
+   full observation is lettered *Stella nova* on its rim, as a world is with its species, and the
+   construction's *Æquator cælestis* and *Ecliptica* carry their English in italic beneath them (*the
+   celestial equator*, *the Sun's yearly path*).
 3. **Bring the Scroll up to the Astrolabe.** Curator's lines for the four palaces; notes such as *Xin,
    the Heart, is Antares*, *the Weaver Girl and the Herd Boy are Vega and Altair*, *twenty-eight lodges,
    about one for each night of the Moon's round*, *365¼ dù, a day for each of the Sun's*; pinyin beside

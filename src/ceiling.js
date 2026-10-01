@@ -695,10 +695,10 @@ function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
 // ruled box, the name beneath it and the red construction lines through its centre, all drawn by the
 // caller below rather than by this function.
 function ceilingMonthCircle(g,cx,cy,r,alpha=.85,seed=0){
-  // Thirty spokes, not the twenty-four this first read off a smaller crop: the count is still one
-  // uniform division shared by every wheel — nothing here is invented per-circle — but a closer look
-  // corrects what that fixed count actually is.
-  const div=30,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
+  // Twenty-four spokes, the segments research/ceiling.md records for TT353's month circles: one uniform
+  // division shared by every wheel, nothing here invented per circle. A closer crop was once read as
+  // thirty, but the count the research holds is the one the wall keeps.
+  const div=24,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
   g.save();g.globalAlpha=alpha;
   ceilingBrush(g,ceilingArcPoints(cx,cy,r*jit,0,TAU,48),ink,Math.max(.75,r*.02),alpha*.95,seed*7+1);
   for(let i=0;i<div;i++){
