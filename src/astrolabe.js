@@ -634,6 +634,7 @@ function astroNodeDrawn(n,aim){
   if(ASTRO_GIFTS[n.type])astroGift(n,x,y,n.r*scale,used);
   else if(n.difficultyChoice||pen.taken>0)astroBody(n,x,y,tier,pen.d,n.difficultyChoice?1:pen.taken);
   else astroPhenomenon(n,x,y,tier);
+  if(n.difficultyChoice)drawTriadGloss(n,x,y+n.r*scale*.6+16*scale,ink.astro.ink,.78);
   if(active)astroReleaseMarks(n,p,x,y);
 }
 

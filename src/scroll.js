@@ -402,6 +402,7 @@ function scrollNode(n,aim){
   if(SCROLL_GIFTS[n.type])scrollGift(n,x,y,n.r*scale,used);
   else if(n.difficultyChoice||pen.taken>0)scrollBody(n,x,y,tier,pen.d,n.difficultyChoice?1:pen.taken);
   else scrollPhenomenon(n,x,y,tier);
+  if(n.difficultyChoice)drawTriadGloss(n,x,y+n.r*scale*.6+16*scale,ink.scroll.soot,.78);
   if(active)scrollReleaseMarks(n,p,x,y);
 }
 

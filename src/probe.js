@@ -668,6 +668,7 @@ function prbChoice(n,x,y){
   const P=ink.probe,C=PRB_CHOICE[n.difficultyChoice]||PRB_CHOICE.classic,R=prbDiscR(n);
   prbBody(n,C.fam,x,y,1,1,0);
   prbMono(ctx,C.name,x,y+R+13*scale,Math.max(9.5,10*scale),P.white,.95,'center');prbMono(ctx,C.sub,x,y+R+25*scale,Math.max(7,7.2*scale),P.grey,.85,'center');
+  drawTriadGloss(n,x,y+R+37*scale,P.white,.8);
 }
 // A small body — a faint light, or the gilt find — is read the same class-first way, only as rubble: a lumpy
 // outline, its figures in the same hand; the gilt find is a metal-rich asteroid, the one worth the most metal.

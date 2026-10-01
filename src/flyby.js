@@ -558,6 +558,7 @@ function flyChoice(n,x,y){
   if(c==='relaxed'){const mx=x+R*.18,my=y-R*.12;ctx.save();ctx.strokeStyle=`rgba(${P.amber},.95)`;ctx.lineWidth=Math.max(.6,.7*scale);ctx.beginPath();ctx.moveTo(mx-3*scale,my);ctx.lineTo(mx+3*scale,my);ctx.moveTo(mx,my-3*scale);ctx.lineTo(mx,my+3*scale);ctx.stroke();ctx.restore();}
   const name=c==='relaxed'?'THE MOON':c==='classic'?'MARS':'NEPTUNE',sub=c==='relaxed'?'1969 · APOLLO 11':c==='classic'?'1965 · MARINER 4':'1989 · VOYAGER 2';
   flyGrot(ctx,name,x,y+R+13*scale,Math.max(10,10.5*scale),P.white,.92,'center');flyMono(ctx,sub,x,y+R+25*scale,Math.max(7,7.5*scale),P.grey,.85,'center');
+  drawTriadGloss(n,x,y+R+37*scale,P.white,.8);
 }
 // The charges, as the things a mission actually carried or leaned on: a radiation vault, the shielded box its
 // electronics ride Jupiter's belts in; a high-gain dish locked on Earth; one of the network's seventy-metre

@@ -1060,11 +1060,18 @@ function rockRingSprite(seed,cap,r){
   return sprite;
 }
 function rockRing(n,x,y,cap,state){
-  {const al=.95*state;if(al>.003){const sp=rockRingSprite(n.seed>>>0,cap,2.6*Math.max(.55,state)*scale),h=sp.half,
+  {const al=.95*state;if(al>.003){const sp=rockRingSprite(n.seed>>>0,cap,2.6*Math.max(.8,state)*scale),h=sp.half,
       X=Math.round((x-h)*DPR)/DPR,Y=Math.round((y-h)*DPR)/DPR,op=ctx.globalCompositeOperation,ga=ctx.globalAlpha;
     ctx.globalCompositeOperation='multiply';ctx.globalAlpha=al;ctx.drawImage(sp.canvas,X,Y,sp.size,sp.size);
     ctx.globalCompositeOperation='source-over';ctx.globalAlpha=al*.34;ctx.drawImage(sp.canvas,X,Y,sp.size,sp.size);
     ctx.globalCompositeOperation=op;ctx.globalAlpha=ga;}}
+  // Ochre multiplied into the wall is only as visible as the rock under it is lit, and most of the wall
+  // is out of the torch's reach, where the ring went dark with it — but a ring is how a release is
+  // judged and may never be withheld. Each dot therefore keeps a pricked kaolin core, the scratch's own
+  // pale, which reads on unlit rock as the ochre reads on lit.
+  {const al=(state>=1?.66:.58)*state;if(al>.01){ctx.save();ctx.fillStyle=`rgba(${ink.rock.kaolin},${al.toFixed(3)})`;ctx.beginPath();
+    const pr=(state>=1?1.2:1.1)*scale;for(let i=0;i<ROCK_RING_N;i++){const a=i/ROCK_RING_N*TAU,px=x+Math.cos(a)*cap,py=y+Math.sin(a)*cap;ctx.moveTo(px+pr,py);ctx.arc(px,py,pr,0,TAU);}
+    ctx.fill();ctx.restore();}}
   const at=rockFlourishAt.get(n);if(at===undefined)return;
   const seal=clamp(1-(world.time-at)/ROCK_FLOURISH_DUR,0,1);if(seal<=0)return;
   const glow=seal*seal;
@@ -1148,6 +1155,7 @@ function rockNode(n,aim){
   if(ROCK_GIFTS[n.type])rockGift(n,x,y,bodyR,used);
   else if(n.difficultyChoice||pen.taken>0)rockBody(n,x,y,bodyR*rockTriadSize(n),tier,pen.d,n.difficultyChoice?1:pen.taken,relief);
   else rockPhenomenon(n,x,y,bodyR);
+  if(n.difficultyChoice)drawTriadGloss(n,x,y+bodyR*.6+20*scale,ink.rock.kaolin,.95,'rgba(26,20,15,.55)');
   if(active)rockReleaseMarks(n,p,x,y);
   ctx.restore();
 }

@@ -909,6 +909,7 @@ function lensChoice(n,x,y){
       gr.addColorStop(0,`rgba(${P.sepia},.32)`);gr.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(gx,gy,R*1.1,0,TAU);ctx.fill();}
     ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,43)-.5)*R*.7,y+(tileHash(n.id,i,44)-.5)*R*.5,Math.max(.7,.9*scale),0,TAU);ctx.fill();}
     ctx.restore();lensFell(ctx,'NEBULA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
+  drawTriadGloss(n,x,y+R+27*scale,P.ink,.75);
 }
 // The charges, as the things an observatory kept: the objective's dew-cap for the shield; a finder's mirror
 // for the reflector; the dome's shutter opening on a clear sky for the dawn charge; and for the inkwell, a
