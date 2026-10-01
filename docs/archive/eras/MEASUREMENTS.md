@@ -310,3 +310,58 @@ Only a sitting that ends sooner, or a hand that goes deeper, would move it.
 node scripts/probe.mjs --ladder --seeds=40                    # the tables above, one process
 node scripts/probe.mjs --ladder --seeds=40 --hands=20         # one hand; fly several side by side
 ```
+
+## The fourth reading: the Marathon, the whole ladder in one life
+
+*2026-10-01.* JOURNEY.md §9.2 leaves the Marathon's in-run gates to be set and measured. In a Marathon nothing is
+banked across runs, so every century's gate has to be met inside the one life, and the Journey's gate of 50 is out
+of reach: a run at the author's hand banks 5 to 13 in all. `probe.mjs --marathon` flies one life from the Rock up
+through every century and round the circle. It arms the next century once the knowledge observed since this one
+began reaches the gate, and once the century's feat has been flown in it unless `--nofeats`. Each change refills the
+nib and pushes the dark back, as `eraTransition` does. The Rock's flares relight and the Lens crosses its registers;
+every other century flies the atlas's chart. 60 lives per hand and gate, default pressure, endless driver on. The
+σ 10 ms reading without feats was cut off by the sandbox's time limit and is missing.
+
+*Flown* is the median number of centuries a life leaves, which is the Marathon's record (§9.2). The columns II to
+VIII are the share of lives that reach each.
+
+**Feats required**, as the Journey asks them:
+
+| gate | hand | flown | p90 | best | circle | II | III | IV | V | VI | VII | VIII |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2 | σ 10 ms | 4 | 12 | 12 | 28 % | 100 % | 95 % | 92 % | 77 % | 43 % | 32 % | 28 % |
+| 4 | σ 10 ms | 4 | 11 | 12 | 13 % | 97 % | 92 % | 82 % | 70 % | 28 % | 20 % | 13 % |
+| 2 | σ 20 ms | 3 | 4 | 5 | 0 % | 100 % | 83 % | 65 % | 40 % | 2 % | 0 % | 0 % |
+| 4 | σ 20 ms | 3 | 4 | 4 | 0 % | 88 % | 67 % | 55 % | 23 % | 0 % | 0 % | 0 % |
+| 4 | σ 30 ms | 2 | 3 | 4 | 0 % | 85 % | 60 % | 25 % | 8 % | 0 % | 0 % | 0 % |
+| 4 | σ 45 ms | 1 | 3 | 3 | 0 % | 67 % | 32 % | 10 % | 0 % | 0 % | 0 % | 0 % |
+
+**Feats not required**, knowledge alone:
+
+| gate | hand | flown | p90 | best | circle | II | III | IV | V | VI | VII | VIII |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2 | σ 20 ms | 6 | 12 | 31 | 38 % | 100 % | 88 % | 80 % | 67 % | 63 % | 58 % | 47 % |
+| 4 | σ 20 ms | 3 | 7 | 14 | 7 % | 88 % | 67 % | 57 % | 32 % | 22 % | 15 % | 12 % |
+| 6 | σ 20 ms | 2 | 3 | 8 | 2 % | 85 % | 58 % | 25 % | 8 % | 2 % | 2 % | 2 % |
+| 8 | σ 20 ms | 1 | 3 | 5 | 0 % | 73 % | 35 % | 10 % | 3 % | 2 % | 0 % | 0 % |
+| 2 | σ 30 ms | 5 | 9 | 14 | 20 % | 98 % | 85 % | 78 % | 60 % | 53 % | 37 % | 30 % |
+| 4 | σ 30 ms | 2 | 6 | 9 | 3 % | 85 % | 63 % | 33 % | 18 % | 13 % | 12 % | 3 % |
+| 4 | σ 45 ms | 1 | 3 | 5 | 0 % | 67 % | 35 % | 12 % | 2 % | 2 % | 0 % | 0 % |
+
+**A life is as long as it is whatever the gate.** At σ 20 ms it reaches row 27–28 in about a minute (57–62 s), at
+σ 45 ms row 13 in half a minute. The refills at each change hardly lengthen it, because a life ends by leaving the
+chart, not by the dark. So the gate only divides that minute among the centuries. A century holds a life for about
+8 s at gate 2, 16–18 s at gate 4, 24 s at gate 6 and 32 s at gate 8, nearly the same for every hand.
+
+**The feats are a wall in one life.** Linea Pura and Saturn in One Sitting cost a Journey a few runs, but a Marathon
+has no further runs to spend. Saturn's sitting asks for 24 rows on the Lens, more than half of a σ 20 ms life, so with
+the feats required no life of σ 20 ms or rougher got past era VI. Even σ 10 ms loses half its lives between V and VI.
+
+**What it measures and what it does not.** Every century but the Rock and the Lens is flown on the atlas's chart, so
+the Ceiling's hours and the Probe's harvest only change which feat is read, not the flight. The figure-seeking hand
+goes after Linea Pura only while in era V.
+
+```
+node scripts/probe.mjs --marathon --seeds=60 --hands=20 --gates=2,4,6,8            # feats required
+node scripts/probe.mjs --marathon --seeds=60 --hands=20 --gates=2,4,6,8 --nofeats  # knowledge alone
+```
