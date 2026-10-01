@@ -134,6 +134,9 @@ These need a design decision, not a text edit.
   qadr 3. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
   "everything is either a measurement or an inheritance". Either bind them to real data or say, in the
   source line, that the pairings are illustrative.
+  *Built 2026-10-01:* the Probe's star tags are bound to real data: each system now carries its stars'
+  catalogued classes (`PRB_SYSTEMS`, cited in `src/probe.js`), and a star prints its own component's —
+  Barnard's Star `M4V`, Alpha Centauri `A G2V`, `B K1V`, `C M5.5V` — with Barnard's mass corrected to 0.16 M☉.
 - **The Lens's families do not follow its chapters.** A body's family comes from
   `planetFamily(row,runSeed)`, not from the register, so by the code a 1610 chapter can caption a body
   `1787 · THREE VOLCANOS`. Not yet seen in play. Its sensor-era names (OCEAN WORLD, LAVA WORLD) sit on a
