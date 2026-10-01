@@ -133,7 +133,10 @@ These need a design decision, not a text edit.
   Astrolabe the qadr comes from the seed and a star's name goes to any bright body, so Sirius can read
   qadr 3. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
   "everything is either a measurement or an inheritance". Either bind them to real data or say, in the
-  source line, that the pairings are illustrative.
+  source line, that the pairings are illustrative. *Built 2026-10-01:* the Scroll is bound to real
+  data: a body takes its school from its row as before and then an office that school truly set down
+  (`SCROLL_OFFICES`, after the Kaiyuan Zhanjing's three lists) in the palace of the lodge it is held in,
+  so name and colour always agree, and its source line no longer calls the pairing a translation.
 - **The Lens's families do not follow its chapters.** A body's family comes from
   `planetFamily(row,runSeed)`, not from the register, so by the code a 1610 chapter can caption a body
   `1787 · THREE VOLCANOS`. Not yet seen in play. Its sensor-era names (OCEAN WORLD, LAVA WORLD) sit on a
