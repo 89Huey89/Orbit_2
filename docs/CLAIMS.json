@@ -1,0 +1,681 @@
+{
+ "atlas": {
+  "chapterLines": [
+   {
+    "starts": "Ingolstadt, 1540. Peter ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "1572. A new star flares ",
+    "label": "attested",
+    "source": "Tycho Brahe, De nova stella 1573 (docs/archive/eras/research/beliefs.md, 'V · The Atlas — the unchanging heavens, and the new star of 1572')"
+   },
+   {
+    "starts": "1582. Ten days are struc",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Padua, 1610. Four small ",
+    "label": "attested",
+    "source": "Galileo, Sidereus Nuncius 1610 (docs/archive/eras/research/knowledge-horizon.md, 'The telescope (era VI, 1600–1801)')"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "Acus, the Needle, is thi",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "The Sail was still part ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Lyra is one of Ptolemy’s",
+    "label": "attested",
+    "source": "Bayer, Uranometria 1603 (docs/archive/eras/research/one-star.md, 'Vega and Altair (round 6)', era V row)"
+   },
+   {
+    "starts": "Ptolemy set two crowns a",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Phoenix is one of twelve",
+    "label": "attested",
+    "source": "Bayer, Uranometria 1603; Keyser and de Houtman's voyage of 1595–97 (ART-AUDIT-TODO.md, 'Bayer's own dozen, as three of the twelve'; docs/KNOWLEDGE-AUDIT.md, §3.1 item 2)"
+   },
+   {
+    "starts": "Tucana, the toucan, is a",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Serpens is the one figur",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Argo, Jason’s ship, was ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Pavo, the peacock, came ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Penna, the Quill, is thi",
+    "label": "attested",
+    "source": "Bayer, Uranometria 1603, drawing on Tycho Brahe's naked-eye catalogue (docs/archive/eras/05-engraving.md, 'The documents')"
+   },
+   {
+    "starts": "Laterna, the Lantern, is",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Phalæna, the Moth, is th",
+    "label": "unchecked",
+    "source": ""
+   }
+  ]
+ },
+ "rock": {
+  "chapterLines": [
+   {
+    "starts": "Bulls painted over older",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "At the foot of the shaft",
+    "label": "attested",
+    "source": "Rappenglück; Bahn; Hayden & Villeneuve 2011, Cambridge Archaeological Journal 21(3) (research/rock.md §1, 'Lascaux, the Shaft Scene')"
+   },
+   {
+    "starts": "Palms loaded with wet oc",
+    "label": "attested",
+    "source": "French Ministry of Culture, Chauvet-Pont d'Arc site, 'Panel of Hand Dots' (research/rock.md §1, 'Chauvet Cave', and §13)"
+   },
+   {
+    "starts": "Five thousand years ago:",
+    "label": "attested",
+    "source": "Newgrange.com (research/rock.md §1, 'Newgrange and Knowth', c. 3200 BCE, roofbox aligned to winter-solstice sunrise; §13)"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "The largest Lascaux bull",
+    "label": "attested",
+    "source": "Rappenglück after Antequera Congregado 1992; contested by Bahn and Hayden & Villeneuve 2011, CAJ 21(3) (research/rock.md §1, 'Lascaux, the Hall of the Bulls', and §12)"
+   },
+   {
+    "starts": "The most painted animal ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "At Altamira the bison li",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Both horns drawn on a he",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "A row of stags at Lascau",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Rouffignac holds over a ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Chauvet drew its lions w",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Cave bears slept here lo",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "One Chauvet rhinoceros h",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "A few quick lines: the p",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "A many-legged animal at ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "At the Abri du Poisson a",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "heirloom": {
+   "starts": "The greatest bull of the",
+   "label": "plausible reconstruction",
+   "source": "Rappenglück after Antequera Congregado 1992, contested by Bahn and Hayden & Villeneuve 2011 (research/rock.md §1 and §12; research/one-star.md, Aldebaran round, era I row; KNOWLEDGE-AUDIT.md §2.1, 'The Rock's heirloom')"
+  }
+ },
+ "ceiling": {
+  "heirloom": {
+   "starts": "The thirty-six decans an",
+   "label": "attested",
+   "source": "Louvre inv. D 38 / E 13482 / CM 464; Wikipedia 'Dendera zodiac' (research/ceiling.md §1, 'The Dendera zodiac', c. 50 BCE, outer ring of 36 decans round the 12 signs, and Sources; KNOWLEDGE-AUDIT.md §2.1, 'The Dendera heirloom')"
+  }
+ },
+ "scroll": {
+  "chapterLines": [
+   {
+    "starts": "The Azure Dragon rules t",
+    "label": "attested",
+    "source": "Four Symbols, Azure Dragon east, over the Twenty-Eight Mansions (research/china.md §2, search summary of 'Twenty-Eight Mansions'); Antares = 大火, 心宿二, middle star of the lodge Xin, Shijing, Bin Feng, 七月 (research/one-star.md, Antares, III)"
+   },
+   {
+    "starts": "The Black Tortoise, nort",
+    "label": "attested",
+    "source": "Score row: 度 dù, the circle in 365¼ dù matching the solar year (research/china.md §5 and §9; 03-scroll.md names table)"
+   },
+   {
+    "starts": "The White Tiger, west an",
+    "label": "attested",
+    "source": "Four Symbols, White Tiger west (research/china.md §2); 昴 Mao the Pleiades, eighteenth lodge, Shijing, Shao Nan, 小星, and 畢 Bi, the nineteenth lodge, brightest Aldebaran (research/one-star.md, Pleiades III and Aldebaran III)"
+   },
+   {
+    "starts": "The Vermilion Bird, sout",
+    "label": "attested",
+    "source": "Twenty-Eight Mansions, four sets of seven, Vermilion Bird south, markers for the Moon, Sun and planets (research/china.md §2, search summary of 'Twenty-Eight Mansions')"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "The Northern Dipper is t",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Xuanyuan, the Yellow Emp",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "The Weaver Girl is Vega.",
+    "label": "attested",
+    "source": "織女 Zhinü = Vega: Shijing, Xiao Ya, 大東; Sima Qian, Tianguan shu (research/one-star.md, Vega and Altair, III)"
+   },
+   {
+    "starts": "The River Drum holds Alt",
+    "label": "attested",
+    "source": "河鼓 Hegu's great star is Altair: Sima Qian, Tianguan shu, 河鼓大星; Erya 釋天; 牛郎 the Herd Boy of the Qixi story (research/one-star.md, '河鼓, 牽牛 and 牛郎')"
+   },
+   {
+    "starts": "The Heavenly Ford is a c",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "The Five Chariots lie in",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Shen is Orion, named for",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Mao, the Hairy Head, is ",
+    "label": "attested",
+    "source": "昴 Mao = the Pleiades, the eighteenth lodge: Shijing, Shao Nan, 小星 (research/one-star.md, Pleiades III)"
+   },
+   {
+    "starts": "Xin, the Heart, is three",
+    "label": "attested",
+    "source": "大火 = 心宿二, the middle star of 心 Xin: Shijing, Bin Feng, 七月 (research/one-star.md, Antares III); 熒惑守心, e.g. Lord Jing of Song 480 BCE (research/china.md §7; research/beliefs.md III)"
+   },
+   {
+    "starts": "The Heavenly Market is o",
+    "label": "attested",
+    "source": "Three Enclosures 三垣, Tianshi the Heavenly Market Enclosure (research/china.md §2, search summary of 'Twenty-Eight Mansions')"
+   },
+   {
+    "starts": "The pole is the still po",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "The Southern Dipper, six",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "heirloom": {
+   "starts": "No straight line runs fr",
+   "label": "attested",
+   "source": "Song Shi and Song Huiyao on the guest star of 1054; Duyvendak's 1942 assembly of guest-star records and the Crab Nebula identification (research/china.md §1; docs/KNOWLEDGE-AUDIT.md, heirloom correction)"
+  }
+ },
+ "astrolabe": {
+  "chapterLines": [
+   {
+    "starts": "Baghdad, 927. Nastulus s",
+    "label": "attested",
+    "source": "Nastūlus astrolabe, dated 315 AH / 927–928 CE, Baghdad, Kuwait National Museum — McGill Biographical Encyclopedia of Astronomers, Sotheby's lot notes, Muslim Heritage (research/instruments.md §2, 'Widely cited as the earliest securely dated astrolabe to survive ... attested'; 04-astrolabe.md, 'The documents')"
+   },
+   {
+    "starts": "Isfahan, 964. Al-Sufi lo",
+    "label": "attested",
+    "source": "al-Ṣūfī, Kitāb ṣuwar al-kawākib al-thābita, 964 (research/globe.md §1, 'A systematic revision of Ptolemy's Almagest catalogue ... with magnitudes re-observed by al-Ṣūfī himself'; 04-astrolabe.md, 'Ptolemy's inherited magnitudes re-graded by al-Ṣūfī's own eye'; Isfahan 964 per research/beliefs.md table)"
+   },
+   {
+    "starts": "Cairo, c. 1027. Ibn al-H",
+    "label": "plausible reconstruction",
+    "source": "Ibn al-Haytham, Kitāb al-Manāẓir (research/instruments.md, 'The geometric-diagram tradition', rays as straight lines, attested; date 'c. 1027' sits inside a disputed range, 1011–1021 against 1028–1038, per KNOWLEDGE-AUDIT.md §2.1)"
+   },
+   {
+    "starts": "Valencia, 1085. Al-Sahli",
+    "label": "attested",
+    "source": "The Valencia celestial globe, Ibrāhīm ibn Saʿīd al-Sahlī, inscribed 478 AH/1085 CE, Museo Galileo, Florence (research/globe.md §1, 'Stars are small punched/engraved points ... a globe has no paint, only metal'; 04-astrolabe.md, 'no colour anywhere on it')"
+   },
+   {
+    "starts": "Maragha, 1259. Al-Tusi’s",
+    "label": "attested",
+    "source": "Marāgha Observatory, founded 1259 under al-Ṭūsī — McGill Biographical Encyclopedia of Astronomers and Wikipedia summaries for the library (research/instruments.md §5, 'attested'); mural quadrant per the peer-reviewed survey arXiv:2511.19559 (04-astrolabe.md, 'The documents'; KNOWLEDGE-AUDIT.md §2.1, radius deliberately not stated)"
+   },
+   {
+    "starts": "Samarkand, 1428. Ulugh B",
+    "label": "attested",
+    "source": "Ulugh Beg Observatory, Samarkand, built 1428–1429, Fakhrī sextant trenched into a hillside (research/globe.md §1; research/instruments.md §5, 'trenching the arc directly into bedrock ... is itself attested reasoning in the secondary literature', citing the Ulugh Beg Observatory sources listed there)"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "Al-Sufi drew every figur",
+    "label": "attested",
+    "source": "al-Ṣūfī, Book of the Fixed Stars, 964, his own stated reason (research/globe.md §1, '48 constellation drawings, each given twice: once as seen on a globe from outside, once looking up at the sky')"
+   },
+   {
+    "starts": "Rigel is rijl al-jabbar,",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Regulus was qalb al-asad",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Antares was qalb al-aqra",
+    "label": "attested",
+    "source": "al-Ṣūfī, 964; Kunitzsch (research/one-star.md, Antares round 4, row IV, 'qalb al-ʿaqrab, the heart of the scorpion')"
+   },
+   {
+    "starts": "Aldebaran is al-dabaran,",
+    "label": "attested",
+    "source": "al-Ṣūfī, 964; Kunitzsch (research/one-star.md, Aldebaran round 5, row IV, 'al-dabarān, \"the follower\" (of the Pleiades)')"
+   },
+   {
+    "starts": "Deneb is dhanab, the tai",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Alphard is al-fard, the ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Markab is the saddle; Sc",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Al-Sufi notes a little c",
+    "label": "attested",
+    "source": "al-Ṣūfī, Book of the Fixed Stars, 'the little cloud' for the Andromeda nebula (research/globe.md §7 and 04-astrolabe.md, 'earliest surviving description of a galaxy beyond the Milky Way'; wording corrected per KNOWLEDGE-AUDIT.md §2.1, 'The first written record of another galaxy')"
+   },
+   {
+    "starts": "Vega is from al-nasr al-",
+    "label": "attested",
+    "source": "al-Ṣūfī, 964; Kunitzsch (research/one-star.md, Vega and Altair round 6, rows IV–V, 'al-nasr al-wāqiʿ, \"the swooping (falling) eagle\"'; 'Vega is the Latin wearing-down of (al-nasr) al-wāqiʿ')"
+   },
+   {
+    "starts": "Altair is from al-nasr a",
+    "label": "attested",
+    "source": "al-Ṣūfī, 964; Kunitzsch (research/one-star.md, Vega and Altair round 6, row IV, 'Altair is al-nasr al-ṭāʾir, \"the flying eagle\"')"
+   },
+   {
+    "starts": "Dhat al-kursi, she of th",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "heirloom": {
+   "starts": "The eye of the Bull keep",
+   "label": "attested",
+   "source": "al-Ṣūfī, Book of the Fixed Stars, 964; Kunitzsch (research/one-star.md, Aldebaran round 5, row IV, 'al-dabarān, \"the follower\" (of the Pleiades)'); 'eye of the Bull' after Allen, Star-Names (1899), Oculus Tauri (same file, row V)"
+  }
+ },
+ "lens": {
+  "chapterLines": [
+   {
+    "starts": "Padua, 1610. Galileo tur",
+    "label": "attested",
+    "source": "Galileo, Sidereus Nuncius, March 1610 (Moon's mountains) and the July 1610 anagram 'altissimum planetam tergeminum observavi', Saturn triform (research/knowledge-horizon.md, 'The telescope (era VI)'; 06-lens.md, 'The documents', register one)"
+   },
+   {
+    "starts": "The Hague, 1659. Huygens",
+    "label": "attested",
+    "source": "Huygens, De Saturni luna observatio nova 1656 (anagram 'annulo cingitur, tenui, plano, nusquam cohaerente') and Systema Saturnium 1659 (research/knowledge-horizon.md, 'The telescope (era VI)', marked verified; 06-lens.md, 'The documents')"
+   },
+   {
+    "starts": "Paris, 1887. Twenty obse",
+    "label": "attested",
+    "source": "Carte du Ciel / Astrographic Catalogue, agreed 1887 Paris congress, twenty observatories, matched normal astrographs, réseau printed on the emulsion (research/plate.md §1 'The documents'; 06-lens.md, register two)"
+   },
+   {
+    "starts": "Meudon, 1909. Antoniadi,",
+    "label": "attested",
+    "source": "Antoniadi at Meudon's 83 cm Grande Lunette, 1909 opposition; La Planète Mars 1930 (research/knowledge-horizon.md, 'The plate (era VII)', marked verified; research/beliefs.md, Lens row)"
+   },
+   {
+    "starts": "Tucson, 1981. A picture ",
+    "label": "attested",
+    "source": "Wells, Greisen and Harten, the FITS header standard, 1981 (06-lens.md, 'The documents', register three; research/observatory.md §4 on FITS cards). The place, Tucson, is not backed in the repo."
+   },
+   {
+    "starts": "Cape Canaveral, 1990. A ",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "Galileo drew the Pleiade",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Galileo found the cloudy",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Huygens drew the Orion N",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Isaac Roberts photograph",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Lord Rosse drew the Whir",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Rosse drew M 1 with claw",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Williamina Fleming found",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Barnard photographed the",
+    "label": "attested",
+    "source": "E. E. Barnard, A Photographic Atlas of Selected Regions of the Milky Way (negatives 1889–1905, pub. 1927); Barnard's and Max Wolf's photographic proof that some holes are dust clouds (research/plate.md §1 and §7 'Obscurer — Dark nebula')"
+   },
+   {
+    "starts": "Halley came across the H",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Darquier found the Ring ",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "On the Carte du Ciel, ea",
+    "label": "attested",
+    "source": "Carte du Ciel réseau, 27×27 printed lines at 5 mm, so positions were measured against a fixed grid (research/plate.md §1 'The documents'; 06-lens.md, register two)"
+   },
+   {
+    "starts": "Albireo splits in a smal",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "heirloom": {
+   "starts": "Galileo’s own first, wro",
+   "label": "attested",
+   "source": "Galileo's July 1610 anagram 'altissimum planetam tergeminum observavi', Saturn triform; Saturn's 'handles' 1610–1659 (research/knowledge-horizon.md, 'The telescope (era VI)' and the ringed row, marked verified; 06-lens.md, register one)"
+  }
+ },
+ "flyby": {
+  "chapterLines": [
+   {
+    "starts": "Mars, 1965. Mariner 4 se",
+    "label": "attested",
+    "source": "NASA Science, 'Coloring the Mariner 4 Image Data', and JPL/NSSDCA records (research/space-age.md §1, 'radioed home at 8⅓ bits per second' and 'coloured the digits by hand'; 07-flyby.md, 'The documents')"
+   },
+   {
+    "starts": "Chryse Planitia, 1976. V",
+    "label": "attested",
+    "source": "JPL/USGS Viking documentation (research/space-age.md §1, 'Each facsimile camera scanned the scene with a rotating photodiode, line by line in azimuth'; Chryse landing site in research/beliefs.md, 'the outflow channels Viking 1 later landed beside at Chryse')"
+   },
+   {
+    "starts": "Jupiter, 1979. Linda Mor",
+    "label": "attested",
+    "source": "Morabito's 2012 arXiv historical review, arXiv:1211.2554 (research/space-age.md §1, 'Io's volcanism, discovered 9 March 1979 ... the first active volcanism ever seen off Earth'; 07-flyby.md)"
+   },
+   {
+    "starts": "Uranus, 1986. Voyager 2 ",
+    "label": "attested",
+    "source": "Elliot et al. 1977 occultation, via EBSCO Research Starters 'Astronomers discover rings of Uranus' (research/space-age.md §1 and sources, 'tracking a stellar occultation from an airborne telescope ... Voyager 2 then imaged the system directly')"
+   },
+   {
+    "starts": "Neptune, 1989. Voyager 2",
+    "label": "attested",
+    "source": "Wikipedia, 'Great Dark Spot' (research/space-age.md §1 and sources, 'An Earth-sized dark storm ... Hubble found it gone by the mid-1990s'; Voyager's last encounter in the same section)"
+   },
+   {
+    "starts": "Pluto, 2015. New Horizon",
+    "label": "attested",
+    "source": "NASA, 'Pluto Dazzles in False Color' (research/space-age.md §1, 'colour-enhanced — not natural colour'; passes once and never returns, research/space-age.md §5 Names table, attested for a pass)"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "Io: Linda Morabito saw a",
+    "label": "attested",
+    "source": "Morabito's 2012 arXiv historical review, arXiv:1211.2554 (research/space-age.md §1, 'a Voyager 1 frame for spacecraft-position work, noticed a 270 km crescent cloud off Io's limb')"
+   },
+   {
+    "starts": "Europa: Voyager’s frames",
+    "label": "attested",
+    "source": "NASA Science, 'Europa exploration history' (research/space-age.md §1, 'keep the two claims separated: 1979 is the fractured ice, 1995–2003 the ocean')"
+   },
+   {
+    "starts": "Ganymede: the largest mo",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Callisto: one of the mos",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Titan: the Huygens probe",
+    "label": "attested",
+    "source": "Space.com, 'Huygens probe returns images of Titan surface' (research/space-age.md §1 and sources, 'Huygens landed on Titan 14 January 2005 ... icy \"cobblestones\"')"
+   },
+   {
+    "starts": "Enceladus: Cassini found",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Miranda: Voyager 2 found",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Triton: Voyager 2 saw da",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Charon: New Horizons fou",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Eros: NEAR Shoemaker orb",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Itokawa: Hayabusa brough",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "67P: Rosetta’s lander Ph",
+    "label": "attested",
+    "source": "JPL news, 'Rosetta's comet lander landed three times' (research/space-age.md §1 and sources, 'Philae's 12 November landing (it bounced twice ... settling in a cliff's shadow)')"
+   }
+  ],
+  "heirloom": {
+   "starts": "Voyager 1 turned its cam",
+   "label": "unchecked",
+   "source": ""
+  }
+ },
+ "probe": {
+  "chapterLines": [
+   {
+    "starts": "Departure. The probe lea",
+    "label": "attested",
+    "source": "Pioneer plaque, Pioneer 10, 1972 (research/probe.md §1 'The documents', citing Wikipedia, The Planetary Society, Smithsonian Magazine; whether the plate was etched or engraved is marked unverified there)"
+   },
+   {
+    "starts": "Cruise. A sail of a few ",
+    "label": "attested",
+    "source": "Breakthrough Starshot, announced 2016, laser-pushed sail 'a few square meters to ~10 m²' (research/probe.md §1, citing Breakthrough Initiatives, Space.com, Sci. American; 08-probe.md 'The documents': 'Attested, final spec (unverified)')"
+   },
+   {
+    "starts": "Arrival. Barnard’s Star,",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Seed. After Freitas’s RE",
+    "label": "attested",
+    "source": "Freitas, 'A Self-Reproducing Interstellar Probe', JBIS 33, 1980 (research/probe-mechanics.md §1, 'drops a SEED, and SEED spends roughly 500 years growing into a FACTORY capable of mining the system'; 08-probe.md 'The documents', marked Attested)"
+   },
+   {
+    "starts": "Factory. Closure: a fact",
+    "label": "attested",
+    "source": "NASA/ASEE, 'Advanced Automation for Space Missions', 1980 Santa Clara summer study, NASA CP-2255 (research/probe-mechanics.md §1, 'closure (the factory being able to build every one of its own parts)'; 08-probe.md 'The documents', marked Attested)"
+   },
+   {
+    "starts": "Replication. The first d",
+    "label": "gameplay translation",
+    "source": "08-probe.md 'The documents' ('Every choice past this list is fictional gameplay translation'); research/probe.md §10.4 and §12 flag the daughter-probe motif as proposed, not found"
+   }
+  ],
+  "chartNotes": [
+   {
+    "starts": "Barnard’s Star: the red ",
+    "label": "attested",
+    "source": "van de Kamp's planet as 'one reason Project Daedalus (1973–78) chose Barnard's Star' (research/beliefs.md, VIII, checked against Centauri Dreams on Daedalus); M4V class after RECONS (src/probe.js comment above PRB_SYSTEMS)"
+   },
+   {
+    "starts": "Alpha Centauri: the pair",
+    "label": "attested",
+    "source": "Breakthrough Starshot, gram-scale chip on a laser lightsail toward Alpha Centauri (research/probe.md §1, citing Breakthrough Initiatives; research/probe-mechanics.md §1)"
+   },
+   {
+    "starts": "Proxima Centauri: the ne",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Wolf 359: a faint red dw",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Lalande 21185: one of th",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Sirius: the brightest st",
+    "label": "attested",
+    "source": "Alvan Graham Clark saw Sirius's companion on 31 January 1862 (research/one-star.md, Sirius row VI, citing AMNH and Astronomy.com)"
+   },
+   {
+    "starts": "Epsilon Eridani: Project",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Ross 128: a quiet red dw",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "61 Cygni: the first star",
+    "label": "attested",
+    "source": "Bessel's parallax of 61 Cygni, 1838, the first stellar distance (research/knowledge-horizon.md, 'The plate', marked verified; source list cites MPIfR press release)"
+   },
+   {
+    "starts": "Tau Ceti: the other star",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "Luyten’s Star: a red dwa",
+    "label": "unchecked",
+    "source": ""
+   },
+   {
+    "starts": "TRAPPIST-1: a small star",
+    "label": "unchecked",
+    "source": ""
+   }
+  ],
+  "heirloom": {
+   "starts": "Closure copies the whole",
+   "label": "gameplay translation",
+   "source": "08-probe.md (Closure chosen as the era's signature, 'the first bill met, the medal struck once'); the ladder from cave wall to probe is the game's own framing"
+  }
+ }
+}

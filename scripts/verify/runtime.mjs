@@ -76,6 +76,31 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   // Free Play's doors are gated as shipped, but the layout below flies every century whole; the proof chapter
   // a century not yet reached opens on is flown on its own, with the gate put back (Steps 16 and 17).
   context.test.gates=false;
+  // The register of claims (docs/KNOWLEDGE-AUDIT.md §2.3, docs/CLAIMS.json): every factual line a player reads — a
+  // century's chapter lines, its chart notes and its heirloom's gloss — is entered with one of ERA-AUDIT.md's three
+  // labels and the source it rests on, or honestly as unchecked. A line added, dropped or reordered without its
+  // entry fails here, so the notes are checked against something rather than only counted.
+  {
+    const t=context.test,claims=JSON.parse(readFileSync(new URL('../../docs/CLAIMS.json',import.meta.url),'utf8'));
+    const LABELS=['attested','plausible reconstruction','gameplay translation','unchecked'],was=t.plateName;
+    const entered=(c,line,where)=>{
+      assert(c,'The register enters every line the player reads: '+where);
+      assert.equal(c.starts,line.slice(0,24),'A register entry stands against its own line: '+where);
+      assert(LABELS.includes(c.label),'A register entry carries one of the three labels, or unchecked: '+where);
+      assert(c.label==='unchecked'?c.source==='':!!c.source,'A labelled entry names its source, and an unchecked one none: '+where);
+    };
+    for(const id of ['night',...Object.keys(t.PLATE_STYLES).filter(k=>t.PLATE_STYLES[k].door)]){
+      t.applyPlate(id);const w=t.plateWords(),key=id==='night'?'atlas':id,own=claims[key]||{};
+      for(const kind of ['chapterLines','chartNotes']){
+        const lines=w[kind]||[],reg=own[kind]||[];
+        assert.equal(reg.length,lines.length,'The register holds as many '+kind+' as '+key+' sets');
+        lines.forEach((line,i)=>entered(reg[i],line,key+' '+kind+' '+i));
+      }
+      const era=(t.PLATE_STYLES[id]||{}).era,heir=t.CENTURIES[era]&&t.CENTURIES[era].heirloom;
+      if(heir)entered(own.heirloom,heir.gloss,key+' heirloom');
+    }
+    t.applyPlate(was);
+  }
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
   // one. Each style is selected in turn, the body run under it, and whatever was chosen put back.

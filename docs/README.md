@@ -21,6 +21,10 @@ anything toward the progression.
 proposals for fixes, effects and rendering. It adds to the root `ART-AUDIT-TODO.md` rather than
 repeating it.
 
+[CLAIMS.json](CLAIMS.json) is the register of claims the knowledge audit asked for: every chapter line, chart note
+and heirloom gloss a player reads, with its evidence label and source, or entered honestly as unchecked. The test
+suite holds it against the lines themselves.
+
 [KNOWLEDGE-AUDIT.md](KNOWLEDGE-AUDIT.md) reads all eight centuries for what they teach: what reaches the
 player, which statements were wrong (corrected with it), what still contradicts its own claim, and where
 the game could teach more — including options for what JOURNEY.md §9.2's rounds could reveal.

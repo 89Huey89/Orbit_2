@@ -194,6 +194,26 @@ cheap steps would close most of the gap:
   *Built 2026-10-01:* the Rock and the atlas now carry theirs, so every frontispiece has one. The Rock's
   says no painted dot is asserted to be a star and that the keeping hand is a story, not a finding.
 
+*The register, built 2026-10-01:* [CLAIMS.json](CLAIMS.json) enters all 127 lines — every century's chapter lines
+and chart notes and every heirloom's gloss (the Ceiling keeps no lines of its own, only its heirloom) — with a label
+and the source the repository already cites for it, and `scripts/verify/runtime.mjs` fails if a line is added,
+dropped or reordered without its entry. It is kept in `docs/` rather than in the voices, since the player never
+reads it and it need not ship. A label was given only where a source is already named in the research files, the
+era files or this audit; anything else is entered as `unchecked`, with no source, rather than sourced from memory.
+It stands at 58 attested, 2 plausible reconstruction, 2 gameplay translation and **65 unchecked**: those are the
+research still owed, and moving one to a label means first citing it in the research file. Lines worth checking
+first, raised while labelling (from general knowledge, so not yet findings):
+
+- The Rock's first chart note and its heirloom treat the largest Lascaux bull and the bull with six dots on its
+  shoulder as one animal; `research/rock.md` names them separately.
+- The Probe's Barnard's Star note says Daedalus chose it "in 1978"; the repo dates the study 1973–78.
+- The Astrolabe's Pegasus note reads Scheat as "the upper arm" and Markab as "the saddle"; both derivations are disputed.
+- The atlas's Sail note dates Lacaille's division of Argo to the 1750s (formalised 1763); its Lantern note gives
+  Tycho's catalogue an accuracy of "about a minute of arc" (more often one to two).
+- The Lens's Galileo note counts the Pleiades' new stars; the text and the drawing of 1610 differ.
+- Several lines are attested in their main claim only: the Scroll's Weaver Girl (the magpie bridge) and Heavenly
+  Market (the walls named for the old states), and the Lens's FITS line (Tucson) carry an unsourced clause.
+
 ## 3 · Where it could teach more
 
 ### 3.1 · Cheap, data only, high return
