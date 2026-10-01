@@ -260,6 +260,15 @@ own answer to the grind. Three directions, offered for the author's choice rathe
 Whatever is chosen, the three hints the descent carries — panspermia, the multiverse, time run back —
 should stay unnamed, as §9.2 has them, and never be stated as knowledge.
 
+*Built 2026-10-01:* the author chose **one star, eight names** (JOURNEY.md §9.2). Round 2 follows the Pleiades,
+round 3 Sirius, round 4 Antares, round 5 Aldebaran, then the four again; round 1 reveals nothing. In each century of
+such a round one plain body is the star, inscribed in the plate's own small caps with the name the century gave it
+(or, where it gave none that survives, a line saying so) and given the century's note on landing; the descent that
+ends the round letters the ochre dot with the star's name and names nothing else; and the atlas's Record keeps the
+names met under `orbit.star.v1`. Every one of the thirty-two entries carries an evidence label and a source
+(`ONE_STARS` in `src/onestar.js`; `docs/archive/eras/research/one-star.md`), and six of them are honest absences.
+This also answers part of §3.2 item 8 (one star through several hands) for these four stars.
+
 ## Sources checked for this audit
 
 - Betelgeuse's name: [All Skies Encyclopaedia](https://xing.fmi.uni-jena.de/mediawiki/index.php/Betelgeuse),
