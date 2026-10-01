@@ -871,7 +871,27 @@ Three of the answers this list owed were given the same day, asked one by one:
 - **What each round reveals is left for later.** The mechanism and the count of circles are built first; the
   contents of the deeper layer are decided once they stand.
 
-Still owed, and not for an implementer to invent: what each round's layer reveals and in what order, and how the
+*Settled 2026-10-01: one star, eight names.* What each round's layer reveals was answered by the author, taking
+the direction docs/KNOWLEDGE-AUDIT.md §3.3 recommended. The first round reveals nothing: it is the climb. Every
+round after it follows one real star through all eight centuries — round 2 the Pleiades, round 3 Sirius, round 4
+Antares, round 5 Aldebaran, and the four again from round 6 — shown in three places: one body in each century of
+the round *is* the star, named in that century's own hand and given a note in its curator's voice; the descent that
+ends the round letters the hand's ochre dot with the star's name; and a page of the catalogue keeps the names met.
+Only attested names are set; where a culture left none, the note says so and hedges as the Rock's notes do. The
+three hints of the descent stay unnamed; only the star is named.
+*Built the same day* (`src/onestar.js`, the table argued in `research/one-star.md`): the body is the first plain
+main-line body from the century's second row on — never an opening target, figure star, pickup, slingshot, fading
+orbit, or a body the century already names (the Ceiling's wanderers, the Astrolabe's wandering stars, whose own
+star names skip the round's star) — read off the seed's chart, so a seed always deals it on the same body. Its name
+is a standing inscription in the plate's own small caps, always ending in the name a player knows the star by
+(`昴 MAO · THE PLEIADES`, `HIP 17702 · THE PLEIADES`); the Ceiling also spells it in signs under the body; landing on
+it says the century's note. The descent is the one that *ends* the round: it is begun before the circle is counted,
+so it names the star the closing round followed, held 1.2 s longer than an unnamed one, and the first descent of
+all, closing round 1, ends on an unnamed dot as before — the surprise §9.2 asks of it is kept, and the name arrives
+as the end of a round flown for it. What is met is kept in `orbit.star.v1` and set out on the atlas's Record, one
+section a star and one line a century in that century's script. Nothing in the simulation changed.
+
+Still owed, and not for an implementer to invent: how the
 Marathon's in-run gates are set — the chapters are paced by knowledge banked over
 about five runs an era (§1.6, `ERA_THRESHOLD`), which one run cannot hold, so the Marathon needs gates of its
 own, measured with `probe.mjs --ladder` as the threshold was.
@@ -953,6 +973,10 @@ stages above.
   clock run back to T-17000.0 Y (time). The traveller is held in orbit through it and the dark held off; the
   replay applies the same grace (`grace` on the log's era entry). Reduced motion turns the page plainly. Seen at
   430×932 with `npm run shots -- descent`.
+- *One star, eight names* (2026-10-01, §9.2): what each later round reveals — the Pleiades, Sirius, Antares and
+  Aldebaran in turn, one body a century named in its own hand with its note, the round's closing descent lettering
+  the dot, and the atlas's Record keeping what was met (`src/onestar.js`, `orbit.star.v1`,
+  `research/one-star.md`). Seen at 430×932 with `npm run shots -- onestar` and `descent-star`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)
   included; the Ceiling's night wraps its hours when read Endless.
 
@@ -964,8 +988,8 @@ stages above.
 - **The old medium as a live drawing.** The receding sheet is a still: its marks do not move, and it is held
   in place rather than carried with the camera.
 - **The descent, a second pass** (§9.2): the probe's replication drawn before the fall (the daughter is only a
-  spark on the wake so far), a sound of its own, and the layer each round reveals once the author has said what
-  it is — the descent is where a round's revelation would be shown.
+  spark on the wake so far) and a sound of its own. The layer each round reveals is settled and built (§9.2,
+  one star, eight names); a later pass may give the descent more of it than the name on the dot.
 - **Marathon** (§9.2): the whole ladder in one run without dying, opened by the first closing of the circle;
   its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in

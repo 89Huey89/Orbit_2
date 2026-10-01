@@ -120,7 +120,7 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=catalogueTable()+ledgerTable(rows)+signatureSection(5);
+  let html=catalogueTable()+ledgerTable(rows)+signatureSection(5)+oneStarSections();
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
@@ -135,6 +135,32 @@ function catalogueRecord(){
     ledgerTable(CONSTELLATIONS.map((c,i)=>{const note=ledger.constellations[c.name]?centuryChartNote(5,i):'';
       return [`<span class="cat-name">${plainText(c.name)}</span><span class="cat-latin">${plainText(c.latin)}</span>`+(note?`<span class="cat-gloss">${plainText(note)}</span>`:''),countMark(ledger.constellations[c.name])];}))+'</section>';
   html+=annalsSection(5);
+  return html;
+}
+// ---------- One star, eight names ----------
+// Every round after the first follows one star through the eight centuries (src/onestar.js), and the atlas's
+// Record keeps what was found of it: one section a star, one line a century, in the century's own script where
+// it has one. A century where the star has not yet been met keeps only its numeral; the star's section appears
+// once its round has been reached or any of it met. Nothing here before the circle has first been closed.
+// Where the century left no name, the line's own words for that ("NO NAME SURVIVES") stand in its place.
+const oneStarAbsence=e=>{const w=e.line.split(' · ').pop().toLowerCase();return w.charAt(0).toUpperCase()+w.slice(1);};
+function oneStarSections(){
+  let html='';
+  ONE_STARS.forEach((star,i)=>{
+    const reached=journey.rounds+1>=i+2,any=Object.keys(oneStarBook.met[star.id]||{}).length>0;
+    if(!reached&&!any)return;
+    let rows='';
+    for(let era=1;era<=JOURNEY_ERAS;era++){
+      const e=star.eras[era],met=oneStarMet(star,era),head=CENTURY_NUMERALS[era-1]+' · '+centuryTitle(era);
+      if(!met){rows+=`<li class="cat-annal locked"><span class="cat-annal-head">${plainText(head)}</span><span class="cat-cond">Not yet met</span></li>`;continue;}
+      const signs=e.glyphs?e.glyphs.flat().map(cp=>String.fromCodePoint(cp)).join(''):'';
+      rows+=`<li class="cat-annal"><span class="cat-annal-head">${plainText(head)}</span>`+
+        (signs?`<span class="cat-star-own cat-star-signs">${signs}</span>`:e.own?`<span class="cat-star-own">${plainText(e.own)}</span>`:'')+
+        `<span class="cat-name">${plainText(e.reading||oneStarAbsence(e))}</span><span class="cat-gloss">${plainText(e.note)}</span>`+
+        `<span class="cat-cond">${plainText(e.label.charAt(0).toUpperCase()+e.label.slice(1))}${met&2?' · landed on':' · seen'}</span></li>`;
+    }
+    html+=`<section class="cat-group cat-onestar"><h3>${plainText(star.title)}<span class="cat-latin">Stella una · nomina octo</span></h3><ol class="cat-annals">${rows}</ol></section>`;
+  });
   return html;
 }
 // ---------- The catalogue's engraved previews ----------

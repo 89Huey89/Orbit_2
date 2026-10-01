@@ -68,6 +68,7 @@ get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCos
 get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,lensFamily,LENS_FAMILY_YEAR,LENS_EYE_READINGS,LENS_FAMILIES,planetFamily,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,PRB_SYSTEMS,prbStarClass,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,astroQadr,astroDealName,ASTRO_STARS,scrollSchool,scrollOffice,scrollLodge,SCROLL_OFFICES,SCROLL_SCHOOLS,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
+ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
@@ -2192,6 +2193,80 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     }
     if(t.plateOwns('mode'))events['ceiling-exit:click']();else if(t.runMode==='journey')events['journey-open:click']();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;
+    t.setPlate('night');
+  }
+  // ---- One star, eight names (JOURNEY.md §9.2, src/onestar.js) ----
+  // Every round after the first follows one star, in a fixed order; in every century of such a round the chart
+  // deals that star on exactly one plain body, the same one for the same seed, and its name and note are the
+  // table's. The first round deals none. What was met is kept in its own versioned key, and survives a store
+  // that is garbage or blocked.
+  {
+    const t=context.test,LABELS=['attested','plausible reconstruction','gameplay translation'];
+    assert.equal(t.oneStarOfRound(1),null,'The first round follows no star');
+    assert.deepEqual([2,3,4,5,6,10].map(r=>t.oneStarOfRound(r).id),['pleiades','sirius','antares','aldebaran','pleiades','pleiades'],'Round two the Pleiades, three Sirius, four Antares, five Aldebaran, then again');
+    for(const star of t.ONE_STARS)for(let era=1;era<=8;era++){
+      const e=star.eras[era],where=star.id+' in era '+era;
+      assert(e&&e.line&&e.note&&e.source,'Every century has a line, a note and a source: '+where);
+      assert(LABELS.includes(e.label),'Every name carries one of the three evidence labels: '+where+' · '+e.label);
+      assert(e.line.toUpperCase().includes(star.title.replace(/^The /,'').toUpperCase()),'Every line ends on the name the player knows the star by: '+where);
+      // Where no name survives, the line says so, and nothing is set in the century's own script.
+      if(/NO NAME/.test(e.line))assert(!e.own&&!e.glyphs&&e.label!=='attested','A star with no surviving name has none invented: '+where);
+    }
+    t.setPlate('paper');t.newWorld();
+    if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+    const dealt=(era,rounds)=>{
+      if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+      t.journey.era=era;t.journey.knowledge=0;t.journey.rounds=rounds;t.journey.milestones={};t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();
+      assert.equal(t.eraId()||5,era,'The Journey opens on the frontier: era '+era);
+      t.handleInput();
+      const w=t.world;
+      // The chart is dealt well past where the star may stand.
+      for(let i=0;i<30;i++)w.generateRow();
+      const bodies=w.nodes.filter(n=>t.oneStarIs(n)),body=t.oneStarBody();
+      // A second chart cut from the same seed, with the run's own settings, is dealt the star on the same row.
+      const twin=new OrbitWorld(w.seed,w.width,w.height,()=>{},true,w.varyOpening,w.newtonOn,w.chasmsOn,w.relightOn,w.goalRow);
+      twin.driven=w.driven;for(let i=0;i<30;i++)twin.generateRow();
+      const twinBody=t.oneStarBody(twin);
+      // Read while the run is still on the press, since a century's own selectors read the world in hand.
+      const claimed=!!body&&(era===2?!!t.ceilingWanderer(body):era===4?t.astroWanderer(body)!==-1:false);
+      return {w,bodies,body,twinBody,claimed};
+    };
+    for(let era=1;era<=8;era++){
+      assert.equal(dealt(era,0).bodies.length,0,'The first round deals no star: era '+era);
+      for(const rounds of [1,2,3,4]){
+        const {bodies,body,twinBody,claimed}=dealt(era,rounds),star=t.oneStarOfRound(rounds+1),where=star.id+' in era '+era;
+        assert.equal(bodies.length,1,'A round that follows a star deals it on exactly one body: '+where);
+        assert(body&&!body.difficultyChoice&&body.routeId==null&&(body.type==='still'||body.type==='drift')&&t.astroPlainRow(body.row),'And it is a plain main-line body: '+where);
+        assert(!claimed,'Never a body the century has named itself, the Ceiling\'s wanderers or the Astrolabe\'s wandering stars: '+where);
+        assert(twinBody&&twinBody.row===body.row,'The star is dealt deterministically, on the same row for the same seed: '+where);
+      }
+    }
+    // Landed on, the body is given its century's note and is kept as met and held; the catalogue sets its name.
+    {
+      if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+      t.journey.era=3;t.journey.rounds=1;t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();t.handleInput();
+      const w=t.world;for(let i=0;i<30;i++)w.generateRow();
+      const body=t.oneStarBody(),entry=t.ONE_STARS[0].eras[3];
+      t.oneStarCapture(body);
+      assert(t.inscriptions.some(g=>g.text===entry.note),'The landing says the century\'s note for the star');
+      assert.equal(t.oneStarMet(t.ONE_STARS[0],3),3,'And the star is kept as met and held in this century');
+      if(!storageBlocked)assert.deepEqual(JSON.parse(saved.get(t.ONE_STAR_KEY)).met.pleiades,{3:3},'And written at once under its own key');
+      else assert(!saved.has(t.ONE_STAR_KEY),'A blocked store keeps it for the page alone');
+      events['ceiling-exit:click']();if(t.eraId())t.leaveEra();
+      t.openCatalogue();const html=element('catalogue-body').innerHTML;t.closeCatalogue();
+      assert(html.includes('The Pleiades')&&html.includes(entry.own)&&html.includes(entry.note),'The atlas\'s Record keeps the star\'s name in the century\'s own script, and its note');
+      assert(html.includes('Not yet met'),'And leaves the centuries where it has not been met blank');
+      // A garbage store reads as nothing met, and a well-formed one is read back cleaned.
+      if(!storageBlocked){
+        context.localStorage.setItem(t.ONE_STAR_KEY,'{not json');assert.equal(JSON.stringify(t.readOneStars().met.sirius),'{}','A garbage store is read as nothing met');
+        context.localStorage.setItem(t.ONE_STAR_KEY,JSON.stringify({v:1,met:{sirius:{2:1,9:3,4:7},nonsense:{1:3}}}));
+        const read=t.readOneStars();assert.equal(JSON.stringify(read.met.sirius),JSON.stringify({2:1,4:3}),'Only the eight centuries and the two marks are read back');assert(!('nonsense' in read.met));
+      }
+    }
+    if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;t.journey.milestones={};
     t.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};

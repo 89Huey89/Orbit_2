@@ -498,9 +498,10 @@ function astroReleaseMarks(n,p,x,y){
 let astroRunWorld=null,astroNamed=new Map(),astroNameNext=[0,0];
 function astroRun(){if(astroRunWorld!==world){astroRunWorld=world;astroNamed=new Map();astroNameNext=[0,0];astroFlourishAt.clear();}}
 function astroDealName(n,q){
-  let named=astroNamed.get(n.id);if(named!==undefined||q>2)return named;
-  const pool=ASTRO_STARS_BY_QADR[q-1],k=astroNameNext[q-1]++,o=((world.seed|0)>>>0);
-  named={id:n.id,i:q===1?(k===0?pool[0]:pool[1+((k-1+o)%(pool.length-1))]):pool[(k+o)%pool.length]};
+  let named=astroNamed.get(n.id);if(named!==undefined||q>2||oneStarIs(n))return named;
+  const pool=ASTRO_STARS_BY_QADR[q-1],o=((world.seed|0)>>>0),at=k=>q===1?(k===0?pool[0]:pool[1+((k-1+o)%(pool.length-1))]):pool[(k+o)%pool.length];
+  let i=at(astroNameNext[q-1]++);if(oneStarAstroTaken(i))i=at(astroNameNext[q-1]++);
+  named={id:n.id,i};
   astroNamed.set(n.id,named);astroFihristNote('stars',named.i);return named;
 }
 // The wanderers: one body of each chapter after Baghdad is not a fixed star but a planet, its row
@@ -611,6 +612,7 @@ function astroBody(n,x,y,tier,d,taken){
   else if(s3>0&&!n.difficultyChoice){
     const q=astroQadr(n),tx=x+(rm+9*scale)*Math.cos(-.75),ty=y+(rm+9*scale)*Math.sin(-.75);
     astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true,true);
+    // The body the round's star stands on (src/onestar.js) is named by the round, and its name is never set twice.
     const named=s3>=.5?astroDealName(n,q):astroNamed.get(n.id);
     if(named&&named.id===n.id){const S=ASTRO_STARS[named.i],k=clamp(s3*2-1,0,1);
       astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true,true);

@@ -184,6 +184,8 @@ function event(type,e){
     if(planetFamilies.includes(planetFamilyFor(e.n.type,e.n.row,world.seed,e.n.difficultyChoice)))tally('telescopicCaptures');
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
+    // The round's star, landed on, is given its century's note (src/onestar.js).
+    oneStarCapture(e.n);
     if(e.steep){
       // A rough impression still earns its base; the duller strike and displaced colour carry the
       // cost now, while the score floater makes the continuous angle progression explicit.
@@ -865,6 +867,8 @@ function updateUI(dt){
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
     inscribeHeld('instruction',plateWords().held.bend,{node:nearestHazard()});
   }
+  // The round's star is named on the sheet in the century's own hand while it is still ahead (src/onestar.js).
+  oneStarTick();
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
 function resize(){

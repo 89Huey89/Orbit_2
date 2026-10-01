@@ -2370,7 +2370,7 @@ function renderCeiling(dt,aim){
   ceilingLampShade();
   ceilingDrawChangeover(dt);
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
-  ceilingDrawGates();ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
+  ceilingDrawGates();ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes){ceilingDrawNode(n,aim);oneStarCeilingSigns(n);}for(const h of world.hazards)ceilingDrawHazard(h);
   ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);
   // Same slot the atlas gives drawSurveys(): after the aim guide and the route's own ink, ahead of the
   // transient effects layer (render(), src/frame.js) — the survey is dried ink beside the route, not a
