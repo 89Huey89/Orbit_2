@@ -942,7 +942,11 @@ function prbDark(dt){
       if(h<u*u*.55){ctx.fillStyle=`rgba(${P.dim},${(.35+u*.4).toFixed(3)})`;ctx.fillRect(x-cw/2+.5,yy-ch/2+.5,cw-1,ch-1);}
       else{const bad=flip<u*.35;ctx.fillStyle=bad?`rgba(${P.amber},${(.5+u*.4).toFixed(3)})`:`rgba(${P.white},${(.1+u*.3).toFixed(3)})`;ctx.fillText(Math.floor(tileHash(i,row+(bad?tick:0),303)*256).toString(16).toUpperCase().padStart(2,'0'),x,yy);}}}
   // below the edge: one flat value, no texture, no grid, nothing left to show a record was ever there
-  ctx.fillStyle="rgb(17,17,19)";ctx.fillRect(0,fy,W,H-fy+10);
+  // Flat, but a shade the log's black is not: the null has to read as a mass against the black above it, or the
+  // one thing on the sheet that kills is the one thing on it that cannot be seen.
+  ctx.fillStyle="rgb(30,30,34)";ctx.fillRect(0,fy,W,H-fy+10);
+  // The warning every sheet gives as the edge closes in, in the log's own amber, deeper as the probe nears.
+  {const gh=(26+near*22)*scale,gr=ctx.createLinearGradient(0,fy-gh,0,fy);gr.addColorStop(0,`rgba(${P.amber},0)`);gr.addColorStop(1,`rgba(${P.amber},${(.07+near*.16).toFixed(3)})`);ctx.fillStyle=gr;ctx.fillRect(0,fy-gh,W,gh);}
   // the edge: straight, square, the sharpest line in the field
   ctx.strokeStyle=`rgba(${P.white},${(.75+near*.2).toFixed(3)})`;ctx.lineWidth=Math.max(1,1.1*scale);ctx.beginPath();ctx.moveTo(0,fy);ctx.lineTo(W,fy);ctx.stroke();
   // what is lost is named plainly: the error count past what correction can hold, and the null it reverts to
