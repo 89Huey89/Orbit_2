@@ -120,7 +120,7 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=catalogueTable()+ledgerTable(rows)+signatureSection(5)+oneStarSections();
+  let html=catalogueTable()+ledgerTable(rows)+signatureSection(5)+milestonesSection(5)+oneStarSections();
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
@@ -740,6 +740,18 @@ function signatureSection(era,latin=true){
     `<li class="cat-annal"><span class="cat-annal-head">${plainText(sig.name)}</span><span class="cat-gloss">${plainText(sig.why||'')}</span>`+
     `<span class="cat-cond">${signatureFlown(era)?'Flown in the Journey':plainText(sig.describe)+'.'}</span></li></ol></section>`;
 }
+// The Journey's milestones as a section of the Record: each chapter the climb counts, named as the century
+// names it, with the knowledge it stands for in italic beneath, and whether it stands in the climb in hand.
+// The gloss is shown before the milestone stands, as the feat's history is, since it says what is to be learned.
+function milestonesSection(era,latin=true){
+  const words=centuryWords(era),names=(words&&words.milestones)||[],glosses=(words&&words.milestoneGlosses)||[];
+  if(!names.length)return '';
+  const open=journey.era>era?names.length:journey.era===era?journeyMilestones().open:0;
+  return '<section class="cat-group"><h3>The Journey’s milestones<span class="cat-latin">'+(latin?'Gradus':'')+'</span></h3><ol class="cat-annals">'+
+    names.map((name,i)=>`<li class="cat-annal${i<open?'':' locked'}"><span class="cat-annal-head">${plainText(name)}</span>`+
+      (glosses[i]?`<span class="cat-gloss milestone-gloss">${plainText(glosses[i])}</span>`:'')+
+      `<span class="cat-cond">${i<open?'Stands in the Journey':'Not yet reached in the Journey'}</span></li>`).join('')+'</ol></section>';
+}
 // The same lines as a section of a leaf's Record: a chapter not yet reached keeps its head and the row it
 // opens at, as a locked card keeps its condition. `latin` is false on a leaf that sets no Latin.
 function annalsSection(era,latin=true){
@@ -769,7 +781,7 @@ function centuryRecord(era){
   // and state in the register, and what it stands for in a section of its own beneath.
   const sig=SIGNATURES[era];
   if(sig)rows.splice(8,0,['Signature feat',sig.name+(signatureFlown(era)?' · flown':' · not yet flown')]);
-  let html=ledgerTable(rows,4)+signatureSection(era,!page.leaf);
+  let html=ledgerTable(rows,4)+signatureSection(era,!page.leaf)+milestonesSection(era,!page.leaf);
   const own=typeof page.recordRows==='function'?page.recordRows():[];
   if(own&&own.length)html+=`<section class="cat-group"><h3>${plainText(page.title||'')}<span class="cat-latin">${plainText(page.latin||'')}</span></h3>`+ledgerTable(own.map(([label,value])=>[plainText(label),plainText(value)]))+'</section>';
   // What the century's curator said, chapter by chapter, kept once a run has reached the chapter.

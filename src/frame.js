@@ -1047,33 +1047,39 @@ function drawHudLeaf(){
   ctx.save();ctx.translate(cx,cy);ctx.scale(rx,ry);
   ctx.fillStyle=hudLeafGradient();ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
-// The MAGNITUDINES key: on a wide sheet it stands permanently in the right flank (buildFrameLayer's
-// `if(wide)` block above), but a narrow one has no flank to carry it in, and the play field is kept
-// clear rather than crowded with a sixth line of furniture. It is drawn here instead, live, only while
-// the run is paused — the one moment a phone actually has the screen free, and a reader has stopped to
-// consult a legend rather than fly past it. Laid horizontally rather than as the wide key's column, in
-// the open sheet below the pause leaf's own card.
-function drawPauseMagnitudeKey(){
-  if(frameWide()||plainPlate()||!world)return;
-  const colors=ink.frame,cx=W*.5,top=Math.min(H*.68,H-186);
-  ctx.save();
-  ctx.font=plateFace(Math.max(6.8,7.5*scale),'sc');ctx.fillStyle=colors.text;ctx.textAlign='center';
-  // The key stands on the sheet for as long as the pause does, heading and glyph row together, so it takes
-  // its ground in the register rather than being something a note or a caption can be set on top of.
-  markGround('key',cx-Math.min(W*.5-18,150),top-12,cx+Math.min(W*.5-18,150),top+50);
-  ctx.fillText('MAGNITUDINES',cx,top);
-  ctx.lineWidth=.6;ctx.strokeStyle=colors.tickMinor;
-  ctx.beginPath();ctx.moveTo(cx-40,top+5.5);ctx.lineTo(cx+40,top+5.5);ctx.stroke();
-  const known=typeof renaissanceLegendMask==='function'?renaissanceLegendMask():0;
-  const cols=6,spacing=Math.min(52,(W-60)/cols),startX=cx-spacing*(cols-1)/2,glyphY=top+27;
-  ctx.font=plateFace(Math.max(6.4,7*scale),'text','italic');
-  for(let i=0;i<cols;i++){
-    const magnitude=i+1,classified=!!(known&(1<<(magnitude-1))),alpha=classified?.78:.16,x=startX+i*spacing;
-    renaissanceStarGlyph(ctx,x,glyphY,magnitude,ink.atmosphere.starGlyph,alpha,.5,0x1603+magnitude);
-    ctx.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.78:.2})`;
-    ctx.fillText(MAGNITUDES[magnitude-1],x,glyphY+18);
+// The atlas's legend on the pause leaf (#pause-legend): on a wide sheet the MAGNITUDINES key stands in the
+// right flank (buildFrameLayer's `if(wide)` block above) and the construction names its own two lines, but on
+// the phone the atlas is drawn for both are too small to read, or have no flank to stand in at all. The leaf
+// carries them on every sheet instead, as a legend is consulted: when the run has stopped. The six forms are
+// struck by the plate's own painter at the flank key's gauge, a class not yet classified on this run set
+// fainter but still legible, as the flank's ghost rows record what the atlas has actually observed; the two
+// lines are drawn in the construction's own inks, the ecliptic tilted and, on paper, in the rubricator's red.
+// Only where the plate actually draws these marks: the atlas's engraved plates, never a century or a proof.
+function paintPauseLegend(){
+  const legend=$('pause-legend');if(!legend)return;
+  const on=!!world&&renaissanceAtlas()&&!plainPlate();legend.hidden=!on;if(!on)return;
+  const d=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+  const sheet=(id,w,h)=>{const c=$(id);if(!c||!c.getContext)return null;c.width=Math.round(w*d);c.height=Math.round(h*d);const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);return g;};
+  const key=sheet('pause-key',264,52);
+  if(key){
+    const known=renaissanceLegendMask(),gauge=.72,step=264/6,glyphY=19;
+    key.font=plateFace(11,'text','italic');key.textAlign='center';key.textBaseline='alphabetic';
+    for(let i=0;i<6;i++){
+      const magnitude=i+1,classified=!!(known&(1<<i)),x=step*(i+.5);
+      renaissanceStarGlyph(key,x,glyphY,magnitude,ink.atmosphere.starGlyph,classified?.92:.5,gauge,0x1603+magnitude);
+      key.fillStyle=`rgba(${onPaper()?ink.base.ink:ink.base.inkStrong},${classified?.9:.62})`;
+      key.fillText(MAGNITUDES[i],x,48);
+    }
   }
-  ctx.restore();
+  // A short sweep of each line as the sphere lays it: the equator level, the ecliptic tilted by the same
+  // angle the construction turns it, both cut a little heavier than on the sheet so a mark this short reads.
+  const line=(id,tone,rotation,alpha)=>{
+    const g=sheet(id,44,22);if(!g)return;
+    g.save();g.translate(22,4);g.rotate(rotation);g.strokeStyle=`rgba(${tone},${alpha})`;g.lineWidth=1.3;g.lineCap='round';
+    g.beginPath();g.ellipse(0,0,24,12,0,Math.PI*.18,Math.PI*.82);g.stroke();g.restore();
+  };
+  line('pause-equator',ink.base.inkSoft,0,.85);
+  line('pause-ecliptic',rubricInk()||ink.base.inkSoft,-.31,.9);
 }
 // The running head: the plate's own number and name, engraved at the foot of the sheet where a printer
 // sets one, in the frame's ink rather than in the DOM. It names the chapter the ascent has reached, and
@@ -1503,7 +1509,6 @@ function render(dt){
   {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms)paintChasm(c);}
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
-  if(world.state==='paused')drawPauseMagnitudeKey();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}
   // The dark's own flash is one frame of the flood's own ink rather than screenFlash's fading warm
   // wash: it is drawn once, at whatever alpha that single frame calls for, then cleared unconditionally

@@ -255,6 +255,13 @@ cheap steps would close most of the gap:
 6. **Milestones that say what was learned.** Keep the chapter as the milestone, as LINKING.md settled,
    and give each the knowledge §1.5 meant it to stand for as its gloss, in the one place a milestone is
    named, `A MILESTONE STANDS · {name}`: "HOURS I TO III · the decans as a clock".
+   *Built 2026-10-01:* every milestone of all eight eras carries `milestoneGlosses` in its century's voice,
+   set in italic English under `A MILESTONE STANDS · {name}` on the leaf and listed with its state in a new
+   *The Journey's milestones* section of each Record. The Ceiling's are worded after §2.1: the hours are not
+   decans, so I–III is *the decans as a clock, a rising for each hour* and IV–VI *thirty-six decans, ten days
+   apiece*; VII–IX *the imperishable stars, which never set*; X–XII *the dawn rising of Sirius, and the year
+   begun*. The Rock's Hand Dots are only likened to a count. The suite checks one gloss per milestone, in
+   lower case, each century its own, and that the Record and the leaf set it.
 7. **A belief kept, and corrected, in every century.** The Lens is the model and
    KNOWLEDGE-HORIZON.md's column for it is empty for eras I–IV. Candidates: on the Scroll, Mars at the
    Heart as the omen it was read as (it is already a danger there); on the Astrolabe, Ptolemy's equant
@@ -268,6 +275,13 @@ cheap steps would close most of the gap:
 9. **The phone first.** On 430×932 the magnitude key and the construction's labels are next to
    invisible. The pause leaf could be the atlas's legend: *I brightest · VI faintest, as Ptolemy ranked
    them*; *the celestial equator*; *the ecliptic, the Sun's yearly path*.
+   *Built 2026-10-01:* the atlas's pause leaf carries the legend on every viewport (`#pause-legend`,
+   `paintPauseLegend()` in frame.js): the six star forms struck by `renaissanceStarGlyph` over their numerals
+   under MAGNITUDINES with *I brightest · VI faintest, as Ptolemy ranked them*, and a sweep of the equator and
+   the ecliptic in the construction's inks beside *Æquator cælestis* · *the celestial equator* and *Ecliptica* ·
+   *the Sun's yearly path*. It replaces the faint canvas key the phone used to get under the leaf. Night and
+   paper only; the centuries, the proof and the modern plate are untouched. Checked at 430×932 (`npm run
+   shots -- pause`).
 
 ### 3.3 · The lever in §9.2: what each round reveals
 

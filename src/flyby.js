@@ -1011,6 +1011,8 @@ defineVoice('flyby',{
   endless:true,
   // The Journey's milestones: Mars, the Grand Tour, and the edge of the planets, two encounters apiece.
   milestones:['MARS','THE GRAND TOUR','THE EDGE OF THE PLANETS'],
+  // What each leg stands for.
+  milestoneGlosses:['a planet seen close, and sent home as numbers','each planet’s pull bending the path to the next','the farthest worlds, each passed only once'],
   chapterSaid:'Encounter {numeral}. {name}.',
   chapterLines:[
     'Mars, 1965. Mariner 4 sends its pictures home at about eight bits a second. Engineers colour the first by hand, from the printed numbers.',

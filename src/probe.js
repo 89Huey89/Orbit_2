@@ -1172,6 +1172,8 @@ defineVoice('probe',{
   endless:true,
   // The Journey's milestones: the crossing, the seed, and closure, two phases apiece.
   milestones:['THE CROSSING','THE SEED','CLOSURE'],
+  // What each pair of phases stands for, as the studies it follows proposed it.
+  milestoneGlosses:['the gap between the stars, crossed in decades','a machine that mines the world it lands on','a factory that can build all its own parts'],
   chapterSaid:'Phase {numeral}. {name}.',
   chapterLines:[
     'Departure. The probe leaves the Sun carrying a plate cut in 1972 for Pioneer 10. Nothing aboard will ever read it.',

@@ -1083,6 +1083,8 @@ defineVoice('astrolabe',{
   chapterSaid:'Door {numeral}. {name}.',
   // The instrument's six parts, one a city: the Journey's milestones are the astrolabe assembled.
   milestones:ASTRO_CHAPTERS.map(c=>c.part),
+  // What each part of the instrument stands for, in the order it is made.
+  milestoneGlosses:['the sky made a thing to hold in the hand','the circle read in degrees','the sphere projected flat, for one latitude','the bright stars pinned at their places','the sky observed anew, year after year','a star’s height sighted, and the hour found'],
   // A line for each place as its chapter opens, set on the sheet as a curator's note beside the alidade.
   // Each says only what is known of the place and the work it is named for, and says "roughly" where the
   // number is only reported.

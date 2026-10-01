@@ -351,6 +351,19 @@
     #pause strong{font-style:italic;font-family:var(--face-text);font-size:34px;font-weight:400;letter-spacing:.04em}
     #pause .action-copy{margin:12px 0 0;font-size:17px}
     .pause-menu{align-self:stretch;margin-top:19px}
+    /* The atlas's legend, carried on the pause leaf on every sheet: the wide sheet's MAGNITUDINES key and the
+       construction's two named lines are flank furniture a phone has no room for, and a halt is the one
+       moment a reader has stopped to consult a legend. Set between the prompt and the two entries, ruled
+       off above as the colophon rules a section, the star forms drawn by the plate's own painter. */
+    .pause-legend{align-self:stretch;display:flex;flex-direction:column;align-items:center;margin-top:14px;padding-top:11px;border-top:1px solid var(--line)}
+    .pause-legend[hidden]{display:none}
+    .pause-legend .legend-head{margin:0;color:var(--gold);font-family:var(--face-sc);font-size:11px;letter-spacing:.3em}
+    .pause-legend .legend-key{display:block;width:264px;height:52px;margin:4px 0 0}
+    .pause-legend .legend-gloss{margin-top:3px;font-family:var(--face-text);font-style:italic;font-size:13px;letter-spacing:.01em;color:var(--copy)}
+    .legend-lines{display:grid;grid-template-columns:44px auto;grid-auto-rows:auto;column-gap:10px;align-items:center;margin-top:11px;text-align:left}
+    .legend-lines .legend-mark{grid-row:span 2;width:44px;height:22px}
+    .legend-lines .legend-name{align-self:end;font-family:var(--face-sc);font-size:11.5px;letter-spacing:.12em;color:var(--ivory)}
+    .legend-lines .legend-gloss{align-self:start;margin:0 0 6px;font-size:12.5px}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -496,6 +509,9 @@
       #pause .action-copy{margin-top:6px;font-size:14px}
       #pause .pause-menu{margin-top:10px}
       #game .pause-leaf{padding:14px 18px 15px;max-width:min(322px,100%)}
+      .pause-legend{margin-top:8px;padding-top:6px}
+      .pause-legend .legend-key{height:44px}
+      .legend-lines{margin-top:4px}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{margin-top:max(15dvh,64px)}.start-copy{margin-bottom:max(14dvh,56px)}}
     @media(max-height:530px) and (orientation:landscape){.hud{top:16px}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}#end-score-roman{display:none}.end-stats{margin:9px 0 15px;padding-top:10px}}
@@ -513,6 +529,9 @@
     .journey-mark{display:block;margin:4px auto 0;max-width:100%}
     .journey-mark[hidden]{display:none}
     #journey-note,#end-journey{white-space:pre-line;text-align:center;line-height:1.4}
+    /* What a milestone stands for, set under its small-caps name in the plate's own italic and in English,
+       as the figures and chapter titles are glossed: lower case, unspaced, and a size up from the note. */
+    #end-journey .milestone-gloss{display:inline-block;margin:1px 0 3px;font-family:var(--face-text);font-style:italic;font-size:12.5px;letter-spacing:.02em;text-transform:none;color:var(--copy)}
     #game.daily #daily{color:var(--gold)}
     /* A second disclosure, folded the way HOW TO PLAY already folds its own paragraph: the ephemeris,
        both era doors and the last plate wait behind it, so the sheet a hand first meets offers only
@@ -1019,6 +1038,15 @@
       <strong id="pause-title">Suspended.</strong>
       <div class="title-rule"><span></span></div>
       <p class="action-copy" id="pause-note">Tap the sheet to continue</p>
+      <div id="pause-legend" class="pause-legend atlas-only" role="group" aria-label="The atlas's legend" hidden>
+        <p class="legend-head">MAGNITUDINES</p>
+        <canvas id="pause-key" class="legend-key" role="img" aria-label="The six star forms, from magnitude I, the brightest, to VI, the faintest"></canvas>
+        <em class="legend-gloss">I brightest · VI faintest, as Ptolemy ranked them</em>
+        <div class="legend-lines">
+          <canvas id="pause-equator" class="legend-mark" aria-hidden="true"></canvas><span class="legend-name">Æquator cælestis</span><em class="legend-gloss">the celestial equator</em>
+          <canvas id="pause-ecliptic" class="legend-mark" aria-hidden="true"></canvas><span class="legend-name">Ecliptica</span><em class="legend-gloss">the Sun’s yearly path</em>
+        </div>
+      </div>
       <div class="pause-menu">
         <button id="pause-resume" class="diff-btn" type="button">TAKE UP THE PEN</button>
         <button id="pause-leave" class="diff-btn" type="button">RETURN TO THE FRONTISPIECE</button>

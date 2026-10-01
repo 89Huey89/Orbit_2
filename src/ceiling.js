@@ -170,6 +170,9 @@ defineVoice('ceiling',{
   chapterWrap:true,
   // The Journey's milestones are the night's four watches, three of its twelve hours each.
   milestones:['HOURS I TO III','HOURS IV TO VI','HOURS VII TO IX','HOURS X TO XII'],
+  // What each watch stands for. The hours are the Amduat's, not decans (docs/KNOWLEDGE-AUDIT.md §2.1): the
+  // decans come in only as the star clock that marked an hour by a rising, and as the ten-day weeks of the year.
+  milestoneGlosses:['the decans as a clock, a rising for each hour','thirty-six decans, ten days apiece','the imperishable stars, which never set','the dawn rising of Sirius, and the year begun'],
   // The Chronicle ends at the twelfth gate, sunrise; read Endless the barque sails past it into a new
   // night instead (LINKING.md's "Endless, later" and chapterWrap above).
   goalRow:CEILING_DAWN_ROW,

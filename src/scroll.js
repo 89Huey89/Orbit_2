@@ -789,6 +789,9 @@ defineVoice('scroll',{
   chapters:['THE AZURE DRAGON','THE BLACK TORTOISE','THE WHITE TIGER','THE VERMILION BIRD'],
   chapterSaid:'Palace {numeral}. {name}.',
   milestones:['THE AZURE DRAGON','THE BLACK TORTOISE','THE WHITE TIGER','THE VERMILION BIRD'],
+  // What each palace stands for: the quarters and their seasons, the dù, the marker star each lodge is
+  // measured from, and the twenty-eight lodges as the Moon's nightly steps.
+  milestoneGlosses:['the sky in four quarters, one to a season','the circle in dù, one for each day of the year','each lodge measured from a marker star','twenty-eight lodges, a night’s step of the Moon'],
   opening:'The tube is raised. Tap to release. Follow the pricked line to the next light. Hold a light to file it and to grind more ink; every flight spends ink by the distance it carries.',
   // The Chronicle ends with the fourth palace: the sky's four quarters passed and the scroll rolled up.
   // Read Endless, the sheet unrolls as it always did (LINKING.md).

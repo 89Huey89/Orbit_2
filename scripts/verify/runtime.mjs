@@ -3,6 +3,7 @@
    on its own worker thread by the driver in ../verify.mjs (see runtimeLayout there). */
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
 import {step,FAST_GLOBALS,OrbitWorld,orbitTangents,CONSTELLATIONS,OBSERVATIONS,SWEEP_FULL,RELEASE_GRACE,script} from './sandbox.mjs';
 
 const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
@@ -1322,6 +1323,28 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.world.state,'ready','Neither the control nor Escape suspends the frontispiece');
     assert.equal(leaf.classList.contains('hidden'),true,'The frontispiece raises no pause leaf');
   }
+  // ---------- The atlas's legend on the pause leaf (docs/KNOWLEDGE-AUDIT.md §3.2, item 9) ----------
+  // The magnitude key and the construction's two named lines are flank furniture the phone cannot carry, so
+  // the leaf carries them: on both of the atlas's engraved plates, and on no century, whose leaf is its own.
+  {
+    const t=context.test,legend=element('pause-legend'),was=t.plateName;
+    const page=readFileSync(new URL('../../src/index.html',import.meta.url),'utf8'),slip=page.slice(page.indexOf('<section id="pause"'),page.indexOf('</section>',page.indexOf('<section id="pause"')));
+    for(const words of ['id="pause-legend"','atlas-only','MAGNITUDINES','I brightest · VI faintest, as Ptolemy ranked them','Æquator cælestis','the celestial equator','Ecliptica','the Sun’s yearly path','id="pause-key"','id="pause-equator"','id="pause-ecliptic"'])
+      assert(slip.includes(words),'The pause leaf carries the atlas\'s legend: '+words);
+    for(const plate of ['night','paper']){
+      t.setPlate(plate);t.newWorld();t.handleInput();events['pause-open:click']();
+      assert.equal(t.world.state,'paused');
+      assert.equal(legend.hidden,false,'The atlas\'s pause leaf shows its legend on the '+plate+' plate');
+      events['pause-leave:click']();
+    }
+    for(const id of Object.keys(t.PLATE_STYLES).filter(id=>t.PLATE_STYLES[id].door)){
+      t.enterEra(id);assert.equal(t.plateName,id,'The century opens: '+id);t.handleInput();events['pause-open:click']();
+      assert.equal(t.world.state,'paused');
+      assert.equal(legend.hidden,true,'A century\'s pause leaf does not carry the atlas\'s legend: '+id);
+      events['pause-leave:click']();t.leaveEra();
+    }
+    t.setPlate(was);t.newWorld();
+  }
   // ---------- The survey at both ends of a flight ----------
   // An exact tangent from a two-planet fixture, flown through the whole runtime: the release lays a
   // departure construction on the orbit it left, the landing lays an arrival construction with the
@@ -1896,6 +1919,14 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const id of [null,...Object.keys(t.PLATE_STYLES).filter(id=>t.PLATE_STYLES[id].door)]){
       if(id)t.enterEra(id);else t.setPlate('paper');
       assert.equal(t.plateWords().milestones.length,t.ERA_MILESTONES[t.eraId()||5],'A century names exactly the milestones the Journey counts for it: '+(id||'atlas'));
+      // Each milestone carries the knowledge it stands for (docs/KNOWLEDGE-AUDIT.md §3.2, item 6): one English
+      // gloss to a name, set in the lower case of an italic gloss, and every century's its own, not the atlas's.
+      {const w=t.plateWords(),g=w.milestoneGlosses||[];
+        assert.equal(g.length,w.milestones.length,'Every milestone has a gloss: '+(id||'atlas'));
+        for(const gloss of g)assert(typeof gloss==='string'&&gloss.length>8&&gloss.length<=48&&/^[a-z]/.test(gloss)&&!/[<>]/.test(gloss),'A milestone gloss is a short English line in lower case: '+(id||'atlas')+': '+gloss);
+        if(id)assert(!g.some(gloss=>t.centuryWords(5).milestoneGlosses.includes(gloss)),'A century glosses its own milestones, not the atlas\'s: '+id);
+        t.openCatalogue();const leaf=element('catalogue-body').innerHTML;t.closeCatalogue();
+        for(let i=0;i<g.length;i++)assert(leaf.includes(t.plateWords().milestones[i].replace(/&/g,'&amp;'))&&leaf.includes(g[i].replace(/&/g,'&amp;')),'The Record lists each milestone with its gloss: '+(id||'atlas')+': '+g[i]);}
       if(id)t.leaveEra();
     }
     t.setPlate('paper');t.newWorld();
@@ -1910,14 +1941,15 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     assert.equal(t.journey.knowledge,13,'A Journey run banks what it observed');
     if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,13);
-    assert.equal(endNote.hidden,false);assert(endNote.textContent.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.textContent);
-    assert(endNote.textContent.includes('THIS RUN \u00b7 +13.0 KNOWLEDGE \u00b7 13 ORBITS \u00b7 13 WHOLE'),'The leaf says what the run banked and from what: '+endNote.textContent);
-    assert(endNote.textContent.includes('KNOWLEDGE 13 / '+t.ERA_THRESHOLD),'and where the knowledge now stands: '+endNote.textContent);
+    assert.equal(endNote.hidden,false);assert(endNote.innerHTML.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS\n<em class="milestone-gloss">'+t.plateWords().milestoneGlosses[0]+'</em>'),'and what it stands for, in italic beneath it: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('THIS RUN \u00b7 +13.0 KNOWLEDGE \u00b7 13 ORBITS \u00b7 13 WHOLE'),'The leaf says what the run banked and from what: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('KNOWLEDGE 13 / '+t.ERA_THRESHOLD),'and where the knowledge now stands: '+endNote.innerHTML);
     t.journey.knowledge=t.ERA_THRESHOLD-.5;t.newWorld();t.handleInput();t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     // Every chapter stands, and the Rock's own feat (JOURNEY.md §9) is still owed: the leaf names it and the
     // page does not turn.
-    assert(endNote.textContent.includes('ONLY THE FEAT REMAINS')&&endNote.textContent.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.textContent);
+    assert(endNote.innerHTML.includes('ONLY THE FEAT REMAINS')&&endNote.innerHTML.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.innerHTML);
     // The Struck Ring, read off the events a run emits: a light the wall sorts as major held for a whole orbit.
     // Every sling body is one (radius 57), and one is dealt at row 2 on every chart.
     t.newWorld();t.handleInput();
@@ -1932,7 +1964,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.journeySigned(),true);
     }
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
-    assert(endNote.textContent.includes('IS KNOWN')&&endNote.textContent.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.textContent);
+    assert(endNote.innerHTML.includes('IS KNOWN')&&endNote.innerHTML.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.innerHTML);
     assert(element('end-action').textContent.includes('THE CEILING'),'And the leaf asks for the tap that turns the page to it: '+element('end-action').textContent);
     t.world.player.deadTime=10;t.handleInput();
     assert.equal(t.journey.era,2,'The page turns between runs');
@@ -2040,8 +2072,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }
       t.world.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
-      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
-      if(era===8)assert(element('end-journey').textContent.includes('ERA I'),'And at the last rung that the next run opens in the cave: '+element('end-journey').textContent);
+      assert(element('end-journey').innerHTML.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').innerHTML);
+      if(era===8)assert(element('end-journey').innerHTML.includes('ERA I'),'And at the last rung that the next run opens in the cave: '+element('end-journey').innerHTML);
       assert.equal(element('frontier-open').hidden,true,'The Final Frontier waits for the circle to close: era '+era);
       t.world.player.deadTime=10;t.handleInput();
       if(era<8){
@@ -2071,7 +2103,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     t.world.score=4321;t.recordBest(t.world.score);
     assert.equal(t.journey.bests.frontier,4321,'The Final Frontier keeps its own record');
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
-    assert(element('end-journey').textContent.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').textContent);
+    assert(element('end-journey').innerHTML.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').innerHTML);
     assert.equal(t.journey.era,1,'The Final Frontier never moves the Journey');assert.equal(t.journey.knowledge,0,'Nor banks for it');
     // A climb carried a little way into the new round, so there is something to begin again.
     t.journey.era=8;t.journey.knowledge=12;
