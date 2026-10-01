@@ -131,7 +131,8 @@ These need a design decision, not a text edit.
 - **Arbitrary pairings that read as fact.** On the Scroll a body's school is its row taken in threes and
   its asterism name is its id taken in twenty-fours, so the caption pairs them at random. On the
   Astrolabe the qadr comes from the seed and a star's name goes to any bright body, so Sirius can read
-  qadr 3. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
+  qadr 3. *Built 2026-10-01:* each rete star carries its catalogued qadr and is dealt only to a body of
+  that greatness, so a named star always reads its own. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
   "everything is either a measurement or an inheritance". Either bind them to real data or say, in the
   source line, that the pairings are illustrative.
 - **The Lens's families do not follow its chapters.** A body's family comes from
