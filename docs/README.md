@@ -74,4 +74,7 @@ phenomenon, and orbiting it is the act that turns it into knowledge, in the hand
 century is currently held. `JOURNEY.md` is the controlling statement of that claim and the door to
 open first when working on the design; `research/` holds four files behind it —
 `china.md`, `instruments.md`, `observer-core.md`, and `space-age.md` — reached from the era files
-and cross-cutting docs above that draw on them.
+and cross-cutting docs above that draw on them. `research/one-star.md` is the table behind §9.2's
+later rounds: each star's name in each of the eight centuries, with its evidence label and source. `research/beliefs.md`
+is the table behind the audit's §3.2 item 7: the belief each century keeps and the correction struck
+over it, with labels and sources.

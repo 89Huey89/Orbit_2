@@ -3,6 +3,7 @@
    on its own worker thread by the driver in ../verify.mjs (see runtimeLayout there). */
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
 import {step,FAST_GLOBALS,OrbitWorld,orbitTangents,CONSTELLATIONS,OBSERVATIONS,SWEEP_FULL,RELEASE_GRACE,script} from './sandbox.mjs';
 
 const LEDGER_KEY='orbit.ledger.v2',LEDGER_KEY_V1='orbit.ledger.v1';
@@ -65,9 +66,10 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,scrollSchool,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,lensFamily,LENS_FAMILY_YEAR,LENS_EYE_READINGS,LENS_FAMILIES,planetFamily,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,PRB_SYSTEMS,prbStarClass,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,astroQadr,astroDealName,astroRun,ASTRO_STARS,scrollSchool,scrollOffice,scrollLodge,SCROLL_OFFICES,SCROLL_SCHOOLS,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
+BELIEFS,beliefOf,beliefHere,beliefBodies,beliefTick,strikeInscription,inscriptionStrike,lensCanalReading,ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
 replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
@@ -829,6 +831,26 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     // Two chapters to a register, and the register changes exactly at a chapter pair's boundary.
     assert.deepEqual([0,11,12,23,24,35,40].map(context.test.lensRegOfRow),[0,0,1,1,2,2,2],'Rows 0-11 are the eyepiece, 12-23 the plate, 24 on the sensor');
     context.test.LENS_CHAPTERS.forEach((c,i)=>assert.equal(c.reg,context.test.lensRegOfRow(i*words.chapterRows),'Chapter '+i+' is told in the register its rows are drawn in'));
+    // A body's family is bound to its chapter: no world on the Lens resolves into a reading dated after the
+    // chapter it stands in, whatever the seed deals it and wherever in a Journey the century began, and the
+    // binding is a function of the seed and the row alone.
+    {
+      const T=context.test,w=T.world,heldSeed=w.seed,heldFrom=w.eraFrom;let rebound=0;
+      for(const f of T.LENS_FAMILIES)assert.equal(T.LENS_FAMILY_YEAR[f],parseInt(T.LENS_EYE_READINGS[f].caption,10),'Every family is dated by its own caption: '+f);
+      for(const from of [0,7])for(let s=1;s<=200;s++){
+        w.seed=(s*2654435761)>>>0;w.eraFrom=from;
+        for(let row=from;row<from+words.goalRow+6;row++){
+          const n={id:row*31+s,type:['still','drift','fading','sling'][row%4],row},f=T.lensFamily(n),ch=T.LENS_CHAPTERS[Math.min(T.LENS_CHAPTERS.length-1,Math.floor((row-from)/words.chapterRows))];
+          assert(T.LENS_FAMILIES.includes(f),'A Lens body is always one of the seven families');
+          assert(T.LENS_FAMILY_YEAR[f]<=ch.year,`Seed ${w.seed}, row ${row}: a ${f} world (${T.LENS_EYE_READINGS[f].caption}) stands in ${ch.place} ${ch.year}`);
+          assert.equal(T.lensFamily({...n}),f,'The same seed and row resolve the same world');
+          if(f!==T.planetFamily(row,w.seed))rebound++;
+        }
+      }
+      assert(rebound>0,'The binding does redraw families the chart deals too early');
+      for(const n of w.nodes)if(!n.difficultyChoice&&!['gold','shield','reflector','dawn','inkwell'].includes(n.type)&&n.routeRole!=='star'){const f=T.lensFamily(n);assert(T.LENS_FAMILY_YEAR[f]<=T.LENS_CHAPTERS[Math.max(0,Math.min(5,Math.floor((n.row-(w.eraFrom||0))/words.chapterRows)))].year,'A dealt body on the Lens is never dated past its chapter');}
+      w.seed=heldSeed;w.eraFrom=heldFrom;
+    }
     // Every register draws, the finale included, without throwing: the HUD, trail and traveller follow the run's row.
     // Silenced while the run is forced through its chapters: a chapter's sound lays a wash, and a wash
     // schedules its own disconnect on a timer this sandbox has not got.
@@ -921,6 +943,15 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.newWorld();context.test.render(1/60);context.test.handleInput();
     const w=context.test.world;
     for(const row of [0,7,13,19,25,31]){w.progress=row;for(const d of [0,.1,.3,.6,.85,1])for(const n of w.nodes)if(!n.difficultyChoice){n.documented=d;n.visited=true;}context.test.render(1/60);}
+    // A system's stars print their own spectral classes, never one dealt: each tag is the real class of the
+    // component its place in the chart reads, out of the system the chart is surveying, and a lone star is its own.
+    {const SYS=context.test.PRB_SYSTEMS;const read=new Set();while(w.row<100)w.generateRow();
+      for(const S of SYS)assert(S[2].length>=1&&S[2].every(c=>/^(?:[OBAFGKM]\d(?:\.\d)?(?:V|IV)|DA\d)$/.test(c)),'Every system carries real spectral classes: '+S[0]);
+      for(const chart of w.constellations)chart.stars.forEach((n,i)=>{const S=SYS[((chart.catalogueIndex|0)%12+12)%12],tag=context.test.prbStarClass(n);read.add(S[0]);
+        assert.equal(tag,S[2].length>1?'ABC'[i<S[2].length?i:0]+' '+S[2][i<S[2].length?i:0]:S[2][0],'The star\'s tag is its own component\'s class in '+S[0]);});
+      assert.equal(read.size,12,'Every one of the twelve systems was read: '+[...read]);
+      assert.equal(SYS[0][0],'BARNARD’S STAR');assert.equal(JSON.stringify(SYS[0][2]),'["M4V"]','Barnard\'s Star, the Arrival\'s target, reads M4V and nothing else');
+      assert.equal(JSON.stringify(SYS[1][2]),'["G2V","K1V","M5.5V"]','Alpha Centauri reads A, B and Proxima as C');}
     // Everything read pays its material: a chart this well documented has met the first bill, so a daughter left.
     // What is read pays its material. The bill for the first daughter met by parts alone — a sail segment, two
     // memory scrubs, a shield plate and an isotope cache — launches it; half-read bodies pay half their share,
@@ -1291,6 +1322,28 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     events['pause-open:click']();events['window:keydown'](escape);
     assert.equal(context.test.world.state,'ready','Neither the control nor Escape suspends the frontispiece');
     assert.equal(leaf.classList.contains('hidden'),true,'The frontispiece raises no pause leaf');
+  }
+  // ---------- The atlas's legend on the pause leaf (docs/KNOWLEDGE-AUDIT.md §3.2, item 9) ----------
+  // The magnitude key and the construction's two named lines are flank furniture the phone cannot carry, so
+  // the leaf carries them: on both of the atlas's engraved plates, and on no century, whose leaf is its own.
+  {
+    const t=context.test,legend=element('pause-legend'),was=t.plateName;
+    const page=readFileSync(new URL('../../src/index.html',import.meta.url),'utf8'),slip=page.slice(page.indexOf('<section id="pause"'),page.indexOf('</section>',page.indexOf('<section id="pause"')));
+    for(const words of ['id="pause-legend"','atlas-only','MAGNITUDINES','I brightest · VI faintest, as Ptolemy ranked them','Æquator cælestis','the celestial equator','Ecliptica','the Sun’s yearly path','id="pause-key"','id="pause-equator"','id="pause-ecliptic"'])
+      assert(slip.includes(words),'The pause leaf carries the atlas\'s legend: '+words);
+    for(const plate of ['night','paper']){
+      t.setPlate(plate);t.newWorld();t.handleInput();events['pause-open:click']();
+      assert.equal(t.world.state,'paused');
+      assert.equal(legend.hidden,false,'The atlas\'s pause leaf shows its legend on the '+plate+' plate');
+      events['pause-leave:click']();
+    }
+    for(const id of Object.keys(t.PLATE_STYLES).filter(id=>t.PLATE_STYLES[id].door)){
+      t.enterEra(id);assert.equal(t.plateName,id,'The century opens: '+id);t.handleInput();events['pause-open:click']();
+      assert.equal(t.world.state,'paused');
+      assert.equal(legend.hidden,true,'A century\'s pause leaf does not carry the atlas\'s legend: '+id);
+      events['pause-leave:click']();t.leaveEra();
+    }
+    t.setPlate(was);t.newWorld();
   }
   // ---------- The survey at both ends of a flight ----------
   // An exact tangent from a two-planet fixture, flown through the whole runtime: the release lays a
@@ -1866,6 +1919,14 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     for(const id of [null,...Object.keys(t.PLATE_STYLES).filter(id=>t.PLATE_STYLES[id].door)]){
       if(id)t.enterEra(id);else t.setPlate('paper');
       assert.equal(t.plateWords().milestones.length,t.ERA_MILESTONES[t.eraId()||5],'A century names exactly the milestones the Journey counts for it: '+(id||'atlas'));
+      // Each milestone carries the knowledge it stands for (docs/KNOWLEDGE-AUDIT.md §3.2, item 6): one English
+      // gloss to a name, set in the lower case of an italic gloss, and every century's its own, not the atlas's.
+      {const w=t.plateWords(),g=w.milestoneGlosses||[];
+        assert.equal(g.length,w.milestones.length,'Every milestone has a gloss: '+(id||'atlas'));
+        for(const gloss of g)assert(typeof gloss==='string'&&gloss.length>8&&gloss.length<=48&&/^[a-z]/.test(gloss)&&!/[<>]/.test(gloss),'A milestone gloss is a short English line in lower case: '+(id||'atlas')+': '+gloss);
+        if(id)assert(!g.some(gloss=>t.centuryWords(5).milestoneGlosses.includes(gloss)),'A century glosses its own milestones, not the atlas\'s: '+id);
+        t.openCatalogue();const leaf=element('catalogue-body').innerHTML;t.closeCatalogue();
+        for(let i=0;i<g.length;i++)assert(leaf.includes(t.plateWords().milestones[i].replace(/&/g,'&amp;'))&&leaf.includes(g[i].replace(/&/g,'&amp;')),'The Record lists each milestone with its gloss: '+(id||'atlas')+': '+g[i]);}
       if(id)t.leaveEra();
     }
     t.setPlate('paper');t.newWorld();
@@ -1880,14 +1941,15 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     assert.equal(t.journey.knowledge,13,'A Journey run banks what it observed');
     if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.journey.v1')).knowledge,13);
-    assert.equal(endNote.hidden,false);assert(endNote.textContent.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.textContent);
-    assert(endNote.textContent.includes('THIS RUN \u00b7 +13.0 KNOWLEDGE \u00b7 13 ORBITS \u00b7 13 WHOLE'),'The leaf says what the run banked and from what: '+endNote.textContent);
-    assert(endNote.textContent.includes('KNOWLEDGE 13 / '+t.ERA_THRESHOLD),'and where the knowledge now stands: '+endNote.textContent);
+    assert.equal(endNote.hidden,false);assert(endNote.innerHTML.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS'),'The leaf names the milestone the run opened: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('A MILESTONE STANDS \u00b7 THE HALL OF THE BULLS\n<em class="milestone-gloss">'+t.plateWords().milestoneGlosses[0]+'</em>'),'and what it stands for, in italic beneath it: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('THIS RUN \u00b7 +13.0 KNOWLEDGE \u00b7 13 ORBITS \u00b7 13 WHOLE'),'The leaf says what the run banked and from what: '+endNote.innerHTML);
+    assert(endNote.innerHTML.includes('KNOWLEDGE 13 / '+t.ERA_THRESHOLD),'and where the knowledge now stands: '+endNote.innerHTML);
     t.journey.knowledge=t.ERA_THRESHOLD-.5;t.newWorld();t.handleInput();t.journeyObserve(1);
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
     // Every chapter stands, and the Rock's own feat (JOURNEY.md §9) is still owed: the leaf names it and the
     // page does not turn.
-    assert(endNote.textContent.includes('ONLY THE FEAT REMAINS')&&endNote.textContent.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.textContent);
+    assert(endNote.innerHTML.includes('ONLY THE FEAT REMAINS')&&endNote.innerHTML.includes(t.SIGNATURES[1].name),'A century whose feat is owed names it: '+endNote.innerHTML);
     // The Struck Ring, read off the events a run emits: a light the wall sorts as major held for a whole orbit.
     // Every sling body is one (radius 57), and one is dealt at row 2 on every chart.
     t.newWorld();t.handleInput();
@@ -1902,7 +1964,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(t.journeySigned(),true);
     }
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
-    assert(endNote.textContent.includes('IS KNOWN')&&endNote.textContent.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.textContent);
+    assert(endNote.innerHTML.includes('IS KNOWN')&&endNote.innerHTML.includes('THE CEILING'),'A known era says which century the next run opens on: '+endNote.innerHTML);
     assert(element('end-action').textContent.includes('THE CEILING'),'And the leaf asks for the tap that turns the page to it: '+element('end-action').textContent);
     t.world.player.deadTime=10;t.handleInput();
     assert.equal(t.journey.era,2,'The page turns between runs');
@@ -1975,6 +2037,16 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
           flown=fly('capture',{n:find(n=>n.row>=1&&t.ceilingWanderer(n)),perfect:false});
         }
         if(era===3){
+          // A body's caption pairs a name and a school as the Kaiyuan Zhanjing does: every school keeps an
+          // office in every palace, no name is catalogued under two schools, and every body the chart deals is
+          // written up as an office of its own colour's school, set down in the palace of the lodge it is held in.
+          const names=t.SCROLL_OFFICES.map(o=>o[0]);assert.equal(new Set(names).size,names.length,'No star office is catalogued under two schools');
+          for(let s=0;s<3;s++)for(let p=0;p<4;p++)assert(t.SCROLL_OFFICES.some(o=>o[1]===s&&o[2]===p),'The '+t.SCROLL_SCHOOLS[s]+' school keeps an office in palace '+(p+1));
+          for(const n of w.nodes){const o=t.scrollOffice(n);
+            assert(o,'Every body the Scroll deals is written up as a star office: row '+n.row);
+            assert.equal(o[1],t.scrollSchool(n),'A body\'s school is its office\'s catalogued school: '+o[0]+' on row '+n.row);
+            assert.equal(o[2],Math.floor(t.scrollLodge(n)/7),'A body\'s office lies in the palace of the lodge it is held in: '+o[0]);
+            assert.equal(t.scrollOffice(n),o,'One body is always written up as the same office');}
           const rows=[5,6,7].map(k=>find(n=>n.row===k));
           fly('capture',{n:rows[0],perfect:true});fly('capture',{n:rows[1],perfect:false});
           assert.equal(fly('capture',{n:rows[2],perfect:true}),null,'A rough landing breaks the three schools');
@@ -1982,6 +2054,13 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         }
         if(era===4){
           for(let c=1;c<=5;c++)assert(w.nodes.some(n=>n.row>=c*6&&n.row<c*6+6&&t.astroWanderer(n)!==-1),'The Astrolabe deals a wanderer in chapter '+(c+1));
+          // A star's name carries its own catalogued greatness: every body named off the rete is one whose qadr is
+          // that star's, so no named star is ever cut with a greatness it does not have, and both pools are dealt.
+          const dealt=new Set();
+          for(const n of w.nodes){if(n.difficultyChoice||t.astroWanderer(n)!==-1)continue;const q=t.astroQadr(n),named=t.astroDealName(n,q);if(q>2){assert.equal(named,undefined,'A body of the '+q+'th greatness is not named');continue;}
+            const S=t.ASTRO_STARS[named.i];assert.equal(S[2],q,S[1]+' is cut with its own qadr, '+S[2]+', not '+q);assert.equal(t.astroDealName(n,q),named,'A body keeps the name it was dealt');dealt.add(q);}
+          assert(dealt.size>0,'A forty-row sheet names at least one star off the rete');for(const q of [1,2])assert(t.ASTRO_STARS.some(S=>S[2]===q),'The rete carries a star of greatness '+q+' to name');
+          assert.equal(t.ASTRO_STARS.map(S=>S[2]).join(''),'111112111122','Each rete star carries its catalogued qadr');
           flown=fly('capture',{n:find(n=>t.astroWanderer(n)!==-1),perfect:false});
         }
         if(era===5)flown=fly('observation',{key:'pureChart'});
@@ -1993,8 +2072,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       }
       t.world.die('THE DARK CAUGHT UP');t.showEnd();
       assert.equal(t.journey.knowledge,T,'Step 7: every milestone stands: era '+era);
-      assert(element('end-journey').textContent.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').textContent);
-      if(era===8)assert(element('end-journey').textContent.includes('ERA I'),'And at the last rung that the next run opens in the cave: '+element('end-journey').textContent);
+      assert(element('end-journey').innerHTML.includes('IS KNOWN'),'The leaf says the era is known: era '+era+' · '+element('end-journey').innerHTML);
+      if(era===8)assert(element('end-journey').innerHTML.includes('ERA I'),'And at the last rung that the next run opens in the cave: '+element('end-journey').innerHTML);
       assert.equal(element('frontier-open').hidden,true,'The Final Frontier waits for the circle to close: era '+era);
       t.world.player.deadTime=10;t.handleInput();
       if(era<8){
@@ -2024,7 +2103,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     t.world.score=4321;t.recordBest(t.world.score);
     assert.equal(t.journey.bests.frontier,4321,'The Final Frontier keeps its own record');
     t.world.die('THE DARK CAUGHT UP');t.showEnd();
-    assert(element('end-journey').textContent.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').textContent);
+    assert(element('end-journey').innerHTML.includes('THE FINAL FRONTIER · BEST 4321'),'The leaf names it: '+element('end-journey').innerHTML);
     assert.equal(t.journey.era,1,'The Final Frontier never moves the Journey');assert.equal(t.journey.knowledge,0,'Nor banks for it');
     // A climb carried a little way into the new round, so there is something to begin again.
     t.journey.era=8;t.journey.knowledge=12;
@@ -2146,6 +2225,156 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     }
     if(t.plateOwns('mode'))events['ceiling-exit:click']();else if(t.runMode==='journey')events['journey-open:click']();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;
+    t.setPlate('night');
+  }
+  // ---- One star, eight names (JOURNEY.md §9.2, src/onestar.js) ----
+  // Every round after the first follows one star, in a fixed order; in every century of such a round the chart
+  // deals that star on exactly one plain body, the same one for the same seed, and its name and note are the
+  // table's. The first round deals none. What was met is kept in its own versioned key, and survives a store
+  // that is garbage or blocked.
+  {
+    const t=context.test,LABELS=['attested','plausible reconstruction','gameplay translation'];
+    assert.equal(t.oneStarOfRound(1),null,'The first round follows no star');
+    assert.deepEqual([2,3,4,5,6,7,11,12].map(r=>t.oneStarOfRound(r).id),['pleiades','sirius','antares','aldebaran','vega','pleiades','vega','pleiades'],'Round two the Pleiades, three Sirius, four Antares, five Aldebaran, six Vega, then again');
+    for(const star of t.ONE_STARS)for(let era=1;era<=8;era++){
+      const e=star.eras[era],where=star.id+' in era '+era;
+      assert(e&&e.line&&e.note&&e.source,'Every century has a line, a note and a source: '+where);
+      assert(LABELS.includes(e.label),'Every name carries one of the three evidence labels: '+where+' · '+e.label);
+      assert(e.line.toUpperCase().includes((star.name||star.title).replace(/^The /,'').toUpperCase()),'Every line ends on the name the player knows the star by: '+where);
+      // Where no name survives, the line says so, and nothing is set in the century's own script.
+      if(/NO NAME/.test(e.line))assert(!e.own&&!e.glyphs&&e.label!=='attested','A star with no surviving name has none invented: '+where);
+    }
+    t.setPlate('paper');t.newWorld();
+    if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+    const dealt=(era,rounds)=>{
+      if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+      t.journey.era=era;t.journey.knowledge=0;t.journey.rounds=rounds;t.journey.milestones={};t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();
+      assert.equal(t.eraId()||5,era,'The Journey opens on the frontier: era '+era);
+      t.handleInput();
+      const w=t.world;
+      // The chart is dealt well past where the star may stand.
+      for(let i=0;i<30;i++)w.generateRow();
+      const bodies=w.nodes.filter(n=>t.oneStarIs(n)),body=t.oneStarBody();
+      // A second chart cut from the same seed, with the run's own settings, is dealt the star on the same row.
+      const twin=new OrbitWorld(w.seed,w.width,w.height,()=>{},true,w.varyOpening,w.newtonOn,w.chasmsOn,w.relightOn,w.goalRow);
+      twin.driven=w.driven;for(let i=0;i<30;i++)twin.generateRow();
+      const twinBody=t.oneStarBody(twin);
+      // Read while the run is still on the press, since a century's own selectors read the world in hand.
+      const claimed=!!body&&(era===2?!!t.ceilingWanderer(body):era===4?t.astroWanderer(body)!==-1:false);
+      return {w,bodies,body,twinBody,claimed};
+    };
+    for(let era=1;era<=8;era++){
+      assert.equal(dealt(era,0).bodies.length,0,'The first round deals no star: era '+era);
+      for(const rounds of [1,2,3,4,5]){
+        const {bodies,body,twinBody,claimed}=dealt(era,rounds),star=t.oneStarOfRound(rounds+1),where=star.id+' in era '+era;
+        assert.equal(bodies.length,1,'A round that follows a star deals it on exactly one body: '+where);
+        assert(body&&!body.difficultyChoice&&body.routeId==null&&(body.type==='still'||body.type==='drift')&&t.astroPlainRow(body.row),'And it is a plain main-line body: '+where);
+        assert(!claimed,'Never a body the century has named itself, the Ceiling\'s wanderers or the Astrolabe\'s wandering stars: '+where);
+        assert(twinBody&&twinBody.row===body.row,'The star is dealt deterministically, on the same row for the same seed: '+where);
+      }
+    }
+    // Vega comes as one half of a pair, and its round's chart still names it once. The entry is the pair's on the
+    // Record's page and Vega's on the dot; the Scroll writes no other body up as the Weaver Girl, while the River
+    // Drum, Altair's office, stays free; the Astrolabe names no other body al-nasr al-waqi, while Altair, al-nasr
+    // al-tair, may stand on another body of the same chart.
+    {
+      const vega=t.oneStarOfRound(6);
+      assert.equal(vega.title,'Vega and Altair','The sixth round follows the pair');assert.equal(vega.name,'Vega','And its dot is Vega');
+      assert.equal(vega.eras[3].own,'織女','The Scroll names Vega the Weaver Girl');assert.equal(vega.eras[4].own,t.ASTRO_STARS[4][0],'The Astrolabe names it from its own rete');
+      assert(/Altair/.test(vega.eras[3].note)&&/Altair/.test(vega.eras[4].note)&&/Altair/.test(vega.eras[5].note),'And Altair stands in the notes of the centuries that set the pair down together');
+      {
+        const {w,body}=dealt(3,5);let river=0;
+        for(const n of w.nodes){const o=t.scrollOffice(n);assert.notEqual(o[0],'織女','No body but the round\'s own is written up as the Weaver Girl: row '+n.row);
+          assert.equal(o[1],t.scrollSchool(n),'And the office is still one of the body\'s own school');if(o[0]==='河鼓')river++;}
+        assert(body,'The Scroll deals Vega in round six');
+      }
+      {
+        const {w,body}=dealt(4,5);t.astroRun();
+        const others=w.nodes.filter(n=>n!==body),named=others.map((n,k)=>t.astroDealName(n,1+(k&1))).filter(Boolean).map(x=>x.i);
+        assert(others.length>20&&!named.includes(4),'The Astrolabe sets al-nasr al-waqi on no second body in Vega\'s round');
+        assert(named.includes(5),'While Altair, the flying eagle, is still dealt');
+      }
+    }
+    // Landed on, the body is given its century's note and is kept as met and held; the catalogue sets its name.
+    {
+      if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+      t.journey.era=3;t.journey.rounds=1;t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();t.handleInput();
+      const w=t.world;for(let i=0;i<30;i++)w.generateRow();
+      const body=t.oneStarBody(),entry=t.ONE_STARS[0].eras[3];
+      t.oneStarCapture(body);
+      assert(t.inscriptions.some(g=>g.text===entry.note),'The landing says the century\'s note for the star');
+      assert.equal(t.oneStarMet(t.ONE_STARS[0],3),3,'And the star is kept as met and held in this century');
+      if(!storageBlocked)assert.deepEqual(JSON.parse(saved.get(t.ONE_STAR_KEY)).met.pleiades,{3:3},'And written at once under its own key');
+      else assert(!saved.has(t.ONE_STAR_KEY),'A blocked store keeps it for the page alone');
+      events['ceiling-exit:click']();if(t.eraId())t.leaveEra();
+      t.openCatalogue();const html=element('catalogue-body').innerHTML;t.closeCatalogue();
+      assert(html.includes('The Pleiades')&&html.includes(entry.own)&&html.includes(entry.note),'The atlas\'s Record keeps the star\'s name in the century\'s own script, and its note');
+      assert(html.includes('Not yet met'),'And leaves the centuries where it has not been met blank');
+      // A garbage store reads as nothing met, and a well-formed one is read back cleaned.
+      if(!storageBlocked){
+        context.localStorage.setItem(t.ONE_STAR_KEY,'{not json');assert.equal(JSON.stringify(t.readOneStars().met.sirius),'{}','A garbage store is read as nothing met');
+        context.localStorage.setItem(t.ONE_STAR_KEY,JSON.stringify({v:1,met:{sirius:{2:1,9:3,4:7},nonsense:{1:3}}}));
+        const read=t.readOneStars();assert.equal(JSON.stringify(read.met.sirius),JSON.stringify({2:1,4:3}),'Only the eight centuries and the two marks are read back');assert(!('nonsense' in read.met));
+      }
+    }
+    if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;t.journey.milestones={};
+    t.setPlate('night');
+  }
+  // ---- A belief kept, and corrected, in every century (docs/KNOWLEDGE-AUDIT.md §3.2 item 7, src/beliefs.js) ----
+  // Every century but the Rock keeps one attested belief and its attested correction. The belief is set beside
+  // a plain body early in the run; later in the same run, on a body further up, it is set again struck through
+  // with the correction beneath, and the first note, if it still stands, is struck where it is. The Lens draws
+  // its own pair on Mars's plate, struck the same way. The same seed sets both on the same bodies.
+  {
+    const t=context.test,LABELS=['attested','plausible reconstruction','gameplay translation'];
+    assert.equal(t.beliefOf(1),null,'The Rock keeps no belief: it asserts nothing a later hand corrected');
+    for(let era=2;era<=8;era++){
+      const b=t.beliefOf(era);assert(b&&b.belief&&b.fix&&b.source&&LABELS.includes(b.label),'Every century from the Ceiling up has a belief, its correction, a label and a source: era '+era);
+      if(!b.own)assert(b.fixAt>=b.at,'The correction is never looked for before the belief: era '+era);
+    }
+    {const r=t.lensCanalReading,early=r(1,0),late=r(1,1);
+      assert(early.belief>0&&early.struck===0&&early.fix===0,'The Lens sets Lowell\'s canals as the plate develops, unstruck');
+      assert(late.belief>0&&late.struck===1&&late.fix===1,'And strikes them through, never erasing them, as Antoniadi\'s correction is typed');}
+    const leave=()=>{if(t.world.state==='playing')t.world.die('THE DARK CAUGHT UP');if(t.runMode==='journey'){if(t.plateOwns('mode'))events['ceiling-exit:click']();else events['journey-open:click']();}};
+    for(const era of [1,2,3,4,5,7,8]){
+      leave();
+      t.journey.era=era;t.journey.knowledge=0;t.journey.rounds=0;t.journey.milestones={};t.journey.unlocked=[1,2,3,4,5,6,7,8];
+      events['journey-open:click']();t.handleInput();
+      const w=t.world;for(let i=0;i<34;i++)w.generateRow();
+      t.clearInscriptions();
+      const got=t.beliefBodies(),b=t.beliefOf(era);
+      if(era===1){assert.equal(got,null,'The wall sets no belief');t.beliefTick(()=>true);assert(!t.inscriptions.some(g=>/^belief/.test(g.key)),'And writes none');continue;}
+      const where='era '+era,from=w.eraFrom||0;
+      assert(got&&got.set&&got.fix&&got.set!==got.fix,'The belief and its correction each stand on a body of their own: '+where);
+      assert(got.set.row>=from+b.at&&got.fix.row>=from+b.fixAt,'On the rows the century gives them: '+where);
+      assert(got.fix.row>got.set.row,'The correction stands on a later row than the belief: '+where);
+      if(b.until!=null)assert(got.set.row<from+b.until&&got.fix.row<from+b.fixUntil,'And inside the chapters whose dates they carry: '+where);
+      for(const n of [got.set,got.fix])assert(!n.difficultyChoice&&n.routeId==null&&(n.type==='still'||n.type==='drift'),'A plain main-line body: '+where);
+      const twin=new OrbitWorld(w.seed,w.width,w.height,()=>{},true,w.varyOpening,w.newtonOn,w.chasmsOn,w.relightOn,w.goalRow);twin.driven=w.driven;for(let i=0;i<34;i++)twin.generateRow();
+      const tg=t.beliefBodies(twin);assert(tg&&tg.set.row===got.set.row&&tg.fix.row===got.fix.row,'The same seed sets them on the same rows: '+where);
+      t.beliefBodies(w);
+      // Early: only the belief is in sight, and it is set, unstruck.
+      t.beliefTick(n=>n===got.set);
+      const first=t.inscriptions.find(g=>g.key==='belief');
+      assert(first&&first.text===b.belief&&t.inscriptionStrike(first)===0,'The belief is set beside its body, unstruck: '+where);
+      assert(first.lines.every(l=>!/^·|·$/.test(l.trim())),'No line of a note begins or ends on its separating dot: '+where);
+      assert(!t.inscriptions.some(g=>g.key==='belief-fix'),'And nothing corrects it yet: '+where);
+      // Later: the correction's body comes into sight, and the belief is struck.
+      t.beliefTick(()=>true);
+      const fix=t.inscriptions.find(g=>g.key==='belief-fix');
+      assert(fix&&fix.text===b.fix,'The correction is set beside a body further up the run: '+where);
+      assert(fix.strikeN>=1&&fix.lines.slice(0,fix.strikeN).join(' ')===b.belief,'Quoting the belief above it, to be struck: '+where);
+      assert(first.struckAt!=null&&first.strikeN===first.lines.length,'And the first note, still on the sheet, is struck where it stands: '+where);
+      for(const g of [first,fix])g.age+=10;
+      assert(t.inscriptionStrike(first)===1&&t.inscriptionStrike(fix)===1,'Struck through in full, and still there: '+where);
+      t.beliefTick(()=>true);
+      assert.equal(t.inscriptions.filter(g=>g.key==='belief-fix').length,1,'The correction is written once: '+where);
+    }
+    leave();
+    t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};t.journey.rounds=0;t.journey.milestones={};
     t.setPlate('night');
   }
   return {width,height,storageBlocked,reduceMotion,lensCopies,turnFrames};

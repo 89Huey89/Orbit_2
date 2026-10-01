@@ -134,10 +134,25 @@ These need a design decision, not a text edit.
   qadr 3. On the Probe the spectral class is `n.id%6`, so any star can be M4V, against the README's
   "everything is either a measurement or an inheritance". Either bind them to real data or say, in the
   source line, that the pairings are illustrative.
+  *Built 2026-10-01, bound to real data in all three.* The Astrolabe's rete stars carry their catalogued
+  qadr (the Almagest's, which al-Ṣūfī keeps) and each is dealt only to a body of that greatness, so a
+  named star always reads its own; until then a named body could read any first or second greatness.
+  On the Scroll a body takes its school from its row as before and then an office that school truly set
+  down (`SCROLL_OFFICES`, after the Kaiyuan Zhanjing's three lists) in the palace of the lodge it is held
+  in, so name and colour always agree, and its source line no longer calls the pairing a translation.
+  The Probe's systems carry their stars' catalogued classes (`PRB_SYSTEMS`), and a star prints its own
+  component's (Barnard's Star `M4V`; Alpha Centauri `A G2V`, `B K1V`, `C M5.5V`), with Barnard's mass
+  corrected to 0.16 M☉. The values were checked through search summaries only, since the primary
+  catalogues could not be opened from the sandbox; a reading against Toomer's Almagest, the Kaiyuan
+  Zhanjing's chapters 65–70 and RECONS is still owed.
 - **The Lens's families do not follow its chapters.** A body's family comes from
   `planetFamily(row,runSeed)`, not from the register, so by the code a 1610 chapter can caption a body
   `1787 · THREE VOLCANOS`. Not yet seen in play. Its sensor-era names (OCEAN WORLD, LAVA WORLD) sit on a
-  1990 card before any exoplanet was known, which `06-lens.md` admits.
+  1990 card before any exoplanet was known, which `06-lens.md` admits. *Built 2026-10-01:* the Lens binds a
+  body's family to its chapter (`lensFamily` redraws, from row and seed, any family whose caption year is
+  later than its chapter's, so Padua shows only the Moon and Venus and The Hague adds the ring), checked
+  in `scripts/verify/runtime.mjs`; the register-three names stay as `06-lens.md`'s "Names" chose them, the
+  families being known by 1787 and only the words postdating 1990, and are left for a decision.
 - **A gravity assist is not a lap.** The Flyby's signature feat asks to "leave a gravity well on a full
   lap". A real assist is a single hyperbolic pass that borrows the planet's orbital motion; a full lap
   would be a capture. The mechanic can stay; its gloss should not teach the wrong picture.
@@ -145,15 +160,22 @@ These need a design decision, not a text edit.
   of 1603 (Phoenix, Tucana, Pavo) and four invented ones (Acus, Penna, Laterna, Phalæna). Velum is
   Lacaille's division of Argo in the 1750s, flown beside Argo itself. None of this is disclosed, and the
   atlas is the one frontispiece with no source line. *Since 2026-09-30 the figures' own notes disclose it
-  (§3.1, item 2); the source line is still owed.*
+  (§3.1, item 2); since 2026-10-01 the atlas has its source line too, naming Bayer's Uranometria, the
+  figures' four sources and the gameplay translation.*
 - **The Ceiling fuses three sources** a century and a half apart: Senenmut's ceiling (c. 1470 BCE), the
-  Book of Nut and the Amduat (Ramesside). The source line discloses part of it.
+  Book of Nut and the Amduat (Ramesside). The source line discloses part of it. *Built 2026-10-01:* the
+  source line now dates Senenmut's ceiling and the Ramesside books and says the sheet sets the three side
+  by side.
 - **Smaller:** the compass rose sets ORIENS on the right, the terrestrial convention, where a chart of
   the sky seen from below has east on the left; VIS GRAVITATIS is a softened pull of finite range, while
   its only English (an aria label) calls it "real gravity"; the Mariner 4 "ten-hour frames" in
   `flyby.js`'s header and `07-flyby.md` do not match their own figures (240,000 bits at 8⅓ bit/s is
   eight hours); the Ceiling's month circles are drawn with thirty spokes where
-  `research/ceiling.md` records twenty-four segments.
+  `research/ceiling.md` records twenty-four segments. *Built 2026-10-01:* all four are done. The rose
+  letters ORIENS on the left and OCCIDENS on the right, and the frame's hours of right ascension now rise
+  from right to left with it; the aria label says the pull is softened and has a short reach; Mariner 4's
+  frames are eight hours in `flyby.js`, `07-flyby.md` and `research/space-age.md`; the month circles have
+  twenty-four spokes.
 
 ### 2.3 · How claims are kept honest
 
@@ -169,6 +191,8 @@ cheap steps would close most of the gap:
   should say what its framing is ("Someone has to remember them" is a story, not a finding); the
   atlas's should name Bayer's *Uranometria* (Augsburg, 1603) and say that the telescopic bodies and the
   invented figures are a gameplay translation.
+  *Built 2026-10-01:* the Rock and the atlas now carry theirs, so every frontispiece has one. The Rock's
+  says no painted dot is asserted to be a star and that the keeping hand is a story, not a finding.
 
 ## 3 · Where it could teach more
 
@@ -192,8 +216,10 @@ cheap steps would close most of the gap:
    Moth now say they are the atlas's own. The atlas's Record keeps both (the notes under the Asterismi
    register, the lines as *Annales*). Building it found that every voice inherits the atlas's lore unless
    it sets its own, so the Ceiling and the Scroll now set theirs to none, and the suite checks that no
-   century speaks the atlas's lines. Still open from the list: the *stella nova* caption and the
-   ecliptic's gloss, which are captions on the sheet rather than lines.
+   century speaks the atlas's lines. *Built 2026-10-01:* the two captions left over. A slingshot held to a
+   full observation is lettered *Stella nova* on its rim, as a world is with its species, and the
+   construction's *Æquator cælestis* and *Ecliptica* carry their English in italic beneath them (*the
+   celestial equator*, *the Sun's yearly path*).
 3. **Bring the Scroll up to the Astrolabe.** Curator's lines for the four palaces; notes such as *Xin,
    the Heart, is Antares*, *the Weaver Girl and the Herd Boy are Vega and Altair*, *twenty-eight lodges,
    about one for each night of the Moon's round*, *365¼ dù, a day for each of the Sun's*; pinyin beside
@@ -229,19 +255,55 @@ cheap steps would close most of the gap:
 6. **Milestones that say what was learned.** Keep the chapter as the milestone, as LINKING.md settled,
    and give each the knowledge §1.5 meant it to stand for as its gloss, in the one place a milestone is
    named, `A MILESTONE STANDS · {name}`: "HOURS I TO III · the decans as a clock".
+   *Built 2026-10-01:* every milestone of all eight eras carries `milestoneGlosses` in its century's voice,
+   set in italic English under `A MILESTONE STANDS · {name}` on the leaf and listed with its state in a new
+   *The Journey's milestones* section of each Record. The Ceiling's are worded after §2.1: the hours are not
+   decans, so I–III is *the decans as a clock, a rising for each hour* and IV–VI *thirty-six decans, ten days
+   apiece*; VII–IX *the imperishable stars, which never set*; X–XII *the dawn rising of Sirius, and the year
+   begun*. The Rock's Hand Dots are only likened to a count. The suite checks one gloss per milestone, in
+   lower case, each century its own, and that the Record and the leaf set it.
 7. **A belief kept, and corrected, in every century.** The Lens is the model and
    KNOWLEDGE-HORIZON.md's column for it is empty for eras I–IV. Candidates: on the Scroll, Mars at the
    Heart as the omen it was read as (it is already a danger there); on the Astrolabe, Ptolemy's equant
    and the Ṭūsī couple that replaced it; on the Flyby, Mariner 4 finding craters where Lowell drew
    canals — planned in `07-flyby.md`, and the word *canal* is not yet in `flyby.js`, although the Lens
    already sets `NOT CANALS` two centuries below.
+   *Built 2026-10-01:* in the Lens's own form, decided by the author — a belief of the time set beside a body
+   early in the run, then set again later in the same run struck through, never erased, with its correction
+   beneath (`src/beliefs.js`, and the Lens's `LOWELL 1895` now struck in red as Antoniadi's note is typed).
+   Only attested pairs: the Ceiling's 365-day year and the Decree of Canopus (238 BCE); the Scroll's inch of
+   shadow per thousand li and Yixing's survey of 724 (Mars at the Heart was dropped: its only correction is
+   Huang Yi-long's computation of 1990, six centuries past the Scroll); the Astrolabe's precession of a degree
+   a century, Ptolemy's, and al-Ṣūfī's degree in 66 years (Isfahan, 964); the atlas's unchanging heavens and
+   Tycho's new star of 1572; the Flyby's dead, Moon-like Mars of Mariners 4 to 7 and Mariner 9's river beds
+   and volcanoes (1971); the Probe's van de Kamp planets of Barnard's Star and the telescope fault
+   found in 1973. The Rock is left without: it asserts nothing a later hand corrected. Table and sources in
+   KNOWLEDGE-HORIZON.md and `docs/archive/eras/research/beliefs.md`; the suite checks every century sets its
+   belief and strikes it later, and `npm run shots -- beliefs` shows each at 430×932. The equant (Marāgha, the fifth
+   chapter, seldom reached) and Lowell's canals on the Flyby (which fell under the Viking heading, and are
+   already the Lens's pair) were the first choices and were moved the same day; each pair is now kept inside
+   the chapters whose dates it carries.
 8. **One star through several hands.** Antares is *Xin*, *qalb al-aqrab* and "the rival of Ares"; Vega
    and Altair are the Weaver Girl and the Herd Boy and al-Ṣūfī's two eagles; Aldebaran leads from the
    Hall of the Bulls, hedged, to *al-dabarān* to the guest star of 1054 at the Bull's horn. The
    heirlooms already walk this path in part.
+   *Built 2026-10-01:* Vega and Altair are the fifth entry of one star, eight names (§3.3), round 6, so the
+   cycle is five long. One entry for the pair: the round's body is Vega, and Altair stands in the notes of the
+   centuries that set the two down together (the Scroll's Herd Boy, great star of 河鼓 the River Drum; al-Ṣūfī's
+   flying eagle; Bayer's α Aquilae; Altair's distance on the Probe). The Rock's line says no name survives and
+   its note hedges Rappenglück's Shaft Scene reading as weak; the Ceiling's says no name is certain. The
+   distinction between 河鼓 (the office Altair is brightest in) and 牽牛 (properly the lodge Niu) is argued in
+   `research/one-star.md`.
 9. **The phone first.** On 430×932 the magnitude key and the construction's labels are next to
    invisible. The pause leaf could be the atlas's legend: *I brightest · VI faintest, as Ptolemy ranked
    them*; *the celestial equator*; *the ecliptic, the Sun's yearly path*.
+   *Built 2026-10-01:* the atlas's pause leaf carries the legend on every viewport (`#pause-legend`,
+   `paintPauseLegend()` in frame.js): the six star forms struck by `renaissanceStarGlyph` over their numerals
+   under MAGNITUDINES with *I brightest · VI faintest, as Ptolemy ranked them*, and a sweep of the equator and
+   the ecliptic in the construction's inks beside *Æquator cælestis* · *the celestial equator* and *Ecliptica* ·
+   *the Sun's yearly path*. It replaces the faint canvas key the phone used to get under the leaf. Night and
+   paper only; the centuries, the proof and the modern plate are untouched. Checked at 430×932 (`npm run
+   shots -- pause`).
 
 ### 3.3 · The lever in §9.2: what each round reveals
 
@@ -259,6 +321,16 @@ own answer to the grind. Three directions, offered for the author's choice rathe
 
 Whatever is chosen, the three hints the descent carries — panspermia, the multiverse, time run back —
 should stay unnamed, as §9.2 has them, and never be stated as knowledge.
+
+*Built 2026-10-01:* the author chose **one star, eight names** (JOURNEY.md §9.2). Round 2 follows the Pleiades,
+round 3 Sirius, round 4 Antares, round 5 Aldebaran, then the four again; round 1 reveals nothing. In each century of
+such a round one plain body is the star, inscribed in the plate's own small caps with the name the century gave it
+(or, where it gave none that survives, a line saying so) and given the century's note on landing; the descent that
+ends the round letters the ochre dot with the star's name and names nothing else; and the atlas's Record keeps the
+names met under `orbit.star.v1`. Every one of the thirty-two entries carries an evidence label and a source
+(`ONE_STARS` in `src/onestar.js`; `docs/archive/eras/research/one-star.md`), and six of them are honest absences.
+This also answers part of §3.2 item 8 (one star through several hands) for these four stars; Vega and Altair
+were added the same day as a fifth entry, round 6, with forty entries in all and eight of them honest absences.
 
 ## Sources checked for this audit
 

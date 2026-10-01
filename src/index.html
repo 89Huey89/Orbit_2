@@ -105,6 +105,8 @@
     #game[data-era="3"] #end-score-roman{display:none}
     .scroll-lore-open{position:absolute;left:16px;right:16px;top:calc(6.5% + env(safe-area-inset-top));text-align:center}
     .scroll-lore{margin:0 auto 12px;max-width:24em;font-family:'Zilla Slab','LXGW WenKai TC',serif;font-style:italic;font-size:15px;line-height:1.45;color:#2c241b}
+    .atlas-context{max-width:42em;margin:12px auto 0;color:var(--muted);font-size:10.5px;line-height:1.5;letter-spacing:.035em}
+    .rock-context{max-width:42em;margin:12px auto 0;color:#d9cdb6;text-shadow:1px 1px 0 rgba(2,2,2,.85);font-size:10.5px;line-height:1.5;letter-spacing:.035em}
     .scroll-context{max-width:42em;margin:12px auto 0;color:#4e4232;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
     #game[data-era="4"] .astrolabe-only{display:revert!important}
     /* Era IV is brass measured on sized cream paper, so its chrome is the paper plate's shape again in the
@@ -349,6 +351,19 @@
     #pause strong{font-style:italic;font-family:var(--face-text);font-size:34px;font-weight:400;letter-spacing:.04em}
     #pause .action-copy{margin:12px 0 0;font-size:17px}
     .pause-menu{align-self:stretch;margin-top:19px}
+    /* The atlas's legend, carried on the pause leaf on every sheet: the wide sheet's MAGNITUDINES key and the
+       construction's two named lines are flank furniture a phone has no room for, and a halt is the one
+       moment a reader has stopped to consult a legend. Set between the prompt and the two entries, ruled
+       off above as the colophon rules a section, the star forms drawn by the plate's own painter. */
+    .pause-legend{align-self:stretch;display:flex;flex-direction:column;align-items:center;margin-top:14px;padding-top:11px;border-top:1px solid var(--line)}
+    .pause-legend[hidden]{display:none}
+    .pause-legend .legend-head{margin:0;color:var(--gold);font-family:var(--face-sc);font-size:11px;letter-spacing:.3em}
+    .pause-legend .legend-key{display:block;width:264px;height:52px;margin:4px 0 0}
+    .pause-legend .legend-gloss{margin-top:3px;font-family:var(--face-text);font-style:italic;font-size:13px;letter-spacing:.01em;color:var(--copy)}
+    .legend-lines{display:grid;grid-template-columns:44px auto;grid-auto-rows:auto;column-gap:10px;align-items:center;margin-top:11px;text-align:left}
+    .legend-lines .legend-mark{grid-row:span 2;width:44px;height:22px}
+    .legend-lines .legend-name{align-self:end;font-family:var(--face-sc);font-size:11.5px;letter-spacing:.12em;color:var(--ivory)}
+    .legend-lines .legend-gloss{align-self:start;margin:0 0 6px;font-size:12.5px}
     .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     #game.playing .score-block{opacity:1}
     #game.over .score-block{opacity:0}
@@ -494,6 +509,9 @@
       #pause .action-copy{margin-top:6px;font-size:14px}
       #pause .pause-menu{margin-top:10px}
       #game .pause-leaf{padding:14px 18px 15px;max-width:min(322px,100%)}
+      .pause-legend{margin-top:8px;padding-top:6px}
+      .pause-legend .legend-key{height:44px}
+      .legend-lines{margin-top:4px}
     }
     @media(min-width:800px){.hud{left:42px;right:42px;top:36px}.brand{font-size:19px}.footer{left:31px;right:31px;bottom:23px}.title-group{margin-top:max(15dvh,64px)}.start-copy{margin-bottom:max(14dvh,56px)}}
     @media(max-height:530px) and (orientation:landscape){.hud{top:16px}h1{font-size:65px}.eyebrow{margin-bottom:5px}.title-rule{margin-top:10px}.action-copy{font-size:17px;margin-bottom:6px}.instruction{font-size:11px}.footer{bottom:4px}#score{font-size:34px}#end{padding-bottom:20px}#end h2{font-size:30px}#end-score{font-size:68px;margin:0}#end-score-roman{display:none}.end-stats{margin:9px 0 15px;padding-top:10px}}
@@ -511,6 +529,9 @@
     .journey-mark{display:block;margin:4px auto 0;max-width:100%}
     .journey-mark[hidden]{display:none}
     #journey-note,#end-journey{white-space:pre-line;text-align:center;line-height:1.4}
+    /* What a milestone stands for, set under its small-caps name in the plate's own italic and in English,
+       as the figures and chapter titles are glossed: lower case, unspaced, and a size up from the note. */
+    #end-journey .milestone-gloss{display:inline-block;margin:1px 0 3px;font-family:var(--face-text);font-style:italic;font-size:12.5px;letter-spacing:.02em;text-transform:none;color:var(--copy)}
     #game.daily #daily{color:var(--gold)}
     /* A second disclosure, folded the way HOW TO PLAY already folds its own paragraph: the ephemeris,
        both era doors and the last plate wait behind it, so the sheet a hand first meets offers only
@@ -701,6 +722,9 @@
     .cat-annal .cat-gloss{font-size:12px;line-height:1.45}
     .cat-annal .cat-cond{margin-top:0;text-align:left}
     .cat-annal.locked .cat-annal-head{color:var(--muted)}
+    /* The round's star, in the century's own script: kaishu, naskh or the Ceiling's signs, whichever the line holds. */
+    .cat-star-own{font-family:'LXGW WenKai TC','Amiri',var(--face-text);font-size:19px;line-height:1.3;color:var(--ivory)}
+    .cat-star-signs{font-family:var(--face-hiero);font-size:22px;letter-spacing:.08em}
     /* A word of the Ceiling's wall, set on its card in the hieroglyph face whichever century's leaf is open. */
     .cat-art .cat-hiero{font-family:var(--face-hiero);fill:currentColor;stroke:none}
     /* A traced figure's note, under its name in the register's own label column. */
@@ -953,7 +977,7 @@
           <button id="instrument" class="diff-btn" type="button" aria-pressed="false" aria-label="Fly as this century's own instrument rather than the comet" hidden>INSTRUMENTUM</button>
           <button id="journey-open" class="diff-btn atlas-only" type="button" aria-pressed="false">THE JOURNEY</button>
           <button id="daily" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button>
-          <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button>
+          <button id="newton" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: the bodies pull the traveller between orbits, softened and only within a short reach" hidden>VIS GRAVITATIS</button>
           <button id="more-toggle" class="diff-btn atlas-only" type="button" aria-expanded="false" aria-controls="more-menu">MORE</button>
         </div>
         <span id="daily-date" class="small daily-note atlas-only"></span>
@@ -976,8 +1000,10 @@
         </div>
         <span id="review-last-note" class="small daily-note"></span>
       </div>
-      <p class="ceiling-context ceiling-only">The sky is Nut’s body, after the Book of Nut and the blue star ceilings of the Theban tombs; the columns and star signs are laid out after Senenmut’s, from TT353, though the words set in them are a short vocabulary rather than the decans’ own names. The night barque and its dangers are a gameplay translation from wider Egyptian funerary art.</p>
-      <p class="scroll-context scroll-only">The chart is after the Dunhuang star chart (British Library, Or.8210/S.3326), whose three colours of star mark the three schools that first counted them; the twenty-eight lodges keep their traditional widths in dù. The sighting tube as traveller, the office and school each light is filed under, and Mars, the broom star and the wind as dangers, are a gameplay translation.</p>
+      <p class="atlas-context atlas-only">The plate is after Bayer’s Uranometria (Augsburg, 1603), whose Greek letters still name the stars: its figures are Ptolemy’s, the southern ones of the Dutch voyage of 1595–97, Lacaille’s Sail of the 1750s, and four of the atlas’s own, the Needle, the Quill, the Lantern and the Moth. The bodies a telescope would resolve, the traveller, and the whirlpool, the sunspot and the wind as dangers, are a gameplay translation.</p>
+      <p class="rock-context rock-only">The wall is after the painted caves of Lascaux, Chauvet, Altamira and Rouffignac. Whether any dot painted there is a star is argued, not known, and the wall asserts none of it; the hand that keeps the lights is a story, not a finding. The torch as traveller, and the shaft, the flare and the draught as dangers, are a gameplay translation.</p>
+      <p class="ceiling-context ceiling-only">The sky is Nut’s body, after the Book of Nut and the blue star ceilings of the Theban tombs; the columns and star signs are laid out after Senenmut’s, from TT353, though the words set in them are a short vocabulary rather than the decans’ own names. Senenmut’s ceiling is of about 1470 BCE; the Book of Nut and the Amduat, whose twelve hours are the voyage’s gates, are read from Ramesside tombs a century and a half and more later, and the sheet sets the three side by side. The night barque and its dangers are a gameplay translation from wider Egyptian funerary art.</p>
+      <p class="scroll-context scroll-only">The chart is after the Dunhuang star chart (British Library, Or.8210/S.3326), whose three colours of star mark the three schools that first counted them; the twenty-eight lodges keep their traditional widths in dù. Each light is filed under a real star office, with the school the Kaiyuan Zhanjing’s lists give it, from the palace of the lodge it is held in; which light takes which office is the run’s own. The sighting tube as traveller, and Mars, the broom star and the wind as dangers, are a gameplay translation.</p>
       <p class="astrolabe-context astrolabe-only">The brass is after the Nastulus astrolabe (Baghdad, 927) and the Valencia globe (1085); the figures and star names are al-Sufi’s, from the Book of the Fixed Stars. The alidade as traveller, and the dragon, the sun, the wind and the little cloud as dangers, are a gameplay translation.</p>
       <p class="lens-context lens-only">The drawings are after Galileo’s Sidereus Nuncius (1610) and Huygens’s Systema Saturnium (1659); the glass after the Carte du Ciel and the Harvard plates; the cards after the FITS standard (1981). The telescope as traveller, and the void, the halation, the drift and the dark cloud as dangers, are a gameplay translation.</p>
       <p class="flyby-context flyby-only">The frames are after Mariner 4’s hand-tinted strip chart (1965), the Viking lander scans (1976), the Voyager mosaics (1979–1989) and New Horizons at Pluto (2015). The spacecraft as traveller, a generic deep-space layout rather than any one mission’s, and the well, the belt, the wind and the dropout as dangers, are a gameplay translation.</p>
@@ -1002,7 +1028,7 @@
       <div id="end-exlibris" class="exlibris hidden"><span class="exlibris-line">EX LIBRIS</span><span id="exlibris-initials">ORBIS</span></div>
       <div id="end-finis" class="finis atlas-only"><canvas id="end-miniature" aria-hidden="true" hidden></canvas><canvas id="end-finis-device" aria-hidden="true"></canvas><span id="end-finis-word">FINIS</span></div>
       <p class="rock-lore rock-only" id="end-lore">The torch is out. What you marked stays on the rock for the next hand.</p><p class="action-copy" id="end-action">Tap to try again</p><p class="instruction" id="end-tip">The pricked line follows your momentum.</p>
-      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: real gravity acts on the traveller between orbits" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="frontispiece-end" class="diff-btn atlas-only" type="button">RETURN TO THE FRONTISPIECE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
+      <div class="end-plate-line"><div class="action-row"><button id="review-open" class="diff-btn atlas-only" type="button">REVIEW THE PLATE</button><button id="daily-end" class="diff-btn atlas-only" type="button" aria-pressed="false">DAILY PLATE</button><button id="newton-end" class="diff-btn atlas-only no-daily" type="button" aria-pressed="false" aria-label="Newtonian gravity: the bodies pull the traveller between orbits, softened and only within a short reach" hidden>VIS GRAVITATIS</button><button id="copy-score" class="diff-btn atlas-only" type="button" aria-label="Copy the score line">TAKE AN IMPRESSION</button><button id="frontispiece-end" class="diff-btn atlas-only" type="button">RETURN TO THE FRONTISPIECE</button><button id="ceiling-exit-end" class="diff-btn era-exit" type="button">RETURN TO THE ATLAS</button></div><span id="end-daily" class="small daily-note atlas-only"></span><canvas id="end-journey-mark" class="journey-mark" aria-hidden="true" hidden></canvas><span id="end-journey" class="small daily-note" hidden></span></div>
     </div>
   </section>
   <button id="review-close" class="catchword" type="button" aria-label="Close the review"><span id="review-catch" class="catch-word" aria-hidden="true">Colophon.</span></button>
@@ -1012,6 +1038,15 @@
       <strong id="pause-title">Suspended.</strong>
       <div class="title-rule"><span></span></div>
       <p class="action-copy" id="pause-note">Tap the sheet to continue</p>
+      <div id="pause-legend" class="pause-legend atlas-only" role="group" aria-label="The atlas's legend" hidden>
+        <p class="legend-head">MAGNITUDINES</p>
+        <canvas id="pause-key" class="legend-key" role="img" aria-label="The six star forms, from magnitude I, the brightest, to VI, the faintest"></canvas>
+        <em class="legend-gloss">I brightest · VI faintest, as Ptolemy ranked them</em>
+        <div class="legend-lines">
+          <canvas id="pause-equator" class="legend-mark" aria-hidden="true"></canvas><span class="legend-name">Æquator cælestis</span><em class="legend-gloss">the celestial equator</em>
+          <canvas id="pause-ecliptic" class="legend-mark" aria-hidden="true"></canvas><span class="legend-name">Ecliptica</span><em class="legend-gloss">the Sun’s yearly path</em>
+        </div>
+      </div>
       <div class="pause-menu">
         <button id="pause-resume" class="diff-btn" type="button">TAKE UP THE PEN</button>
         <button id="pause-leave" class="diff-btn" type="button">RETURN TO THE FRONTISPIECE</button>
@@ -1160,6 +1195,8 @@
 <script src="lens.js"></script>
 <script src="flyby.js"></script>
 <script src="probe.js"></script>
+<script src="onestar.js"></script>
+<script src="beliefs.js"></script>
 <script src="recede.js"></script>
 <script src="descent.js"></script>
 <script src="frame.js"></script>

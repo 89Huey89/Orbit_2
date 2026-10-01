@@ -76,6 +76,10 @@ defineVoice('atlas',{
   // named as this century names them. The atlas's are its own four chapters; every century replaces the
   // list, and src/journey.js's ERA_MILESTONES must count the same number (the suite checks it).
   milestones:chapters,
+  // What each milestone stands for, the knowledge JOURNEY.md §1.5 meant it to mark: an English italic gloss
+  // set under its name wherever a milestone is named for the player (the leaf's `stands` line and the
+  // century's Record). Every century that replaces `milestones` replaces this too, one gloss to each.
+  milestoneGlosses:['where each planet stands, reckoned ahead','the heavens can change','the calendar set back in step with the Sun','moons that circle another world'],
   // How many rows one chapter spans, read by the chapter math in updateUI() below; the atlas's own
   // four chapters are eight rows apiece, as they always were. goalRow is the row a run is won at —
   // 0, the atlas's own value, means no such row exists and a run is endless, exactly as it always was.
@@ -184,6 +188,8 @@ function event(type,e){
     if(planetFamilies.includes(planetFamilyFor(e.n.type,e.n.row,world.seed,e.n.difficultyChoice)))tally('telescopicCaptures');
     // The landing is surveyed where the flight met the ring; a square is answered with two short tones.
     recordLanding(e);
+    // The round's star, landed on, is given its century's note (src/onestar.js).
+    oneStarCapture(e.n);
     if(e.steep){
       // A rough impression still earns its base; the duller strike and displaced colour carry the
       // cost now, while the score floater makes the continuous angle progression explicit.
@@ -746,9 +752,12 @@ function showEnd(){
       // leaving the leaf silent, which read as knowledge lost.
       const stray=!fold&&runMode==='journey'&&!dailyOn,frontier=runMode==='frontier'&&!dailyOn;
       note.hidden=!fold&&!stray&&!frontier;
-      if(fold){const w=plateWords(),opened=(w.milestones||[]).slice(fold.open-fold.opened,fold.open);note.textContent=[...opened.map(name=>fmt(w.chrome.journey.stands,{name})),journeyRunLine(),journeyNote(false)].join('\n');}
-      else if(stray)note.textContent=fmt(plateWords().chrome.journey.elsewhere,{era:journeyEraTitle(journey.era)});
-      else if(frontier)note.textContent=journeyNote(false);
+      // A milestone opened is named in the century's small caps with what it stands for in italic English
+      // beneath, as the figures and chapter titles are glossed; the rest of the note is plain lines.
+      if(fold){const w=plateWords(),from=fold.open-fold.opened,glosses=w.milestoneGlosses||[];
+        note.innerHTML=[...(w.milestones||[]).slice(from,fold.open).map((name,i)=>plainText(fmt(w.chrome.journey.stands,{name}))+(glosses[from+i]?'\n<em class="milestone-gloss">'+plainText(glosses[from+i])+'</em>':'')),plainText(journeyRunLine()),plainText(journeyNote(false))].join('\n');}
+      else if(stray)note.innerHTML=plainText(fmt(plateWords().chrome.journey.elsewhere,{era:journeyEraTitle(journey.era)}));
+      else if(frontier)note.innerHTML=plainText(journeyNote(false));
     }
     // The next tap turns the page rather than dealing this century again, and the leaf says so.
     if(fold&&fold.ready&&journeyOnward())$('end-action').textContent=fmt(plateWords().chrome.journey.onward,{next:journeyEraTitle(journeyNext(journey.era))});
@@ -865,6 +874,10 @@ function updateUI(dt){
   }else if(world.state==='playing'&&world.progress<12&&world.flightPreview?.curved){
     inscribeHeld('instruction',plateWords().held.bend,{node:nearestHazard()});
   }
+  // The round's star is named on the sheet in the century's own hand while it is still ahead (src/onestar.js).
+  oneStarTick();
+  // The century's belief, and later its correction struck over it, each beside a body ahead (src/beliefs.js).
+  beliefTick();
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
 function resize(){
@@ -958,7 +971,7 @@ function syncPauseControl(){
 // and it is taken up again by that same control, by a tap anywhere on the sheet exactly as it always
 // was, or from the leaf the suspended sheet now carries: the plate's word for the halt, and beneath it
 // the two things that can be done with a run held in hand.
-function pause(){if(world&&world.state==='playing'){world.state='paused';$('pause').classList.remove('hidden');accumulator=0;$('announcement').textContent=plateWords().chrome.pauseTitle;syncPauseControl();}}
+function pause(){if(world&&world.state==='playing'){world.state='paused';paintPauseLegend();$('pause').classList.remove('hidden');accumulator=0;$('announcement').textContent=plateWords().chrome.pauseTitle;syncPauseControl();}}
 function resume(){
   if(!world||world.state!=='paused')return;
   // The presentation clock is picked up from now rather than from whenever the run was set down, so a

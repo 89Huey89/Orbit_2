@@ -2345,6 +2345,9 @@ defineVoice('rock',{
   chapters:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
   chapterSaid:'Chamber {numeral}. {name}.',
   milestones:['THE HALL OF THE BULLS','THE SHAFT SCENE','THE PANEL OF HAND DOTS','NEWGRANGE'],
+  // What each chamber stands for, set in italic under its name wherever a milestone is named (ui.js's
+  // `milestoneGlosses`). The Hand Dots are only likened to a count: nothing says the wall was keeping one.
+  milestoneGlosses:['a figure remembered and painted again','a story set down in a picture','a mark made again and again, like a count','the midwinter sunrise, built into stone'],
   // A line for each chamber as it opens, set on the wall as a curator's note beside the hand. Each says
   // only what is actually known of the place it borrows its name from.
   chapterLines:[

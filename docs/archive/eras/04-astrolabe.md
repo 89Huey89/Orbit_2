@@ -358,6 +358,10 @@ section asked for only in part, and makes choices this file left open, recorded 
   same fallback the manuscript-primary study used. The fontkit `ArabicShaper` pipeline stays the plan.
 - **The numeral split is built:** abjad on every engraved graduation (the limb, a body's qadr, the
   instrument's rim), Eastern Arabic-Indic digits for the score. Not yet judged in the hand.
+- **A named star keeps its own qadr.** A body of the first or second greatness is named off the rete, but
+  only with a star of that same greatness, each star's qadr held beside its name as the Almagest gives it
+  and al-Ṣūfī keeps it — nine of the first, Altair, Deneb and Alphard of the second — so the abjad cut beside
+  Sirius is always its first, never the seed's (built 2026-10-01, answering `KNOWLEDGE-AUDIT.md` §2.2).
 - **The obscurer is labelled لطخة سحابية** (laṭkha saḥābiyya, "a little cloud"), the phrase usually cited
   from al-Ṣūfī for the Andromeda nebula, rather than the constructed *al-shayʾ al-saḥābī* above.
 - **A story is added the progression does not plan:** six chapters (Baghdad 927, Isfahan 964, Cairo 1027,

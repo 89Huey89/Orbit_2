@@ -16,7 +16,7 @@ translation** — follow [`ERA-AUDIT.md`](../ERA-AUDIT.md)'s contract.
 
 - **Mariner 4's first close-up image of Mars, 14–15 July 1965.** A **200×200-pixel raster, each
   pixel a 6-bit value (0–63)** — 240,000 bits per frame, taped onboard (21-frame capacity) and
-  radioed home at **8⅓ bits per second**, so one frame took roughly ten hours and the full set
+  radioed home at **8⅓ bits per second**, so one frame took about eight hours and the full set
   about ten days. **Attested**, JPL/NSSDCA records. The image everyone actually pictures is not the
   developed photograph but **the hand-coloured strip chart**: unwilling to wait for the imaging
   computer, JPL engineers pinned the teletype's numeric printout to a wall and coloured the digits

@@ -170,6 +170,9 @@ defineVoice('ceiling',{
   chapterWrap:true,
   // The Journey's milestones are the night's four watches, three of its twelve hours each.
   milestones:['HOURS I TO III','HOURS IV TO VI','HOURS VII TO IX','HOURS X TO XII'],
+  // What each watch stands for. The hours are the Amduat's, not decans (docs/KNOWLEDGE-AUDIT.md §2.1): the
+  // decans come in only as the star clock that marked an hour by a rising, and as the ten-day weeks of the year.
+  milestoneGlosses:['the decans as a clock, a rising for each hour','thirty-six decans, ten days apiece','the imperishable stars, which never set','the dawn rising of Sirius, and the year begun'],
   // The Chronicle ends at the twelfth gate, sunrise; read Endless the barque sails past it into a new
   // night instead (LINKING.md's "Endless, later" and chapterWrap above).
   goalRow:CEILING_DAWN_ROW,
@@ -695,10 +698,10 @@ function ceilingStarBandH(g,x0,x1,y,gap,width,rows=3){
 // ruled box, the name beneath it and the red construction lines through its centre, all drawn by the
 // caller below rather than by this function.
 function ceilingMonthCircle(g,cx,cy,r,alpha=.85,seed=0){
-  // Thirty spokes, not the twenty-four this first read off a smaller crop: the count is still one
-  // uniform division shared by every wheel — nothing here is invented per-circle — but a closer look
-  // corrects what that fixed count actually is.
-  const div=30,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
+  // Twenty-four spokes, the segments research/ceiling.md records for TT353's month circles: one uniform
+  // division shared by every wheel, nothing here invented per circle. A closer crop was once read as
+  // thirty, but the count the research holds is the one the wall keeps.
+  const div=24,hub=r*.12,ink=CEILING_PALETTE.carbon,jit=.97+ceilingHash(seed,5)*.06;
   g.save();g.globalAlpha=alpha;
   ceilingBrush(g,ceilingArcPoints(cx,cy,r*jit,0,TAU,48),ink,Math.max(.75,r*.02),alpha*.95,seed*7+1);
   for(let i=0;i<div;i++){
@@ -2370,7 +2373,7 @@ function renderCeiling(dt,aim){
   ceilingLampShade();
   ceilingDrawChangeover(dt);
   ctx.save();if(!reducedMotion&&world.shake>.08)ctx.translate(Math.sin(world.time*109)*world.shake*scale,Math.cos(world.time*137)*world.shake*.65*scale);
-  ceilingDrawGates();ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes)ceilingDrawNode(n,aim);for(const h of world.hazards)ceilingDrawHazard(h);
+  ceilingDrawGates();ceilingDrawRoute();ceilingDrawDecanCharts();for(const n of world.nodes){ceilingDrawNode(n,aim);oneStarCeilingSigns(n);}for(const h of world.hazards)ceilingDrawHazard(h);
   ceilingDrawAim(aim);for(const g of world.nebulas)ceilingDrawNun(g);
   // Same slot the atlas gives drawSurveys(): after the aim guide and the route's own ink, ahead of the
   // transient effects layer (render(), src/frame.js) — the survey is dried ink beside the route, not a

@@ -42,16 +42,39 @@ function inscriptionRoom(box){
   const middle=box.left<W*.5+HUD_TEXT_HALF&&box.right>W*.5-HUD_TEXT_HALF;
   return Math.min(box.left-inner,W-inner-box.right,box.top-(middle?hudBand():inner),H-footerBand()-box.bottom);
 }
-// The lettering is broken to the width of the play channel, in the face it will be written in.
-function wrapInscription(text,tone,size){
-  const max=inscriptionWidth(),lines=[];
-  ctx.save();ctx.font=inscriptionFont(tone,size);
-  let line='';
-  for(const word of String(text).split(' ')){
-    const next=line?line+' '+word:word;
-    if(line&&ctx.measureText(next).width>max){lines.push(line);line=word;}else line=next;
+// The lettering is broken to the width of the play channel, in the face it will be written in. A note made of
+// parts set off by a middle dot is broken between its parts where it can be, and the dot falls away at the break,
+// as an engraver would not end a line on a separator; only a part too long for the line is broken between words.
+// The lines are then evened out: the narrowest measure that still takes the same number of lines, and breaks no part
+// the full measure kept whole, is used, so a note never leaves a single word or a pair of numerals standing alone.
+function wrapInscriptionAt(text,max,parts=true){
+  const lines=[],fits=t=>ctx.measureText(t).width<=max;
+  let line='',inner=0;
+  for(const part of parts?String(text).split(' · '):[String(text)]){
+    if(line&&fits(line+' · '+part)){line+=' · '+part;continue;}
+    if(line)lines.push(line);
+    line=part;if(fits(line))continue;
+    // A part longer than the line on its own is broken between its words.
+    const words=line.split(' ');line='';
+    for(const word of words){const w=line?line+' '+word:word;if(line&&!fits(w)){lines.push(line);line=word;inner++;}else line=w;}
   }
   if(line)lines.push(line);
+  lines.inner=inner;
+  return lines;
+}
+function wrapInscription(text,tone,size){
+  const max=inscriptionWidth();
+  ctx.save();ctx.font=inscriptionFont(tone,size);
+  // Breaking between parts is a preference, never a cost: where it would take more lines than breaking between
+  // words, the words win.
+  const parts=wrapInscriptionAt(text,max).length<=wrapInscriptionAt(text,max,false).length;
+  let lines=wrapInscriptionAt(text,max,parts);
+  if(lines.length>1){
+    let lo=max*.5,hi=max;
+    // Evening out never breaks a part that the full measure kept whole.
+    for(let i=0;i<8;i++){const mid=(lo+hi)/2,t=wrapInscriptionAt(text,mid,parts);if(t.length<=lines.length&&t.inner<=lines.inner)hi=mid;else lo=mid;}
+    lines=wrapInscriptionAt(text,hi,parts);
+  }
   let width=0;for(const one of lines)width=Math.max(width,ctx.measureText(one).width);
   ctx.restore();
   return {lines,width:Math.min(width,max)};
@@ -266,15 +289,20 @@ function inscribe(text,options={}){
     q.extraAnchors.push(anchor);
     return q;
   }
-  const {lines,width}=wrapInscription(text,tone,size);
+  // A correction is written under the belief it corrects, and the belief is quoted above it to be struck
+  // through rather than erased (see src/beliefs.js): `struck` is that belief, set first, in the same hand.
+  const wrapped=wrapInscription(text,tone,size),quoted=options.struck?wrapInscription(options.struck,tone,size):null;
+  const lines=quoted?quoted.lines.concat(wrapped.lines):wrapped.lines,width=quoted?Math.max(quoted.width,wrapped.width):wrapped.width;
   const step=size*1.34;
   const g={
-    key:options.key||'',text:str,tone,lines,
+    key:options.key||'',text:str,tone,lines,strikeN:quoted?quoted.lines.length:0,struckAt:null,
     size:size/scale,w:(width+3)/scale,h:lines.length*step/scale,
     node:anchor.node,x:anchor.x,y:anchor.y,r:anchor.r,
-    age:0,write:reducedMotion?0:.22+str.length*.017,held:false,touched:false,
+    age:0,write:reducedMotion?0:.22+(str.length+(options.struck?String(options.struck).length:0))*.017,held:false,touched:false,
     seed:(++inscriptionSeq*2654435761)>>>0,dx:0,dy:0,placedX:0,placedY:0,extraAnchors:[]
   };
+  // A quoted belief is struck the moment the pen has finished writing it, before the correction beneath.
+  if(quoted)g.struckAt=g.write*(.22+g.strikeN/lines.length*.78);
   // A note is never set over lettering already on the sheet: if no clear ground was found anywhere on
   // the plate, it goes unwritten rather than printed illegibly. The run has plenty more to say.
   if(!placeInscription(g))return null;
@@ -301,7 +329,7 @@ function inscribe(text,options={}){
 // rather than written twice. While held it is re-set when its subject changes, when the subject drifts
 // away from where the lettering was placed, or when the sheet has carried it off the plate.
 function inscribeHeld(key,text,options={}){
-  const live=inscriptions.find(q=>q.key===key&&q.text===text);
+  const live=inscriptions.find(q=>q.key===key&&q.text===String(text));
   if(live){
     for(const q of inscriptions)if(q!==live&&q.key===key)q.held=false;
     live.held=true;live.touched=true;
@@ -360,6 +388,16 @@ function drawInscription(g){
       writeText(ctx,g.lines[i],box.cx+p.dx*scale,box.top+size+i*step+p.dy*scale,revealSpan(t,start,end),{size,plain:true});
     }
   }
+  // A belief the run has since corrected is struck through where it stands, never erased: one rule through
+  // each of its lines in the plate's own ink, drawn left to right as a pen would cancel it.
+  const strike=inscriptionStrike(g);
+  if(strike>0){
+    const core=passes[passes.length-1];
+    for(let i=0;i<Math.min(g.strikeN,g.lines.length);i++){
+      const w=ctx.measureText(g.lines[i]).width,x0=box.cx-w/2-2*scale,y=box.top+size+i*step-size*.3;
+      beliefStrikeLine(x0,y,w+4*scale,strike,core.rgb,Math.max(.8,1.05*scale));
+    }
+  }
   // An announcement is ruled underneath, as a plate rules a legend; an instruction is left unruled.
   const ruled=caps?revealSpan(t,.88,1):0;
   if(ruled>0){
@@ -367,6 +405,16 @@ function drawInscription(g){
     line(box.cx-reach,y,box.cx+reach,y,`rgba(${ink.inscription.rule},.34)`,.5);
   }
   ctx.restore();
+}
+// How far the strike through a note's quoted belief has been drawn, 0 to 1: nothing until it is struck.
+const inscriptionStrike=g=>!g.strikeN||g.struckAt==null?0:reducedMotion?1:clamp((g.age-g.struckAt)/.45,0,1);
+// Strike a note already standing on the sheet: every line it carries is cancelled, from this moment on.
+function strikeInscription(g){if(!g||g.struckAt!=null)return false;g.strikeN=g.lines.length;g.struckAt=g.age;return true;}
+// The one stroke every century cancels a belief with — the Lens's own plate notes use it too: a rule a hair
+// above the middle of the lettering, its far end riding the pen while it is drawn.
+function beliefStrikeLine(x0,y,w,k,rgb,width,g=ctx){
+  if(k<=0||w<=0)return;
+  g.save();g.strokeStyle=`rgba(${rgb},.92)`;g.lineWidth=width;g.lineCap='round';g.beginPath();g.moveTo(x0,y+.4);g.lineTo(x0+w*k,y-.3);g.stroke();g.restore();
 }
 // The sheet is written on while the run is on and nowhere else: the frontispiece and the colophon are
 // leaves of their own, and a paused run freezes the pen exactly where it stopped. The lettering is drawn

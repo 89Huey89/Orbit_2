@@ -1031,8 +1031,9 @@ function drawNode(n,aim){
   // so it is the plate's Latin (CLAUDE.md, the two voices); the seven are plain enough to need no gloss.
   // The top is tried first, the foot second when no rim caption stands there, and where both stand on
   // other type the name is still written, drawn down to a hairline the way a crowded side caption is. A
-  // star and a slingshot are not worlds and have no species, so they are left as they are.
-  const species=renaissanceAtlas()&&!n.difficultyChoice&&!PICKUP_FAMILIES.has(n.type)&&!sling&&n.routeRole!=='star'&&pen.d>=1?SPECIMEN_NAMES[planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice)]:null;
+  // figure's star is not a world and has no species, so it is left as it is; a slingshot is not a world
+  // either, but it is lettered for what it is engraved as, a stella nova, the new star Tycho saw in 1572.
+  const species=renaissanceAtlas()&&!n.difficultyChoice&&!PICKUP_FAMILIES.has(n.type)&&n.routeRole!=='star'&&pen.d>=1?(sling?'Stella nova':SPECIMEN_NAMES[planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice)]):null;
   if(species&&!captionsHeld()){
     const written=reveal.progress('specimen:'+n.id,species.length*.05,true),size=Math.max(8,8.6*scale),radius=r+8*scale;
     ctx.font=plateFace(size,'text','italic');

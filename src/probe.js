@@ -104,11 +104,23 @@ function prbPay(got,bill){
   for(const m of PRB_MATS)got[m]=got[m]>=bill[m]?got[m]-bill[m]:0;return true;
 }
 
-// The twelve systems a daughter can be sent to, each a real star with the one fact its record carries.
+// The twelve systems a daughter can be sent to, each a real star with the one fact its record carries, and the
+// spectral class of every star in it, A first, as the catalogues give it. A star on the sheet is read as one of its
+// system's stars and as no other, so nothing it prints is dealt: the three readings take the components in order
+// where the system has them, and where it has fewer, the primary again under its own letter. Classes after the
+// RECONS census of the solar neighbourhood (Henry et al.) and the stars' own standard references: Barnard's Star
+// M4V; Alpha Centauri A G2V, B K1V and C, Proxima, M5.5V (its emission flag e dropped, the log sets no small
+// letters); Wolf 359 M6V; Lalande 21185 M2V; Sirius A1V with its white dwarf B DA2; Epsilon Eridani K2V, the class's
+// own standard since 1943; Ross 128 M4V; 61 Cygni A K5V and B K7V (Kervella et al. 2008); Tau Ceti G8V; Luyten's
+// Star M3.5V; TRAPPIST-1 M8V (Gillon et al. 2016). Luyten's Star's distance is Gaia DR3's parallax, 264.13 mas.
 const PRB_SYSTEMS=[
-  ['BARNARD’S STAR','5.96 LY'],['ALPHA CENTAURI','4.37 LY'],['PROXIMA CENTAURI','4.24 LY'],['WOLF 359','7.86 LY'],
-  ['LALANDE 21185','8.31 LY'],['SIRIUS','8.60 LY'],['EPSILON ERIDANI','10.5 LY'],['ROSS 128','11.0 LY'],
-  ['61 CYGNI','11.4 LY'],['TAU CETI','11.9 LY'],['LUYTEN’S STAR','12.2 LY'],['TRAPPIST-1','40.7 LY']];
+  ['BARNARD’S STAR','5.96 LY',['M4V']],['ALPHA CENTAURI','4.37 LY',['G2V','K1V','M5.5V']],['PROXIMA CENTAURI','4.24 LY',['M5.5V']],
+  ['WOLF 359','7.86 LY',['M6V']],['LALANDE 21185','8.31 LY',['M2V']],['SIRIUS','8.60 LY',['A1V','DA2']],
+  ['EPSILON ERIDANI','10.5 LY',['K2V']],['ROSS 128','11.0 LY',['M4V']],['61 CYGNI','11.4 LY',['K5V','K7V']],
+  ['TAU CETI','11.9 LY',['G8V']],['LUYTEN’S STAR','12.3 LY',['M3.5V']],['TRAPPIST-1','40.7 LY',['M8V']]];
+// The tag a system's i-th star prints: the class alone for a single star, the component's letter before it where
+// the system has more than one, so a second reading of Sirius A says that it is A again.
+function prbStarTag(S,i){const c=S[2],k=(i|0)<c.length?i|0:0;return c.length>1?'ABC'[k]+' '+c[k]:c[0];}
 
 // ---------- Small tools ----------
 // Every figure on this sheet is set in B612 Mono, the cockpit face Airbus drew for legibility under vibration
@@ -383,7 +395,9 @@ function prbFrame(g,R,stage,k=1,opts={}){
   }else if(stage===3){
     // Arrival: Barnard's Star at the focus, a red dwarf's granulated disc; the system read as Keplerian conics one
     // after another, each world set on its orbit once the conic closes, with the habitable zone marked; and the
-    // probe's own hyperbola bending into a captured ellipse at the orbit insertion
+    // probe's own hyperbola bending into a captured ellipse at the orbit insertion; the star logged by its class and
+    // its mass, 0.16 of the Sun's, as the radial-velocity surveys that found its planets measured it (Ribas et al.
+    // 2018, González Hernández et al. 2024)
     const fx=-iw*.14,fy=cy,sr=R*.17,orb=[[.2,.1,'CLASS-REG','crater'],[.32,.2,'CLASS-AEOL','dune'],[.48,.08,'CLASS-ATM','storm'],[.66,.24,'CLASS-CRYO','ice']];
     const hz=g.createRadialGradient(fx,fy,iw*.14,fx,fy,iw*.24);hz.addColorStop(0,'rgba(51,255,102,0)');hz.addColorStop(.5,'rgba(51,255,102,.06)');hz.addColorStop(1,'rgba(51,255,102,0)');g.fillStyle=hz;g.beginPath();g.arc(fx,fy,iw*.24,0,TAU);g.fill();
     const glow=g.createRadialGradient(fx,fy,sr*.6,fx,fy,sr*3.2);glow.addColorStop(0,`rgba(${P.radHi},.4)`);glow.addColorStop(1,`rgba(${P.rad},0)`);g.fillStyle=glow;g.beginPath();g.arc(fx,fy,sr*3.2,0,TAU);g.fill();
@@ -394,7 +408,7 @@ function prbFrame(g,R,stage,k=1,opts={}){
       const pa=i*1.7+.6,px=fx+c+Math.cos(pa)*A,py=fy+Math.sin(pa)*B;if(q>=1){const pr=R*(.045+.012*i),art=prbWorldArt({id:880+i,seed:1970+i},fam,pr);g.drawImage(art.canvas,px-art.size/2,py-art.size/2,art.size,art.size);prbMono(g,tag,px+pr+R*.05,py-R*.08,hs*.8,P.grey,.85);}});
     prbMono(g,'HZ',fx+iw*.19,fy+R*.03,hs*.8,P.green,.6*clamp(e*2,0,1),'left');
     const q=clamp((e-.72)/.28,0,1);if(q>0){g.strokeStyle=`rgba(${P.amber},${(.9*q).toFixed(3)})`;g.lineWidth=Math.max(.5,R*.014);g.setLineDash([R*.04,R*.03]);g.beginPath();g.moveTo(ix+iw,iy+R*.05);g.quadraticCurveTo(fx+iw*.5,fy-ih*.5,fx+iw*.42,fy);g.stroke();g.setLineDash([]);prbFrameCraft(g,fx+iw*.42,fy,R*.3,Math.PI/2,q);prbMono(g,'OI',fx+iw*.42+R*.1,fy+R*.1,hs,P.amber,.95*q);}
-    prbMono(g,'M4V · 0.14 MSUN',fx,fy+sr+R*.1,hs*.8,P.radHi,.8*clamp(e*2,0,1),'center');
+    prbMono(g,'M4V · 0.16 MSUN',fx,fy+sr+R*.1,hs*.8,P.radHi,.8*clamp(e*2,0,1),'center');
   }else if(stage===4){
     // Seed: the mother probe in orbit above; the seed coming down on its retro burn to a cratered limb, raising
     // dust as it lands; and once it is down the first plant opening out across the regolith — a dome, a
@@ -707,12 +721,14 @@ function prbSling(n,x,y){
   prbMono(ctx,'DV ASSIST',x,y-R-7*scale,Math.max(6.5,6.8*scale),P.grey,.75,'center');
   ctx.restore();
 }
-// A system's star: a point in a bracket until it is visited, then a spectral class set beside it.
+// A system's star: a point in a bracket until it is visited, then its spectral class set beside it, read off the
+// system its chart is surveying and the place it holds among that chart's three.
+function prbStarClass(n){const chart=world.constellations.find(c=>c.id===n.routeId);return chart?prbStarTag(prbSystemOf(chart),chart.stars.indexOf(n)):'';}
 function prbStar(n,x,y,d,al){
   const P=ink.probe,mag=clamp(n.magnitude??3,1,6),r=(3.6-mag*.4)*scale,k=prbEase(clamp(d*1.6,0,1));
   ctx.save();ctx.globalAlpha=al;ctx.fillStyle=`rgb(${P.white})`;ctx.fillRect(x-r*.45,y-r*.45,r*.9,r*.9);
   ctx.strokeStyle=`rgba(${P.white},${(.45+.4*k).toFixed(3)})`;ctx.lineWidth=Math.max(.5,.55*scale);const b=r*2.2;ctx.beginPath();for(const [s0,s1] of[[-1,-1],[1,-1],[1,1],[-1,1]]){ctx.moveTo(x+s0*b,y+s1*(b-2*scale));ctx.lineTo(x+s0*b,y+s1*b);ctx.lineTo(x+s0*(b-2*scale),y+s1*b);}ctx.stroke();
-  if(k>0)prbMono(ctx,['M4V','G2V','K1V','M5V','A1V','K2V'][(n.id|0)%6],x+b+3*scale,y,Math.max(6.5,6.5*scale),P.grey,.85*k,'left');
+  if(k>0)prbMono(ctx,prbStarClass(n),x+b+3*scale,y,Math.max(6.5,6.5*scale),P.grey,.85*k,'left');
   ctx.restore();
 }
 function prbNode(n,aim){
@@ -1156,6 +1172,8 @@ defineVoice('probe',{
   endless:true,
   // The Journey's milestones: the crossing, the seed, and closure, two phases apiece.
   milestones:['THE CROSSING','THE SEED','CLOSURE'],
+  // What each pair of phases stands for, as the studies it follows proposed it.
+  milestoneGlosses:['the gap between the stars, crossed in decades','a machine that mines the world it lands on','a factory that can build all its own parts'],
   chapterSaid:'Phase {numeral}. {name}.',
   chapterLines:[
     'Departure. The probe leaves the Sun carrying a plate cut in 1972 for Pioneer 10. Nothing aboard will ever read it.',

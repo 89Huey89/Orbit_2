@@ -693,8 +693,22 @@ function lensReleaseMarks(n,p,reg,x,y){
       ctx.restore();}
   }
 }
-// Which world a body is, and how large its disc is drawn once it is resolved.
-const lensFamily=n=>planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice);
+// Which world a body is, and how large its disc is drawn once it is resolved. The chart deals families
+// without regard to dates, but the Lens is a story told in order, and a body never resolves into a reading
+// its chapter had not yet made: the year sealed on each family's register-one caption is the year that
+// family's reading entered the record, and a family dealt to a chapter older than it is redrawn, from the
+// row and the seed, among those its chapter already knew. Padua holds the Moon and Venus, The Hague adds
+// the ring, and from Paris on every reading is old. Only the Lens is bound this way; every other century
+// reads the chart's own family.
+const LENS_FAMILY_YEAR=Object.fromEntries(Object.entries(LENS_EYE_READINGS).map(([f,r])=>[f,parseInt(r.caption,10)]));
+const lensChapterOfRow=row=>clamp(Math.floor(eraRow(row)/LENS_CHAPTER_ROWS),0,LENS_CHAPTERS.length-1);
+function lensFamily(n){
+  const f=planetFamilyFor(n.type,n.row,world.seed,n.difficultyChoice);
+  if(n.difficultyChoice||!(f in LENS_FAMILY_YEAR))return f;
+  const year=LENS_CHAPTERS[lensChapterOfRow(n.row)].year;if(LENS_FAMILY_YEAR[f]<=year)return f;
+  const known=LENS_FAMILIES.filter(k=>LENS_FAMILY_YEAR[k]<=year);
+  return known[(Math.floor(n.row)+((world.seed>>>0)%7))%known.length];
+}
 const lensDiscR=n=>clamp(n.r*.4,7,17)*scale;
 // A light not yet reached, in each register's way of being unresolved: a soft blot at the eyepiece that has
 // not come to focus; a bare knot of silver on the glass; a point-spread function off the sensor.
@@ -815,6 +829,9 @@ function lensBodyEye(n,family,x,y,d,al){
 // Register two: the body on the glass. A bare knot at the capture; held, it develops as a tray print does,
 // the densest middle first and the faint outer wash last, in the shape its family leaves on a plate — and
 // the ink laid on afterwards by a hand at the glass back: a loop round it, and its plate number stamped.
+// How far Mars's plate has come in its one belief: Lowell's canals set as the silver develops (`belief`, an
+// alpha), struck through as Antoniadi's patches come up (`struck`, 0 to 1), and his note typed beneath (`fix`).
+function lensCanalReading(s2,e3){return {belief:clamp(s2*2-.4,0,1),struck:clamp(e3*2,0,1),fix:e3};}
 function lensBodyPlate(n,family,x,y,d,al){
   const P=ink.lens,R=lensDiscR(n),s1=lensSpan(d,LENS_STAGE.soft),s2=lensSpan(d,LENS_STAGE.first),s3=lensSpan(d,LENS_STAGE.done),e3=lensEase(s3),dev=lensEase(clamp(.25+s1*.35+s2*.5,0,1));
   // [horizontal stretch, size, density]: Jupiter prints a little oblate, Uranus small and thin, the Moon and a
@@ -847,10 +864,13 @@ function lensBodyPlate(n,family,x,y,d,al){
   // a faint circle clear of the image, which is what tells a world on a plate from a star.
   if(e3>0&&family!=='ice'){ctx.strokeStyle=`rgba(${P.silverMid},${(.3*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.8,1.4*scale);ctx.beginPath();ctx.arc(x,y,rr*(family==='ringed'?2.5:1.6),0,TAU);ctx.stroke();}
   // Mars on the plate: Lowell's canals ruled straight across it in ink, and then Antoniadi's irregular patches
-  // with his correction written beside the first annotation rather than over it
-  if(family==='dune'){const ck=clamp(s2*2-.4,0,1);if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
+  // with his correction written beside the first annotation rather than over it, and the first struck through
+  // in the same red, never erased (beliefStrikeLine, the stroke every century cancels a belief with)
+  if(family==='dune'){const reading=lensCanalReading(s2,e3),ck=reading.belief;if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
       for(let i=0;i<6;i++){const a=tileHash(n.id,i,21)*Math.PI,o=(tileHash(n.id,i,22)-.5)*R*.9,c=Math.cos(a),s=Math.sin(a);ctx.moveTo(x-s*o-c*R*.9,y+c*o-s*R*.9);ctx.lineTo(x-s*o+c*R*.9,y+c*o+s*R*.9);}ctx.stroke();
-      lensTyped(ctx,'LOWELL 1895',x+R*1.2,y-R*.9,Math.max(8,8.5*scale),P.inkBlack,.8*ck*al,'left');}
+      lensTyped(ctx,'LOWELL 1895',x+R*1.2,y-R*.9,Math.max(8,8.5*scale),P.inkBlack,.8*ck*al,'left');
+      if(reading.struck>0){const sz=Math.max(8,8.5*scale);ctx.save();ctx.font=plateFace(sz,'typed');const cw=ctx.measureText('M').width;ctx.restore();
+        ctx.save();ctx.globalAlpha=al;beliefStrikeLine(x+R*1.2-2,y-R*.9,cw*11+4,reading.struck,P.inkRed,Math.max(.8,scale));ctx.restore();}}
     if(e3>0){ctx.fillStyle=`rgba(${P.silver},${(.55*e3).toFixed(3)})`;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(x+(tileHash(n.id,i,23)-.5)*R*1.1,y+(tileHash(n.id,i,24)-.5)*R*1.1,R*(.14+tileHash(n.id,i,25)*.18),R*(.08+tileHash(n.id,i,26)*.12),tileHash(n.id,i,27)*TAU,0,TAU);ctx.fill();}
       lensTyped(ctx,'NOT CANALS · A. 1909',x+R*1.2,y-R*.9+11*scale,Math.max(8,8.5*scale),P.inkRed,.9*e3*al,'left');}}
   // the hand at the glass back: a loose loop, then a stamped number
@@ -1559,6 +1579,8 @@ defineVoice('lens',{
   transitionRows:[LENS_REG_ROWS,LENS_REG_ROWS*2],
   // The three registers the sheet climbs through are the Journey's milestones, not the six chapters in them.
   milestones:['AT THE EYEPIECE','ON THE GLASS PLATE','OFF THE SENSOR'],
+  // What each register stands for.
+  milestoneGlosses:['a planet resolved: a disk, its moons, a ring','the sky kept on glass and measured on a grid','light counted, a picture made of numbers'],
   chapterSaid:'Plate {numeral}. {name}.',
   // A line for each place as its chapter opens, set on the sheet as a curator's note beside the telescope.
   // Each says only what is known of the place and the work it is named for.
