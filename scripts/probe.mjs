@@ -106,7 +106,9 @@ const SEEDS=flag('seeds',120);
 const PATIENCE=flag('patience',1.5)*TAU;
 // A run is cut off rather than flown forever, because the oracle does not die. Both ceilings are far
 // past anything a hand reaches, so they bind on the oracle's row only.
-const ROW_CAP=flag('rows',200),TIME_CAP=flag('seconds',420);
+// The Marathon (below) is one life flown through every century, so it is given far more room by default.
+const MARATHON=args.includes('--marathon');
+const ROW_CAP=flag('rows',MARATHON?2000:200),TIME_CAP=flag('seconds',MARATHON?3600:420);
 // What one encounter contributes to the Journey's knowledge, as `JOURNEY.md` settles it: the observed
 // fraction of the completion arc and nothing else. There is no floor, because an encounter barely
 // looked at has barely been observed, and no landing term, because how cleanly a body was entered is
@@ -200,7 +202,7 @@ function flySpread(seed,hand,era,watch){
         // only on a perfect transfer with room beside it, since one rough landing spoils the figure and a
         // miss ends the run. With such a body in reach it would rather circle for the next window than land
         // roughly, until its patience runs out; otherwise it flies the main line as ever.
-        const chasing=era&&era.figures&&w.nodes.some(n=>n.row>=row&&n.row<=row+2&&figureOpen(w,n));
+        const chasing=era&&(era.figures||era.chase&&era.chase())&&w.nodes.some(n=>n.row>=row&&n.row<=row+2&&figureOpen(w,n));
         let aimAt=chasing?forecast(w,a=>near(a)&&figureOpen(w,a.n),false,hand.sigma,true):null;
         if(aimAt===null&&(!chasing||p.orbitSweep>PATIENCE))aimAt=forecast(w,a=>near(a)&&a.n.type!=='gold',p.orbitSweep>PATIENCE,hand.sigma);
         if(aimAt!==null)pending=w.time+Math.max(0,aimAt+gauss(jitter)*hand.sigma);
@@ -213,6 +215,7 @@ function flySpread(seed,hand,era,watch){
     } else pending=-1;
     w.update(STEP);
     if(watch&&frame%2===1)watch.frame();
+    if(era&&era.tick)era.tick(w,ledger);
   }
   // The body still held when the run ends is banked for what it had been observed to, as the Journey
   // banks it at death (journeyCommit in src/journey.js).
@@ -305,7 +308,7 @@ const FEAT_SCRIPT=await (async()=>{
     const text=await readFile(new URL('../src/'+file,import.meta.url),'utf8');
     for(const name of names)parts.push(cut(text,name,file));
   }
-  parts.push('this.api={bind(w){world=w;signed=false;},event(type,e){signatureEvent(type,e);},harvest(){if(ERA===8)prbHarvest();},get signed(){return signed;},LENS_REG_ROWS};');
+  parts.push('this.api={bind(w){world=w;signed=false;prbState=null;prbRunWorld=null;},event(type,e){signatureEvent(type,e);},harvest(){if(ERA===8)prbHarvest();},get signed(){return signed;},LENS_REG_ROWS};');
   return parts.join('\n');
 })();
 // One copy of the detectors per century, each with its own run state, all listening to the same flight: a
@@ -404,6 +407,70 @@ if(LADDER){
   console.log('  run, rock · the median run\'s whole banked observation on the atlas\'s chart and on the Rock\'s');
   console.log('  I … VIII · median runs a century holds a player for   climb · median runs for the whole ladder');
   console.log('  done · share of players who climbed all eight inside the cap   alone · the same climb on knowledge alone\n');
+  process.exit(0);
+}
+
+// ---------- The Marathon: the whole ladder in one life ----------
+// `--marathon` asks what JOURNEY.md §9.2 leaves open for the Marathon: what gate each century should set when
+// nothing is banked across runs, so the whole of it has to be met inside the one life. A run starts on the
+// Rock and is flown as the page flies a Journey run: once what it has observed since the century began reaches
+// the gate (and, unless `--nofeats`, the century's own feat has been flown in it), the world is armed and its
+// next ordinary landing grows the next century, refilling the nib and pushing the dark back (eraTransition in
+// simulation.js). What each century sets on the world is set here as the page sets it (ui.js, the arming of the
+// next century): the Rock's flares relight, the Lens crosses its registers, and from the Probe the circle turns
+// back to the cave and goes on. The driver is the run's own, by row and clock, so the climb only steepens.
+// `--gates=3,5,8` reads several gates; the record it reports is the number of centuries flown, which is the
+// Marathon's own (§9.2): a century counts once it has been left, so a run that dies on the Rock has flown none.
+if(MARATHON){
+  const GATES=((args.find(a=>a.startsWith('--gates='))||'').slice(8)||'2,4,6,8').split(',').map(Number).filter(g=>g>0);
+  const FEATS=!args.includes('--nofeats'),ERA_NAMES=['I','II','III','IV','V','VI','VII','VIII'];
+  const LENS_ROWS=FEAT_COPIES[6].LENS_REG_ROWS;
+  const hands=(MODEL==='spread'?SPREAD_HANDS:HANDS).filter(h=>(h.sigma??h.late)>0&&(!ONLY.length||ONLY.includes(Math.round((h.sigma??h.late)*1000))));
+  const table=[];
+  for(const gate of GATES)for(const hand of hands){
+    const flown=[],seconds=[],rows=[],reached=Array(8).fill(0),eraSeconds=[...Array(9)].map(()=>[]);
+    for(let seed=1;seed<=SEEDS;seed++){
+      // The century in hand, where its knowledge began, and when it began, for the time a century holds a life.
+      let era=1,base=0,banked=0,since=0,left=0,copy=FEAT_COPIES[1],w=null;
+      const watch={
+        bind:x=>{w=x;copy.bind(x);},
+        emit:(type,e)=>{
+          if(type==='eraTransition'){
+            eraSeconds[era].push(w.elapsed-since);left++;
+            // The knowledge a century counts begins at the landing that grew it, as the page clears the run's.
+            era=era>=8?1:era+1;since=w.elapsed;base=banked;
+            w.relightOn=era===1;w.chasmsOn=false;
+            w.transitionRows=era===6?[LENS_ROWS,LENS_ROWS*2].map(r=>r+w.eraFrom):[];w.transitionsCrossed=0;
+            copy=FEAT_COPIES[era];copy.bind(w);
+          }
+          copy.event(type,e);
+        },
+        frame:()=>{if(era===8)copy.harvest();},
+        flown:()=>({})
+      };
+      const course={relight:true,chase:()=>era===5,tick:(x,ledger)=>{
+        banked=ledger;
+        if(!x.transitionReady&&ledger-base>=gate&&(!FEATS||copy.signed))x.transitionReady=true;
+      }};
+      const r=flySpread(seed,hand,course,watch);
+      flown.push(left);seconds.push(r.elapsed);rows.push(r.row);
+      for(let k=0;k<Math.min(left+1,8);k++)reached[k]++;
+    }
+    table.push({gate,hand:hand.name,median:pct(flown,.5),p90:pct(flown,.9),best:Math.max(...flown),circle:flown.filter(n=>n>=8).length/SEEDS,
+      seconds:pct(seconds,.5),row:pct(rows,.5),reached:reached.slice(1).map(n=>n/SEEDS),eraSeconds:eraSeconds.slice(1).map(a=>a.length?Math.round(pct(a,.5)):null)});
+  }
+  if(JSON_OUT){console.log(JSON.stringify({seeds:SEEDS,feats:FEATS,table},null,2));process.exit(0);}
+  console.log('\nOrbit · the Marathon, the whole ladder in one life — '+SEEDS+' runs per hand and gate');
+  console.log('hand model '+MODEL+', pressure '+(PRESSURE||'default')+', feats '+(FEATS?'required':'not required')+', capped at row '+ROW_CAP+' or '+TIME_CAP+' s');
+  console.log('\n'+pad('gate',6)+pad('hand',9)+padL('flown',6)+padL('p90',5)+padL('best',5)+padL('circle',7)+padL('row',5)+padL('secs',6)+'   share of lives that reach each century: '+ERA_NAMES.slice(1).join(' · '));
+  console.log('-'.repeat(120));
+  for(const r of table)console.log(pad(r.gate,6)+pad(r.hand,9)+padL(r.median,6)+padL(r.p90,5)+padL(r.best,5)+padL(Math.round(r.circle*100)+'%',7)+padL(Math.round(r.row),5)+padL(Math.round(r.seconds),6)+'   '+r.reached.map(v=>padL(Math.round(v*100)+'%',5)).join(''));
+  console.log('\n  median seconds a century holds a life (of the lives that left it)\n');
+  console.log(pad('gate',6)+pad('hand',9)+ERA_NAMES.map(e=>padL(e,6)).join(''));
+  for(const r of table)console.log(pad(r.gate,6)+pad(r.hand,9)+r.eraSeconds.map(v=>padL(v===null?'—':v,6)).join(''));
+  console.log('\n  gate · knowledge a century asks of the life before its next landing grows the next one');
+  console.log('  flown · median centuries left in one life (the Marathon\'s record)   p90, best · the same at the top');
+  console.log('  circle · share of lives that close the circle   row, secs · median depth and length of a life\n');
   process.exit(0);
 }
 
