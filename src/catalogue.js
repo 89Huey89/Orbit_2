@@ -120,7 +120,7 @@ function catalogueRecord(){
     ['Rough impressions',commas(ledger.badAngles)],
     ['Daily streak',commas(streak.current)+' day'+(streak.current===1?'':'s')+' · best '+commas(streak.longest)]
   ];
-  let html=catalogueTable()+ledgerTable(rows);
+  let html=catalogueTable()+ledgerTable(rows)+signatureSection(5);
   html+='<section class="cat-group"><h3>By pressure<span class="cat-latin">Pondera</span></h3>'+pressureTable()+'</section>';
   html+='<section class="cat-group"><h3>Feats achieved<span class="cat-latin">Insignia</span></h3>'+
     ledgerTable(OBSERVATION_LABELS.map(([key,latin])=>[plainText(latin),countMark(ledger.observations[key])]))+'</section>';
@@ -705,6 +705,15 @@ function heirloomCard(era,cond=true){
   return centuryCard({name:h.name,latin:h.latin,locked:true,state:'NOT YET HANDED DOWN',
     cond:cond?'Finish the Chronicle of '+centuryTitle(era)+', or climb past it in the Journey':''});
 }
+// A century's signature feat as a section of its Record: the half-sentence of history it is named for,
+// under its name, and what to fly for it until it has been flown.
+const signatureFlown=era=>!!(journey.milestones['sig'+era]||journey.era>era);
+function signatureSection(era,latin=true){
+  const sig=SIGNATURES[era];if(!sig)return '';
+  return '<section class="cat-group"><h3>The century’s feat<span class="cat-latin">'+(latin?'Signum':'')+'</span></h3><ol class="cat-annals">'+
+    `<li class="cat-annal"><span class="cat-annal-head">${plainText(sig.name)}</span><span class="cat-gloss">${plainText(sig.why||'')}</span>`+
+    `<span class="cat-cond">${signatureFlown(era)?'Flown in the Journey':plainText(sig.describe)+'.'}</span></li></ol></section>`;
+}
 // The same lines as a section of a leaf's Record: a chapter not yet reached keeps its head and the row it
 // opens at, as a locked card keeps its condition. `latin` is false on a leaf that sets no Latin.
 function annalsSection(era,latin=true){
@@ -730,10 +739,11 @@ function centuryRecord(era){
     ['Perfect transfers',commas(log.perfects)],
     ['Time in the chart',chartTime(log.playSeconds)]
   ];
-  // The century's own signature feat, which the Journey asks to be flown on it before it is left.
+  // The century's own signature feat, which the Journey asks to be flown on it before it is left: its name
+  // and state in the register, and what it stands for in a section of its own beneath.
   const sig=SIGNATURES[era];
-  if(sig)rows.splice(8,0,['Signature feat',sig.name+(journey.milestones['sig'+era]||journey.era>era?' · flown':' · '+sig.describe)]);
-  let html=ledgerTable(rows,4);
+  if(sig)rows.splice(8,0,['Signature feat',sig.name+(signatureFlown(era)?' · flown':' · not yet flown')]);
+  let html=ledgerTable(rows,4)+signatureSection(era,!page.leaf);
   const own=typeof page.recordRows==='function'?page.recordRows():[];
   if(own&&own.length)html+=`<section class="cat-group"><h3>${plainText(page.title||'')}<span class="cat-latin">${plainText(page.latin||'')}</span></h3>`+ledgerTable(own.map(([label,value])=>[plainText(label),plainText(value)]))+'</section>';
   // What the century's curator said, chapter by chapter, kept once a run has reached the chapter.

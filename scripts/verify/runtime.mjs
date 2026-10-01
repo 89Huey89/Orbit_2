@@ -435,7 +435,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       const leaf=element('ephemeris-body').innerHTML;
       assert(leaf.includes('data-date="'+today+'"'),'Today\'s plate is always open in the almanac: '+leaf);
       assert(leaf.includes('eph-hodie'),'Today is captioned as today until it has been drawn');
-      assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
+      // On the first of a month the leaf holds no day before today, so there is no undrawn day to rule.
+      if(Number(today.slice(8,10))>1)assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
       assert(element('eph-title').textContent.includes(context.test.roman(Number(today.slice(0,4)))),element('eph-title').textContent);
       assert(element('eph-note').textContent.includes('only on the day it was drawn'),element('eph-note').textContent);
       assert(/^<svg[^]*<\/svg>in [A-Z][a-z]+ · [A-Z][a-z]+ intrat die [IVX]+$/.test(element('eph-sun').innerHTML),'The ephemeris names the sun\'s place: '+element('eph-sun').innerHTML);
@@ -1712,6 +1713,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         const leaf=element('catalogue-body').innerHTML;
         assert(leaf.includes('cat-centuries')&&leaf.includes('Chronicles completed')&&leaf.includes('Lineage'),'Century '+era+' prints its record, feats and lineage');
         assert(!leaf.includes('undefined')&&!leaf.includes('NaN'),'Century '+era+' prints no undefined or NaN');
+        {const sig=context.test.SIGNATURES[era];assert(sig&&sig.why&&leaf.includes(sig.why.slice(0,24)),'Century '+era+' says on its Record what its feat stands for');}
         context.test.closeCatalogue();
         // What the century said is kept on its own leaf once a flight has met it (docs/KNOWLEDGE-AUDIT.md,
         // §3.1): each curator's line on the Record once a run has reached its chapter, and each chart's note on
@@ -1779,6 +1781,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       html=record();
       assert(html.includes(said(words.chapterLines,1))&&!html.includes(said(words.chapterLines,2)),'The atlas keeps the lines of the chapters reached, and no further');
       assert(html.includes(said(words.chartNotes,0))&&!html.includes(said(words.chartNotes,1)),'The atlas keeps a figure\'s note once the figure is traced, and no other');
+      assert(html.includes(context.test.SIGNATURES[5].why.slice(0,24)),'The atlas says on its Record what its feat stands for');
       L.deepestChapter=was.deep;L.constellations=was.figures;
     }
     context.test.enterEra('rock');

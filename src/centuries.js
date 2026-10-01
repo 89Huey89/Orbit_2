@@ -156,17 +156,23 @@ function centuryAnnals(era){
 // does not leave the century until it has been flown there. Each one is read off events the simulation
 // already emits, and each is owed by the chart: the note beside it names what the generator promises.
 // Kept on the Journey's document as `milestones['sig'+era]`, which a restart clears with the rest.
+// `why` is the half-sentence of history the feat is named for, set on the century's Record beside it
+// (docs/KNOWLEDGE-AUDIT.md, §3.1): `describe` says what to fly, `why` what flying it stands for — and where
+// the mechanic is a game's shorthand for the real thing, as the Flyby's lap is for a gravity assist, says so.
 let sigRun={held:null,schools:[],rescues:0};
 const SIGNATURES={
   // A sling body is dealt at row 2 and every eighth row after 7, always at radius 57, which the wall's naked
   // eye always sorts as major: a doubled ring is on the wall within eight rows of anywhere.
   1:{name:'THE STRUCK RING',describe:'Hold one of the brightest lights, a doubled ring, for a whole orbit',
+    why:'Rings pecked round a hollow are among the commonest marks on later prehistoric rock. Some read them as lights in the sky; no one knows.',
     test:(type,e)=>type==='release'&&sigRun.held&&rockTier(sigRun.held)==='major'&&sigRun.held.documented>=1},
   // One ordinary body in every watch of the night is a wanderer carried in its barque (ceilingWanderer).
   2:{name:'THOSE WHO KNOW NO REST',describe:'Land on a wandering star carried in its barque',
+    why:'Some read the Egyptians’ unwearying stars as the planets: Senenmut’s ceiling sails four of them in barques, and leaves out Mars.',
     test:(type,e)=>type==='capture'&&typeof ceilingWanderer==='function'&&ceilingWanderer(e.n)},
   // A body's school is its row taken in threes, so any three rows running carry all three schools.
   3:{name:'THE THREE SCHOOLS',describe:'Land three perfect transfers in a row on the three schools, Gan, Shi and Wu Xian',
+    why:'The old star lists were credited to three astronomers, Gan De, Shi Shen and Wu Xian; the Dunhuang chart tells their stars apart by colour.',
     test:(type,e)=>{
       if(type!=='capture')return false;
       if(!e.perfect){sigRun.schools=[];return false;}
@@ -175,23 +181,28 @@ const SIGNATURES={
     }},
   // One wanderer is set on a plain row of every chapter after the first (astroWanderer).
   4:{name:'A WANDERER SIGHTED',describe:'Land on the wandering star of a chapter',
+    why:'The Arabic kawkab sayyar, like the Greek planetes, means a star that wanders; the zijes tabled where each of the five would stand.',
     test:(type,e)=>type==='capture'&&astroWanderer(e.n)!==-1},
   // A figure forks off every eighth row.
   5:{name:'LINEA PURA',describe:'Reach all three stars of a constellation in perfect transfers',
+    why:'Copperplate made a chart repeatable: every impression of Bayer’s plates set the same stars in the same places, line for line.',
     test:(type,e)=>type==='observation'&&e.key==='pureChart'},
   // The registers change at fixed rows counted from where the Lens began. One charge spent to save the sitting
   // is forgiven, since a rough hand spends one in most sittings long enough to reach the sensor; a second is
   // not (MEASUREMENTS.md, "Linea Pura made fair").
   6:{name:'SATURN IN ONE SITTING',describe:'Carry one sitting from the eyepiece to the sensor with no more than one charge spent to save it',
+    why:'Saturn was seen in stages: Galileo’s handles in 1610, Huygens’s ring in 1659, Cassini’s gap in 1675, and the rings’ fine weave from space.',
     test:(type,e)=>{
       if(type==='shieldBreak'||type==='dawnBreak'||type==='reflectorBreak')sigRun.rescues++;
       return type==='transition'&&e.index===1&&sigRun.rescues<=1;
     }},
   // A sling body at row 2 and every eighth row after 7, as on every sheet.
   7:{name:'GRAVITY ASSIST',describe:'Leave a gravity well on a full lap, at full charge',
+    why:'A real assist is one pass, not a lap: the craft borrows the planet’s own motion round the Sun. Mariner 10 swung past Venus to Mercury in 1974.',
     test:(type,e)=>type==='release'&&e.sling&&e.charge>=1},
   // The bill is sized so a steady run meets closure in its middle phases, and never stalls (probe.js).
   8:{name:'CLOSURE',describe:'Launch the first daughter probe',
+    why:'Closure is the 1980 NASA study’s word for a factory that can make all of its own parts; von Neumann had shown on paper that a machine could copy itself.',
     test:()=>typeof prbState!=='undefined'&&prbState&&prbState.gen>=2}
 };
 // Heard from every simulation event (ui.js). Returns the signature this event flew, or null.

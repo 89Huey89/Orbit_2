@@ -218,6 +218,11 @@ cheap steps would close most of the gap:
    done between planets by Mariner 10 at Venus in 1974. THE THREE SCHOOLS: three old star catalogues,
    told apart on one chart by colour. THOSE WHO KNOW NO REST: the wandering stars Senenmut's ceiling
    carries in barques, Mars missing among them.
+   *Built 2026-10-01:* every entry of `SIGNATURES` carries a `why`, set on each century's Record (and
+   the atlas's) under *The century's feat · Signum* above what to fly. GRAVITY ASSIST's says plainly
+   that a real assist is one pass, not a lap, which answers §2.2's point about the mechanic without
+   changing it; THOSE WHO KNOW NO REST's is hedged, since reading the "unwearying" stars as the planets
+   is a reading.
 
 ### 3.2 · Design, medium
 
