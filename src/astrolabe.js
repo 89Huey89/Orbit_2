@@ -596,7 +596,8 @@ function astroBody(n,x,y,tier,d,taken){
   else if(s3>0&&!n.difficultyChoice){
     const q=astroQadr(n),tx=x+(rm+9*scale)*Math.cos(-.75),ty=y+(rm+9*scale)*Math.sin(-.75);
     astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true,true);
-    let named=astroNamed.get(n.id);if(named===undefined&&q<=2&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(n.id,named);astroFihristNote('stars',named.i);}
+    // The body the round's star stands on (src/onestar.js) is named by the round, and its name is never set twice.
+    let named=astroNamed.get(n.id);if(named===undefined&&q<=2&&s3>=.5&&!oneStarIs(n)){const pick=()=>astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1));let i=pick();if(oneStarAstroTaken(i)){astroNameNext++;i=pick();}named={id:n.id,i};astroNameNext++;astroNamed.set(n.id,named);astroFihristNote('stars',named.i);}
     if(named&&named.id===n.id){const S=ASTRO_STARS[named.i],k=clamp(s3*2-1,0,1);
       astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true,true);
       astroGloss(ctx,S[1],x,y+rm+31*scale,Math.max(9,9.5*scale),P.inkSoft,.85*al*k,'center',true);}

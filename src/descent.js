@@ -15,6 +15,9 @@
 // the probe's own dotted wake and is lost in the world's clouds: a seed. For a moment the world is struck twice
 // more, faintly, beside itself, as if there were several to arrive at. And the probe's clock, T+ as its sheet
 // counts, is carried under the world and runs the other way, to seventeen thousand years before the count began.
+// A round that followed a star (src/onestar.js) ends on it: the dot the hand presses is lettered with that star's
+// name, in the wall's own hand, and held a little longer so it can be read. Only the star is named; the three
+// hints stay as they are. The first round followed none, and its descent ends on an unnamed dot.
 // Everything here reads the run's clock, so a pause holds the fall where it is; it is drawn in CSS pixels over
 // whatever the new century has already drawn, and it reads no plate tokens except for the probe's own face,
 // taken as the page turns, since the press already holds the Rock's by the time the first frame is drawn.
@@ -24,7 +27,9 @@ const descentBell=(a,b,c,d,t)=>descentEase(a,b,t)*(1-descentEase(c,d,t));
 function descentBegin(g){
   let s=((g.x*73856093)^(g.y*19349663)^0x9e3779b9)>>>0;
   const rng=()=>{s=(s+0x6D2B79F5)>>>0;let r=Math.imul(s^(s>>>15),1|s);r^=r+Math.imul(r^(r>>>7),61|r);return ((r^(r>>>14))>>>0)/4294967296;};
-  g.descent=true;g.dur=DESCENT_TIME;
+  // The round about to close is the one in hand: the descent is begun before the circle is counted.
+  g.star=runMode==='journey'?oneStarOfRound(journey.rounds+1):null;g.hold=g.star?1.2:0;
+  g.descent=true;g.dur=DESCENT_TIME+g.hold;
   // The clock is lettered in the face the probe counted in, asked before the page turns to the Rock.
   g.face=plateFace(11,'text');
   g.stars=[];for(let i=0;i<260;i++)g.stars.push({a:rng()*TAU,d:.01+rng()*rng()*1.2,m:.3+rng()*.7});
@@ -163,10 +168,17 @@ function descentFrame(g){
   {
     const reach=descentEase(4.8,5.65,t),back=descentEase(5.95,6.55,t),off=(1-reach)*W*.8+back*W*.7;
     descentHand(c,x,y,Math.max(.7,scale)*.95,.62,off+2,reach*(1-back));
-    const dot=descentEase(5.62,5.72,t)*(1-descentEase(6.2,6.6,t));
+    const hold=g.hold||0,dot=descentEase(5.62,5.72,t)*(1-descentEase(6.2+hold,6.6+hold,t));
     if(dot>0){const pulse=1+.35*(1-descentEase(5.65,6.0,t));
       c.fillStyle=`rgba(168,42,24,${(dot*.9).toFixed(3)})`;c.beginPath();c.arc(x,y,5.2*scale*pulse,0,TAU);c.fill();
       c.fillStyle=`rgba(212,86,46,${(dot*.55).toFixed(3)})`;c.beginPath();c.arc(x-1,y-1,2.6*scale*pulse,0,TAU);c.fill();}
+    // The star's name over the dot, set in the face the wall now letters in, clear of the hand below it and of the
+    // body's own ring as the wall comes up round it.
+    const named=g.star?descentEase(5.8,6.1,t)*(1-descentEase(6.3+hold,6.6+hold,t)):0;
+    if(named>0){const size=Math.max(15,17*scale),ty=y-Math.max(48,56*scale),word=g.star.title.toUpperCase();
+      c.font=plateFace(size,'sc');c.textAlign='center';c.textBaseline='middle';
+      c.lineJoin='round';c.lineWidth=Math.max(3,size*.3);c.strokeStyle=`rgba(3,2,1,${(named*.7).toFixed(3)})`;c.strokeText(word,x,ty);
+      c.fillStyle=`rgba(232,186,132,${(named*.95).toFixed(3)})`;c.fillText(word,x,ty);}
   }
   c.restore();
   return true;
