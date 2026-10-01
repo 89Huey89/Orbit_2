@@ -2360,6 +2360,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       t.beliefTick(n=>n===got.set);
       const first=t.inscriptions.find(g=>g.key==='belief');
       assert(first&&first.text===b.belief&&t.inscriptionStrike(first)===0,'The belief is set beside its body, unstruck: '+where);
+      assert(first.lines.every(l=>!/^·|·$/.test(l.trim())),'No line of a note begins or ends on its separating dot: '+where);
       assert(!t.inscriptions.some(g=>g.key==='belief-fix'),'And nothing corrects it yet: '+where);
       // Later: the correction's body comes into sight, and the belief is struck.
       t.beliefTick(()=>true);

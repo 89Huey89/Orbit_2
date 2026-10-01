@@ -42,16 +42,37 @@ function inscriptionRoom(box){
   const middle=box.left<W*.5+HUD_TEXT_HALF&&box.right>W*.5-HUD_TEXT_HALF;
   return Math.min(box.left-inner,W-inner-box.right,box.top-(middle?hudBand():inner),H-footerBand()-box.bottom);
 }
-// The lettering is broken to the width of the play channel, in the face it will be written in.
-function wrapInscription(text,tone,size){
-  const max=inscriptionWidth(),lines=[];
-  ctx.save();ctx.font=inscriptionFont(tone,size);
+// The lettering is broken to the width of the play channel, in the face it will be written in. A note made of
+// parts set off by a middle dot is broken between its parts where it can be, and the dot falls away at the break,
+// as an engraver would not end a line on a separator; only a part too long for the line is broken between words.
+// The lines are then evened out: the narrowest measure that still takes the same number of lines is used, so a
+// note never leaves a single word or a pair of numerals standing alone under a full line.
+function wrapInscriptionAt(text,max,parts=true){
+  const lines=[],fits=t=>ctx.measureText(t).width<=max;
   let line='';
-  for(const word of String(text).split(' ')){
-    const next=line?line+' '+word:word;
-    if(line&&ctx.measureText(next).width>max){lines.push(line);line=word;}else line=next;
+  for(const part of parts?String(text).split(' · '):[String(text)]){
+    if(line&&fits(line+' · '+part)){line+=' · '+part;continue;}
+    if(line)lines.push(line);
+    line=part;if(fits(line))continue;
+    // A part longer than the line on its own is broken between its words.
+    const words=line.split(' ');line='';
+    for(const word of words){const w=line?line+' '+word:word;if(line&&!fits(w)){lines.push(line);line=word;}else line=w;}
   }
   if(line)lines.push(line);
+  return lines;
+}
+function wrapInscription(text,tone,size){
+  const max=inscriptionWidth();
+  ctx.save();ctx.font=inscriptionFont(tone,size);
+  // Breaking between parts is a preference, never a cost: where it would take more lines than breaking between
+  // words, the words win.
+  const parts=wrapInscriptionAt(text,max).length<=wrapInscriptionAt(text,max,false).length;
+  let lines=wrapInscriptionAt(text,max,parts);
+  if(lines.length>1){
+    let lo=max*.5,hi=max;
+    for(let i=0;i<8;i++){const mid=(lo+hi)/2;if(wrapInscriptionAt(text,mid,parts).length<=lines.length)hi=mid;else lo=mid;}
+    lines=wrapInscriptionAt(text,hi,parts);
+  }
   let width=0;for(const one of lines)width=Math.max(width,ctx.measureText(one).width);
   ctx.restore();
   return {lines,width:Math.min(width,max)};
