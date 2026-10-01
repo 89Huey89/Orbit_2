@@ -45,12 +45,27 @@ function scrollTier(n){
 const SCROLL_STAGE={line:[0,.375],bound:[.375,.75],entry:[.75,1]};
 const scrollSpan=(t,r)=>clamp((t-r[0])/(r[1]-r[0]),0,1);
 const scrollEase=t=>t*t*(3-2*t);
-// The three schools, in the order an encounter cycles through them.
+// The three schools, in the order an encounter cycles through them: a body's school is its row taken in
+// threes, so any three rows running carry all three, which the Scroll's signature feat counts on.
 const SCROLL_SCHOOLS=['甘氏','石氏','巫咸'];
 const scrollSchool=n=>((n.row|0)%3+3)%3;
-// Star offices a body may be written up as: real names from the Chinese catalogue, drawn on without any
-// claim that the body the run deals is that office — the chart's positions here are the run's own.
-const SCROLL_NAMES=['天江','傅說','東咸','西咸','鍵閉','天市','帝座','貫索','織女','河鼓','天津','騰蛇','華蓋','五車','天船','軒轅','天廚','天棓','天槍','天床','文昌','三台','天倉','天囷'];
+// Star offices a body may be written up as, each with the school whose list it stands in and the palace
+// whose seven lodges its stars lie among (0 the Azure Dragon, east; 1 the Black Tortoise, north; 2 the
+// White Tiger, west; 3 the Vermilion Bird, south). The schools are the Kaiyuan Zhanjing's (開元占經, the
+// Tang omen compendium begun in 718), which keeps the three lists apart — Shi Shen's inner and outer
+// offices in its chapters 65 to 68, Gan De's in 69 and 70 with Wu Xian's after them, each entry opening on
+// its own school's word, "Gan says" or "Shi says" — and they are the same three the Dunhuang chart tells
+// apart by colour, Gan's in black, Shi's in red and Wu Xian's in pale. They were read off that text's
+// entries, and the three lists as tabled from the Dunhuang Xingzhan canjuan (星占殘卷), through search
+// summaries on 2026-10-01, the editions themselves being out of reach; an office the sources reached
+// gave to two schools (the Hook, the Grand Judge, the Earth Overseer) is left out rather than guessed,
+// and so is every office of the three enclosures, which belong to no one palace. The body is still the
+// run's own, as the source line says: what is real is the name and the school the caption pairs.
+const SCROLL_OFFICES=[
+  ['天田',0,0],['折威',0,0],['陣車',0,0],['車騎',0,0],['騎官',1,0],['東咸',1,0],['西咸',1,0],['天江',1,0],['傅說',1,0],['天輻',2,0],['鍵閉',2,0],['罰',2,0],
+  ['羅堰',0,1],['司命',0,1],['哭',0,1],['泣',0,1],['織女',1,1],['河鼓',1,1],['天津',1,1],['騰蛇',1,1],['北落師門',1,1],['天桴',2,1],['離瑜',2,1],['天壘城',2,1],['虛梁',2,1],
+  ['積水',0,2],['天讒',0,2],['天倉',1,2],['天囷',1,2],['天苑',1,2],['五車',1,2],['天陰',2,2],
+  ['天狗',0,3],['天社',0,3],['外廚',0,3],['青丘',0,3],['老人',1,3],['弧矢',1,3],['軒轅',1,3],['天相',2,3],['長垣',2,3],['軍門',2,3]];
 // The twelve charts of the catalogue, as the twelve asterisms each is filed under on this sheet.
 const SCROLL_CHARTS=[['北斗','THE NORTHERN DIPPER'],['軒轅','XUANYUAN'],['織女','THE WEAVER GIRL'],['河鼓','THE RIVER DRUM'],['天津','THE HEAVENLY FORD'],['五車','THE FIVE CHARIOTS'],
   ['參','THREE STARS'],['昴','THE HAIRY HEAD'],['心','THE HEART'],['天市','THE MARKET'],['北極','THE NORTH POLE'],['南斗','THE SOUTHERN DIPPER']];
@@ -72,6 +87,16 @@ function scrollNoteOffice(i){const r=scrollRead(),b=1<<(((i|0)%12+12)%12);if(!(r
 const SCROLL_MANSIONS=[['角',12],['亢',9],['氐',15],['房',5],['心',5],['尾',18],['箕',11],['斗',26],['牛',8],['女',12],['虛',10],['危',17],['室',16],['壁',9],
   ['奎',16],['婁',12],['胃',14],['昴',11],['畢',16],['觜',2],['參',9],['井',33],['鬼',4],['柳',15],['星',7],['張',18],['翼',18],['軫',17]];
 const SCROLL_DU=14;// world units to one dù of the climb.
+// The lodge a body is held in is the one the side bands name beside it: its height read off in dù the way
+// the bands count them, round the 365 whole dù of the mansions' widths.
+const SCROLL_LODGE_START=SCROLL_MANSIONS.reduce((a,m,i)=>(a.push(i?a[i-1]+SCROLL_MANSIONS[i-1][1]:0),a),[]);
+function scrollLodge(n){const du=((Math.floor(-(+n.y||0)/SCROLL_DU)%365)+365)%365;let i=0;while(i<27&&SCROLL_LODGE_START[i+1]<=du)i++;return i;}
+// The office a held body is written up as: its school first, from its row, and then, seeded by the body,
+// one of that school's offices from the palace of the lodge it is held in — so the colour the boundary
+// closes in and the school the caption names are always the same school, and the name is one that school
+// truly set down in that quarter of the sky.
+function scrollOffice(n){const s=scrollSchool(n),p=Math.floor(scrollLodge(n)/7),c=SCROLL_OFFICES.filter(o=>o[1]===s&&o[2]===p);
+  return c[Math.floor(tileHash(n.seed|0,n.id|0,17)*c.length)];}
 
 // ---------- Small tools ----------
 function scrollNum(n){const d='零一二三四五六七八九',u=['','十','百','千'],s=String(Math.max(0,n|0));let o='',z=false;
@@ -357,8 +382,8 @@ function scrollBody(n,x,y,tier,d,taken){
     let owner=scrollCaptioned.get(school);if(owner===undefined){owner=n.id;scrollCaptioned.set(school,owner);}
     let maxX=-1e9,minY=1e9;for(const p of pts){maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);}
     const cx=maxX+12*scale+M[0].r,cy=minY-6*scale;
-    if(owner===n.id){const size=Math.max(11,12.5*scale),e=scrollColumn(ctx,SCROLL_NAMES[n.id%SCROLL_NAMES.length],cx,cy,size,P.soot,.9*al,clamp(s3*1.6,0,1));
-      scrollColumn(ctx,SCROLL_SCHOOLS[school],cx,e+2,Math.max(8.5,9*scale),P.soot,.72*al,clamp(s3*1.6-.9,0,1),'kaiL');}
+    if(owner===n.id){const size=Math.max(11,12.5*scale),office=scrollOffice(n),e=scrollColumn(ctx,office[0],cx,cy,size,P.soot,.9*al,clamp(s3*1.6,0,1));
+      scrollColumn(ctx,SCROLL_SCHOOLS[office[1]],cx,e+2,Math.max(8.5,9*scale),P.soot,.72*al,clamp(s3*1.6-.9,0,1),'kaiL');}
     else{const k=scrollEase(clamp(s3*2,0,1));ctx.save();ctx.translate(cx,cy+12*scale);ctx.scale(1.35-.35*k,1.35-.35*k);scrollSeal(ctx,0,0,Math.max(10,11*scale),'志',n.id*13+1,k*al,.05);ctx.restore();}
   }
 }
