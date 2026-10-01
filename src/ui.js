@@ -869,6 +869,8 @@ function updateUI(dt){
   }
   // The round's star is named on the sheet in the century's own hand while it is still ahead (src/onestar.js).
   oneStarTick();
+  // The century's belief, and later its correction struck over it, each beside a body ahead (src/beliefs.js).
+  beliefTick();
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
 function resize(){

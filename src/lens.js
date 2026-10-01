@@ -829,6 +829,9 @@ function lensBodyEye(n,family,x,y,d,al){
 // Register two: the body on the glass. A bare knot at the capture; held, it develops as a tray print does,
 // the densest middle first and the faint outer wash last, in the shape its family leaves on a plate — and
 // the ink laid on afterwards by a hand at the glass back: a loop round it, and its plate number stamped.
+// How far Mars's plate has come in its one belief: Lowell's canals set as the silver develops (`belief`, an
+// alpha), struck through as Antoniadi's patches come up (`struck`, 0 to 1), and his note typed beneath (`fix`).
+function lensCanalReading(s2,e3){return {belief:clamp(s2*2-.4,0,1),struck:clamp(e3*2,0,1),fix:e3};}
 function lensBodyPlate(n,family,x,y,d,al){
   const P=ink.lens,R=lensDiscR(n),s1=lensSpan(d,LENS_STAGE.soft),s2=lensSpan(d,LENS_STAGE.first),s3=lensSpan(d,LENS_STAGE.done),e3=lensEase(s3),dev=lensEase(clamp(.25+s1*.35+s2*.5,0,1));
   // [horizontal stretch, size, density]: Jupiter prints a little oblate, Uranus small and thin, the Moon and a
@@ -861,10 +864,13 @@ function lensBodyPlate(n,family,x,y,d,al){
   // a faint circle clear of the image, which is what tells a world on a plate from a star.
   if(e3>0&&family!=='ice'){ctx.strokeStyle=`rgba(${P.silverMid},${(.3*e3).toFixed(3)})`;ctx.lineWidth=Math.max(.8,1.4*scale);ctx.beginPath();ctx.arc(x,y,rr*(family==='ringed'?2.5:1.6),0,TAU);ctx.stroke();}
   // Mars on the plate: Lowell's canals ruled straight across it in ink, and then Antoniadi's irregular patches
-  // with his correction written beside the first annotation rather than over it
-  if(family==='dune'){const ck=clamp(s2*2-.4,0,1);if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
+  // with his correction written beside the first annotation rather than over it, and the first struck through
+  // in the same red, never erased (beliefStrikeLine, the stroke every century cancels a belief with)
+  if(family==='dune'){const reading=lensCanalReading(s2,e3),ck=reading.belief;if(ck>0){ctx.strokeStyle=`rgba(${P.inkBlack},${(.75*ck*(1-.45*e3)).toFixed(3)})`;ctx.lineWidth=Math.max(.4,.45*scale);ctx.beginPath();
       for(let i=0;i<6;i++){const a=tileHash(n.id,i,21)*Math.PI,o=(tileHash(n.id,i,22)-.5)*R*.9,c=Math.cos(a),s=Math.sin(a);ctx.moveTo(x-s*o-c*R*.9,y+c*o-s*R*.9);ctx.lineTo(x-s*o+c*R*.9,y+c*o+s*R*.9);}ctx.stroke();
-      lensTyped(ctx,'LOWELL 1895',x+R*1.2,y-R*.9,Math.max(8,8.5*scale),P.inkBlack,.8*ck*al,'left');}
+      lensTyped(ctx,'LOWELL 1895',x+R*1.2,y-R*.9,Math.max(8,8.5*scale),P.inkBlack,.8*ck*al,'left');
+      if(reading.struck>0){const sz=Math.max(8,8.5*scale);ctx.save();ctx.font=plateFace(sz,'typed');const cw=ctx.measureText('M').width;ctx.restore();
+        ctx.save();ctx.globalAlpha=al;beliefStrikeLine(x+R*1.2-2,y-R*.9,cw*11+4,reading.struck,P.inkRed,Math.max(.8,scale));ctx.restore();}}
     if(e3>0){ctx.fillStyle=`rgba(${P.silver},${(.55*e3).toFixed(3)})`;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(x+(tileHash(n.id,i,23)-.5)*R*1.1,y+(tileHash(n.id,i,24)-.5)*R*1.1,R*(.14+tileHash(n.id,i,25)*.18),R*(.08+tileHash(n.id,i,26)*.12),tileHash(n.id,i,27)*TAU,0,TAU);ctx.fill();}
       lensTyped(ctx,'NOT CANALS · A. 1909',x+R*1.2,y-R*.9+11*scale,Math.max(8,8.5*scale),P.inkRed,.9*e3*al,'left');}}
   // the hand at the glass back: a loose loop, then a stamped number
