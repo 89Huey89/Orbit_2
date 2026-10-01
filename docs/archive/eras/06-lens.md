@@ -434,6 +434,16 @@ this section calls the largest gap, and makes choices this file left open, recor
 - **Chapter four draws Saturn, not Mars:** Meudon's own story is told in its curator's line and on every
   dune world on the plate, while its Saturn is the Paris plate annotated in ink, so the six openings stay
   one planet.
+- **A body's family is bound to its chapter** (2026-10-01, answering `docs/KNOWLEDGE-AUDIT.md` §2.2). The
+  chart deals families by row and seed without regard to dates, so as first built a Padua body could be
+  sealed `1787 · THREE VOLCANOS`. Now the year on each family's register-one caption is the year it entered
+  the record, and `lensFamily` redraws a family dealt to an older chapter, from the row and the seed, among
+  those its chapter already knew: Padua 1610 holds the airless world and Venus's phases, The Hague 1659 adds
+  the ring, and from Paris 1887 on all seven are old. It is Lens-local; the chart, the atlas's glyph cache,
+  the telescopic-capture tally and every other century still read `planetFamilyFor`, and the tally is
+  unchanged because a redrawn family is still one of the seven. Register three's names (OCEAN WORLD, LAVA
+  WORLD and the rest) are left as "Names" above chose them, the informal words of the present: the families
+  themselves are all known by 1787, and only the words postdate 1990.
 
 ## Risk
 
