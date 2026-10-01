@@ -95,9 +95,16 @@ const ASTRO_FIGURES=[['الدب الأكبر','THE GREATER BEAR'],['الجبار
 // Betelgeuse is a hand, yad al-jawzāʾ, the hand of the figure the Arabs saw in Orion before the Giant, and
 // not a shoulder: the star has a shoulder-name too, mankib al-jawzāʾ, but the Latin came from the hand, its
 // y read as a b by a medieval copyist (Kunitzsch).
-const ASTRO_STARS=[['رجل الجبار','RIGEL · THE GIANT’S FOOT'],['يد الجوزاء','BETELGEUSE · THE HAND'],['الدبران','ALDEBARAN · THE FOLLOWER'],['العيوق','CAPELLA'],
-  ['النسر الواقع','VEGA · THE SWOOPING EAGLE'],['النسر الطائر','ALTAIR · THE FLYING EAGLE'],['قلب الأسد','REGULUS · THE LION’S HEART'],['السماك الرامح','ARCTURUS'],
-  ['الشعرى','SIRIUS'],['السماك الأعزل','SPICA'],['ذنب الدجاجة','DENEB · THE HEN’S TAIL'],['الفرد','ALPHARD · THE SOLITARY']];
+// Each star carries beside its name its own qadr, as the catalogue gives it and not as a seed would: nine of
+// the first greatness, which are nine of the fifteen the Almagest sets first (Books VII–VIII, in Toomer's
+// translation, 1984; the machine-readable catalogue is CDS V/61), and Altair, Deneb and Alphard of the second,
+// as the Almagest has them and al-Ṣūfī's Book of the Fixed Stars (964) keeps them. A name is dealt only to a
+// body graded at that same greatness, so Sirius is never cut with a third.
+const ASTRO_STARS=[['رجل الجبار','RIGEL · THE GIANT’S FOOT',1],['يد الجوزاء','BETELGEUSE · THE HAND',1],['الدبران','ALDEBARAN · THE FOLLOWER',1],['العيوق','CAPELLA',1],
+  ['النسر الواقع','VEGA · THE SWOOPING EAGLE',1],['النسر الطائر','ALTAIR · THE FLYING EAGLE',2],['قلب الأسد','REGULUS · THE LION’S HEART',1],['السماك الرامح','ARCTURUS',1],
+  ['الشعرى','SIRIUS',1],['السماك الأعزل','SPICA',1],['ذنب الدجاجة','DENEB · THE HEN’S TAIL',2],['الفرد','ALPHARD · THE SOLITARY',2]];
+// The rete's stars by greatness, each pool in the rete's own order: Rigel heads the first.
+const ASTRO_STARS_BY_QADR=[1,2].map(q=>ASTRO_STARS.map((S,i)=>S[2]===q?i:-1).filter(i=>i>=0));
 // The five wandering stars (kawkab sayyār), in the order of their spheres from Saturn inward, as a zīj
 // tabulates them: named in full wherever one is sighted, since each is one body and not one of a class.
 const ASTRO_PLANETS=[['زحل','SATURN'],['المشتري','JUPITER'],['المريخ','MARS'],['الزهرة','VENUS'],['عطارد','MERCURY']];
@@ -475,9 +482,17 @@ function astroReleaseMarks(n,p,x,y){
 }
 // Which bodies have been named this run: every completed body of the first or second greatness is set on the
 // sheet with a star's name from a rete, in naskh with the curator's gloss, since those are the stars a rete
-// actually carries pointers to; every other one carries only its qadr.
-let astroRunWorld=null,astroNamed=new Map(),astroNameNext=0;
-function astroRun(){if(astroRunWorld!==world){astroRunWorld=world;astroNamed=new Map();astroNameNext=0;astroFlourishAt.clear();}}
+// actually carries pointers to; every other one carries only its qadr. A name is drawn only from the stars of
+// the body's own greatness, so the qadr cut beside a named body is always that star's own: the first body of
+// the first greatness is Rigel, the rest of each pool follow in turn from a place the run's seed sets.
+let astroRunWorld=null,astroNamed=new Map(),astroNameNext=[0,0];
+function astroRun(){if(astroRunWorld!==world){astroRunWorld=world;astroNamed=new Map();astroNameNext=[0,0];astroFlourishAt.clear();}}
+function astroDealName(n,q){
+  let named=astroNamed.get(n.id);if(named!==undefined||q>2)return named;
+  const pool=ASTRO_STARS_BY_QADR[q-1],k=astroNameNext[q-1]++,o=((world.seed|0)>>>0);
+  named={id:n.id,i:q===1?(k===0?pool[0]:pool[1+((k-1+o)%(pool.length-1))]):pool[(k+o)%pool.length]};
+  astroNamed.set(n.id,named);astroFihristNote('stars',named.i);return named;
+}
 // The wanderers: one body of each chapter after Baghdad is not a fixed star but a planet, its row
 // dealt off the run's seed and its planet off a shuffle of the five, so one seed always sights the same
 // wanderers in the same places. Baghdad has none of its own: its only plain row is the opening's, where
@@ -586,7 +601,7 @@ function astroBody(n,x,y,tier,d,taken){
   else if(s3>0&&!n.difficultyChoice){
     const q=astroQadr(n),tx=x+(rm+9*scale)*Math.cos(-.75),ty=y+(rm+9*scale)*Math.sin(-.75);
     astroNaskh(ctx,astroAbjad(q),tx+3*scale,ty,Math.max(11,12*scale),P.ink,.9*al*s3,'left',true,true);
-    let named=astroNamed.get(n.id);if(named===undefined&&q<=2&&s3>=.5){named={id:n.id,i:astroNameNext===0?0:1+((astroNameNext-1+((world.seed|0)>>>0))%(ASTRO_STARS.length-1))};astroNameNext++;astroNamed.set(n.id,named);astroFihristNote('stars',named.i);}
+    const named=s3>=.5?astroDealName(n,q):astroNamed.get(n.id);
     if(named&&named.id===n.id){const S=ASTRO_STARS[named.i],k=clamp(s3*2-1,0,1);
       astroNaskh(ctx,S[0],x,y+rm+15*scale,Math.max(13,14*scale),P.ink,.9*al*k,'center',true,true);
       astroGloss(ctx,S[1],x,y+rm+31*scale,Math.max(9,9.5*scale),P.inkSoft,.85*al*k,'center',true);}
@@ -1218,8 +1233,8 @@ defineCentury(4,{
     gloss:'Every star the rete has named, every figure set whole, every wanderer sighted, kept across every flight.',
     items(){
       const f=astroFihrist(),out=[];
-      ASTRO_STARS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.stars[i],count:f.stars[i]||0,
-        cond:'Hold close by a first- or second-greatness star until its scale is struck whole.',art:()=>astroFihristStarArt(i)}));
+      ASTRO_STARS.forEach(([ar,en,q],i)=>out.push({name:ar,latin:en,seen:!!f.stars[i],count:f.stars[i]||0,
+        cond:'Hold close by a star of the '+(q===1?'first':'second')+' greatness until its scale is struck whole.',art:()=>astroFihristStarArt(i)}));
       ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,gloss:centuryChartNote(4,i,en),seen:!!f.figures[i],count:f.figures[i]||0,
         cond:'Trace the figure’s whole constellation in one flight.',art:()=>astroFihristFigureArt(i)}));
       ASTRO_PLANETS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.planets[i],count:f.planets[i]||0,
