@@ -48,6 +48,7 @@ fraction of a second (`--paint-all` paints every frame, for checking animations)
 | `--seed` | the run's seed (default 7) |
 | `--difficulty` | `classic`, `relaxed`, `hardcore` |
 | `--daily` / `--date` | play the daily plate; `--date` sets the page's wall clock (default `2026-09-24T12:00:00Z`) |
+| `--gates` | gate Free Play's doors as shipped: a century the Journey has not reached opens on its first chapter only. Off by default, so every capture flies a century whole; the `proof` scenario turns it on |
 | `--hand` | the pilot: `oracle` (default), `good`, `fair`, `poor`, or a release lateness in seconds |
 | `--dist` | shoot `dist/index.html` (after `npm run build`) instead of `src/` |
 | `--out`, `--clean`, `--headed`, `--chromium` | output folder, empty it first, show the browser, a Chromium binary |

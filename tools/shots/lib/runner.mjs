@@ -16,7 +16,7 @@ import {contactSheet} from './contact-sheet.mjs';
 // `defaults` sit between these and the command line, so a scenario can ask for (say) the full ledger
 // while a hand can still override it.
 export const BASE_OPTIONS={viewport:'iphone-15-pro-max',plate:null,era:null,profile:'returning',seed:7,difficulty:null,daily:false,
-  date:'2026-09-24T12:00:00Z',hand:'oracle',scale:null,dist:false,paintAll:false,storage:null};
+  date:'2026-09-24T12:00:00Z',hand:'oracle',scale:null,dist:false,paintAll:false,storage:null,gates:false};
 const AXES=['viewport','plate','era'];
 const list=v=>v==null?[null]:Array.isArray(v)?v:String(v).split(',').map(x=>x.trim()).filter(Boolean);
 

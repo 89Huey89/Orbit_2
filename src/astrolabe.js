@@ -266,7 +266,7 @@ function astroRead(){
 function astroWrite(r){try{storage.set(ASTRO_KEY,JSON.stringify(r));}catch(_){}}
 function astroNoteChapter(i){const r=astroRead();if(i>r.furthest){r.furthest=i;astroWrite(r);invalidateAstroTitle();}}
 function astroRecordRun(w){
-  const r=astroRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(w.won)r.completed++;
+  const r=astroRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(chronicleWon(w))r.completed++;
   r.furthest=Math.max(r.furthest,Math.min(ASTRO_CHAPTERS.length-1,Math.floor(w.progress/ASTRO_CHAPTER_ROWS)));astroWrite(r);invalidateAstroTitle();
 }
 const astroBest=()=>astroRead().best;
@@ -923,7 +923,7 @@ function astroRoundel(x,y,r,word){
 }
 function astroHudLeaf(){
   if(!world||world.state==='ready')return;
-  if(world.won){astroFinale();return;}
+  if(chronicleWon(world)){astroFinale();return;}
   const P=ink.astro,top=astroHudTop(),words=plateWords().hud,score=world.score|0;
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   const left=ASTRO_BAND+12;

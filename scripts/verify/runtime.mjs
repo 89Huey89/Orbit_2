@@ -72,7 +72,10 @@ openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay
 BELIEFS,beliefOf,beliefHere,beliefBodies,beliefTick,strikeInscription,inscriptionStrike,lensCanalReading,ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
-replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
+replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY},get gates(){return journeyGatesDoors},set gates(v){journeyGatesDoors=v},eraProof,chronicleWon,syncEraChrome};',context);
+  // Free Play's doors are gated as shipped, but the layout below flies every century whole; the proof chapter
+  // a century not yet reached opens on is flown on its own, with the gate put back (Steps 16 and 17).
+  context.test.gates=false;
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
   // one. Each style is selected in turn, the body run under it, and whatever was chosen put back.
@@ -2129,6 +2132,33 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.records.free['3'],scrollBest+77,'Step 18: Free Play keeps its own record for the century');
     t.world.player.deadTime=10;events['ceiling-exit-end:click']();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
+    // The proof (JOURNEY.md §9.1): with the gate on as shipped, a century the Journey has not reached keeps its
+    // door, named for the first chapter it opens on, and is won at that chapter's end without counting as its
+    // Chronicle flown. A reached century is flown whole, and the atlas is never a proof.
+    t.gates=true;t.syncEraChrome();
+    assert.equal(element('rock-open').hidden,false,'A reached century keeps its door');
+    assert.equal(element('rock-open').textContent,'ERA I \u00b7 THE ROCK','And it names no limit');
+    for(const id of ['ceiling-open','scroll-open','astrolabe-open','lens-open','flyby-open','probe-open']){
+      assert.equal(element(id).hidden,false,'No door is ever simply shut: '+id);
+      assert(element(id).textContent.endsWith('FIRST CHAPTER'),'A door to a century not yet reached names its proof: '+id);
+    }
+    t.enterEra('rock');assert.equal(t.eraProof(),false,'A reached century is no proof');assert.equal(t.world.goalRow,t.plateWords().goalRow);
+    events['ceiling-exit:click']();
+    t.enterEra('scroll');assert.equal(t.eraId(),3,'A century not yet reached still opens');
+    assert.equal(t.eraProof(),true);assert.equal(t.world.proof,true);
+    assert.equal(t.world.goalRow,t.plateWords().chapterRows,'A proof is won at the end of its first chapter');
+    assert.equal(element('reading').hidden,true,'A proof offers no reading to choose');
+    const wonBefore=t.eraLog(3).won,scrollLeafBest=t.records.free['3']||0;
+    t.handleInput();t.world.score=12;t.world.progress=t.world.goalRow;t.world.die('THE SUN ROSE',true);t.showEnd();
+    assert.equal(t.chronicleWon(t.world),false,'A proof won is not a Chronicle flown');
+    assert.equal(t.eraLog(3).won,wonBefore,'Nor counted as one');
+    assert.equal(element('end-title').textContent,t.plateWords().chrome.proof.title,'The leaf closes on the first chapter');
+    assert.equal(element('end-reason').textContent,t.plateWords().chrome.proof.reason);
+    assert.equal(element('end-tip').textContent,t.plateWords().chrome.proof.note,'And says how the rest is opened');
+    assert(t.records.free['3']>=scrollLeafBest,'A proof keeps Free Play\'s record as any run does');
+    t.world.player.deadTime=10;events['ceiling-exit-end:click']();
+    assert.equal(t.eraProof(),false,'The atlas is never a proof');
+    t.gates=false;t.syncEraChrome();
   }
   // ---- Steps 8 to 13: the change of century inside the run ----
   // The era becomes known while the run is still flying, the next ordinary landing carries the change, and

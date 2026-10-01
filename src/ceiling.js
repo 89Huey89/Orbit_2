@@ -1541,7 +1541,7 @@ function ceilingSunriseWing(g,dir,span,s,e){
   }
 }
 function ceilingDrawSunrise(){
-  if(!world||!world.won)return;
+  if(!chronicleWon(world))return;
   const P=CEILING_PALETTE,time=world.player.deadTime,t=reducedMotion?1:clamp(time/2.6,0,1),e=1-Math.pow(1-t,3);
   const sky=ctx.createLinearGradient(0,H,0,0);sky.addColorStop(0,`rgba(240,196,86,${.6*e})`);sky.addColorStop(.5,`rgba(194,74,47,${.3*e})`);sky.addColorStop(1,'rgba(21,36,87,0)');
   ctx.save();ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);

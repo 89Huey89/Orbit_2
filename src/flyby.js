@@ -267,7 +267,7 @@ function flyNoteChapter(i){const r=flyRead();if(i>r.furthest){r.furthest=i;flyWr
 function flyNoteWorld(family){const i=FLY_FAMILIES.indexOf(family);if(i<0)return;const r=flyRead();if(!(r.worlds&(1<<i))){r.worlds|=1<<i;flyWrite(r);}}
 function flyNoteTarget(i){const r=flyRead(),b=1<<(((i|0)%12+12)%12);if(!(r.targets&b)){r.targets|=b;flyWrite(r);}}
 function flyRecordRun(w){
-  const r=flyRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(w.won)r.completed++;
+  const r=flyRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(chronicleWon(w))r.completed++;
   r.furthest=Math.max(r.furthest,Math.min(FLY_CHAPTERS.length-1,Math.floor(w.progress/FLY_CHAPTER_ROWS)));flyWrite(r);flySprites.clear();
 }
 const flyBest=()=>flyRead().best;
@@ -876,7 +876,7 @@ function flyChartRoute(chart){
 const FLY_DSN=['GOLDSTONE','CANBERRA','MADRID'];
 function flyHudLeaf(){
   if(!world||world.state==='ready')return;
-  if(world.won){flyFinale();return;}
+  if(chronicleWon(world)){flyFinale();return;}
   const P=ink.flyby,top=flyHudTop(),words=plateWords().hud,score=world.score|0,level=world.inkLevel(),low=level<=.34,pulse=low&&!reducedMotion?.5+.5*Math.sin(world.time*6):1,ci=flyChapterOf(world),C=FLY_CHAPTERS[ci];
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   const left=FLY_BAND+10,right=W-FLY_BAND-12,cx=W/2,m=world.speedMultiplier(),pace=words.pace+(m%1?m.toFixed(1):m);

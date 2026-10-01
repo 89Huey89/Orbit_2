@@ -153,21 +153,24 @@ function keepContextBest(score){
   return true;
 }
 // ---------- Free Play's doors ----------
-// LINKING.md, "Door access": once the Journey ships, a century is open in Free Play only after the Journey
-// has reached it. Each era is an unlockable of the catalogue's own shape, whose condition reads the
-// Journey's document rather than the ledger, so the one unlockMet() in src/ledger.js answers both kinds.
-// They are kept out of UNLOCKS, and so off the catalogue's pages, until the gate stands. The gate is off,
-// by choice rather than necessity: the Journey can climb all eight, but every century stays open to Free
-// Play while the climb itself is still being tuned, and the first chapter of a century not yet reached,
-// which LINKING.md keeps open as a proof, is not built. Every preview door stays open until this is on.
-const JOURNEY_GATES_DOORS=false;
+// LINKING.md, "Door access": a century is open in Free Play once the Journey has reached it. Each era is an
+// unlockable of the catalogue's own shape, whose condition reads the Journey's document rather than the
+// ledger, so the one unlockMet() in src/ledger.js answers both kinds. They are kept out of UNLOCKS, and so off
+// the catalogue's pages. No door is ever simply shut (JOURNEY.md §9.1): a century not yet reached still opens,
+// as a proof — its first chapter alone, won at that chapter's end — and is flown whole once the Journey gets
+// there. The gate is a binding rather than a constant only so the test harnesses can fly every century whole.
+const JOURNEY_GATES_DOORS=true;
+let journeyGatesDoors=JOURNEY_GATES_DOORS;
 const ERA_UNLOCKS=[1,2,3,4,6,7,8].map(era=>({id:'era'+era,kind:'era',era,test:()=>journey.unlocked.includes(era),describe:()=>'Reach this century in the Journey'}));
 // The atlas is always open: it is where the Journey and Free Play both begin.
-function eraOpen(era,gated=JOURNEY_GATES_DOORS){
+function eraOpen(era,gated=journeyGatesDoors){
   if(!gated||era===5)return true;
   const entry=ERA_UNLOCKS.find(e=>e.era===era);
   return !entry||unlockMet(entry);
 }
+// Whether the run on the press is a proof: Free Play on a century the Journey has not reached. A Journey or
+// Frontier run is let in at a century it has reached by definition, and the daily is the atlas's own.
+const eraProof=(era=eraId())=>!!era&&runMode==='free'&&!dailyOn&&!eraOpen(era);
 // ---------- The century's own instrument ----------
 // Every century flies the traveller as the one comet (travellerComet(), src/effects.js), because the eye has to
 // find the point that collides and nothing else, at the size of a fingertip on the reference phone. The tool a
