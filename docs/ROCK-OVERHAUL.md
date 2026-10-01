@@ -1,7 +1,8 @@
 # Era I · The Rock — overhaul plan
 
-Status: **in progress (2026-09-23).** The forks below are marked **DECIDED**, with the option that was
-chosen; see [Progress](#progress) for what is built and what is left. This is a complete redesign of the era's look, not a
+Status: **built (2026-09-23), merged in pull request #74.** The forks below are marked **DECIDED**, with the option
+that was chosen; see [Progress](#progress) for what is built. What is left is level B of the relit
+surface, a frame-rate reading on the reference iPhone, and three of the planned tests. This is a complete redesign of the era's look, not a
 retune of the current wall.
 
 This is a polish pass on a door that already ships (`src/rock.js`, entered from the frontispiece),
@@ -245,7 +246,10 @@ before anything else is built on it:
 - **Bodies are prehistoric sky marks, not plain dabs** (supersedes A4's "dot only" reading). Stars are
   the Iberian schematic estrelliform (a pressed dot with rays); bright bodies the soliform /
   cup-and-ring (a disc with a ring walked round it and rays); the Moon a kaolin crescent with tally
-  notches (after the Laussel horn and the Blanchard plaque). Every "this is a star" reading is marked
+  notches (after the Laussel horn and the Blanchard plaque). *Since superseded:* the Rock's three sizes
+  (`ROCK_TRIAD`) took the Moon's place, `rockTier()` no longer returns `'moon'`, and the crescent is kept
+  in `rock.js` but dealt to no body; whether the Moon comes back is left to the author
+  (`docs/KNOWLEDGE-AUDIT.md` §2.1). Every "this is a star" reading is marked
   in the README as contested. An unreached body is its light alone, a breathing point.
 - **Holes you can fall into.** The Shaft is drawn as a real hole whose black is exactly the lethal
   core. A new era-only hazard, the **chasm** (a lethal capsule you must not fly across, from row 5,

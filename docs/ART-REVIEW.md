@@ -77,6 +77,9 @@ Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
 | D1 press strike | Fixed | A perfect transfer sets the sheet down 1 px for 80 ms and embosses the landing ring (lit and shadowed offset strokes) for 0.95 s |
 | D4 second colour pass | Fixed | A completed figure is inked again in one left-to-right sweep, rubric red on paper and gold at night, off register, settling and drying over the completion's 2.4 s flash |
 | D5 death blot | Fixed | A hazard death on the atlas blots the page with the run's own ink, flung away from the nearest hazard, instead of bursting |
+| C6 Ceiling ageing | Fixed; captions still open | Plaster, lamp soot, edge grime and lifted flakes over the painted wall (`a6b1452`, `ceiling.js` `ceilingFlake`). Whether the red captions still clip at the right edge is unchecked |
+| R4 Rock frontispiece | Fixed | Every century is named on its frontispiece (`9473cc4`); the stray black shape was not seen again but has not been rechecked by a capture |
+| R1, R2, R5 Rock wall | In part | The flowstone's edge is softened and gated by a second field, the bedding period jittered per bed, and niches fade at the rim with a soft stacked shadow (`2bd18ee`). The flowstone still has no x-warp, the moiré is unchecked by a capture, and the dried route is unchanged |
 
 Built on `claude/remaining-art-assets-6bf6v4`, with everything new in `src/press.js` and one-line hooks
 elsewhere, so it merges cleanly with the Era I overhaul (`claude/stone-age-deck-conflicts-g0en46`).

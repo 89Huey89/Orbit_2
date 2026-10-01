@@ -2,7 +2,7 @@
 
 Era II ships as a playable preview (`src/ceiling.js`), and on the phone it reads as beige graph paper
 with a game on top rather than as Egypt. This file is the plan agreed on 2026-09-23 to change that
-in art, HUD and play. It is live work, not archive: it is separate from the eight-era progression,
+in art, HUD and play. It shipped in pull request #73 and is kept as the record of what was decided. It was live work, not archive: it is separate from the eight-era progression,
 and nothing here builds toward that ladder. Era II stays a standalone door on the frontispiece that
 keeps its own record.
 
@@ -64,7 +64,11 @@ event), not a lap.
 | 4 · Play | Twelve hours with pylon gates; sunrise as a win state | Touches `simulation.js`: new state, `verify.mjs` coverage, replay safety, and the plate-gating so the atlas is unchanged |
 | 5 · Sound | Harp or lyre for captures, sistrum and frame drum at the gates, a sunrise chord | Through `defineHand('ceiling', …)` and `audio.js`'s existing voices |
 
-## Open questions for phase 4
+## Questions for phase 4 (settled)
+
+Both were settled while building, as the status above records: sunrise is a win that ends the run, and an
+hour is three rows, so dawn falls on row thirty-six. The questions as they were asked:
+
 
 - **Is sunrise the end of the run, or a lap?** A win that ends the run is the clean reading of the
   myth; a lap (dawn, then night again, faster) keeps it an endless arcade game. The default is a

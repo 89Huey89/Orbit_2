@@ -125,6 +125,8 @@ three pressures legible before any caption can. Whether that pressure reads off 
 dabs alone, on the one sheet in the whole ladder with no caption to fall back on, is unspiked and
 needs a built sheet to answer. [01-rock.md](01-rock.md)'s own Risk section;
 [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md).
+*Settled since (2026-09-30, [JOURNEY.md](JOURNEY.md) §9.1):* the triad reads by size, not brightness — three
+struck dabs in three sizes (`ROCK_TRIAD` in `src/rock.js`), and the Moon is no longer one of them.
 
 **The daily's rotation, now across eight eras rather than nine.** [DANGERS.md](DANGERS.md) commits
 the daily plate to one seed and one era, the era rotating through the ladder for everyone, which
