@@ -23,12 +23,16 @@ function roman(value){
 const pad2=n=>String(n).padStart(2,'0');
 const dayKey=(y,m,d)=>y+'-'+pad2(m+1)+'-'+pad2(d);
 const monthOf=date=>({y:Number(date.slice(0,4)),m:Number(date.slice(5,7))-1});
-// Augsburg — the city the imprint claims — is the one place the Gregorian reform actually produced a
-// riot: the city's Protestant half refused the new calendar in 1583 and kept the old one running
-// alongside it, through lawsuits and an imperial standoff, until 1700. Ten days is the whole of the
-// difference for the span this atlas is dated in; the leaf states both rather than picking a side.
+// Augsburg — the city the imprint claims — is one of the places the Gregorian reform brought to riot:
+// the city's Protestant half refused the new calendar in 1583 and kept the old one running alongside it,
+// through lawsuits and an imperial standoff, until 1700. The leaf states both rather than picking a side,
+// and it states the old one as it stands in the year the leaf is dated: the two calendars drift a day
+// further apart in every century year the Julian keeps as a leap year and the Gregorian does not, so the
+// ten days of Augsburg's quarrel are thirteen for every plate this leaf can hold. The gap is counted
+// from the year in hand (the one before it in January and February, before a dropped leap day falls).
 function julianOf(y,m,d){
-  const j=new Date(Date.UTC(y,m,d-10));
+  const c=Math.floor((m<2?y-1:y)/100),gap=c-Math.floor(c/4)-2;
+  const j=new Date(Date.UTC(y,m,d-gap));
   return {y:j.getUTCFullYear(),m:j.getUTCMonth(),d:j.getUTCDate()};
 }
 // The sun's place in the zodiac is the first column of every printed ephemeris of the century; it is what
@@ -138,8 +142,8 @@ function renderEphemeris(){
   body.innerHTML=html;
   paintLeafFrame('eph-leaf-frame');
   const title=$('eph-title');if(title)title.textContent=MONTHS_LATIN[ephMonth.m]+' · '+roman(ephMonth.y);
-  // The grid's own first ten squares always fall stylo veteri in the month before — ten days never
-  // reaches back further than that, since no month this calendar keeps is shorter than twenty-eight —
+  // The grid's own first squares always fall stylo veteri in the month before — the gap never reaches
+  // back further than that, since no month this calendar keeps is shorter than twenty-eight —
   // so the header names it too, the same two-column reckoning every square in the body already keeps.
   const oldMonth=julianOf(ephMonth.y,ephMonth.m,1),titleOld=$('eph-title-old');
   if(titleOld)titleOld.textContent=MONTHS_LATIN[oldMonth.m]+' · '+roman(oldMonth.y);

@@ -995,7 +995,7 @@ function lensVoid(h,reg,x,y){
   if(reg===0){ctx.save();ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.clip();ctx.fillStyle=`rgba(${P.ink},.3)`;ctx.fillRect(x-core,y-core,core*2,core*2);
     ctx.strokeStyle=`rgba(${P.ink},.8)`;ctx.lineWidth=Math.max(.5,.6*scale);const st=1.9*scale;ctx.beginPath();for(let o=-core*2;o<core*2;o+=st){ctx.moveTo(x+o-core,y-core);ctx.lineTo(x+o+core,y+core);ctx.moveTo(x+o+core,y-core);ctx.lineTo(x+o-core,y+core);}ctx.stroke();ctx.restore();
     ctx.strokeStyle=`rgba(${P.ink},.95)`;ctx.lineWidth=1.1*scale;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.stroke();
-    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Nihil visum',lx,ly,sz,P.ink,.8,al,'text','italic'),'Nihil visum',x,y-core-5*scale,core+8*scale,sz,'text');}}
+    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Nihil visum · nothing seen',lx,ly,sz,P.ink,.8,al,'text','italic'),'Nihil visum · nothing seen',x,y-core-5*scale,core+8*scale,sz,'text');}}
   else if(reg===1){
     // the lifted silver: clear glass inside a torn edge, the edge itself darker where the gelatin rolled up
     ctx.beginPath();const N=40;for(let i=0;i<=N;i++){const a=i/N*TAU,rr=core*(1+(tileHash(h.seed,i%N,1)-.5)*.14);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();
@@ -1021,7 +1021,7 @@ function lensHalation(h,reg,x,y){
     ctx.fillStyle=`rgba(${P.paper},1)`;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();lensHatchDisc(ctx,x,y,core,1,P,.35,{noCross:true});
     ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(h.seed,i,5)-.5)*core*1.1,y+(tileHash(h.seed,i,6)-.5)*core*.6,Math.max(.8,core*(.05+tileHash(h.seed,i,7)*.06)),0,TAU);ctx.fill();}
     ctx.strokeStyle=`rgba(${P.ink},.95)`;ctx.lineWidth=1*scale;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.stroke();
-    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Sol · maculae',lx,ly,sz,P.ink,.8,al,'text','italic'),'Sol · maculae',x,y-core-4*scale,core+10*scale,sz,'text');}}
+    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Sol · maculae · the Sun’s spots',lx,ly,sz,P.ink,.8,al,'text','italic'),'Sol · maculae · the Sun’s spots',x,y-core-4*scale,core+10*scale,sz,'text');}}
   else if(reg===1){for(let i=4;i>=1;i--){const rr=core+(reach-core)*i/4.4;ctx.strokeStyle=`rgba(${P.silverMid},${(.14+.08*(4-i)).toFixed(3)})`;ctx.lineWidth=(reach-core)/5;ctx.beginPath();ctx.arc(x,y,rr,0,TAU);ctx.stroke();}
     for(let i=0;i<3;i++){const f=((t*.3+i/3)%1),r=core+f*(reach-core);ctx.strokeStyle=`rgba(${P.silver},${((1-f)*.35).toFixed(3)})`;ctx.lineWidth=.7*scale;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();}
     const kg=ctx.createRadialGradient(x,y,0,x,y,core);kg.addColorStop(0,`rgb(${P.silver})`);kg.addColorStop(.85,`rgb(${P.silver})`);kg.addColorStop(1,`rgba(${P.silver},.8)`);ctx.fillStyle=kg;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
@@ -1048,10 +1048,12 @@ function lensDrift(h,reg,x,y){
     ctx.fillStyle=`rgba(${col},${reg===2?.8:.9})`;ctx.beginPath();ctx.arc(x0+len,lane,(reg===1?1.1:.8)*scale,0,TAU);ctx.fill();}
   ctx.restore();
   const lx=x-Math.cos(dir)*reach*.72,ly=y-Math.sin(dir)*reach*.72-12*scale,sz=Math.max(reg===0?10:7.5,(reg===0?10.5:7.5)*scale);
-  if(reg===0)lensFell(ctx,'Manus tremula',lx,ly,sz,P.ink,.75,'center','text','italic');else if(reg===1)lensTyped(ctx,'TRACKING DRIFT',lx,ly,sz,P.inkRed,.85,'center');else lensMono(ctx,'SOLAR WIND',lx,ly,sz,P.cyan,.8,'center');
+  if(reg===0)lensFell(ctx,'Manus tremula · a shaking hand',lx,ly,sz,P.ink,.75,'center','text','italic');else if(reg===1)lensTyped(ctx,'TRACKING DRIFT',lx,ly,sz,P.inkRed,.85,'center');else lensMono(ctx,'SOLAR WIND',lx,ly,sz,P.cyan,.8,'center');
   ctx.save();ctx.strokeStyle=reg===0?`rgba(${P.rubric},.85)`:reg===1?`rgba(${P.inkRed},.85)`:`rgba(${P.cyan},.85)`;ctx.lineWidth=1.3*scale;const ax=lx,ay=ly+10*scale;
   ctx.beginPath();ctx.moveTo(ax-Math.cos(dir)*8*scale,ay-Math.sin(dir)*8*scale);ctx.lineTo(ax+Math.cos(dir)*10*scale,ay+Math.sin(dir)*10*scale);ctx.lineTo(ax+Math.cos(dir-2.6)*4*scale+Math.cos(dir)*10*scale,ay+Math.sin(dir-2.6)*4*scale+Math.sin(dir)*10*scale);ctx.stroke();ctx.restore();
 }
+// The eyepiece's notes are the observer's Latin, each with its English after it in the same hand, since a
+// reader has to know what the hand wrote to see what it did not yet understand: a hole in the sky, asked.
 // The dark nebula, for the obscurer: a patch where the star count falls to nothing, unremarkable until the
 // photographs of Barnard and Wolf proved some of the sky's holes to be dust — on paper a blank reserved in the
 // sheet's own tone, on glass a clear starless island, off the sensor a lane of dust dark against a faint glow.
@@ -1060,7 +1062,7 @@ function lensDarkNebula(h,reg,x,y){
   ctx.save();const t=reducedMotion?0:world.time;
   if(reg===0){const wg=ctx.createRadialGradient(x,y,0,x,y,R);wg.addColorStop(0,`rgba(${P.paperDeep},.75)`);wg.addColorStop(.75,`rgba(${P.paperDeep},.4)`);wg.addColorStop(1,`rgba(${P.paperDeep},0)`);ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${P.inkSoft},.35)`;ctx.setLineDash([2*scale,3*scale]);ctx.lineWidth=.6*scale;ctx.beginPath();ctx.arc(x,y,R*.9,0,TAU);ctx.stroke();ctx.setLineDash([]);
-    lensFell(ctx,'Foramen in caelo?',x,y-R-8*scale,Math.max(10,10.5*scale),P.ink,.72,'center','text','italic');}
+    lensFell(ctx,'Foramen in caelo? · a hole in the sky?',x,y-R-8*scale,Math.max(10,10.5*scale),P.ink,.72,'center','text','italic');}
   else if(reg===1){const wg=ctx.createRadialGradient(x,y,0,x,y,R);wg.addColorStop(0,'rgba(246,246,242,.9)');wg.addColorStop(.7,'rgba(246,246,242,.6)');wg.addColorStop(1,'rgba(246,246,242,0)');ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${P.inkBlack},.55)`;ctx.lineWidth=.8*scale;lensLoop(ctx,x,y,R*.82,h.seed|0,1,.8*scale);
     lensTyped(ctx,'B '+(33+(h.seed%330|0)),x,y-R*.82-8*scale,Math.max(8,8.5*scale),P.inkBlack,.85,'center');}
@@ -1731,7 +1733,7 @@ function lensCollectionItems(){
   const rec=lensRead(),items=[];
   LENS_FIELDS.forEach(([id,common],i)=>{
     const seen=!!(rec.fields&(1<<i));
-    items.push({name:common.charAt(0)+common.slice(1).toLowerCase(),latin:id,seen,cond:'Not yet logged as a field on the plate',art:LENS_FIELD_ART[i]});
+    items.push({name:common.charAt(0)+common.slice(1).toLowerCase(),latin:id,gloss:centuryChartNote(6,i,common),seen,cond:'Not yet logged as a field on the plate',art:LENS_FIELD_ART[i]});
   });
   LENS_FAMILIES.forEach((family,i)=>{
     const seen=!!(rec.worlds&(1<<i)),eye=LENS_EYE_READINGS[family];

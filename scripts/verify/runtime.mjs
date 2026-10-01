@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,scrollSchool,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,scrollSchool,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
@@ -435,7 +435,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       const leaf=element('ephemeris-body').innerHTML;
       assert(leaf.includes('data-date="'+today+'"'),'Today\'s plate is always open in the almanac: '+leaf);
       assert(leaf.includes('eph-hodie'),'Today is captioned as today until it has been drawn');
-      assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
+      // On the first of a month the leaf holds no day before today, so there is no undrawn day to rule.
+      if(Number(today.slice(8,10))>1)assert(leaf.includes('eph-blank'),'A day that was never drawn is printed as a blank rule');
       assert(element('eph-title').textContent.includes(context.test.roman(Number(today.slice(0,4)))),element('eph-title').textContent);
       assert(element('eph-note').textContent.includes('only on the day it was drawn'),element('eph-note').textContent);
       assert(/^<svg[^]*<\/svg>in [A-Z][a-z]+ · [A-Z][a-z]+ intrat die [IVX]+$/.test(element('eph-sun').innerHTML),'The ephemeris names the sun\'s place: '+element('eph-sun').innerHTML);
@@ -725,7 +726,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(atlasWords.chrome.eraExit,'RETURN TO THE ATLAS');
     assert.equal(atlasWords.chrome.endAction,'Tap to try again');
     assert.equal(atlasWords.chrome.statFlow,'Best flow');
-    assert.equal(atlasWords.hazards.vortex,'VORAGO');
+    assert.equal(atlasWords.hazards.vortex,'VORAGO · A WHIRLPOOL');
     assert.equal(atlasWords.squareLanding,'Angulus rectus');
     assert.equal(atlasWords.glosses.perfect,'PERFECT · MOMENTUM KEPT');
     assert.equal(atlasWords.held.choose,'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.');
@@ -1712,7 +1713,37 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
         const leaf=element('catalogue-body').innerHTML;
         assert(leaf.includes('cat-centuries')&&leaf.includes('Chronicles completed')&&leaf.includes('Lineage'),'Century '+era+' prints its record, feats and lineage');
         assert(!leaf.includes('undefined')&&!leaf.includes('NaN'),'Century '+era+' prints no undefined or NaN');
+        {const sig=context.test.SIGNATURES[era];assert(sig&&sig.why&&leaf.includes(sig.why.slice(0,24)),'Century '+era+' says on its Record what its feat stands for');}
         context.test.closeCatalogue();
+        // What the century said is kept on its own leaf once a flight has met it (docs/KNOWLEDGE-AUDIT.md,
+        // §3.1): each curator's line on the Record once a run has reached its chapter, and each chart's note on
+        // its card in the collection once the chart has been closed. The store and the log are put back after.
+        {
+          const words=context.test.centuryWords(era),log=context.test.eraLogs[era],was={runs:log.runs,bestRow:log.bestRow},store=new Map(saved);
+          // Every voice is read over the atlas's: a century with no lore of its own must not say the atlas's.
+          const atlas=context.test.centuryWords(5);
+          assert(words.chapterLines!==atlas.chapterLines&&words.chartNotes!==atlas.chartNotes,'Century '+era+' never speaks the atlas\'s lines or notes as its own');
+          assert.deepEqual(context.test.plateWords().chartNotes,words.chartNotes,'Century '+era+' says on its sheet the notes its leaf keeps');
+          const leafNow=()=>{context.test.openCatalogue();const html=element('catalogue-body').innerHTML;context.test.closeCatalogue();return html;};
+          if(words.chapterLines){
+            const annals=context.test.centuryAnnals(era),rows=words.chapterRows;
+            assert.equal(annals.length,words.chapterLines.length,'Century '+era+' keeps a place for every curator\'s line');
+            log.runs=0;log.bestRow=0;
+            assert(context.test.centuryAnnals(era).every(a=>!a.reached)&&!leafNow().includes(words.chapterLines[0].slice(0,24)),'Century '+era+' keeps no line before a run has been flown on it');
+            log.runs=1;log.bestRow=rows;
+            const kept=context.test.centuryAnnals(era),html=leafNow();
+            assert(kept[0].reached&&kept[1].reached&&!kept[2].reached,'Century '+era+' keeps the lines of the chapters its best row has reached, and no further');
+            assert(html.includes('cat-annals')&&html.includes(words.chapterLines[1].slice(0,24))&&!html.includes(words.chapterLines[2].slice(0,24)),'Century '+era+' prints the lines it keeps on its Record');
+          }
+          // A blocked store keeps no chart as met, so there is nothing for the card to carry.
+          if(words.chartNotes&&!storageBlocked){
+            const raw=words.chartNotes[0],tail=(raw.includes(': ')?raw.split(': ').slice(1).join(': '):raw).toLowerCase(),carries=i=>i.seen&&i.gloss&&i.gloss.toLowerCase().includes(tail);
+            assert(!page.collection.items().some(carries),'Century '+era+' shows no chart\'s note before the chart is met');
+            context.test.handFor('caveAnimal')(0);
+            assert(page.collection.items().some(carries),'Century '+era+' keeps a chart\'s note on its card once the chart is met');
+          }
+          log.runs=was.runs;log.bestRow=was.bestRow;saved.clear();for(const [k,v] of store)saved.set(k,v);
+        }
       }
       context.test.handleInput();context.test.render(1/60);
       context.test.leaveEra();
@@ -1734,6 +1765,24 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.test.heirloomMask(),0,'A century\'s own sheet carries none of the heirlooms');
       context.test.leaveEra();context.test.newWorld();
       for(const era of [1,2,3,4,6,7,8])if(logs[era])logs[era].won=saved[era]||0;
+    }
+    // The atlas keeps what it says on its own Record as well: a traced figure's note under its name in the
+    // Asterismi register, and each chapter's line once a run has reached the chapter (its ledger's deepest).
+    {
+      const L=context.test.ledger,words=context.test.plateWords(),was={deep:L.deepestChapter,figures:L.constellations};
+      const record=()=>{context.test.openCatalogue();const html=element('catalogue-body').innerHTML;context.test.closeCatalogue();return html;};
+      const said=(list,i)=>list[i].slice(0,24);
+      assert.equal(words.chapterLines.length,4,'The atlas opens each of its four chapters with a line');
+      assert.equal(words.chartNotes.length,context.test.CONSTELLATIONS.length,'Every figure of the atlas carries a note');
+      L.deepestChapter=0;L.constellations={};
+      let html=record();
+      assert(!html.includes(said(words.chapterLines,0))&&!html.includes(said(words.chartNotes,0)),'The atlas keeps no line or note before a run has met it');
+      L.deepestChapter=2;L.constellations={[context.test.CONSTELLATIONS[0].name]:1};
+      html=record();
+      assert(html.includes(said(words.chapterLines,1))&&!html.includes(said(words.chapterLines,2)),'The atlas keeps the lines of the chapters reached, and no further');
+      assert(html.includes(said(words.chartNotes,0))&&!html.includes(said(words.chartNotes,1)),'The atlas keeps a figure\'s note once the figure is traced, and no other');
+      assert(html.includes(context.test.SIGNATURES[5].why.slice(0,24)),'The atlas says on its Record what its feat stands for');
+      L.deepestChapter=was.deep;L.constellations=was.figures;
     }
     context.test.enterEra('rock');
     context.test.enterEra('ceiling');

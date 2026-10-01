@@ -92,7 +92,10 @@ const ASTRO_FIGURES=[['الدب الأكبر','THE GREATER BEAR'],['الجبار
   ['الشجاع','THE BRAVE ONE'],['الفرس الأعظم','THE GREATER HORSE'],['المرأة المسلسلة','THE CHAINED WOMAN'],['السلياق','THE LYRE'],['العقاب','THE EAGLE'],['ذات الكرسي','SHE OF THE THRONE']];
 // The star names the rete's pointers carry: Arabic names still read, most of them, in the Latin the atlas
 // inherited. Rigel, the Giant's foot, is always the first a run names, after the signature sheet in the era file.
-const ASTRO_STARS=[['رجل الجبار','RIGEL · THE GIANT’S FOOT'],['منكب الجوزاء','BETELGEUSE · THE SHOULDER'],['الدبران','ALDEBARAN · THE FOLLOWER'],['العيوق','CAPELLA'],
+// Betelgeuse is a hand, yad al-jawzāʾ, the hand of the figure the Arabs saw in Orion before the Giant, and
+// not a shoulder: the star has a shoulder-name too, mankib al-jawzāʾ, but the Latin came from the hand, its
+// y read as a b by a medieval copyist (Kunitzsch).
+const ASTRO_STARS=[['رجل الجبار','RIGEL · THE GIANT’S FOOT'],['يد الجوزاء','BETELGEUSE · THE HAND'],['الدبران','ALDEBARAN · THE FOLLOWER'],['العيوق','CAPELLA'],
   ['النسر الواقع','VEGA · THE SWOOPING EAGLE'],['النسر الطائر','ALTAIR · THE FLYING EAGLE'],['قلب الأسد','REGULUS · THE LION’S HEART'],['السماك الرامح','ARCTURUS'],
   ['الشعرى','SIRIUS'],['السماك الأعزل','SPICA'],['ذنب الدجاجة','DENEB · THE HEN’S TAIL'],['الفرد','ALPHARD · THE SOLITARY']];
 // The five wandering stars (kawkab sayyār), in the order of their spheres from Saturn inward, as a zīj
@@ -1060,7 +1063,7 @@ defineVoice('astrolabe',{
     'Isfahan, 964. Al-Sufi looks again at every star Ptolemy listed and grades its brightness by his own eye.',
     'Cairo, c. 1027. Ibn al-Haytham proves with geometry that light runs to the eye in straight lines.',
     'Valencia, 1085. Al-Sahli makes a brass globe of the sky: stars punched as points, no colour anywhere.',
-    'Maragha, 1259. Al-Tusi’s observatory: a great library, and a quadrant set in a wall, roughly forty metres, it is said.',
+    'Maragha, 1259. Al-Tusi’s observatory: a great library, and a quadrant built into a wall along the meridian.',
     'Samarkand, 1428. Ulugh Beg cuts his sextant into the hill itself, so the arc can never move.'
   ],
   // A note for each figure as it is set: one thing its Arabic names still carry.
@@ -1073,7 +1076,7 @@ defineVoice('astrolabe',{
     'Deneb is dhanab, the tail: the tail of the hen.',
     'Alphard is al-fard, the solitary one, alone in an empty part of the sky.',
     'Markab is the saddle; Scheat, the upper arm: names still read off the Arabic.',
-    'Al-Sufi notes a little cloud beside the Chained Woman: the first written record of another galaxy.',
+    'Al-Sufi notes a little cloud beside the Chained Woman: the oldest surviving record of what we now know is another galaxy.',
     'Vega is from al-nasr al-waqi, the swooping eagle.',
     'Altair is from al-nasr al-tair, the flying eagle.',
     'Dhat al-kursi, she of the throne. The astrolabe hangs from a throne too.'
@@ -1217,7 +1220,7 @@ defineCentury(4,{
       const f=astroFihrist(),out=[];
       ASTRO_STARS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.stars[i],count:f.stars[i]||0,
         cond:'Hold close by a first- or second-greatness star until its scale is struck whole.',art:()=>astroFihristStarArt(i)}));
-      ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.figures[i],count:f.figures[i]||0,
+      ASTRO_FIGURES.forEach(([ar,en],i)=>out.push({name:ar,latin:en,gloss:centuryChartNote(4,i,en),seen:!!f.figures[i],count:f.figures[i]||0,
         cond:'Trace the figure’s whole constellation in one flight.',art:()=>astroFihristFigureArt(i)}));
       ASTRO_PLANETS.forEach(([ar,en],i)=>out.push({name:ar,latin:en,seen:!!f.planets[i],count:f.planets[i]||0,
         cond:'Hold a wandering star until it is named, rather than a fixed one.',art:()=>astroFihristPlanetArt(i)}));

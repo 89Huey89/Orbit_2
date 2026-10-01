@@ -33,8 +33,9 @@ cave was sealed shut before it could be lost.
   Chinese and Japanese guest-star records assembled by J. J. L. Duyvendak in 1942 led to its
   identification with the Crab Nebula — a Bureau entry doing real astrophysical work nine centuries
   later, and the clearest evidence this era's record-keeping has ever produced of its own value.
-- **The imperial Bureau of Astronomy** — Sitianjian (司天監) under the Tang and Song, Qintianjian
-  (欽天監) from the Yuan — continuous observation, calendar production, and the reading of
+- **The imperial Bureau of Astronomy** — Taishiju (太史局) when the Dunhuang chart was drawn,
+  renamed Sitiantai (司天臺) in 758, Sitianjian (司天監) under the Song, Qintianjian
+  (欽天監) from the Ming — continuous observation, calendar production, and the reading of
   celestial events as portents of state affairs, across dynasties into the twentieth century. This
   is the institution this era's whole grammar answers to, not a single astronomer's atlas.
 - **The Mawangdui silk comet atlas**, a Han-dynasty tomb manuscript sealed at Changsha in 168 BCE —

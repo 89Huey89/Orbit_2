@@ -24,8 +24,30 @@ defineVoice('atlas',{
   chartVerb:'traced',
   chartNames:null,
   // Lore a plate may keep for itself: a line set on the sheet as each chapter opens, and a note under a
-  // chart as it closes. The atlas keeps none; its chapters and charts say what they are by their names.
-  chapterLines:null,chartNotes:null,
+  // chart as it closes, both in the curator's English and both kept on the catalogue once met. The atlas's
+  // four lines tell its own century in order, Apian's wheels to Galileo's glass, the calendar reform the
+  // ephemeris double-dates among them; its twelve notes say where each figure comes from, and say plainly of
+  // the four it invented that they are its own (docs/KNOWLEDGE-AUDIT.md, §3.1).
+  chapterLines:[
+    'Ingolstadt, 1540. Peter Apian prints the heavens with paper wheels that turn, to find where each planet stands.',
+    '1572. A new star flares in Cassiopeia. Tycho Brahe shows it lies beyond the Moon: the heavens can change.',
+    '1582. Ten days are struck from October, to bring the calendar back into step with the Sun.',
+    'Padua, 1610. Four small stars circle Jupiter, and Galileo names them for the Medici: not everything circles the Earth.'
+  ],
+  chartNotes:[
+    'Acus, the Needle, is this atlas’s own figure. Chart-makers cut many such; the sky was fixed at eighty-eight in 1922.',
+    'The Sail was still part of Argo, the ship, in 1603. Lacaille cut the ship into keel, stern and sails in the 1750s.',
+    'Lyra is one of Ptolemy’s forty-eight figures. Its brightest star is Vega, lettered α Lyrae after Bayer.',
+    'Ptolemy set two crowns among his forty-eight, a northern and a southern; the northern is Ariadne’s.',
+    'Phoenix is one of twelve southern figures from the Dutch voyage of 1595–97, first printed in an atlas by Bayer in 1603.',
+    'Tucana, the toucan, is a bird of the Americas. Its stars never rise over Europe, so Ptolemy’s list has none of them.',
+    'Serpens is the one figure cut in two: its head and its tail lie either side of Ophiuchus, who holds it.',
+    'Argo, Jason’s ship, was the largest of Ptolemy’s figures. It was later broken up, and no longer counts as one.',
+    'Pavo, the peacock, came home with the same Dutch voyage. Its brightest star is called, simply, the Peacock.',
+    'Penna, the Quill, is this atlas’s own. Bayer took his stars’ places from the catalogue Tycho Brahe measured by eye.',
+    'Laterna, the Lantern, is this atlas’s own. Tycho fixed a thousand stars without a telescope, to about a minute of arc.',
+    'Phalæna, the Moth, is this atlas’s own. Bayer printed a bee in the south; it survives as Musca, the one insect left in the sky.'
+  ],
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',
   observations:{},
   pressures:DIFFICULTY_LABELS,
@@ -76,8 +98,9 @@ defineVoice('atlas',{
   held:{choose:'Aim for TIRO, ADEPTUS, or MAGISTER — your first orbit sets the pressure.',dry:'The nib is running dry. Hold this orbit to re-charge it, or find a star.',sling:'One lap builds speed. Tap sooner for less. Perfect landings keep it.',release:'Tap when the pricked line skims the next orbit’s rim.',bend:'Vortices bend your flight. Follow the curve; give the dark eye room.'},
   // A hazard's Latin name, taught once per kind on the sheet itself (see frame.js's own naming pass) —
   // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
-  // its own has somewhere to put a different word instead.
-  hazards:{vortex:HAZARD_KINDS.vortex.latin,flare:HAZARD_KINDS.flare.latin,wind:HAZARD_KINDS.wind.latin},
+  // its own has somewhere to put a different word instead. The English a player needs is set beside it,
+  // as every other century's pair of names reads (docs/KNOWLEDGE-AUDIT.md, §3.1).
+  hazards:{vortex:HAZARD_KINDS.vortex.latin+' · A WHIRLPOOL',flare:HAZARD_KINDS.flare.latin+' · A SUNSPOT',wind:HAZARD_KINDS.wind.latin+' · A WIND'},
   // The bare currency word, without the ARMED/HELD suffix a capsule's own pickup toast (below) adds to
   // it — kept apart from POWERUP_LABELS itself so a plate can rename what is carried without touching
   // the internal type strings every capsule handler already keys on.

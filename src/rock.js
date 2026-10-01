@@ -2588,7 +2588,7 @@ defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
       return ROCK_ANIMALS.map((a,i)=>({
         name:a.name,
         latin:'',
-        gloss:(VOICES.rock.chartNotes||[])[i]||'',
+        gloss:centuryChartNote(1,i,a.name),
         seen:!!cave.animals[i],
         count:cave.animals[i]||0,
         cond:'Close its cluster of three lights in a run on the Rock.',
@@ -2633,7 +2633,7 @@ defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
   heirloom:{
     name:'THE BULL OF THE HALL',
     latin:'TAURUS',
-    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, along the zodiac of the atlas’s own construction where Taurus stands — the oldest bull in the sky, with Aldebaran for its eye.',
+    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, along the zodiac of the atlas’s own construction where Taurus stands, with Aldebaran for its eye — the oldest bull in the sky, if the dots on its shoulder are the Pleiades, as a few have read them.',
     art:()=>rockCollectionArt(0)
   }
 });

@@ -1323,7 +1323,7 @@ defineCentury(8,{leaf:{heading:'SELF-LOG',subs:['','','']},
         art:PRB_CLASS_ICON[fam]
       }));
       PRB_SYSTEMS.forEach(([name,dist],i)=>items.push({
-        name,latin:dist,gloss:'SURVEYED · A DAUGHTER ASSIGNED',
+        name,latin:dist,gloss:centuryChartNote(8,i,name)||'SURVEYED · A DAUGHTER ASSIGNED',
         seen:!!(r.systems&(1<<i)),cond:'Survey this system whole and send a daughter to it.',
         art:PRB_SYSTEM_ICON
       }));

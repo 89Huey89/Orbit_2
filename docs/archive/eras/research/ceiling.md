@@ -180,12 +180,12 @@ marked **(recalled)**.
 | Ocean family | 𓈗 | *mw* | water | attested (base sign; family-naming is constructed) |
 | Crater family | — | — | pockmarked disc | constructed, no attested source |
 | Ringed family | 𓆓𓅃 (winged sun-disc, Behdety) | *bḥdty* | the winged disc of Horus of Edfu | attested motif, applied by analogy — not literally "rings" |
-| Ice family | 𓌡𓏏 | *ḥḏ* | white / silver | attested |
-| Dune family | 𓊪𓏏 | *dšrt* | "the red land" — the desert, as opposed to *kmt*, "the black land" | attested |
+| Ice family | 𓌉𓆓 | *ḥḏ* | white / silver | attested — *corrected 2026-09-30: the group first given here, 𓌡𓏏 (T21, X1), reads wꜥt, "one"; ḥḏ is the mace T3 with ḏ (docs/KNOWLEDGE-AUDIT.md)* |
+| Dune family | 𓂧𓈙𓂋𓏏𓈉 | *dšrt* | "the red land" — the desert, as opposed to *kmt*, "the black land" | attested — *corrected 2026-09-30: 𓊪𓏏 (Q3, X1) is pt, "sky"* |
 | Volcanic family | (Sekhmet) | *Sḫmt* | the fire/plague goddess, an aspect of the Eye of Ra | attested deity, applied by analogy |
 | Storm family | (Set) | *Stẖ* | god of storms, chaos, foreign deserts | attested |
 | Slingshot star | (New Year phrase) | *wp rnpt* | "opener of the year" — the moment of Sirius/Sopdet's heliacal rising, which reset the civil calendar | attested phrase, applied by analogy (renewal/speed) |
-| Scutum (shield) | 𓎼𓅓 | *ikm* | shield | attested |
+| Scutum (shield) | 𓇋𓎡𓅓 | *ikm* | shield | attested — *corrected 2026-09-30: 𓎼𓅓 (W11, G17) is gm, "find"* |
 | Repulsa (reflector) | — | *ḫsf* | "to repel, turn back" — common in temple texts ("repelling the enemies of Ra") | (recalled) |
 | Inkwell | — | *gsti* | scribe's palette | (recalled) |
 | Attractor | Apep / Apophis | *ꜥꜣpp* | the serpent that swallows the sun | attested — see DANGERS.md |
