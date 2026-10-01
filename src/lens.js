@@ -1487,7 +1487,7 @@ function lensFloater(f,fb,alpha){
   lensNoteMark(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left,hand,y,alpha*.85);
 }
 function lensTally(t,tb,alpha){
-  const size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale),hand=Math.max(4.5,6*scale);
+  const [size,size2]=tallySizes(),hand=Math.max(4.5,6*scale);
   ctx.fillStyle=`rgba(${lensNoteInk(tb.y)},${alpha})`;ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';ctx.fillText(t.line1,tb.x,tb.y);
   ctx.font=plateFace(size2,'text','italic');ctx.fillText(t.line2,tb.x,tb.y+size*.98);
   lensNoteMark(tb.x+(t.left?-hand*1.5:hand*1.5),tb.y-hand*.62,t.left,hand,tb.y,alpha*.85);

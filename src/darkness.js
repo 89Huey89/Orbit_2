@@ -392,9 +392,9 @@ function floaterLine(f,left,h,kind){
   // re-set at the end of a frame, after this frame's lettering has declared its ground, so the register can
   // be one note short at exactly the moment a floater or a tally is choosing its line. Asked only through
   // it, an era's score settled straight across the note written beside the same landing.
-  const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale);
+  const inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale),[tally1,tally2]=tallySizes(),size=kind==='tally'?tally1:Math.max(11,13*scale);
   let w;ctx.save();ctx.font=plateFace(size,'text','italic');
-  if(kind==='tally'){w=ctx.measureText(f.line1).width;ctx.font=plateFace(Math.max(9.5,11*scale),'text','italic');w=Math.max(w,ctx.measureText(f.line2).width);}
+  if(kind==='tally'){w=ctx.measureText(f.line1).width;ctx.font=plateFace(tally2,'text','italic');w=Math.max(w,ctx.measureText(f.line2).width);}
   else w=f.markWidth!=null?f.markWidth:ctx.measureText(f.text).width;
   ctx.restore();
   const l=left?inner:W-inner-hand*2.4-w,r=left?inner+hand*2.4+w:W-inner;
