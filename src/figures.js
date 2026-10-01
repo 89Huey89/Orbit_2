@@ -840,6 +840,17 @@ function drawChargeDevice(kind,r,rgb,pen){
 // The species a full observation names, one per geological family: the atlas's own Latin for what the
 // specimen shows, in the manner of the century's descriptive names rather than any later nomenclature.
 const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus annulatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
+// The room a century's frontispiece has for its emblem and its name: under the lore set in the DOM above it
+// and over the opening three below. Read every frame the frontispiece stands, which is the only time it is
+// drawn, so a turned phone is followed. A short sheet can leave it empty or less; each hand fits into it
+// from the bottom up and drops the emblem, then the name, rather than set either over the words or the bodies.
+function eraTitleRoom(loreId){
+  let top=H*.13;
+  try{const e=document.getElementById(loreId),r=e&&e.getBoundingClientRect?e.getBoundingClientRect():null,gr=game.getBoundingClientRect?game.getBoundingClientRect():null;
+    if(r&&gr&&r.height>0)top=r.bottom-gr.top+6;}catch(_){}
+  let bottom=H*.36;for(const n of world.nodes)if(n.difficultyChoice)bottom=Math.min(bottom,sy(n.y)-n.cap*scale-6);
+  return{top,bottom};
+}
 // The opening three are named in each century's own voice — TIRO, a moon, a mansion, a mission — but the
 // pressure each one sets is something the player acts on, so every hand glosses it in English beneath its
 // own name, in its own face and ink, and only until the choice is made.

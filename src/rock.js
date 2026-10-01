@@ -2150,23 +2150,32 @@ function rockPaintRelight(){
 let rockTitleFade=1;
 function rockTitleMark(){
   const ready=world.state==='ready';rockTitleFade=ready?1:Math.max(0,rockTitleFade-.03);if(rockTitleFade<=0)return;
-  const x=W/2,y=H*.265,R=Math.min(W*.1,46*scale),a=rockTitleFade;
+  // The mark and the name are fitted from the bottom up into the room between the lore and the opening three
+  // (eraTitleRoom); the crowd of hands and the animals keep the wall's own fixed places, as they always had.
+  const x=W/2,a=rockTitleFade,{top,bottom}=eraTitleRoom('rock-lore-open'),ts=Math.min(22,W*.052),titleY=bottom-ts*.6-4,
+    R0=Math.min(W*.1,46*scale),R=Math.min(R0,(titleY-ts*.6-10-top)/2.1),y=titleY-ts*.6-10-R*1.05,cy=H*.265;
   ctx.save();
-  for(let i=0;i<32;i++){const t=i/32*TAU;for(let k=0;k<2;k++)rockDot(ctx,x+Math.cos(t)*R,y+Math.sin(t)*R,4.2*scale,ink.rock.redOchre,a,i+700);}
-  // The spiral is pale: fresh stone struck out of the darkened face.
-  for(let t=0,i=0;t<=1;t+=1/70,i++){const q=t*2.6*TAU+.3,r=R*.72*t;rockDot(ctx,x+Math.cos(q)*r,y+Math.sin(q)*r,1.9*scale,ink.rock.kaolin,a*.9,i+40,true);}
-  rockHand(x-R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,false);rockHand(x+R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,true);
+  if(R>=14){
+    for(let i=0;i<32;i++){const t=i/32*TAU;for(let k=0;k<2;k++)rockDot(ctx,x+Math.cos(t)*R,y+Math.sin(t)*R,4.2*scale,ink.rock.redOchre,a,i+700);}
+    // The spiral is pale: fresh stone struck out of the darkened face.
+    for(let t=0,i=0;t<=1;t+=1/70,i++){const q=t*2.6*TAU+.3,r=R*.72*t;rockDot(ctx,x+Math.cos(q)*r,y+Math.sin(q)*r,1.9*scale,ink.rock.kaolin,a*.9,i+40,true);}
+    rockHand(x-R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,false);rockHand(x+R*1.75,y+R*.15,R*.62,ink.rock.redOchre,a*.85,true);}
   // Your cave: every hand that has come this far before is pressed round the mark, the most recent
   // strongest, in a widening crowd the way hands gather round a panel at Gargas or Cueva de las Manos;
   // and every animal ever marked here stands faint along the sides of the wall, one for each kind,
   // drawn more firmly the more often it has been found.
   if(typeof rockCaveView==='function'){const cave=rockCaveView(),runs=cave.runs||[],n=runs.length;
-    for(let i=0;i<n&&i<60;i++){const j=n-1-i,hr=rockHash(7,j,1),ring=R*(2.25+Math.floor(i/10)*.5),ang=-Math.PI/2+(hr-.5)*.5+(i%10)/10*TAU+Math.floor(i/10)*.31;
-      const hx=x+Math.cos(ang)*ring*1.15,hy=y+Math.sin(ang)*ring*.62;if(Math.abs(hy-y)<R*.5&&Math.abs(hx-x)<R*2.2)continue;
-      ctx.save();ctx.translate(hx,hy);ctx.rotate((hr-.5)*.8);for(let q=0;q<2;q++)rockHand(0,0,R*(.5-Math.min(.2,i*.006)),hr<.25?ink.rock.manganese:ink.rock.redOchre,a*(1-Math.min(.55,i*.014)),hr<.5);ctx.restore();}
+    for(let i=0;i<n&&i<60;i++){const j=n-1-i,hr=rockHash(7,j,1),ring=R0*(2.25+Math.floor(i/10)*.5),ang=-Math.PI/2+(hr-.5)*.5+(i%10)/10*TAU+Math.floor(i/10)*.31;
+      const hx=x+Math.cos(ang)*ring*1.15,hy=cy+Math.sin(ang)*ring*.62;if(Math.abs(hy-cy)<R0*.5&&Math.abs(hx-x)<R0*2.2)continue;
+      ctx.save();ctx.translate(hx,hy);ctx.rotate((hr-.5)*.8);for(let q=0;q<2;q++)rockHand(0,0,R0*(.5-Math.min(.2,i*.006)),hr<.25?ink.rock.manganese:ink.rock.redOchre,a*(1-Math.min(.55,i*.014)),hr<.5);ctx.restore();}
     const kinds=Object.keys(cave.animals||{}).map(Number).filter(k=>ROCK_ANIMALS[k]).sort((p,q)=>p-q);
     kinds.forEach((k,idx)=>{const m=kinds.length,span=Math.min(W*.8/Math.max(3,m),84*scale),cx=W/2+(idx-(m-1)/2)*span*1.05,cy=H*.505+(idx%2)*span*.12,side=idx%2?1:-1,cnt=cave.animals[k];
       rockPaintAnimal(ctx,ROCK_ANIMALS[k],1000+k,p=>[cx+(p[0]-.5)*span*-side,cy+(p[1]-.25)*span],span,1,Math.min(1,.5+.25*cnt),ink.rock.redOchre,a*Math.min(1,.6+.15*cnt));});}
+  // The century's name, in the curator's English as everything the wall sets is, under the mark — as every
+  // century on the frontispiece is named — and chalked pale so it reads on the darkest reach of the wall.
+  if(titleY-ts*.6>=top){ctx.font=plateFace(ts,'sc');ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+    ctx.strokeStyle=`rgba(20,16,12,${(.55*a).toFixed(3)})`;ctx.lineWidth=3;ctx.strokeText('THE ROCK',x,titleY);
+    ctx.fillStyle=`rgba(${ink.rock.kaolin},${(.92*a).toFixed(3)})`;ctx.fillText('THE ROCK',x,titleY);}
   ctx.restore();
 }
 
@@ -2368,7 +2377,7 @@ defineVoice('rock',{
   endless:true,
   ended:'The torch gutters. Tally {score}. Deepest {best}. Strike again.',
   won:'Midwinter. The sunrise comes down the passage into the chamber. Tally {score}. Strike again, or return to the atlas.',
-  unrecorded:'A PREVIEW · NOT KEPT',
+  unrecorded:'ERA PREVIEW · NOT RECORDED',
   newRecord:'A NEW DEPTH',
   // The wall's own names for the three fields the atlas prices as a vortex, a flare and a wind-head
   // (HAZARD_KINDS in simulation.js) — taught once per kind, the same as on the atlas, just in the
