@@ -175,7 +175,7 @@ function descentFrame(g){
     // The star's name over the dot, set in the face the wall now letters in, clear of the hand below it and of the
     // body's own ring as the wall comes up round it.
     const named=g.star?descentEase(5.8,6.1,t)*(1-descentEase(6.3+hold,6.6+hold,t)):0;
-    if(named>0){const size=Math.max(15,17*scale),ty=y-Math.max(48,56*scale),word=g.star.title.toUpperCase();
+    if(named>0){const size=Math.max(15,17*scale),ty=y-Math.max(48,56*scale),word=oneStarName(g.star).toUpperCase();
       c.font=plateFace(size,'sc');c.textAlign='center';c.textBaseline='middle';
       c.lineJoin='round';c.lineWidth=Math.max(3,size*.3);c.strokeStyle=`rgba(3,2,1,${(named*.7).toFixed(3)})`;c.strokeText(word,x,ty);
       c.fillStyle=`rgba(232,186,132,${(named*.95).toFixed(3)})`;c.fillText(word,x,ty);}

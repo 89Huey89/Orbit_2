@@ -65,7 +65,7 @@ export function runtime(width,height,storageBlocked=false,reduceMotion=false,see
   const context={console,Math,Date,Uint8ClampedArray,setTimeout:()=>0,performance:{now:()=>0},requestAnimationFrame:fn=>raf.push(fn),document:{hidden:false,getElementById:element,createElement:()=>element('offscreen-'+items.size),addEventListener:(t,fn)=>{events['document:'+t]=fn;}},window:{devicePixelRatio:2,matchMedia:()=>({matches:reduceMotion}),addEventListener:(t,fn)=>{events['window:'+t]=fn;},AudioContext:FakeAudioContext},localStorage:{getItem:k=>{if(storageBlocked)throw Error('blocked');return saved.get(k)??null;},setItem:(k,v)=>{if(storageBlocked)throw Error('blocked');saved.set(k,v);}}};
   vm.createContext(context);vm.runInContext(FAST_GLOBALS,context);vm.runInContext(script+'\nthis.test={get world(){return world},handleInput,groundCollisions,GROUND_FIXED,newWorld,resize,render,showEnd,audio,drawCelestialScene,setPlate,get plateName(){return plateName},setDaily,recordBest,scoreLine,copyScore,reveal,revealNode,revealFlourish,atlasFlourishAt,SWEEP_FULL,penLettering,letteringTime,get dailyOn(){return dailyOn},get dailyDay(){return dailyDay},get dailySeed(){return dailySeed},get difficulty(){return difficulty},get ctx(){return ctx},get regionBlend(){return regionBlend},pageTurn,textAlongArc,figureFor,figAsterism,figFrame,buildFigureLayer,FIGURE_SHAPES,\
 get ledger(){return ledger},get cosmetics(){return cosmetics},cosmetic,activeCosmetic,dailySetup,dailySetupFor,dailyPressPlate,setCosmetic,recordCosmetic,cosmeticItems,COSMETIC_KINDS,UNLOCKS,UNLOCK_BY_ID,unlockMet,unlockedIds,isUnlocked,ledgerStat,ledgerCommit,setInitials,engraverCredit,\
-get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,lensFamily,LENS_FAMILY_YEAR,LENS_EYE_READINGS,LENS_FAMILIES,planetFamily,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,PRB_SYSTEMS,prbStarClass,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,astroQadr,astroDealName,ASTRO_STARS,scrollSchool,scrollOffice,scrollLodge,SCROLL_OFFICES,SCROLL_SCHOOLS,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
+get initials(){return initials},get runMode(){return runMode},get journey(){return journey},get records(){return records},ERA_THRESHOLD,journeyObserve,journeyArm,get eraGrowth(){return eraGrowth},eraRow,paintJourneyMark,ERA_MILESTONES,plateIds:Object.keys(PLATES),plainPlate,buildFrameLayer,applyPlate,plateWords,plateOwns,handFor,relightSurface,eraId,laidPaper,laidSheetFor,paintBackdrop,enterEra,leaveEra,rockCaveRead,rockCaveRecordRun,rockCaveRecordAnimal,rockBest,ROCK_CAVE_KEY,lensRead,lensRecordRun,lensNoteField,lensRegOfRow,lensRegAtY,lensRegAt,lensReach,lensGrowths,LENS_KEY,LENS_CHAPTERS,lensFamily,LENS_FAMILY_YEAR,LENS_EYE_READINGS,LENS_FAMILIES,planetFamily,flyRead,flyRecordRun,flyNoteTarget,flyNoteWorld,FLY_KEY,FLY_CHAPTERS,flyChartValue,prbRead,prbRecordRun,prbNoteSystem,prbNoteClass,prbNoteGen,prbBill,PRB_KEY,PRB_CHAPTERS,PRB_MATS,get prbState(){return prbState},prbHarvest,prbPay,PRB_SYSTEMS,prbStarClass,get PLATE_STYLES(){return PLATE_STYLES},get rings(){return rings},get inkPath(){return world.inkPath},sy,INK_PATH_CAP,openCatalogue,closeCatalogue,renderCatalogue,get catalogueOpen(){return catalogueOpen},get catalogueCentury(){return catalogueCentury},eraLog,CENTURIES,centuryUnlockedIds,signatureEvent,SIGNATURES,journeySigned,ceilingWanderer,astroWanderer,astroQadr,astroDealName,astroRun,ASTRO_STARS,scrollSchool,scrollOffice,scrollLodge,SCROLL_OFFICES,SCROLL_SCHOOLS,centuryKnown,centuryFeatMet,ERAS_KEY,heirloomMask,get eraLogs(){return eraLogs},centuryWords,centuryAnnals,centuryChartNote,CONSTELLATIONS,\
 drawSurveys,get surveys(){return world.surveys},SURVEY_CAP,orbitTangents,nebulaSprite,glossSprite,marginaliaGloss,marginaliaFloor,footerBand,setPlaying,\
 openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay,dailyOpen,dailyDates,dailyLabel,roman,sunPlace,moonAge,MONTHS_LATIN_GEN,get ephemerisOpen(){return ephemerisOpen},get ephMonth(){return ephMonth},get dailyLog(){return dailyLog},get dailyReplay(){return dailyReplay},\
 ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
@@ -2203,12 +2203,12 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
   {
     const t=context.test,LABELS=['attested','plausible reconstruction','gameplay translation'];
     assert.equal(t.oneStarOfRound(1),null,'The first round follows no star');
-    assert.deepEqual([2,3,4,5,6,10].map(r=>t.oneStarOfRound(r).id),['pleiades','sirius','antares','aldebaran','pleiades','pleiades'],'Round two the Pleiades, three Sirius, four Antares, five Aldebaran, then again');
+    assert.deepEqual([2,3,4,5,6,7,11,12].map(r=>t.oneStarOfRound(r).id),['pleiades','sirius','antares','aldebaran','vega','pleiades','vega','pleiades'],'Round two the Pleiades, three Sirius, four Antares, five Aldebaran, six Vega, then again');
     for(const star of t.ONE_STARS)for(let era=1;era<=8;era++){
       const e=star.eras[era],where=star.id+' in era '+era;
       assert(e&&e.line&&e.note&&e.source,'Every century has a line, a note and a source: '+where);
       assert(LABELS.includes(e.label),'Every name carries one of the three evidence labels: '+where+' · '+e.label);
-      assert(e.line.toUpperCase().includes(star.title.replace(/^The /,'').toUpperCase()),'Every line ends on the name the player knows the star by: '+where);
+      assert(e.line.toUpperCase().includes((star.name||star.title).replace(/^The /,'').toUpperCase()),'Every line ends on the name the player knows the star by: '+where);
       // Where no name survives, the line says so, and nothing is set in the century's own script.
       if(/NO NAME/.test(e.line))assert(!e.own&&!e.glyphs&&e.label!=='attested','A star with no surviving name has none invented: '+where);
     }
@@ -2234,12 +2234,34 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     };
     for(let era=1;era<=8;era++){
       assert.equal(dealt(era,0).bodies.length,0,'The first round deals no star: era '+era);
-      for(const rounds of [1,2,3,4]){
+      for(const rounds of [1,2,3,4,5]){
         const {bodies,body,twinBody,claimed}=dealt(era,rounds),star=t.oneStarOfRound(rounds+1),where=star.id+' in era '+era;
         assert.equal(bodies.length,1,'A round that follows a star deals it on exactly one body: '+where);
         assert(body&&!body.difficultyChoice&&body.routeId==null&&(body.type==='still'||body.type==='drift')&&t.astroPlainRow(body.row),'And it is a plain main-line body: '+where);
         assert(!claimed,'Never a body the century has named itself, the Ceiling\'s wanderers or the Astrolabe\'s wandering stars: '+where);
         assert(twinBody&&twinBody.row===body.row,'The star is dealt deterministically, on the same row for the same seed: '+where);
+      }
+    }
+    // Vega comes as one half of a pair, and its round's chart still names it once. The entry is the pair's on the
+    // Record's page and Vega's on the dot; the Scroll writes no other body up as the Weaver Girl, while the River
+    // Drum, Altair's office, stays free; the Astrolabe names no other body al-nasr al-waqi, while Altair, al-nasr
+    // al-tair, may stand on another body of the same chart.
+    {
+      const vega=t.oneStarOfRound(6);
+      assert.equal(vega.title,'Vega and Altair','The sixth round follows the pair');assert.equal(vega.name,'Vega','And its dot is Vega');
+      assert.equal(vega.eras[3].own,'織女','The Scroll names Vega the Weaver Girl');assert.equal(vega.eras[4].own,t.ASTRO_STARS[4][0],'The Astrolabe names it from its own rete');
+      assert(/Altair/.test(vega.eras[3].note)&&/Altair/.test(vega.eras[4].note)&&/Altair/.test(vega.eras[5].note),'And Altair stands in the notes of the centuries that set the pair down together');
+      {
+        const {w,body}=dealt(3,5);let river=0;
+        for(const n of w.nodes){const o=t.scrollOffice(n);assert.notEqual(o[0],'織女','No body but the round\'s own is written up as the Weaver Girl: row '+n.row);
+          assert.equal(o[1],t.scrollSchool(n),'And the office is still one of the body\'s own school');if(o[0]==='河鼓')river++;}
+        assert(body,'The Scroll deals Vega in round six');
+      }
+      {
+        const {w,body}=dealt(4,5);t.astroRun();
+        const others=w.nodes.filter(n=>n!==body),named=others.map((n,k)=>t.astroDealName(n,1+(k&1))).filter(Boolean).map(x=>x.i);
+        assert(others.length>20&&!named.includes(4),'The Astrolabe sets al-nasr al-waqi on no second body in Vega\'s round');
+        assert(named.includes(5),'While Altair, the flying eagle, is still dealt');
       }
     }
     // Landed on, the body is given its century's note and is kept as met and held; the catalogue sets its name.

@@ -874,7 +874,7 @@ Three of the answers this list owed were given the same day, asked one by one:
 *Settled 2026-10-01: one star, eight names.* What each round's layer reveals was answered by the author, taking
 the direction docs/KNOWLEDGE-AUDIT.md §3.3 recommended. The first round reveals nothing: it is the climb. Every
 round after it follows one real star through all eight centuries — round 2 the Pleiades, round 3 Sirius, round 4
-Antares, round 5 Aldebaran, and the four again from round 6 — shown in three places: one body in each century of
+Antares, round 5 Aldebaran, and the four again from round 6 (round 6 became Vega on 2026-10-01; see below) — shown in three places: one body in each century of
 the round *is* the star, named in that century's own hand and given a note in its curator's voice; the descent that
 ends the round letters the hand's ochre dot with the star's name; and a page of the catalogue keeps the names met.
 Only attested names are set; where a culture left none, the note says so and hedges as the Rock's notes do. The
@@ -890,6 +890,13 @@ so it names the star the closing round followed, held 1.2 s longer than an unnam
 all, closing round 1, ends on an unnamed dot as before — the surprise §9.2 asks of it is kept, and the name arrives
 as the end of a round flown for it. What is met is kept in `orbit.star.v1` and set out on the atlas's Record, one
 section a star and one line a century in that century's script. Nothing in the simulation changed.
+*Extended 2026-10-01: Vega and Altair.* A fifth entry, the Weaver Girl and the Herd Boy (KNOWLEDGE-AUDIT.md §3.2
+item 8), makes round 6 Vega's and the cycle five long: rounds 2–6 the Pleiades, Sirius, Antares, Aldebaran, Vega, and
+the five again from round 7. The pair is one entry and the round follows one body, Vega; Altair stands in the notes.
+The Scroll's offices skip 織女 and the Astrolabe's star names skip al-nasr al-wāqiʿ in that round, so no second body
+carries the round's name, while Altair's own office (河鼓) and name (al-nasr al-ṭāʾir) stay free to be dealt
+elsewhere on the same sheet. `orbit.star.v1` keeps one mask per star by id, so a fifth star is an extension, not a
+new shape, and the key is unchanged.
 
 Still owed, and not for an implementer to invent: how the
 Marathon's in-run gates are set — the chapters are paced by knowledge banked over
@@ -973,8 +980,8 @@ stages above.
   clock run back to T-17000.0 Y (time). The traveller is held in orbit through it and the dark held off; the
   replay applies the same grace (`grace` on the log's era entry). Reduced motion turns the page plainly. Seen at
   430×932 with `npm run shots -- descent`.
-- *One star, eight names* (2026-10-01, §9.2): what each later round reveals — the Pleiades, Sirius, Antares and
-  Aldebaran in turn, one body a century named in its own hand with its note, the round's closing descent lettering
+- *One star, eight names* (2026-10-01, §9.2): what each later round reveals — the Pleiades, Sirius, Antares,
+  Aldebaran and Vega (with Altair) in turn, one body a century named in its own hand with its note, the round's closing descent lettering
   the dot, and the atlas's Record keeping what was met (`src/onestar.js`, `orbit.star.v1`,
   `research/one-star.md`). Seen at 430×932 with `npm run shots -- onestar` and `descent-star`.
 - *Readings*: a Chronicle and an Endless reading of every century, the atlas's own Chronicle (TO THE PRESS)

@@ -94,8 +94,10 @@ function scrollLodge(n){const du=((Math.floor(-(+n.y||0)/SCROLL_DU)%365)+365)%36
 // The office a held body is written up as: its school first, from its row, and then, seeded by the body,
 // one of that school's offices from the palace of the lodge it is held in — so the colour the boundary
 // closes in and the school the caption names are always the same school, and the name is one that school
-// truly set down in that quarter of the sky.
-function scrollOffice(n){const s=scrollSchool(n),p=Math.floor(scrollLodge(n)/7),c=SCROLL_OFFICES.filter(o=>o[1]===s&&o[2]===p);
+// truly set down in that quarter of the sky. A round that follows the Weaver Girl (src/onestar.js) keeps her
+// name for her own body, so no second body is written up under it.
+function scrollOffice(n){const s=scrollSchool(n),p=Math.floor(scrollLodge(n)/7),all=SCROLL_OFFICES.filter(o=>o[1]===s&&o[2]===p),
+    free=typeof oneStarScrollTaken==='function'?all.filter(o=>!oneStarScrollTaken(o[0])):all,c=free.length?free:all;
   return c[Math.floor(tileHash(n.seed|0,n.id|0,17)*c.length)];}
 
 // ---------- Small tools ----------
