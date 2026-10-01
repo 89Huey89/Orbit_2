@@ -505,11 +505,10 @@ was not yet played for real, so there was nothing to keep), and the daily keeps 
 writes Free Play's record, a pressure's personal best (the ledger counts it under `journey`) or a
 century's own record (`caveRun`). Free Play is re-pointed: each era is an unlockable of the catalogue's
 shape (`ERA_UNLOCKS`) whose condition reads `journey.unlocked`, answered by `ledger.js`'s own `unlockMet()`
-and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which is **off** by choice: every century stays open to Free Play while
-the climb is still being tuned. (An earlier note here said the frontier could not pass VI; it could — every
-century has a plate, and stage 6's acceptance test climbs all eight.) Turning
-it on is one line; LINKING.md's "first chapter of an era not yet reached stays open as a proof" is not
-built and belongs with it. `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
+and consulted by the doors and `enterEra()` — behind `JOURNEY_GATES_DOORS`, which was **off** by choice while the climb was tuned and is on since
+2026-10-01, with the proof chapter (§9.1, §10). (An earlier note here said the frontier could not pass VI; it could — every
+century has a plate, and stage 6's acceptance test climbs all eight.) LINKING.md's
+"first chapter of an era not yet reached stays open as a proof" is built with it. `orbit.ledger.v1`'s migration was already done (v1 → v2, `readLedger()`).
 
 **What is built.** The plate-declares-itself seam (§6.1), `eraId()` and `data-era`, the Ceiling fully
 entsandboxed (L7, nought reads left), the caches keyed, and the singleton-to-map conversions. **What is
@@ -832,8 +831,8 @@ each is owed its own pass (§10, Open).
   its place as a body of the wall, not as the easiest pressure.
 - **The Journey gates Free Play, with a proof chapter.** `JOURNEY_GATES_DOORS` is to be turned on once the
   proof is built: a century the Journey has reached is open in Free Play, and of one not yet reached only the
-  first chapter is open, as `LINKING.md`'s door-access line planned. The proof chapter is not built yet, and
-  the gate stays off until it is, so no door is ever simply shut.
+  first chapter is open, as `LINKING.md`'s door-access line planned, so no door is ever simply shut. *Built
+  and turned on 2026-10-01* (§10).
 
 ### 9.2 · The circle amended, and the modes it opens · settled by the author, 2026-09-30
 
@@ -914,8 +913,20 @@ stages above.
 
 - *Stage 3*: era state and the Journey document (`src/journey.js`); contextual records in
   `orbit.records.v1`, one per era and reading, with the Final Frontier's apart; the door mechanism
-  (`eraOpen`, `ERA_UNLOCKS`) built and held off by `JOURNEY_GATES_DOORS=false`. No old records are
+  (`eraOpen`, `ERA_UNLOCKS`), on since 2026-10-01 with the proof chapter below. No old records are
   carried over: the game had no players to carry them for.
+- *The Flyby's vacuum as measurement* (§9.1, 2026-10-01): the shipped ground already had the parallax field,
+  the DSN traces, the cosmic rays and the shape-model mesh; what LOS lacked is now built (`flyLock()` in
+  `src/flyby.js`): the margin traces go flat over the edge's reach, and past lock (`FLY_LOCK_LOST`) the AOS
+  turns LOS, the traces stop and the stars freeze in their parallax. Shots: `flyby-los`.
+- *The doors* (§9.1, 2026-10-01): `JOURNEY_GATES_DOORS` is on. A century the Journey has reached is flown
+  whole in Free Play; a door to one not yet reached stays on the frontispiece, named `THE SCROLL · FIRST
+  CHAPTER`, and opens a proof (`eraProof()` in `src/journey.js`): the Chronicle reading only, won at the end of
+  the first chapter (`chapterRows` as the run's `goalRow`), with the atlas's fanfare and a leaf of its own
+  that says the rest opens once the Journey reaches it. A proof won is not the Chronicle flown
+  (`chronicleWon()`): it counts toward no century's `won`, makes no century known, and plays no finale. Free
+  Play's record and the century's catalogue are kept as on any run. The Ceiling's chapter is an hour, so its
+  proof is three rows.
 - *Stage 4*: the shared endless driver, `world.difficultyDriver()`, on every Endless reading and the
   Journey; `probe.mjs --flat` reads the chart as it was before it.
 - *Stage 5*: the in-run change of century, §1.3 steps 7–13 — NEXT LANDING and the ringed body, the growing
@@ -1001,7 +1012,3 @@ stages above.
   its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
   `ENDLESS-HARD.md` and not built.
-- **The doors** (§9.1): the gate is built and off; it is turned on once the proof chapter of an unreached
-  century is built.
-- **The Flyby's vacuum as measurement** (§9.1): check the shipped ground and LOS against the settled
-  reading and fill in what it lacks.

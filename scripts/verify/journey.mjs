@@ -126,10 +126,10 @@ export async function runJourneyChecks(){
     assert.deepEqual(JSON.parse(JSON.stringify(junk.j.records)),{free:{}},'A malformed record document reads as none');
   }
   {
-    // Free Play's doors: each century an unlockable reading the Journey's document, behind a gate that is off.
+    // Free Play's doors: each century an unlockable reading the Journey's document, behind a gate that ships on.
     const {j}=load({'orbit.journey.v1':JSON.stringify({era:3,unlocked:[1,2,3]})},{unlockMet:e=>!!e.test()});
-    for(let era=1;era<=8;era++)assert.equal(j.eraOpen(era),true,'Every door stays open while the gate is off: '+era);
-    assert.deepEqual([1,2,3,4,5,6,7,8].filter(e=>j.eraOpen(e,true)),[1,2,3,5],'Gated, a century is open once the Journey has reached it, and the atlas always');
+    assert.deepEqual([1,2,3,4,5,6,7,8].filter(e=>j.eraOpen(e)),[1,2,3,5],'Gated, a century is open once the Journey has reached it, and the atlas always');
+    for(let era=1;era<=8;era++)assert.equal(j.eraOpen(era,false),true,'Ungated, every door is open: '+era);
   }
   {
     // The ladder climbed and the circle closed (§9.1, §9.2): the last century known turns back to the cave, a new

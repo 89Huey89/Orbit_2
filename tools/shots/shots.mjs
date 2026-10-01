@@ -26,6 +26,7 @@ Options (a comma list on viewport/plate/era crosses every value):
   --seed=N                 the run's seed (default 7)
   --difficulty=ID          classic | relaxed | hardcore
   --daily                  play the daily plate instead of a seeded run
+  --gates                  gate Free Play's doors as shipped (unreached centuries open on their first chapter only)
   --date=ISO               the page's wall clock (default 2026-09-24T12:00:00Z; sets the daily)
   --hand=NAME|SECONDS      the pilot: oracle (default) | good | fair | poor | a lateness in seconds
   --paint-all              paint every frame instead of fast-forwarding (slower, for animation checks)

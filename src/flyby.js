@@ -267,7 +267,7 @@ function flyNoteChapter(i){const r=flyRead();if(i>r.furthest){r.furthest=i;flyWr
 function flyNoteWorld(family){const i=FLY_FAMILIES.indexOf(family);if(i<0)return;const r=flyRead();if(!(r.worlds&(1<<i))){r.worlds|=1<<i;flyWrite(r);}}
 function flyNoteTarget(i){const r=flyRead(),b=1<<(((i|0)%12+12)%12);if(!(r.targets&b)){r.targets|=b;flyWrite(r);}}
 function flyRecordRun(w){
-  const r=flyRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(w.won)r.completed++;
+  const r=flyRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(chronicleWon(w))r.completed++;
   r.furthest=Math.max(r.furthest,Math.min(FLY_CHAPTERS.length-1,Math.floor(w.progress/FLY_CHAPTER_ROWS)));flyWrite(r);flySprites.clear();
 }
 const flyBest=()=>flyRead().best;
@@ -303,8 +303,20 @@ function flyLayer(k){
 // Doppler residual, both scrolling as the craft climbs, so the black is never only black but always being
 // listened to. They are kept faint, well under anything a transfer is read from.
 const FLY_BAND=14;
+// The link failing (JOURNEY.md §9.1, "vacuum as measurement"): the boundary does not grey the sheet over, it
+// takes the measurement away. `near` is flyDark's own reading of how close the traveller is to LOS; past
+// FLY_LOCK_LOST the link has dropped lock, and the edge's screen line and reach are where the margins go flat.
+const FLY_LOCK_LOST=.55;
+function flyLock(){
+  const fy=sy(world.floorY-4),near=clamp(1-(world.floorY-4-world.player.y)/190,0,1);
+  return {fy,near,reach:(96+near*50)*scale,lost:world.state!=='ready'&&near>FLY_LOCK_LOST};
+}
+// The star field's camera, held while lock is lost: a frame that never came down shows the last one received,
+// so the stars stop in their parallax and stay put on the glass while the craft climbs, and catch up in one
+// jump when lock is regained.
+let flyStarCam=null;
 function flyMargins(){
-  const P=ink.flyby,B=FLY_BAND,t=reducedMotion?0:world.time,cam=world.cameraY;
+  const P=ink.flyby,B=FLY_BAND,cam=world.cameraY,lock=flyLock(),t=reducedMotion||lock.lost?0:world.time;
   ctx.save();
   for(const side of[-1,1]){const x0=side<0?0:W-B,inner=side<0?B:W-B;
     ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(x0,0,B,H);ctx.strokeStyle=`rgba(${P.phosDim},.35)`;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(inner,0);ctx.lineTo(inner,H);ctx.stroke();
@@ -313,7 +325,10 @@ function flyMargins(){
     for(let k=first;k<=last;k++){const y=sy(k*FLY_UNIT);if(y<-4||y>H+4)continue;const L=k%10===0?B*.5:k%5===0?B*.32:B*.16;ctx.moveTo(inner,y);ctx.lineTo(inner-side*L,y);}
     ctx.strokeStyle=`rgba(${P.dim},.7)`;ctx.lineWidth=.5;ctx.stroke();
     // the trace: SNR on the left, a Doppler residual on the right, read off world height so it scrolls with the climb
-    ctx.beginPath();for(let y=0;y<=H;y+=4){const wy=(y-plateShift.y)/scale+cam,v=side<0?.55+.25*Math.sin(wy*.021)+.12*Math.sin(wy*.093+1.3)+.06*Math.sin(wy*.31+t*2):.5+.2*Math.sin(wy*.013+2)+.1*Math.sin(wy*.061),xx=x0+B*(side<0?clamp(v,0,1):1-clamp(v,0,1))*.8+B*.1;y?ctx.lineTo(xx,y):ctx.moveTo(xx,y);}
+    // Toward the edge each trace loses its signal: the SNR falls to the noise floor and the Doppler residual to
+    // a flat line with no data under it, both going dead straight rather than ragged, as a lost lock reads.
+    ctx.beginPath();for(let y=0;y<=H;y+=4){const wy=(y-plateShift.y)/scale+cam,live=side<0?.55+.25*Math.sin(wy*.021)+.12*Math.sin(wy*.093+1.3)+.06*Math.sin(wy*.31+t*2):.5+.2*Math.sin(wy*.013+2)+.1*Math.sin(wy*.061),
+      u=clamp((y-(lock.fy-lock.reach))/lock.reach,0,1),gone=u*u*(3-2*u),v=lerp(live,side<0?.08:.5,gone),xx=x0+B*(side<0?clamp(v,0,1):1-clamp(v,0,1))*.8+B*.1;y?ctx.lineTo(xx,y):ctx.moveTo(xx,y);}
     ctx.strokeStyle=`rgba(${P.phos},${side<0?.3:.2})`;ctx.lineWidth=.7;ctx.stroke();
     for(let k=first;k<=last;k++){if(((k%50)+50)%50)continue;const y=sy(k*FLY_UNIT);if(y<-10||y>H+10)continue;ctx.save();ctx.translate(side<0?B*.32:W-B*.32,y);ctx.rotate(side<0?-Math.PI/2:Math.PI/2);
       flyMono(ctx,side<0?'SNR':'DOP',0,0,5.5,P.dim,.9,'center');ctx.restore();}}
@@ -331,7 +346,8 @@ function flyCosmicRays(){
 function flyAtmosphere(){
   plateShift.x=0;plateShift.y=0;
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
-  for(let k=0;k<3;k++){const th=FLY_TILE,phase=(((-world.cameraY*scale*FLY_DEPTHS[k])%th)+th)%th,tile=flyLayer(k);for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));}
+  if(flyStarCam===null||!flyLock().lost||reducedMotion)flyStarCam=world.cameraY;
+  for(let k=0;k<3;k++){const th=FLY_TILE,phase=(((-flyStarCam*scale*FLY_DEPTHS[k])%th)+th)%th,tile=flyLayer(k);for(let y=phase-th;y<H+th;y+=th)ctx.drawImage(tile,0,Math.round(y*DPR));}
   ctx.restore();
   flyMargins();flyCosmicRays();flyTitleMark();
 }
@@ -876,7 +892,7 @@ function flyChartRoute(chart){
 const FLY_DSN=['GOLDSTONE','CANBERRA','MADRID'];
 function flyHudLeaf(){
   if(!world||world.state==='ready')return;
-  if(world.won){flyFinale();return;}
+  if(chronicleWon(world)){flyFinale();return;}
   const P=ink.flyby,top=flyHudTop(),words=plateWords().hud,score=world.score|0,level=world.inkLevel(),low=level<=.34,pulse=low&&!reducedMotion?.5+.5*Math.sin(world.time*6):1,ci=flyChapterOf(world),C=FLY_CHAPTERS[ci];
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   const left=FLY_BAND+10,right=W-FLY_BAND-12,cx=W/2,m=world.speedMultiplier(),pace=words.pace+(m%1?m.toFixed(1):m);
@@ -890,7 +906,8 @@ function flyHudLeaf(){
   // the network complex holding contact, handed round the three as the Earth turns, and AOS while it holds
   const dsn=FLY_DSN[Math.floor((reducedMotion?0:world.time)/24)%3];
   ctx.save();ctx.strokeStyle=`rgba(${P.white},.85)`;ctx.lineWidth=.8;const dx=right-4,dy=top+2;ctx.beginPath();ctx.ellipse(dx,dy,5,2.2,-.5,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(dx,dy+1.5);ctx.lineTo(dx,dy+7);ctx.moveTo(dx-3,dy+7);ctx.lineTo(dx+3,dy+7);ctx.stroke();ctx.restore();
-  flyMono(ctx,'AOS · '+dsn,right-13,top+2,7,P.phos,.9,'right');
+  // Acquisition of signal while the link holds; loss of it, in the console's amber, once it has dropped lock.
+  const lost=flyLock().lost;flyMono(ctx,(lost?'LOS · ':'AOS · ')+dsn,right-13,top+2,7,lost?P.amber:P.phos,.9,'right');
   let rx=right;if(world.combo>1&&world.captures>0){const shown=Math.min(6,world.combo);ctx.strokeStyle=`rgba(${P.phos},.9)`;ctx.lineWidth=.8;for(let i=0;i<shown;i++){ctx.strokeRect(rx-3.5,top+12.5,7,7);rx-=11;}
     if(world.combo>6)flyMono(ctx,'x'+world.combo,right+4,top+28,8,P.grey,.85,'right');}
   let ix=right;const iy=top+40,p=world.player,badge=type=>{ctx.save();ctx.strokeStyle=`rgba(${P.grey},.6)`;ctx.lineWidth=.7;ctx.beginPath();ctx.arc(ix,iy,9.5,0,TAU);ctx.stroke();ctx.restore();flyGift({type,r:20},ix,iy,false,.85);ix-=24;};

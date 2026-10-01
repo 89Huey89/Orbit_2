@@ -66,6 +66,9 @@ defineVoice('atlas',{
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endTitleWon:'The atlas is printed.',endActionWon:'Tap to begin a new atlas',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
     readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
+    // A century the Journey has not reached, flown in Free Play as a proof (src/journey.js's eraProof): its
+    // door says so (its numeral set aside, so the line still fits the reference phone), and its leaf closes on the first chapter rather than on the century's own ending.
+    proof:{door:'{name} · FIRST CHAPTER',doorNote:'Only the first chapter is open until the Journey reaches this century.',title:'The first chapter is flown.',reason:'END OF THE FIRST CHAPTER',action:'Tap to fly the first chapter again',note:'The rest of this century opens once the Journey reaches it.',spoken:'The first chapter is flown. Score {score}. The rest of this century opens once the Journey reaches it.'},
     journey:{door:'THE JOURNEY',doorLabel:'The Journey: climb the eras from the frontier you have reached',head:'THE JOURNEY · {era}',headRound:'THE JOURNEY · ROUND {round} · {era}',knowledge:'KNOWLEDGE {k} / {of} · LONGER ORBITS TEACH MORE',full:'KNOWLEDGE COMPLETE · ONLY THE FEAT REMAINS',feat:'FEAT · {name} — {how}',flown:'FEAT FLOWN · {name}',run:'THIS RUN · +{gained} KNOWLEDGE · {orbits} ORBITS · {whole} WHOLE · {early} LEFT EARLY',elsewhere:'THIS RUN DID NOT COUNT · THE JOURNEY LEARNS ONLY ON {era}',known:'THE JOURNEY · {era} IS KNOWN · THE NEXT RUN OPENS ON {next}',whole:'THE JOURNEY · {era} IS KNOWN',stands:'A MILESTONE STANDS · {name}',onward:'Tap to turn the page to {next}',waits:'NEXT LANDING · {next}',entered:'{era} · THE CLIMB GOES ON',circle:'THE CIRCLE CLOSES · {era}',frontier:'THE FINAL FRONTIER · BEST {best}',frontierDoor:'THE FINAL FRONTIER',frontierLabel:'The Final Frontier: the last century flown endless, opened by closing the circle',restart:'BEGIN THE JOURNEY AGAIN',restartSure:'TAP AGAIN · BACK TO ERA I',restartLabel:'Begin the Journey again at era I; the centuries reached stay open and every record is kept'},
     statCaptures:'Orbits',statPerfects:'Perfects',statFlow:'Best flow',statRow:'Row',
     reduceMotion:'A STILLER PRESS',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster plate',
@@ -371,8 +374,9 @@ function event(type,e){
     // A win, not a death: its own sound (the plate's 'dawn' hand — see defineHand('ceiling',...) in
     // src/ceiling.js — falling back to the atlas's fanfare exactly as medal() does), no splat or flash,
     // and the live region gets its own line rather than the ordinary loss announcement.
-    const h=handFor('dawn');if(h)h(audio);else audio.medal();
-    $('announcement').textContent=spoken('won',{score:e.score})||spoken('ended',{score:e.score,best:currentBest()});
+    // A proof's end is the atlas's own fanfare, since the century's own dawn belongs to its last chapter.
+    const h=!world.proof&&handFor('dawn');if(h)h(audio);else audio.medal();
+    $('announcement').textContent=world.proof?fmt(plateWords().chrome.proof.spoken,{score:e.score}):spoken('won',{score:e.score})||spoken('ended',{score:e.score,best:currentBest()});
     clearInscriptions();
   }else if(type==='difficulty'){
     setDifficulty(e.value);
@@ -407,10 +411,11 @@ const readingDefault=()=>eraId()?'chronicle':'endless';
 const readingOffered=()=>eraId()?!!plateWords().endless:!dailyOn;
 const eraReading=()=>readingOffered()&&readings[readingKey()]||readingDefault();
 // A Journey run is never won at a row: its chapters are opened by knowledge across runs (LINKING.md).
-const eraGoalRow=()=>runMode==='journey'||runMode==='frontier'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
+// A proof is won at the end of the century's first chapter, whatever reading was last chosen for it.
+const eraGoalRow=()=>eraProof()?plateWords().chapterRows:runMode==='journey'||runMode==='frontier'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
 // Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
 function toggleReading(){
-  if(!readingOffered()||runMode!=='free'||(world&&world.state!=='ready'))return;
+  if(!readingOffered()||eraProof()||runMode!=='free'||(world&&world.state!=='ready'))return;
   const next=eraReading()==='endless'?'chronicle':'endless';
   if(next===readingDefault())delete readings[readingKey()];else readings[readingKey()]=next;
   storage.set(READING_KEY,JSON.stringify(readings));
@@ -564,7 +569,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];
+  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];world.proof=eraProof();
   // The endless driver (simulation.js) is felt by every run that has no row it is won at: the atlas, an
   // Endless reading, a Journey run and the daily. A Chronicle keeps the flat chart its finish was read off.
   world.driven=!world.goalRow;
@@ -584,6 +589,7 @@ function resetToFrontispiece(){
   game.classList.remove('playing','over','cataloguing');$('intro').classList.remove('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
   syncLastReviewButton();syncPauseControl();
 }
+const doorLabels=new Map();
 function syncEraChrome(){
   // Everything here is a plate's own name for a fixture the atlas also has; the fixture stays where
   // it is, and only the words on it change. The entry button is the one exception even to that: what
@@ -593,9 +599,14 @@ function syncEraChrome(){
   // third era is a button in the markup and that row, rather than another label written out here. The
   // doors stand on the atlas's sheet only; from inside a century the way back is the exit, which is
   // the same door out of all of them.
+  // A door to a century the Journey has not reached stays, and names the proof it opens on.
   for(const id in PLATE_STYLES){
     const door=PLATE_STYLES[id].door;if(!door)continue;
-    const button=$(door.button);if(button){button.textContent=door.label;button.hidden=!eraOpen(PLATE_STYLES[id].era);}
+    const button=$(door.button);if(!button)continue;
+    const proof=!eraOpen(PLATE_STYLES[id].era),words=chrome.proof;
+    if(!doorLabels.has(door.button))doorLabels.set(door.button,(button.getAttribute&&button.getAttribute('aria-label'))||door.label);
+    button.hidden=false;button.textContent=proof?fmt(words.door,{name:door.label.split(' \u00b7 ').pop()}):door.label;
+    button.setAttribute('aria-label',doorLabels.get(door.button)+(proof?'. '+words.doorNote:''));
   }
   const brand=$('brand');if(brand)brand.textContent=chrome.brand;
   const bestLabel=$('best-label');if(bestLabel)bestLabel.textContent=chrome.bestLabel;
@@ -614,7 +625,7 @@ function syncEraChrome(){
   // The choice of reading stands only on a century that offers one, and names the reading in hand.
   const reading=$('reading');
   if(reading){
-    const offered=readingOffered()&&runMode==='free',now=eraReading(),word=chrome.readings[now];
+    const offered=readingOffered()&&runMode==='free'&&!eraProof(),now=eraReading(),word=chrome.readings[now];
     reading.hidden=!offered;reading.textContent=word;
     reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
@@ -659,8 +670,7 @@ function enterEra(name){
   if(plateOwns('mode')){leaveEra();return;}
   if(world&&world.state==='playing')return;
   if(!PLATES[name])return;
-  // A Journey run is let in at its own frontier, which the Journey has by definition reached.
-  if(runMode==='free'&&!eraOpen(PLATE_STYLES[name].era))return;
+  // Every door opens: a century the Journey has not reached is dealt as a proof (eraGoalRow, below).
   eraReturn={plate:plateName,dailyOn,dailyDay,dailyReplay,difficulty};
   dailyOn=false;dailyReplay=false;dailyDay=utcDay();dailySeed=dayStamp(dailyDay);dailyBest=readDailyBest();
   applyPlate(name);invalidateArt();loadPlateFaces();syncPlate();syncDaily();newWorld();resetToFrontispiece();syncEraChrome();render(0);
@@ -703,12 +713,14 @@ function showEnd(){
     // A century that closes its leaf with a line of its own (the Rock's torch going out) says a different
     // one over a run that reached its ending, since a won run did not end in the dark.
     const lore=$('end-lore');if(lore&&chrome.endLore)lore.textContent=world.won?(chrome.endLoreWon||chrome.endLore):chrome.endLore;
+    // A proof reached neither the century's ending nor its dark: it closes on the chapter, and says why it stopped.
+    if(world.proof&&world.won){const p=chrome.proof;if(endTitleEl)endTitleEl.textContent=p.title;$('end-action').textContent=p.action;if(lore)lore.textContent='';}
     // A won leaf's sun is turned gold a beat after the leaf appears, so it is seen to change rather than
     // arriving already turned; a loss clears it at once so it never carries over from a win.
     const leaf=$('end');leaf.classList.remove('won');
     if(world.won){if(reducedMotion)leaf.classList.add('won');else setTimeout(()=>{if(world&&world.won)leaf.classList.add('won');},350);}
   }
-  $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=plateWords().losses[world.reason]||world.reason;
+  $('end-score').textContent=world.score;$('end-score-roman').textContent=roman(world.score);$('end-reason').textContent=world.proof&&world.won?plateWords().chrome.proof.reason:plateWords().losses[world.reason]||world.reason;
   // The Ceiling letters its own score in Egyptian numerals, on the canvas rather than in this DOM
   // text — ceilingPaintEndNumerals (src/ceiling.js) sizes the canvas for its own devicePixelRatio and
   // paints it; this call only exists on that plate, and the typeof guard keeps it safe if that
@@ -784,8 +796,8 @@ function showEnd(){
   // A win has no failure to give a tip about; tips.won is read where a plate names one, and left blank
   // where it does not, rather than falling through to a loss tip that would misdescribe the run.
   const tip=world.captures===0?'first':world.reason==='THE DARK CAUGHT UP'?'dark':world.reason==='THE ORBIT FADED'?'faded':world.reason==='DRAWN INTO A VORTEX'?'vortex':world.perfects<2?'angle':'speed';
-  $('end-tip').textContent=world.won?(plateWords().tips.won||''):plateWords().tips[tip];
-  $('announcement').textContent=world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best:currentBest()}):spoken('ended',{score:world.score,best:currentBest()});
+  $('end-tip').textContent=world.proof&&world.won?plateWords().chrome.proof.note:world.won?(plateWords().tips.won||''):plateWords().tips[tip];
+  $('announcement').textContent=world.proof&&world.won?fmt(plateWords().chrome.proof.spoken,{score:world.score}):world.won?spoken('won',{score:world.score})||spoken('ended',{score:world.score,best:currentBest()}):spoken('ended',{score:world.score,best:currentBest()});
   syncEndFit();
 }
 // Whether the colophon actually fits #end's own box is measured directly rather than guessed from a
@@ -880,11 +892,26 @@ function updateUI(dt){
   beliefTick();
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
+// The density the sheet is pulled at. A phone-sized sheet on a 3x screen (the reference phone) is drawn at its
+// own 3x, since the burin hairlines are what the look is made of and a 2x pull scaled up by the browser
+// softens every one of them; its pixel count at 3x is still under a laptop's at 2x. Anything larger stays
+// capped at 2x. If the pacer (below) finds the press missing frames at 3x, the sheet drops to 2x for good,
+// remembered so the next visit starts there rather than stuttering once more before it learns.
+const SHARP_KEY='orbit.sharpness.v1',SHARP_PHONE_AREA=520000;
+let sharpShed=storage.get(SHARP_KEY,'')==='2x';
+function sheetDensity(w,h){
+  const native=window.devicePixelRatio||1,cap=!sharpShed&&w*h<=SHARP_PHONE_AREA?3:2;
+  return Math.min(Math.max(native,1.5),cap);
+}
+function shedSharpness(){
+  if(sharpShed||DPR<=2)return false;
+  sharpShed=true;storage.set(SHARP_KEY,'2x');resize();invalidateArt();return true;
+}
 function resize(){
   // Floored at 1.5 even on an ordinary "1x" screen: the engraving's hairline burin strokes run well
   // under a device pixel wide, and rasterising them with no supersampling turns a crisp incised line
   // into a soft grey smear. The floor costs at most the same fill rate already paid on any 2x display.
-  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);scale=Math.min(W/440,H/780);
+  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=sheetDensity(W,H);scale=Math.min(W/440,H/780);
   canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
   // Resizing the canvas resets its context state, so this is set again on every resize: it governs how
   // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
@@ -1124,6 +1151,8 @@ function pacePresent(dt,raw){
   // an addition to the ground, never the ground, so a screen of any speed that is plainly missing frames
   // — one in five or more — loses it first, and the window is measured again without it.
   if(late>native*PACE_MISS&&typeof relightShed==='function'&&relightShed())return;
+  // Next goes the third pull of a 3x sheet: sharper hairlines are worth less than an even flight.
+  if(late>native*PACE_MISS&&shedSharpness())return;
   if(native<PACE_FAST_PANEL&&achieved>native*PACE_MISS){
     presentEvery=2;presentIn=1;paceProbeIn=paceProbeWait;paceProbeWait=Math.min(30,paceProbeWait*2);
   }

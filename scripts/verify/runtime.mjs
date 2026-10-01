@@ -72,7 +72,35 @@ openEphemeris,closeEphemeris,renderEphemeris,leafMonth,replayDaily,noteDailyPlay
 BELIEFS,beliefOf,beliefHere,beliefBodies,beliefTick,strikeInscription,inscriptionStrike,lensCanalReading,ONE_STARS,ONE_STAR_KEY,oneStarOfRound,oneStarBody,oneStarIs,oneStarTick,oneStarCapture,oneStarMet,readOneStars,get oneStarBook(){return oneStarBook},astroPlainRow,\
 get inscriptions(){return inscriptions},inscribe,inscribeHeld,clearInscriptions,inscriptionBox,inscriptionRoom,INSCRIPTION_CAP,get scale(){return scale},drawRunningHead,drawImpressum,impressumRows,impressumScreenLine,impressumMetrics,impressumAnchor,\
 groundTurn,markGround,groundTaken,groundStanding,groundClear,revealBand,revealPoint,captionOffset,get tallies(){return tallies},tallyBox,\
-replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY}};',context);
+replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,renderReview,reviewBounds,get reviewing(){return reviewing},get reviewWorld(){return reviewWorld},get reviewCameraY(){return reviewCameraY},get gates(){return journeyGatesDoors},set gates(v){journeyGatesDoors=v},eraProof,chronicleWon,syncEraChrome};',context);
+  // Free Play's doors are gated as shipped, but the layout below flies every century whole; the proof chapter
+  // a century not yet reached opens on is flown on its own, with the gate put back (Steps 16 and 17).
+  context.test.gates=false;
+  // The register of claims (docs/KNOWLEDGE-AUDIT.md §2.3, docs/CLAIMS.json): every factual line a player reads — a
+  // century's chapter lines, its chart notes and its heirloom's gloss — is entered with one of ERA-AUDIT.md's three
+  // labels and the source it rests on, or honestly as unchecked. A line added, dropped or reordered without its
+  // entry fails here, so the notes are checked against something rather than only counted.
+  {
+    const t=context.test,claims=JSON.parse(readFileSync(new URL('../../docs/CLAIMS.json',import.meta.url),'utf8'));
+    const LABELS=['attested','plausible reconstruction','gameplay translation','unchecked'],was=t.plateName;
+    const entered=(c,line,where)=>{
+      assert(c,'The register enters every line the player reads: '+where);
+      assert.equal(c.starts,line.slice(0,24),'A register entry stands against its own line: '+where);
+      assert(LABELS.includes(c.label),'A register entry carries one of the three labels, or unchecked: '+where);
+      assert(c.label==='unchecked'?c.source==='':!!c.source,'A labelled entry names its source, and an unchecked one none: '+where);
+    };
+    for(const id of ['night',...Object.keys(t.PLATE_STYLES).filter(k=>t.PLATE_STYLES[k].door)]){
+      t.applyPlate(id);const w=t.plateWords(),key=id==='night'?'atlas':id,own=claims[key]||{};
+      for(const kind of ['chapterLines','chartNotes']){
+        const lines=w[kind]||[],reg=own[kind]||[];
+        assert.equal(reg.length,lines.length,'The register holds as many '+kind+' as '+key+' sets');
+        lines.forEach((line,i)=>entered(reg[i],line,key+' '+kind+' '+i));
+      }
+      const era=(t.PLATE_STYLES[id]||{}).era,heir=t.CENTURIES[era]&&t.CENTURIES[era].heirloom;
+      if(heir)entered(own.heirloom,heir.gloss,key+' heirloom');
+    }
+    t.applyPlate(was);
+  }
   // The distance behind the chart ships bare and every style of it has to be earned, so a test that
   // wants one drawn has to put it on the press by name — `setCosmetic` would rightly refuse a locked
   // one. Each style is selected in turn, the body run under it, and whatever was chosen put back.
@@ -94,6 +122,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       // notes the sheet carries down pass under it on their way off the plate: that is a leaf over ink, not
       // two lines of type sharing a place.
       if(a.kind==='head'||b.kind==='head')continue;
+      // The same holds for a piece of a century's frame that stands inside the sheet (the Ceiling's Nut, whose head
+      // is drawn over the chart): a note is never set across it, but once set it rides the sheet under it like any
+      // ink. So such a key is held against a note only in the moment the note is placed.
+      if(a.kind==='key'||b.kind==='key'){const n=a.kind==='key'?b:a;if(!n.owner||n.owner.age==null||n.owner.age>.25)continue;}
       const smaller=Math.min((a.right-a.left)*(a.bottom-a.top),(b.right-b.left)*(b.bottom-b.top));
       const said=m=>`${m.kind}${m.owner&&m.owner.text?' "'+m.owner.text+'"':''}${m.owner&&m.owner.pending?' (still finding its line)':m.owner&&m.owner.name?' "'+m.owner.name+'"':''} [${[m.left,m.top,m.right,m.bottom].map(Math.round)}]`;
       assert(area<=smaller*.12,`Settled type overlaps in ${where} at ${width}×${height}: ${said(a)} over ${said(b)} (${Math.round(area)} of ${Math.round(smaller)} sq pt)`);
@@ -1844,6 +1876,26 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
     context.test.setPlate('night');
   }
+  // ---- A century's own lettering keeps the atlas's promise (ART-REVIEW.md R3, C6) ----
+  // The Rock and the Ceiling set their notes, tallies and captions through the same register as the atlas, so a
+  // run flown on each is checked the same way: nothing set down to stay is printed across anything else.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    for(const id of ['rock','ceiling']){
+      context.test.enterEra(id);context.test.handleInput();
+      const w=context.test.world;w.releaseGrace=0;
+      for(let i=0;i<120*30&&w.state==='playing';i++){
+        // The shots harness's oracle: a perfect onto the next row or two, or any clean transfer after a lap and a half.
+        const aim=w.player.node&&w.aim(),row=Math.floor(w.progress)+1;
+        if(aim&&!aim.steep&&!aim.dry&&aim.n.type!=='gold'&&aim.n.row>=row&&aim.n.row<=row+2&&(aim.perfect||w.player.orbitSweep>1.5*Math.PI*2)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+        w.update(step);
+        if(i%2===0){context.test.render(step*2);settledClashes(context.test.groundCollisions(),'a run on '+id);}
+      }
+      assert(w.captures>3,'The run on '+id+' reached far enough to letter something: '+w.captures);
+      context.test.leaveEra();
+    }
+    context.test.setPlate('night');
+  }
   // ---- A century with an ending may be flown without one: its Chronicle, or Endless (LINKING.md) ----
   {
     context.test.setPlate('paper');context.test.newWorld();
@@ -2129,6 +2181,33 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.records.free['3'],scrollBest+77,'Step 18: Free Play keeps its own record for the century');
     t.world.player.deadTime=10;events['ceiling-exit-end:click']();
     t.journey.era=1;t.journey.knowledge=0;t.journey.unlocked=[1];t.journey.bests={};
+    // The proof (JOURNEY.md §9.1): with the gate on as shipped, a century the Journey has not reached keeps its
+    // door, named for the first chapter it opens on, and is won at that chapter's end without counting as its
+    // Chronicle flown. A reached century is flown whole, and the atlas is never a proof.
+    t.gates=true;t.syncEraChrome();
+    assert.equal(element('rock-open').hidden,false,'A reached century keeps its door');
+    assert.equal(element('rock-open').textContent,'ERA I \u00b7 THE ROCK','And it names no limit');
+    for(const id of ['ceiling-open','scroll-open','astrolabe-open','lens-open','flyby-open','probe-open']){
+      assert.equal(element(id).hidden,false,'No door is ever simply shut: '+id);
+      assert(element(id).textContent.endsWith('FIRST CHAPTER'),'A door to a century not yet reached names its proof: '+id);
+    }
+    t.enterEra('rock');assert.equal(t.eraProof(),false,'A reached century is no proof');assert.equal(t.world.goalRow,t.plateWords().goalRow);
+    events['ceiling-exit:click']();
+    t.enterEra('scroll');assert.equal(t.eraId(),3,'A century not yet reached still opens');
+    assert.equal(t.eraProof(),true);assert.equal(t.world.proof,true);
+    assert.equal(t.world.goalRow,t.plateWords().chapterRows,'A proof is won at the end of its first chapter');
+    assert.equal(element('reading').hidden,true,'A proof offers no reading to choose');
+    const wonBefore=t.eraLog(3).won,scrollLeafBest=t.records.free['3']||0;
+    t.handleInput();t.world.score=12;t.world.progress=t.world.goalRow;t.world.die('THE SUN ROSE',true);t.showEnd();
+    assert.equal(t.chronicleWon(t.world),false,'A proof won is not a Chronicle flown');
+    assert.equal(t.eraLog(3).won,wonBefore,'Nor counted as one');
+    assert.equal(element('end-title').textContent,t.plateWords().chrome.proof.title,'The leaf closes on the first chapter');
+    assert.equal(element('end-reason').textContent,t.plateWords().chrome.proof.reason);
+    assert.equal(element('end-tip').textContent,t.plateWords().chrome.proof.note,'And says how the rest is opened');
+    assert(t.records.free['3']>=scrollLeafBest,'A proof keeps Free Play\'s record as any run does');
+    t.world.player.deadTime=10;events['ceiling-exit-end:click']();
+    assert.equal(t.eraProof(),false,'The atlas is never a proof');
+    t.gates=false;t.syncEraChrome();
   }
   // ---- Steps 8 to 13: the change of century inside the run ----
   // The era becomes known while the run is still flying, the next ordinary landing carries the change, and

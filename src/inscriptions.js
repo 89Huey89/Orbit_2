@@ -31,6 +31,11 @@ const inscriptionFont=(tone,size)=>tone==='note'
   ?plateFace(size,'text','italic')
   :plateFace(size,'sc');
 const inscriptionSize=tone=>tone==='note'?Math.max(10.5,12*scale):Math.max(10,11.5*scale);
+// The lettering's order of size on the reference phone (docs/ART-REVIEW.md, F): what the player has to act on
+// is set largest, so a standing instruction is cut a step over an ordinary note; a landing's tally, which is
+// only a record of what already happened, a step under it, with its running SUMMA a step under that again.
+const INSTRUCTION_LEAD=1.12;
+const tallySizes=()=>[Math.max(10.5,12*scale),Math.max(9.5,10.5*scale)];
 const inscriptionInner=()=>frameBand()*.92+8;
 const inscriptionWidth=()=>Math.max(96,Math.min(W-inscriptionInner()*2-16,244));
 // How much room an inscription's box has on the sheet: the distance from its nearest edge to the frame's
@@ -133,7 +138,7 @@ function floaterBox(f){
 // loop that marks it never disagree about where the ink actually sits.
 function tallyBox(f){
   if(f.lift==null)return null;
-  const size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
+  const [size,size2]=tallySizes(),inner=frameBand()*.92+7,hand=Math.max(4.5,6*scale);
   const y=sy(f.y)+f.lift,left=f.left,x=left?inner+hand*2.4:W-inner-hand*2.4;
   ctx.save();ctx.font=plateFace(size,'text','italic');const w1=ctx.measureText(f.line1).width;
   ctx.font=plateFace(size2,'text','italic');const w2=ctx.measureText(f.line2).width;
@@ -272,7 +277,7 @@ function repositionHeld(g,mutate){
 // it to the point on the sheet where the thing happened; with neither, it is set beside the traveller.
 function inscribe(text,options={}){
   if(!world||!text)return null;
-  const tone=options.tone||'caps',size=inscriptionSize(tone),p=world.player;
+  const tone=options.tone||'caps',size=inscriptionSize(tone)*(options.key==='instruction'?INSTRUCTION_LEAD:1),p=world.player;
   const str=String(text);
   const anchor={
     node:options.node||(options.x===undefined?p.node:null)||null,

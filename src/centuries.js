@@ -49,7 +49,7 @@ function eraLedgerCommit(ending=false){
   log.bestRow=Math.max(log.bestRow,Math.floor(eraRow()));
   log.bestFlow=Math.max(log.bestFlow,world.maxCombo||0);
   if(!runCounted&&world.state!=='ready'){log.runs++;runCounted=true;}
-  if(ending&&world.won)log.won++;
+  if(ending&&chronicleWon(world))log.won++;
   runTally=freshTally();
   saveEraLogs();
   return [...centuryUnlockedIds()].filter(id=>!before.has(id));

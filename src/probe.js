@@ -248,7 +248,7 @@ function prbNoteClass(family){const i=PRB_FAMILIES.indexOf(family);if(i<0)return
 function prbNoteSystem(i){const r=prbRead(),b=1<<(((i|0)%12+12)%12);if(!(r.systems&b)){r.systems|=b;prbWrite(r);}}
 function prbNoteGen(gen){const r=prbRead();if(gen>r.maxGen){r.maxGen=gen|0;prbWrite(r);prbSprites.clear();}}
 function prbRecordRun(w){
-  const r=prbRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(w.won)r.completed++;
+  const r=prbRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(chronicleWon(w))r.completed++;
   r.furthest=Math.max(r.furthest,Math.min(PRB_CHAPTERS.length-1,Math.floor(w.progress/PRB_CHAPTER_ROWS)));
   if(prbRunWorld===w)r.maxGen=Math.max(r.maxGen,prbState.gen);prbWrite(r);prbSprites.clear();
 }
@@ -1016,7 +1016,7 @@ function prbChartRoute(chart){
 // DOM HUD stays for screen readers and is taken off the screen (index.html).
 function prbHudLeaf(){
   if(!world||world.state==='ready')return;
-  if(world.won){prbFinale();return;}
+  if(chronicleWon(world)){prbFinale();return;}
   prbRun();const P=ink.probe,top=prbHudTop(),words=plateWords().hud,score=world.score|0,level=world.inkLevel(),low=level<=.34,pulse=low&&!reducedMotion?.5+.5*Math.sin(world.time*6):1,ci=prbChapterOf(world),C=PRB_CHAPTERS[ci],S=prbState;
   prbShown=prbShown<score?Math.min(score,prbShown+Math.max(.6,(score-prbShown)*.12)):score;
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);

@@ -11,13 +11,19 @@ being postponed since 2026-09-08). Development now includes building it out, alo
 polishing of the shipped Renaissance atlas — era V, the only plate a run ships with today (root
 `README.md`'s "Plates" and "Catalogue" sections; `src/plates.js`'s default).
 
-One piece of live work sits beside that focus, at the user's request: the overhaul of Era II,
-The Ceiling, planned in [CEILING-OVERHAUL.md](CEILING-OVERHAUL.md). It changes the standalone preview
-door only and builds nothing toward the progression.
+Two overhauls of standalone preview doors sit beside that focus, both built and kept as the record of
+what was decided: [ROCK-OVERHAUL.md](ROCK-OVERHAUL.md) for Era I, The Rock (merged in #74; level B of its
+relit surface and a frame-rate reading on the device are still open), and
+[CEILING-OVERHAUL.md](CEILING-OVERHAUL.md) for Era II, The Ceiling (merged in #73). Neither builds
+anything toward the progression.
 
 [ART-REVIEW.md](ART-REVIEW.md) is a review of the atlas as it looks on the reference phone, with
 proposals for fixes, effects and rendering. It adds to the root `ART-AUDIT-TODO.md` rather than
 repeating it.
+
+[CLAIMS.json](CLAIMS.json) is the register of claims the knowledge audit asked for: every chapter line, chart note
+and heirloom gloss a player reads, with its evidence label and source, or entered honestly as unchecked. The test
+suite holds it against the lines themselves.
 
 [KNOWLEDGE-AUDIT.md](KNOWLEDGE-AUDIT.md) reads all eight centuries for what they teach: what reaches the
 player, which statements were wrong (corrected with it), what still contradicts its own claim, and where

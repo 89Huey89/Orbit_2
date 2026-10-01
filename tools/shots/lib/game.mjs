@@ -46,13 +46,16 @@ export class Game{
     await this.page.goto(o.url,{waitUntil:'load'});
     await this.page.evaluate(()=>document.fonts&&document.fonts.ready);
     await this.advance(.25);
-    await this.page.evaluate(({plate,era,seed,difficulty,daily})=>{
+    // Free Play's doors ship gated, so a century the Journey has not reached opens on its first chapter alone.
+    // Captures fly every century whole unless a scenario (or --gates) asks for the doors as shipped.
+    await this.page.evaluate(({plate,era,seed,difficulty,daily,gates})=>{
+      journeyGatesDoors=gates;syncEraChrome();
       if(era)enterEra(era);
       if(plate&&!era)setPlate(plate);
       if(difficulty&&typeof setDifficulty==='function')setDifficulty(difficulty);
       if(daily&&typeof setDaily==='function')setDaily(true);
       if(seed!=null&&!daily){runSeed=(seed-1)>>>0;newWorld();render(0);}
-    },{plate:o.plate,era:o.era,seed:o.seed,difficulty:o.difficulty,daily:o.daily});
+    },{plate:o.plate,era:o.era,seed:o.seed,difficulty:o.difficulty,daily:o.daily,gates:!!o.gates&&o.gates!=='false'});
     // An era asks for its faces on entry; give them the same chance the opening faces had.
     await this.page.evaluate(()=>document.fonts&&document.fonts.ready);
     await this.advance(.5);

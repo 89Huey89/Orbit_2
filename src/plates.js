@@ -471,6 +471,9 @@ const plateBase=name=>PLATE_STYLES[name]?PLATE_STYLES[name].base:name;
 // The stylesheet reads the ordinal to swap the whole frontispiece in two rules per era rather than one
 // rule per element, and `[data-plate-id]` narrows back to a variation inside one century.
 const eraId=()=>(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].era)||0;
+// A Chronicle flown to its ending, as against a proof chapter's (src/journey.js's eraProof): only the first
+// is counted as won by a century's own record, its catalogue and its finale.
+const chronicleWon=w=>!!(w&&w.won&&!w.proof);
 const onPaper=()=>plateBase(plateName)==='paper';
 // A proof before letters carries no captions, labels, numerals or legend: figures and rings only.
 const plainPlate=()=>!!(PLATE_STYLES[plateName]&&PLATE_STYLES[plateName].plain);

@@ -405,7 +405,7 @@ function lensNoteChapter(i){const r=lensRead();if(i>r.furthest){r.furthest=i;len
 function lensNoteWorld(family){const i=LENS_FAMILIES.indexOf(family);if(i<0)return;const r=lensRead();if(!(r.worlds&(1<<i))){r.worlds|=1<<i;lensWrite(r);}}
 function lensNoteField(i){const r=lensRead(),b=1<<(((i|0)%12+12)%12);if(!(r.fields&b)){r.fields|=b;lensWrite(r);}}
 function lensRecordRun(w){
-  const r=lensRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(w.won)r.completed++;
+  const r=lensRead();r.runs++;r.best=Math.max(r.best,w.score|0);if(chronicleWon(w))r.completed++;
   r.furthest=Math.max(r.furthest,Math.min(LENS_CHAPTERS.length-1,Math.floor(w.progress/LENS_CHAPTER_ROWS)));lensWrite(r);lensSprites.clear();
 }
 const lensBest=()=>lensRead().best;
@@ -1392,7 +1392,7 @@ function lensHudTop(){
 }
 function lensHudLeaf(){
   if(!world||world.state==='ready')return;
-  if(world.won){lensFinale();return;}
+  if(chronicleWon(world)){lensFinale();return;}
   const P=ink.lens,reg=lensRegNow(),top=lensHudTop(),words=plateWords().hud,score=world.score|0,level=world.inkLevel(),low=level<=.34,pulse=low&&!reducedMotion?.5+.5*Math.sin(world.time*6):1,C=LENS_CHAPTERS[lensChapterOf(world)];
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   const left=LENS_BAND+12,right=W-LENS_BAND-14,cx=W/2,m=world.speedMultiplier(),pace=words.pace+(m%1?m.toFixed(1):m);
@@ -1487,7 +1487,7 @@ function lensFloater(f,fb,alpha){
   lensNoteMark(x+(left?-hand*1.5:hand*1.5),y-hand*.62,left,hand,y,alpha*.85);
 }
 function lensTally(t,tb,alpha){
-  const size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale),hand=Math.max(4.5,6*scale);
+  const [size,size2]=tallySizes(),hand=Math.max(4.5,6*scale);
   ctx.fillStyle=`rgba(${lensNoteInk(tb.y)},${alpha})`;ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';ctx.fillText(t.line1,tb.x,tb.y);
   ctx.font=plateFace(size2,'text','italic');ctx.fillText(t.line2,tb.x,tb.y+size*.98);
   lensNoteMark(tb.x+(t.left?-hand*1.5:hand*1.5),tb.y-hand*.62,t.left,hand,tb.y,alpha*.85);

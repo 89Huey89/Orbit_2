@@ -1347,7 +1347,7 @@ function drawTallies(dt){
     if(t.lift===undefined){
       t.left=sx(t.x)<W*.5;
       // Two lines tall, so the line it asks for is the height tallyBox will actually declare, not a floater's one.
-      const size=Math.max(11,13*scale),line=floaterLine(t,t.left,size*1.85,'tally');
+      const size=tallySizes()[0],line=floaterLine(t,t.left,size*1.85,'tally');
       // A gutter with nowhere left to stand it is a tally that is never struck at all, exactly as a
       // note the plate has no clear ground for goes unwritten (inscriptions.js) rather than printed
       // over whatever already stands there.
@@ -1384,7 +1384,7 @@ function drawTallies(dt){
     const alpha=(reducedMotion?1:Math.min(1,t.age*8))*dry;
     // A plate that sets its tallies in its own ink names a `tally` painter, handed the settled box to draw in.
     const own=handFor('tally');if(own){ctx.save();own(t,tb,alpha);ctx.restore();continue;}
-    const hand=Math.max(4.5,6*scale),size=Math.max(11,13*scale),size2=Math.max(9.5,11*scale);
+    const hand=Math.max(4.5,6*scale),[size,size2]=tallySizes();
     ctx.save();ctx.fillStyle=`rgba(${ink.dark.floaterText},${alpha})`;
     ctx.font=plateFace(size,'text','italic');ctx.textAlign=t.left?'left':'right';
     ctx.fillText(t.line1,tb.x,tb.y);
