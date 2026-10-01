@@ -356,13 +356,23 @@ let astroTitleFade=1;
 function invalidateAstroTitle(){astroSprites.clear();}
 function astroTitleMark(){
   const ready=world.state==='ready';astroTitleFade=ready?1:Math.max(0,astroTitleFade-.03);if(astroTitleFade<=0)return;
-  const P=ink.astro,rec=astroRead(),fih=astroFihrist(),R=Math.min(W*.14,48*scale+6),x=W/2,y=H*.215,sp=astroInstrumentSprite(R,rec.furthest+1,rec.completed>0?1:0,astroFihristMask(fih));
-  ctx.save();ctx.globalAlpha=astroTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2-sp.dy,sp.size,sp.size);
-  astroNaskh(ctx,'الأسطرلاب',x,y+R+20,22,P.ink,.92,'center',true);
+  const P=ink.astro,rec=astroRead(),fih=astroFihrist(),x=W/2;
+  const ns=Object.keys(fih.stars).length,nf=Object.keys(fih.figures).length,np=Object.keys(fih.planets).length,log=ns||nf||np;
+  // Fitted from the bottom up into the room between the lore and the opening three (eraTitleRoom): the
+  // fihrist, the part reached, the century's name in the player's English under its own — as every century
+  // on the frontispiece is named — then the instrument in what is left, or nothing where there is none.
+  // Where the room is short the name stands and the lines under it go first, the fihrist before the part.
+  const {top,bottom}=eraTitleRoom('astrolabe-lore-open'),need=(f,p)=>8+(f?14:0)+(p?15:0)+20+14;let showLog=!!log,showParts=true;
+  if(bottom-top<need(showLog,showParts))showLog=false;if(bottom-top<need(showLog,showParts))showParts=false;
+  const logY=bottom-8,partsY=showLog?logY-14:logY,titleY=showParts?partsY-15:bottom-8,arabicY=titleY-20,
+    R=Math.min(W*.14,48*scale+6,(arabicY-14-top)/2.5),y=arabicY-20-R;
+  ctx.save();ctx.globalAlpha=astroTitleFade;
+  if(R>=16){const sp=astroInstrumentSprite(R,rec.furthest+1,rec.completed>0?1:0,astroFihristMask(fih));ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2-sp.dy,sp.size,sp.size);}
+  if(arabicY-14>=top)astroNaskh(ctx,'الأسطرلاب',x,arabicY,22,P.ink,.92,'center',true);
+  if(titleY-7>=top)astroGloss(ctx,'THE ASTROLABE',x,titleY,12,P.ink,.9);
   const done=rec.completed>0?'THE ZIJ IS FINISHED':'PARTS '+(rec.furthest+1)+' OF '+ASTRO_CHAPTERS.length+' · '+ASTRO_CHAPTERS[rec.furthest].en;
-  astroGloss(ctx,done,x,y+R+40,9.5,P.inkSoft,.85);
-  const ns=Object.keys(fih.stars).length,nf=Object.keys(fih.figures).length,np=Object.keys(fih.planets).length;
-  if(ns||nf||np)astroGloss(ctx,'FIHRIST · '+ns+' OF '+ASTRO_STARS.length+' STARS · '+nf+' OF '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' OF '+ASTRO_PLANETS.length+' WANDERERS':''),x,y+R+55,9,P.giltDeep,.95,'center',true);
+  if(showParts&&partsY-6>=top)astroGloss(ctx,done,x,partsY,9.5,P.inkSoft,.85);
+  if(showLog&&logY-6>=top)astroGloss(ctx,'FIHRIST · '+ns+' OF '+ASTRO_STARS.length+' STARS · '+nf+' OF '+ASTRO_FIGURES.length+' FIGURES'+(np?' · '+np+' OF '+ASTRO_PLANETS.length+' WANDERERS':''),x,logY,9,P.giltDeep,.95,'center',true);
   ctx.restore();
 }
 // The ground: the paper tile at the camera's own rate, a lamp above the held body, the limb, the title.
@@ -649,6 +659,7 @@ function astroNodeDrawn(n,aim){
   if(ASTRO_GIFTS[n.type])astroGift(n,x,y,n.r*scale,used);
   else if(n.difficultyChoice||pen.taken>0)astroBody(n,x,y,tier,pen.d,n.difficultyChoice?1:pen.taken);
   else astroPhenomenon(n,x,y,tier);
+  if(n.difficultyChoice)drawTriadGloss(n,x,y+n.r*scale*.6+16*scale,ink.astro.ink,.78);
   if(active)astroReleaseMarks(n,p,x,y);
 }
 

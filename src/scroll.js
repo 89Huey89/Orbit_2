@@ -285,12 +285,17 @@ function scrollTitleSprite(R){
 }
 function scrollTitleMark(){
   const ready=world.state==='ready';scrollTitleFade=ready?1:Math.max(0,scrollTitleFade-.03);if(scrollTitleFade<=0)return;
-  const P=ink.scroll,R=Math.min(W*.17,58*scale+10),x=W/2,y=H*.235+R*.2,sp=scrollTitleSprite(R);
-  ctx.save();ctx.globalAlpha=scrollTitleFade;ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);
-  const tx=Math.min(W-34,x+R+34),ts=Math.max(19,R*.3);scrollColumn(ctx,'天文圖',tx,y-R,ts,P.soot,.94,1,'kaiM');
-  // The seal is the office's as it was named when the Dunhuang chart was drawn: the Tang's Taishi Ju, the
-  // Bureau of the Grand Historian. The Sitian names came later, from 758.
-  scrollSeal(ctx,tx,y-R+ts*3.2+14,Math.max(18,R*.26),'太史局印',5,.95);
+  // Fitted from the bottom up into the room between the lore and the opening three (eraTitleRoom): the
+  // century's name in the player's English, as every century on the frontispiece is named, then the chart.
+  const P=ink.scroll,{top,bottom}=eraTitleRoom('scroll-lore-open'),fs=Math.min(15,W*.036),titleY=bottom-fs*.6-4,
+    R=Math.min(W*.16,54*scale+8,(titleY-fs*.6-8-top)/2.05),x=W/2,y=titleY-fs*.6-8-R;
+  ctx.save();ctx.globalAlpha=scrollTitleFade;
+  if(R>=18){const sp=scrollTitleSprite(R);ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);
+    const tx=Math.min(W-34,x+R+34),ts=Math.max(19,R*.3);scrollColumn(ctx,'天文圖',tx,y-R,ts,P.soot,.94,1,'kaiM');
+    // The seal is the office's as it was named when the Dunhuang chart was drawn: the Tang's Taishi Ju, the
+    // Bureau of the Grand Historian. The Sitian names came later, from 758.
+    scrollSeal(ctx,tx,y-R+ts*3.2+14,Math.max(18,R*.26),'太史局印',5,.95);}
+  if(titleY-fs*.6>=top){ctx.font=plateFace(fs,'sc');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=`rgba(${P.soot},.9)`;ctx.fillText('THE SCROLL',x,titleY);}
   ctx.restore();
 }
 // The ground: the paper tile at the camera's own rate, one lamp above the held body, the bands, the title.
@@ -427,6 +432,7 @@ function scrollNode(n,aim){
   if(SCROLL_GIFTS[n.type])scrollGift(n,x,y,n.r*scale,used);
   else if(n.difficultyChoice||pen.taken>0)scrollBody(n,x,y,tier,pen.d,n.difficultyChoice?1:pen.taken);
   else scrollPhenomenon(n,x,y,tier);
+  if(n.difficultyChoice)drawTriadGloss(n,x,y+n.r*scale*.6+16*scale,ink.scroll.soot,.78);
   if(active)scrollReleaseMarks(n,p,x,y);
 }
 

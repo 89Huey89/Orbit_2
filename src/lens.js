@@ -557,14 +557,7 @@ let lensTitleFade=1;
 // The mark is laid out upward from the opening lights and downward from the lore above them, so it fits the
 // gap between the two on any sheet — a short phone gets a smaller Saturn rather than a title set over the
 // rings, and a wide one lifts it clear of rings that sit higher than they do in the hand.
-function lensTitleRoom(){
-  let top=H*.13;
-  // read every frame the frontispiece stands, which is the only time this is drawn, so a turned phone is followed
-  try{const e=document.getElementById('lens-lore-open'),r=e&&e.getBoundingClientRect?e.getBoundingClientRect():null,gr=game.getBoundingClientRect?game.getBoundingClientRect():null;
-    if(r&&gr&&r.height>0)top=r.bottom-gr.top+6;}catch(_){}
-  let bottom=H*.36;for(const n of world.nodes)if(n.difficultyChoice)bottom=Math.min(bottom,sy(n.y)-n.cap*scale-6);
-  return{top,bottom};
-}
+function lensTitleRoom(){return eraTitleRoom('lens-lore-open');}
 function lensTitleMark(){
   const ready=world.state==='ready';lensTitleFade=ready?1:Math.max(0,lensTitleFade-.03);if(lensTitleFade<=0)return;
   const P=ink.lens,rec=lensRead(),stage=rec.completed>0?6:rec.furthest+1,C=LENS_CHAPTERS[stage-1],x=W/2,nw=lensBits(rec.worlds),nf=lensBits(rec.fields),log=nw||nf;
@@ -923,6 +916,7 @@ function lensChoice(n,x,y){
       gr.addColorStop(0,`rgba(${P.sepia},.32)`);gr.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(gx,gy,R*1.1,0,TAU);ctx.fill();}
     ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,43)-.5)*R*.7,y+(tileHash(n.id,i,44)-.5)*R*.5,Math.max(.7,.9*scale),0,TAU);ctx.fill();}
     ctx.restore();lensFell(ctx,'NEBULA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
+  drawTriadGloss(n,x,y+R+27*scale,P.ink,.75);
 }
 // The charges, as the things an observatory kept: the objective's dew-cap for the shield; a finder's mirror
 // for the reflector; the dome's shutter opening on a clear sky for the dawn charge; and for the inkwell, a
