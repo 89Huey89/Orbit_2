@@ -840,6 +840,28 @@ function drawChargeDevice(kind,r,rgb,pen){
 // The species a full observation names, one per geological family: the atlas's own Latin for what the
 // specimen shows, in the manner of the century's descriptive names rather than any later nomenclature.
 const SPECIMEN_NAMES={ocean:'Terra aquosa',crater:'Luna cavernosa',ringed:'Globus annulatus',ice:'Orbis glacialis',dune:'Terra arida',volcanic:'Terra ignea',storm:'Globus fasciatus'};
+// The room a century's frontispiece has for its emblem and its name: under the lore set in the DOM above it
+// and over the opening three below. Read every frame the frontispiece stands, which is the only time it is
+// drawn, so a turned phone is followed. A short sheet can leave it empty or less; each hand fits into it
+// from the bottom up and drops the emblem, then the name, rather than set either over the words or the bodies.
+function eraTitleRoom(loreId){
+  let top=H*.13;
+  try{const e=document.getElementById(loreId),r=e&&e.getBoundingClientRect?e.getBoundingClientRect():null,gr=game.getBoundingClientRect?game.getBoundingClientRect():null;
+    if(r&&gr&&r.height>0)top=r.bottom-gr.top+6;}catch(_){}
+  let bottom=H*.36;for(const n of world.nodes)if(n.difficultyChoice)bottom=Math.min(bottom,sy(n.y)-n.cap*scale-6);
+  return{top,bottom};
+}
+// The opening three are named in each century's own voice — TIRO, a moon, a mansion, a mission — but the
+// pressure each one sets is something the player acts on, so every hand glosses it in English beneath its
+// own name, in its own face and ink, and only until the choice is made.
+// A ground that changes under the word as the light moves (the Rock's) passes a halo to keep it legible.
+function drawTriadGloss(n,x,y,rgb,alpha=.8,halo=''){
+  if(!n.difficultyChoice||world.captures>0)return;
+  const word=(plateWords().triadGloss||{})[n.difficultyChoice];if(!word)return;
+  ctx.save();ctx.font=plateFace(Math.max(9,9.5*scale),'text','italic');ctx.textAlign='center';ctx.textBaseline='middle';
+  if(halo){ctx.strokeStyle=halo;ctx.lineWidth=3;ctx.lineJoin='round';ctx.strokeText(word,x,y);}
+  ctx.fillStyle=`rgba(${rgb},${alpha})`;ctx.fillText(word,x,y);ctx.restore();
+}
 function drawNode(n,aim){
   // A plate that draws this in its own hand names the painter (see defineHand() in src/plates.js); a
   // plate that names none is drawn exactly as the atlas always drew it.
@@ -1084,6 +1106,7 @@ function drawNode(n,aim){
       const labelW=ctx.measureText(label).width,labelY=captionOffset(x,y,r,24*scale,labelW*.5+6);
       markGroundText('caption',x,y+labelY,labelW,labelSize,'center');
       writeText(ctx,label,0,labelY,revealLabel(pen,label),{size:labelSize});
+      if(n.difficultyChoice)drawTriadGloss(n,0,labelY+labelSize+2*scale,paper?ink.base.ink:ink.marks.next,paper?.7:.6);
     }
   }
   if(renaissanceStar&&!captionsHeld())drawRenaissanceStarLetter(n,renaissanceStarObservation(n),rgb);

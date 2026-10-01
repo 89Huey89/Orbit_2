@@ -558,6 +558,7 @@ function flyChoice(n,x,y){
   if(c==='relaxed'){const mx=x+R*.18,my=y-R*.12;ctx.save();ctx.strokeStyle=`rgba(${P.amber},.95)`;ctx.lineWidth=Math.max(.6,.7*scale);ctx.beginPath();ctx.moveTo(mx-3*scale,my);ctx.lineTo(mx+3*scale,my);ctx.moveTo(mx,my-3*scale);ctx.lineTo(mx,my+3*scale);ctx.stroke();ctx.restore();}
   const name=c==='relaxed'?'THE MOON':c==='classic'?'MARS':'NEPTUNE',sub=c==='relaxed'?'1969 · APOLLO 11':c==='classic'?'1965 · MARINER 4':'1989 · VOYAGER 2';
   flyGrot(ctx,name,x,y+R+13*scale,Math.max(10,10.5*scale),P.white,.92,'center');flyMono(ctx,sub,x,y+R+25*scale,Math.max(7,7.5*scale),P.grey,.85,'center');
+  drawTriadGloss(n,x,y+R+37*scale,P.white,.8);
 }
 // The charges, as the things a mission actually carried or leaned on: a radiation vault, the shielded box its
 // electronics ride Jupiter's belts in; a high-gain dish locked on Earth; one of the network's seventy-metre
@@ -806,10 +807,16 @@ function flyDark(dt){
   // below the edge: nothing received at all, a flat black over a faint grid of frames still owed
   const edge=[];for(let x=0;x<=W+stepW;x+=stepW){const q=Math.floor(x/stepW);edge.push([x,fy+Math.round((tileHash(q,level,107)-.5)*3)*2*scale]);}
   ctx.beginPath();ctx.moveTo(0,edge[0][1]);for(let i=0;i<edge.length;i++){const [x,y]=edge[i];ctx.lineTo(x,y);if(i+1<edge.length)ctx.lineTo(edge[i+1][0],y);}ctx.lineTo(W+10,H+10);ctx.lineTo(-10,H+10);ctx.closePath();
-  ctx.fillStyle='rgba(1,1,2,.985)';ctx.fill();ctx.save();ctx.clip();ctx.strokeStyle=`rgba(${P.faint},.8)`;ctx.lineWidth=.5;ctx.beginPath();
+  // Black below black read as more of the vacuum, not as something that kills, so what was never received is
+  // the grey of a frame that never came down — the placeholder tiles' own grey, a shade under it — and a
+  // mass on every sheet of the ladder rather than only on the pale ones.
+  ctx.fillStyle='rgba(20,23,29,.985)';ctx.fill();ctx.save();ctx.clip();ctx.strokeStyle=`rgba(${P.dim},.55)`;ctx.lineWidth=.5;ctx.beginPath();
   const g0=((fy%ts)+ts)%ts;for(let x=0;x<W;x+=ts){ctx.moveTo(x,fy);ctx.lineTo(x,H);}for(let y=fy+g0;y<H;y+=ts){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();
   for(let i=0;i<4;i++){const ly=fy+(30+i*44)*scale;if(ly>H)break;flyMono(ctx,'NO SYNC · NO SYNC · NO SYNC',W*(.2+tileHash(i,level,108)*.6),ly,6.5,P.faint,.9,'center');}
   ctx.restore();
+  // The warning every sheet gives as the edge closes in, in the console's own amber: a band of it laid
+  // along the edge, deeper as the traveller nears.
+  {const gh=(26+near*22)*scale,gr=ctx.createLinearGradient(0,fy-gh,0,fy);gr.addColorStop(0,`rgba(${P.amber},0)`);gr.addColorStop(1,`rgba(${P.amber},${(.07+near*.16).toFixed(3)})`);ctx.fillStyle=gr;ctx.fillRect(0,fy-gh,W,gh);}
   // the edge: a square-stepped raster line, bright, the sharpest thing in the field
   ctx.strokeStyle=`rgba(${P.white},${(.75+near*.2).toFixed(3)})`;ctx.lineWidth=Math.max(1,1.1*scale);ctx.beginPath();ctx.moveTo(0,edge[0][1]);for(let i=0;i<edge.length;i++){const [x,y]=edge[i];ctx.lineTo(x,y);if(i+1<edge.length)ctx.lineTo(edge[i+1][0],y);}ctx.stroke();
   // what is lost is named plainly: LOS, and the frame counter jumping the frames that never arrived

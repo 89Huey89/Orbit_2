@@ -380,16 +380,12 @@
     #game[data-era="2"] #score{padding:1px 22px 5px}
     #game[data-era="2"] #best{padding:0 13px 2px}
     #game[data-era="2"] #score::after,#game[data-era="2"] #best::after{content:'';position:absolute;right:-4px;top:24%;height:52%;border-right:1.4px solid #efe2c4}
-    /* The canvas cartouche is the score now (a separate painter's own HUD, drawn over #sky), so this
-       DOM account steps down: still in the grid, still on the accessibility tree, just cut from the
-       eye. visibility:hidden would take it off that tree along with the pixels, so the box is clipped
-       instead — its footprint survives untouched, which is what keeps #pace/#flow/#ink from riding up
-       into the space it used to fill. */
-    #game[data-era="2"] #brand,#game[data-era="2"] #score,#game[data-era="2"] .best-block{clip-path:inset(50%)}
-    /* The cartouche the canvas paints runs to roughly y96 from the top of the sheet; the wall's own
-       watch sat close enough under the old (visible) score to graze it, so era II starts it a little
-       lower. */
-    #game[data-era="2"] .score-block{padding-top:14px}
+    /* The canvas cartouche is the score now (a separate painter's own HUD, drawn over #sky), and it
+       stands where every other century keeps its count, at the head of the left margin. So this DOM
+       account steps down the way theirs do: still on the accessibility tree, taken out of the flow, and
+       #pace/#flow/#ink ride up to the head of the sheet's middle, where every other century sets them. */
+    #game[data-era="2"] #brand,#game[data-era="2"] .best-block{clip-path:inset(50%)}
+    #game[data-era="2"] #score{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     /* The reed, charged and drying: the reservoir keeps its length but takes the shape of a brush
        laid on its side, so what drains along it reads as paint rather than as a bar. */
     #game[data-era="2"] #ink{height:7px;width:62px;clip-path:polygon(0 20%,64% 4%,90% 32%,100% 50%,90% 68%,64% 96%,0 80%)}

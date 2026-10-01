@@ -155,10 +155,10 @@ defineVoice('ceiling',{
   unrecorded:'ERA PREVIEW · NOT RECORDED',
   // The bonus a landing earns for how true its angle ran, and the square landing itself, in the
   // colophon's words rather than the atlas's Latin.
-  glosses:{angleBonus:'  ·  TRUE ENTRY +{bonus}'},
+  glosses:{angleBonus:'  ·  TRUE ENTRY +{bonus}',skip:'{count} HOUR-CIRCLE{plural} SKIPPED · +{bonus}'},
   squareLanding:CEILING_OBSERVATIONS.rightAngle,
   hud:{pace:'COURSE ×',flow:'ORDER ×',shield:'PROTECTION HELD',reflector:'RETURN HELD',dawn:'DAYBREAK HELD'},
-  chrome:{brand:'WNWT',bestLabel:'Preview',endTitle:'The night begins again.',endTitleWon:'The barque came through the night.',endActionWon:'Tap to sail the night again',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
+  chrome:{brand:'WNWT',eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',bestLabel:'Preview',endTitle:'The night begins again.',endTitleWon:'The barque came through the night.',endActionWon:'Tap to sail the night again',pauseTitle:'The barque rests.',pauseEyebrow:'THE HOURS STAND STILL',pauseNote:'Tap the wall to continue',pauseResume:'TAKE UP THE COURSE',pauseLeave:'LEAVE THE VOYAGE',pauseLabel:'Rest the barque',gameLabel:'The Ceiling, a playable Era II preview',canvasLabel:'The Ceiling. Guide a flat solar night barque through painted hour-circles. Tap or press Space to release.',
     readings:{chronicle:'TO SUNRISE',endless:'THE ENDLESS NIGHT',label:'The voyage: {reading}. Tap to change it'},
     instructions:{head:'THE MANNER OF USE',rules:['Tap to release the flat night barque.','Skim an hour-circle; hold it to restore the reed.','Follow the painted dabs around Apep, the Eye, Shu and Nun.','The first landing sets the course.']}},
   tips:{first:'Release when the painted dabs meet the next circle.',vortex:'Apep bends the course before his body can seize the barque. Give the serpent room.',dark:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',faded:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',angle:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',speed:'Skim the circle’s rim; a clean transfer preserves the barque’s pace.',won:'Twelve hours, twelve gates, and the sun is born again from the sky.'},
@@ -1248,7 +1248,9 @@ function ceilingGroundPatch(x,y,w,h,alpha,shade=false){
 // born. Geb, the earth, lies green along the foot. She is baked once per screen size into one canvas
 // the size of the screen and drawn over the flight (renderCeiling), so the waters of Nun rise inside
 // her and never over her. Her figure is not animated: she is what the night happens inside.
-function ceilingNutBandWidth(){return Math.max(14,Math.min(22,W*.046));}
+// On the phone a band a twentieth of the sheet wide cost the flight more than its own margins, so the body
+// is cut thinner on a narrow sheet and keeps its old width where there is room for it.
+function ceilingNutBandWidth(){return Math.max(12,Math.min(22,W*.03));}
 function ceilingDrawRegisterGrid(){
   const key=W+'x'+H+'x'+DPR;
   if(!ceilingFrameTop||ceilingFrameKey!==key){
@@ -1362,7 +1364,7 @@ function ceilingDrawRegisterGrid(){
 function ceilingDrawCartouche(){
   const n=Math.max(0,world.score|0),key=n+':'+W+'x'+H+'x'+DPR;
   if(ceilingCartoucheKey!==key){
-    const P=CEILING_PALETTE,nh=24,numW=n?ceilingNumWidth(n,nh):nh*.6,w=Math.min(W-2*ceilingNutBandWidth()-90,Math.max(112,numW+60)),h=58,pad=8;
+    const P=CEILING_PALETTE,nh=19,numW=n?ceilingNumWidth(n,nh):nh*.6,w=Math.min(W*.3,Math.max(84,numW+46)),h=46,pad=8;
     const c=makeCanvas(Math.ceil((w+pad*2)*DPR),Math.ceil((h+pad*2)*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(pad,pad);
     const r=h/2,oval=()=>{g.beginPath();g.moveTo(r,0);g.lineTo(w-r-6,0);g.arc(w-r-6,r,r,-Math.PI/2,Math.PI/2);g.lineTo(r,h);g.arc(r,r,r,Math.PI/2,Math.PI*1.5);g.closePath();};
     oval();g.fillStyle='rgba(13,24,56,.92)';g.fill();
@@ -1370,14 +1372,15 @@ function ceilingDrawCartouche(){
     g.lineWidth=2.4;g.strokeStyle=P.carbon;g.stroke();
     g.save();g.translate(w/2,h/2);g.scale((w-7)/w,(h-7)/h);g.translate(-w/2,-h/2);oval();g.restore();g.lineWidth=1;g.strokeStyle=P.yellow;g.stroke();
     g.fillStyle=P.carbon;g.fillRect(w-6.6,7,3.6,h-14);g.strokeStyle=P.yellow;g.lineWidth=1;g.strokeRect(w-6.6,7,3.6,h-14);
-    const scale0=Math.min(1,(w-44)/Math.max(1,numW)),nw=numW*scale0;
-    g.save();g.translate((w-6)/2-nw/2,8);g.scale(scale0,scale0);
+    const scale0=Math.min(1,(w-34)/Math.max(1,numW)),nw=numW*scale0;
+    g.save();g.translate((w-6)/2-nw/2,6);g.scale(scale0,scale0);
     if(n)ceilingNumber(g,n,0,0,nh,P.yellow);else{g.strokeStyle=P.yellow;g.lineWidth=1.4;g.beginPath();g.arc(nh*.3,nh*.5,nh*.22,0,TAU);g.stroke();}
     g.restore();
-    g.font=plateFace(11,'sc');g.textAlign='center';g.fillStyle=P.carbon;g.globalAlpha=.9;g.fillText(String(n),(w-6)/2,h-9);
+    g.font=plateFace(10,'sc');g.textAlign='center';g.fillStyle=P.carbon;g.globalAlpha=.9;g.fillText(String(n),(w-6)/2,h-7);
     ceilingCartouche={c,w:w+pad*2,h:h+pad*2};ceilingCartoucheKey=key;
   }
-  const q=ceilingCartouche;ctx.drawImage(q.c,W/2-q.w/2+3,ceilingNutBandWidth()+2,q.w,q.h);
+  // At the head of the left margin, inside Nut's arch, where every other century keeps its count.
+  const q=ceilingCartouche,bw=ceilingNutBandWidth();ctx.drawImage(q.c,bw+Math.max(6,bw*.5),bw+2,q.w,q.h);
 }
 // The sun's course through Nut. The night is the sun travelling through her body, swallowed at her lips
 // in the evening and born at her feet at dawn, and that is exactly what a run is: so the sun is drawn

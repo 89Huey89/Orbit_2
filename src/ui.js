@@ -23,6 +23,9 @@ defineVoice('atlas',{
   chartNoun:'constellation',
   chartVerb:'traced',
   chartNames:null,
+  // The pressure each of the opening three sets, in plain English under whatever a century names the body
+  // itself: the choice is the first thing a run asks the player to act on, so it is glossed on every sheet.
+  triadGloss:{relaxed:'gentle',classic:'steady',hardcore:'hard'},
   // Lore a plate may keep for itself: a line set on the sheet as each chapter opens, and a note under a
   // chart as it closes, both in the curator's English and both kept on the catalogue once met. The atlas's
   // four lines tell its own century in order, Apian's wheels to Galileo's glass, the calendar reform the
