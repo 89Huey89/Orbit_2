@@ -81,7 +81,9 @@ Built on `claude/games-art-audit-p5nt2z`, `npm test` green, checked at 430×932:
 | D5 death blot | Fixed | A hazard death on the atlas blots the page with the run's own ink, flung away from the nearest hazard, instead of bursting |
 | C6 Ceiling ageing | Fixed; captions still open | Plaster, lamp soot, edge grime and lifted flakes over the painted wall (`a6b1452`, `ceiling.js` `ceilingFlake`). Whether the red captions still clip at the right edge is unchecked |
 | R4 Rock frontispiece | Fixed | Every century is named on its frontispiece (`9473cc4`); the stray black shape was not seen again but has not been rechecked by a capture |
-| R1, R2, R5 Rock wall | In part | The flowstone's edge is softened and gated by a second field, the bedding period jittered per bed, and niches fade at the rim with a soft stacked shadow (`2bd18ee`). The flowstone still has no x-warp, the moiré is unchecked by a capture, and the dried route is unchanged |
+| R1, R2 Rock wall | Fixed as proposed, not re-seen | The flowstone is sampled through a slow sideways warp (±22 units, off the damp field) and cut with a wide step (`.5–.85`), and the bedding lip's share of the shading is cut from `.15` to `.1` over a smaller mask (`.66–.84`). Neither the columns nor the moiré reproduced in a capture at row 20 before the change, so the fix is judged by its mechanism, not by a before-and-after |
+| R3, C6 captions | Checked | A run flown on the Rock and on the Ceiling now goes through the same settled-type check as the atlas (`runtime.mjs`, "A century's own lettering"); no clash on the Rock. On the Ceiling a note is placed clear of Nut's head and later rides the sheet under it, which the check allows, as it allows the running head |
+| R5 Rock niches | In part | Niches fade at the rim with a soft stacked shadow (`2bd18ee`); the dried route is unchanged |
 
 Built on `claude/remaining-art-assets-6bf6v4`, with everything new in `src/press.js` and one-line hooks
 elsewhere, so it merges cleanly with the Era I overhaul (`claude/stone-age-deck-conflicts-g0en46`).

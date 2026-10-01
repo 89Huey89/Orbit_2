@@ -97,6 +97,10 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       // notes the sheet carries down pass under it on their way off the plate: that is a leaf over ink, not
       // two lines of type sharing a place.
       if(a.kind==='head'||b.kind==='head')continue;
+      // The same holds for a piece of a century's frame that stands inside the sheet (the Ceiling's Nut, whose head
+      // is drawn over the chart): a note is never set across it, but once set it rides the sheet under it like any
+      // ink. So such a key is held against a note only in the moment the note is placed.
+      if(a.kind==='key'||b.kind==='key'){const n=a.kind==='key'?b:a;if(!n.owner||n.owner.age==null||n.owner.age>.25)continue;}
       const smaller=Math.min((a.right-a.left)*(a.bottom-a.top),(b.right-b.left)*(b.bottom-b.top));
       const said=m=>`${m.kind}${m.owner&&m.owner.text?' "'+m.owner.text+'"':''}${m.owner&&m.owner.pending?' (still finding its line)':m.owner&&m.owner.name?' "'+m.owner.name+'"':''} [${[m.left,m.top,m.right,m.bottom].map(Math.round)}]`;
       assert(area<=smaller*.12,`Settled type overlaps in ${where} at ${width}×${height}: ${said(a)} over ${said(b)} (${Math.round(area)} of ${Math.round(smaller)} sq pt)`);
@@ -1845,6 +1849,26 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.plateName,'paper','A door pressed from inside a century is the way back out');
     context.test.leaveEra();
     assert.equal(context.test.plateName,'paper','Leaving when no century is standing is not a second exit');
+    context.test.setPlate('night');
+  }
+  // ---- A century's own lettering keeps the atlas's promise (ART-REVIEW.md R3, C6) ----
+  // The Rock and the Ceiling set their notes, tallies and captions through the same register as the atlas, so a
+  // run flown on each is checked the same way: nothing set down to stay is printed across anything else.
+  {
+    context.test.setPlate('paper');context.test.newWorld();
+    for(const id of ['rock','ceiling']){
+      context.test.enterEra(id);context.test.handleInput();
+      const w=context.test.world;w.releaseGrace=0;
+      for(let i=0;i<120*30&&w.state==='playing';i++){
+        // The shots harness's oracle: a perfect onto the next row or two, or any clean transfer after a lap and a half.
+        const aim=w.player.node&&w.aim(),row=Math.floor(w.progress)+1;
+        if(aim&&!aim.steep&&!aim.dry&&aim.n.type!=='gold'&&aim.n.row>=row&&aim.n.row<=row+2&&(aim.perfect||w.player.orbitSweep>1.5*Math.PI*2)&&w.player.orbitTime>.12&&(w.player.node.type!=='sling'||w.charge()===1))w.release();
+        w.update(step);
+        if(i%2===0){context.test.render(step*2);settledClashes(context.test.groundCollisions(),'a run on '+id);}
+      }
+      assert(w.captures>3,'The run on '+id+' reached far enough to letter something: '+w.captures);
+      context.test.leaveEra();
+    }
     context.test.setPlate('night');
   }
   // ---- A century with an ending may be flown without one: its Chronicle, or Endless (LINKING.md) ----
