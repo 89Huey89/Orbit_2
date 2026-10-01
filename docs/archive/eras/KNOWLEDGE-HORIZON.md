@@ -206,10 +206,10 @@ can honestly reach. The code is `BELIEFS` in `src/beliefs.js`; the argument and 
 | I · Rock | — | — | none: the wall asserts nothing a later hand corrected | — |
 | II · Ceiling | `THE YEAR IS 365 DAYS` | `SOPDET SLIPS A DAY IN FOUR YEARS · CANOPUS, 238 BCE` | row 3 → row 15 | attested |
 | III · Scroll | `寸差千里 · AN INCH OF SHADOW PER THOUSAND LI` | `一行 YIXING, 724 · 2.1 INCHES IN 527 LI` | row 3 → row 11 | attested |
-| IV · Astrolabe | `معدل المسير · PTOLEMY’S EQUANT` | `TWO CIRCLES FOR THE EQUANT · AL-TUSI, MARAGHA 1261` | Valencia (row 19) → Marāgha (row 25) | attested |
+| IV · Astrolabe | `PRECESSION · ONE DEGREE A CENTURY · PTOLEMY` | `ONE DEGREE IN 66 YEARS · AL-SUFI, ISFAHAN 964` | Baghdad or Isfahan (rows 1–10) → Isfahan (rows 6–11) | attested |
 | V · Atlas | `CŒLUM IMMUTABILE · ARISTOTELES` | `STELLA NOVA SUPRA LUNAM · TYCHO 1572` | Tabula I (row 3) → Tabula II (row 10) | attested |
 | VI · Lens | `LOWELL 1895` on Mars's plate | `NOT CANALS · A. 1909`, Lowell struck in red | as the plate develops → developed | attested |
-| VII · Flyby | `CANALS · LOWELL 1895` | `NO CANALS · CRATERS · MARINER 4, 1965` | row 2 → row 4 (Mars, 1965) | attested |
+| VII · Flyby | `A DEAD WORLD, LIKE THE MOON · MARINERS 4–7` | `RIVER BEDS AND VOLCANOES · MARINER 9, 1971` | both in Chryse, 1971–76 (rows 6–11) | attested |
 | VIII · Probe | `TWO GIANTS · VAN DE KAMP 1969` | `NOT FOUND · TELESCOPE FAULT, 1973` | Arrival (row 13) → Seed (row 19) | attested |
 
 Rows are counted from the row the century was entered on. "Where the pattern holds and where it breaks",

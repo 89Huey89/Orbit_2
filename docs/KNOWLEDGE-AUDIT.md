@@ -273,12 +273,16 @@ cheap steps would close most of the gap:
    beneath (`src/beliefs.js`, and the Lens's `LOWELL 1895` now struck in red as Antoniadi's note is typed).
    Only attested pairs: the Ceiling's 365-day year and the Decree of Canopus (238 BCE); the Scroll's inch of
    shadow per thousand li and Yixing's survey of 724 (Mars at the Heart was dropped: its only correction is
-   Huang Yi-long's computation of 1990, six centuries past the Scroll); the Astrolabe's equant and al-Ṭūsī's
-   two circles at Marāgha (1261); the atlas's unchanging heavens and Tycho's new star of 1572; the Flyby's
-   canals and Mariner 4 (1965); the Probe's van de Kamp planets of Barnard's Star and the telescope fault
+   Huang Yi-long's computation of 1990, six centuries past the Scroll); the Astrolabe's precession of a degree
+   a century, Ptolemy's, and al-Ṣūfī's degree in 66 years (Isfahan, 964); the atlas's unchanging heavens and
+   Tycho's new star of 1572; the Flyby's dead, Moon-like Mars of Mariners 4 to 7 and Mariner 9's river beds
+   and volcanoes (1971); the Probe's van de Kamp planets of Barnard's Star and the telescope fault
    found in 1973. The Rock is left without: it asserts nothing a later hand corrected. Table and sources in
    KNOWLEDGE-HORIZON.md and `docs/archive/eras/research/beliefs.md`; the suite checks every century sets its
-   belief and strikes it later, and `npm run shots -- beliefs` shows each at 430×932.
+   belief and strikes it later, and `npm run shots -- beliefs` shows each at 430×932. The equant (Marāgha, the fifth
+   chapter, seldom reached) and Lowell's canals on the Flyby (which fell under the Viking heading, and are
+   already the Lens's pair) were the first choices and were moved the same day; each pair is now kept inside
+   the chapters whose dates it carries.
 8. **One star through several hands.** Antares is *Xin*, *qalb al-aqrab* and "the rival of Ares"; Vega
    and Altair are the Weaver Girl and the Herd Boy and al-Ṣūfī's two eagles; Aldebaran leads from the
    Hall of the Bulls, hedged, to *al-dabarān* to the guest star of 1054 at the Bull's horn. The

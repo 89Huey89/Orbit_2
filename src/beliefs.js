@@ -13,7 +13,8 @@
 // every pair are docs/archive/eras/research/beliefs.md and KNOWLEDGE-HORIZON.md's last column.
 // `at` and `fixAt` are rows counted from the row the century was entered on: the first plain body from `at` is
 // given the belief, the first from `fixAt` the struck belief and its correction. Where a century tells itself
-// in dated chapters, the two rows fall in the chapters of the two dates.
+// in dated chapters, the two rows fall in the chapters of the two dates, and `until` and `fixUntil` keep each
+// search inside its chapter, so a correction dated 1965 is never written under a heading of 1976.
 // The Rock sets none. It asserts nothing a later hand could correct: no belief of the Palaeolithic survives in
 // words, and a modern reading of a wall corrected by another modern reading is not the wall's own belief.
 // The Lens keeps its pair on Mars's own plate (lensBodyPlate), where it was first built; it is listed here so
@@ -25,18 +26,18 @@ const BELIEFS={
   3:{belief:'寸差千里 · AN INCH OF SHADOW PER THOUSAND LI',fix:'一行 YIXING, 724 · 2.1 INCHES IN 527 LI',at:3,fixAt:11,
     label:'attested',
     source:'The old rule that a gnomon’s noon shadow changes one cun for every thousand li north or south (寸差千里), doubted by Liu Zhuo under the Sui; refuted by the Kaiyuan survey of 724 under Yixing and Nangong Yue: from Baima to Shangcai, 526 li 270 bu, the summer-solstice shadow differed by 2.1 cun, and one du of the pole’s height came to 351 li 80 bu.'},
-  4:{belief:'معدل المسير · PTOLEMY’S EQUANT',fix:'TWO CIRCLES FOR THE EQUANT · AL-TUSI, MARAGHA 1261',at:19,fixAt:25,
+  4:{belief:'PRECESSION · ONE DEGREE A CENTURY · PTOLEMY',fix:'ONE DEGREE IN 66 YEARS · AL-SUFI, ISFAHAN 964',at:1,fixAt:6,until:11,fixUntil:12,
     label:'attested',
-    source:'Ptolemy’s equant (Ar. muʿaddil al-masīr), kept by the Almagest tradition and the equatorium makers; al-Ṭūsī’s al-Tadhkira fī ʿilm al-hayʾa (1261), whose pair of circles — one rolling inside another twice its size — gives a straight motion from two uniform ones and replaced the equant in his models (not for Mercury, which he left unsolved).'},
+    source:'Ptolemy’s Almagest (VII.2) gives the precession of the fixed stars as one degree in a hundred years; al-Battānī measured it faster, a degree in about 66 years, and al-Ṣūfī’s Book of the Fixed Stars (Isfahan, 964) takes that rate and adds 12°42′ to Ptolemy’s longitudes for his own epoch. The equant and al-Ṭūsī’s pair of circles (Maragha, 1261) were the first choice, but Maragha is the fifth chapter and few runs reach it.'},
   5:{belief:'CŒLUM IMMUTABILE · ARISTOTELES',fix:'STELLA NOVA SUPRA LUNAM · TYCHO 1572',at:3,fixAt:10,
     label:'attested',
     source:'Aristotle’s unchanging heavens above the Moon; Tycho Brahe, De nova stella (1573): the new star of November 1572 showed no daily parallax, and so stood beyond the Moon.'},
   6:{own:true,belief:'LOWELL 1895',fix:'NOT CANALS · A. 1909',
     label:'attested',
     source:'Lowell, Mars (1895); Antoniadi at the Meudon 83 cm refractor, 1909. Drawn on Mars’s own plate by lens.js.'},
-  7:{belief:'CANALS · LOWELL 1895',fix:'NO CANALS · CRATERS · MARINER 4, 1965',at:2,fixAt:4,
+  7:{belief:'A DEAD WORLD, LIKE THE MOON · MARINERS 4–7',fix:'RIVER BEDS AND VOLCANOES · MARINER 9, 1971',at:6,fixAt:6,until:12,fixUntil:12,
     label:'attested',
-    source:'Lowell, Mars (1895); Mariner 4’s 21 pictures of July 1965, covering about one per cent of the planet, showed craters and no canals.'},
+    source:'Mariner 4 (1965), then Mariners 6 and 7 (1969), happened to photograph the old cratered uplands, and Mars was read as a dead, Moon-like world; Mariner 9, the first craft to orbit another planet (from November 1971), mapped Olympus Mons, Valles Marineris and dry channels cut by flowing water. Lowell’s canals, corrected by Mariner 4 itself, are already the Lens’s pair, so the Flyby keeps the belief its own pictures made.'},
   8:{belief:'TWO GIANTS · VAN DE KAMP 1969',fix:'NOT FOUND · TELESCOPE FAULT, 1973',at:13,fixAt:19,
     label:'attested',
     source:'Van de Kamp’s astrometric planet (1963) and two-planet solution (1969) from Sproul plates — the reason Project Daedalus chose the star; Gatewood & Eichhorn (1973) found no wobble, and Hershey (1973) traced it to the Sproul objective’s cleaning and remounting. Four small planets, under half an Earth’s mass each, were confirmed in 2025 (Basant et al., ApJL 982 L1).'}
@@ -55,8 +56,8 @@ function beliefHere(){
 // stars), and never the round's star, which carries a name of its own. Read off the chart a seed deals, so the
 // same seed always sets the belief on the same body, and kept once found.
 let beliefPicked={world:null,from:-1,era:0,set:-1,fix:-1};
-function beliefFirstFrom(w,row,era,skip){
-  for(let k=row;k<=w.row;k++){
+function beliefFirstFrom(w,row,era,skip,until=Infinity){
+  for(let k=row;k<=w.row&&k<until;k++){
     const n=w.nodes.find(q=>q.row===k&&q!==skip&&oneStarPlain(q)&&!oneStarClaimed(q,era)&&!(typeof oneStarIs==='function'&&oneStarIs(q)));
     if(n)return n;
   }
@@ -68,8 +69,8 @@ function beliefBodies(w=world){
   if(p.world!==w||p.from!==from||p.era!==here.era)beliefPicked={world:w,from,era:here.era,set:-1,fix:-1};
   const q=beliefPicked,find=id=>id<0?null:w.nodes.find(n=>n.id===id)||null;
   let set=find(q.set),fix=find(q.fix);
-  if(q.set<0){set=beliefFirstFrom(w,from+here.b.at,here.era,null);if(set)q.set=set.id;}
-  if(q.fix<0){fix=beliefFirstFrom(w,from+here.b.fixAt,here.era,set);if(fix)q.fix=fix.id;}
+  if(q.set<0){set=beliefFirstFrom(w,from+here.b.at,here.era,null,here.b.until==null?Infinity:from+here.b.until);if(set)q.set=set.id;}
+  if(q.fix<0&&set){fix=beliefFirstFrom(w,Math.max(from+here.b.fixAt,set?set.row+1:-Infinity),here.era,set,here.b.fixUntil==null?Infinity:from+here.b.fixUntil);if(fix)q.fix=fix.id;}
   return {set,fix,here};
 }
 // ---------- On the sheet ----------

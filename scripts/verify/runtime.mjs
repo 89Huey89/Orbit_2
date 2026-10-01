@@ -2333,7 +2333,7 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(t.beliefOf(1),null,'The Rock keeps no belief: it asserts nothing a later hand corrected');
     for(let era=2;era<=8;era++){
       const b=t.beliefOf(era);assert(b&&b.belief&&b.fix&&b.source&&LABELS.includes(b.label),'Every century from the Ceiling up has a belief, its correction, a label and a source: era '+era);
-      if(!b.own)assert(b.fixAt>b.at,'The correction is set later in the run than the belief: era '+era);
+      if(!b.own)assert(b.fixAt>=b.at,'The correction is never looked for before the belief: era '+era);
     }
     {const r=t.lensCanalReading,early=r(1,0),late=r(1,1);
       assert(early.belief>0&&early.struck===0&&early.fix===0,'The Lens sets Lowell\'s canals as the plate develops, unstruck');
@@ -2350,6 +2350,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       const where='era '+era,from=w.eraFrom||0;
       assert(got&&got.set&&got.fix&&got.set!==got.fix,'The belief and its correction each stand on a body of their own: '+where);
       assert(got.set.row>=from+b.at&&got.fix.row>=from+b.fixAt,'On the rows the century gives them: '+where);
+      assert(got.fix.row>got.set.row,'The correction stands on a later row than the belief: '+where);
+      if(b.until!=null)assert(got.set.row<from+b.until&&got.fix.row<from+b.fixUntil,'And inside the chapters whose dates they carry: '+where);
       for(const n of [got.set,got.fix])assert(!n.difficultyChoice&&n.routeId==null&&(n.type==='still'||n.type==='drift'),'A plain main-line body: '+where);
       const twin=new OrbitWorld(w.seed,w.width,w.height,()=>{},true,w.varyOpening,w.newtonOn,w.chasmsOn,w.relightOn,w.goalRow);twin.driven=w.driven;for(let i=0;i<34;i++)twin.generateRow();
       const tg=t.beliefBodies(twin);assert(tg&&tg.set.row===got.set.row&&tg.fix.row===got.fix.row,'The same seed sets them on the same rows: '+where);

@@ -34,10 +34,10 @@ chapters, `at` and `fixAt` fall in the chapters of the two dates. Nothing in `sr
 | I · Rock | — none | — none | — | — | No Palaeolithic belief survives in words; see below. |
 | II · Ceiling | `THE YEAR IS 365 DAYS` | `SOPDET SLIPS A DAY IN FOUR YEARS · CANOPUS, 238 BCE` | 3 → 15 (hour II → hour VI) | attested (the reading of the civil year as a belief is ours: see below) | Decree of Canopus, 7 March 238 BCE (Ptolemy III) |
 | III · Scroll | `寸差千里 · AN INCH OF SHADOW PER THOUSAND LI` | `一行 YIXING, 724 · 2.1 INCHES IN 527 LI` | 3 → 11 (Azure Dragon → Black Tortoise) | attested | The Kaiyuan meridian survey, 724, under Yixing and Nangong Yue |
-| IV · Astrolabe | `معدل المسير · PTOLEMY’S EQUANT` | `TWO CIRCLES FOR THE EQUANT · AL-TUSI, MARAGHA 1261` | 19 → 25 (Valencia 1085 → Maragha 1259) | attested | al-Ṭūsī, *al-Tadhkira fī ʿilm al-hayʾa* (1261); Ragep |
+| IV · Astrolabe | `PRECESSION · ONE DEGREE A CENTURY · PTOLEMY` | `ONE DEGREE IN 66 YEARS · AL-SUFI, ISFAHAN 964` | Baghdad or Isfahan → Isfahan (rows 1–10 → 6–11) | attested | al-Ṭūsī, *al-Tadhkira fī ʿilm al-hayʾa* (1261); Ragep |
 | V · Atlas | `CŒLUM IMMUTABILE · ARISTOTELES` | `STELLA NOVA SUPRA LUNAM · TYCHO 1572` | 3 → 10 (Tabula I → Tabula II, 1572) | attested | Tycho Brahe, *De nova stella* (1573) |
 | VI · Lens | `LOWELL 1895` (on Mars's plate) | `NOT CANALS · A. 1909`, Lowell struck through | as the plate develops → once developed | attested | Lowell, *Mars* (1895); Antoniadi, Meudon 83 cm, 1909 |
-| VII · Flyby | `CANALS · LOWELL 1895` | `NO CANALS · CRATERS · MARINER 4, 1965` | 2 → 4 (Mars 1965) | attested | Mariner 4, 14–15 July 1965 |
+| VII · Flyby | `A DEAD WORLD, LIKE THE MOON · MARINERS 4–7` | `RIVER BEDS AND VOLCANOES · MARINER 9, 1971` | both in Chryse, 1971–76 (rows 6–11) | attested | Mariners 4, 6, 7 (1965, 1969); Mariner 9 in orbit from November 1971 |
 | VIII · Probe | `TWO GIANTS · VAN DE KAMP 1969` | `NOT FOUND · TELESCOPE FAULT, 1973` | 13 → 19 (Arrival → Seed, Barnard's Star b) | attested | van de Kamp 1963, 1969; Gatewood & Eichhorn 1973; Hershey 1973 |
 
 ## Each pair
@@ -169,3 +169,15 @@ uses, rather than left standing beside it.
   says only that the civil year was 365 days and that Canopus corrected it, both attested.
 - Hershey's paper (AJ 78, 1973) was not read directly; the lens-remounting account is from Bartlett &
   Ianna's history and later reviews.
+
+## Revised 2026-10-01
+
+Two pairs were moved so a run actually reaches them, each kept inside the chapters whose dates it carries (`until`,
+`fixUntil` in `src/beliefs.js`). The Astrolabe's equant and al-Ṭūsī's circles needed the fifth chapter, Maragha, which
+few runs reach; it now keeps the precession instead — Ptolemy's degree a century (Almagest VII.2), corrected to a degree in
+about 66 years by al-Battānī and taken up in al-Ṣūfī's Book of the Fixed Stars (Isfahan, 964), which adds 12°42′ to
+Ptolemy's longitudes. The Flyby's canals fell under the Viking heading, since the Mariner chapter deals no plain body
+past its opening; and Lowell's canals are already the Lens's pair. It now keeps the belief its own first pictures made:
+Mariners 4, 6 and 7 happened on the old cratered uplands and Mars was read as a dead, Moon-like world, until Mariner 9,
+in orbit from November 1971, mapped Olympus Mons, Valles Marineris and channels cut by water. Both are set in the
+1971–76 chapter. Unverified here as before: the 12°42′ figure and al-Battānī's rate rest on secondary summaries.
