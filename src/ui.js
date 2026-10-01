@@ -892,11 +892,26 @@ function updateUI(dt){
   beliefTick();
   if(world.state==='dead'&&!deathShown&&world.player.deadTime>(world.won?WIN_END_DELAY:.65))showEnd();
 }
+// The density the sheet is pulled at. A phone-sized sheet on a 3x screen (the reference phone) is drawn at its
+// own 3x, since the burin hairlines are what the look is made of and a 2x pull scaled up by the browser
+// softens every one of them; its pixel count at 3x is still under a laptop's at 2x. Anything larger stays
+// capped at 2x. If the pacer (below) finds the press missing frames at 3x, the sheet drops to 2x for good,
+// remembered so the next visit starts there rather than stuttering once more before it learns.
+const SHARP_KEY='orbit.sharpness.v1',SHARP_PHONE_AREA=520000;
+let sharpShed=storage.get(SHARP_KEY,'')==='2x';
+function sheetDensity(w,h){
+  const native=window.devicePixelRatio||1,cap=!sharpShed&&w*h<=SHARP_PHONE_AREA?3:2;
+  return Math.min(Math.max(native,1.5),cap);
+}
+function shedSharpness(){
+  if(sharpShed||DPR<=2)return false;
+  sharpShed=true;storage.set(SHARP_KEY,'2x');resize();invalidateArt();return true;
+}
 function resize(){
   // Floored at 1.5 even on an ordinary "1x" screen: the engraving's hairline burin strokes run well
   // under a device pixel wide, and rasterising them with no supersampling turns a crisp incised line
   // into a soft grey smear. The floor costs at most the same fill rate already paid on any 2x display.
-  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=Math.min(Math.max(window.devicePixelRatio||1,1.5),2);scale=Math.min(W/440,H/780);
+  const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=sheetDensity(W,H);scale=Math.min(W/440,H/780);
   canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
   // Resizing the canvas resets its context state, so this is set again on every resize: it governs how
   // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
@@ -1136,6 +1151,8 @@ function pacePresent(dt,raw){
   // an addition to the ground, never the ground, so a screen of any speed that is plainly missing frames
   // — one in five or more — loses it first, and the window is measured again without it.
   if(late>native*PACE_MISS&&typeof relightShed==='function'&&relightShed())return;
+  // Next goes the third pull of a 3x sheet: sharper hairlines are worth less than an even flight.
+  if(late>native*PACE_MISS&&shedSharpness())return;
   if(native<PACE_FAST_PANEL&&achieved>native*PACE_MISS){
     presentEvery=2;presentIn=1;paceProbeIn=paceProbeWait;paceProbeWait=Math.min(30,paceProbeWait*2);
   }
