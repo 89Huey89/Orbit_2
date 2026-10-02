@@ -368,38 +368,27 @@ function paintEngraving(g,core,palette,rng,family='ocean',tilt=-.28){
       px=qx;py=qy;
     }
   }
-  if(crossHatch){
-    // The crossing set: circles of latitude laid across the first set where the body is darkest,
-    // entered past the middle of the disc (past the terminator on the moon) and carried out to the limb,
-    // bowed as a parallel is on a globe tipped a little toward the viewer, and struck heavier toward the
-    // limb, so the tone builds from single hatching to crossed the way a burin deepens a shadow.
-    const x0=moon?core*.34:core*.12;
-    for(let h=-core*.94;h<core*.94;h+=1.7*(.85+rng()*.3)){
-      if(rng()<.08)continue;
-      const w=Math.sqrt(core*core-h*h)*1.01;if(w<=x0+1)continue;
-      const bow=core*.07,M=6,hs=(rng()*4294967296)>>>0||1,weight=(paper?.45:.32)+rng()*(paper?.35:.24);
-      let px=0,py=0;
-      for(let k=0;k<=M;k++){
-        const x=x0+(w-x0)*k/M,y=h+bow*Math.sqrt(Math.max(0,1-(x/w)**2)),qx=x*cl-y*sl,qy=x*sl+y*cl;
-        const a=(paper?.1:.08)+((x-x0)/(core-x0))*(paper?.45:.3);
-        if(k>0)burinSegment(g,px,py,qx,qy,hatchInk,a*(.35+.65*Math.sin(Math.PI*(k-.5)/M)),weight,hs+k,{segments:2,skips:0,wobble:.5,hair:false});
-        px=qx;py=qy;
-      }
+  // The crossing set, as a 1603 copperplate cut it: circles of latitude laid across the first set where
+  // the body is darkest, entered past the middle of the disc (past the terminator on the moon) and carried
+  // out to the limb, bowed as a parallel is on a globe tipped a little toward the viewer, and struck
+  // heavier toward the limb, so the tone builds from single hatching to crossed the way a burin deepens a shadow.
+  const x0=moon?core*.34:core*.12;
+  for(let h=-core*.94;h<core*.94;h+=1.7*(.85+rng()*.3)){
+    if(rng()<.08)continue;
+    const w=Math.sqrt(core*core-h*h)*1.01;if(w<=x0+1)continue;
+    const bow=core*.07,M=6,hs=(rng()*4294967296)>>>0||1,weight=(paper?.45:.32)+rng()*(paper?.35:.24);
+    let px=0,py=0;
+    for(let k=0;k<=M;k++){
+      const x=x0+(w-x0)*k/M,y=h+bow*Math.sqrt(Math.max(0,1-(x/w)**2)),qx=x*cl-y*sl,qy=x*sl+y*cl;
+      const a=(paper?.1:.08)+((x-x0)/(core-x0))*(paper?.45:.3);
+      if(k>0)burinSegment(g,px,py,qx,qy,hatchInk,a*(.35+.65*Math.sin(Math.PI*(k-.5)/M)),weight,hs+k,{segments:2,skips:0,wobble:.5,hair:false});
+      px=qx;py=qy;
     }
   }
   g.strokeStyle=paper?'rgba(26,18,11,.42)':'rgba(37,33,25,.32)';g.lineWidth=paper?.5:.38;
   for(let i=0;i<19;i++){
     const y=-core+i*core*.12;
     g.beginPath();g.moveTo(core*.4,y);g.bezierCurveTo(core*.66,y+.08*core,core*.86,y+.35*core,core*1.1,y+.45*core);g.stroke();
-  }
-  if(paper&&!crossHatch){
-    // Without the crossing set, the dark limb is deepened with a second set of parallel strokes that curve with the
-    // form, concentric with the limb itself, the way a pen follows a rounded body rather than crossing it.
-    for(let i=0;i<14;i++){
-      const rr=core*(.5+i*.036),reach=.55+i*.03;
-      g.strokeStyle=`rgba(26,18,11,${.08+i/14*.26})`;g.lineWidth=.38+rng()*.24;
-      g.beginPath();g.arc(0,0,rr,-reach+rng()*.08,reach-rng()*.08);g.stroke();
-    }
   }
   // Scaled by the disc's own area ratio to the reference body (core 26), the same fix paintPigment's
   // stipple gets, and for the same reason: flat per body, this was the densest mark a pickup carried.

@@ -323,10 +323,10 @@ function figHatch(g,spine,leftFn,rightFn,count,rng,rgb,alpha,width){
     const x=s.x+s.px*o,y=s.y+s.py*o,tone=alpha*(.4+frac*.7);
     burinSegment(g,x-ca*len,y-sa*len,x+ca*len,y+sa*len,rgb,tone,width,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.35,hair:false});
   }
-  if(!crossHatch)return;
-  // The crossing set, laid only over the outer, darker half of the ribbon and a little lighter
-  // than the first, so a figure's shadow side builds to cross-hatch while its lit side stays single. Its
-  // own generator keeps the first set's sequence, and so the plain reading, unchanged.
+  // The press crosses its hatching in the darkest ground, as a 1603 copperplate did. The crossing set is
+  // laid only over the outer, darker half of the ribbon and a little lighter than the first, so a
+  // figure's shadow side builds to cross-hatch while its lit side stays single. Its own generator keeps
+  // the first set's sequence unchanged.
   const xr=seeded((Math.floor(rng()*4294967296)>>>0)||1),cb=Math.cos(FIG_HATCH_ANGLE-1.35),sb=Math.sin(FIG_HATCH_ANGLE-1.35);
   for(let i=0;i<n;i++){
     const t=clamp((i+.5)*step+(xr()-.5)*step*.7,0,1),s=spine.at(t);
@@ -756,7 +756,7 @@ function deviceLine(g,pts,rgb,alpha,weight,seed,closed){
   }
 }
 // A device's hatching: parallel strokes running down and to the right. The devices are small enough that
-// the crossing set the figures and bodies carry (crossHatch) would close them up, so they keep one slant.
+// the crossing set the figures and bodies carry would close them up, so they keep one slant.
 function deviceHatch(g,x,y,count,step,length,rgb,alpha,seed){
   for(let i=0;i<count;i++)burinSegment(g,x+i*step,y+i*step*.5,x+i*step+length*.62,y+i*step*.5+length,rgb,alpha,1,(seed+i*104729)>>>0,{segments:3,hair:false,wobble:.3});
 }
@@ -1025,7 +1025,7 @@ function drawNode(n,aim){
     const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
     if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
   }
-  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Fell italic,
+  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Garamond italic,
   // written round the top of the rim by the pen once the observation closes and left there after release,
   // so a finished chart reads as a lettered plate rather than a field of anonymous circles. It is a name,
   // so it is the plate's Latin (CLAUDE.md, the two voices); the seven are plain enough to need no gloss.

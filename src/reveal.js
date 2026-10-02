@@ -806,25 +806,25 @@ function writeText(context,text,x,y,progress,options){
   if(context===ctx&&(!options||options.nib!==false))penNib(left+shown+1,y-size*.28,-.6,.75,undefined,nibRecency(progress));
 }
 // ---------- Large lettering: true stroke order ----------
-// The chapter name is written letter by letter from the outlines of the Fell faces themselves (see
+// The chapter name is written letter by letter from the outlines of the Garamond faces themselves (see
 // scripts/glyphs.mjs): each glyph's contours are stroked on by dash offset with a bead of wet ink at the
 // pen, then the counters flood with ink. Once the writing is finished the ordinary text rendering takes
 // over as the finished state, so nothing about the printed result changes.
 const LETTER_STAGGER=.09,LETTER_STROKE=.12,LETTER_FLOOD=.26;
-const fellOutlines=new Map();
-let fellDigits=null;
-function fellGlyph(face,char){
+const atlasOutlines=new Map();
+let glyphDigits=null;
+function atlasGlyph(face,char){
   const key=face+char;
-  const cached=fellOutlines.get(key);if(cached!==undefined)return cached;
-  const set=typeof FELL_GLYPHS==='undefined'?null:FELL_GLYPHS.faces[face];
+  const cached=atlasOutlines.get(key);if(cached!==undefined)return cached;
+  const set=typeof ATLAS_GLYPHS==='undefined'?null:ATLAS_GLYPHS.faces[face];
   const entry=set&&set[char];
-  if(!entry){fellOutlines.set(key,null);return null;}
-  if(!fellDigits){fellDigits=new Map();for(let i=0;i<FELL_GLYPHS.digits.length;i++)fellDigits.set(FELL_GLYPHS.digits[i],i);}
+  if(!entry){atlasOutlines.set(key,null);return null;}
+  if(!glyphDigits){glyphDigits=new Map();for(let i=0;i<ATLAS_GLYPHS.digits.length;i++)glyphDigits.set(ATLAS_GLYPHS.digits[i],i);}
   const counts=entry[1],blob=entry[2],contours=[],lengths=[];
   let at=0,px=0,py=0;
   const next=()=>{
     let value=0,shift=1,code;
-    do{code=fellDigits.get(blob[at++]);value+=(code&31)*shift;shift*=32;}while(code&32);
+    do{code=glyphDigits.get(blob[at++]);value+=(code&31)*shift;shift*=32;}while(code&32);
     return value&1?-(value+1)/2:value/2;
   };
   for(const count of counts){
@@ -838,10 +838,10 @@ function fellGlyph(face,char){
     contours.push(points);lengths.push(spans);
   }
   const glyphOutline={advance:entry[0],contours,lengths};
-  fellOutlines.set(key,glyphOutline);return glyphOutline;
+  atlasOutlines.set(key,glyphOutline);return glyphOutline;
 }
-function fellAdvance(face,char){
-  const set=typeof FELL_GLYPHS==='undefined'?null:FELL_GLYPHS.faces[face];
+function atlasAdvance(face,char){
+  const set=typeof ATLAS_GLYPHS==='undefined'?null:ATLAS_GLYPHS.faces[face];
   const entry=set&&(set[char]||set[' ']);
   return entry?entry[0]:0;
 }
@@ -851,17 +851,17 @@ function letteringTime(text){return text.length*LETTER_STAGGER+LETTER_STROKE+LET
 // the caller asks for a wide-set abbreviation without typing the gaps in as literal space characters,
 // which would otherwise be timed and drawn as glyphs of their own.
 function penLettering(text,x,y,size,face,age,align,tracking=0){
-  if(reducedMotion||typeof FELL_GLYPHS==='undefined'||!FELL_GLYPHS.faces[face])return false;
+  if(reducedMotion||typeof ATLAS_GLYPHS==='undefined'||!ATLAS_GLYPHS.faces[face])return false;
   if(age>=letteringTime(text))return false;
-  const unit=size/FELL_GLYPHS.unitsPerEm;
-  let width=Math.max(0,text.length-1)*tracking;for(let i=0;i<text.length;i++)width+=fellAdvance(face,text[i])*unit;
+  const unit=size/ATLAS_GLYPHS.unitsPerEm;
+  let width=Math.max(0,text.length-1)*tracking;for(let i=0;i<text.length;i++)width+=atlasAdvance(face,text[i])*unit;
   let pen=align==='center'?x-width/2:align==='right'?x-width:x;
   const style=ctx.fillStyle,base=ctx.globalAlpha,wall=ink.reveal.mode==='wall';
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
   for(let i=0;i<text.length;i++){
-    const char=text[i],advance=fellAdvance(face,char)*unit,start=i*LETTER_STAGGER;
+    const char=text[i],advance=atlasAdvance(face,char)*unit,start=i*LETTER_STAGGER;
     const stroke=clamp((age-start)/LETTER_STROKE,0,1),flood=clamp((age-start-LETTER_STROKE*.55)/LETTER_FLOOD,0,1);
-    const outline=stroke>0?fellGlyph(face,char):null;
+    const outline=stroke>0?atlasGlyph(face,char):null;
     if(outline&&wall){
       // The wall's own order, letter by letter: the draftsman's red setting-out laid off register,
       // the senior hand's thin black correction over it, the flat flood, and the black line that

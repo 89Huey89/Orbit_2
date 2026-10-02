@@ -151,8 +151,10 @@ These need a design decision, not a text edit.
   1990 card before any exoplanet was known, which `06-lens.md` admits. *Built 2026-10-01:* the Lens binds a
   body's family to its chapter (`lensFamily` redraws, from row and seed, any family whose caption year is
   later than its chapter's, so Padua shows only the Moon and Venus and The Hague adds the ring), checked
-  in `scripts/verify/runtime.mjs`; the register-three names stay as `06-lens.md`'s "Names" chose them, the
-  families being known by 1787 and only the words postdating 1990, and are left for a decision.
+  in `scripts/verify/runtime.mjs`; the register-three names were left for a decision, the families being known
+  by 1787 and only the words postdating 1990. *Decided by the author (2026-10-02):* they are now words in
+  use by 1990 (TERRESTRIAL PLANET, AIRLESS BODY, RINGED PLANET, ICE GIANT, DESERT PLANET, VOLCANIC BODY,
+  GAS GIANT; `LENS_WORLD_NAMES`).
 - **A gravity assist is not a lap.** The Flyby's signature feat asks to "leave a gravity well on a full
   lap". A real assist is a single hyperbolic pass that borrows the planet's orbital motion; a full lap
   would be a capture. The mechanic can stay; its gloss should not teach the wrong picture.

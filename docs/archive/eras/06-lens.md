@@ -171,7 +171,7 @@ word, it is following one act of resolving through three different institutions.
 |---|---|---|
 | An unresolved point | a blurred disc at the eyepiece (reg. 1); a bare knot on the glass (reg. 2); a FITS `OBJECT` field (reg. 3) | fictional gameplay translation; `OBJECT` itself attested |
 | The Moon | *Luna*, the first body this era actually resolves — Galileo's terminator and craters, 1610; Riccioli's named *maria*, 1651, though they hold no water | attested |
-| A resolved world (the seven families) | undifferentiated by name in registers one and two — a bracketed annotation and a plate's own density stand in for a name no century yet had; **ocean world, rocky/airless world, gas giant, ice giant, desert world, lava world, hot Jupiter** only in register three | reg. 1–2: n/a, by design (per [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md), no family is named until this era resolves one); reg. 3: attested, informal exoplanet-outreach usage |
+| A resolved world (the seven families) | undifferentiated by name in registers one and two — a bracketed annotation and a plate's own density stand in for a name no century yet had; **terrestrial planet, airless body, ringed planet, ice giant, desert planet, volcanic body, gas giant** only in register three, each a word in use by 1990 (gas giant from Blish, 1952; ice giant in the literature from about 1978) | reg. 1–2: n/a, by design (per [KNOWLEDGE-HORIZON.md](KNOWLEDGE-HORIZON.md), no family is named until this era resolves one); reg. 3: attested before 1990, chosen by the author (2026-10-02) over the exoplanet-era ocean world and lava world |
 | Slingshot | a full sweep of the tube on its mount, the slow-motion screw run one whole turn | fictional gameplay translation |
 | Shield | the objective's own dew-cap, a plain ring at the tube's mouth | fictional gameplay translation |
 | Reflector | a finder-scope's mirrored image (reg. 1); a blink comparator's flipped pair of plates (reg. 2) | fictional gameplay translation, grounded in the attested comparator Tombaugh's own Pluto search used |
@@ -441,9 +441,10 @@ this section calls the largest gap, and makes choices this file left open, recor
   those its chapter already knew: Padua 1610 holds the airless world and Venus's phases, The Hague 1659 adds
   the ring, and from Paris 1887 on all seven are old. It is Lens-local; the chart, the atlas's glyph cache,
   the telescopic-capture tally and every other century still read `planetFamilyFor`, and the tally is
-  unchanged because a redrawn family is still one of the seven. Register three's names (OCEAN WORLD, LAVA
-  WORLD and the rest) are left as "Names" above chose them, the informal words of the present: the families
-  themselves are all known by 1787, and only the words postdate 1990.
+  unchanged because a redrawn family is still one of the seven. Register three's names were
+  OCEAN WORLD, LAVA WORLD and the rest, the informal words of the present, which postdate the card's 1990;
+  *decided by the author (2026-10-02)*, they are now words in use by then: TERRESTRIAL PLANET, AIRLESS
+  BODY, RINGED PLANET, ICE GIANT, DESERT PLANET, VOLCANIC BODY, GAS GIANT (`LENS_WORLD_NAMES`).
 
 ## Risk
 

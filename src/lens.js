@@ -68,11 +68,13 @@ const LENS_ROMAN=['I','II','III','IV','V','VI'];
 
 // The twelve fields of the catalogue, each an object this era actually resolved or photographed, with the
 // one thing its record still carries; and the seven families, which registers one and two decline to name
-// (06-lens.md, "Names") and register three names in the informal words of the present.
+// (06-lens.md, "Names") and register three names in words a 1980s planetary scientist would have typed:
+// gas giant (1952) and ice giant (c. 1978) were in use by then, where ocean world and lava world are the
+// exoplanet era's and would put a 1990 card ahead of its own date.
 const LENS_FIELDS=[
   ['M 45','THE PLEIADES'],['M 44','PRAESEPE'],['M 42','THE ORION NEBULA'],['M 31','ANDROMEDA'],['M 51','THE WHIRLPOOL'],['M 1','THE CRAB'],
   ['B 33','THE HORSEHEAD'],['B 86','A DARK CLOUD'],['M 13','THE HERCULES CLUSTER'],['M 57','THE RING'],['MEL 25','THE HYADES'],['β CYG','ALBIREO']];
-const LENS_WORLD_NAMES={ocean:'OCEAN WORLD',crater:'AIRLESS WORLD',ringed:'RINGED GIANT',ice:'ICE GIANT',dune:'DESERT WORLD',volcanic:'LAVA WORLD',storm:'GAS GIANT'};
+const LENS_WORLD_NAMES={ocean:'TERRESTRIAL PLANET',crater:'AIRLESS BODY',ringed:'RINGED PLANET',ice:'ICE GIANT',dune:'DESERT PLANET',volcanic:'VOLCANIC BODY',storm:'GAS GIANT'};
 const LENS_FAMILIES=['ocean','crater','ringed','ice','dune','volcanic','storm'];
 // Register one's readings, one to a family: what the eyepiece first made of such a body, what it later made
 // of it, and the dated caption the finished drawing is sealed with. Every one is drawn as its century
@@ -100,9 +102,9 @@ const LENS_WORLD={
 
 // ---------- Small tools ----------
 const lensRgb=(a,k=1)=>`rgba(${a[0]|0},${a[1]|0},${a[2]|0},${k})`;
-// Register one sets its words in the Fell types, roman and italic, because a Huygens or a Herschel paper was
-// set in them; `variant` 'sc' is the Fell small capitals.
-function lensFell(g,str,x,y,size,rgb,alpha,align='center',variant='text',style=''){
+// Register one sets its words in the atlas's Garamond, roman and italic, because a Huygens or a Herschel paper
+// was set in its descendants; `variant` 'sc' is its small capitals.
+function lensGaramond(g,str,x,y,size,rgb,alpha,align='center',variant='text',style=''){
   if(alpha<=0||!str)return;g.save();g.font=plateFace(size,variant,style);g.direction='ltr';g.textAlign=align;g.textBaseline='middle';g.fillStyle=`rgba(${rgb},${alpha})`;g.fillText(str,x,y);g.restore();
 }
 // Register two is typed, not written: Courier Prime, each strike a little heavier or lighter than the one
@@ -512,7 +514,7 @@ function lensRegAt(x,y){const gs=lensGrowths();let reg=0;for(let k=0;k<gs.length
 function lensRegAtY(y,x=0){return lensRegAt(x,y);}
 const lensRegAtScreen=(ys,xs=W/2)=>lensRegAt((xs-W*.5-plateShift.x)/scale,(ys-plateShift.y)/scale+world.cameraY);
 // The margins down both edges count the climb in arcminutes in every register, each in its own manner: an
-// engraved double rule with the Fell's figures at the eyepiece; the plate's own unexposed edge, clear glass
+// engraved double rule with the Garamond's figures at the eyepiece; the plate's own unexposed edge, clear glass
 // with its numbers typed, on the plate; and an instrument axis with row numbers in the card face, off the sensor.
 const LENS_BAND=14;
 function lensMargins(reg,top,bot){
@@ -527,7 +529,7 @@ function lensMargins(reg,top,bot){
     ctx.strokeStyle=reg===0?`rgba(${P.ink},.75)`:reg===1?`rgba(${P.inkBlack},.7)`:`rgba(${P.instrSoft},.8)`;ctx.lineWidth=.5;ctx.stroke();
     for(let k=first;k<=last;k++){const m=((k%60)+60)%60;if(m%10)continue;const y=sy(-k*LENS_UNIT),xm=side<0?B*.32:W-B*.32,deg=Math.floor(k/60);
       ctx.save();ctx.translate(xm,y);ctx.rotate(side<0?-Math.PI/2:Math.PI/2);
-      if(reg===0)lensFell(ctx,m===0?deg+'°':m+'′',0,0,7.5,P.ink,.8);
+      if(reg===0)lensGaramond(ctx,m===0?deg+'°':m+'′',0,0,7.5,P.ink,.8);
       else if(reg===1)lensGrot(ctx,String(m===0?deg:m).padStart(2,'0'),0,0,7,P.inkBlack,.75,'center');
       else lensMono(ctx,String(k*LENS_UNIT*4).padStart(5,'0'),0,0,6,P.instrSoft,.85,'center');
       ctx.restore();}}
@@ -552,7 +554,7 @@ function lensRim(reg,x,y,R){
   ctx.restore();
 }
 // The frontispiece's title mark: Saturn as far as any run on this device has resolved it, above the opening
-// lights and gone once the hand starts; the era's name beneath it in the Fell capitals, and the catalogue.
+// lights and gone once the hand starts; the era's name beneath it in the Garamond capitals, and the catalogue.
 let lensTitleFade=1;
 // The mark is laid out upward from the opening lights and downward from the lore above them, so it fits the
 // gap between the two on any sheet — a short phone gets a smaller Saturn rather than a title set over the
@@ -570,8 +572,8 @@ function lensTitleMark(){
   if(fit>=14){const key='title:'+stage+':'+R.toFixed(1)+':'+DPR;let sp=lensSprites.get(key);
   if(!sp){const size=Math.ceil(R*4.4),c=makeCanvas(Math.round(size*DPR),Math.round(size*DPR)),g=c.getContext('2d');g.scale(DPR,DPR);g.translate(size/2,size/2);lensSaturn(g,R,stage,1);sp={canvas:c,size};if(lensSprites.size>8)lensSprites.clear();lensSprites.set(key,sp);}
   ctx.drawImage(sp.canvas,x-sp.size/2,y-sp.size/2,sp.size,sp.size);}
-  lensFell(ctx,'THE LENS',x,titleY,Math.min(24,W*.062),P.ink,.94,'center','sc');
-  lensFell(ctx,'Saturn, as far as it has been resolved: '+C.year+' · '+C.place.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),x,lineY,Math.min(10.5,W*.027),P.inkSoft,.85,'center','text','italic');
+  lensGaramond(ctx,'THE LENS',x,titleY,Math.min(24,W*.062),P.ink,.94,'center','sc');
+  lensGaramond(ctx,'Saturn, as far as it has been resolved: '+C.year+' · '+C.place.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),x,lineY,Math.min(10.5,W*.027),P.inkSoft,.85,'center','text','italic');
   if(log)lensTyped(ctx,'LOG · '+nw+' OF 7 WORLDS · '+nf+' OF 12 FIELDS',x,logY,8,P.inkRed,.8,'center');
   ctx.restore();
 }
@@ -602,7 +604,7 @@ function lensAtmosphere(){
 // ---------- A chapter opens: the place, its year, and Saturn as it drew it ----------
 // Struck early in the paint order, under every orbit and body, the way the atlas cuts its chapter title into
 // the plate: Saturn at this chapter's reading, faint behind the play and made in the register's own manner,
-// the place above it, and the reading set in the register's own hand — the Fell at the eyepiece, a typed
+// the place above it, and the reading set in the register's own hand — the Garamond at the eyepiece, a typed
 // jacket label on the plate, a teletyped header off the sensor.
 let lensRevealCanvas=null,lensRevealKey='',lensRevealOf=null,lensRevealAt=0;
 function lensChapterReveal(dt){
@@ -627,9 +629,9 @@ function lensChapterReveal(dt){
     ctx.save();ctx.globalAlpha=(reg===0?.5:.62)*fade;ctx.drawImage(lensRevealCanvas,cx-size/2,cy-size/2,size,size);ctx.restore();}
   const tk=clamp((age-.2)/.8,0,1)*fade,ty=drawSat?cy-R*up-14:clear-8,sub=LENS_ROMAN[i]+' OF VI · '+C.place+' · '+C.year;
   if(reg===0){
-    lensFell(ctx,C.place,cx,ty-40,28,P.ink,.9*tk,'center','sc');
-    lensFell(ctx,'Caput '+LENS_ROMAN[i]+' · '+C.year+' · '+C.who.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),cx,ty-16,12,P.ink,.8*tk,'center','text','italic');
-    lensFell(ctx,C.reading,cx,ty+1,9.5,P.inkSoft,.85*clamp((age-.9)/.6,0,1)*fade,'center','sc');
+    lensGaramond(ctx,C.place,cx,ty-40,28,P.ink,.9*tk,'center','sc');
+    lensGaramond(ctx,'Caput '+LENS_ROMAN[i]+' · '+C.year+' · '+C.who.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),cx,ty-16,12,P.ink,.8*tk,'center','text','italic');
+    lensGaramond(ctx,C.reading,cx,ty+1,9.5,P.inkSoft,.85*clamp((age-.9)/.6,0,1)*fade,'center','sc');
   }else if(reg===1){
     // a plate jacket's label: a ruled slip with the plate's particulars typed on it
     const w=Math.min(W-60,250),h=58,x0=cx-w/2,y0=ty-54;ctx.save();ctx.globalAlpha=tk;
@@ -822,8 +824,8 @@ function lensBodyEye(n,family,x,y,d,al){
   ctx.restore();
   // the reading, then the dated caption that seals the drawing
   const Rd=LENS_EYE_READINGS[family];if(Rd&&!n.difficultyChoice){const cy=y+reach+13*scale,sz=Math.max(10,10.5*scale);
-    if(e2>0&&e3<1)lensFell(ctx,Rd.first.toLowerCase(),x,cy,sz,P.inkSoft,.8*al*e2*(1-e3),'center','text','italic');
-    if(e3>0)lensFell(ctx,Rd.caption,x,cy,sz,P.ink,.9*al*e3,'center','text','italic');}
+    if(e2>0&&e3<1)lensGaramond(ctx,Rd.first.toLowerCase(),x,cy,sz,P.inkSoft,.8*al*e2*(1-e3),'center','text','italic');
+    if(e3>0)lensGaramond(ctx,Rd.caption,x,cy,sz,P.ink,.9*al*e3,'center','text','italic');}
   if(d>=1)lensNoteDone(n,family);
 }
 // Register two: the body on the glass. A bare knot at the capture; held, it develops as a tray print does,
@@ -916,12 +918,12 @@ function lensFlourishAge(n){let at=lensDoneAt.get(n.id);if(at===undefined){at=wo
 // a nebula, the faintest thing an eyepiece was asked to draw — Huygens's Orion, a cloud with stars in it.
 function lensChoice(n,x,y){
   const P=ink.lens,R=lensDiscR(n),c=n.difficultyChoice;
-  if(c==='relaxed'){lensBodyEye(n,'crater',x,y,1,1);lensFell(ctx,'LUNA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
-  else if(c==='classic'){lensBodyEye(n,'ringed',x,y,1,1);lensFell(ctx,'SATURNUS',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
+  if(c==='relaxed'){lensBodyEye(n,'crater',x,y,1,1);lensGaramond(ctx,'LUNA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
+  else if(c==='classic'){lensBodyEye(n,'ringed',x,y,1,1);lensGaramond(ctx,'SATURNUS',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
   else{ctx.save();for(let i=0;i<5;i++){const a=tileHash(n.id,i,41)*TAU,dd=R*.5*tileHash(n.id,i,42),gx=x+Math.cos(a)*dd,gy=y+Math.sin(a)*dd,gr=ctx.createRadialGradient(gx,gy,0,gx,gy,R*1.1);
       gr.addColorStop(0,`rgba(${P.sepia},.32)`);gr.addColorStop(1,`rgba(${P.sepia},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(gx,gy,R*1.1,0,TAU);ctx.fill();}
     ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(n.id,i,43)-.5)*R*.7,y+(tileHash(n.id,i,44)-.5)*R*.5,Math.max(.7,.9*scale),0,TAU);ctx.fill();}
-    ctx.restore();lensFell(ctx,'NEBULA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
+    ctx.restore();lensGaramond(ctx,'NEBULA',x,y+R+14*scale,Math.max(10,10.5*scale),P.ink,.85,'center','sc');}
   drawTriadGloss(n,x,y+R+27*scale,P.ink,.75);
 }
 // The charges, as the things an observatory kept: the objective's dew-cap for the shield; a finder's mirror
@@ -1009,7 +1011,7 @@ function lensVoid(h,reg,x,y){
   if(reg===0){ctx.save();ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.clip();ctx.fillStyle=`rgba(${P.ink},.3)`;ctx.fillRect(x-core,y-core,core*2,core*2);
     ctx.strokeStyle=`rgba(${P.ink},.8)`;ctx.lineWidth=Math.max(.5,.6*scale);const st=1.9*scale;ctx.beginPath();for(let o=-core*2;o<core*2;o+=st){ctx.moveTo(x+o-core,y-core);ctx.lineTo(x+o+core,y+core);ctx.moveTo(x+o+core,y-core);ctx.lineTo(x+o-core,y+core);}ctx.stroke();ctx.restore();
     ctx.strokeStyle=`rgba(${P.ink},.95)`;ctx.lineWidth=1.1*scale;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.stroke();
-    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Nihil visum · nothing seen',lx,ly,sz,P.ink,.8,al,'text','italic'),'Nihil visum · nothing seen',x,y-core-5*scale,core+8*scale,sz,'text');}}
+    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensGaramond(ctx,'Nihil visum · nothing seen',lx,ly,sz,P.ink,.8,al,'text','italic'),'Nihil visum · nothing seen',x,y-core-5*scale,core+8*scale,sz,'text');}}
   else if(reg===1){
     // the lifted silver: clear glass inside a torn edge, the edge itself darker where the gelatin rolled up
     ctx.beginPath();const N=40;for(let i=0;i<=N;i++){const a=i/N*TAU,rr=core*(1+(tileHash(h.seed,i%N,1)-.5)*.14);i?ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}ctx.closePath();
@@ -1035,7 +1037,7 @@ function lensHalation(h,reg,x,y){
     ctx.fillStyle=`rgba(${P.paper},1)`;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();lensHatchDisc(ctx,x,y,core,1,P,.35,{noCross:true});
     ctx.fillStyle=`rgba(${P.ink},.85)`;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(x+(tileHash(h.seed,i,5)-.5)*core*1.1,y+(tileHash(h.seed,i,6)-.5)*core*.6,Math.max(.8,core*(.05+tileHash(h.seed,i,7)*.06)),0,TAU);ctx.fill();}
     ctx.strokeStyle=`rgba(${P.ink},.95)`;ctx.lineWidth=1*scale;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.stroke();
-    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensFell(ctx,'Sol · maculae · the Sun’s spots',lx,ly,sz,P.ink,.8,al,'text','italic'),'Sol · maculae · the Sun’s spots',x,y-core-4*scale,core+10*scale,sz,'text');}}
+    {const sz=Math.max(10,10.5*scale);lensHazardLabel((lx,ly,al)=>lensGaramond(ctx,'Sol · maculae · the Sun’s spots',lx,ly,sz,P.ink,.8,al,'text','italic'),'Sol · maculae · the Sun’s spots',x,y-core-4*scale,core+10*scale,sz,'text');}}
   else if(reg===1){for(let i=4;i>=1;i--){const rr=core+(reach-core)*i/4.4;ctx.strokeStyle=`rgba(${P.silverMid},${(.14+.08*(4-i)).toFixed(3)})`;ctx.lineWidth=(reach-core)/5;ctx.beginPath();ctx.arc(x,y,rr,0,TAU);ctx.stroke();}
     for(let i=0;i<3;i++){const f=((t*.3+i/3)%1),r=core+f*(reach-core);ctx.strokeStyle=`rgba(${P.silver},${((1-f)*.35).toFixed(3)})`;ctx.lineWidth=.7*scale;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.stroke();}
     const kg=ctx.createRadialGradient(x,y,0,x,y,core);kg.addColorStop(0,`rgb(${P.silver})`);kg.addColorStop(.85,`rgb(${P.silver})`);kg.addColorStop(1,`rgba(${P.silver},.8)`);ctx.fillStyle=kg;ctx.beginPath();ctx.arc(x,y,core,0,TAU);ctx.fill();
@@ -1062,7 +1064,7 @@ function lensDrift(h,reg,x,y){
     ctx.fillStyle=`rgba(${col},${reg===2?.8:.9})`;ctx.beginPath();ctx.arc(x0+len,lane,(reg===1?1.1:.8)*scale,0,TAU);ctx.fill();}
   ctx.restore();
   const lx=x-Math.cos(dir)*reach*.72,ly=y-Math.sin(dir)*reach*.72-12*scale,sz=Math.max(reg===0?10:7.5,(reg===0?10.5:7.5)*scale);
-  if(reg===0)lensFell(ctx,'Manus tremula · a shaking hand',lx,ly,sz,P.ink,.75,'center','text','italic');else if(reg===1)lensTyped(ctx,'TRACKING DRIFT',lx,ly,sz,P.inkRed,.85,'center');else lensMono(ctx,'SOLAR WIND',lx,ly,sz,P.cyan,.8,'center');
+  if(reg===0)lensGaramond(ctx,'Manus tremula · a shaking hand',lx,ly,sz,P.ink,.75,'center','text','italic');else if(reg===1)lensTyped(ctx,'TRACKING DRIFT',lx,ly,sz,P.inkRed,.85,'center');else lensMono(ctx,'SOLAR WIND',lx,ly,sz,P.cyan,.8,'center');
   ctx.save();ctx.strokeStyle=reg===0?`rgba(${P.rubric},.85)`:reg===1?`rgba(${P.inkRed},.85)`:`rgba(${P.cyan},.85)`;ctx.lineWidth=1.3*scale;const ax=lx,ay=ly+10*scale;
   ctx.beginPath();ctx.moveTo(ax-Math.cos(dir)*8*scale,ay-Math.sin(dir)*8*scale);ctx.lineTo(ax+Math.cos(dir)*10*scale,ay+Math.sin(dir)*10*scale);ctx.lineTo(ax+Math.cos(dir-2.6)*4*scale+Math.cos(dir)*10*scale,ay+Math.sin(dir-2.6)*4*scale+Math.sin(dir)*10*scale);ctx.stroke();ctx.restore();
 }
@@ -1076,7 +1078,7 @@ function lensDarkNebula(h,reg,x,y){
   ctx.save();const t=reducedMotion?0:world.time;
   if(reg===0){const wg=ctx.createRadialGradient(x,y,0,x,y,R);wg.addColorStop(0,`rgba(${P.paperDeep},.75)`);wg.addColorStop(.75,`rgba(${P.paperDeep},.4)`);wg.addColorStop(1,`rgba(${P.paperDeep},0)`);ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${P.inkSoft},.35)`;ctx.setLineDash([2*scale,3*scale]);ctx.lineWidth=.6*scale;ctx.beginPath();ctx.arc(x,y,R*.9,0,TAU);ctx.stroke();ctx.setLineDash([]);
-    lensFell(ctx,'Foramen in caelo? · a hole in the sky?',x,y-R-8*scale,Math.max(10,10.5*scale),P.ink,.72,'center','text','italic');}
+    lensGaramond(ctx,'Foramen in caelo? · a hole in the sky?',x,y-R-8*scale,Math.max(10,10.5*scale),P.ink,.72,'center','text','italic');}
   else if(reg===1){const wg=ctx.createRadialGradient(x,y,0,x,y,R);wg.addColorStop(0,'rgba(246,246,242,.9)');wg.addColorStop(.7,'rgba(246,246,242,.6)');wg.addColorStop(1,'rgba(246,246,242,0)');ctx.fillStyle=wg;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
     ctx.strokeStyle=`rgba(${P.inkBlack},.55)`;ctx.lineWidth=.8*scale;lensLoop(ctx,x,y,R*.82,h.seed|0,1,.8*scale);
     lensTyped(ctx,'B '+(33+(h.seed%330|0)),x,y-R*.82-8*scale,Math.max(8,8.5*scale),P.inkBlack,.85,'center');}
@@ -1341,7 +1343,7 @@ function lensFigure(chart){
   if(reg===0){let R=0;for(const p of pts)R=Math.max(R,Math.hypot(p[0]-cx,p[1]-cy));R+=30*scale;const a0=-Math.PI/2,a1=a0+TAU*f;
     ctx.strokeStyle=`rgba(${P.ink},.62)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.beginPath();ctx.arc(cx,cy,R,a0,a1);ctx.stroke();ctx.lineWidth=Math.max(.35,.4*scale);ctx.beginPath();ctx.arc(cx,cy,R+3*scale,a0,a1);ctx.stroke();
     if(done){ctx.strokeStyle=`rgba(${P.ink},.35)`;ctx.lineWidth=Math.max(.35,.4*scale);ctx.setLineDash([3*scale,3*scale]);ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx-R*.2,cy);ctx.moveTo(cx+R*.2,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy-R*.2);ctx.moveTo(cx,cy+R*.2);ctx.lineTo(cx,cy+R);ctx.stroke();ctx.setLineDash([]);
-      const x=clamp(cx,90,W-90),y=clamp(cy+R+16*scale,70,H-70),sz=Math.max(12,13*scale);lensFell(ctx,F[0]+' · '+F[1],x,y,sz,P.ink,.92,'center','sc');lensMarkName(F[0]+' · '+F[1],x,y,sz,'sc');}}
+      const x=clamp(cx,90,W-90),y=clamp(cy+R+16*scale,70,H-70),sz=Math.max(12,13*scale);lensGaramond(ctx,F[0]+' · '+F[1],x,y,sz,P.ink,.92,'center','sc');lensMarkName(F[0]+' · '+F[1],x,y,sz,'sc');}}
   else if(reg===1){const pad=30*scale;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of pts){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);}
     x0-=pad;y0-=pad;x1+=pad;y1+=pad;const per=2*((x1-x0)+(y1-y0));
     ctx.strokeStyle=`rgba(${P.inkBlack},.7)`;ctx.lineWidth=Math.max(.6,.8*scale);ctx.setLineDash([per*f,per]);ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.lineTo(x1,y1);ctx.lineTo(x0,y1);ctx.closePath();ctx.stroke();ctx.setLineDash([]);
@@ -1373,15 +1375,15 @@ function lensChartRoute(chart){
   }
   ctx.setLineDash([]);
   chart.stars.forEach((n,i)=>{const x=sx(n.x)-(n.r*.62+8)*scale,y=sy(n.y)-(n.r*.62+8)*scale,a=chart.expired?.2:n.visited?.85:.6,sz=Math.max(10,10.5*scale),c=n.visited?live:dry;
-    if(reg===0)lensFell(ctx,LENS_ROMAN[i].toLowerCase(),x,y,sz,c,a,'center','text','italic');else if(reg===1)lensTyped(ctx,String(i+1),x,y,sz,c,a,'center');else lensMono(ctx,'#'+(i+1),x,y,sz*.8,c,a,'center');});
+    if(reg===0)lensGaramond(ctx,LENS_ROMAN[i].toLowerCase(),x,y,sz,c,a,'center','text','italic');else if(reg===1)lensTyped(ctx,String(i+1),x,y,sz,c,a,'center');else lensMono(ctx,'#'+(i+1),x,y,sz*.8,c,a,'center');});
   if(!chart.expired&&!chart.completed&&!captionsHeld()){const e=chart.stars[1]||chart.stars[0],x=sx(e.x),y=sy(e.y)+e.cap*scale+14*scale,F=lensFieldName(chart);
-    if(y>-40&&y<H+40){if(reg===0)lensFell(ctx,F[0],x,y,Math.max(10,10.5*scale),P.inkSoft,.6,'center','sc');else if(reg===1)lensGrot(ctx,F[0],x,y,Math.max(8.5,9*scale),P.inkBlack,.55,'center');else lensMono(ctx,F[0],x,y,Math.max(7.5,8*scale),P.instrSoft,.7,'center');}}
+    if(y>-40&&y<H+40){if(reg===0)lensGaramond(ctx,F[0],x,y,Math.max(10,10.5*scale),P.inkSoft,.6,'center','sc');else if(reg===1)lensGrot(ctx,F[0],x,y,Math.max(8.5,9*scale),P.inkBlack,.55,'center');else lensMono(ctx,F[0],x,y,Math.max(7.5,8*scale),P.instrSoft,.7,'center');}}
   ctx.restore();
 }
 
 // ---------- The HUD, in the register's own hand ----------
 // The magnitude reached as the score and the exposure as the currency, set at the head of the sheet: at the
-// eyepiece in the Fell over an engraved scale; on the plate typed on a log slip, the exposure a strip of film
+// eyepiece in the Garamond over an engraved scale; on the plate typed on a log slip, the exposure a strip of film
 // darkening as far as it will carry; off the sensor a stack of FITS cards ticking over, the exposure a meter.
 // The DOM HUD stays for screen readers and is taken off the screen (index.html).
 let lensHudTopPx=null;
@@ -1397,18 +1399,18 @@ function lensHudLeaf(){
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   const left=LENS_BAND+12,right=W-LENS_BAND-14,cx=W/2,m=world.speedMultiplier(),pace=words.pace+(m%1?m.toFixed(1):m);
   if(reg===0){
-    lensFell(ctx,String(score),left,top+7,22,P.ink,.94,'left');lensFell(ctx,'magnitudo',left,top+24,9.5,P.inkSoft,.75,'left','text','italic');
+    lensGaramond(ctx,String(score),left,top+7,22,P.ink,.94,'left');lensGaramond(ctx,'magnitudo',left,top+24,9.5,P.inkSoft,.75,'left','text','italic');
     // the exposure as an engraved scale, gilt as far as it will carry, and rubric once it will not carry a transfer
     const span=Math.min(62,W*.15),R=170,cy=top+14-R,half=Math.asin(span/R),a0=Math.PI/2+half,a1=Math.PI/2-half;
     ctx.lineCap='butt';ctx.strokeStyle=`rgba(${P.ink},.8)`;ctx.lineWidth=.8;ctx.beginPath();ctx.arc(cx,cy,R,a1,a0);ctx.stroke();
     for(let i=0;i<=40;i++){const u=i/40,a=a0-(a0-a1)*u,on=u<=level,big=i%10===0,l=big?7:i%5===0?5:3.2,x0=cx+Math.cos(a)*R,y0=cy+Math.sin(a)*R,x1=cx+Math.cos(a)*(R+l),y1=cy+Math.sin(a)*(R+l);
       if(on){ctx.strokeStyle=low?`rgba(${P.rubric},${(.55+.45*pulse).toFixed(3)})`:`rgba(${P.gold},.95)`;ctx.lineWidth=big?1.3:.9;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();}
       else{ctx.fillStyle=`rgba(${P.inkSoft},.4)`;ctx.beginPath();ctx.arc(x1,y1,.55,0,TAU);ctx.fill();}}
-    lensFell(ctx,'EXPOSURE',cx,top-2,8.5,P.ink,.75,'center','sc');
-    lensFell(ctx,pace,cx,top+30,9.5,P.inkSoft,.8,'center','sc');
-    lensFell(ctx,C.place.toLowerCase().replace(/\b\w/g,q=>q.toUpperCase())+', '+C.year,cx,top+44,10,P.inkSoft,.75,'center','text','italic');
+    lensGaramond(ctx,'EXPOSURE',cx,top-2,8.5,P.ink,.75,'center','sc');
+    lensGaramond(ctx,pace,cx,top+30,9.5,P.inkSoft,.8,'center','sc');
+    lensGaramond(ctx,C.place.toLowerCase().replace(/\b\w/g,q=>q.toUpperCase())+', '+C.year,cx,top+44,10,P.inkSoft,.75,'center','text','italic');
     let rx=right;if(world.combo>1&&world.captures>0){const shown=Math.min(6,world.combo);for(let i=0;i<shown;i++){ctx.strokeStyle=`rgba(${P.ink},.85)`;ctx.lineWidth=.8;ctx.beginPath();for(let k=0;k<3;k++){const a=k*Math.PI/3;ctx.moveTo(rx-Math.cos(a)*4.5,top+6-Math.sin(a)*4.5);ctx.lineTo(rx+Math.cos(a)*4.5,top+6+Math.sin(a)*4.5);}ctx.stroke();rx-=12;}
-      if(world.combo>6)lensFell(ctx,'×'+world.combo,right+4,top+20,10,P.inkSoft,.75,'right');}
+      if(world.combo>6)lensGaramond(ctx,'×'+world.combo,right+4,top+20,10,P.inkSoft,.75,'right');}
   }else if(reg===1){
     // a log slip: score typed as a running entry, and the plate's exposure as a strip of film
     ctx.fillStyle='rgba(240,236,224,.85)';ctx.fillRect(left-4,top-8,96,30);ctx.strokeStyle=`rgba(${P.inkBlack},.45)`;ctx.lineWidth=.6;ctx.strokeRect(left-4,top-8,96,30);
@@ -1446,15 +1448,15 @@ function lensFinale(){
   ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle=`rgba(${P.paper},${(.9*e).toFixed(3)})`;ctx.fillRect(0,0,W,H);
   const R=Math.min(W*.085,H*.05,34),y=lerp(H*.56,H*.47,e),gap=Math.min(W/3,R*4.1),stages=[1,3,6],years=['PADUA · 1610','PARIS · 1887','ABOVE THE AIR · 1990'];
-  lensFell(ctx,'SATURN, THREE TIMES',W/2,y-R*2.6-22,Math.min(26,W*.06),P.ink,.95*e,'center','sc');
-  lensFell(ctx,'one planet, one era, the same question answered three ways',W/2,y-R*2.6+2,11,P.inkSoft,.85*e,'center','text','italic');
+  lensGaramond(ctx,'SATURN, THREE TIMES',W/2,y-R*2.6-22,Math.min(26,W*.06),P.ink,.95*e,'center','sc');
+  lensGaramond(ctx,'one planet, one era, the same question answered three ways',W/2,y-R*2.6+2,11,P.inkSoft,.85*e,'center','text','italic');
   stages.forEach((s,i)=>{const k=clamp((time-.25-i*.45)/.8,0,1);if(k<=0)return;const x=W/2+(i-1)*gap;ctx.save();ctx.translate(x,y);ctx.scale(.78,.78);lensSaturn(ctx,R,s,reducedMotion?1:k);ctx.restore();
-    const lab=clamp(k*2-1,0,1);if(i===0)lensFell(ctx,years[i],x,y+R*1.7,9,P.ink,.9*lab,'center','sc');else if(i===1)lensTyped(ctx,years[i],x,y+R*1.7,8,P.inkBlack,.9*lab,'center');else lensMono(ctx,years[i],x,y+R*1.7,7.5,P.ink,.9*lab,'center');});
+    const lab=clamp(k*2-1,0,1);if(i===0)lensGaramond(ctx,years[i],x,y+R*1.7,9,P.ink,.9*lab,'center','sc');else if(i===1)lensTyped(ctx,years[i],x,y+R*1.7,8,P.inkBlack,.9*lab,'center');else lensMono(ctx,years[i],x,y+R*1.7,7.5,P.ink,.9*lab,'center');});
   const vk=clamp((time-1.7)/.5,0,1),vy=y+R*1.7+34;
   if(vk>0){const s='VULCAN · CATALOGUED 1859 · NEVER FOUND';lensTyped(ctx,s,W/2,vy,9,P.inkBlack,.85*vk,'center');ctx.font=plateFace(9,'typed');const tw=ctx.measureText(s).width;
     ctx.strokeStyle=`rgba(${P.inkRed},${(.9*vk).toFixed(3)})`;ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(W/2-tw/2-3,vy);ctx.lineTo(W/2-tw/2-3+(tw+6)*clamp((time-2)/.5,0,1),vy+.5);ctx.stroke();
-    const lk=.9*clamp((time-2.3)/.6,0,1);lensFell(ctx,'Every surface it drew, it drew as it believed.',W/2,vy+22,11.5,P.ink,lk,'center','text','italic');
-    lensFell(ctx,'The next century goes there.',W/2,vy+38,11.5,P.ink,lk,'center','text','italic');}
+    const lk=.9*clamp((time-2.3)/.6,0,1);lensGaramond(ctx,'Every surface it drew, it drew as it believed.',W/2,vy+22,11.5,P.ink,lk,'center','text','italic');
+    lensGaramond(ctx,'The next century goes there.',W/2,vy+38,11.5,P.ink,lk,'center','text','italic');}
   ctx.restore();
 }
 // What is written on the sheet — a note, a warning, a landing — takes the register's own ink.
@@ -1561,7 +1563,7 @@ defineHand('lens',{
 // ---------- The vocabulary: only what this era calls differently ----------
 // The era keeps one word for its currency through all three institutions, exposure; the score is the
 // magnitude a run reaches; a constellation is a field, resolved; a chapter is a plate; the boundary is the fog.
-// Names from 06-lens.md, "Names", set in English where a player reads them and in the Fell's Latin on the sheet.
+// Names from 06-lens.md, "Names", set in English where a player reads them and in the Garamond's Latin on the sheet.
 defineVoice('lens',{
   chart:'FIELD',
   chartNoun:'field',

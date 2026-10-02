@@ -1,6 +1,5 @@
 // The seven worlds drawn large side by side, for judging the hatching and the surface marks. The crossing
-// question (ART-AUDIT-TODO, finding i) was settled by pulling this twice; run it again with
-// --storage='{"orbit.crosshatch.trial":"off"}' to see the single-slant reading beside the crossed one.
+// question (ART-AUDIT-TODO, finding i) was settled by pulling this twice, and the press now always crosses.
 export default {
   name:'crosshatch',
   description:'The seven worlds large, specimens in flight and a figure, for judging hatching and surface marks.',

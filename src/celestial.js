@@ -900,7 +900,7 @@ function drawRevealTitle(x,y,m,age){
   const t=age,alpha=clamp(t/.55,0,1);
   ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';
   // The plate line and the chapter name are written in the true order of the pen: each letter's outline is
-  // stroked on from the Fell faces themselves and its counters then flood with ink. Once the writing is
+  // stroked on from the Garamond faces themselves and its counters then flood with ink. Once the writing is
   // done — and always under reduced motion — the ordinary lettering below is the finished state.
   // Spelled out rather than abbreviated: this is the largest lettering on the sheet, so it names the
   // plate itself in full — TABULA, matching what the impressum's own TAB. row abbreviates — while the

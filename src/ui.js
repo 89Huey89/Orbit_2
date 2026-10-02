@@ -741,7 +741,7 @@ function showEnd(){
   {const caveRun=handFor('caveRun');if(caveRun&&runMode==='free')caveRun(world);}
   $('end-row').textContent=row;$('end-row-note').textContent=newRow?'BEST ROW '+bestRow:'';
   const charts=world.constellationsCompleted;
-  // Fell's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
+  // The atlas's old-style zero sets as a lowercase o at this size: a run that traced nothing reads as the
   // words for nothing rather than as that figure.
   {const w=plateWords(),v=w.chartVerb;$('end-constellations').textContent=charts?charts+' '+w.chartNoun+(charts===1?'':'s')+' '+v:'no '+w.chartNoun+'s '+v;}
   $('end-observations').textContent=world.observations.map(o=>plateWords().observations[o.key]||o.latin).join(' · ');
@@ -832,7 +832,7 @@ function nearestHazard(){
 function updateUI(dt){
   if(lastScore!==world.score){lastScore=world.score;inked('score',String(world.score));inked('best',String(currentBest()));}
   const words=plateWords().hud;
-  // Fell's old-style zero is a lowercase o at this size, and a trailing '.0' set it on every frame of
+  // The atlas's old-style zero is a lowercase o at this size, and a trailing '.0' set it on every frame of
   // every run: dropped whenever the multiple is whole, so the opening reads 'SPEED ×1' rather than
   // '×1.0'.
   const m=world.speedMultiplier();inked('pace',words.pace+(m%1?m.toFixed(1):m));

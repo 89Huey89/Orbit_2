@@ -11,7 +11,7 @@ let pendingUnlocks=[],catalogueOpen=false,catalogueTab='record';
 // Thousands set off by a thin space, the period convention, rather than the en-US comma this used to
 // hard-code — an old-style figure was never grouped by a punctuation mark.
 const commas=n=>String(Math.round(Number(n)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
-// A count of nothing is ruled off rather than lettered as Fell's old-style zero, which sets as a
+// A count of nothing is ruled off rather than lettered as the atlas's old-style zero, which sets as a
 // lowercase o at table size — the same convention roman() already declares for a bare figure.
 const countMark=n=>{const v=Math.round(Number(n)||0);return v?commas(v):'—';};
 function chartTime(seconds){

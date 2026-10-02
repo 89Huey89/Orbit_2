@@ -1200,6 +1200,10 @@ function impressumHasTelescopicBody(){
   const current=typeof runTally!=='undefined'&&runTally&&runTally.telescopicCaptures>0;
   return lifetime||current;
 }
+// The paper plate is not a second edition but a later state of the same copper: the night plate is the
+// first pull of 1603, and the cream sheet was pulled from it after the additions were cut. So on paper
+// the second state stands from the first dated row on, and only the night pull has to earn it.
+function impressumSecondState(){return onPaper()?impressumHasCapture():impressumHasTelescopicBody();}
 function impressumHasCompleteAtlas(){
   const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
   return lifetime>=12||!!(world&&lifetime+world.constellationsCompleted>=12);
@@ -1223,7 +1227,7 @@ function impressumRows(){
     {key:'plate',text:'TAB. I · A1'},
     {key:'edition',text:'EDITIO V'},
     {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
-    {key:'state',text:impressumHasTelescopicBody()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
+    {key:'state',text:impressumSecondState()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
     {key:'engraver',text:perfect?engraver:'',device:perfect},
     {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},

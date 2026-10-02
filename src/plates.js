@@ -5,11 +5,6 @@
 const game=document.getElementById('game'),canvas=document.getElementById('sky'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
 const storage={get(key,fallback){try{return localStorage.getItem(key)??fallback;}catch(_){return fallback;}},set(key,value){try{localStorage.setItem(key,String(value));}catch(_){}}};
-// The press crosses its hatching in the darkest ground, as a 1603 copperplate did: a single slant over
-// the half-tones, a second set laid across it toward the dark limb. Chosen against the old single-slant
-// house rule by pulling both side by side; `orbit.crosshatch.trial` set to `off` (written only by the
-// screenshot harness) still pulls the single-slant reading for comparison.
-const crossHatch=storage.get('orbit.crosshatch.trial','')!=='off';
 // Seeded from the OS accessibility signal, but a reader who wants a lighter, faster plate without
 // asking the whole system for it can say so directly (see the pause menu's REDUCE MOTION button in
 // ui.js); once they have, that explicit choice is what's kept, in either direction.
@@ -549,17 +544,17 @@ definePlate('base',{
   astrolabe:{paper:'#efe1c4',paperRgb:'239,225,196',ink:'36,28,17',inkStrong:'24,18,10',inkSoft:'92,74,50',gold:'160,122,36',goldBright:'212,175,55',copper:'168,57,44',blue:'27,63,143',shieldBlue:'40,70,130',red:'196,58,44',text:'#241c11',caption:'92,74,50',shadow:'#c9b48a'}
 });
 // ---------- The hand the plate letters in ----------
-// Every `ctx.font` in the game is built here. The Fell faces are era V's — the engraved atlas the
+// Every `ctx.font` in the game is built here. The EB Garamond faces are era V's — the engraved atlas the
 // game is set in — and are registered as a plate token like any colour, so a plate cut for another
 // century sets its captions in its own type by naming one value rather than by rewriting the font
 // string at every place text is drawn. `text` is the roman, `sc` the small caps, `body` the stack the
 // stylesheet's running copy uses; each keeps its own fallbacks so a face that fails to load still
 // lands on something with the right proportions.
 const HIERO_FACE="'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif";
-const FELL_FACES={
-  text:"'IM Fell English',Georgia,serif",
-  sc:"'IM Fell English SC','IM Fell English',Georgia,serif",
-  body:"'IM Fell English',Georgia,'Times New Roman',serif",
+const ATLAS_FACES={
+  text:"'EB Garamond',Garamond,Georgia,serif",
+  sc:"'EB Garamond SC','EB Garamond',Garamond,Georgia,serif",
+  body:"'EB Garamond',Garamond,Georgia,'Times New Roman',serif",
   hiero:HIERO_FACE
 };
 // The Ceiling letters in two hands at once, and neither of them is the atlas's. Its Latin is an
@@ -581,7 +576,7 @@ const CEILING_FACES={
 // The Rock has no script of its own to letter anything in, so what it sets is entirely the modern
 // curatorial layer — the same slab the Ceiling's sentences use, for the same reason: it is the type
 // an excavation plate has been captioned in since the trade named the class, and it declares itself
-// modern where the Fell types would claim the wrong century by seventeen thousand years. It reaches
+// modern where the atlas's Garamond would claim the wrong century by seventeen thousand years. It reaches
 // for none of the Ceiling's 1920s Limelight, which postdates this wall by twenty millennia.
 // What the wall itself announces — a loss, a landing, a chamber — is set in a hand that looks cut, not
 // printed: Amatic SC, narrow scratched capitals, bold, the nearest a face comes to the tally notches on
@@ -626,13 +621,13 @@ const ASTRO_FACES={
   weight:{naskhB:700}
 };
 // The Lens letters in three hands, one to a register, and names all three here so any painter can ask for
-// any of them: register one's is the atlas's own Fell, because a Huygens or a Herschel paper was set in it;
+// any of them: register one's is the atlas's own Garamond, because a Huygens or a Herschel paper was set in its descendants;
 // `typed` is Courier Prime, a redrawn IBM Courier, for the plate register's typed labels and log; `mono` is
 // IBM Plex Mono for the rendered register's FITS cards, fixed-width and uppercase with no hand in it.
 // The plate register has two more: `grot` is Libre Franklin, an open Franklin Gothic, for the printed réseau
 // and catalogue labels a survey plate carries; `jacket` is Special Elite, a worn Smith-Corona, kept for the
 // one dramatic label the era file allows it, the plate jacket a chapter opens on.
-const LENS_FACES={...FELL_FACES,
+const LENS_FACES={...ATLAS_FACES,
   typed:"'Courier Prime','Courier New',monospace",
   mono:"'IBM Plex Mono','Courier Prime','Courier New',monospace",
   grot:"'Libre Franklin','Helvetica Neue',Arial,sans-serif",
@@ -651,7 +646,7 @@ const FLYBY_FACES={
 // hand"), the one face on the ladder chosen for a machine's legibility rather than a scribe's.
 const PROBE_MONO="'B612 Mono','IBM Plex Mono','Courier New',monospace";
 const PROBE_FACES={text:PROBE_MONO,sc:PROBE_MONO,body:PROBE_MONO,hiero:HIERO_FACE,grot:PROBE_MONO,mono:PROBE_MONO};
-definePlate('type',{night:FELL_FACES,paper:FELL_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES,flyby:FLYBY_FACES,probe:PROBE_FACES});
+definePlate('type',{night:ATLAS_FACES,paper:ATLAS_FACES,ceiling:CEILING_FACES,rock:ROCK_FACES,scroll:SCROLL_FACES,astrolabe:ASTRO_FACES,lens:LENS_FACES,flyby:FLYBY_FACES,probe:PROBE_FACES});
 // A CSS font shorthand at a size, in one of the plate's faces, optionally in a style. Sizes are in
 // the same CSS pixels every caller already worked in, so this changes nothing about what is drawn.
 const plateFace=(size,variant='text',style='')=>{const t=ink.type,w=t.weight&&t.weight[variant],k=(t.scale&&t.scale[variant])||1;
