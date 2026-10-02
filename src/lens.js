@@ -1596,13 +1596,13 @@ defineVoice('lens',{
   ],
   // A note for each field as it is resolved: one thing its record still carries.
   chartNotes:[
-    'Galileo drew the Pleiades with thirty more stars than the eye alone can find.',
-    'Galileo found the cloudy Praesepe to be a crowd of some forty small stars.',
+    'Galileo drew the Pleiades with thirty-six more stars than the eye alone can find.',
+    'Galileo found the cloudy Praesepe to be a crowd of more than forty small stars.',
     'Huygens drew the Orion Nebula in 1656: a cloud with stars inside it.',
     'Isaac Roberts photographed Andromeda in 1888 and showed it was a spiral.',
     'Lord Rosse drew the Whirlpool as a spiral in 1845, by eye, at a six-foot mirror.',
-    'Rosse drew M 1 with claws in 1844, and the name Crab stuck.',
-    'Williamina Fleming found the Horsehead on a Harvard plate in 1888.',
+    'Rosse published M 1 with claws in 1844, and the name Crab stuck.',
+    'Williamina Fleming found the Horsehead on a Harvard plate taken in 1888.',
     'Barnard photographed the dark patches and argued that some were clouds of dust, not gaps.',
     'Halley came across the Hercules cluster in 1714.',
     'Darquier found the Ring Nebula in 1779 and likened it to a fading planet.',

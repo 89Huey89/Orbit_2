@@ -48,7 +48,7 @@ defineVoice('atlas',{
     'Argo, Jason’s ship, was the largest of Ptolemy’s figures. It was later broken up, and no longer counts as one.',
     'Pavo, the peacock, came home with the same Dutch voyage. Its brightest star is called, simply, the Peacock.',
     'Penna, the Quill, is this atlas’s own. Bayer took his stars’ places from the catalogue Tycho Brahe measured by eye.',
-    'Laterna, the Lantern, is this atlas’s own. Tycho fixed a thousand stars without a telescope, to about a minute of arc.',
+    'Laterna, the Lantern, is this atlas’s own. Tycho fixed a thousand stars without a telescope, to a minute or two of arc.',
     'Phalæna, the Moth, is this atlas’s own. Bayer printed a bee in the south; it survives as Musca, the one insect left in the sky.'
   ],
   chartSaid:'{chart} complete. Sixty bonus points. Darkness retreats for four seconds.',

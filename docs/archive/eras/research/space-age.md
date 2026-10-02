@@ -424,3 +424,90 @@ corrected path, and one that could not be found under any path is dropped rather
 - https://wearethemutants.com/2020/01/09/unity-precision-thrust-the-nasa-graphics-standards-manual-1975/ (NASA Graphics Standards Manual, Helvetica)
 - https://magenta.as/how-one-typeface-landed-on-the-moon-dd31ea17d732 (Futura, Apollo 11 plaque)
 - https://ntrs.nasa.gov/api/citations/20170009181/downloads/20170009181.pdf (Voyager's Grand Tour, flyby dates)
+
+## Claims register checks (2026-10-02)
+
+The nine Flyby lines below were entered in `docs/CLAIMS.json` as unchecked. Each was checked against
+institutional pages and the discovery papers. One caveat on method: this session's network proxy
+blocked direct page fetches from every source domain tried (nasa.gov, jpl.nasa.gov, esa.int,
+jhuapl.edu, planetary.org, science.org), so each claim was confirmed from search-engine extracts of
+the cited pages and abstracts, not from a full reading of the page. No line needed a correction.
+
+- **"Ganymede: the largest moon in the Solar System, wider than the planet Mercury."** Attested.
+  NASA gives Ganymede's diameter as 5,268 km (3,270 miles) and calls it the largest moon in the Solar
+  System, bigger than Mercury and Pluto. Mercury is about 4,880 km across. NASA Science, "Ganymede:
+  Facts" (https://science.nasa.gov/jupiter/jupiter-moons/ganymede/facts/); Caltech IPAC Cool Cosmos,
+  "What is the largest moon in the Solar System?"
+  (https://coolcosmos.ipac.caltech.edu/ask/201-What-is-the-largest-moon-in-the-Solar-System-).
+- **"Callisto: one of the most heavily cratered surfaces known, with the great ringed basin
+  Valhalla."** Attested. NASA calls Callisto's surface the oldest and most heavily cratered in the
+  Solar System. Galileo-era JPL material describes Valhalla's bright central region (about 600 km)
+  and concentric rings running out to about 1,500 km from the centre. Elsewhere Valhalla is called
+  the largest multi-ring basin known. "One of the most" is, if anything, more cautious than the
+  sources. NASA Science, "Callisto: Facts"
+  (https://science.nasa.gov/jupiter/jupiter-moons/callisto/facts/); NASA/JPL Galileo Project,
+  "Callisto: Summary of Facts" (https://www2.jpl.nasa.gov/galileo/callisto/c-summary.html); NASA
+  Photojournal, "Opposite Side of Callisto from Valhalla Impact"
+  (https://science.nasa.gov/photojournal/opposite-side-of-callisto-from-valhalla-impact/).
+- **"Enceladus: Cassini found jets of water ice venting from its south pole in 2005."** Attested.
+  Cassini made three close flybys between February and July 2005, and on 14 July 2005 several
+  instruments found activity centred on the south pole. Imaging showed jets of fine icy particles
+  rising from the "tiger stripe" fractures, carried aloft by water vapour, and supplying the E ring.
+  C. C. Porco et al., "Cassini Observes the Active South Pole of Enceladus," *Science* 311 (5766):
+  1393–1401, 2006 (https://doi.org/10.1126/science.1123013); J. R. Spencer et al., "Cassini
+  Encounters Enceladus: Background and the Discovery of a South Polar Hot Spot," *Science* 311:
+  1401–1405, 2006 (https://www.science.org/doi/abs/10.1126/science.1121661); NASA/JPL, "PIA06443:
+  Enceladus Plume" (https://www.jpl.nasa.gov/images/pia06443-enceladus-plume/).
+- **"Miranda: Voyager 2 found a patchwork of grooved ground and cliffs many kilometres high."**
+  Attested. Voyager 2 flew past on 24 January 1986. Its images showed young grooved "coronae"
+  (Arden, Elsinore, Inverness) set among old cratered ground (Smith et al. 1986). Verona Rupes is the
+  tallest scarp. Estimates of its height run from about 5–15 km, once oblique viewing is allowed for,
+  up to the commonly quoted 20 km. "Many kilometres" holds at either end of that range. B. A. Smith
+  et al., "Voyager 2 in the Uranian System: Imaging Science Results," *Science* 233 (4759): 43–64,
+  1986 (https://doi.org/10.1126/science.233.4759.43); NASA Space Place, "Jumping the Tallest Cliff in
+  the Solar System" (https://spaceplace.nasa.gov/cliff-jumping/en/); NASA/JPL, "PIA00038: Miranda –
+  'Chevron' Grooves" (https://www.jpl.nasa.gov/images/pia00038-miranda-chevron-grooves/).
+- **"Triton: Voyager 2 saw dark streaks laid down by plumes on its frozen surface."** Attested.
+  Voyager 2 (August 1989) imaged at least four active geyser-like plumes. Columns of dark material
+  rose about 8 km and trailed off downwind. It also imaged about 120 dark fan-shaped streaks. Their
+  albedo matches the trailing plume clouds, and they are read as deposits from earlier plumes. That
+  causal link is an interpretation, but it is the discovery team's own and the standard one.
+  L. A. Soderblom et al., "Triton's Geyser-Like Plumes: Discovery and Basic Characterization,"
+  *Science* 250 (4979): 410–415, 1990 (https://doi.org/10.1126/science.250.4979.410); C. J. Hansen
+  et al., "Surface and Airborne Evidence for Plumes and Winds on Triton," *Science* 250 (4979):
+  421–424, 1990 (https://doi.org/10.1126/science.250.4979.421).
+- **"Charon: New Horizons found a reddish cap over its north pole."** Attested. New Horizons' July 2015
+  flyby imaged a dark red north polar region, informally named Mordor Macula. Grundy and colleagues
+  explain it as methane escaping from Pluto, cold-trapped at the winter pole and processed by UV
+  light into reddish tholins. W. M. Grundy et al., "The formation of Charon's red poles from
+  seasonally cold-trapped volatiles," *Nature* 539: 65–68, 2016
+  (https://doi.org/10.1038/nature19340).
+- **"Eros: NEAR Shoemaker orbited it for a year and then touched down, though it was never built to
+  land."** Attested. NEAR entered orbit around Eros on 14 February 2000 and landed on 12 February
+  2001, the first landing on an asteroid. APL stresses that it was an orbiter not designed to land,
+  and that it kept talking to the Deep Space Network from the surface. Johns Hopkins APL, "NEAR
+  Landing Left a Lasting Space Exploration Legacy," 2021
+  (https://www.jhuapl.edu/news/news-releases/210212-NEAR-landing-legacy); Johns Hopkins APL, "NEAR"
+  mission page (https://www.jhuapl.edu/destinations/missions/near); A. F. Cheng, "Near Earth Asteroid
+  Rendezvous: Mission Summary," in *Asteroids III*, University of Arizona Press, 2002
+  (https://www.kiss.caltech.edu/workshops/csc2011/references/missions-to-neo/Near%20Earth%20Asteroid%20Rendezvous_Mission%20Summary_Cheng.pdf).
+- **"Itokawa: Hayabusa brought grains of it back to the Earth in 2010."** Attested. The return capsule
+  came down in June 2010. In November 2010 JAXA announced that about 1,500 rocky particles, mostly
+  under 10 µm, had been recovered from it and judged to come from Itokawa. JAXA/ISAS Astromaterials
+  Science Research Group, "Hayabusa Curation: Itokawa"
+  (https://curation.isas.jaxa.jp/en/sample-curation/itokawa/); Planetary Science Research
+  Discoveries, "Asteroid Itokawa Samples," 2011
+  (http://www.psrd.hawaii.edu/CosmoSparks/Feb11/ItokawaSamples.html).
+- **"Voyager 1 turned its camera back from beyond Neptune in 1990 and found the Earth inside a single
+  pixel of scattered sunlight — the one star the atlas never had to plot, seen at last from outside
+  it."** Attested for its factual clauses. Voyager 1 took the image on 14 February 1990, more than 6
+  billion km (about 40 AU) from the Sun and about 32° above the ecliptic. NASA's caption puts the
+  Earth at 0.12 pixel, a point inside one pixel, sitting in one of the rays of sunlight scattered in
+  the camera optics. "Beyond Neptune" is true in distance: Neptune orbits at about 30 AU. Voyager 1
+  never flew past Neptune, though, since it left the planetary plane at Saturn in 1980; the line does
+  not claim it did. The closing clause is the atlas's own conceit, not a historical claim. NASA/JPL,
+  "Solar System Portrait – Earth as 'Pale Blue Dot'" (PIA00452)
+  (https://www.nasa.gov/image-article/solar-system-portrait-earth-as-pale-blue-dot/); NASA Science,
+  "The Pale Blue Dot" (https://science.nasa.gov/resource/voyager-pale-blue-dot-download/); The
+  Planetary Society, "The Pale Blue Dot of Earth"
+  (https://www.planetary.org/space-images/the-pale-blue-dot-of-earth).

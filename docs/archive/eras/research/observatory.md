@@ -353,3 +353,97 @@ pieces of era III's chrome this era does not have to replace.
 - https://www.gemini.edu/observing/phase-i/too, https://www.eso.org/sci/observing/policies/too_policy.html
 - https://beltoforion.de/en/astrophotography/stacking.php
 - https://www.celestron.com/blogs/knowledgebase/the-ultimate-guide-to-calibration-frames-for-astrophotography
+
+## Claims register checks (2026-10-02)
+
+The eleven lines below are the ones Era VI's preview door (`src/lens.js`) sets before a player and
+that `docs/CLAIMS.json` held as unchecked: one chapter line and ten chart notes. They are kept here
+because the lens door's telescope history leads straight into this file's era. Each was checked against
+the sources named; most institutional pages could be read only through search excerpts this session
+(the fetch proxy refused SEDS, Gutenberg, Linda Hall and Ridpath directly), and that is said where it matters.
+
+- **"Cape Canaveral, 1990. A telescope is carried above the air. Its mirror, it turns out, was ground a
+  hair too flat."** (chapter line 5) — *attested.* Discovery (STS-31) carried Hubble up on 24 April
+  1990 from NASA's Kennedy Space Center, and deployed it the next day; the primary mirror's outer edge
+  proved too flat by about 2.2 microns, "about one-fiftieth the width of a human hair", the result of a
+  1.3 mm spacing error in the null corrector used to test it, and the cause of the spherical aberration
+  seen in the first images that June. The launch pad (39B) stands on Merritt Island inside the Kennedy
+  Space Center rather than on Cape Canaveral Space Force Station, but "Cape Canaveral" is the ordinary
+  name for the Florida launch coast and the line is not wrong at the plate's scale. NASA Science,
+  "Hubble's Mirror Flaw", https://science.nasa.gov/mission/hubble/observatory/design/optics/hubbles-mirror-flaw/ ;
+  ESA/Hubble, "History: The Spherical Aberration Problem", https://esahubble.org/about/history/aberration_problem/ ;
+  ESA/Hubble, "Timeline", https://esahubble.org/about/history/timeline/ ; NASA Science, "The History of
+  Hubble", https://science.nasa.gov/mission/hubble/overview/the-history-of-hubble/ .
+- **"Galileo drew the Pleiades with thirty more stars than the eye alone can find."** (chart note 0) —
+  *corrected, then attested.* Galileo writes that beside the six naked-eye Pleiades lie "more than
+  forty" others invisible to the eye, of which he set down thirty-six in his diagram; the old stars are
+  drawn larger and double-outlined, the new ones small with a single line. Thirty undercounts his own
+  figure. Galileo Galilei, *Sidereus Nuncius* (Venice, 1610), tr. E. S. Carlos, *The Sidereal Messenger*
+  (Rivingtons, 1880), Wikisource, https://en.wikisource.org/wiki/The_Sidereal_Messenger_of_Galileo_Galilei/The_Sidereal_Messenger ;
+  Harvard–Smithsonian MicroObservatory, "The View from Galileo's Telescope: Pleiades",
+  http://mo-www.harvard.edu/microobs/guestobserverportal/Galileo/ThenNow/Pleiades/mObsPleiadesWeb.htm ;
+  Rice University Galileo Project, "Pleiades", https://galileo.library.rice.edu/lib/student_work/astronomy96/rjbrown/pleiades.html .
+  Correction: "Galileo drew the Pleiades with thirty-six more stars than the eye alone can find."
+- **"Galileo found the cloudy Praesepe to be a crowd of some forty small stars."** (chart note 1) —
+  *corrected, then attested.* Carlos's translation: the nebula called Praesepe "is not one star only,
+  but a mass of more than forty small stars." "Some forty" softens Galileo's "more than forty".
+  Galileo 1610, tr. Carlos 1880, as above. Correction: "Galileo found the cloudy Praesepe to be a crowd
+  of more than forty small stars."
+- **"Huygens drew the Orion Nebula in 1656: a cloud with stars inside it."** (chart note 2) —
+  *attested.* Huygens observed and sketched the nebula in 1656 and published the drawing, the first
+  known of it, in *Systema Saturnium* (The Hague, 1659); it shows the bright inner region with the
+  stars of the Trapezium set inside the glow. Christiaan Huygens, *Systema Saturnium* (1659),
+  Smithsonian Libraries digital copy, https://library.si.edu/digital-library/book/cristianihugeni00huyga-0 ;
+  the 1656 sketch reproduced in ResearchGate figure "The 1656 sketch of the inner Orion Nebula by
+  Huyghens", https://www.researchgate.net/figure/The-1656-sketch-of-the-inner-Orion-Nebula-by-Huyghens-The-figure-has-been-re-oriented_fig2_23625261 .
+- **"Isaac Roberts photographed Andromeda in 1888 and showed it was a spiral."** (chart note 3) —
+  *attested.* Roberts exposed M31 for four hours on 29 December 1888 with his 20-inch Grubb reflector
+  at Maghull, near Liverpool; the Science Museum Group calls it the first photograph of M31 to show it
+  had a spiral structure. Roberts himself read the spiral as a planetary system forming inside the Milky
+  Way, which the line does not contradict. Science Museum Group, "Photograph of the Andromeda Galaxy
+  (M31)", object co56351, https://collection.sciencemuseumgroup.org.uk/objects/co56351/photograph-of-the-andromeda-galaxy-m31 ;
+  *Astronomy*, "Dec. 29, 1888: The Andromeda Galaxy is photographed",
+  https://www.astronomy.com/today-in-the-history-of-astronomy/dec-29-1888-the-andromeda-galaxy-is-photographed/ .
+- **"Lord Rosse drew the Whirlpool as a spiral in 1845, by eye, at a six-foot mirror."** (chart note 4)
+  — *attested.* The 72-inch (six-foot) "Leviathan" at Birr was turned on M51 in March 1845, and in April
+  1845 Rosse saw and sketched its spiral form visually; the drawing was shown at the British Association
+  that June and engraved by J. P. Nichol in 1846. Wolfgang Steinicke, "Lord Rosse, Robinson, South and
+  the discovery of spiral structure" (author's archive, http://www.klima-luft.de/steinicke/Artikel/M51_Mystery.pdf,
+  read through search excerpt); Armagh Observatory and Planetarium, "William Parsons, 3rd Earl of Rosse",
+  https://armagh.space/notable_figure/william-parsons-3rd-earl-of-rosse ; IAU/UNESCO Astronomical
+  Heritage portal, "Lord Rosse's telescope in Birr Castle", https://web.astronomicalheritage.net/show-entity?identity=198&idsubentity=1 .
+- **"Rosse drew M 1 with claws in 1844, and the name Crab stuck."** (chart note 5) — *corrected, then
+  attested.* The claw-armed drawing, made with the 36-inch reflector, was published in 1844 (Parsons,
+  "Observations on some of the Nebulae", *Phil. Trans. R. Soc.* 134, 1844), but it is undated and Ridpath
+  puts its making around 1842–43; the name grew from it (helped by T. R. Robinson's "streams running out
+  like claws"), and Rosse himself used "Crab" by 1848 though the 72-inch no longer showed the likeness.
+  "Drew in 1844" therefore claims a date the sources do not give. Ian Ridpath, "Lord Rosse and the Crab
+  Nebula", *Star Tales*, http://www.ianridpath.com/startales/rosse-crab.html (read through search excerpt);
+  William Parsons, 3rd Earl of Rosse, "Observations on Some of the Nebulae", *Philosophical Transactions
+  of the Royal Society* 134 (1844); NASA Science, "Crab Nebula", https://science.nasa.gov/asset/hubble/crab-nebula-3/ .
+  Correction: "Rosse published M 1 with claws in 1844, and the name Crab stuck."
+- **"Williamina Fleming found the Horsehead on a Harvard plate in 1888."** (chart note 6) — *corrected,
+  then attested.* Plate B2312 was taken on 6 February 1888 by W. H. Pickering with the 8-inch Bache
+  Doublet; Fleming found on it "a semicircular indentation 5 minutes in diameter 30 minutes south of
+  Zeta Orionis", and E. C. Pickering published it with credit to her in 1890 (*Harvard Annals* 18), though
+  Dreyer's *Index Catalogue* later credited "Pickering". The year belongs securely to the plate; when she
+  read it is not dated so closely. Harvard College Observatory Plate Stacks, "Williamina Fleming:
+  Variable Stars and Nebula", https://platestacks.cfa.harvard.edu/williamina-fleming/variable-stars-and-nebula ;
+  MacTutor, "Mina Fleming (1857–1911)", https://mathshistory.st-andrews.ac.uk/Biographies/Fleming/ .
+  Correction: "Williamina Fleming found the Horsehead on a Harvard plate taken in 1888."
+- **"Halley came across the Hercules cluster in 1714."** (chart note 8) — *attested.* Halley's own list
+  says the sixth nebula "was accidentally hit upon by M. Edm. Halley in the Constellation of Hercules, in
+  the Year 1714". Edmond Halley, "An Account of several Nebulae or lucid Spots like Clouds, lately
+  discovered among the Fixt Stars by help of the Telescope", *Philosophical Transactions* 29 (1714–16),
+  390–392, https://www.jstor.org/stable/103075 ; transcription at SEDS, http://www.messier.seds.org/xtra/similar/halley_pt.html .
+- **"Darquier found the Ring Nebula in 1779 and likened it to a fading planet."** (chart note 9) —
+  *attested.* Antoine Darquier de Pellepoix found M57 in January 1779 (Messier came on it independently
+  weeks later) and reported it "as large as Jupiter and resembles a planet which is fading". SEDS,
+  "Messier Object 57", http://www.messier.seds.org/m/m057.html (read through search excerpt);
+  Deep Sky Corner, "Ring Nebula (Messier 57)", https://www.deepskycorner.ch/obj/m57.en.php .
+- **"Albireo splits in a small telescope into a gold star and a blue one."** (chart note 11) — *attested.*
+  Beta Cygni's components, magnitude 3.1 golden-yellow (a K giant) and 5.1 blue (a B dwarf), lie 34
+  arcseconds apart and separate in any small telescope. NASA Science, Night Sky Network, "August's Night
+  Sky Notes: Seeing Double" (2024), https://science.nasa.gov/solar-system/skywatching/night-sky-network/aug2024-night-sky-notes/ ;
+  *Astronomy Now*, "Don't miss Albireo: a glorious colour-contrast double star" (2022),
+  https://astronomynow.com/2022/08/02/dont-miss-albireo-a-glorious-colour-contrast-double-star/ .

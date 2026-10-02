@@ -202,9 +202,20 @@ and the source the repository already cites for it, and `scripts/verify/runtime.
 dropped or reordered without its entry. It is kept in `docs/` rather than in the voices, since the player never
 reads it and it need not ship. A label was given only where a source is already named in the research files, the
 era files or this audit; anything else is entered as `unchecked`, with no source, rather than sourced from memory.
-It stands at 58 attested, 2 plausible reconstruction, 2 gameplay translation and **65 unchecked**: those are the
-research still owed, and moving one to a label means first citing it in the research file. Lines worth checking
-first, raised while labelling (from general knowledge, so not yet findings):
+It stood at 58 attested, 2 plausible reconstruction, 2 gameplay translation and 65 unchecked, and moving one to a
+label means first citing it in the research file. *Checked 2026-10-02:* all 65 were researched and cited, each era's
+under a "Claims register checks (2026-10-02)" section of its research file (`research/atlas.md`, new, for the atlas;
+`rock.md`, `china.md`, `instruments.md`, `observatory.md`, `space-age.md`, `probe.md`), and the register now stands at
+**117 attested, 8 plausible reconstruction, 2 gameplay translation, none unchecked**. Eight lines were corrected in the
+same pass: Tycho's accuracy (a minute or two of arc, not about one), Rigel (from *rijl al-jawzāʾ*, not *rijl
+al-jabbār*), Markab and Scheat (Kunitzsch's *mankib* and *sāq*, not saddle and upper arm), Galileo's Pleiades
+(thirty-six new stars drawn, not thirty) and Praesepe (more than forty, not some forty), Rosse's Crab (published, not
+drawn, in 1844), the Horsehead (the plate is of 1888, the find's date is not known) and Shen (its link to the belt's
+three stars is the traditional reading, not a certainty). One caution: the sandbox's proxy refused most direct page
+fetches, so many citations were confirmed from search-result text of the cited pages rather than the pages
+themselves; each research section says where. A reading against the full sources is still worth doing. Lines worth checking
+first, raised while labelling (from general knowledge, so not yet findings; the 2026-10-02 pass has since settled the
+Sail, the Lantern, Pegasus and the Pleiades):
 
 - The Rock's first chart note and its heirloom treat the largest Lascaux bull and the bull with six dots on its
   shoulder as one animal; `research/rock.md` names them separately.
