@@ -55,7 +55,7 @@ defineVoice('atlas',{
   observations:{},
   pressures:DIFFICULTY_LABELS,
   pressureSet:'PRESSURE SET · {label}',
-  losses:{'THE SUN ROSE':'THE ATLAS IS PRINTED'},
+  losses:{'THE SUN ROSE':'THE ATLAS IS PRINTED','FELL INTO THE CHASM':'CAUGHT IN A SLIPPED STROKE'},
   opening:'Game started. Tap to release. Skim an orbit for a perfect transfer. Circle slingshot stars to gain speed and to fill the nib. Every flight spends ink by the distance flown; hold an orbit to re-charge it.',
   ended:'Run complete. Score {score}. Best {best}. Tap to try again.',
   unrecorded:'',
@@ -65,7 +65,7 @@ defineVoice('atlas',{
   hud:{pace:'SPEED ×',flow:'FLOW ×',shield:POWERUP_LABELS.shield+' ARMED',reflector:POWERUP_LABELS.reflector+' ARMED',dawn:POWERUP_LABELS.dawn+' ARMED'},
   chrome:{brand:'ORBIT',bestLabel:'Best',endTitle:'One more orbit.',endAction:'Tap to try again',endTitleWon:'The atlas is printed.',endActionWon:'Tap to begin a new atlas',pauseTitle:'Suspended.',pauseEyebrow:'THE PRESS STANDS IDLE',pauseNote:'Tap the sheet to continue',pauseResume:'TAKE UP THE PEN',pauseLeave:'RETURN TO THE FRONTISPIECE',pauseLabel:'Pause the run',gameLabel:'Orbit arcade game',canvasLabel:'Orbit. Tap or press Space to start. While orbiting, tap to release toward the next node.',
     eraExit:'RETURN TO THE ATLAS',eraExitLabel:'Return to the atlas',
-    readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',label:'The reading: {reading}. Tap to change it'},
+    readings:{chronicle:'TO THE PRESS',endless:'ENDLESS',hard:'ENDLESS · SLIPPED STROKES',label:'The reading: {reading}. Tap to change it'},
     // A century the Journey has not reached, flown in Free Play as a proof (src/journey.js's eraProof): its
     // door says so (its numeral set aside, so the line still fits the reference phone), and its leaf closes on the first chapter rather than on the century's own ending.
     proof:{door:'{name} · FIRST CHAPTER',doorNote:'Only the first chapter is open until the Journey reaches this century.',title:'The first chapter is flown.',reason:'END OF THE FIRST CHAPTER',action:'Tap to fly the first chapter again',note:'The rest of this century opens once the Journey reaches it.',spoken:'The first chapter is flown. Score {score}. The rest of this century opens once the Journey reaches it.'},
@@ -110,7 +110,7 @@ defineVoice('atlas',{
   // kept here rather than read straight off HAZARD_KINDS at the call site, so a plate with no Latin of
   // its own has somewhere to put a different word instead. The English a player needs is set beside it,
   // as every other century's pair of names reads (docs/KNOWLEDGE-AUDIT.md, §3.1).
-  hazards:{vortex:HAZARD_KINDS.vortex.latin+' · A WHIRLPOOL',flare:HAZARD_KINDS.flare.latin+' · A SUNSPOT',wind:HAZARD_KINDS.wind.latin+' · A WIND'},
+  hazards:{vortex:HAZARD_KINDS.vortex.latin+' · A WHIRLPOOL',flare:HAZARD_KINDS.flare.latin+' · A SUNSPOT',wind:HAZARD_KINDS.wind.latin+' · A WIND',chasm:'LAPSUS · A SLIPPED STROKE'},
   // The bare currency word, without the ARMED/HELD suffix a capsule's own pickup toast (below) adds to
   // it — kept apart from POWERUP_LABELS itself so a plate can rename what is carried without touching
   // the internal type strings every capsule handler already keys on.
@@ -403,20 +403,29 @@ const READING_KEY='orbit.reading.v1';
 const ATLAS_CHRONICLE_ROW=32;
 const readings=(()=>{
   const out={};
-  try{const raw=JSON.parse(storage.get(READING_KEY,'{}'));if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw)if(raw[k]==='endless'||raw[k]==='chronicle')out[k]=raw[k];}catch(_){}
+  try{const raw=JSON.parse(storage.get(READING_KEY,'{}'));if(raw&&typeof raw==='object'&&!Array.isArray(raw))for(const k in raw)if(raw[k]==='endless'||raw[k]==='chronicle'||raw[k]==='hard')out[k]=raw[k];}catch(_){}
   return out;
 })();
 const readingKey=()=>eraId()?plateName:'atlas';
 const readingDefault=()=>eraId()?'chronicle':'endless';
 const readingOffered=()=>eraId()?!!plateWords().endless:!dailyOn;
-const eraReading=()=>readingOffered()&&readings[readingKey()]||readingDefault();
+// The third reading, Endless made harder by one danger of the century's own, too harsh for a Chronicle, the
+// Journey or the daily (docs/archive/eras/ENDLESS-HARD.md). It is offered only where that danger is built and
+// named — the atlas's slipped stroke and the Rock's chasm (its plate's can.hard), both the simulation's one
+// chasm generator, which always leaves a way through — and a reading kept for a century that no longer offers
+// it falls back. It is asked of the plate, not of the words, since every century inherits the atlas's.
+const hardOffered=()=>readingOffered()&&(!eraId()||plateOwns('hard'));
+const eraReading=()=>{const kept=readingOffered()&&readings[readingKey()];return kept&&(kept!=='hard'||hardOffered())?kept:readingDefault();};
+const readingCycle=()=>[readingDefault(),readingDefault()==='endless'?'chronicle':'endless',...(hardOffered()?['hard']:[])];
+// Only a Free Play run that is not a proof is ever dealt the harder reading's danger.
+const hardOn=()=>runMode==='free'&&!dailyOn&&!eraProof()&&eraReading()==='hard';
 // A Journey run is never won at a row: its chapters are opened by knowledge across runs (LINKING.md).
 // A proof is won at the end of the century's first chapter, whatever reading was last chosen for it.
-const eraGoalRow=()=>eraProof()?plateWords().chapterRows:runMode==='journey'||runMode==='frontier'||eraReading()==='endless'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
+const eraGoalRow=()=>eraProof()?plateWords().chapterRows:runMode==='journey'||runMode==='frontier'||eraReading()!=='chronicle'?0:eraId()?plateWords().goalRow:ATLAS_CHRONICLE_ROW;
 // Only from the frontispiece: a run is dealt with its finish line or without one, never changed under it.
 function toggleReading(){
   if(!readingOffered()||eraProof()||runMode!=='free'||(world&&world.state!=='ready'))return;
-  const next=eraReading()==='endless'?'chronicle':'endless';
+  const cycle=readingCycle(),next=cycle[(cycle.indexOf(eraReading())+1)%cycle.length];
   if(next===readingDefault())delete readings[readingKey()];else readings[readingKey()]=next;
   storage.set(READING_KEY,JSON.stringify(readings));
   newWorld();resetToFrontispiece();syncEraChrome();render(0);
@@ -569,7 +578,7 @@ function newWorld(){
   regionBlend=0;darknessRelief=0;chapterReveal={index:0,age:5};
   // Newton gravity never rides under the daily plate's own fixed setup, and never leaks into an era's
   // separate simulation-and-record (see PLATE_STYLES' can.mode and enterEra/leaveEra).
-  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms'),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];world.proof=eraProof();
+  recordAtStart=currentBest();resetRunTally();resetJourneyRun();world=new OrbitWorld(dailyOn?dailySeed:++runSeed,W/scale,H/scale,event,!dailyOn,dailyOn,newtonOn&&!dailyOn&&!plateOwns('mode')&&isUnlocked('newton'),plateOwns('chasms')||hardOn(),plateOwns('relight'),eraGoalRow());world.transitionRows=plateWords().transitionRows||[];world.proof=eraProof();
   // The endless driver (simulation.js) is felt by every run that has no row it is won at: the atlas, an
   // Endless reading, a Journey run and the daily. A Chronicle keeps the flat chart its finish was read off.
   world.driven=!world.goalRow;
@@ -627,7 +636,7 @@ function syncEraChrome(){
   if(reading){
     const offered=readingOffered()&&runMode==='free'&&!eraProof(),now=eraReading(),word=chrome.readings[now];
     reading.hidden=!offered;reading.textContent=word;
-    reading.setAttribute('aria-pressed',String(now==='endless'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
+    reading.setAttribute('aria-pressed',String(now!=='chronicle'));reading.setAttribute('aria-label',fmt(chrome.readings.label,{reading:word}));
   }
   syncJourney();syncInstruments();
   const statCaptures=$('end-captures-label');if(statCaptures)statCaptures.textContent=chrome.statCaptures;

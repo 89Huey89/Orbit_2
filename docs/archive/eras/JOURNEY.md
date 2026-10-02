@@ -1011,4 +1011,5 @@ stages above.
 - **Marathon** (§9.2): the whole ladder in one run without dying, opened by the first closing of the circle;
   its in-run gates are still to be set and measured.
 - **Endless-hard dangers.** One per century, in the spirit of the Rock's chasms, drafted in
-  `ENDLESS-HARD.md` and not built.
+  `ENDLESS-HARD.md`. The reading itself and two of its dangers are built (2026-10-02): the Rock's chasm as
+  THE CRACKED WALL and the atlas's slipped stroke as ENDLESS · SLIPPED STROKES; the other six are not.

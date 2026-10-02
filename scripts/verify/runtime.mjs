@@ -1907,6 +1907,8 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
       assert.equal(context.test.world.goalRow,w.goalRow,'A century opens on its Chronicle: '+id);
       assert.equal(reading.hidden,!w.endless,'The choice of reading stands only on a century that offers one: '+id);
       if(w.endless)assert(w.goalRow>0&&w.chrome.readings.chronicle!==w.chrome.readings.endless,'A century offering two readings has an ending to leave out, and names both: '+id);
+      assert.equal(context.test.plateOwns('hard'),id==='rock','Only a century whose own danger is built offers the harder reading: '+id);
+      if(id==='rock')assert(w.chrome.readings.hard&&w.chrome.readings.hard!==context.test.centuryWords(5).chrome.readings.hard,'And names it in its own words');
       context.test.leaveEra();context.test.newWorld();
     }
     // The atlas offers the choice the other way round: Endless is its own reading, and its Chronicle, the atlas
@@ -1925,8 +1927,30 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     assert.equal(context.test.world.goalRow,0,'And never ends at a row');
     events['daily:click']();
     assert.equal(context.test.world.goalRow,32,'Leaving the daily puts the chosen reading back');
+    // The third reading (ENDLESS-HARD.md): Endless with the atlas's own danger, the slipped stroke, which is
+    // the simulation's chasm generator under the atlas's hand. Never on the daily, and gone with the reading.
+    assert.equal(context.test.world.chasmsOn,false,'A Chronicle deals no slipped strokes');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'The harder reading is endless');
+    assert.equal(context.test.world.chasmsOn,true,'And deals the atlas its slipped strokes');
+    assert.equal(reading.textContent,context.test.plateWords().chrome.readings.hard);
+    assert.equal(context.test.plateWords().losses['FELL INTO THE CHASM'],'CAUGHT IN A SLIPPED STROKE','The atlas names a death in its own danger');
+    if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,'hard','The harder reading is kept like any other');
+    // The atlas's own hand draws one, on both plates, and names it once (the chasm's dealing and its way
+    // through are the simulation's own, flown by taskChasmRoute60).
+    for(const plate of ['night','paper']){
+      context.test.setPlate(plate);const w=context.test.world;
+      w.chasms.push({x0:-120,y0:w.player.y-170,x1:110,y1:w.player.y-230,w:12,row:5,seed:77,phase:0});
+      for(let i=0;i<90;i++)context.test.render(1/30);
+      assert.equal(typeof context.test.handFor('chasm'),'function','The atlas has a hand for the slipped stroke: '+plate);
+    }
+    events['daily:click']();
+    assert.equal(context.test.world.chasmsOn,false,'The daily never deals the harder reading\'s danger');
+    events['daily:click']();
+    assert.equal(context.test.world.chasmsOn,true,'Leaving the daily puts the harder reading back');
     events['reading:click']();
     assert.equal(context.test.world.goalRow,0,'And Endless can be chosen back');
+    assert.equal(context.test.world.chasmsOn,false,'Plain Endless deals no slipped strokes');
     if(!storageBlocked)assert.equal(JSON.parse(saved.get('orbit.reading.v1')).atlas,undefined,'The atlas\'s own reading is not written down');
     context.test.enterEra('rock');
     assert.equal(context.test.world.goalRow,32,'The Rock\'s Chronicle ends with the fourth chamber, Newgrange');
@@ -1944,8 +1968,13 @@ replayRun,get replayLog(){return replayLog},openReview,closeReview,panReviewBy,r
     context.test.handleInput();events['reading:click']();
     assert.equal(context.test.world.goalRow,0,'A run under way keeps the finish line it was dealt');
     context.test.leaveEra();context.test.newWorld();context.test.enterEra('rock');
+    assert.equal(context.test.world.chasmsOn,false,'The Rock\'s Endless keeps its wall whole');
+    events['reading:click']();
+    assert.equal(context.test.world.goalRow,0,'The cracked wall is endless');
+    assert.equal(context.test.world.chasmsOn,true,'And is cut with the chasms the base game set aside');
     events['reading:click']();
     assert.equal(context.test.world.goalRow,32,'And the Chronicle can be chosen back');
+    assert.equal(context.test.world.chasmsOn,false);
     context.test.leaveEra();context.test.setPlate('night');
   }
   // ---- The chapter boundary reads chapterRows off the plate, not the atlas's own hard-coded 8 ----

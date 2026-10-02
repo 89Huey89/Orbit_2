@@ -1507,10 +1507,16 @@ function render(dt){
       if(inscribe(plateWords().hazards[kind]||hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
     }
   }
-  // world.chasms is era I's own array (see simulation.js), never populated on any other plate, so
-  // this asks for a 'chasm' painter rather than assuming every hand has one — the atlas and era II
-  // never see this loop do anything at all.
-  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms)paintChasm(c);}
+  // world.chasms is only populated where a chasm is dealt — the harder Endless reading of the atlas and the
+  // Rock (ENDLESS-HARD.md) — so this asks for a 'chasm' painter rather than assuming every hand has one. The
+  // first one in full view is named once, as a hazard of each kind is, where the plate's voice names it.
+  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms){
+    paintChasm(c);
+    const name=plateWords().hazards.chasm,mx=(c.x0+c.x1)/2,my=(c.y0+c.y1)/2,y=sy(my);
+    if(name&&!plainPlate()&&!namedHazardKinds.has('chasm')&&y>H*.15&&y<H*.85&&(reducedMotion||reveal.progress(c,HAZARD_REVEAL,true)>=1)){
+      if(inscribe(name,{x:mx,y:my,r:c.w+6}))namedHazardKinds.add('chasm');
+    }
+  }}
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}

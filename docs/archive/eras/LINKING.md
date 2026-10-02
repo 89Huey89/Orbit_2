@@ -89,7 +89,8 @@ repeats that. The mechanism is kept whole (`chasmsOn` in `src/simulation.js`, th
 
 That points at what a harder Endless reading could be for every century, beyond the shared driver of
 `JOURNEY.md` §1.8: one danger of the era's own, too harsh for the Chronicle or the Journey, switched on
-only when a player has chosen the harder way. The Rock's is the chasm. The others are still to be found
+only when a player has chosen the harder way. The Rock's is the chasm, and the atlas's the slipped stroke, the
+same chasm under its hand; both are built as a third reading (2026-10-02). The others are still to be found
 in each era's own material, and each has to keep the one promise the chasm's generation already keeps —
 a way through always left standing — so that it is hard and never hopeless. A first reading for all eight is drafted in
 [ENDLESS-HARD.md](ENDLESS-HARD.md).

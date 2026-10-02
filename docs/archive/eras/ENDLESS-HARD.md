@@ -1,4 +1,4 @@
-# Endless-hard — one danger a century (draft, nothing built beyond the Rock's)
+# Endless-hard — one danger a century (draft; the Rock's and the atlas's are built)
 
 A first reading of the idea recorded in [LINKING.md](LINKING.md), "Endless, later": a harder Endless
 reading in which each century switches on one danger of its own, too harsh for the Chronicle, the Journey
@@ -8,11 +8,11 @@ era files, `DANGERS.md` and the hazard code in `src/simulation.js`.
 
 | Era | Danger | What it does | The promise generation keeps | Cost |
 |---|---|---|---|---|
-| I Rock | **The chasm** — the long crack across the wall | a capsule that kills a free flight crossing it (built: `chasmsOn`, `src/rock.js`, `taskChasmRoute60`) | a fan of 24 departure headings sampled, at least 82 % left clear, and one exact tangent held clear in either winding | none: flip the flag |
+| I Rock | **The chasm** — the long crack across the wall | a capsule that kills a free flight crossing it (built: `chasmsOn`, `src/rock.js`, `taskChasmRoute60`); *dealt in the reading THE CRACKED WALL since 2026-10-02* | a fan of 24 departure headings sampled, at least 82 % left clear, and one exact tangent held clear in either winding | none: flip the flag |
 | II Ceiling | **The sealed hour** — a gate between the Amduat's hours | a full-width wall at an hour boundary with one gap | the gap centred on an exact tangent between the last body and the next, sized to the capture band and a margin; no qualifying tangent, no wall that hour | medium: line geometry, an hour-keyed placement rule, its own pilot |
 | III Scroll | **The escapement** — Su Song's clock tower ticking | a lethal row whose core switches on and off on a fixed period, on its own random stream | the chasm's fan restated in time: the safe phase at a tangent departure's predicted transit covers a wide majority of a window round it | medium: a timing rule in `flightStep`, a render change, a timing pilot |
 | IV Astrolabe | **The trench** — the Fakhrī sextant's walls cut into the hill | a curved capsule, a masonry arc | the chasm's fan and tangent rule, against point-to-arc distance | medium to large: arc distance does not exist yet |
-| V Atlas | **The slipped stroke** — an engraver's trial slipped onto the plate | the chasm itself under the atlas's hand | the chasm's own | small: a skin over the chasm's code path |
+| V Atlas | **The slipped stroke** — an engraver's trial slipped onto the plate | the chasm itself under the atlas's hand; *built 2026-10-02* as the reading ENDLESS · SLIPPED STROKES (`atlasChasm` in `src/figures.js`, named LAPSUS · A SLIPPED STROKE) | the chasm's own | small: a skin over the chasm's code path |
 | VI Lens | **The cracked plate** — a stressed glass plate failing | a capsule that lengthens every few rows | the fan re-checked at every growth step; a growth that would close it arrests the crack instead | large: live, revalidated capsules are new state |
 | VII Flyby | **The ring-plane crossing** — Cassini's Grand Finale gap | the sealed hour's wall and gap, rarer, as a one-time threading | as the sealed hour | small once II exists |
 | VIII Probe | **Bit rot** — errors outrunning the frame's own correction | a corruption meter filled near flux, draining when clear; overflow ends the run | a pilot flying every tangent through the densest flux never overflows by more than a set margin | large: new run state, a HUD meter, a new loss |
@@ -29,6 +29,6 @@ and the vortex-only graze. Keeping every entry here inside an opt-in reading avo
 would still need a look (`figures.js`'s graze test). It also breaks `OVERVIEW.md`'s rule that the simulation
 never learns the era — for this reading only, `HAZARD_KINDS` and the spawn rules would be chosen per era.
 
-**Open.** Whether the toggle is per century or one global modifier; whether the Ceiling's and the Flyby's
+*Built 2026-10-02 for I and V:* the reading is a third step of the frontispiece's reading button (`readingCycle()`, `hardOn()` in `src/ui.js`), offered on the atlas and on any century whose plate sets `can.hard`, keeping its own record under `:hard`; the danger is the simulation's unchanged chasm generator, so no new pilot was needed. **Open.** Whether the toggle is per century or one global modifier (built per century); whether the Ceiling's and the Flyby's
 shared wall-and-gap is acceptable reuse; whether the growing crack and the meter can share the chasm
 pilot's shape in `scripts/verify/tasks.mjs`.
