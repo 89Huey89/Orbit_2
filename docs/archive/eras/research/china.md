@@ -431,3 +431,92 @@ museum sites, and JSTOR/ADS abstracts on the guest star of 1054 and Su Song's cl
 by search this session but are omitted here rather than listed, since this document cannot confirm
 they resolve without the blocked `WebFetch` tool; treat §1–§11's claims sourced from them as
 search-summary-only per §12, not as pointing to a dead link.
+
+## Claims register checks (2026-10-02)
+
+Seven of the scroll's chart notes, entered in `docs/CLAIMS.json` as unchecked, checked against
+outside sources. As in §13, `WebFetch` was blocked by the egress proxy for every host tried this pass
+(`en.wikipedia.org`, `ctext.org`, `hk.space.museum`, `www.ianridpath.com`,
+`languagelog.ldc.upenn.edu`, `xing.fmi.uni-jena.de`), so what follows rests on search-result
+summaries of the pages named. Each verdict was taken only where two or more independently worded
+summaries agreed. Wikipedia was used only to find sources.
+
+- **"The Northern Dipper is the Plough. Where its handle points at dusk tells the season: east in
+  spring, south in summer."** Attested. The rule is the *Heguanzi*'s (鶡冠子, chapter 環流, Warring
+  States): "斗柄東指，天下皆春；斗柄南指，天下皆夏；斗柄西指，天下皆秋；斗柄北指，天下皆冬". The
+  *Heguanzi* names no hour. The dusk reading follows the older seasonal texts, which read the handle
+  at 初昏, "first dusk": the *Xia xiaozheng* gives 正月……初昏參中，斗柄縣在下, "first month… at first
+  dusk Shen is due south and the handle hangs down". It also matches the sky, since the handle points
+  east shortly after nightfall in spring. Northern Dipper (北斗) = Big Dipper = Plough is the
+  standard identification. Sources: *Heguanzi*, 環流, Chinese Text Project, https://ctext.org/he-guan-zi
+  (summarised); *Da Dai Liji*, 夏小正, Wikisource,
+  https://zh.wikisource.org/wiki/大戴禮記/夏小正 (summarised); Hong Kong Space Museum, "The Big
+  Dipper: a pointer in the sky", curators' blog, 2022,
+  https://hk.space.museum/en/web/spm/resources/curators-blog/2022/03/the-big-dipper-a-pointer-in-the-sky.html
+  (summarised).
+
+- **"Xuanyuan, the Yellow Emperor's name, is a long coil of stars through Leo. Its brightest is
+  Regulus."** Attested. Xuanyuan (軒轅) is the Yellow Emperor's personal name. The asterism is a chain
+  of 17 stars drawn as a yellow dragon, running from Regulus and the stars of the Sickle north through
+  Leo into Lynx. Regulus is 軒轅十四, the brightest star in the chain. "Through Leo" is fair, though
+  the tail reaches into Lynx. Sources: Ian Ridpath, *Star Tales*, "Leo", http://www.ianridpath.com/startales/leo.html
+  (summarised); *All Skies Encyclopaedia*, "Xuanyuan (轩辕)",
+  Friedrich-Schiller-Universität Jena, https://xing.fmi.uni-jena.de/mediawiki/index.php/Xuanyuan
+  (summarised).
+
+- **"The Heavenly Ford is a crossing of the Milky Way, the River of Heaven. Its brightest star is
+  Deneb."** Attested. Deneb is 天津四, the fourth star of Tianjin, the Celestial or Heavenly Ford, a
+  ferry or bridge across the Milky Way (天河/天漢). Its other members are γ, δ, ε, ζ, ν, τ, υ and
+  30 Cygni. At magnitude 1.25, Deneb is clearly brighter than Sadr (γ, about 2.2), the next brightest.
+  The numbering "four" refers to its order in the asterism, not its rank in brightness. Sources: Hong
+  Kong Space Museum / Taiwan National Museum of Natural Science, 天文教育資訊網 (AEEA), Chinese–Western
+  star-name tables, as tabulated in 中西星名對照表 and 二十八宿中西星名對照表 (summarised); Deneb
+  entry, Baidu Baike, https://baike.baidu.com/en/item/Deneb/1419748 (summarised).
+
+- **"The Five Chariots lie in Auriga. Their brightest star, Capella, is Wuche Er, the second of the
+  five."** Attested. Wuche (五車), the Five Chariots, is Auriga less δ Aur, and is named for its five
+  main stars: Capella (α Aur), β Aur, θ Aur, ι Aur and β Tau. Capella is 五車二, "second of the Five
+  Chariots", and is the brightest of them. It is listed under the Net mansion (畢宿) of the White
+  Tiger. Sources: AEEA star-name tables via 二十八宿中西星名對照表 (summarised); Constellation Guide,
+  "Capella", https://www.constellation-guide.com/capella/ (summarised).
+
+- **"Shen is Orion, named for the three stars of its belt. It and the Heart never share the sky, like
+  two feuding brothers kept apart."** Corrected, plausible reconstruction. The legend is attested
+  (*Zuo zhuan*, Duke Zhao year 1). Gaoxin's two sons, E Bo and Shi Chen, fought every day, so Yao sent
+  E Bo to Shangqiu to tend the Shang star (大火, the Heart, Antares) and Shi Chen to Daxia to tend
+  Shen. The two stars rise and set opposite each other, hence 參商不相見. Shen (參宿) is the Orion
+  mansion. Reading its name as "three", for the belt, is the usual gloss, but Victor Mair
+  (Language Log) calls the 參 = 三 link doubtful; the name may first have meant the Orion figure as a
+  whole. So the etymology should be given as a reading, not stated as fact. Correction: "Shen is
+  Orion, its name traditionally read as the three stars of its belt. It and the Heart never share the
+  sky, like two feuding brothers kept apart." Sources: *Zuo zhuan*, 昭公元年 (summarised via Baidu
+  Baike, "Shi Shen", https://baike.baidu.com/en/item/Shi%20Shen/3469879); Victor H. Mair, "Betelgeuse
+  in Greek, Latin, Arabic, English, and Chinese", Language Log, University of Pennsylvania,
+  https://languagelog.ldc.upenn.edu/nll/?p=53535 (summarised).
+
+- **"The pole is the still point the sky turns on, and so the emperor's seat. It drifts: in the Tang
+  it stood well off Polaris."** Attested. The ruler-as-pole figure is *Analects* 2.1: 為政以德，譬如北辰，
+  居其所，而眾星共之, "like the north polar star, which keeps its place and all the stars turn towards
+  it" (Legge, 1893). When the Chinese constellations were fixed, about 1,600 years ago, the pole lay
+  in northern Camelopardalis. The pivot star, Tianshu (天樞) or Niuxing (紐星), was the
+  fifth-magnitude Struve 1694, not Polaris. Around AD 900, Polaris still circled about 7.5° from the
+  pole, and it was further off in the 7th and 8th centuries. Some secondary pages call Zu Gengzhi's
+  c. 500 CE "Tianshu" Polaris, but that is the old pivot star, and Ridpath's identification is the
+  one followed here. Sources: Confucius, *Analects* 2.1, tr. James Legge, *The Chinese Classics* vol.
+  1, 1893, Wikisource, https://en.wikisource.org/wiki/The_Chinese_Classics/Volume_1/Confucian_Analects/II;
+  Ian Ridpath, *Star Tales*, "Camelopardalis", http://www.ianridpath.com/startales/camelopardalis.html
+  (summarised); "Pole star", Wikipedia, https://en.wikipedia.org/wiki/Pole_star, used only for the
+  AD 900 figure and to be confirmed against a precession calculation (summarised).
+
+- **"The Southern Dipper, six stars in Sagittarius, heads the Tortoise's lodges. Legend gives it the
+  book of births, the Northern of deaths."** Attested. Dou (斗宿), the Southern Dipper (南斗六星), is six
+  stars in Sagittarius. It is the first of the seven mansions of the Black Tortoise of the North and
+  the eighth of the twenty-eight. The legend is in Gan Bao's *Soushen ji* (4th century). Guan Lu
+  sends the doomed youth Yan Chao to two old men playing *weiqi*. The one seated south changes Yan's
+  span in the register from nineteen years to ninety. Guan Lu explains: 南斗注生，北斗注死, "the
+  Southern Dipper records births, the Northern deaths". Sources: Chinese Text Project data wiki, "斗宿
+  Dou Su", https://ctext.org/datawiki.pl?if=en&res=499573&remap=gb (summarised); Gan Bao, *Soushen
+  ji*, Guan Lu story, as summarised by Hong Kong Space Museum, "Chinese Starlore",
+  https://hk.space.museum/en/web/spm/resources/teachers-corner/constellations-and-myths/chinese-starlore.html,
+  and by Judy Volker, "Ancient Chinese Star Lore",
+  http://judy-volker.com/StarLore/Myths/UrsaMajor3.html (summarised).

@@ -776,7 +776,7 @@ defineVoice('scroll',{
     'The River Drum holds Altair, the Herd Boy of the same story, kept across the River from the Weaver Girl.',
     'The Heavenly Ford is a crossing of the Milky Way, the River of Heaven. Its brightest star is Deneb.',
     'The Five Chariots lie in Auriga. Their brightest star, Capella, is Wuche Er, the second of the five.',
-    'Shen is Orion, named for the three stars of its belt. It and the Heart never share the sky, like two feuding brothers kept apart.',
+    'Shen is Orion, its name traditionally read as the three stars of its belt. It and the Heart never share the sky, like two feuding brothers kept apart.',
     'Mao, the Hairy Head, is the Pleiades, set down as seven stars, though most eyes count six.',
     'Xin, the Heart, is three stars with Antares in the middle. Mars lingering here was among the gravest omens the Bureau read.',
     'The Heavenly Market is one of the sky’s three walled enclosures, its wall stars named for the old states of China.',

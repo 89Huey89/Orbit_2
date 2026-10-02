@@ -530,3 +530,80 @@ on dragon iconography in medieval Islamic and Christian art.
 - https://www.worldhistory.org/Astrolabe/
 - https://www.academia.edu/39239308/Kuehn_S_The_Dragon_in_Medieval_Islamic_Astrology_and_Its_Indian_and_Iranian_Influences (unverified — title as given could not be matched with confidence to a specific known publication this session; Sara Kuehn's attested published work on this subject is the book *The Dragon in Medieval East Christian and Islamic Art*, which may or may not be what this academia.edu entry actually contains)
 - `globe.md`, [../04-astrolabe.md](../04-astrolabe.md), [../DANGERS.md](../DANGERS.md) (this repository)
+
+## Claims register checks (2026-10-02)
+
+This pass checked the six star-name chart notes in `src/astrolabe.js` that `docs/CLAIMS.json` held
+as unchecked. A caveat first, in the same spirit as the note heading §14: this session's network
+egress again refused every direct page fetch (Wikipedia, Ridpath, Britannica, archive.org all
+returned a proxy denial), so every source below was read **via search summary** only, quoting the
+page's own text, and none could be opened in full. Paul Kunitzsch's etymologies (Kunitzsch & Smart,
+*A Dictionary of Modern Star Names*, Sky Publishing, 2006) are taken as the standard throughout;
+where a summary reports his reading through Ian Ridpath's *Star Tales*, which follows Kunitzsch
+explicitly, that is said. Where Kunitzsch and R. H. Allen's older *Star-Names and Their Meanings*
+(1899) disagree, Kunitzsch wins.
+
+- **"Rigel is rijl al-jabbar, the Giant’s foot: the star kept its Arabic name in Latin."**
+  Verdict: **corrected, then attested**. *Rijl*, "foot", is certain, and *al-jabbār*, "the giant",
+  is an attested Arabic name for Orion, with *rijl al-jabbār* an attested form for the star. But
+  Kunitzsch derives the European name from the translation of Ptolemy's "bright star in the left
+  foot", *rijl al-jauzā' al-yusrā*, "the left foot of al-Jauzā'", not from *rijl al-jabbār*, so
+  naming the full phrase as the source overstates it. Corrected text: *"Rigel is rijl, the foot: the
+  left foot of al-jawza, the Arabs’ Orion. The name came into Latin whole."* Sources: Ian Ridpath, *Star Tales*,
+  "Orion" (self-published online, rev. ed. of the 1988 Lutterworth book),
+  http://www.ianridpath.com/startales/orion.html and .../orion2.html (via search summary);
+  Kunitzsch & Smart 2006, as reported there; "Rigel", Wikipedia,
+  https://en.wikipedia.org/wiki/Rigel (via search summary, for the *rijl al-jabbār* form only);
+  "Jabbar", Wikipedia, https://en.wikipedia.org/wiki/Jabbar (via search summary, for *al-jabbār* as
+  Orion's alternative Arabic name).
+
+- **"Regulus was qalb al-asad, the heart of the lion."** Verdict: **attested**. The Arabic name is
+  *qalb al-asad*, "the heart of the lion", matching Ptolemy's placing of the star on the lion's
+  heart; the Latin *Regulus*, "little king", renders Ptolemy's *Basiliskos*, so "was" (the star's
+  Arabic name, not the source of its modern one) is exactly right. Sources: Ridpath, *Star Tales*,
+  "Leo", http://www.ianridpath.com/startales/leo.html (via search summary); "Regulus",
+  Constellation Guide, https://www.constellation-guide.com/regulus/ (via search summary).
+
+- **"Deneb is dhanab, the tail: the tail of the hen."** Verdict: **attested**. The name comes from
+  *dhanab*, "tail", in the phrase *dhanab al-dajājah*, "tail of the hen", the Arabic figure being a
+  hen, not a swan; the Alfonsine Tables carry it as *Denebadigege*. Sources: "Deneb", Wikipedia,
+  https://en.wikipedia.org/wiki/Deneb (via search summary, citing Kunitzsch & Smart 2006);
+  "Arabic Star Names: A Treasure of Knowledge Shared by the World", Muslim Heritage (FSTC),
+  https://muslimheritage.com/arabic-star-names/ (via search summary).
+
+- **"Alphard is al-fard, the solitary one, alone in an empty part of the sky."** Verdict:
+  **attested**. *Al-fard*, "the individual" or "the solitary one", named for there being no other
+  bright star near it in a dim region; al-Achsasi's *Calendarium* carries it as *Soheil al Fard*,
+  Latinised *Solitarius*. Sources: Ridpath, *Star Tales*, "Hydra",
+  http://www.ianridpath.com/startales/hydra.html (via search summary); "Alphard", Wikipedia,
+  https://en.wikipedia.org/wiki/Alphard (via search summary, citing Kunitzsch & Smart 2006).
+
+- **"Markab is the saddle; Scheat, the upper arm: names still read off the Arabic."** Verdict:
+  **corrected, then plausible reconstruction**. Both glosses are Allen's (1899) and are the disputed
+  ones. Allen gives *markab* as "saddle, ship, vehicle, anything ridden" and Scheat as *al-sā'id*,
+  "the upper arm". Kunitzsch, followed by Ridpath, reads Markab as a corruption of *mankib*,
+  "shoulder" (Ptolemy put the star on the horse's shoulder), and Scheat as *al-sāq*, "the shin",
+  a name carried over to β Pegasi from δ Aquarii by a muddle in a fifteenth-century star table.
+  Corrected text: *"Markab was mankib, the shoulder; Scheat, the shin: names misread off the
+  Arabic."* It keeps the note's point (the names came through Arabic) and now says how they came
+  through. It stays plausible rather than attested because the *markab* reading still has
+  currency and the *mankib* derivation is Kunitzsch's reconstruction of a scribal slip. Sources:
+  Ridpath, *Star Tales*, "Pegasus", http://www.ianridpath.com/startales/pegasus.html (via search
+  summary, reporting Kunitzsch); R. H. Allen, *Star-Names and Their Meanings* (G. E. Stechert,
+  1899), "Pegasus", LacusCurtius transcription,
+  https://penelope.uchicago.edu/Thayer/E/Gazetteer/Topics/astronomy/_Texts/secondary/ALLSTA/Pegasus*.html
+  (via search summary); "Delta Aquarii", Wikipedia, https://en.wikipedia.org/wiki/Delta_Aquarii
+  (via search summary, for the *sāq*/*sā'id* disagreement).
+
+- **"Dhat al-kursi, she of the throne. The astrolabe hangs from a throne too."** Verdict:
+  **attested**. Cassiopeia is *dhāt al-kursī*, "the woman with the chair/throne", in al-Ṣūfī's
+  *Book of the Fixed Stars*; *kursī* is chair or throne, so "she of the throne" is a fair gloss. The
+  astrolabe's throne is likewise the *kursī* (Persian *korsī*), the usually triangular piece at the
+  top of the mater carrying the handle (*ʿurwa*) and suspension ring (*ḥalqa*), as §3 already
+  records. Sources: Harvard Art Museums, "The Constellation Cassiopeia, folio from an Arabic
+  manuscript of the *Kitāb ṣuwar al-kawākib* of al-Ṣūfī", object 143490,
+  https://harvardartmuseums.org/collections/object/143490 (via search summary); "ASṬORLĀB",
+  *Encyclopaedia Iranica* (author and fascicle not visible in the summary),
+  https://www.iranicaonline.org/articles/astorlab-or-ostorlab-astrolabe-an-instrument-used-in-astronomy-for-a-variety-of-purposes-e/
+  (via search summary); Museo Galileo, "Astrolabe components",
+  https://catalogue.museogalileo.it/indepth/AstrolabeComponents.html (via search summary).

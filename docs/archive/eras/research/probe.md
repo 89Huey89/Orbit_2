@@ -361,3 +361,94 @@ and tug.org were both blocked by this session's egress policy; the Voyager 1 202
 telemetry-fault incident and the plasma-wave sonifications — this session's WebSearch budget was
 exhausted before either could be checked. Both are widely reported and consistent with general
 knowledge but unconfirmed by a source read this session.
+
+## Claims register checks (2026-10-02)
+
+The probe plate's chapter line and chart notes, as entered unchecked in `docs/CLAIMS.json`, checked
+one by one. Direct fetches of eso.org, nrao.edu, chandra.harvard.edu and iopscience.iop.org were
+blocked by this session's egress policy, so every reading below is from search-result text quoting
+the named page or paper; the citations are to those primary pages, not to the search engine.
+
+- **chapterLines 2** — "Arrival. Barnard’s Star, six light-years out: the target Project Daedalus was
+  designed to reach in fifty years." **Attested.** Gaia DR3 puts Barnard's Star at a parallax of
+  546.98 mas, 5.96 ly (1.83 pc) (value read from search-result text quoting the Gaia DR3 entry). The British Interplanetary Society's Daedalus study (1973–78) was an
+  uncrewed flyby probe to Barnard's Star under the rule that it arrive within a human lifetime, with
+  50 years allotted: about 3.8 years of two-stage boost to ~12% of light speed, then a ~46-year
+  cruise. "Reach" is right for a flyby; the probe was never meant to stop. Sources: A. Bond, A. R.
+  Martin et al., *Project Daedalus: The Final Report on the BIS Starship Study*, Journal of the
+  British Interplanetary Society, Supplement, 1978; D. Darling, "Daedalus", *Encyclopedia of
+  Science* (https://www.daviddarling.info/encyclopedia/D/Daedalus.html); P. Gilster, "Remembering
+  Project Daedalus", Centauri Dreams, 2006
+  (https://www.centauri-dreams.org/2006/12/16/remembering-project-daedalus/); Gaia Collaboration
+  (A. Vallenari et al.), "Gaia Data Release 3: Summary of the content and survey properties",
+  Astronomy & Astrophysics 674, A1, 2023 (https://doi.org/10.1051/0004-6361/202243940).
+
+- **chartNotes 2** — "Proxima Centauri: the nearest star to the Sun. A planet in its habitable zone
+  was found in 2016." **Attested.** Anglada-Escudé and colleagues announced Proxima b on 24 August
+  2016: a potentially Earth-mass planet on an 11.2-day orbit, in the zone where surface
+  water could be liquid; ESO's release is headed "Planet Found in Habitable Zone Around Nearest
+  Star". Sources: G. Anglada-Escudé et al., "A terrestrial planet candidate in a temperate orbit
+  around Proxima Centauri", Nature 536, 437–440, 2016 (https://www.nature.com/articles/nature19106);
+  ESO, "Planet Found in Habitable Zone Around Nearest Star", press release eso1629, 24 August 2016
+  (https://www.eso.org/public/news/eso1629/).
+
+- **chartNotes 3** — "Wolf 359: a faint red dwarf just under eight light-years away." **Attested.**
+  Chandra's 2025 release gives 7.8 ly; Astronomy magazine gives 7.9 ly and notes it is too faint to see
+  without a telescope. A red dwarf of about 0.09 solar masses. Sources: Chandra X-ray Center,
+  "Wolf 359: Exoplanets Need to be Prepared for Extreme Space Weather", Photo Album, 16 January 2025
+  (https://chandra.si.edu/photo/2025/wolf359/); NASA, "Exoplanets Need to Be Prepared for Extreme
+  Space Weather, Chandra Finds", 2025
+  (https://www.nasa.gov/missions/chandra/exoplanets-need-to-be-prepared-for-extreme-space-weather-chandra-finds/);
+  "Wolf 359", Astronomy magazine (https://www.astronomy.com/science/wolf-359/).
+
+- **chartNotes 4** — "Lalande 21185: one of the brightest red dwarfs in the northern sky, and still too
+  faint to see without a telescope." **Attested.** Astronomy magazine calls it the brightest red
+  dwarf in the northern half of the sky, at magnitude 7.5, below the naked-eye limit; it shows in
+  binoculars or a small telescope, which the line's "without a telescope" fairly covers. "One of the
+  brightest" understates rather than overstates. Source: "Lalande 21185", Astronomy magazine
+  (Kalmbach), https://www.astronomy.com/science/lalande-21185/.
+
+- **chartNotes 6** — "Epsilon Eridani: Project Ozma listened to it for signals in 1960. It is ringed by
+  dust." **Attested.** Frank Drake's Project Ozma began on 8 April 1960 with the 85-foot Tatel
+  telescope at Green Bank, tuned to the 21-cm hydrogen line, on Tau Ceti and Epsilon Eridani.
+  Greaves et al. imaged a dust ring around the star at 850 µm with SCUBA on the JCMT, peaking about
+  60 AU out, a young analogue of the Kuiper Belt. Sources: NRAO, "Project Ozma Hardware"
+  (https://public.nrao.edu/gallery/project-ozma-hardware/); "April 8, 1960: Frank Drake begins
+  Project Ozma", Astronomy magazine
+  (https://www.astronomy.com/today-in-the-history-of-astronomy/april-8-1960-frank-drake-begins-project-ozma/);
+  J. S. Greaves, W. S. Holland,
+  G. Moriarty-Schieven et al., "A Dust Ring around ε Eridani: Analog to the Young Solar System",
+  Astrophysical Journal 506, L133–L137, 1998 (https://iopscience.iop.org/article/10.1086/311652;
+  https://arxiv.org/abs/astro-ph/9808224).
+
+- **chartNotes 7** — "Ross 128: a quiet red dwarf with an Earth-sized planet, found in 2017."
+  **Attested.** Bonfils et al. report from HARPS radial velocities a planet of at least 1.35 Earth
+  masses on a 9.9-day orbit around an M4 dwarf 3.4 pc away, the nearest temperate planet around a
+  quiet (inactive, slowly rotating) star; ESO announced it in November 2017 and calls it "a
+  temperate Earth-sized planet" (the release headline says "Earth-mass"). Its radius is unmeasured,
+  so "Earth-sized" is ESO's own loose word, not a measured size. Sources: X. Bonfils et al., "A
+  temperate exo-Earth around a quiet M dwarf at 3.4 parsec", Astronomy & Astrophysics 613, A25, 2018
+  (https://arxiv.org/abs/1711.06177); ESO, "Closest Temperate World Orbiting Quiet Star Discovered",
+  press release eso1736, 15 November 2017 (https://www.eso.org/public/news/eso1736/).
+
+- **chartNotes 9** — "Tau Ceti: the other star Project Ozma listened to in 1960." **Attested.** Same
+  sources as Epsilon Eridani above: Ozma's two targets were Tau Ceti and Epsilon Eridani.
+
+- **chartNotes 10** — "Luyten’s Star: a red dwarf with a planet, found in 2017, that may be temperate."
+  **Attested.** Astudillo-Defru et al., from twelve years of HARPS velocities, report GJ 273 b, a
+  super-Earth of at least 2.9 Earth masses on an 18.6-day orbit inside the habitable zone
+  (equilibrium temperature ~259 K), with an inner planet c alongside it. "A planet" is the temperate
+  one; the line does not claim it is the only one. Source: N. Astudillo-Defru et al., "The HARPS
+  search for southern extra-solar planets XLI. A dozen planets around the M dwarfs GJ 3138, GJ 3323,
+  GJ 273, GJ 628, and GJ 3293", Astronomy & Astrophysics 602, A88, 2017
+  (https://arxiv.org/abs/1703.05386).
+
+- **chartNotes 11** — "TRAPPIST-1: a small star with seven Earth-sized planets, announced in 2017."
+  **Attested.** Gillon et al. published the seven transiting planets of the ultracool dwarf on 22
+  February 2017; ESO's release calls them "temperate Earth-sized worlds". All seven are transit-measured
+  bodies close to Earth's size, so "Earth-sized" holds as a plain-English summary for the set. Sources: M. Gillon et al., "Seven
+  temperate terrestrial planets around the nearby ultracool dwarf star TRAPPIST-1", Nature 542,
+  456–460, 2017 (https://doi.org/10.1038/nature21360); ESO, "Ultracool Dwarf and the Seven Planets",
+  press release eso1706, 22 February 2017 (https://www.eso.org/public/news/eso1706/).
+
+No corrections proposed.

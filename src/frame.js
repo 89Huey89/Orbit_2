@@ -1200,6 +1200,10 @@ function impressumHasTelescopicBody(){
   const current=typeof runTally!=='undefined'&&runTally&&runTally.telescopicCaptures>0;
   return lifetime||current;
 }
+// The paper plate is not a second edition but a later state of the same copper: the night plate is the
+// first pull of 1603, and the cream sheet was pulled from it after the additions were cut. So on paper
+// the second state stands from the first dated row on, and only the night pull has to earn it.
+function impressumSecondState(){return onPaper()?impressumHasCapture():impressumHasTelescopicBody();}
 function impressumHasCompleteAtlas(){
   const lifetime=typeof ledgerStat==='function'?ledgerStat('constellations'):0;
   return lifetime>=12||!!(world&&lifetime+world.constellationsCompleted>=12);
@@ -1223,7 +1227,7 @@ function impressumRows(){
     {key:'plate',text:'TAB. I · A1'},
     {key:'edition',text:'EDITIO V'},
     {key:'year',text:impressumHasCapture()?'Anno MDCIII':''},
-    {key:'state',text:impressumHasTelescopicBody()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
+    {key:'state',text:impressumSecondState()?'AUCTA ET RECUSA · ANNO MDCLXXXVII':''},
     {key:'title',text:impressumHasConstellation()?'URANOMETRIA':''},
     {key:'engraver',text:perfect?engraver:'',device:perfect},
     {key:'correction',text:impressumHasRoughImpression()?'* CORR.':''},
@@ -1503,10 +1507,16 @@ function render(dt){
       if(inscribe(plateWords().hazards[kind]||hazardKind(h).latin,{node:h}))namedHazardKinds.add(kind);
     }
   }
-  // world.chasms is era I's own array (see simulation.js), never populated on any other plate, so
-  // this asks for a 'chasm' painter rather than assuming every hand has one — the atlas and era II
-  // never see this loop do anything at all.
-  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms)paintChasm(c);}
+  // world.chasms is only populated where a chasm is dealt — the harder Endless reading of the atlas and the
+  // Rock (ENDLESS-HARD.md) — so this asks for a 'chasm' painter rather than assuming every hand has one. The
+  // first one in full view is named once, as a hazard of each kind is, where the plate's voice names it.
+  {const paintChasm=handFor('chasm');if(paintChasm)for(const c of world.chasms){
+    paintChasm(c);
+    const name=plateWords().hazards.chasm,mx=(c.x0+c.x1)/2,my=(c.y0+c.y1)/2,y=sy(my);
+    if(name&&!plainPlate()&&!namedHazardKinds.has('chasm')&&y>H*.15&&y<H*.85&&(reducedMotion||reveal.progress(c,HAZARD_REVEAL,true)>=1)){
+      if(inscribe(name,{x:mx,y:my,r:c.w+6}))namedHazardKinds.add('chasm');
+    }
+  }}
   drawAim(aim);drawInkPath();drawSurveys();drawTrail();drawEffects(dt);drawInscriptions(dt);drawImpressum();drawPlayer();drawDark(dt);ctx.restore();
   drawPlateFrame();frameCorrode();drawRunningHead();drawHudLeaf();drawActionFrames();
   if(screenFlash>0){if(!reducedMotion){ctx.fillStyle=`rgba(${ink.dark.screenFlash},${screenFlash*(onPaper()?.09:.055)})`;ctx.fillRect(0,0,W,H);}if(world.state!=='paused')screenFlash=Math.max(0,screenFlash-dt*3);}

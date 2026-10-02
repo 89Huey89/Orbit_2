@@ -2391,7 +2391,7 @@ defineVoice('rock',{
   // The wall's own names for the three fields the atlas prices as a vortex, a flare and a wind-head
   // (HAZARD_KINDS in simulation.js) — taught once per kind, the same as on the atlas, just in the
   // hand's own words rather than the sky's Latin.
-  hazards:{vortex:'THE SHAFT',flare:'THE FLARE',wind:'THE DRAUGHT'},
+  hazards:{vortex:'THE SHAFT',flare:'THE FLARE',wind:'THE DRAUGHT',chasm:'THE CHASM'},
   // The bare word for each of the three charges a run can carry, without the HELD suffix (below).
   labels:{shield:'THE SPIRAL',reflector:'THE TURNED HAND',dawn:'THE EMBER'},
   squareLanding:'A SQUARE LANDING',
@@ -2434,7 +2434,7 @@ defineVoice('rock',{
     pauseLeave:'LEAVE THE WALL',pauseLabel:'Rest the hand',gameLabel:'The Rock, a playable Era I preview',
     canvasLabel:'The Rock. Guide a hand of ochre across torchlit stone through painted lights. Tap or press Space to release.',
     eraExit:'BACK TO THE ATLAS',eraExitLabel:'Back to the atlas',endAction:'Tap to strike again',endActionWon:'Tap to go in again',
-    readings:{chronicle:'TO NEWGRANGE',endless:'THE ENDLESS WALL',label:'The way: {reading}. Tap to change it'},
+    readings:{chronicle:'TO NEWGRANGE',endless:'THE ENDLESS WALL',hard:'THE CRACKED WALL',label:'The way: {reading}. Tap to change it'},
     statCaptures:'Lights',statPerfects:'Clean',statFlow:'Best rhythm',statRow:'Depth',
     reduceMotion:'STILL THE DUST',reduceMotionLabel:'Reduce motion and effects, for a lighter, faster run',
     instructions:{head:'HOW TO MARK IT',rules:['Tap to release the hand of ochre.','Circle a light to gain speed. Faster earns more.','Keep ahead of the rising dark.','Aim your first light — {pressures}.']}

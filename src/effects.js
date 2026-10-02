@@ -345,7 +345,7 @@ function surveyProgress(s){
 // figure, and again with two and three. Doubling the letter instead grew a word at every pass, and by the
 // thirtieth row the sheet carried points lettered mmmmmmm. After the third prime the plain letters come
 // round again; by then the constructions that used them have long been carried off the sheet. The prime
-// is set as the Fell apostrophe, since none of the three faces cuts a prime of its own.
+// is set as the apostrophe, as a compositor of 1603, whose case held no prime, would have set it.
 function surveyLetterName(n){return String.fromCharCode(97+n%26)+"'".repeat(Math.floor(n/26)%4);}
 function nextSurveyLetters(){
   const base=(world.surveyLetterSeq=(world.surveyLetterSeq||0)+3)-3;
@@ -1285,7 +1285,7 @@ function drawEffects(dt){
   }
   // The embossed bite a perfect landing's strike leaves in the ring (src/press.js).
   drawPress(dt);
-  // An era's own score is still written up as a marginal note in Fell italic beside the play field,
+  // An era's own score is still written up as a marginal note in Garamond italic beside the play field,
   // each with a small engraved manicule pointing back in at the event, drifting up gently and fading —
   // exactly as the atlas's own used to. The atlas keeps its score as ink now instead (drawTallies,
   // below), so this loop only ever has anything in it on a plate that still deals in floaters.

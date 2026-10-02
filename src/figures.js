@@ -323,10 +323,10 @@ function figHatch(g,spine,leftFn,rightFn,count,rng,rgb,alpha,width){
     const x=s.x+s.px*o,y=s.y+s.py*o,tone=alpha*(.4+frac*.7);
     burinSegment(g,x-ca*len,y-sa*len,x+ca*len,y+sa*len,rgb,tone,width,Math.floor(rng()*4294967296)>>>0,{segments:2,wobble:.35,hair:false});
   }
-  if(!crossHatch)return;
-  // The crossing set, laid only over the outer, darker half of the ribbon and a little lighter
-  // than the first, so a figure's shadow side builds to cross-hatch while its lit side stays single. Its
-  // own generator keeps the first set's sequence, and so the plain reading, unchanged.
+  // The press crosses its hatching in the darkest ground, as a 1603 copperplate did. The crossing set is
+  // laid only over the outer, darker half of the ribbon and a little lighter than the first, so a
+  // figure's shadow side builds to cross-hatch while its lit side stays single. Its own generator keeps
+  // the first set's sequence unchanged.
   const xr=seeded((Math.floor(rng()*4294967296)>>>0)||1),cb=Math.cos(FIG_HATCH_ANGLE-1.35),sb=Math.sin(FIG_HATCH_ANGLE-1.35);
   for(let i=0;i<n;i++){
     const t=clamp((i+.5)*step+(xr()-.5)*step*.7,0,1),s=spine.at(t);
@@ -756,7 +756,7 @@ function deviceLine(g,pts,rgb,alpha,weight,seed,closed){
   }
 }
 // A device's hatching: parallel strokes running down and to the right. The devices are small enough that
-// the crossing set the figures and bodies carry (crossHatch) would close them up, so they keep one slant.
+// the crossing set the figures and bodies carry would close them up, so they keep one slant.
 function deviceHatch(g,x,y,count,step,length,rgb,alpha,seed){
   for(let i=0;i<count;i++)burinSegment(g,x+i*step,y+i*step*.5,x+i*step+length*.62,y+i*step*.5+length,rgb,alpha,1,(seed+i*104729)>>>0,{segments:3,hair:false,wobble:.3});
 }
@@ -1025,7 +1025,7 @@ function drawNode(n,aim){
     const arc=textAlongArc(ctx,word,0,0,r+11*scale+size,Math.PI/2,{align:'center',size,spacing:size*.2,inward:true,progress:written});
     if(written>0&&written<1)penNib(arc.tx,arc.ty,arc.angle,.6,undefined,nibRecency(written));
   }
-  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Fell italic,
+  // A body held to a full observation is lettered as a specimen: its species in Latin, in the Garamond italic,
   // written round the top of the rim by the pen once the observation closes and left there after release,
   // so a finished chart reads as a lettered plate rather than a field of anonymous circles. It is a name,
   // so it is the plate's Latin (CLAUDE.md, the two voices); the seven are plain enough to need no gloss.
@@ -1542,6 +1542,70 @@ function drawHazard(h){
   ctx.drawImage(core.canvas,-core.size/2,-core.size/2,core.size,core.size);
   ctx.restore();
 }
+// The harder Endless reading's danger on the atlas (docs/archive/eras/ENDLESS-HARD.md): an engraver's trial
+// that slipped — the burin skidding off its line across the copper — drawn over the simulation's one chasm,
+// so it kills exactly as the Rock's crack does and keeps the same promise of a way through. The groove is the
+// capsule itself, never narrower: an inked V-cut the full width the code tests, rounded where the tool bit in
+// and where it left, with the burr thrown up along both lips, a curl of swarf at the bite and two hairline
+// skids where the point ran on. It is cut on in the pen's own order the first time it comes into view, the
+// lethal width laid down faint at once so nothing that can kill is ever unseen while the cut catches up.
+function atlasChasm(c){
+  const x0=sx(c.x0),y0=sy(c.y0),x1=sx(c.x1),y1=sy(c.y1),w=c.w*scale,m=w*4+40;
+  if(Math.max(x0,x1)+m<0||Math.min(x0,x1)-m>W||Math.max(y0,y1)+m<0||Math.min(y0,y1)-m>H)return;
+  const L=Math.hypot(x1-x0,y1-y0),ang=Math.atan2(y1-y0,x1-x0),paper=onPaper(),M=ink.marks,seed=(c.seed>>>0)||1;
+  const cut=reducedMotion?1:reveal.progress(c,HAZARD_REVEAL,true),rng=seeded(seed),edge=M.hazardEdge;
+  ctx.save();ctx.translate(x0,y0);ctx.rotate(ang);
+  // The lips wander a little outward and never in, so the drawn groove is always at least the capsule, and
+  // here and there the copper tore where the tool chattered, a notch standing out of the lip.
+  const N=Math.max(8,Math.round(L/7)),lip=[],tear=()=>w*(1+rng()*.1+(rng()<.12?.08+rng()*.08:0));
+  for(let i=0;i<=N;i++)lip.push([tear(),tear()]);
+  const groove=(upTo)=>{
+    const n=Math.max(1,Math.round(N*upTo)),end=L*upTo;
+    ctx.beginPath();ctx.moveTo(0,-lip[0][0]);
+    for(let i=1;i<=n;i++)ctx.lineTo(Math.min(end,i/N*L),-lip[i][0]);
+    ctx.arc(end,0,w,-Math.PI/2,Math.PI/2);
+    for(let i=n;i>=0;i--)ctx.lineTo(Math.min(end,i/N*L),lip[i][1]);
+    ctx.arc(0,0,w,Math.PI/2,Math.PI*1.5);ctx.closePath();
+  };
+  ctx.fillStyle=M.hazardCore;ctx.globalAlpha=.3;groove(1);ctx.fill();
+  ctx.globalAlpha=paper?.92:.88;groove(cut);ctx.fill();ctx.globalAlpha=1;
+  // The night ground is nearly as dark as the groove, so there the cut is keyed out: a warm haze of the
+  // hazard's own colour round it and a lit rim on its lips, so the danger stands clear of the sky.
+  if(!paper){ctx.save();groove(1);ctx.lineJoin='round';
+    ctx.strokeStyle=`rgba(${M.hazardHalo0},.09)`;ctx.lineWidth=w*.7;ctx.stroke();
+    ctx.strokeStyle=`rgba(${M.hazardRim},.5)`;ctx.lineWidth=Math.max(.8,1.1*scale);groove(cut);ctx.stroke();ctx.restore();}
+  // A V-cut, not a blot: the facet turned to the light is cross-cut with short strokes of the ground showing
+  // through, the one in shade keeps only a hairline or two of the tool's own track, and the floor where the
+  // two meet is a crisp thread. It reads at a glance as a groove in the copper the full width of the danger.
+  {const lit=ink.base.paperRgb,soft=paper?ink.base.paperRgb:ink.base.inkSoft,end=L*cut;
+    ctx.save();groove(cut);ctx.clip();
+    ctx.fillStyle=`rgba(${soft},${paper?.12:.12})`;ctx.fillRect(-w*1.5,-w*1.6,end+w*3,w*1.55);
+    ctx.lineWidth=Math.max(.5,.55*scale);ctx.strokeStyle=`rgba(${paper?lit:soft},${paper?.34:.3})`;ctx.beginPath();
+    for(let x=-w*.6;x<end+w*.6;x+=3.1*scale*(.8+rng()*.4)){const d=w*(.75+rng()*.5);ctx.moveTo(x,-w*.08);ctx.lineTo(x+d*.42,-d);}
+    ctx.stroke();
+    ctx.strokeStyle=`rgba(${lit},${paper?.14:.1})`;ctx.lineWidth=Math.max(.4,.4*scale);ctx.beginPath();
+    for(const f of [.38,.66]){ctx.moveTo(-w*.4,w*f);for(let i=1;i<=N;i++)ctx.lineTo(Math.min(end,i/N*L),w*(f+(rng()-.5)*.06));}
+    ctx.stroke();
+    ctx.strokeStyle=`rgba(${lit},${paper?.36:.28})`;ctx.lineWidth=Math.max(.5,.6*scale);ctx.beginPath();ctx.moveTo(-w*.5,-w*.05);ctx.lineTo(end+w*.5,-w*.03);ctx.stroke();
+    ctx.restore();}
+  // The burr: metal shouldered up along both lips, broken where the tool chattered.
+  for(const side of [-1,1]){
+    const off=w+2.2*scale;
+    for(let k=0;k<3;k++){
+      const a=(k/3+rng()*.08)*L*cut,b=Math.min(L*cut,((k+1)/3-rng()*.05)*L);
+      if(b>a+4)burinSegment(ctx,a,side*off,b,side*(off+rng()*1.2*scale),edge,paper?.75:.6,paper?.7:.55,seed+11+k+(side>0?7:0),{segments:4,skips:1,hair:k===1,wobble:.45});
+    }
+  }
+  // The bite, where the point first dug in, throws its curl of swarf off to one side.
+  burinArc(ctx,-w*.4,-w*1.25,w*.55,Math.PI*.2,Math.PI*1.45,edge,paper?.7:.55,.55,seed+29,{segments:7,skips:0});
+  // And where it left, the point ran on: two hairline skids, fainter than the groove and clear of it.
+  if(cut>=1)for(let k=0;k<2;k++){
+    const s0=(k?1:-1)*w*.5,len=(18+rng()*22)*scale,tilt=(k?1:-1)*(.08+rng()*.12);
+    burinSegment(ctx,L+w*.9,s0,L+w*.9+Math.cos(tilt)*len,s0+Math.sin(tilt)*len,edge,paper?.42:.34,.4,seed+41+k,{segments:3,skips:1,hair:false,wobble:.25});
+  }
+  ctx.restore();
+}
+defineHand('atlas',{chasm:atlasChasm});
 function drawAim(aim){
   const p=world.player;if(!p.node||world.state==='dead')return;
   const preview=world.flightPreview,points=preview?.points;if(!points||points.length<2)return;

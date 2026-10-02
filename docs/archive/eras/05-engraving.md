@@ -88,11 +88,12 @@ edge by the press that printed it.
 
 ## Lettering and the hand
 
-The atlas is set in **IM Fell English** and its small-capitals companion, **IM Fell English SC**
-(SIL Open Font License) — a genuine seventeenth-century English type revival, close enough to this
-era's own printing to letter it honestly without claiming to be Bayer's own specific fount. Every
-caption, every inscription, every discovery note the game writes anywhere is built from these two
-faces through `plateFace()`, and running copy in the surrounding page reads from the same stack.
+The atlas is set in **EB Garamond** (SIL Open Font License), cut from the Egenolff-Berner specimen of
+1592 — Garamont's roman and Granjon's italic, the types a 1603 Augsburg printer actually had — in a roman,
+its italic and a small-capitals face, **EB Garamond SC**, made from the roman with its small capitals and
+old-style figures frozen in. *Decided by the author (2026-10-02)*, it replaced IM Fell English, whose
+Oxford punches of 1670–72 and 1686 postdate the plate by seventy years. Every caption, every inscription,
+every discovery note the game writes anywhere is built from these faces through `plateFace()`, and running copy in the surrounding page reads from the same stack.
 Captions are lettered in Latin, as Bayer's own plates are, and the large hand — `penLettering()` —
 strokes each glyph's real outline on by a travelling dash offset with a wet bead riding the nib,
 then floods the counters with ink once the stroke has closed, at roughly a hundred and twenty

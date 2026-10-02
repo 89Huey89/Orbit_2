@@ -11,7 +11,7 @@
   <style>
     /* The three faces the plate letters in, so a plate cut for another century overrides them
        beside its colours; the canvas reads the same values through plateFace() in plates.js. */
-    :root{--face-text:'IM Fell English',Georgia,serif;--face-sc:'IM Fell English SC','IM Fell English',Georgia,serif;--face-body:'IM Fell English',Georgia,'Times New Roman',serif;--face-hiero:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif}
+    :root{--face-text:'EB Garamond',Garamond,Georgia,serif;--face-sc:'EB Garamond SC','EB Garamond',Garamond,Georgia,serif;--face-body:'EB Garamond',Garamond,Georgia,'Times New Roman',serif;--face-hiero:'Noto Egyptian Hieroglyphs','Segoe UI Historic',serif}
     :root{--ink:#080f18;--ivory:#ece5d3;--gold:#d5b779;--muted:#8d9ca5;--copy:#a9b3b6;--best:#d1c8b6;--shield:#9fc9d8;--reflector:#c4a8d6;--dawn:#f2c79a;--copper:#cd9f7a;--line:rgba(207,188,141,.24);--veil:8,15,24}
     #game[data-plate="paper"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8f5f1e;--muted:#6d5a45;--copy:#4d3d2d;--best:#3d3022;--shield:#3f6f8a;--reflector:#6a406e;--dawn:#a5622a;--copper:#a05434;--line:rgba(74,52,30,.34);--veil:226,213,184}
     #game[data-plate="paper"] .footer{color:var(--footer,#d9ccb0)}
@@ -129,8 +129,8 @@
     #game[data-era="6"] .lens-only{display:revert!important}
     /* Era VI climbs from laid paper through a glass plate to a sensor, and opens on the paper, so its chrome is
        the paper plate's own in the eyepiece register's colours: the sheet for the ground, iron-gall for the
-       words, the plate register's red grease pencil where the atlas spends gold. Its words are set in the Fell,
-       as register one's own papers were. The counts are set on the sheet in each register's own hand
+       words, the plate register's red grease pencil where the atlas spends gold. Its words are set in the atlas's
+       Garamond, as register one's own papers were. The counts are set on the sheet in each register's own hand
        (lensHudLeaf() in lens.js); the DOM HUD stays for screen readers and is only taken off the screen. */
     #game[data-era="6"]{--ink:#e7dabd;--ivory:#2a2016;--gold:#8a2318;--muted:#6d5a45;--copy:#4d3d2d;--best:#2a2016;--shield:#3f5a6a;--reflector:#5d6a78;--dawn:#8a2318;--copper:#a05434;--line:rgba(52,38,26,.3);--veil:231,218,189}
     #game[data-era="6"] .footer{color:#4d3d2d}
@@ -142,7 +142,7 @@
     #game[data-era="6"] #end-numerals{display:block;margin:0 auto 2px;max-width:100%;height:auto}
     #game[data-era="6"] #end-score{font-size:clamp(24px,6.5vw,30px);opacity:.8;margin:0 0 2px}
     .lens-lore-open{position:absolute;left:16px;right:16px;top:calc(5% + env(safe-area-inset-top));text-align:center}
-    .lens-lore{margin:0 auto 12px;max-width:24em;font-family:'IM Fell English',Georgia,serif;font-style:italic;font-size:15.5px;line-height:1.42;color:#2a2016}
+    .lens-lore{margin:0 auto 12px;max-width:24em;font-family:var(--face-text);font-style:italic;font-size:15.5px;line-height:1.42;color:#2a2016}
     .lens-context{max-width:42em;margin:12px auto 0;color:#5a4a36;font-size:10.5px;line-height:1.5;letter-spacing:.035em}
     #game[data-era="7"] .flyby-only{display:revert!important}
     /* Era VII has no ground but vacuum, so its chrome is the darkest on the ladder: console white on black, the
@@ -469,7 +469,7 @@
     #game[data-era="2"] .ceiling-column.left{left:-19px}
     #game[data-era="2"] .ceiling-column.right{right:-19px}
     @media(max-width:480px){#game[data-era="2"] .ceiling-column{display:none}}
-    /* Limelight already carries the width the Fell/Zilla small caps needed tracking to read as
+    /* Limelight already carries the width the Garamond/Zilla small caps needed tracking to read as
        lettering rather than a block; every --face-sc line the Ceiling sets is retightened here. */
     #game[data-era="2"] .eyebrow{letter-spacing:.12em}
     #game[data-era="2"] .subtitle-latin{letter-spacing:.1em}

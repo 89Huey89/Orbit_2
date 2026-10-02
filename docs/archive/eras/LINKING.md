@@ -89,7 +89,8 @@ repeats that. The mechanism is kept whole (`chasmsOn` in `src/simulation.js`, th
 
 That points at what a harder Endless reading could be for every century, beyond the shared driver of
 `JOURNEY.md` §1.8: one danger of the era's own, too harsh for the Chronicle or the Journey, switched on
-only when a player has chosen the harder way. The Rock's is the chasm. The others are still to be found
+only when a player has chosen the harder way. The Rock's is the chasm, and the atlas's the slipped stroke, the
+same chasm under its hand; both are built as a third reading (2026-10-02). The others are still to be found
 in each era's own material, and each has to keep the one promise the chasm's generation already keeps —
 a way through always left standing — so that it is hard and never hopeless. A first reading for all eight is drafted in
 [ENDLESS-HARD.md](ENDLESS-HARD.md).
@@ -100,13 +101,18 @@ Not built by the first stage and recorded here so it is not lost:
 
 - **Each era a catalogue of its own**, cut from the atlas's categories (ground, observer mark, trail,
   figure style, feats) in that era's own materials — ten to fifteen entries an era, not fifty-two.
-  The conditions carry over unchanged, since the ledger's counters are era-neutral.
+  The conditions carry over unchanged, since the ledger's counters are era-neutral. *In part (2026-09-28):*
+  every century has its own leaf with a Record, a collection and feats (`src/centuries.js`); what it does not
+  yet have is cosmetics of its own to choose among, so this entry is still open.
 - **Each era's collection is its catalogue page**: the Rock's twelve animals, the Ceiling's decans,
-  the Scroll's mansions, the Astrolabe's named rete stars, the Lens's worlds and fields.
+  the Scroll's mansions, the Astrolabe's named rete stars, the Lens's worlds and fields. *Built* (each
+  century's `collection` in its own file, read by `src/centuries.js`).
 - **Links between eras**, the real point of the ladder: a rete star named on the Astrolabe letters
   under its Arabic name on the atlas (as the atlas's star names really came down through al-Ṣūfī);
   the Lascaux bull drawn faint under Taurus; the Ceiling's decans earning the Dendera zodiac as a
-  sphere on the atlas; every completed era leaving one heirloom in the atlas's own catalogue.
+  sphere on the atlas; every completed era leaving one heirloom in the atlas's own catalogue. *Built
+  (2026-09-28 in the catalogue, 2026-09-30 on the sheet):* all seven heirlooms, Aldebaran lettered by
+  al-Ṣūfī's name among them; see the order of work, step 6.
 - **Door access**: the preview doors stay open until the Journey ships; after that an era is open in
   Free Play once reached, and the first chapter of one not yet reached stays open as a proof. *The gate
   is built and on* (`JOURNEY_GATES_DOORS` in `src/journey.js`, 2026-10-01), with the proof chapter
@@ -136,4 +142,4 @@ Not built by the first stage and recorded here so it is not lost:
    *Landed across centuries* (JOURNEY.md stage 5): once an era is known the next ordinary landing grows the
    next century out of that body inside the run, the old one held as a still outside the circle. The page
    turn between runs stays for a run that ends before it lands.
-6. The per-era catalogues and the links between eras. *Landed 2026-09-28* (`src/centuries.js`): a leaf per century and its heirloom in the atlas's catalogue; the heirlooms are not yet drawn on the atlas's own chart.
+6. The per-era catalogues and the links between eras. *Landed 2026-09-28* (`src/centuries.js`): a leaf per century and its heirloom in the atlas's catalogue; *since 2026-09-30 every known century's heirloom is drawn on the atlas's own sheet too* (`heirloomMask()`, `paintSphereHeirlooms()` and `frameHeirlooms()` in `src/frame.js`; `npm run shots -- heirlooms`): the aurochs along the zodiac at Taurus, Aldebaran lettered at its eye and the guest star of 1054 at its horn, the Dendera zodiac round the pole, the Earth as a pale blue point, and Saturn's handles and the eight-mark ladder beside the engraver's line.

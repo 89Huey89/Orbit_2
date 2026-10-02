@@ -348,3 +348,126 @@ has to a signature, is proposed as the mark for a personal best or completed run
 - [Wikipedia — Neolithic and Bronze Age rock art in the British Isles, cup-and-ring dating](https://en.wikipedia.org/wiki/Neolithic_and_Bronze_Age_rock_art_in_the_British_Isles)
 - [Wiltshire Museum — Bush Barrow lozenge](https://www.wiltshiremuseum.org.uk/news-articles/artworks/bush-barrow-lozenge/)
 - [P22 Type Foundry — Petroglyphs fonts (commercial, not OFL — cited to confirm what to avoid)](https://p22.com/fonts/petroglyphs/)
+
+## Claims register checks (2026-10-02)
+
+The wall's chapter line and chart notes, as `docs/CLAIMS.json` entered them unchecked, each checked
+against the sources named beneath it. Every clause stands as written; no line needs new text. Two
+are labelled readings rather than facts because the line itself reports a reading.
+
+- **"Bulls painted over older bulls. No one knows how many hands."** (chapter line, the Hall of the
+  Bulls) — *plausible reconstruction.* Lascaux's Hall of the Bulls sets four great aurochs, up to
+  five metres long, over two herds of some thirty smaller animals painted interwoven and on top of
+  one another, and the cave's best-known bull-over-bull, the Great Black Bull, conceals earlier
+  aurochs beneath it; it stands in the Axial Gallery, the Hall's continuation, rather than the Hall
+  itself. How many painters worked there is not known: Aujoulat argued for a short campaign,
+  possibly a single generation, others for long reuse, which is what the second sentence says.
+  Sources: Bradshaw Foundation, "The Great Black Bull of Lascaux Cave", A Retrospective in Pictures,
+  https://www.bradshawfoundation.com/25_years/9.php ; N. Aujoulat, *Lascaux: le geste, l'espace et
+  le temps*, Seuil, 2004 (as summarised in Encyclopaedia Britannica, "Lascaux",
+  https://www.britannica.com/place/Lascaux).
+
+- **"The most painted animal of the Ice Age caves."** (chart note, THE HORSE) — *attested.* The note
+  belongs to the horse (`ROCK_ANIMALS[1]`), and the horse is in fact the most frequent: Sauvet's
+  inventory gives horses at more than a quarter of the whole bestiary, present in more than three
+  sites in four and 44% of panels, with horse and bison together over 52%; the inventory cited by
+  Pruvost et al. counts 946 horses in 3,295 animal images (28.7%), Chauvet excluded. Sources:
+  G. Sauvet, "The hierarchy of animals in the Paleolithic iconography", *Journal of Archaeological
+  Science: Reports*, 2019, https://www.sciencedirect.com/science/article/abs/pii/S2352409X19301932 ;
+  M. Pruvost et al., "Genotypes of predomestic horses match phenotypes painted in Paleolithic works
+  of cave art", *PNAS* 108(46), 2011, https://www.pnas.org/doi/10.1073/pnas.1108982108 .
+
+- **"At Altamira the bison lie over bulges in the ceiling, so the rock gives them their bodies."**
+  (THE BISON) — *attested.* Several of the polychrome bison of the Great Ceiling are painted over
+  large natural bosses that give volume to the whole body or to the chest or head, the curled,
+  crouching bison among them; cracks in the ceiling serve as outlines. Sources: Ministerio de
+  Cultura, Museo Nacional y Centro de Investigación de Altamira, "Detail of bison on the Large
+  Ceiling in Altamira Cave", Spain is Culture,
+  http://www.spainisculture.com/en/obras_de_excelencia/museo_nacional_y_centro_de_investigacion_de_altamira/detalle_de_bisontes_del_gran_techo_de_la_Cueva_de_altamira.html ;
+  Bradshaw Foundation, "The Cave of Altamira", https://www.bradshawfoundation.com/spain/altamira/index.php .
+
+- **"Both horns drawn on a head seen from the side, as if it turned to look at you."** (THE IBEX) —
+  *plausible reconstruction.* This is the convention Breuil and Leroi-Gourhan named *perspective
+  tordue*: the head in profile, the horns turned to a frontal view, common in the older styles
+  though not universal (Chauvet hardly uses it). The convention is attested; "as if it turned" is
+  the line's own simile, not a reading anyone holds. Source: H. Collado, J. J. García-Arranz et al.,
+  "Animals hidden in plain sight: stereoscopic recording of Palaeolithic rock art at La Pasiega
+  cave, Cantabria", *Antiquity*, Cambridge University Press,
+  https://www.cambridge.org/core/journals/antiquity/article/animals-hidden-in-plain-sight-stereoscopic-recording-of-palaeolithic-rock-art-at-la-pasiega-cave-cantabria/46343BA0AB2D0FA2DAF598DE10B52D51 .
+
+- **"A row of stags at Lascaux, heads raised, is read as a herd swimming a river."** (THE STAG) —
+  *attested.* The Frieze of the Swimming Stags on the right wall of Lascaux's Nave: five stag heads
+  and necks, about five metres of frieze, drawn so they seem to emerge from water; "swimming" is the
+  frieze's own conventional name and the line keeps it as a reading. Sources: Ministère de la
+  Culture, "La Nef", Inauguration de Lascaux IV,
+  https://www.culture.gouv.fr/Thematiques/Archeologie/Acteurs-metiers-formations/Le-Centre-national-de-prehistoire/Inauguration-de-Lascaux-IV/La-Nef ;
+  Encyclopaedia Britannica, "Lascaux", https://www.britannica.com/place/Lascaux .
+
+- **"Rouffignac holds over a hundred and fifty mammoths, some traced with fingers in soft clay."**
+  (THE MAMMOTH) — *attested.* Rouffignac counts 158 mammoths, about 60% of its figures and a large
+  share of all mammoths in cave art; where the wall was soft the figures were drawn with fingers as
+  well as flint, and the ceiling flutings around and over the mammoths are fingers dragged through a
+  pliable red clay film down to the white limestone. Sources: Bradshaw Foundation, "Rouffignac Cave:
+  The Cave of the Hundred Mammoths", https://www.bradshawfoundation.com/france/rouffignac/index.php ;
+  K. Sharpe and L. Van Gelder, "Evidence for cave marking by Palaeolithic children", *Antiquity*
+  80(310), 2006, reported in Science News, "Children of Prehistory",
+  https://www.sciencenews.org/article/children-prehistory ; L. Van Gelder et al., "Ten years in
+  Rouffignac Cave", *P@lethnologie*, Université de Toulouse,
+  https://blogs.univ-tlse2.fr/palethnologie/wp-content/files/2013/fr-FR/version-longue/articles/EUR23_Van-Gelder.pdf .
+
+- **"Chauvet drew its lions without manes. So, it seems, were the real ones."** (THE CAVE LION) —
+  *attested.* A survey of 48 Palaeolithic lion depictions, Chauvet's among them, finds none with a
+  mane, including males shown with a scrotum (a Chauvet pair sets a larger male beside a smaller
+  female); the inference that the living cave lion was maneless is the accepted one, and the line
+  hedges it as an inference. Source: N. Yamaguchi, A. Cooper, L. Werdelin and D. W. Macdonald,
+  "Evolution of the mane and group-living in the lion (*Panthera leo*): a review", *Journal of
+  Zoology* 263(4), 2004,
+  https://www.researchgate.net/publication/229481823_Evolution_of_the_mane_and_group-living_in_the_lion_Panthera_leo_A_review .
+
+- **"Cave bears slept here long before anyone painted. Their claw marks are still on the walls."**
+  (THE BEAR) — *attested.* Cave bears hibernated in Chauvet from about 48,500 to 33,300 years ago,
+  beginning some ten thousand years before the first Aurignacian visits, and left claw scratches on
+  the walls and tracks in the floor; some red paintings in the End Chamber are themselves cut by
+  claw marks, so the two overlapped at the end. Sources: A. Quilès et al., "A high-precision
+  chronological model for the decorated Upper Paleolithic cave of Chauvet-Pont d'Arc, Ardèche,
+  France", *PNAS* 113(17), 2016, https://www.pnas.org/doi/10.1073/pnas.1523158113 ; Mental Floss,
+  "13 Facts About the Chauvet Cave Paintings",
+  https://www.mentalfloss.com/article/577563/chauvet-cave-paintings-facts .
+
+- **"One Chauvet rhinoceros has its horn drawn again and again, as if to make it move."**
+  (THE RHINOCEROS) — *attested.* Near the centre of Chauvet's large panel a charcoal rhinoceros has
+  seven or eight horns and several backs; Azéma separates the outlines as one animal in successive
+  positions, raising and lowering its horn, and the line keeps his "as if". Sources: M. Azéma and
+  F. Rivère, "Animation in Palaeolithic art: a pre-echo of cinema", *Antiquity* 86(332), 2012,
+  https://files.commons.gc.cuny.edu/wp-content/blogs.dir/4133/files/2018/08/PaleoCinema.pdf ;
+  Science News, "Stone Age art gets animated", 2012,
+  https://www.sciencenews.org/article/stone-age-art-gets-animated .
+
+- **"A few quick lines: the painters knew the hind well enough to leave most of her out."**
+  (THE HIND) — *plausible reconstruction.* Hinds are drawn with notable economy in Cantabrian art:
+  Covalanas's eighteen red hinds are set out in dotted contours dabbed with the fingers, and
+  engraved hind heads alone recur on bone at Altamira. Altamira's great painted hind, two metres
+  long, is a full figure, so the line holds for the type rather than for every hind; "knew her well
+  enough" is the line's reading of that economy. Sources: Bradshaw Foundation, "The Cave of
+  Altamira", https://www.bradshawfoundation.com/spain/altamira/index.php ; New World Encyclopedia,
+  "Paleolithic Cave Art of Northern Spain" (Covalanas),
+  https://www.newworldencyclopedia.org/entry/Paleolithic_Cave_Art_of_Northern_Spain .
+
+- **"A many-legged animal at Altamira: a boar, some say; a bison, say others. Perhaps it is only
+  running."** (THE BOAR) — *plausible reconstruction.* Breuil (1935) named three Great Ceiling
+  figures wild boars, one of them the eight-legged "running boar"; Freeman (1987) re-read all three
+  as bison, their pig-like features accidents of the ceiling's relief; Rice (1992) argued back. The
+  extra legs are read by some as motion and by others as an earlier drawing beneath; the line gives
+  all three readings and settles none. Sources: P. C. Rice, "The Boars from Altamira: Solving an
+  Identity Crisis", *Papers from the Institute of Archaeology* 3, 1992, 23–29,
+  https://student-journals.ucl.ac.uk/pia/article/id/119 ; Makimono, "Cine rupestre: Altamira, el
+  jabalí octópodo", https://www.makimono.es/cine-rupestre/altamira/ .
+
+- **"At the Abri du Poisson a salmon a metre long is carved into the roof of the shelter."**
+  (THE SALMON) — *attested.* The fish, identified by Jean Marsan in 1912, is a salmon 1.05 m long,
+  engraved and carved in low relief on the vault of the small shelter in the Gorge d'Enfer, Les
+  Eyzies, touched with red; it is probably Gravettian, some 25,000 years old. Sources: Ministère de
+  la Culture, DRAC Aquitaine, notice "Abri du Poisson",
+  http://aquitaine.culture.gouv.fr/notices/dbcba5fee4c5c408d247485aae9a8641/ ; Actu-culture,
+  "Au cœur de la vallée de la Vézère (3/7): L'abri du Poisson",
+  https://www.actu-culture.com/archeologie/au-coeur-de-la-vallee-de-la-vezere-a-la-decouverte-des-gisements-abris-et-grottes-de-la-prehistoire-3-7-labri-du-poisson-petit-florilege-de-themes-de-techniques-et-de-styles/ .

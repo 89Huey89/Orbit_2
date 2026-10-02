@@ -2208,7 +2208,7 @@ function ceilingPointer(x,y,dir,size,alpha){
 // A score is set as a marginal note beside the play field rather than floating up over it: the
 // wall's own reading of the atlas's manicule-and-margin gesture (src/effects.js's floater loop),
 // clamped between hudBand() and footerBand() the same way. It keeps to the wall's small-caps hand
-// and its own red ochre rubric rather than the atlas's Fell italic. A landing's gain no longer comes
+// and its own red ochre rubric rather than the atlas's Garamond italic. A landing's gain no longer comes
 // this way — it is written in Egyptian numerals under that landing's own survey (ceilingGainEntry) —
 // so what still reaches the margin is the rest: a graze, and a gain the wall had no survey to set it by.
 function ceilingFloaterMark(f,alpha){

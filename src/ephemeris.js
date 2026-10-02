@@ -58,7 +58,7 @@ function sunPlace(y,m){
 // cut faces never have to carry a glyph only this line would use.
 const SUN_MARK='<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.4"/><circle cx="6" cy="6" r="1.05" class="eph-sun-point"/></svg>';
 // The weekday columns are headed with the seven planetary characters, as every printed almanac of the
-// century heads them, drawn rather than set: the cut Fell faces carry none of them, and a character a face
+// century heads them, drawn rather than set: the cut Garamond faces carry none of them, and a character a face
 // never cut falls through to the phone's colour emoji. Each is a small closed or open burin figure on a
 // twelve-unit square, in the order of the planetary week from dies Solis to dies Saturni.
 const PLANET_SIGNS=[

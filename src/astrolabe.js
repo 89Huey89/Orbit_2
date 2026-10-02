@@ -1099,13 +1099,13 @@ defineVoice('astrolabe',{
   // A note for each figure as it is set: one thing its Arabic names still carry.
   chartNotes:[
     'Al-Sufi drew every figure twice: once as it stands on a globe, once as it stands in the sky.',
-    'Rigel is rijl al-jabbar, the Giant’s foot: the star kept its Arabic name in Latin.',
+    'Rigel is rijl, the foot: the left foot of al-jawza, the Arabs’ Orion. The name came into Latin whole.',
     'Regulus was qalb al-asad, the heart of the lion.',
     'Antares was qalb al-aqrab, the heart of the scorpion.',
     'Aldebaran is al-dabaran, the follower: it follows the Pleiades across the sky.',
     'Deneb is dhanab, the tail: the tail of the hen.',
     'Alphard is al-fard, the solitary one, alone in an empty part of the sky.',
-    'Markab is the saddle; Scheat, the upper arm: names still read off the Arabic.',
+    'Markab was mankib, the shoulder; Scheat, the shin: names misread off the Arabic.',
     'Al-Sufi notes a little cloud beside the Chained Woman: the oldest surviving record of what we now know is another galaxy.',
     'Vega is from al-nasr al-waqi, the swooping eagle.',
     'Altair is from al-nasr al-tair, the flying eagle.',
