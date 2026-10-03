@@ -15,6 +15,11 @@
      node scripts/perf.mjs rock,ceiling --seconds=20
      node scripts/perf.mjs rock --breakdown         also: which painters the frame's time went to
      node scripts/perf.mjs --root=/path/to/checkout compare against another tree (e.g. a git worktree)
+     node scripts/perf.mjs atlas,rock --viewport=412x892 --dpr=2.625    a Pixel 6 Pro's sheet, not the reference's
+
+   The sheet is pulled at the density the page itself would choose for that screen (sheetDensity, src/ui.js),
+   which the line reports; the page's own frame pacer is held off, so it cannot shed that density mid-measure,
+   unless --pacer is given.
 
    Every frame is flushed (a one-pixel read) so its raster is counted in the frame that drew it. With
    --breakdown every global painter is wrapped and flushed as well, which inflates the total by that
@@ -30,7 +35,7 @@ import {fileURLToPath} from 'node:url';
 
 const args=process.argv.slice(2),flag=(name,fallback)=>{const a=args.find(x=>x.startsWith('--'+name+'='));return a?a.slice(name.length+3):args.includes('--'+name)?true:fallback;};
 const eras=(args.find(a=>!a.startsWith('--'))||'atlas,rock,ceiling,scroll,astrolabe,lens,flyby,probe').split(',');
-const seconds=+flag('seconds',8),warm=+flag('warm',3),breakdown=!!flag('breakdown',false),webgl=!!flag('webgl',false);
+const seconds=+flag('seconds',8),warm=+flag('warm',3),breakdown=!!flag('breakdown',false),webgl=!!flag('webgl',false),dpr=+flag('dpr',3),[vw,vh]=String(flag('viewport','430x932')).split('x').map(Number),pacer=!!flag('pacer',false);
 const root=resolve(flag('root',fileURLToPath(new URL('..',import.meta.url))));
 
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.woff2':'font/woff2'};
@@ -44,12 +49,17 @@ const round=v=>+v.toFixed(1);
 
 try{
   for(const era of eras){
-    const context=await browser.newContext({viewport:{width:430,height:932},deviceScaleFactor:3,isMobile:true,hasTouch:true});
+    const context=await browser.newContext({viewport:{width:vw,height:vh},deviceScaleFactor:dpr,isMobile:true,hasTouch:true});
     await context.addInitScript(pageInit,{seed:7,epoch:Date.parse('2026-09-24T12:00:00Z'),storage:resolveProfile('returning')});
     const page=await context.newPage();
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const g=new Game({page,variant:era,outDir:'/tmp',options:{url:`http://localhost:${server.address().port}/src/`,era:era==='atlas'?null:era,seed:7,hand:'oracle'},record:()=>{}});
-    await g.boot();await g.start();await g.fly(warm,{settle:0});
+    await g.boot();
+    // The harness flies at 120 frames a second and measures at 60, which the page's own pacer reads as a press
+    // missing its frames: left on, it sheds the sheet's density before the first measured frame, and the
+    // figures are for a sheet the device would never have been dealt. So it is held off unless asked for.
+    if(!pacer)await page.evaluate(()=>{window.pacePresent=()=>{};});
+    await g.start();await g.fly(warm,{settle:0});
     // The page's own clock is the harness's virtual one (page-init.mjs); the prototype's now is the wall.
     await page.evaluate(breakdown=>{
       const now=()=>Performance.prototype.now.call(performance),flush=()=>ctx.getImageData(0,0,1,1);
@@ -65,10 +75,10 @@ try{
       window.render=function(dt){flush();const t=now();real(dt);flush();window.__perfFrames.push(now()-t);};
     },breakdown);
     await g.advance(seconds,{fps:60,paint:true});
-    const {frames,stats}=await page.evaluate(()=>({frames:window.__perfFrames,stats:window.__perfStats}));
+    const {frames,stats,density}=await page.evaluate(()=>({frames:window.__perfFrames,stats:window.__perfStats,density:DPR}));
     const sorted=[...frames].sort((a,b)=>a-b),q=p=>round(sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]),median=sorted[sorted.length>>1];
     const spikes=frames.map((t,i)=>[i,round(t)]).filter(([,t])=>t>median*1.6);
-    console.log(`${era.padEnd(10)} frames ${String(frames.length).padStart(4)}  median ${String(q(.5)).padStart(6)} ms  p90 ${String(q(.9)).padStart(6)}  p99 ${String(q(.99)).padStart(6)}  max ${String(round(sorted.at(-1))).padStart(6)}  spikes ${spikes.length}${spikes.length?' '+JSON.stringify(spikes.slice(0,8)):''}`);
+    console.log(`${era.padEnd(10)} ${(density+'x').padEnd(6)} frames ${String(frames.length).padStart(4)}  median ${String(q(.5)).padStart(6)} ms  p90 ${String(q(.9)).padStart(6)}  p99 ${String(q(.99)).padStart(6)}  max ${String(round(sorted.at(-1))).padStart(6)}  spikes ${spikes.length}${spikes.length?' '+JSON.stringify(spikes.slice(0,8)):''}`);
     if(breakdown)for(const [k,v] of Object.entries(stats).sort((a,b)=>b[1].time-a[1].time).slice(0,30))
       console.log(`    ${String(round(v.time/frames.length)).padStart(7)} ms/frame  max ${String(round(v.max)).padStart(6)}  ${String(round(v.calls/frames.length)).padStart(6)} calls/frame  ${k}`);
     if(errors.length)console.log('    page errors:',errors);

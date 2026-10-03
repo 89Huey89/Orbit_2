@@ -906,15 +906,26 @@ function updateUI(dt){
 // softens every one of them; its pixel count at 3x is still under a laptop's at 2x. Anything larger stays
 // capped at 2x. If the pacer (below) finds the press missing frames at 3x, the sheet drops to 2x for good,
 // remembered so the next visit starts there rather than stuttering once more before it learns.
-const SHARP_KEY='orbit.sharpness.v1',SHARP_PHONE_AREA=520000;
-let sharpShed=storage.get(SHARP_KEY,'')==='2x';
+//
+// Below 2x the sheet goes only for a press that cannot hold sixty at all (pacePresent's `behind`): first to
+// 1.5x, then to the plain 1x of the screen's own CSS pixels, each softer and each a little under half the
+// pixels of the one before. A soft line in an even flight is still a game; a sharp one at twenty frames a
+// second is not. These are kept for the visit only: a phone that was hot, or on its battery saver, or busy
+// with something else when it was measured is not held to that for good, and a new visit learns again — on
+// the frontispiece, as a rule, which is painted much as a run is but where no release is being timed.
+const SHARP_KEY='orbit.sharpness.v1',SHARP_PHONE_AREA=520000,SHEET_LOWER=[1.5,1];
+let sharpShed=storage.get(SHARP_KEY,'')==='2x',sheetLowered=0;
 function sheetDensity(w,h){
-  const native=window.devicePixelRatio||1,cap=!sharpShed&&w*h<=SHARP_PHONE_AREA?3:2;
+  const native=window.devicePixelRatio||1,cap=sheetLowered||(!sharpShed&&w*h<=SHARP_PHONE_AREA?3:2);
   return Math.min(Math.max(native,1.5),cap);
 }
 function shedSharpness(){
   if(sharpShed||DPR<=2)return false;
   sharpShed=true;storage.set(SHARP_KEY,'2x');resize();invalidateArt();return true;
+}
+function shedDensity(){
+  const next=SHEET_LOWER.find(d=>d<DPR-.01);if(next===undefined)return false;
+  sheetLowered=next;resize();invalidateArt();return true;
 }
 function resize(){
   // Floored at 1.5 even on an ordinary "1x" screen: the engraving's hairline burin strokes run well
@@ -923,8 +934,17 @@ function resize(){
   const rect=game.getBoundingClientRect();W=rect.width;H=rect.height;DPR=sheetDensity(W,H);scale=Math.min(W/440,H/780);
   canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
   // Resizing the canvas resets its context state, so this is set again on every resize: it governs how
-  // the cached planet, figure and ring sprites get resampled when blitted at the chart's current scale.
-  ctx.imageSmoothingQuality='high';
+  // every image laid on the sheet is resampled — the cached planet, figure and ring sprites, and the
+  // whole-sheet layers a plate lays over its ground each frame. It is plain bilinear, never 'high'. A
+  // 'high' pull is bicubic on every enlargement and a fresh mip chain on every reduction, and the
+  // sheet is full of both: the Rock's torch is a quarter-size light map stretched over the whole wall
+  // twice a frame, and on a screen whose ratio is not a whole number (a Pixel's 2.625) even a layer cut
+  // to the sheet's own size lands a hair off one-to-one and is resampled in full. Measured at 430×932
+  // (scripts/perf.mjs) that was half the atlas's frame, three fifths of the Rock's and two fifths of the
+  // Ceiling's, and a Pixel's sheet came out the same; side by side, the two pulls differ by a few levels
+  // in the odd pixel and nowhere by anything an eye can find, since the sprites are baked near the size
+  // they are laid at and the layers that are stretched are soft light with nothing fine in them.
+  ctx.imageSmoothingQuality='low';
   backdrop=paintBackdrop();if(!grain)grain=grainTexture();
   syncLeafAssets();
   if(world){
@@ -1139,9 +1159,18 @@ if('ResizeObserver'in window)new ResizeObserver(resize).observe(game);else windo
 // is painted, and the elapsed time is handed to the renderer whole so every animation still runs at
 // its own speed. It probes back up at widening intervals, so a screen the press can keep up with is
 // never held down for long, and on an ordinary sixty-hertz screen it never engages at all.
-const PACE_WINDOW=48,PACE_FAST_PANEL=11.5,PACE_MISS=1.5;
+//
+// Missing the screen's cadence is measured against the screen's own fastest frames, which cannot see a
+// press that is slow on every frame alike: a phone pulling each sheet in forty milliseconds has fastest
+// frames of forty too, and reads as an even, slow screen with nothing to shed. So the press is also judged
+// against sixty outright. It is `behind` when half its frames come slower than fifty a second, or when it
+// misses the cadence of a screen that is no faster than sixty or so; on a faster screen missing the cadence
+// is only failing to hold twice sixty, which pulling every other frame answers without blurring a line.
+// A press behind on two windows running, with nothing else left to drop, pulls a softer sheet (see
+// sheetDensity above). Every shed starts the count again, since it changes what a frame costs.
+const PACE_WINDOW=48,PACE_FAST_PANEL=11.5,PACE_MISS=1.5,PACE_SLOW=20;
 const paceIntervals=[];
-let presentEvery=1,presentIn=1,renderDue=0,paceProbeIn=0,paceProbeWait=5;
+let presentEvery=1,presentIn=1,renderDue=0,paceProbeIn=0,paceProbeWait=5,paceBehind=0;
 function pacePresent(dt,raw){
   if(presentEvery>1){
     paceProbeIn-=dt;
@@ -1156,12 +1185,15 @@ function pacePresent(dt,raw){
   const sorted=paceIntervals.slice().sort((a,b)=>a-b);
   const native=sorted[Math.floor(sorted.length*.1)],achieved=sorted[sorted.length>>1],late=sorted[Math.floor(sorted.length*.8)];
   paceIntervals.length=0;
+  const missing=late>native*PACE_MISS,behind=achieved>PACE_SLOW||(missing&&native>=PACE_FAST_PANEL);
+  paceBehind=behind?paceBehind+1:0;
   // Before the press slows, it drops what it can do without: a plate's relit surface (src/relight.js) is
   // an addition to the ground, never the ground, so a screen of any speed that is plainly missing frames
   // — one in five or more — loses it first, and the window is measured again without it.
-  if(late>native*PACE_MISS&&typeof relightShed==='function'&&relightShed())return;
+  if((missing||behind)&&typeof relightShed==='function'&&relightShed()){paceBehind=0;return;}
   // Next goes the third pull of a 3x sheet: sharper hairlines are worth less than an even flight.
-  if(late>native*PACE_MISS&&shedSharpness())return;
+  if((missing||behind)&&shedSharpness()){paceBehind=0;return;}
+  if(paceBehind>=2&&shedDensity()){paceBehind=0;return;}
   if(native<PACE_FAST_PANEL&&achieved>native*PACE_MISS){
     presentEvery=2;presentIn=1;paceProbeIn=paceProbeWait;paceProbeWait=Math.min(30,paceProbeWait*2);
   }
@@ -1175,6 +1207,30 @@ function pacePresent(dt,raw){
 // in whole fixed steps, as it always did.
 const PACE_SNAP_MS=1.2;
 function snapInterval(raw){const steps=Math.round(raw/(FLIGHT_STEP*1000));return steps>=1&&Math.abs(raw-steps*FLIGHT_STEP*1000)<PACE_SNAP_MS?steps*FLIGHT_STEP*1000:raw;}
+// ---------- The meter: what the press is doing, read off the device in the hand ----------
+// Headless timing (scripts/perf.mjs) prices a desktop core rasterising the sheet, never a phone's own
+// press, and the only true reading of a phone is taken on it. With `?meter` on the address, a line in the
+// corner reports twice a second the frames the screen is really getting (their rate, median and slow
+// tenth), how much of each the page's own painting takes on the main thread — near the whole frame, and
+// the drawing itself is the cost; well under it, the wait is the GPU's — and what the pacer has shed: the
+// density the sheet is pulled at against the screen's own, the relit surface, and how often it presents.
+// It is a line of the page, not of the sheet, and without `?meter` none of it is made or run.
+const meter=(()=>{try{return /(?:^|&)meter(?:=|&|$)/.test(location.search.slice(1))?document.createElement('div'):null;}catch(_){return null;}})();
+const meterFrames=[],meterPaints=[];
+let meterDue=0;
+// Inside the game's own element, since a run starts by taking that element fullscreen, and a fullscreen
+// element is laid over everything else on the page however it is stacked.
+if(meter){meter.id='meter';meter.setAttribute('aria-hidden','true');game.appendChild(meter);}
+function meterTick(raw){
+  if(raw>0&&raw<1000)meterFrames.push(raw);
+  if((meterDue-=raw)>0||!meterFrames.length)return;
+  meterDue=500;
+  const at=(list,p)=>{const s=list.slice().sort((a,b)=>a-b);return s.length?s[Math.min(s.length-1,Math.floor(s.length*p))]:0;},ms=v=>v.toFixed(1);
+  const sum=meterFrames.reduce((a,b)=>a+b,0),relit=typeof relightSurfaces!=='undefined'&&relightSurfaces.length?(relightSurfaces.some(s=>s.ok)?'on':'shed'):'none';
+  meter.textContent=`${Math.round(meterFrames.length*1000/sum)} fps · frame ${ms(at(meterFrames,.5))} / ${ms(at(meterFrames,.9))} ms · paint ${ms(at(meterPaints,.5))} / ${ms(at(meterPaints,.9))} ms\n`+
+    `sheet ${+DPR.toFixed(3)}x of ${+(window.devicePixelRatio||1).toFixed(3)}x · ${canvas.width}×${canvas.height} · relit ${relit} · every ${presentEvery}${paceBehind?' · behind '+paceBehind:''}`;
+  meterFrames.length=0;meterPaints.length=0;
+}
 function tick(now){
   const raw=frameTime?now-frameTime:0;
   const dt=frameTime?Math.min(snapInterval(raw)/1000,.05):0;frameTime=now;
@@ -1191,8 +1247,9 @@ function tick(now){
       audio.scratch(world.state==='playing',Math.hypot(world.player.vx,world.player.vy));
       pacePresent(dt,raw);
       renderDue+=dt;
-      if(--presentIn<=0){presentIn=presentEvery;render(renderDue);renderDue=0;}
+      if(--presentIn<=0){presentIn=presentEvery;const t0=meter?performance.now():0;render(renderDue);renderDue=0;if(meter)meterPaints.push(performance.now()-t0);}
     }
+    if(meter)meterTick(raw);
   }
   requestAnimationFrame(tick);
 }
