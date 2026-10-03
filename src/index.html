@@ -911,6 +911,8 @@
     #game.reviewing .footer{visibility:hidden;pointer-events:none}
     #game.reviewing #sky{cursor:grab}
     #game.reviewing.review-dragging #sky{cursor:grabbing}
+    /* The press's meter (?meter on the address, see meterTick in ui.js): a desk instrument laid over the page, never part of the sheet. */
+    #meter{position:fixed;left:max(4px,env(safe-area-inset-left));bottom:max(4px,env(safe-area-inset-bottom));z-index:1000;pointer-events:none;white-space:pre;font:12px/1.35 var(--face-body);font-variant-numeric:tabular-nums;color:#f4ecd8;background:rgba(0,0,0,.72);padding:3px 6px;border-radius:3px}
   </style>
 </head>
 <body>

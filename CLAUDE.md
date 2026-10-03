@@ -50,8 +50,11 @@ see README.md's "The eras".
 - `node scripts/perf.mjs` — a timing instrument, not a test: flies a seeded run on each era in headless
   Chromium at 430×932 with the canvas rasterised on the CPU (the nearest a desktop comes to Safari's
   CoreGraphics canvas) and reports frame-time median, tail and spikes; `--breakdown` names the painters
-  the time went to, `--root=<tree>` measures another checkout for a before/after. Compare runs against
-  each other, not against a phone. Needs Playwright, like the shots harness.
+  the time went to, `--root=<tree>` measures another checkout for a before/after, and
+  `--viewport=412x892 --dpr=2.625` pulls another phone's sheet (here a Pixel 6 Pro's). Compare runs against
+  each other, not against a phone. Needs Playwright, like the shots harness. A phone itself is read by
+  opening the page with `?meter` on the address: a line in the corner reports its real frame rate, how much
+  of each frame the painting takes, and what the frame pacer (`pacePresent` in `ui.js`) has shed.
 - `npm run shots` — the screenshot harness (`tools/shots/`, see its README): pulls named scenarios
   of the game in headless Chromium on a virtual clock, at any viewport (`--viewport=iphone-se`,
   `390x844@3`, `all`), plate, era or seed, into `tools/shots/out/` with a contact sheet. Captures are
