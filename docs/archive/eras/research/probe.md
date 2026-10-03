@@ -452,3 +452,10 @@ the named page or paper; the citations are to those primary pages, not to the se
   press release eso1706, 22 February 2017 (https://www.eso.org/public/news/eso1706/).
 
 No corrections proposed.
+
+## Claims register checks (2026-10-03)
+
+**"Barnard's Star: the red dwarf Project Daedalus chose as its target in 1978."** Corrected. The BIS
+study ran 1973–78 (§1 above; `08-probe.md`, "The documents"), and 1978 is the year of its final report,
+not of the choice of target. The note now reads "the red dwarf chosen as the target of Project Daedalus
+(1973–78)". Sources as for the Arrival line above.

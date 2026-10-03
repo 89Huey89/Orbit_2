@@ -1184,7 +1184,7 @@ defineVoice('probe',{
     'Replication. The first daughter leaves on its own escape burn, the plaque copied onto it unread.'
   ],
   chartNotes:[
-    'Barnard’s Star: the red dwarf Project Daedalus chose as its target in 1978.',
+    'Barnard’s Star: the red dwarf chosen as the target of Project Daedalus (1973–78).',
     'Alpha Centauri: the pair Breakthrough Starshot aims its gram-scale sails at.',
     'Proxima Centauri: the nearest star to the Sun. A planet in its habitable zone was found in 2016.',
     'Wolf 359: a faint red dwarf just under eight light-years away.',

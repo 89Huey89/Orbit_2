@@ -2365,7 +2365,7 @@ defineVoice('rock',{
   // A note for each animal as its cluster closes: one thing known of how the caves drew it, and where
   // a reading is only a reading, it says so.
   chartNotes:[
-    'The largest Lascaux bull is over five metres long. Six dots on one shoulder may be the Pleiades, or may not.',
+    'The largest Lascaux bull is over five metres long. Six dots over a bull’s shoulder there may be the Pleiades, or may not.',
     'The most painted animal of the Ice Age caves.',
     'At Altamira the bison lie over bulges in the ceiling, so the rock gives them their bodies.',
     'Both horns drawn on a head seen from the side, as if it turned to look at you.',
@@ -2659,7 +2659,7 @@ defineCentury(1,{leaf:{heading:'THE WALL',subs:['','','']},
   heirloom:{
     name:'THE BULL OF THE HALL',
     latin:'TAURUS',
-    gloss:'The greatest bull of the Hall of the Bulls, drawn once more, fainter, along the zodiac of the atlas’s own construction where Taurus stands, with Aldebaran for its eye — the oldest bull in the sky, if the dots on its shoulder are the Pleiades, as a few have read them.',
+    gloss:'A great bull of the Hall of the Bulls, drawn once more, fainter, along the zodiac of the atlas’s own construction where Taurus stands, with Aldebaran for its eye — the oldest bull in the sky, if the six dots over one bull’s shoulder there are the Pleiades, as a few have read them.',
     art:()=>rockCollectionArt(0)
   }
 });
