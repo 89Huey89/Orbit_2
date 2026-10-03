@@ -158,6 +158,9 @@ These need a design decision, not a text edit.
 - **A gravity assist is not a lap.** The Flyby's signature feat asks to "leave a gravity well on a full
   lap". A real assist is a single hyperbolic pass that borrows the planet's orbital motion; a full lap
   would be a capture. The mechanic can stay; its gloss should not teach the wrong picture.
+  *Answered 2026-10-01 by the feat's `why` (§3.1, item 5):* the Record now says beside the instruction that
+  a real assist is one pass, not a lap, and that Mariner 10 swung past Venus to Mercury in 1974. The
+  instruction keeps "a full lap", since that is what the game asks the player to fly.
 - **The atlas's twelve figures** mix Ptolemaic ones (Lyra, Corona, Serpens, Argo), Bayer's southern ones
   of 1603 (Phoenix, Tucana, Pavo) and four invented ones (Acus, Penna, Laterna, Phalæna). Velum is
   Lacaille's division of Argo in the 1750s, flown beside Argo itself. None of this is disclosed, and the
@@ -215,7 +218,9 @@ three stars is the traditional reading, not a certainty). One caution: the sandb
 fetches, so many citations were confirmed from search-result text of the cited pages rather than the pages
 themselves; each research section says where. A reading against the full sources is still worth doing. Lines worth checking
 first, raised while labelling (from general knowledge, so not yet findings; the 2026-10-02 pass has since settled the
-Sail, the Lantern, Pegasus and the Pleiades):
+Sail, the Lantern, Pegasus and the Pleiades, and the 2026-10-03 pass the rest — the two Lascaux bulls kept apart in both
+lines, Daedalus dated 1973–78, and the three unsourced clauses cited, with Tucson recorded as where FITS began rather
+than where it was agreed; each under a "Claims register checks (2026-10-03)" section of its research file):
 
 - The Rock's first chart note and its heirloom treat the largest Lascaux bull and the bull with six dots on its
   shoulder as one animal; `research/rock.md` names them separately.

@@ -471,3 +471,16 @@ are labelled readings rather than facts because the line itself reports a readin
   http://aquitaine.culture.gouv.fr/notices/dbcba5fee4c5c408d247485aae9a8641/ ; Actu-culture,
   "Au cœur de la vallée de la Vézère (3/7): L'abri du Poisson",
   https://www.actu-culture.com/archeologie/au-coeur-de-la-vallee-de-la-vezere-a-la-decouverte-des-gisements-abris-et-grottes-de-la-prehistoire-3-7-labri-du-poisson-petit-florilege-de-themes-de-techniques-et-de-styles/ .
+
+## Claims register checks (2026-10-03)
+
+Two lines raised in `docs/KNOWLEDGE-AUDIT.md` §2.3 as treating two bulls as one. §1 above names them
+separately — four monumental aurochs, one over five metres, and *one* bull with six dots over its
+shoulder — and the sources agree: Rappenglück's dots sit above the back of "one of the aurochs" in the
+Hall of the Bulls, and no summary found says it is the largest. Both lines were corrected so as not to
+join them. The chart note now reads "Six dots over a bull's shoulder there may be the Pleiades, or may
+not", and the heirloom draws "a great bull of the Hall of the Bulls" and keeps its reading on "the six
+dots over one bull's shoulder there". Searches only: World History Encyclopedia, "Lascaux Cave",
+https://www.worldhistory.org/Lascaux_Cave/ ; UNESCO Portal to the Heritage of Astronomy, Lascaux,
+https://web.astronomicalheritage.net/index.php/show-entity?idunescowhc=85 ; Britannica, "Lascaux",
+https://www.britannica.com/place/Lascaux (summarised).

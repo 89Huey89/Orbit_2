@@ -520,3 +520,23 @@ summaries agreed. Wikipedia was used only to find sources.
   https://hk.space.museum/en/web/spm/resources/teachers-corner/constellations-and-myths/chinese-starlore.html,
   and by Judy Volker, "Ancient Chinese Star Lore",
   http://judy-volker.com/StarLore/Myths/UrsaMajor3.html (summarised).
+
+## Claims register checks (2026-10-03)
+
+Two clauses `docs/KNOWLEDGE-AUDIT.md` §2.3 named as carried without a source. Search summaries only, as
+before.
+
+- **"Once a year, on the seventh night of the seventh month, magpies bridge the River for her."**
+  Attested as a Han tradition. The stars are named in the *Shijing* (大東) and the *Tianguan shu*; the
+  crossing on the seventh night of the seventh month with magpies making the bridge is first set down
+  in Ying Shao's *Fengsu tongyi* (風俗通義, late 2nd century CE), in a passage that survives only as
+  quoted in later compilations. Sources: Wikipedia, "The Cowherd and the Weaver Girl" and "Qixi
+  Festival" (used to find sources); Baidu Baike, "The Meeting of the Cowherd and the Weaver Girl on
+  the Magpie Bridge" (summarised).
+- **"its wall stars named for the old states of China."** Attested. The Heavenly Market's Left and
+  Right Walls, eleven stars each, carry the names of the states and regions of the Zhou world —
+  Wei and Zhao on the Left Wall, Zhou and Qin on the Right (Zhou is β Serpentis). Sources: Wikipedia,
+  "Heavenly Market enclosure" and "Serpens in Chinese astronomy" (used to find sources); Baidu Baike,
+  "Heavenly Market enclosure" (summarised).
+
+No corrections proposed.

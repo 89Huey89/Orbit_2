@@ -447,3 +447,17 @@ the sources named; most institutional pages could be read only through search ex
   Sky Notes: Seeing Double" (2024), https://science.nasa.gov/solar-system/skywatching/night-sky-network/aug2024-night-sky-notes/ ;
   *Astronomy Now*, "Don't miss Albireo: a glorious colour-contrast double star" (2022),
   https://astronomynow.com/2022/08/02/dont-miss-albireo-a-glorious-colour-contrast-double-star/ .
+
+## Claims register checks (2026-10-03)
+
+**"Tucson, 1981. A picture is written down as a header of plain cards and a table of numbers: the FITS
+standard."** The year and the content are attested (Wells, Greisen & Harten, *A&AS* 44, 363, 1981). The
+place is where FITS began rather than where it was agreed: Harten (Westerbork) and Wells (Kitt Peak
+National Observatory, Tucson) exchanged prototype tapes in 1977, and the NSF Image Analysis meeting at
+Kitt Peak in January 1979 set the task; the Basic FITS Agreement itself was written by Greisen and Wells
+in the VLA's cafeteria building, near Socorro, on 27–28 March 1979. The line is left as it stands, since
+the chapter is named for the observatory the format came from; a stricter reading would be `SOCORRO,
+1979`, which is the author's call. Sources: NASA FITS Support Office, "The First Agreement",
+https://fits.gsfc.nasa.gov/users_guide/users_guide/node9.html ; D. Wells, "FITS birthday" (1992),
+https://fits.gsfc.nasa.gov/birthday.news ; E. W. Greisen, "FITS: a remarkable achievement in information
+exchange", https://fits.gsfc.nasa.gov/Greisen.fh.pdf (summarised).

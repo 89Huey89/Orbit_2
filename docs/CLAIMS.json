@@ -112,7 +112,7 @@
    {
     "starts": "The largest Lascaux bull",
     "label": "attested",
-    "source": "Rappenglück after Antequera Congregado 1992; contested by Bahn and Hayden & Villeneuve 2011, CAJ 21(3) (research/rock.md §1, 'Lascaux, the Hall of the Bulls', and §12)"
+    "source": "Rappenglück after Antequera Congregado 1992; contested by Bahn and Hayden & Villeneuve 2011, CAJ 21(3) (research/rock.md §1, 'Lascaux, the Hall of the Bulls', and §12); the six-dot bull is not said to be the largest (research/rock.md, 'Claims register checks (2026-10-03)')"
    },
    {
     "starts": "The most painted animal ",
@@ -171,9 +171,9 @@
    }
   ],
   "heirloom": {
-   "starts": "The greatest bull of the",
+   "starts": "A great bull of the Hall",
    "label": "plausible reconstruction",
-   "source": "Rappenglück after Antequera Congregado 1992, contested by Bahn and Hayden & Villeneuve 2011 (research/rock.md §1 and §12; research/one-star.md, Aldebaran round, era I row; KNOWLEDGE-AUDIT.md §2.1, 'The Rock's heirloom')"
+   "source": "Rappenglück after Antequera Congregado 1992, contested by Bahn and Hayden & Villeneuve 2011 (research/rock.md §1 and §12; research/one-star.md, Aldebaran round, era I row; KNOWLEDGE-AUDIT.md §2.1, 'The Rock's heirloom'); the six-dot bull is not said to be the largest (research/rock.md, 'Claims register checks (2026-10-03)')"
   }
  },
  "ceiling": {
@@ -220,7 +220,7 @@
    {
     "starts": "The Weaver Girl is Vega.",
     "label": "attested",
-    "source": "織女 Zhinü = Vega: Shijing, Xiao Ya, 大東; Sima Qian, Tianguan shu (research/one-star.md, Vega and Altair, III)"
+    "source": "織女 Zhinü = Vega: Shijing, Xiao Ya, 大東; Sima Qian, Tianguan shu (research/one-star.md, Vega and Altair, III); the magpie bridge on the seventh night of the seventh month after Ying Shao, Fengsu tongyi (late 2nd c. CE), as quoted in later compilations (research/china.md, 'Claims register checks (2026-10-03)')"
    },
    {
     "starts": "The River Drum holds Alt",
@@ -255,7 +255,7 @@
    {
     "starts": "The Heavenly Market is o",
     "label": "attested",
-    "source": "Three Enclosures 三垣, Tianshi the Heavenly Market Enclosure (research/china.md §2, search summary of 'Twenty-Eight Mansions')"
+    "source": "Three Enclosures 三垣, Tianshi the Heavenly Market Enclosure (research/china.md §2, search summary of 'Twenty-Eight Mansions'); the wall stars' names for the old states (Wei, Zhao, Zhou, Qin and others) per research/china.md, 'Claims register checks (2026-10-03)'"
    },
    {
     "starts": "The pole is the still po",
@@ -400,7 +400,7 @@
    {
     "starts": "Tucson, 1981. A picture ",
     "label": "attested",
-    "source": "Wells, Greisen and Harten, the FITS header standard, 1981 (06-lens.md, 'The documents', register three; research/observatory.md §4 on FITS cards). The place, Tucson, is not backed in the repo."
+    "source": "Wells, Greisen and Harten, the FITS header standard, 1981 (06-lens.md, 'The documents', register three; research/observatory.md §4 on FITS cards). Tucson is where it began, not where it was agreed: Wells was at Kitt Peak (Tucson) and the NSF meeting of January 1979 that set the task was held there, while the Basic FITS Agreement was drafted with Greisen at the VLA in March 1979 (research/observatory.md, 'Claims register checks (2026-10-03)')."
    },
    {
     "starts": "Cape Canaveral, 1990. A ",
@@ -614,7 +614,7 @@
    {
     "starts": "Barnard’s Star: the red ",
     "label": "attested",
-    "source": "van de Kamp's planet as 'one reason Project Daedalus (1973–78) chose Barnard's Star' (research/beliefs.md, VIII, checked against Centauri Dreams on Daedalus); M4V class after RECONS (src/probe.js comment above PRB_SYSTEMS)"
+    "source": "van de Kamp's planet as 'one reason Project Daedalus (1973–78) chose Barnard's Star' (research/beliefs.md, VIII, checked against Centauri Dreams on Daedalus); M4V class after RECONS (src/probe.js comment above PRB_SYSTEMS); the study's dates 1973–78 (research/probe.md, 'Claims register checks (2026-10-03)')"
    },
    {
     "starts": "Alpha Centauri: the pair",
